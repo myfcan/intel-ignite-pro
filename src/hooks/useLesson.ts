@@ -11,7 +11,7 @@ export interface Lesson {
   trail_id: string;
   title: string;
   description: string;
-  lesson_type: 'fill-blanks' | 'drag-drop' | 'quiz-playground' | 'before-after' | 'flashcards';
+  lesson_type: 'fill-blanks' | 'fill-text' | 'drag-drop' | 'quiz-playground' | 'before-after' | 'flashcards';
   content: LessonContent;
   passing_score: number;
   estimated_time: number;
@@ -183,6 +183,25 @@ function calculateScore(lessonType: string, content: any, answers: any): number 
         return JSON.stringify(userAnswer?.sort?.()) === JSON.stringify(correctAnswer?.sort?.());
       }).length;
       return Math.round((correct / content.sentences.length) * 100);
+    }
+    case 'fill-text': {
+      if (!content.exercises || !Array.isArray(content.exercises)) return 0;
+      let totalBlanks = 0;
+      let correctBlanks = 0;
+      
+      content.exercises.forEach((exercise: any, exerciseIdx: number) => {
+        const userAnswers = answers[exerciseIdx] || [];
+        exercise.blanks.forEach((blank: any, blankIdx: number) => {
+          totalBlanks++;
+          const userAnswer = (userAnswers[blankIdx] || '').toLowerCase().trim();
+          const hasKeyword = blank.keywords.some((keyword: string) => 
+            userAnswer.includes(keyword.toLowerCase())
+          );
+          if (hasKeyword) correctBlanks++;
+        });
+      });
+      
+      return totalBlanks > 0 ? Math.round((correctBlanks / totalBlanks) * 100) : 0;
     }
     case 'drag-drop': {
       return JSON.stringify(content.correctOrder) === JSON.stringify(answers) ? 100 : 50;

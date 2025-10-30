@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLesson } from '@/hooks/useLesson';
 import { FillBlanksLesson } from './FillBlanksLesson';
+import { FillTextLesson } from './FillTextLesson';
 import { DragDropLesson } from './DragDropLesson';
 import { QuizPlaygroundLesson } from './QuizPlaygroundLesson';
 import { FlashcardsLesson } from './FlashcardsLesson';
@@ -79,6 +80,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   switch (lesson.lesson_type) {
     case 'fill-blanks':
       return <FillBlanksLesson {...componentProps} />;
+    case 'fill-text':
+      return <FillTextLesson {...componentProps} />;
     case 'drag-drop':
       return <DragDropLesson {...componentProps} />;
     case 'quiz-playground':
