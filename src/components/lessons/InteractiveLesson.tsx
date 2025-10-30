@@ -46,7 +46,7 @@ export const InteractiveLesson = ({ lessonId, onComplete }: InteractiveLessonPro
   };
 
   const componentProps = {
-    content: lesson.content,
+    content: lesson.content as any,
     onSubmit: handleSubmit,
     testInPlayground,
     submitting,

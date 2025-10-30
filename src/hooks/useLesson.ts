@@ -67,6 +67,8 @@ export const useLesson = (lessonId: string) => {
 
       setLesson({
         ...lessonData,
+        lesson_type: lessonData.lesson_type as any,
+        content: lessonData.content as LessonContent,
         user_status: progressData?.status || 'not_started',
         user_score: progressData?.score || 0,
         user_answers: progressData?.answers,
