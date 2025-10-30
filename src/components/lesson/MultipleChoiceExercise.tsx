@@ -23,6 +23,7 @@ export const MultipleChoiceExercise = ({
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   const handleSubmit = () => {
     setIsSubmitted(true);
@@ -30,14 +31,21 @@ export const MultipleChoiceExercise = ({
     setIsCorrect(correct);
     
     if (correct) {
+      // Espera mostrar o feedback, depois faz fade out
       setTimeout(() => {
-        onComplete();
-      }, 2000);
+        setIsFadingOut(true);
+        // Aguarda animação de fade out completar antes de chamar onComplete
+        setTimeout(() => {
+          onComplete();
+        }, 300);
+      }, 1500);
     }
   };
 
   return (
-    <Card className="p-6 space-y-4 border-2 border-primary/10">
+    <Card className={`p-6 space-y-4 border-2 border-primary/10 transition-all duration-300 ${
+      isFadingOut ? 'animate-fade-out' : 'animate-fade-in'
+    }`}>
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
           <span className="text-xl">🎯</span>
