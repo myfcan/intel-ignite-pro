@@ -8,6 +8,7 @@ import { QuizPlaygroundLesson } from './QuizPlaygroundLesson';
 import { FlashcardsLesson } from './FlashcardsLesson';
 import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { supabase } from '@/integrations/supabase/client';
+import { MiniMaia } from '@/components/MiniMaia';
 
 interface InteractiveLessonProps {
   lessonId: string;
@@ -16,6 +17,8 @@ interface InteractiveLessonProps {
 export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const { lesson, loading, submitting, submitAnswers, testInPlayground } = useLesson(lessonId);
   const [startTime] = useState(Date.now());
+  const [showMaia, setShowMaia] = useState(false);
+  const [isLastLesson, setIsLastLesson] = useState(false);
   const navigate = useNavigate();
 
   if (loading) {
@@ -53,19 +56,31 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         .limit(1)
         .maybeSingle();
 
-      if (nextLesson) {
-        // Navegar para próxima aula
+      const isLast = !nextLesson;
+      
+      if (!isLast) {
+        // Tem próxima aula - aguarda um pouco e navega
         const route = nextLesson.lesson_type 
           ? `/lessons-interactive/${nextLesson.id}` 
           : `/lessons/${nextLesson.id}`;
-        setTimeout(() => navigate(route), 1500);
+        setTimeout(() => navigate(route), 2500);
       } else {
-        // Última aula, voltar para trilha
-        setTimeout(() => navigate(`/trails/${lesson.trail_id}`), 1500);
+        // Última aula - mostra Maia e depois volta para trilha
+        setIsLastLesson(true);
+        setTimeout(() => setShowMaia(true), 1000);
       }
+      
+      return { ...result, isLastLesson: isLast };
     }
     
-    return result;
+    return { ...result, isLastLesson: false };
+  };
+
+  const handleMaiaClose = () => {
+    setShowMaia(false);
+    if (lesson) {
+      navigate(`/trails/${lesson.trail_id}`);
+    }
   };
 
   const componentProps = {
@@ -79,17 +94,89 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
 
   switch (lesson.lesson_type) {
     case 'fill-blanks':
-      return <FillBlanksLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <FillBlanksLesson {...componentProps} />
+        </>
+      );
     case 'fill-text':
-      return <FillTextLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <FillTextLesson {...componentProps} />
+        </>
+      );
     case 'drag-drop':
-      return <DragDropLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <DragDropLesson {...componentProps} />
+        </>
+      );
     case 'quiz-playground':
-      return <QuizPlaygroundLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <QuizPlaygroundLesson {...componentProps} />
+        </>
+      );
     case 'flashcards':
-      return <FlashcardsLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <FlashcardsLesson {...componentProps} />
+        </>
+      );
     case 'before-after':
-      return <BeforeAfterLesson {...componentProps} />;
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <BeforeAfterLesson {...componentProps} />
+        </>
+      );
     default:
       return (
         <div className="text-center py-12">

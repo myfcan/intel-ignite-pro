@@ -161,9 +161,14 @@ export const FlashcardsLesson = ({ content, onSubmit, submitting }: FlashcardsLe
                 <div>
                   <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
                   <p className="text-lg">{result.feedback}</p>
-                  {result.passed && (
+                  {result.passed && !result.isLastLesson && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Redirecionando para a próxima aula...
+                      ⏳ Redirecionando para a próxima aula em instantes...
+                    </p>
+                  )}
+                  {result.passed && result.isLastLesson && (
+                    <p className="text-sm text-green-600 font-semibold mt-2">
+                      🎉 Aguarde a Maia com uma surpresa especial!
                     </p>
                   )}
                 </div>
