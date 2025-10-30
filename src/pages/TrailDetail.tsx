@@ -35,7 +35,13 @@ const TrailDetail = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-  const [showMaia, setShowMaia] = useState(true);
+  
+  // Verificar se a Maia já foi mostrada para esta trilha
+  const maiaShownKey = `maia-shown-${id}`;
+  const [showMaia, setShowMaia] = useState(() => {
+    const hasShown = localStorage.getItem(maiaShownKey);
+    return !hasShown;
+  });
 
   useEffect(() => {
     fetchTrailData();
@@ -160,6 +166,12 @@ const TrailDetail = () => {
 
   const message = getMaiaMessage(trailId, messageType);
 
+  const handleMaiaClose = () => {
+    setShowMaia(false);
+    // Salvar no localStorage que a Maia já foi mostrada para esta trilha
+    localStorage.setItem(maiaShownKey, 'true');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {showMaia && (
@@ -167,7 +179,7 @@ const TrailDetail = () => {
           message={message}
           variant={variant}
           showConfetti={showConfetti}
-          onClose={() => setShowMaia(false)}
+          onClose={handleMaiaClose}
         />
       )}
       {/* Header */}

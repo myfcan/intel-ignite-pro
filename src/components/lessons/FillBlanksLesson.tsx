@@ -30,7 +30,8 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
     setShowFeedback(prev => ({ ...prev, [sentenceIndex]: false }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const result = await onSubmit(answers);
     setResult(result);
     
@@ -42,6 +43,12 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
       feedback[i] = isCorrect;
     });
     setShowFeedback(feedback);
+  };
+
+  const handleTryAgain = () => {
+    setAnswers({});
+    setResult(null);
+    setShowFeedback({});
   };
 
   const allAnswered = Object.keys(answers).length === content.sentences.length;
@@ -99,20 +106,57 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
             );
           })}
 
-          <Button
-            onClick={handleSubmit}
-            disabled={!allAnswered || submitting || !!result}
-            className="w-full"
-            size="lg"
-          >
-            {submitting ? 'Verificando...' : 'Verificar Respostas'}
-          </Button>
+          {!result && (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!allAnswered || submitting}
+              className="w-full"
+              size="lg"
+            >
+              {submitting ? 'Verificando...' : 'Verificar Respostas'}
+            </Button>
+          )}
 
           {result && (
             <Card className={result.passed ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'}>
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
-                <p className="text-lg">{result.feedback}</p>
+              <CardContent className="pt-6 space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
+                  <p className="text-lg">{result.feedback}</p>
+                </div>
+                
+                {result.passed ? (
+                  <Button
+                    type="button"
+                    onClick={() => window.history.back()}
+                    className="w-full"
+                    size="lg"
+                  >
+                    🎉 Continuar para Dashboard
+                  </Button>
+                ) : (
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      onClick={handleTryAgain}
+                      variant="outline"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      🔄 Tentar Novamente
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => window.history.back()}
+                      variant="secondary"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      Voltar
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
