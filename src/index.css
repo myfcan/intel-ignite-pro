@@ -29,6 +29,11 @@ All colors MUST be HSL.
     --accent-foreground: 0 0% 100%;
     --accent-hover: 330 81% 55%;
 
+    /* Azul (Blue) */
+    --blue: 217 91% 60%;
+    --blue-foreground: 0 0% 100%;
+    --blue-hover: 217 91% 55%;
+
     /* Verde Neon (Success) */
     --success: 142 71% 58%;
     --success-foreground: 0 0% 100%;
@@ -64,11 +69,13 @@ All colors MUST be HSL.
     --gray-50: 0 0% 98%;
 
     /* Gradientes poderosos */
-    --gradient-hero: linear-gradient(135deg, hsl(187 85% 53%) 0%, hsl(330 81% 60%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(187 85% 53%) 0%, hsl(217 91% 60%) 50%, hsl(330 81% 60%) 100%);
     --gradient-primary: linear-gradient(135deg, hsl(187 85% 53%) 0%, hsl(188 86% 42%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(330 81% 60%) 0%, hsl(330 81% 55%) 100%);
+    --gradient-blue: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 55%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(142 71% 58%) 0%, hsl(142 71% 45%) 100%);
     --gradient-glass: linear-gradient(135deg, hsla(187 85% 53% / 0.1) 0%, hsla(330 81% 60% / 0.1) 100%);
+    --gradient-mesh: linear-gradient(135deg, hsla(187 85% 53% / 0.8) 0%, hsla(217 91% 60% / 0.8) 50%, hsla(330 81% 60% / 0.8) 100%);
 
     /* Sombras com glow */
     --shadow-cyan-glow: 0 0 20px hsla(187 85% 53% / 0.3);
@@ -197,6 +204,14 @@ All colors MUST be HSL.
 
   .gradient-glass {
     background: var(--gradient-glass);
+  }
+
+  .gradient-blue {
+    background: var(--gradient-blue);
+  }
+
+  .gradient-mesh {
+    background: var(--gradient-mesh);
   }
 
   .shadow-soft {
