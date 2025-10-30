@@ -27,17 +27,31 @@ interface Trail {
   order_index: number;
 }
 
+interface TrailProgress {
+  trailId: string;
+  completedLessons: number;
+  totalLessons: number;
+  progress: number;
+  status: 'active' | 'completed' | 'locked';
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [trails, setTrails] = useState<Trail[]>([]);
+  const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
-    fetchTrails();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchTrailsWithProgress();
+    }
+  }, [user]);
 
   const checkAuth = async () => {
     try {
@@ -69,18 +83,64 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTrails = async () => {
+  const fetchTrailsWithProgress = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all trails
+      const { data: trailsData, error: trailsError } = await supabase
         .from('trails')
         .select('*')
         .eq('is_active', true)
         .order('order_index');
 
-      if (error) throw error;
-      setTrails(data || []);
+      if (trailsError) throw trailsError;
+      setTrails(trailsData || []);
+
+      // Fetch all lessons for each trail and user progress
+      const progressData: TrailProgress[] = [];
+      
+      for (const trail of trailsData || []) {
+        // Get all lessons for this trail
+        const { data: lessons } = await supabase
+          .from('lessons')
+          .select('id')
+          .eq('trail_id', trail.id)
+          .eq('is_active', true);
+
+        const totalLessons = lessons?.length || 0;
+
+        // Get completed lessons for this user in this trail
+        const { data: completedProgress } = await supabase
+          .from('user_progress')
+          .select('lesson_id')
+          .eq('user_id', user!.id)
+          .eq('status', 'completed')
+          .in('lesson_id', lessons?.map(l => l.id) || []);
+
+        const completedLessons = completedProgress?.length || 0;
+        const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+        // Determine status
+        let status: 'active' | 'completed' | 'locked';
+        if (progress === 100) {
+          status = 'completed';
+        } else if (progressData.length === 0 || progressData[progressData.length - 1].status === 'completed') {
+          status = 'active';
+        } else {
+          status = 'locked';
+        }
+
+        progressData.push({
+          trailId: trail.id,
+          completedLessons,
+          totalLessons,
+          progress,
+          status
+        });
+      }
+
+      setTrailsProgress(progressData);
     } catch (error: any) {
-      console.error('Error fetching trails:', error);
+      console.error('Error fetching trails with progress:', error);
     }
   };
 
@@ -210,20 +270,20 @@ const Dashboard = () => {
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Suas Trilhas</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trails.map((trail, index) => {
+            {trails.map((trail) => {
               const IconComponent = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
               const gradient = TRAIL_GRADIENTS[trail.title] || 'from-gray-500 to-gray-600';
-              const status = index === 0 ? 'active' : index === 1 ? 'locked' : 'locked';
+              const trailProgress = trailsProgress.find(tp => tp.trailId === trail.id);
               
               return (
                 <TrailCard
                   key={trail.id}
                   trail={trail}
                   Icon={IconComponent}
-                  progress={index === 0 ? 20 : 0}
-                  completedLessons={index === 0 ? 1 : 0}
-                  totalLessons={5}
-                  status={status}
+                  progress={trailProgress?.progress || 0}
+                  completedLessons={trailProgress?.completedLessons || 0}
+                  totalLessons={trailProgress?.totalLessons || 0}
+                  status={trailProgress?.status || 'locked'}
                   gradient={gradient}
                 />
               );
