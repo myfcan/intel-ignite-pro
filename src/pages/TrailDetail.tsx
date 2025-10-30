@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock } from 'lucide-react';
+import { MiniMaia } from '@/components/MiniMaia';
+import { maiaMessages, defaultMessage } from '@/data/maiaMessages';
 
 interface Lesson {
   id: string;
@@ -32,6 +34,7 @@ const TrailDetail = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [showMaia, setShowMaia] = useState(true);
 
   useEffect(() => {
     fetchTrailData();
@@ -134,6 +137,12 @@ const TrailDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {showMaia && (
+        <MiniMaia
+          message={maiaMessages[trail?.title.toLowerCase().replace(/\s+/g, '')] || defaultMessage}
+          onClose={() => setShowMaia(false)}
+        />
+      )}
       {/* Header */}
       <header className="bg-white border-b-2 border-gray-100 shadow-soft">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
