@@ -97,7 +97,7 @@ const Onboarding = () => {
     }
   };
 
-  const handleSelect = (value: string) => {
+  const handleSelect = async (value: string) => {
     const questionKey = ['profession', 'goal', 'time', 'experience'][step - 1] as keyof typeof answers;
     const newAnswers = { ...answers, [questionKey]: value };
     setAnswers(newAnswers);
@@ -105,13 +105,27 @@ const Onboarding = () => {
     if (step < 4) {
       setTimeout(() => setStep(step + 1), 300);
     } else {
-      saveOnboardingData(newAnswers);
+      await saveOnboardingData(newAnswers);
+      
+      // Buscar primeira trilha (order_index = 1)
+      const { data: trails } = await supabase
+        .from('trails')
+        .select('id')
+        .eq('is_active', true)
+        .order('order_index')
+        .limit(1);
+      
       setTimeout(() => {
         toast({
           title: "Perfeito! Tudo pronto!",
           description: "Vamos começar sua jornada com IA 🚀",
         });
-        navigate('/dashboard');
+        
+        if (trails && trails.length > 0) {
+          navigate(`/trails/${trails[0].id}`);
+        } else {
+          navigate('/dashboard');
+        }
       }, 500);
     }
   };
