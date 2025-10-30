@@ -8,14 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { AudioPlayer } from "@/components/lesson/AudioPlayer";
 import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExercise";
 import { PlaygroundComponent } from "@/components/lesson/PlaygroundComponent";
-import { FeedbackCard } from "@/components/lesson/FeedbackCard";
+import { ExerciseResults } from "@/components/lesson/ExerciseResults";
 import { 
   ArrowLeft, 
   Clock, 
   Target, 
-  CheckCircle2, 
-  ArrowRight,
-  MessageCircle,
+  CheckCircle2,
   BookOpen
 } from "lucide-react";
 
@@ -46,7 +44,10 @@ const Lesson = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
-  const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const [showPlayground, setShowPlayground] = useState(false);
   const [startTime] = useState(Date.now());
 
   useEffect(() => {
@@ -114,12 +115,37 @@ const Lesson = () => {
     }
   };
 
-  const handleExerciseComplete = (exerciseId: string) => {
-    setCompletedExercises(new Set([...completedExercises, exerciseId]));
-    toast({
-      title: "Exercício completo!",
-      description: "Continue assim! 🎉",
-    });
+  const handleExerciseComplete = (isCorrect: boolean) => {
+    if (isCorrect) {
+      setCorrectAnswers(prev => prev + 1);
+    }
+
+    // Avança para próximo exercício
+    if (currentExerciseIndex < exercises.length - 1) {
+      setCurrentExerciseIndex(prev => prev + 1);
+    } else {
+      // Terminou todos os exercícios
+      setShowResults(true);
+    }
+  };
+
+  const handleTryAgain = () => {
+    setCurrentExerciseIndex(0);
+    setCorrectAnswers(0);
+    setShowResults(false);
+    setShowPlayground(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleContinueToPlayground = () => {
+    setShowPlayground(true);
+    // Scroll suave para o playground
+    setTimeout(() => {
+      document.getElementById('playground-section')?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
   };
 
   const handleCompleteLesson = async () => {
@@ -186,7 +212,8 @@ const Lesson = () => {
     );
   }
 
-  const allExercisesCompleted = exercises.length === completedExercises.size;
+  const currentExercise = exercises[currentExerciseIndex];
+  const percentage = exercises.length > 0 ? Math.round((correctAnswers / exercises.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -249,100 +276,90 @@ const Lesson = () => {
 
           <Separator />
 
-          {/* Exercises */}
-          {exercises.length > 0 && (
+          {/* Exercises - Uma pergunta por vez */}
+          {exercises.length > 0 && !showResults && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Exercícios</h2>
-              {exercises.map((exercise, index) => (
-                <div key={exercise.id}>
-                  <MultipleChoiceExercise
-                    question={`${index + 1}. ${exercise.question}`}
-                    options={exercise.options}
-                    correctAnswer={exercise.correct_answer}
-                    explanation={exercise.explanation}
-                    onComplete={() => handleExerciseComplete(exercise.id)}
-                  />
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Exercícios</h2>
+                <div className="text-sm text-muted-foreground">
+                  Questão {currentExerciseIndex + 1} de {exercises.length}
                 </div>
-              ))}
+              </div>
+              
+              {currentExercise && (
+                <MultipleChoiceExercise
+                  key={currentExercise.id}
+                  question={`${currentExerciseIndex + 1}. ${currentExercise.question}`}
+                  options={currentExercise.options}
+                  correctAnswer={currentExercise.correct_answer}
+                  explanation={currentExercise.explanation}
+                  onComplete={handleExerciseComplete}
+                />
+              )}
             </div>
           )}
 
-          <Separator />
+          {/* Tela de Resultado */}
+          {showResults && (
+            <>
+              <Separator />
+              <ExerciseResults
+                totalQuestions={exercises.length}
+                correctAnswers={correctAnswers}
+                onTryAgain={handleTryAgain}
+                onContinue={handleContinueToPlayground}
+              />
+            </>
+          )}
 
-          {/* Playground */}
-          <PlaygroundComponent
-            lessonId={lesson.id}
-            userId={userId}
-            title="🎮 Playground: Pratique Agora"
-            description="Coloque em prática o que aprendeu usando a IA!"
-          />
-
-          {/* Feedback Example */}
-          <FeedbackCard
-            feedbackText="Ótimo trabalho! Você está progredindo bem. Para melhorar ainda mais, tente experimentar com diferentes contextos e tons."
-            suggestions={[
-              "Seja mais específico no contexto",
-              "Experimente diferentes tons de voz",
-              "Adicione detalhes relevantes ao seu objetivo",
-            ]}
-          />
-
-          <Separator />
-
-          {/* Complete Lesson */}
-          <Card className="p-6 md:p-8 bg-gradient-to-br from-success/10 to-primary/10 border-2 border-success/20">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-xl font-bold mb-2">
-                  {allExercisesCompleted
-                    ? "Parabéns! Você completou todos os exercícios!"
-                    : "Continue praticando"}
-                </h3>
-                <p className="text-muted-foreground">
-                  {allExercisesCompleted
-                    ? "Clique em 'Marcar como Concluída' para finalizar esta aula."
-                    : `Complete ${exercises.length - completedExercises.size} exercício(s) restante(s)`}
-                </p>
+          {/* Playground - só aparece depois do resultado */}
+          {showPlayground && (
+            <>
+              <Separator />
+              <div id="playground-section">
+                <PlaygroundComponent
+                  lessonId={lesson.id}
+                  userId={userId}
+                  title="🎮 Playground: Pratique com Maia"
+                  description="Coloque em prática o que aprendeu conversando com a Maia!"
+                />
               </div>
-              <Button
-                onClick={handleCompleteLesson}
-                size="lg"
-                className="gap-2 h-12"
-                disabled={!allExercisesCompleted}
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                Marcar como Concluída
-              </Button>
-            </div>
-          </Card>
+
+              <Separator />
+
+              {/* Complete Lesson */}
+              <Card className="p-6 md:p-8 bg-gradient-to-br from-success/10 to-primary/10 border-2 border-success/20">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xl font-bold mb-2">
+                      Parabéns! Você completou a aula! 🎉
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Clique em "Marcar como Concluída" para finalizar e ganhar pontos.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleCompleteLesson}
+                    size="lg"
+                    className="gap-2 h-12"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    Marcar como Concluída
+                  </Button>
+                </div>
+              </Card>
+            </>
+          )}
 
           {/* Navigation */}
-          <div className="flex justify-between items-center pt-4">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Voltar à Trilha
-            </Button>
-            <Button variant="outline">
-              Próxima Aula
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Community Section */}
-          <Card className="p-6 border-2 border-primary/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold mb-1">💬 Discussão da Aula</h3>
-                <p className="text-sm text-muted-foreground">
-                  42 comentários • Compartilhe sua experiência
-                </p>
-              </div>
-              <Button variant="outline" className="gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Ver Discussão
+          {showPlayground && (
+            <div className="flex justify-between items-center pt-4">
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                Voltar à Trilha
               </Button>
             </div>
-          </Card>
+          )}
         </div>
       </main>
     </div>

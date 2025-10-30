@@ -10,7 +10,7 @@ interface MultipleChoiceExerciseProps {
   options: string[];
   correctAnswer: string;
   explanation: string;
-  onComplete: () => void;
+  onComplete: (isCorrect: boolean) => void;
 }
 
 export const MultipleChoiceExercise = ({
@@ -36,10 +36,16 @@ export const MultipleChoiceExercise = ({
         setIsFadingOut(true);
         // Aguarda animação de fade out completar antes de chamar onComplete
         setTimeout(() => {
-          onComplete();
+          onComplete(true);
         }, 300);
       }, 1500);
     }
+  };
+
+  const handleTryAgain = () => {
+    setSelectedAnswer("");
+    setIsSubmitted(false);
+    setIsCorrect(false);
   };
 
   return (
@@ -117,29 +123,43 @@ export const MultipleChoiceExercise = ({
         >
           Confirmar Resposta
         </Button>
-      ) : (
+      ) : isCorrect ? (
         <div
-          className={`p-4 rounded-lg border-2 animate-fade-in ${
-            isCorrect
-              ? "bg-success/5 border-success/20"
-              : "bg-destructive/5 border-destructive/20"
-          }`}
+          className="p-4 rounded-lg border-2 animate-fade-in bg-success/5 border-success/20"
         >
           <div className="flex items-start gap-3">
-            {isCorrect ? (
-              <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
-            ) : (
-              <Info className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
-            )}
+            <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-semibold mb-1">
-                {isCorrect ? "Correto! 🎉" : "Não foi dessa vez"}
-              </p>
+              <p className="font-semibold mb-1">Correto! 🎉</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {explanation}
               </p>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div
+            className="p-4 rounded-lg border-2 animate-fade-in bg-destructive/5 border-destructive/20"
+          >
+            <div className="flex items-start gap-3">
+              <Info className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold mb-1">Não foi dessa vez</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {explanation}
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button
+            onClick={handleTryAgain}
+            variant="outline"
+            className="w-full h-12 text-base"
+            size="lg"
+          >
+            Tentar Novamente
+          </Button>
         </div>
       )}
     </Card>
