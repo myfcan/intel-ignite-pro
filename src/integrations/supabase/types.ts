@@ -189,6 +189,53 @@ export type Database = {
           },
         ]
       }
+      pricing_sessions: {
+        Row: {
+          converted: boolean | null
+          created_at: string | null
+          discount_code: string | null
+          discount_percentage: number | null
+          expires_at: string
+          id: string
+          selected_plan: string | null
+          session_token: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          converted?: boolean | null
+          created_at?: string | null
+          discount_code?: string | null
+          discount_percentage?: number | null
+          expires_at: string
+          id?: string
+          selected_plan?: string | null
+          session_token: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          converted?: boolean | null
+          created_at?: string | null
+          discount_code?: string | null
+          discount_percentage?: number | null
+          expires_at?: string
+          id?: string
+          selected_plan?: string | null
+          session_token?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_templates: {
         Row: {
           category: string | null
@@ -299,6 +346,38 @@ export type Database = {
           },
         ]
       }
+      user_onboarding_answers: {
+        Row: {
+          answer_value: string
+          answered_at: string | null
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          answer_value: string
+          answered_at?: string | null
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          answer_value?: string
+          answered_at?: string | null
+          id?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_onboarding_answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_playground_sessions: {
         Row: {
           ai_feedback: string | null
@@ -336,6 +415,74 @@ export type Database = {
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          age_range: string | null
+          created_at: string | null
+          familiar_tools: string[] | null
+          fear_replacement: string | null
+          focus: string | null
+          id: string
+          interest_areas: string[] | null
+          intimidated_by_ai: string | null
+          knowledge_level: string | null
+          main_goal: string | null
+          motivation: string | null
+          potential: string | null
+          priority_trail: string | null
+          readiness_level: string | null
+          readiness_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          age_range?: string | null
+          created_at?: string | null
+          familiar_tools?: string[] | null
+          fear_replacement?: string | null
+          focus?: string | null
+          id?: string
+          interest_areas?: string[] | null
+          intimidated_by_ai?: string | null
+          knowledge_level?: string | null
+          main_goal?: string | null
+          motivation?: string | null
+          potential?: string | null
+          priority_trail?: string | null
+          readiness_level?: string | null
+          readiness_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          age_range?: string | null
+          created_at?: string | null
+          familiar_tools?: string[] | null
+          fear_replacement?: string | null
+          focus?: string | null
+          id?: string
+          interest_areas?: string[] | null
+          intimidated_by_ai?: string | null
+          knowledge_level?: string | null
+          main_goal?: string | null
+          motivation?: string | null
+          potential?: string | null
+          priority_trail?: string | null
+          readiness_level?: string | null
+          readiness_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -418,6 +565,9 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_started_at: string | null
           plan: Database["public"]["Enums"]["plan_type"] | null
           profession: string | null
           streak_days: number | null
@@ -439,6 +589,9 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
           profession?: string | null
           streak_days?: number | null
@@ -460,6 +613,9 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name?: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
           profession?: string | null
           streak_days?: number | null
