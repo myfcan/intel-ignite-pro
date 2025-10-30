@@ -132,8 +132,7 @@ export type Database = {
       }
       lessons: {
         Row: {
-          audio_url: string | null
-          content_text: string
+          content: Json
           created_at: string | null
           description: string | null
           difficulty_level:
@@ -142,13 +141,14 @@ export type Database = {
           estimated_time: number | null
           id: string
           is_active: boolean | null
+          lesson_type: string | null
           order_index: number
+          passing_score: number | null
           title: string
           trail_id: string | null
         }
         Insert: {
-          audio_url?: string | null
-          content_text: string
+          content?: Json
           created_at?: string | null
           description?: string | null
           difficulty_level?:
@@ -157,13 +157,14 @@ export type Database = {
           estimated_time?: number | null
           id?: string
           is_active?: boolean | null
+          lesson_type?: string | null
           order_index: number
+          passing_score?: number | null
           title: string
           trail_id?: string | null
         }
         Update: {
-          audio_url?: string | null
-          content_text?: string
+          content?: Json
           created_at?: string | null
           description?: string | null
           difficulty_level?:
@@ -172,7 +173,9 @@ export type Database = {
           estimated_time?: number | null
           id?: string
           is_active?: boolean | null
+          lesson_type?: string | null
           order_index?: number
+          passing_score?: number | null
           title?: string
           trail_id?: string | null
         }
@@ -253,33 +256,40 @@ export type Database = {
       }
       user_achievements: {
         Row: {
-          achievement_icon: string | null
           achievement_name: string
           achievement_type: string
           earned_at: string | null
           id: string
+          lesson_id: string | null
           points_earned: number | null
           user_id: string | null
         }
         Insert: {
-          achievement_icon?: string | null
           achievement_name: string
           achievement_type: string
           earned_at?: string | null
           id?: string
+          lesson_id?: string | null
           points_earned?: number | null
           user_id?: string | null
         }
         Update: {
-          achievement_icon?: string | null
           achievement_name?: string
           achievement_type?: string
           earned_at?: string | null
           id?: string
+          lesson_id?: string | null
           points_earned?: number | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "user_achievements_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_achievements_user_id_fkey"
             columns: ["user_id"]
@@ -289,41 +299,91 @@ export type Database = {
           },
         ]
       }
+      user_playground_sessions: {
+        Row: {
+          ai_feedback: string | null
+          ai_response: string | null
+          created_at: string | null
+          id: string
+          lesson_id: string
+          tokens_used: number | null
+          user_id: string
+          user_prompt: string
+        }
+        Insert: {
+          ai_feedback?: string | null
+          ai_response?: string | null
+          created_at?: string | null
+          id?: string
+          lesson_id: string
+          tokens_used?: number | null
+          user_id: string
+          user_prompt: string
+        }
+        Update: {
+          ai_feedback?: string | null
+          ai_response?: string | null
+          created_at?: string | null
+          id?: string
+          lesson_id?: string
+          tokens_used?: number | null
+          user_id?: string
+          user_prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_playground_sessions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_progress: {
         Row: {
+          answers: Json | null
+          attempts: number | null
           completed_at: string | null
           exercises_completed: number | null
           exercises_total: number | null
           id: string
           last_accessed: string | null
           lesson_id: string | null
+          score: number | null
           started_at: string | null
           status: Database["public"]["Enums"]["lesson_status_type"] | null
-          time_spent: number | null
+          time_spent_seconds: number | null
           user_id: string | null
         }
         Insert: {
+          answers?: Json | null
+          attempts?: number | null
           completed_at?: string | null
           exercises_completed?: number | null
           exercises_total?: number | null
           id?: string
           last_accessed?: string | null
           lesson_id?: string | null
+          score?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["lesson_status_type"] | null
-          time_spent?: number | null
+          time_spent_seconds?: number | null
           user_id?: string | null
         }
         Update: {
+          answers?: Json | null
+          attempts?: number | null
           completed_at?: string | null
           exercises_completed?: number | null
           exercises_total?: number | null
           id?: string
           last_accessed?: string | null
           lesson_id?: string | null
+          score?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["lesson_status_type"] | null
-          time_spent?: number | null
+          time_spent_seconds?: number | null
           user_id?: string | null
         }
         Relationships: [
