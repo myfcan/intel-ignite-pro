@@ -17,6 +17,7 @@ interface Lesson {
   estimated_time: number;
   difficulty_level: string;
   is_active: boolean;
+  lesson_type?: string;
 }
 
 interface Trail {
@@ -106,7 +107,14 @@ const TrailDetail = () => {
       });
       return;
     }
-    navigate(`/lessons/${lesson.id}`);
+    
+    // Se a aula tem lesson_type, usa a nova rota interativa
+    const hasInteractiveContent = lesson.lesson_type && lesson.lesson_type !== '';
+    const route = hasInteractiveContent 
+      ? `/lessons-interactive/${lesson.id}` 
+      : `/lessons/${lesson.id}`;
+    
+    navigate(route);
   };
 
   if (loading) {
