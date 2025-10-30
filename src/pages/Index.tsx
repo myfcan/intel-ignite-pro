@@ -5,10 +5,17 @@ import {
   ArrowRight, Star, Users, TrendingUp, Zap, Clock, Target, 
   BookOpen, MessageSquare, BarChart3, Sparkles, Award, CheckCircle2,
   PlayCircle, ChevronRight, Trophy, Rocket, DollarSign, Calendar,
-  Shield, Brain, Layers, Palette, Bot, FileText
+  Shield, Brain, Layers, Palette, Bot, FileText, Briefcase, LineChart,
+  PenTool, Workflow
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import dashboardMockup from "@/assets/dashboard-mockup.jpg";
+import lessonMockup from "@/assets/lesson-mockup.jpg";
+import chatMockup from "@/assets/chat-mockup.jpg";
+import analyticsMockup from "@/assets/analytics-mockup.jpg";
+import designMockup from "@/assets/design-mockup.jpg";
+import botMockup from "@/assets/bot-mockup.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -89,52 +96,13 @@ const Index = () => {
 
             {/* Hero Mockup */}
             <div className="mt-16 animate-fade-in" style={{animationDelay: '0.8s'}}>
-              <Card className="p-8 shadow-large max-w-4xl mx-auto bg-card/50 backdrop-blur-sm">
-                <div className="aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-2 shadow-medium">
-                  {/* Dashboard Mockup */}
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 gradient-hero rounded-full" />
-                        <div>
-                          <div className="h-3 w-32 bg-foreground/20 rounded" />
-                          <div className="h-2 w-24 bg-foreground/10 rounded mt-1" />
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="w-20 h-8 gradient-primary rounded-lg" />
-                        <div className="w-8 h-8 bg-foreground/10 rounded-lg" />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mt-6">
-                      <div className="h-24 gradient-glass rounded-xl border p-3">
-                        <div className="h-2 w-16 bg-primary rounded mb-2" />
-                        <div className="h-6 w-12 gradient-primary rounded" />
-                      </div>
-                      <div className="h-24 gradient-glass rounded-xl border p-3">
-                        <div className="h-2 w-16 bg-accent rounded mb-2" />
-                        <div className="h-6 w-12 gradient-accent rounded" />
-                      </div>
-                      <div className="h-24 gradient-glass rounded-xl border p-3">
-                        <div className="h-2 w-16 bg-success rounded mb-2" />
-                        <div className="h-6 w-12 gradient-success rounded" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 mt-6">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-16 bg-card rounded-lg border flex items-center px-4 gap-3">
-                          <div className="w-10 h-10 gradient-primary rounded-lg" />
-                          <div className="flex-1">
-                            <div className="h-3 bg-foreground/20 rounded w-3/4" />
-                            <div className="h-2 bg-foreground/10 rounded w-1/2 mt-2" />
-                          </div>
-                          <div className="w-16 h-6 bg-success/20 rounded-full" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              <Card className="p-8 shadow-large max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-2">
+                <div className="aspect-video rounded-xl overflow-hidden shadow-medium">
+                  <img 
+                    src={dashboardMockup} 
+                    alt="Dashboard da Plataforma Inteligência Ignite"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </Card>
             </div>
@@ -272,64 +240,64 @@ const Index = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
               {
-                icon: "🚀",
+                icon: <Zap className="w-12 h-12" />,
                 title: "IA para Produtividade",
                 lessons: "8 aulas",
                 duration: "2h30",
                 level: "Iniciante",
                 description: "Automatize emails, reuniões e tarefas do dia a dia",
                 tag: null,
-                mockupType: "dashboard"
+                mockup: dashboardMockup
               },
               {
-                icon: "💰",
+                icon: <DollarSign className="w-12 h-12" />,
                 title: "Renda Extra com IA",
                 lessons: "12 aulas",
                 duration: "4h",
                 level: "Intermediário",
                 description: "Aprenda a vender serviços e criar produtos com IA",
                 tag: null,
-                mockupType: "lesson"
+                mockup: lessonMockup
               },
               {
-                icon: "📝",
+                icon: <FileText className="w-12 h-12" />,
                 title: "Criação de Conteúdo",
                 lessons: "10 aulas",
                 duration: "3h",
                 level: "Iniciante",
                 description: "Posts, emails, artigos e scripts em minutos",
                 tag: "🔥 Mais popular",
-                mockupType: "chat"
+                mockup: chatMockup
               },
               {
-                icon: "📊",
+                icon: <BarChart3 className="w-12 h-12" />,
                 title: "Análise de Dados com IA",
                 lessons: "15 aulas",
                 duration: "5h",
                 level: "Avançado",
                 description: "Transforme dados em decisões inteligentes",
                 tag: null,
-                mockupType: "analytics"
+                mockup: analyticsMockup
               },
               {
-                icon: "🎨",
+                icon: <Palette className="w-12 h-12" />,
                 title: "Design e Imagens com IA",
                 lessons: "9 aulas",
                 duration: "3h",
                 level: "Iniciante",
                 description: "Crie logos, posts e imagens profissionais",
                 tag: null,
-                mockupType: "design"
+                mockup: designMockup
               },
               {
-                icon: "🤖",
+                icon: <Bot className="w-12 h-12" />,
                 title: "Chatbots e Automação",
                 lessons: "11 aulas",
                 duration: "4h",
                 level: "Intermediário",
                 description: "Construa assistentes virtuais para seu negócio",
                 tag: null,
-                mockupType: "bot"
+                mockup: botMockup
               }
             ].map((trail, index) => (
               <Card key={index} className="overflow-hidden hover:shadow-medium transition-smooth group">
@@ -340,8 +308,14 @@ const Index = () => {
                 )}
                 
                 {/* Mockup Preview */}
-                <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-b p-4 flex items-center justify-center">
-                  <div className="text-6xl opacity-80 group-hover:scale-110 transition-transform">
+                <div className="h-48 overflow-hidden border-b relative">
+                  <img 
+                    src={trail.mockup} 
+                    alt={`Preview ${trail.title}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
+                  <div className="absolute bottom-4 right-4 w-14 h-14 gradient-hero rounded-xl flex items-center justify-center text-white shadow-medium">
                     {trail.icon}
                   </div>
                 </div>
