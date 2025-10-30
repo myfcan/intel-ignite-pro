@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Flame, Trophy, BookOpen, Zap, Lock } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign } from "lucide-react";
+import DashboardHeader from "@/components/DashboardHeader";
+import TrailCard from "@/components/TrailCard";
 
 interface User {
   id: string;
@@ -92,148 +91,147 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando seu dashboard...</p>
         </div>
       </div>
     );
   }
 
-  const interactionsRemaining = user ? user.daily_interaction_limit - user.interactions_used_today : 0;
-  const interactionsPercentage = user ? (interactionsRemaining / user.daily_interaction_limit) * 100 : 0;
+  const TRAIL_ICONS = {
+    '🎓': GraduationCap,
+    '📱': Smartphone,
+    '💼': Briefcase,
+    '💰': DollarSign,
+  };
+
+  const TRAIL_GRADIENTS: { [key: string]: string } = {
+    'Fundamentos de IA': 'from-blue-500 to-indigo-600',
+    'IA no Dia a Dia': 'from-cyan-500 to-blue-500',
+    'IA nos Negócios': 'from-purple-500 to-pink-500',
+    'Renda Extra com IA': 'from-green-500 to-emerald-600',
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b shadow-soft">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold">
-                IA
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <DashboardHeader user={user!} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Hero Section */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-cyan-500 via-cyan-400 to-pink-400 
+                      rounded-3xl p-8 md:p-12 mb-8 shadow-2xl">
+          
+          {/* Grid pattern overlay */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" 
+                 style={{
+                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                 }}
+            />
+          </div>
+
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-6">
               <div>
-                <h1 className="text-xl font-bold">Olá, {user?.name}</h1>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <p className="text-cyan-100 text-sm font-semibold mb-2 uppercase tracking-wide">
+                  Bem-vindo de volta!
+                </p>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  Continue sua jornada de aprendizado
+                </h2>
+                <p className="text-cyan-50 text-lg max-w-2xl">
+                  Escolha uma trilha abaixo para começar a aprender sobre Inteligência Artificial
+                </p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Sequência</CardTitle>
-              <Flame className="w-5 h-5 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{user?.streak_days || 0} dias</div>
-              <p className="text-xs text-muted-foreground mt-1">Continue assim! 🔥</p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pontos Totais</CardTitle>
-              <Trophy className="w-5 h-5 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{user?.total_points || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Continue aprendendo!</p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Aulas Completas</CardTitle>
-              <BookOpen className="w-5 h-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{user?.total_lessons_completed || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Muito bem!</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* AI Interactions Card */}
-        <Card className="mb-8 shadow-soft">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-accent" />
-                  Interações com IA Hoje
-                </CardTitle>
-                <CardDescription>
-                  Plano: <Badge variant="secondary">{user?.plan}</Badge>
-                </CardDescription>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">{interactionsRemaining}</div>
-                <div className="text-sm text-muted-foreground">restantes</div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Progress value={interactionsPercentage} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-2">
-              {user?.interactions_used_today}/{user?.daily_interaction_limit} interações usadas
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Trails Section */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">Trilhas de Aprendizado</h2>
-          <p className="text-muted-foreground">Escolha uma trilha para começar sua jornada</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trails.map((trail) => (
-            <Card 
-              key={trail.id} 
-              className="hover:shadow-medium transition-smooth cursor-pointer group"
-              onClick={() => toast({
-                title: "Em breve!",
-                description: `A trilha "${trail.title}" estará disponível em breve.`,
-              })}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center text-3xl mb-4">
-                    {trail.icon}
-                  </div>
-                  {trail.order_index > 1 && (
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  )}
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          
+          {/* Sequência */}
+          <Card className="border-2 border-gray-200 hover:border-orange-300 hover:shadow-lg transition-all">
+            <CardHeader>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400
+                              flex items-center justify-center shadow-soft">
+                  <Flame className="w-6 h-6 text-white" />
                 </div>
-                <CardTitle className="group-hover:text-primary transition-smooth">
-                  {trail.title}
-                </CardTitle>
-                <CardDescription>{trail.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={trail.order_index > 1}
-                >
-                  {trail.order_index > 1 ? 'Em breve' : 'Começar'}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                <span className="text-3xl font-bold text-gray-900">{user?.streak_days || 0}</span>
+              </div>
+              <CardTitle className="text-base font-medium text-gray-600">Dias de sequência</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500">Continue assim! 🔥</p>
+            </CardContent>
+          </Card>
+
+          {/* Pontos */}
+          <Card className="border-2 border-gray-200 hover:border-cyan-300 hover:shadow-lg transition-all">
+            <CardHeader>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-400
+                              flex items-center justify-center shadow-soft">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-3xl font-bold text-gray-900">{user?.total_points || 0}</span>
+              </div>
+              <CardTitle className="text-base font-medium text-gray-600">Pontos totais</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500">Continue aprendendo!</p>
+            </CardContent>
+          </Card>
+
+          {/* Aulas */}
+          <Card className="border-2 border-gray-200 hover:border-pink-300 hover:shadow-lg transition-all">
+            <CardHeader>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-400 to-purple-400
+                              flex items-center justify-center shadow-soft">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-3xl font-bold text-gray-900">{user?.total_lessons_completed || 0}</span>
+              </div>
+              <CardTitle className="text-base font-medium text-gray-600">Aulas completas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500">Muito bem!</p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+
+        {/* Trilhas */}
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">Suas Trilhas</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trails.map((trail, index) => {
+              const IconComponent = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+              const gradient = TRAIL_GRADIENTS[trail.title] || 'from-gray-500 to-gray-600';
+              const status = index === 0 ? 'active' : index === 1 ? 'locked' : 'locked';
+              
+              return (
+                <TrailCard
+                  key={trail.id}
+                  trail={trail}
+                  Icon={IconComponent}
+                  progress={index === 0 ? 20 : 0}
+                  completedLessons={index === 0 ? 1 : 0}
+                  totalLessons={5}
+                  status={status}
+                  gradient={gradient}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 };

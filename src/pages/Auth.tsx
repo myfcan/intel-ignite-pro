@@ -63,11 +63,24 @@ const Auth = () => {
       }
 
       if (data.session) {
+        // Check if user has completed onboarding
+        const { data: userData } = await supabase
+          .from('users')
+          .select('profession')
+          .eq('id', data.session.user.id)
+          .single();
+
         toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta!",
         });
-        navigate('/dashboard');
+
+        // Redirect to onboarding if not completed
+        if (!userData?.profession) {
+          navigate('/onboarding');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error: any) {
       toast({
@@ -122,9 +135,10 @@ const Auth = () => {
       if (data.session) {
         toast({
           title: "Conta criada com sucesso!",
-          description: "Bem-vindo à IA Academy!",
+          description: "Vamos começar sua jornada! 🚀",
         });
-        navigate('/dashboard');
+        // New users always go to onboarding
+        navigate('/onboarding');
       }
     } catch (error: any) {
       toast({
