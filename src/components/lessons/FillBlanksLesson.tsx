@@ -6,6 +6,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 
 interface FillBlanksLessonProps {
   content: {
+    introduction?: string;
     sentences: Array<{
       text: string;
       options: string[];
@@ -92,6 +93,11 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
           <CardTitle>📝 Complete as Lacunas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {content.introduction && (
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <p className="text-base leading-relaxed">{content.introduction}</p>
+            </div>
+          )}
           {content.sentences.map((sentence, sentenceIndex) => {
             const blanks = getBlanksInSentence(sentence.text);
             const parts = sentence.text.split('[___]');
