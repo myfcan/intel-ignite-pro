@@ -17,6 +17,7 @@ import analyticsMockup from "@/assets/analytics-mockup.jpg";
 import designMockup from "@/assets/design-mockup.jpg";
 import botMockup from "@/assets/bot-mockup.jpg";
 import iphoneChatMockup from "@/assets/iphone-chat-mockup.jpg";
+import iphoneChatHero from "@/assets/iphone-chat-hero.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -97,12 +98,12 @@ const Index = () => {
 
             {/* Hero Mockup */}
             <div className="mt-16 animate-fade-in flex justify-center" style={{animationDelay: '0.8s'}}>
-              <div className="relative max-w-sm">
-                <div className="absolute inset-0 bg-gradient-mesh opacity-30 blur-3xl"></div>
+              <div className="relative w-64">
+                <div className="absolute inset-0 bg-gradient-mesh opacity-40 blur-3xl"></div>
                 <img 
-                  src={iphoneChatMockup} 
+                  src={iphoneChatHero} 
                   alt="Chat IA no iPhone"
-                  className="relative rounded-3xl shadow-2xl w-full"
+                  className="relative rounded-[2.5rem] shadow-2xl w-full hover:scale-105 transition-transform duration-500"
                 />
               </div>
             </div>
