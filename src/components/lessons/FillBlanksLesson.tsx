@@ -124,18 +124,14 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
                 <div>
                   <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
                   <p className="text-lg">{result.feedback}</p>
+                  {result.passed && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Redirecionando para a próxima aula...
+                    </p>
+                  )}
                 </div>
                 
-                {result.passed ? (
-                  <Button
-                    type="button"
-                    onClick={() => window.history.back()}
-                    className="w-full"
-                    size="lg"
-                  >
-                    🎉 Continuar para Dashboard
-                  </Button>
-                ) : (
+                {!result.passed && (
                   <div className="flex gap-3">
                     <Button
                       type="button"
