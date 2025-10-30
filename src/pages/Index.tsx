@@ -16,6 +16,7 @@ import chatMockup from "@/assets/chat-mockup.jpg";
 import analyticsMockup from "@/assets/analytics-mockup.jpg";
 import designMockup from "@/assets/design-mockup.jpg";
 import botMockup from "@/assets/bot-mockup.jpg";
+import iphoneChatMockup from "@/assets/iphone-chat-mockup.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -95,16 +96,15 @@ const Index = () => {
             </div>
 
             {/* Hero Mockup */}
-            <div className="mt-16 animate-fade-in" style={{animationDelay: '0.8s'}}>
-              <Card className="p-8 shadow-large max-w-4xl mx-auto bg-card/50 backdrop-blur-sm border-2">
-                <div className="aspect-video rounded-xl overflow-hidden shadow-medium">
-                  <img 
-                    src={dashboardMockup} 
-                    alt="Dashboard da Plataforma Inteligência Ignite"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </Card>
+            <div className="mt-16 animate-fade-in flex justify-center" style={{animationDelay: '0.8s'}}>
+              <div className="relative max-w-sm">
+                <div className="absolute inset-0 bg-gradient-mesh opacity-30 blur-3xl"></div>
+                <img 
+                  src={iphoneChatMockup} 
+                  alt="Chat IA no iPhone"
+                  className="relative rounded-3xl shadow-2xl w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
