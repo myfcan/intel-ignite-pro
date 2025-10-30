@@ -21,8 +21,9 @@ interface Lesson {
   id: string;
   title: string;
   description: string;
-  content_text: string;
-  audio_url: string | null;
+  content: any;
+  lesson_type?: string;
+  passing_score?: number;
   estimated_time: number;
   difficulty_level: string;
 }
@@ -254,11 +255,6 @@ const Lesson = () => {
             )}
           </div>
 
-          {/* Audio Player */}
-          {lesson.audio_url && (
-            <AudioPlayer audioUrl={lesson.audio_url} />
-          )}
-
           <Separator />
 
           {/* Content Section */}
@@ -269,7 +265,7 @@ const Lesson = () => {
             </div>
             <div className="prose prose-lg max-w-none">
               <div className="text-base leading-relaxed whitespace-pre-wrap">
-                {lesson.content_text}
+                {typeof lesson.content === 'string' ? lesson.content : JSON.stringify(lesson.content, null, 2)}
               </div>
             </div>
           </Card>
