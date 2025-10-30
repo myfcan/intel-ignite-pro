@@ -57,6 +57,35 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        cyan: {
+          50: "hsl(187 92% 94%)",
+          100: "hsl(187 92% 88%)",
+          400: "hsl(187 85% 53%)",
+          500: "hsl(188 86% 42%)",
+          600: "hsl(188 86% 35%)",
+          700: "hsl(189 85% 29%)",
+          900: "hsl(192 91% 20%)",
+        },
+        pink: {
+          50: "hsl(327 73% 97%)",
+          100: "hsl(326 78% 95%)",
+          400: "hsl(330 81% 67%)",
+          500: "hsl(330 81% 60%)",
+          600: "hsl(330 81% 55%)",
+          700: "hsl(330 79% 46%)",
+        },
+      },
+      backgroundImage: {
+        "gradient-hero": "linear-gradient(135deg, hsl(187 85% 53%) 0%, hsl(330 81% 60%) 100%)",
+        "gradient-primary": "linear-gradient(135deg, hsl(187 85% 53%) 0%, hsl(188 86% 42%) 100%)",
+        "gradient-accent": "linear-gradient(135deg, hsl(330 81% 60%) 0%, hsl(330 81% 55%) 100%)",
+        "gradient-success": "linear-gradient(135deg, hsl(142 71% 58%) 0%, hsl(142 71% 45%) 100%)",
+        "gradient-glass": "linear-gradient(135deg, hsla(187 85% 53% / 0.1) 0%, hsla(330 81% 60% / 0.1) 100%)",
+      },
+      boxShadow: {
+        "cyan-glow": "0 0 20px hsla(187 85% 53% / 0.3)",
+        "pink-glow": "0 0 20px hsla(330 81% 60% / 0.3)",
+        "card-hover": "0 20px 25px -5px hsla(187 85% 53% / 0.2)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -96,6 +125,22 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(100%)" },
         },
+        pulse: {
+          "0%, 100%": {
+            boxShadow: "0 0 0 0 hsla(330 81% 60% / 0.7)",
+          },
+          "50%": {
+            boxShadow: "0 0 0 10px hsla(330 81% 60% / 0)",
+          },
+        },
+        "gradient-shift": {
+          "0%, 100%": {
+            backgroundPosition: "0% 50%",
+          },
+          "50%": {
+            backgroundPosition: "100% 50%",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -106,6 +151,8 @@ export default {
         "scale-out": "scale-out 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "slide-out-right": "slide-out-right 0.3s ease-out",
+        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "gradient-shift": "gradient-shift 3s ease infinite",
       },
     },
   },
