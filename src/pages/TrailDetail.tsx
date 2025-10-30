@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock } from 'lucide-react';
 import { MiniMaia } from '@/components/MiniMaia';
-import { maiaMessages, defaultMessage } from '@/data/maiaMessages';
+import { getMaiaMessage, type MaiaMessageType } from '@/data/maiaMessages';
 
 interface Lesson {
   id: string;
@@ -135,11 +135,30 @@ const TrailDetail = () => {
 
   const progress = lessons.length > 0 ? (completedLessons.length / lessons.length) * 100 : 0;
 
+  // Determinar mensagem e variante da MAIA
+  const trailId = trail?.title.toLowerCase().replace(/\s+/g, '') || '';
+  let messageType: MaiaMessageType = 'welcome';
+  let variant: 'default' | 'encouragement' | 'celebration' = 'default';
+  let showConfetti = false;
+
+  if (progress >= 100) {
+    messageType = 'completed';
+    variant = 'celebration';
+    showConfetti = true;
+  } else if (progress >= 50) {
+    messageType = 'progress';
+    variant = 'encouragement';
+  }
+
+  const message = getMaiaMessage(trailId, messageType);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {showMaia && (
         <MiniMaia
-          message={maiaMessages[trail?.title.toLowerCase().replace(/\s+/g, '')] || defaultMessage}
+          message={message}
+          variant={variant}
+          showConfetti={showConfetti}
           onClose={() => setShowMaia(false)}
         />
       )}
