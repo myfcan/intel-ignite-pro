@@ -71,24 +71,21 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
 
             {/* Nível */}
             <div className="flex items-center gap-3 bg-gradient-to-r from-pink-50 to-purple-50 
-                          px-4 lg:px-5 py-3 rounded-full border-2 border-pink-200
-                          hover:scale-105 transition-transform shadow-md">
-              <Target className="w-6 h-6 text-pink-500" />
-              <div className="min-w-[120px]">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-bold text-gray-800 leading-none">Nível {level}</p>
-                  <p className="text-xs text-gray-500 leading-none font-semibold">{user.total_points % 100} / 100 XP</p>
+                          px-3 lg:px-4 py-2 rounded-full border-2 border-pink-200
+                          hover:scale-105 transition-transform">
+              <Target className="w-5 h-5 text-pink-500" />
+              <div className="min-w-[100px]">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-gray-600 leading-none">Nível {level}</p>
+                  <p className="text-xs text-gray-500 leading-none">{level + 1}</p>
                 </div>
-                <div className="h-3 bg-gray-300 rounded-full overflow-hidden shadow-inner">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-pink-600 
-                             transition-all duration-500 shadow-pink-glow relative"
+                             transition-all duration-700 ease-out"
                     style={{ width: `${progressToNextLevel}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                  </div>
+                  />
                 </div>
-                <p className="text-xs text-gray-500 mt-1 text-center">{100 - (user.total_points % 100)} XP para nível {level + 1}</p>
               </div>
             </div>
           </div>
