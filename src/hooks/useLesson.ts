@@ -128,8 +128,8 @@ export const useLesson = (lessonId: string) => {
           });
       }
 
-      await fetchLesson(); // Refresh lesson data
-
+      // DO NOT refresh lesson data here - prevents loop
+      
       return {
         score,
         passed,

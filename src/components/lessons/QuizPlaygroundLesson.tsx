@@ -54,10 +54,18 @@ export const QuizPlaygroundLesson = ({
   };
 
   const handleFinalSubmit = async () => {
-    await onSubmit({
+    const result = await onSubmit({
       quizCorrect: quizResult?.correct,
       promptTested: prompt
     });
+    
+    // Store result
+    if (result) {
+      // Show result in a toast or similar
+      if (result.passed) {
+        // Will redirect automatically via InteractiveLesson
+      }
+    }
   };
 
   return (

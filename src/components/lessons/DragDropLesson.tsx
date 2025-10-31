@@ -43,6 +43,11 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
     setResult(result);
   };
 
+  const handleTryAgain = () => {
+    setItems([...content.items]);
+    setResult(null);
+  };
+
   const isCorrect = result?.passed;
 
   return (
@@ -101,9 +106,44 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
           {result && (
             <div className="space-y-4">
               <Card className={isCorrect ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'}>
-                <CardContent className="pt-6">
-                  <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
-                  <p className="text-lg">{result.feedback}</p>
+                <CardContent className="pt-6 space-y-4">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
+                    <p className="text-lg">{result.feedback}</p>
+                    {result.passed && !result.isLastLesson && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        ⏳ Redirecionando para a próxima aula em instantes...
+                      </p>
+                    )}
+                    {result.passed && result.isLastLesson && (
+                      <p className="text-sm text-green-600 font-semibold mt-2">
+                        🎉 Aguarde a Maia com uma surpresa especial!
+                      </p>
+                    )}
+                  </div>
+                  
+                  {!result.passed && (
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        onClick={handleTryAgain}
+                        variant="outline"
+                        className="flex-1"
+                        size="lg"
+                      >
+                        🔄 Tentar Novamente
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => window.history.back()}
+                        variant="secondary"
+                        className="flex-1"
+                        size="lg"
+                      >
+                        Voltar
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
