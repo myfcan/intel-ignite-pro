@@ -98,6 +98,24 @@ export const useLesson = (lessonId: string) => {
       const score = calculateScore(lesson.lesson_type, lesson.content, answers);
       const passed = score >= lesson.passing_score;
 
+      // Call user-progress edge function to handle completion and points
+      if (passed) {
+        const { data: progressResult, error: progressError } = await supabase.functions.invoke('user-progress', {
+          body: {
+            action: 'complete',
+            user_id: session.user.id,
+            lesson_id: lesson.id,
+            time_spent: timeSpent,
+          },
+        });
+
+        if (progressError) {
+          console.error('Error calling user-progress function:', progressError);
+        } else {
+          console.log('Points awarded:', progressResult?.points_earned);
+        }
+      }
+
       // Upsert progress
       const { error: upsertError } = await supabase
         .from('user_progress')
@@ -115,21 +133,6 @@ export const useLesson = (lessonId: string) => {
 
       if (upsertError) throw upsertError;
 
-      // Check for perfect score achievement
-      if (score === 100) {
-        await supabase
-          .from('user_achievements')
-          .insert({
-            user_id: session.user.id,
-            achievement_type: 'perfect_score',
-            achievement_name: 'Perfeito!',
-            lesson_id: lesson.id,
-            points_earned: 20,
-          });
-      }
-
-      // DO NOT refresh lesson data here - prevents loop
-      
       return {
         score,
         passed,
