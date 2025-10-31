@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock } from 'lucide-react';
 import { MiniMaia } from '@/components/MiniMaia';
 import { getMaiaMessage, type MaiaMessageType } from '@/data/maiaMessages';
+import { TrailIntro } from '@/components/TrailIntro';
 
 interface Lesson {
   id: string;
@@ -35,6 +36,14 @@ const TrailDetail = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [userName, setUserName] = useState<string>('');
+  
+  // Verificar se a introdução de áudio já foi mostrada para esta trilha
+  const audioIntroKey = `audio-intro-${id}`;
+  const [showAudioIntro, setShowAudioIntro] = useState(() => {
+    const hasShown = localStorage.getItem(audioIntroKey);
+    return !hasShown;
+  });
   
   // Verificar se a Maia já foi mostrada para esta trilha
   const maiaShownKey = `maia-shown-${id}`;
@@ -54,6 +63,10 @@ const TrailDetail = () => {
         navigate('/auth');
         return;
       }
+
+      // Usar um nome padrão ou email do usuário
+      const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'amigo';
+      setUserName(name);
 
       // Fetch trail
       const { data: trailData, error: trailError } = await supabase
@@ -172,9 +185,38 @@ const TrailDetail = () => {
     localStorage.setItem(maiaShownKey, 'true');
   };
 
+  const handleAudioIntroClose = () => {
+    setShowAudioIntro(false);
+    // Salvar no localStorage que a introdução de áudio já foi mostrada para esta trilha
+    localStorage.setItem(audioIntroKey, 'true');
+  };
+
+  // Mapear ID da trilha para o formato esperado pelo TrailIntro
+  const getTrailSlug = () => {
+    if (!trail) return '';
+    const title = trail.title.toLowerCase();
+    if (title.includes('fundamento')) return 'fundamentos';
+    if (title.includes('dia a dia')) return 'diaadia';
+    if (title.includes('negócio')) return 'negocios';
+    if (title.includes('renda')) return 'rendaextra';
+    if (title.includes('conteúdo')) return 'conteudo';
+    if (title.includes('automa')) return 'automacoes';
+    if (title.includes('criativ')) return 'criativa';
+    if (title.includes('ética')) return 'etica';
+    return '';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {showMaia && (
+      {showAudioIntro && trail && (
+        <TrailIntro
+          trailId={getTrailSlug()}
+          trailName={trail.title}
+          userName={userName}
+          onClose={handleAudioIntroClose}
+        />
+      )}
+      {showMaia && !showAudioIntro && (
         <MiniMaia
           message={message}
           variant={variant}
