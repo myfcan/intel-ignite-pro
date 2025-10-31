@@ -169,7 +169,7 @@ export function TrailIntro({ trailId, trailName, userName, onClose }: TrailIntro
   
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl animate-slide-up relative">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] p-8 shadow-2xl animate-slide-up relative overflow-y-auto">
         
         {/* Botão Fechar */}
         <button
