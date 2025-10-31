@@ -1,11 +1,32 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { InteractiveLesson } from '@/components/lessons/InteractiveLesson';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function LessonInteractive() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [trailId, setTrailId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTrailId = async () => {
+      if (!id) return;
+      
+      const { data } = await supabase
+        .from('lessons')
+        .select('trail_id')
+        .eq('id', id)
+        .single();
+      
+      if (data?.trail_id) {
+        setTrailId(data.trail_id);
+      }
+    };
+    
+    fetchTrailId();
+  }, [id]);
 
   if (!id) {
     return (
@@ -15,6 +36,14 @@ export default function LessonInteractive() {
     );
   }
 
+  const handleBack = () => {
+    if (trailId) {
+      navigate(`/trails/${trailId}`);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -22,7 +51,7 @@ export default function LessonInteractive() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="mb-4 -ml-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
