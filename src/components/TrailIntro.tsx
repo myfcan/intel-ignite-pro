@@ -205,13 +205,6 @@ export function TrailIntro({ trailId, trailName, userName, onClose }: TrailIntro
           {trailName}
         </h2>
         
-        {/* Box de Texto */}
-        <div className="bg-gradient-to-br from-blue-50 to-orange-50 rounded-2xl p-6 mb-6 max-h-80 overflow-y-auto">
-          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-            {personalizedText}
-          </p>
-        </div>
-        
         {/* Player de Áudio */}
         <div className="bg-white border-2 border-gray-200 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-4">
@@ -234,6 +227,13 @@ export function TrailIntro({ trailId, trailName, userName, onClose }: TrailIntro
             
             <Volume2 className="text-gray-500" size={20} />
           </div>
+        </div>
+        
+        {/* Box de Texto */}
+        <div className="bg-gradient-to-br from-blue-50 to-orange-50 rounded-2xl p-6 mb-6 max-h-64 overflow-y-auto">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            {personalizedText}
+          </p>
         </div>
         
         {/* Botões de Ação */}
