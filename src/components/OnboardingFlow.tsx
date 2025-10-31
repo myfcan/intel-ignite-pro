@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { onboardingQuestions } from '@/data/onboardingQuestions';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { supabase } from '@/integrations/supabase/client';
 import { WelcomeScreen } from './onboarding/WelcomeScreen';
 import { QuestionScreen } from './onboarding/QuestionScreen';
 import { ReassuranceScreen } from './onboarding/ReassuranceScreen';
@@ -21,10 +23,42 @@ interface UserProfile {
 }
 
 export const OnboardingFlow = () => {
+  const navigate = useNavigate();
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [checking, setChecking] = useState(true);
   const { saveAnswer, completeOnboarding, createPricingSession } = useOnboarding();
+
+  // Verificar se usuário já completou onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (userData?.onboarding_completed) {
+          navigate('/dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [navigate]);
 
   const handleStart = () => {
     setCurrentScreen('questions');
@@ -67,6 +101,11 @@ export const OnboardingFlow = () => {
     await createPricingSession();
     setCurrentScreen('pricing');
   };
+
+  // Mostrar loading enquanto verifica
+  if (checking) {
+    return <LoadingScreen />;
+  }
 
   // Renderizar tela atual
   if (currentScreen === 'welcome') {
