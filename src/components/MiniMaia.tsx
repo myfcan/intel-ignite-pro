@@ -114,7 +114,7 @@ export const MiniMaia = ({
               <div className="flex items-center gap-2">
                 <span className="text-2xl animate-wave">💬</span>
                 <p className="text-sm font-semibold text-gray-700">
-                  Olá! Eu sou a MAIA
+                  {variant === 'celebration' ? 'Oiee...' : 'Olá! Eu sou a MAIA'}
                 </p>
               </div>
               
