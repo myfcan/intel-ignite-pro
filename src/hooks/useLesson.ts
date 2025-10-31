@@ -210,10 +210,8 @@ function calculateScore(lessonType: string, content: any, answers: any): number 
       return answers.quizCorrect ? 100 : 0;
     }
     case 'flashcards': {
-      if (!content.cards || !Array.isArray(content.cards)) return 0;
-      const totalCards = content.cards.length;
-      const knownCards = answers.filter((a: string) => a === 'yes').length;
-      return Math.round((knownCards / totalCards) * 100);
+      // Flashcards são informativos, sempre retornam 100% ao concluir
+      return 100;
     }
     case 'before-after': {
       // Score based on AI feedback quality

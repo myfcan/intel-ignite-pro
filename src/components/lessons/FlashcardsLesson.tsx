@@ -156,45 +156,22 @@ export const FlashcardsLesson = ({ content, onSubmit, submitting }: FlashcardsLe
           </div>
 
           {result && (
-            <Card className={result.passed ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'}>
+            <Card className="border-green-500 bg-green-50">
               <CardContent className="pt-6 space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
-                  <p className="text-lg">{result.feedback}</p>
-                  {result.passed && !result.isLastLesson && (
+                  <h3 className="text-xl font-bold mb-2">✅ Cartões Concluídos!</h3>
+                  <p className="text-lg">🎉 Ótimo! Você revisou todos os conceitos importantes desta aula.</p>
+                  {!result.isLastLesson && (
                     <p className="text-sm text-muted-foreground mt-2">
                       ⏳ Redirecionando para a próxima aula em instantes...
                     </p>
                   )}
-                  {result.passed && result.isLastLesson && (
+                  {result.isLastLesson && (
                     <p className="text-sm text-green-600 font-semibold mt-2">
                       🎉 Aguarde a Maia com uma surpresa especial!
                     </p>
                   )}
                 </div>
-                
-                {!result.passed && (
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      onClick={handleTryAgain}
-                      variant="outline"
-                      className="flex-1"
-                      size="lg"
-                    >
-                      🔄 Tentar Novamente
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => window.history.back()}
-                      variant="secondary"
-                      className="flex-1"
-                      size="lg"
-                    >
-                      Voltar
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
