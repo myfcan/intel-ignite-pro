@@ -37,20 +37,13 @@ const TrailDetail = () => {
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [userName, setUserName] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
   
-  // Verificar se a introdução de áudio já foi mostrada para esta trilha
-  const audioIntroKey = `audio-intro-${id}`;
-  const [showAudioIntro, setShowAudioIntro] = useState(() => {
-    const hasShown = localStorage.getItem(audioIntroKey);
-    return !hasShown;
-  });
-  
-  // Verificar se a Maia já foi mostrada para esta trilha
-  const maiaShownKey = `maia-shown-${id}`;
-  const [showMaia, setShowMaia] = useState(() => {
-    const hasShown = localStorage.getItem(maiaShownKey);
-    return !hasShown;
-  });
+  // Estados para controlar diferentes tipos de mensagens da MAIA
+  const [showWelcomeMaia, setShowWelcomeMaia] = useState(false);
+  const [showProgressMaia, setShowProgressMaia] = useState(false);
+  const [showCompletionMaia, setShowCompletionMaia] = useState(false);
+  const [showAudioIntro, setShowAudioIntro] = useState(false);
 
   useEffect(() => {
     fetchTrailData();
@@ -64,9 +57,23 @@ const TrailDetail = () => {
         return;
       }
 
+      // Guardar o userId para usar nas chaves do localStorage
+      const currentUserId = session.user.id;
+      setUserId(currentUserId);
+
       // Usar um nome padrão ou email do usuário
       const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'amigo';
       setUserName(name);
+
+      // Verificar chaves do localStorage com userId
+      const audioIntroKey = `audio-intro-${currentUserId}-${id}`;
+      const welcomeMaiaKey = `maia-welcome-${currentUserId}-${id}`;
+      
+      const hasShownAudio = localStorage.getItem(audioIntroKey);
+      const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
+      
+      setShowAudioIntro(!hasShownAudio);
+      setShowWelcomeMaia(!hasShownWelcome && !!hasShownAudio); // Só mostrar welcome se já passou o áudio
 
       // Fetch trail
       const { data: trailData, error: trailError } = await supabase
@@ -97,7 +104,21 @@ const TrailDetail = () => {
         .in('status', ['completed']);
 
       if (progressData) {
-        setCompletedLessons(progressData.map(p => p.lesson_id));
+        const completed = progressData.map(p => p.lesson_id);
+        setCompletedLessons(completed);
+        
+        // Calcular progresso e determinar se deve mostrar MAIA de progresso/celebração
+        const totalLessons = lessonsData?.length || 0;
+        if (totalLessons > 0) {
+          const progressPercent = (completed.length / totalLessons) * 100;
+          
+          // Sempre mostrar MAIA para marcos importantes (não controlar com localStorage)
+          if (progressPercent >= 100) {
+            setShowCompletionMaia(true);
+          } else if (progressPercent >= 50) {
+            setShowProgressMaia(true);
+          }
+        }
       }
     } catch (error: any) {
       console.error('Error fetching trail:', error);
@@ -162,33 +183,59 @@ const TrailDetail = () => {
 
   const progress = lessons.length > 0 ? (completedLessons.length / lessons.length) * 100 : 0;
 
-  // Determinar mensagem e variante da MAIA
+  // Determinar qual MAIA mostrar (prioridade: Completion > Progress > Welcome)
   const trailId = trail?.title.toLowerCase().replace(/\s+/g, '') || '';
+  
+  let showMaia = false;
   let messageType: MaiaMessageType = 'welcome';
   let variant: 'default' | 'encouragement' | 'celebration' = 'default';
   let showConfetti = false;
 
-  if (progress >= 100) {
+  if (showCompletionMaia) {
+    showMaia = true;
     messageType = 'completed';
     variant = 'celebration';
     showConfetti = true;
-  } else if (progress >= 50) {
+  } else if (showProgressMaia) {
+    showMaia = true;
     messageType = 'progress';
     variant = 'encouragement';
+  } else if (showWelcomeMaia) {
+    showMaia = true;
+    messageType = 'welcome';
+    variant = 'default';
   }
 
   const message = getMaiaMessage(trailId, messageType);
 
   const handleMaiaClose = () => {
-    setShowMaia(false);
-    // Salvar no localStorage que a Maia já foi mostrada para esta trilha
-    localStorage.setItem(maiaShownKey, 'true');
+    if (showWelcomeMaia) {
+      setShowWelcomeMaia(false);
+      // Salvar no localStorage que a mensagem de boas-vindas já foi mostrada
+      if (userId && id) {
+        localStorage.setItem(`maia-welcome-${userId}-${id}`, 'true');
+      }
+    }
+    if (showProgressMaia) {
+      setShowProgressMaia(false);
+    }
+    if (showCompletionMaia) {
+      setShowCompletionMaia(false);
+    }
   };
 
   const handleAudioIntroClose = () => {
     setShowAudioIntro(false);
     // Salvar no localStorage que a introdução de áudio já foi mostrada para esta trilha
-    localStorage.setItem(audioIntroKey, 'true');
+    if (userId && id) {
+      localStorage.setItem(`audio-intro-${userId}-${id}`, 'true');
+      // Mostrar MAIA de boas-vindas após fechar o áudio (se ainda não mostrou)
+      const welcomeMaiaKey = `maia-welcome-${userId}-${id}`;
+      const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
+      if (!hasShownWelcome && progress < 50) {
+        setShowWelcomeMaia(true);
+      }
+    }
   };
 
   // Mapear ID da trilha para o formato esperado pelo TrailIntro
@@ -216,7 +263,7 @@ const TrailDetail = () => {
           onClose={handleAudioIntroClose}
         />
       )}
-      {showMaia && !showAudioIntro && (
+      {showMaia && (
         <MiniMaia
           message={message}
           variant={variant}
