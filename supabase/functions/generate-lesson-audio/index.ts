@@ -170,13 +170,29 @@ serve(async (req) => {
 
       console.log(`Audio generated, size: ${audioBlob.length} bytes`);
 
-      // Fazer upload para Supabase Storage
-      const fileName = `lesson-${lesson.id}.mp3`;
+      // Fazer upload para Supabase Storage com timestamp para evitar cache
+      const timestamp = Date.now();
+      const fileName = `lesson-${lesson.id}-${timestamp}.mp3`;
+      
+      // Deletar áudio antigo se existir
+      const { data: existingFiles } = await supabase.storage
+        .from('lesson-audios')
+        .list('', {
+          search: `lesson-${lesson.id}-`
+        });
+      
+      if (existingFiles && existingFiles.length > 0) {
+        const filesToDelete = existingFiles.map(f => f.name);
+        await supabase.storage
+          .from('lesson-audios')
+          .remove(filesToDelete);
+      }
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('lesson-audios')
         .upload(fileName, audioBlob, {
           contentType: 'audio/mpeg',
-          upsert: true,
+          upsert: false,
         });
 
       if (uploadError) {
