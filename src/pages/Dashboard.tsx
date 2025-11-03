@@ -204,6 +204,16 @@ const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* Admin Access Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => navigate('/admin')}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Acessar Painel Admin
+          </button>
+        </div>
+        
         {/* Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-br from-cyan-500 via-cyan-400 to-pink-400 
                       rounded-3xl p-8 md:p-12 mb-8 shadow-2xl">
