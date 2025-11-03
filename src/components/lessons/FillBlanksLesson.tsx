@@ -79,6 +79,19 @@ export const FillBlanksLesson = ({ content, onSubmit, submitting, previousAnswer
     setShowFeedback({});
   };
 
+  // Validar se o conteúdo está no formato correto
+  if (!content || !content.sentences || !Array.isArray(content.sentences)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">
+            Conteúdo da aula não está no formato correto para este tipo de exercício.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Verificar se todas as perguntas foram respondidas
   const allAnswered = content.sentences.every((sentence, idx) => {
     const blanksCount = (sentence.text.match(/\[___\]/g) || []).length;

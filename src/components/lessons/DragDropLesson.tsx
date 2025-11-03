@@ -14,6 +14,19 @@ interface DragDropLessonProps {
 }
 
 export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLessonProps) => {
+  // Validar se o conteúdo está no formato correto
+  if (!content || !content.items || !Array.isArray(content.items) || !content.correctOrder) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">
+            Conteúdo da aula não está no formato correto para este tipo de exercício.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [items, setItems] = useState<string[]>([...content.items]);
   const [result, setResult] = useState<any>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);

@@ -32,6 +32,19 @@ export const FillTextLesson = ({ content, onSubmit, submitting, previousAnswers 
   const [result, setResult] = useState<any>(null);
   const [feedback, setFeedback] = useState<Record<number, Array<boolean>>>({});
 
+  // Validar se o conteúdo está no formato correto
+  if (!content || !content.exercises || !Array.isArray(content.exercises)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">
+            Conteúdo da aula não está no formato correto para este tipo de exercício.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const parsePromptTemplate = (template: string): BlankInput[] => {
     const parts = template.split('[___]');
     const blanks: BlankInput[] = [];

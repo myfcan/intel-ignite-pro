@@ -22,6 +22,19 @@ export const BeforeAfterLesson = ({
   testInPlayground,
   submitting 
 }: BeforeAfterLessonProps) => {
+  // Validar se o conteúdo está no formato correto
+  if (!content || !content.badExample || !content.goodExample || !content.challenge || !content.challengePrompt) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">
+            Conteúdo da aula não está no formato correto para este tipo de exercício.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [improvedPrompt, setImprovedPrompt] = useState('');
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [testing, setTesting] = useState(false);

@@ -26,6 +26,19 @@ export const QuizPlaygroundLesson = ({
   testInPlayground, 
   submitting 
 }: QuizPlaygroundLessonProps) => {
+  // Validar se o conteúdo está no formato correto
+  if (!content || !content.quiz || !content.playgroundInstructions) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">
+            Conteúdo da aula não está no formato correto para este tipo de exercício.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const [quizAnswer, setQuizAnswer] = useState('');
   const [quizResult, setQuizResult] = useState<{ correct: boolean } | null>(null);
   const [prompt, setPrompt] = useState('');
