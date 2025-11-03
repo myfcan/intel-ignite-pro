@@ -185,6 +185,7 @@ const TrailDetail = () => {
   const progress = lessons.length > 0 ? (completedLessons.length / lessons.length) * 100 : 0;
 
   // Determinar qual MAIA mostrar (prioridade: Completion > Progress > Welcome)
+  // IMPORTANTE: Não mostrar MAIA se o áudio intro ainda está aberto
   const trailId = trail?.title.toLowerCase().replace(/\s+/g, '') || '';
   
   let showMaia = false;
@@ -192,19 +193,22 @@ const TrailDetail = () => {
   let variant: 'default' | 'encouragement' | 'celebration' = 'default';
   let showConfetti = false;
 
-  if (showCompletionMaia) {
-    showMaia = true;
-    messageType = 'completed';
-    variant = 'celebration';
-    showConfetti = true;
-  } else if (showProgressMaia) {
-    showMaia = true;
-    messageType = 'progress';
-    variant = 'encouragement';
-  } else if (showWelcomeMaia) {
-    showMaia = true;
-    messageType = 'welcome';
-    variant = 'default';
+  // Só mostrar MAIA se o áudio intro já foi fechado
+  if (!showAudioIntro) {
+    if (showCompletionMaia) {
+      showMaia = true;
+      messageType = 'completed';
+      variant = 'celebration';
+      showConfetti = true;
+    } else if (showProgressMaia) {
+      showMaia = true;
+      messageType = 'progress';
+      variant = 'encouragement';
+    } else if (showWelcomeMaia) {
+      showMaia = true;
+      messageType = 'welcome';
+      variant = 'default';
+    }
   }
 
   const message = getMaiaMessage(trailId, messageType);
