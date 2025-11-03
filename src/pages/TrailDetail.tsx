@@ -68,9 +68,13 @@ const TrailDetail = () => {
       // Verificar chaves do localStorage com userId
       const audioIntroKey = `audio-intro-${currentUserId}-${id}`;
       const welcomeMaiaKey = `maia-welcome-${currentUserId}-${id}`;
+      const progressMaiaKey = `maia-progress-${currentUserId}-${id}`;
+      const completionMaiaKey = `maia-completion-${currentUserId}-${id}`;
       
       const hasShownAudio = localStorage.getItem(audioIntroKey);
       const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
+      const hasShownProgress = localStorage.getItem(progressMaiaKey);
+      const hasShownCompletion = localStorage.getItem(completionMaiaKey);
       
       // Mostrar MAIA welcome primeiro se nunca mostrou
       if (!hasShownWelcome) {
@@ -117,10 +121,10 @@ const TrailDetail = () => {
         if (totalLessons > 0) {
           const progressPercent = (completed.length / totalLessons) * 100;
           
-          // Sempre mostrar MAIA para marcos importantes (não controlar com localStorage)
-          if (progressPercent >= 100) {
+          // Mostrar MAIA apenas se não foi mostrada antes
+          if (progressPercent >= 100 && !hasShownCompletion) {
             setShowCompletionMaia(true);
-          } else if (progressPercent >= 50) {
+          } else if (progressPercent >= 50 && progressPercent < 100 && !hasShownProgress) {
             setShowProgressMaia(true);
           }
         }
@@ -233,9 +237,17 @@ const TrailDetail = () => {
     }
     if (showProgressMaia) {
       setShowProgressMaia(false);
+      // Salvar no localStorage que a mensagem de progresso já foi mostrada
+      if (userId && id) {
+        localStorage.setItem(`maia-progress-${userId}-${id}`, 'true');
+      }
     }
     if (showCompletionMaia) {
       setShowCompletionMaia(false);
+      // Salvar no localStorage que a mensagem de conclusão já foi mostrada
+      if (userId && id) {
+        localStorage.setItem(`maia-completion-${userId}-${id}`, 'true');
+      }
     }
   };
 
