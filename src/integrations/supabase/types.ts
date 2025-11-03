@@ -132,6 +132,7 @@ export type Database = {
       }
       lessons: {
         Row: {
+          audio_url: string | null
           content: Json
           created_at: string | null
           description: string | null
@@ -148,6 +149,7 @@ export type Database = {
           trail_id: string | null
         }
         Insert: {
+          audio_url?: string | null
           content?: Json
           created_at?: string | null
           description?: string | null
@@ -164,6 +166,7 @@ export type Database = {
           trail_id?: string | null
         }
         Update: {
+          audio_url?: string | null
           content?: Json
           created_at?: string | null
           description?: string | null
