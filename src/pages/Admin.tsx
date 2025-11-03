@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Music } from 'lucide-react';
+import { AudioPlayer } from '@/components/lesson/AudioPlayer';
 
 export default function Admin() {
   const { toast } = useToast();
@@ -144,7 +145,7 @@ export default function Admin() {
                   {results.results?.map((result: any, index: number) => (
                     <div
                       key={index}
-                      className={`p-3 rounded-lg border ${
+                      className={`p-4 rounded-lg border ${
                         result.status === 'success'
                           ? 'bg-green-50 border-green-200'
                           : result.status === 'error'
@@ -152,40 +153,43 @@ export default function Admin() {
                           : 'bg-yellow-50 border-yellow-200'
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{result.lesson_title}</p>
-                          {result.audio_url && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              URL: {result.audio_url}
-                            </p>
-                          )}
-                          {result.error && (
-                            <p className="text-xs text-red-600 mt-1">
-                              Erro: {result.error}
-                            </p>
-                          )}
-                          {result.reason && (
-                            <p className="text-xs text-yellow-600 mt-1">
-                              Motivo: {result.reason === 'no_text' ? 'Sem texto para narrar' : result.reason}
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded ${
-                            result.status === 'success'
-                              ? 'bg-green-100 text-green-700'
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{result.lesson_title}</p>
+                            {result.error && (
+                              <p className="text-xs text-red-600 mt-1">
+                                Erro: {result.error}
+                              </p>
+                            )}
+                            {result.reason && (
+                              <p className="text-xs text-yellow-600 mt-1">
+                                Motivo: {result.reason === 'no_text' ? 'Sem texto para narrar' : result.reason}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded ${
+                              result.status === 'success'
+                                ? 'bg-green-100 text-green-700'
+                                : result.status === 'error'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}
+                          >
+                            {result.status === 'success'
+                              ? 'Sucesso'
                               : result.status === 'error'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-yellow-100 text-yellow-700'
-                          }`}
-                        >
-                          {result.status === 'success'
-                            ? 'Sucesso'
-                            : result.status === 'error'
-                            ? 'Erro'
-                            : 'Ignorado'}
-                        </span>
+                              ? 'Erro'
+                              : 'Ignorado'}
+                          </span>
+                        </div>
+                        
+                        {result.audio_url && (
+                          <div className="pt-2 border-t border-green-200">
+                            <AudioPlayer audioUrl={result.audio_url} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
