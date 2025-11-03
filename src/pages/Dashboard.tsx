@@ -147,10 +147,13 @@ const Dashboard = () => {
         let status: 'active' | 'completed' | 'locked';
         if (progress === 100) {
           status = 'completed';
-        } else if (progressData.length === 0 || progressData[progressData.length - 1].status === 'completed') {
+        } else if (trail.order_index === 1) {
+          // A primeira trilha sempre está desbloqueada
           status = 'active';
         } else {
-          status = 'locked';
+          // Trilhas seguintes só desbloqueiam quando a anterior estiver completa
+          const previousTrailProgress = progressData[progressData.length - 1];
+          status = previousTrailProgress?.status === 'completed' ? 'active' : 'locked';
         }
 
         progressData.push({
