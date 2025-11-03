@@ -120,12 +120,14 @@ export const useOnboarding = () => {
           potential: profile.potential
         });
 
-      // Marcar onboarding como completo
+      // Marcar onboarding como completo e preencher campos necessários
       await supabase
         .from('users')
         .update({ 
           onboarding_completed: true, 
-          onboarding_completed_at: new Date().toISOString() 
+          onboarding_completed_at: new Date().toISOString(),
+          profession: answersMap['goal'] || 'Não informado',
+          learning_goal: answersMap['goal'] || 'learning'
         })
         .eq('id', user.id);
 

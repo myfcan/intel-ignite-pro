@@ -72,8 +72,9 @@ const TrailDetail = () => {
       const hasShownAudio = localStorage.getItem(audioIntroKey);
       const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
       
+      // Mostrar áudio se nunca foi mostrado
       setShowAudioIntro(!hasShownAudio);
-      setShowWelcomeMaia(!hasShownWelcome && !!hasShownAudio); // Só mostrar welcome se já passou o áudio
+      // Não mostrar welcome aqui, apenas depois que o áudio fechar
 
       // Fetch trail
       const { data: trailData, error: trailError } = await supabase
@@ -229,10 +230,11 @@ const TrailDetail = () => {
     // Salvar no localStorage que a introdução de áudio já foi mostrada para esta trilha
     if (userId && id) {
       localStorage.setItem(`audio-intro-${userId}-${id}`, 'true');
-      // Mostrar MAIA de boas-vindas após fechar o áudio (se ainda não mostrou)
+      // Mostrar MAIA de boas-vindas após fechar o áudio (se ainda não mostrou e não está completo)
       const welcomeMaiaKey = `maia-welcome-${userId}-${id}`;
       const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
-      if (!hasShownWelcome && progress < 50) {
+      // Só mostrar welcome se não completou a trilha ainda
+      if (!hasShownWelcome && progress < 100) {
         setShowWelcomeMaia(true);
       }
     }

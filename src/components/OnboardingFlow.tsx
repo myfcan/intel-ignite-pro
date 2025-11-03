@@ -40,13 +40,25 @@ export const OnboardingFlow = () => {
           return;
         }
 
-        const { data: userData } = await supabase
+        // Verificar se o usuário existe na tabela users
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('onboarding_completed')
           .eq('id', user.id)
           .maybeSingle();
 
-        if (userData?.onboarding_completed) {
+        // Se não existe, criar o registro
+        if (!userData && !userError) {
+          await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email || '',
+              name: user.user_metadata?.name || 'Usuário',
+              onboarding_completed: false,
+            });
+        } else if (userData?.onboarding_completed) {
+          // Se já completou, redirecionar
           navigate('/dashboard');
           return;
         }

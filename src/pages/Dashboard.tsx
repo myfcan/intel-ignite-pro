@@ -68,6 +68,11 @@ const Dashboard = () => {
         .eq('id', session.user.id)
         .maybeSingle();
 
+      if (error) {
+        console.error('Error fetching user:', error);
+        throw error;
+      }
+
       // If user doesn't exist, create automatically
       if (!userData) {
         const { data: newUser, error: createError } = await supabase
@@ -76,14 +81,17 @@ const Dashboard = () => {
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.name || 'Usuário',
+            onboarding_completed: false,
           })
           .select()
           .single();
         
-        if (createError) throw createError;
+        if (createError) {
+          console.error('Error creating user:', createError);
+          throw createError;
+        }
         setUser(newUser);
       } else {
-        if (error) throw error;
         setUser(userData);
       }
     } catch (error: any) {
