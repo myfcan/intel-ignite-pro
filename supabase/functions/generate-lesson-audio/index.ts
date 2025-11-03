@@ -134,10 +134,17 @@ serve(async (req) => {
         continue;
       }
 
-      // Limitar o texto para evitar custos excessivos (máximo 1000 caracteres)
-      textToSpeak = textToSpeak.substring(0, 1000);
+      // Remover markdown e formatação para melhorar a narração
+      textToSpeak = textToSpeak
+        .replace(/#{1,6}\s+/g, '') // Remove títulos markdown
+        .replace(/\*\*/g, '') // Remove bold
+        .replace(/\*/g, '') // Remove itálico
+        .replace(/`/g, '') // Remove code
+        .replace(/\n{3,}/g, '\n\n') // Reduz múltiplas quebras de linha
+        .trim();
 
       console.log(`Generating audio for: ${textToSpeak.substring(0, 100)}...`);
+      console.log(`Total text length: ${textToSpeak.length} characters`);
 
       // Gerar áudio com ElevenLabs
       const elevenLabsResponse = await fetch(
