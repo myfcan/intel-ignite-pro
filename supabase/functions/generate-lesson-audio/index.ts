@@ -63,7 +63,7 @@ serve(async (req) => {
       let textToSpeak = '';
       
       if (lesson.content) {
-        // Para lições fill-blanks
+        // Para lições fill-blanks, fill-text, drag-drop
         if (lesson.content.introduction) {
           textToSpeak += lesson.content.introduction + '. ';
         }
@@ -72,6 +72,37 @@ serve(async (req) => {
         }
         if (lesson.content.explanation) {
           textToSpeak += lesson.content.explanation + '. ';
+        }
+        
+        // Para lições quiz-playground
+        if (lesson.content.quiz && lesson.content.quiz.question) {
+          textToSpeak += lesson.content.quiz.question + '. ';
+        }
+        if (lesson.content.playgroundInstructions) {
+          textToSpeak += lesson.content.playgroundInstructions + '. ';
+        }
+        
+        // Para lições flashcards
+        if (lesson.content.cards && Array.isArray(lesson.content.cards)) {
+          lesson.content.cards.forEach((card: any, index: number) => {
+            if (card.question) {
+              textToSpeak += `Cartão ${index + 1}: ${card.question}. `;
+            }
+            if (card.answer) {
+              textToSpeak += `Resposta: ${card.answer}. `;
+            }
+          });
+        }
+        
+        // Para lições before-after
+        if (lesson.content.challenge) {
+          textToSpeak += lesson.content.challenge + '. ';
+        }
+        if (lesson.content.badExample) {
+          textToSpeak += `Exemplo ruim: ${lesson.content.badExample}. `;
+        }
+        if (lesson.content.goodExample) {
+          textToSpeak += `Exemplo bom: ${lesson.content.goodExample}. `;
         }
       }
 
