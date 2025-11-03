@@ -148,7 +148,7 @@ serve(async (req) => {
 
       // Gerar áudio com ElevenLabs
       const elevenLabsResponse = await fetch(
-        'https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL', // Voice ID: Sarah (clear, professional, multilingual)
+        'https://api.elevenlabs.io/v1/text-to-speech/Xb7hH8MSUJpSbSDYk0k2', // Voice ID: Alice
         {
           method: 'POST',
           headers: {
