@@ -1,0 +1,213 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface ElevenLabsResponse {
+  audio: number[];
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!ELEVENLABS_API_KEY) {
+      throw new Error('ELEVENLABS_API_KEY not configured');
+    }
+
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Buscar a Trilha 1 (Fundamentos)
+    const { data: trail, error: trailError } = await supabase
+      .from('trails')
+      .select('id, title')
+      .eq('title', 'Fundamentos de IA')
+      .single();
+
+    if (trailError || !trail) {
+      console.error('Error fetching trail:', trailError);
+      throw new Error('Trail "Fundamentos de IA" not found');
+    }
+
+    console.log('Found trail:', trail);
+
+    // Buscar as aulas da trilha 1
+    const { data: lessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id, title, content, order_index')
+      .eq('trail_id', trail.id)
+      .order('order_index');
+
+    if (lessonsError || !lessons || lessons.length === 0) {
+      console.error('Error fetching lessons:', lessonsError);
+      throw new Error('No lessons found for this trail');
+    }
+
+    console.log(`Found ${lessons.length} lessons`);
+
+    const results = [];
+
+    for (const lesson of lessons) {
+      console.log(`Processing lesson: ${lesson.title}`);
+
+      // Extrair texto do conteúdo da lição para gerar o áudio
+      let textToSpeak = '';
+      
+      if (lesson.content) {
+        // Para lições fill-blanks
+        if (lesson.content.introduction) {
+          textToSpeak += lesson.content.introduction + '. ';
+        }
+        if (lesson.content.instructions) {
+          textToSpeak += lesson.content.instructions + '. ';
+        }
+        if (lesson.content.explanation) {
+          textToSpeak += lesson.content.explanation + '. ';
+        }
+      }
+
+      if (!textToSpeak.trim()) {
+        console.log(`Skipping lesson ${lesson.title} - no text to speak`);
+        results.push({
+          lesson_id: lesson.id,
+          lesson_title: lesson.title,
+          status: 'skipped',
+          reason: 'no_text'
+        });
+        continue;
+      }
+
+      // Limitar o texto para evitar custos excessivos (máximo 1000 caracteres)
+      textToSpeak = textToSpeak.substring(0, 1000);
+
+      console.log(`Generating audio for: ${textToSpeak.substring(0, 100)}...`);
+
+      // Gerar áudio com ElevenLabs
+      const elevenLabsResponse = await fetch(
+        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', // Voice ID: Aria
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': ELEVENLABS_API_KEY,
+          },
+          body: JSON.stringify({
+            text: textToSpeak,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.75,
+            }
+          }),
+        }
+      );
+
+      if (!elevenLabsResponse.ok) {
+        const errorText = await elevenLabsResponse.text();
+        console.error('ElevenLabs API error:', errorText);
+        results.push({
+          lesson_id: lesson.id,
+          lesson_title: lesson.title,
+          status: 'error',
+          error: errorText
+        });
+        continue;
+      }
+
+      // Converter resposta para ArrayBuffer
+      const audioArrayBuffer = await elevenLabsResponse.arrayBuffer();
+      const audioBlob = new Uint8Array(audioArrayBuffer);
+
+      console.log(`Audio generated, size: ${audioBlob.length} bytes`);
+
+      // Fazer upload para Supabase Storage
+      const fileName = `lesson-${lesson.id}.mp3`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('lesson-audios')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        results.push({
+          lesson_id: lesson.id,
+          lesson_title: lesson.title,
+          status: 'error',
+          error: uploadError.message
+        });
+        continue;
+      }
+
+      console.log('Audio uploaded:', uploadData);
+
+      // Obter URL pública
+      const { data: publicUrlData } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(fileName);
+
+      const audioUrl = publicUrlData.publicUrl;
+
+      console.log('Public URL:', audioUrl);
+
+      // Atualizar a tabela lessons com a URL do áudio
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({ audio_url: audioUrl })
+        .eq('id', lesson.id);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        results.push({
+          lesson_id: lesson.id,
+          lesson_title: lesson.title,
+          status: 'error',
+          error: updateError.message
+        });
+        continue;
+      }
+
+      console.log(`Successfully processed lesson: ${lesson.title}`);
+
+      results.push({
+        lesson_id: lesson.id,
+        lesson_title: lesson.title,
+        status: 'success',
+        audio_url: audioUrl
+      });
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        trail: trail.title,
+        total_lessons: lessons.length,
+        results
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error in generate-lesson-audio:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

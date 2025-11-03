@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import TrailDetail from "./pages/TrailDetail";
 import Lesson from "./pages/Lesson";
 import LessonInteractive from "./pages/LessonInteractive";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/trails/:id" element={<TrailDetail />} />
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
