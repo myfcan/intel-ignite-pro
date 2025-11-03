@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Music } from 'lucide-react';
@@ -9,14 +10,42 @@ export default function Admin() {
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState<string>('all');
+  
+  useEffect(() => {
+    fetchLessons();
+  }, []);
+  
+  const fetchLessons = async () => {
+    const { data: trail } = await supabase
+      .from('trails')
+      .select('id')
+      .eq('title', 'Fundamentos de IA')
+      .single();
+    
+    if (trail) {
+      const { data } = await supabase
+        .from('lessons')
+        .select('id, title, order_index')
+        .eq('trail_id', trail.id)
+        .order('order_index');
+      
+      if (data) {
+        setLessons(data);
+      }
+    }
+  };
 
   const handleGenerateAudios = async () => {
     setGenerating(true);
     setResults(null);
 
     try {
+      const body = selectedLesson === 'all' ? {} : { lesson_id: selectedLesson };
+      
       const { data, error } = await supabase.functions.invoke('generate-lesson-audio', {
-        body: {}
+        body
       });
 
       if (error) throw error;
@@ -58,10 +87,27 @@ export default function Admin() {
               Geração de Áudios das Aulas
             </CardTitle>
             <CardDescription>
-              Gere automaticamente os áudios para todas as aulas da Trilha 1 (Fundamentos de IA)
+              Gere áudios para uma aula específica ou todas as aulas da Trilha 1
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Selecione a aula:</label>
+              <Select value={selectedLesson} onValueChange={setSelectedLesson}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha uma aula" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">🎯 Todas as aulas</SelectItem>
+                  {lessons.map((lesson) => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      Aula {lesson.order_index}: {lesson.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <Button
               onClick={handleGenerateAudios}
               disabled={generating}
@@ -76,7 +122,7 @@ export default function Admin() {
               ) : (
                 <>
                   <Music className="w-4 h-4 mr-2" />
-                  Gerar Áudios da Trilha 1
+                  {selectedLesson === 'all' ? 'Gerar Todos os Áudios' : 'Gerar Áudio Selecionado'}
                 </>
               )}
             </Button>

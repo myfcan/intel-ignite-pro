@@ -16,6 +16,8 @@ serve(async (req) => {
   }
 
   try {
+    const { lesson_id } = await req.json().catch(() => ({}));
+    
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -40,12 +42,18 @@ serve(async (req) => {
 
     console.log('Found trail:', trail);
 
-    // Buscar as aulas da trilha 1
-    const { data: lessons, error: lessonsError } = await supabase
+    // Buscar as aulas da trilha 1 - filtrar por lesson_id se fornecido
+    let lessonsQuery = supabase
       .from('lessons')
       .select('id, title, content, order_index')
-      .eq('trail_id', trail.id)
-      .order('order_index');
+      .eq('trail_id', trail.id);
+    
+    if (lesson_id) {
+      lessonsQuery = lessonsQuery.eq('id', lesson_id);
+      console.log(`Filtering for specific lesson: ${lesson_id}`);
+    }
+    
+    const { data: lessons, error: lessonsError } = await lessonsQuery.order('order_index');
 
     if (lessonsError || !lessons || lessons.length === 0) {
       console.error('Error fetching lessons:', lessonsError);
