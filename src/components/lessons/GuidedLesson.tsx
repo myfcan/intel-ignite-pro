@@ -37,11 +37,6 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       
       if (currentSectionIndex !== -1 && currentSectionIndex !== activeSection) {
         setActiveSection(currentSectionIndex);
-        // Scroll automático para a seção ativa
-        sectionRefs.current[currentSectionIndex]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
       }
     };
 
@@ -59,6 +54,16 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       audio.removeEventListener('ended', handleEnded);
     };
   }, [audioUrl, lessonData.sections, activeSection]);
+
+  // Separate effect for smooth scrolling
+  useEffect(() => {
+    if (activeSection !== null && sectionRefs.current[activeSection]) {
+      sectionRefs.current[activeSection].scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [activeSection]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -128,33 +133,33 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
 
       {/* Conteúdo Principal */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* MAIA Narrator Section */}
-        <div className="mb-8 flex flex-col items-center">
-          <div className="relative mb-4">
-            <img 
-              src="/maia-avatar.png" 
-              alt="MAIA"
-              className="w-32 h-32"
-            />
-            {isPlaying && (
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
-                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-100"></span>
-                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-200"></span>
+        {/* MAIA Narrator Section - Sticky Floating */}
+        <div className="sticky top-24 z-30 mb-8 transition-all duration-500">
+          <div className="flex items-start gap-6 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-2xl p-6 shadow-lg">
+            <div className="relative flex-shrink-0">
+              <img 
+                src="/maia-avatar.png" 
+                alt="MAIA"
+                className={`w-24 h-24 transition-transform duration-700 ${isPlaying ? 'animate-pulse' : ''}`}
+              />
+              {isPlaying && (
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-100"></span>
+                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-200"></span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Balão de Fala da MAIA */}
-          <div className="relative bg-white rounded-2xl shadow-lg p-6 max-w-2xl">
-            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <div className="w-6 h-6 bg-white rotate-45 shadow-lg"></div>
+              )}
             </div>
-            <p className="text-lg text-center text-gray-800 font-medium">
-              {lessonData.sections[activeSection]?.speechBubbleText}
-            </p>
+            
+            {/* Balão de Fala da MAIA */}
+            <div className="relative bg-white rounded-2xl shadow-xl p-6 flex-1 border-2 border-cyan-100 animate-fade-in">
+              <div className="absolute -left-3 top-8 w-6 h-6 bg-white transform rotate-45 border-l-2 border-b-2 border-cyan-100"></div>
+              <p className="text-base text-gray-800 font-medium leading-relaxed">
+                {lessonData.sections[activeSection]?.speechBubbleText}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -165,10 +170,10 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
               key={section.id}
               ref={(el) => (sectionRefs.current[index] = el)}
               className={`
-                transition-all duration-500 rounded-2xl p-6
+                transition-all duration-500 rounded-2xl p-8 shadow-md
                 ${index === activeSection 
-                  ? 'bg-white shadow-lg border-2 border-primary scale-[1.02]' 
-                  : 'bg-white/50 opacity-60'}
+                  ? 'bg-gradient-to-br from-cyan-50 to-purple-50 border-l-4 border-cyan-500 shadow-2xl scale-[1.02]' 
+                  : 'bg-white opacity-60 hover:opacity-80'}
               `}
             >
               <div className="prose prose-lg max-w-none">
@@ -259,9 +264,28 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                     <SkipForward className="w-4 h-4" />
                   </Button>
 
-                  {/* Barra de Progresso */}
+                  {/* Barra de Progresso com Marcadores de Seções */}
                   <div className="flex-1">
-                    <Progress value={progressPercent} className="h-2" />
+                    <div className="relative">
+                      <Progress value={progressPercent} className="h-2" />
+                      {/* Section Markers */}
+                      {lessonData.sections.map((section, index) => {
+                        const markerPosition = duration > 0 ? (section.timestamp / duration) * 100 : 0;
+                        return (
+                          <div
+                            key={section.id}
+                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-purple-500 rounded-full shadow-md cursor-pointer hover:scale-125 transition-transform z-10"
+                            style={{ left: `${markerPosition}%` }}
+                            title={`Seção ${index + 1}`}
+                            onClick={() => {
+                              if (audioRef.current) {
+                                audioRef.current.currentTime = section.timestamp;
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-xs text-muted-foreground">
                         {formatTime(currentTime)}

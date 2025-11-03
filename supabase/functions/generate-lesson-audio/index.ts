@@ -63,6 +63,15 @@ serve(async (req) => {
       let textToSpeak = '';
       
       if (lesson.content) {
+        // Para lições guided (novo sistema com sections)
+        if (lesson.content.sections && Array.isArray(lesson.content.sections)) {
+          lesson.content.sections.forEach((section: any) => {
+            if (section.content) {
+              textToSpeak += section.content + ' ';
+            }
+          });
+        }
+        
         // Para lições fill-blanks, fill-text, drag-drop
         if (lesson.content.introduction) {
           textToSpeak += lesson.content.introduction + '. ';
@@ -124,7 +133,7 @@ serve(async (req) => {
 
       // Gerar áudio com ElevenLabs
       const elevenLabsResponse = await fetch(
-        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', // Voice ID: Aria
+        'https://api.elevenlabs.io/v1/text-to-speech/XB0fDUnXU5powFXDhCwa', // Voice ID: Charlotte (friendly, conversational, multilingual pt-BR)
         {
           method: 'POST',
           headers: {
