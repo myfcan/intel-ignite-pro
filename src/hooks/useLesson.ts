@@ -11,7 +11,7 @@ export interface Lesson {
   trail_id: string;
   title: string;
   description: string;
-  lesson_type: 'fill-blanks' | 'fill-text' | 'drag-drop' | 'quiz-playground' | 'before-after' | 'flashcards';
+  lesson_type: 'fill-blanks' | 'fill-text' | 'drag-drop' | 'quiz-playground' | 'before-after' | 'flashcards' | 'guided';
   content: LessonContent;
   passing_score: number;
   estimated_time: number;
@@ -178,6 +178,10 @@ export const useLesson = (lessonId: string) => {
 // Helper functions
 function calculateScore(lessonType: string, content: any, answers: any): number {
   switch (lessonType) {
+    case 'guided': {
+      // Aulas guiadas sempre dão 100% ao concluir
+      return 100;
+    }
     case 'fill-blanks': {
       if (!content.sentences || !Array.isArray(content.sentences)) return 0;
       const correct = content.sentences.filter((s: any, i: number) => {

@@ -2,3 +2,6 @@ project_id = "pspvppymcdjbwsudxzdx"
 
 [functions.generate-lesson-audio]
 verify_jwt = false
+
+[functions.generate-audio-elevenlabs]
+verify_jwt = false

@@ -7,8 +7,10 @@ import { DragDropLesson } from './DragDropLesson';
 import { QuizPlaygroundLesson } from './QuizPlaygroundLesson';
 import { FlashcardsLesson } from './FlashcardsLesson';
 import { BeforeAfterLesson } from './BeforeAfterLesson';
+import { GuidedLesson } from './GuidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
+import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 
 interface InteractiveLessonProps {
   lessonId: string;
@@ -93,6 +95,70 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   };
 
   switch (lesson.lesson_type) {
+    case 'guided':
+      // Aulas guiadas com MAIA narradora
+      const handleGuidedComplete = async () => {
+        // Marca a aula como completa
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        await submitAnswers({}, timeSpent);
+        
+        // Buscar próxima aula
+        const { data: nextLesson } = await supabase
+          .from('lessons')
+          .select('id, lesson_type')
+          .eq('trail_id', lesson.trail_id)
+          .eq('is_active', true)
+          .gt('order_index', lesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (nextLesson) {
+          const route = nextLesson.lesson_type 
+            ? `/lessons-interactive/${nextLesson.id}` 
+            : `/lessons/${nextLesson.id}`;
+          navigate(route);
+        } else {
+          navigate(`/trails/${lesson.trail_id}`);
+        }
+      };
+
+      // Mapeamento de lesson IDs para dados das aulas guiadas
+      // TODO: Criar um sistema mais escalável de mapeamento
+      let guidedLessonData = null;
+      let audioUrl = null;
+      
+      if (lesson.title.includes('O que é IA e por que você precisa dela')) {
+        guidedLessonData = fundamentos01;
+        // Áudio já gerado está no public
+        audioUrl = '/audio/maia-fundamentos.mp3';
+      }
+
+      if (!guidedLessonData) {
+        return (
+          <div className="text-center py-12">
+            <p className="text-lg text-muted-foreground">Conteúdo da aula guiada não encontrado</p>
+          </div>
+        );
+      }
+
+      return (
+        <>
+          {showMaia && isLastLesson && (
+            <MiniMaia
+              message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+              variant="celebration"
+              showConfetti={true}
+              onClose={handleMaiaClose}
+            />
+          )}
+          <GuidedLesson 
+            lessonData={guidedLessonData}
+            onComplete={handleGuidedComplete}
+            audioUrl={audioUrl}
+          />
+        </>
+      );
     case 'fill-blanks':
       return (
         <>
