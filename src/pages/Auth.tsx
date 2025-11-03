@@ -66,7 +66,7 @@ const Auth = () => {
         // Check if user has completed onboarding
         const { data: userData } = await supabase
           .from('users')
-          .select('profession')
+          .select('onboarding_completed')
           .eq('id', data.session.user.id)
           .maybeSingle();
 
@@ -76,7 +76,7 @@ const Auth = () => {
         });
 
         // Redirect to onboarding if not completed
-        if (!userData?.profession) {
+        if (!userData?.onboarding_completed) {
           navigate('/onboarding');
         } else {
           navigate('/dashboard');

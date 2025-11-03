@@ -66,10 +66,26 @@ const Dashboard = () => {
         .from('users')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setUser(userData);
+      // If user doesn't exist, create automatically
+      if (!userData) {
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || 'Usuário',
+          })
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        setUser(newUser);
+      } else {
+        if (error) throw error;
+        setUser(userData);
+      }
     } catch (error: any) {
       console.error('Error checking auth:', error);
       toast({
