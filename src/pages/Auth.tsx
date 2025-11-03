@@ -68,7 +68,7 @@ const Auth = () => {
           .from('users')
           .select('profession')
           .eq('id', data.session.user.id)
-          .single();
+          .maybeSingle();
 
         toast({
           title: "Login realizado!",
