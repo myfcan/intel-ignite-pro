@@ -16,13 +16,22 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   useEffect(() => {
     const audio = audioRef.current;
+    
+    console.log('🔍 [DEBUG] audioUrl recebido:', audioUrl);
+    console.log('🔍 [DEBUG] audioRef.current:', audio);
+    
     if (!audio) {
-      console.log('🎵 [ÁUDIO] Áudio não disponível');
+      console.error('❌ [ÁUDIO] Elemento de áudio não encontrado');
       return;
     }
     
-    console.log('🎵 [ÁUDIO] Inicializando áudio:', audioUrl);
-    console.log('🎵 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
+    if (!audioUrl) {
+      console.error('❌ [ÁUDIO] URL do áudio não fornecida');
+      return;
+    }
+    
+    console.log('✅ [ÁUDIO] Inicializando áudio:', audioUrl);
+    console.log('📋 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
     
     const handleTimeUpdate = () => {
       const time = audio.currentTime;
@@ -69,12 +78,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       setDuration(audio.duration);
     };
     
+    const handleError = (e: Event) => {
+      console.error('❌ [ÁUDIO] Erro ao carregar:', e);
+      console.error('❌ [ÁUDIO] URL problemática:', audioUrl);
+    };
+    
+    const handleCanPlay = () => {
+      console.log('🎵 [ÁUDIO] Pronto para reproduzir');
+    };
+    
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
     
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
     };
   }, [currentSection, lessonData.sections, audioUrl]);
   
@@ -164,17 +186,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-32 pb-32">
-        <div className="w-full max-w-[2400px] mx-auto">
-          <div className="grid lg:grid-cols-[380px_1fr] gap-10">
+      <div className="w-full px-4 sm:px-6 pt-40 pb-32">
+        <div className="w-full max-w-[3200px] mx-auto">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
             <aside className="hidden lg:block">
-              <div className="sticky top-32 space-y-4">
+              <div className="sticky top-40 space-y-3">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/50 shadow-xl">
-                  <div className="flex justify-center mb-4">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
+                  <div className="flex justify-center mb-3">
                     <div className="relative">
-                      <img src="/maia-avatar.png" alt="MAIA" className="w-36 h-36 object-contain drop-shadow-2xl" />
+                      <img src="/maia-avatar.png" alt="MAIA" className="w-24 h-24 object-contain drop-shadow-2xl" />
                       {isPlaying && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
                           <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -185,28 +207,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-4 border border-cyan-200/50">
-                    <p className="text-sm text-center text-slate-700 font-medium leading-relaxed">
+                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-3 border border-cyan-200/50">
+                    <p className="text-xs text-center text-slate-700 font-medium leading-relaxed">
                       {lessonData.sections[currentSection]?.speechBubbleText || "Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial."}
                     </p>
                   </div>
                 </div>
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
-                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Seções da aula</h3>
-                  <div className="space-y-2">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
+                  <div className="space-y-1.5">
                     {lessonData.sections.map((section, index) => (
                       <button
                         key={section.id}
                         onClick={() => jumpToSection(index)}
-                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           currentSection === index
                             ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
                             : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        <div className="flex items-center gap-2">
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                             currentSection === index ? 'bg-white/20' : 'bg-slate-200'
                           }`}>
                             {index + 1}
