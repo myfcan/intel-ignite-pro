@@ -98,40 +98,56 @@ serve(async (req) => {
     const { alignment, audio_base64 } = result;
     const { characters, character_start_times_seconds } = alignment;
     
-    // Converter arrays em string para busca
+    // Normalizar texto para busca (remover espaços extras, quebras de linha)
+    const normalizeText = (text: string) => {
+      return text
+        .toLowerCase()
+        .replace(/\s+/g, ' ')  // Substituir múltiplos espaços por um único
+        .replace(/\n/g, ' ')    // Substituir quebras de linha por espaço
+        .trim();
+    };
+    
     const fullText = characters.join('');
-    const textLowerCase = text.toLowerCase();
+    const normalizedInputText = normalizeText(text);
     
     // Encontrar timestamps de cada seção
     const sectionTimestamps: Record<string, number> = {};
     
     for (const marker of section_markers as SectionMarker[]) {
-      const phraseLower = marker.phrase.toLowerCase();
-      const phraseIndex = textLowerCase.indexOf(phraseLower);
+      const normalizedPhrase = normalizeText(marker.phrase);
+      const phraseIndex = normalizedInputText.indexOf(normalizedPhrase);
       
       if (phraseIndex === -1) {
         console.warn(`Frase não encontrada no texto: "${marker.phrase}"`);
+        console.log(`Texto normalizado procurado: "${normalizedPhrase}"`);
+        console.log(`Primeiros 200 chars do texto: "${normalizedInputText.substring(0, 200)}"`);
         continue;
       }
       
-      // Encontrar o índice do caractere no array de caracteres
-      let charCount = 0;
+      // Calcular índice aproximado no array de caracteres
+      // Como normalizamos o texto, precisamos mapear de volta
+      let charsSeen = 0;
       let foundIndex = -1;
       
       for (let i = 0; i < fullText.length; i++) {
-        if (charCount === phraseIndex) {
+        const normalizedChar = fullText.substring(0, i + 1)
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .replace(/\n/g, ' ')
+          .trim();
+        
+        if (normalizedChar.length >= phraseIndex) {
           foundIndex = i;
           break;
         }
-        charCount++;
       }
       
       if (foundIndex !== -1 && foundIndex < character_start_times_seconds.length) {
         const timestamp = character_start_times_seconds[foundIndex];
         sectionTimestamps[marker.sectionId] = Math.round(timestamp);
-        console.log(`Seção "${marker.sectionId}": ${Math.round(timestamp)}s (frase: "${marker.phrase}")`);
+        console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (frase: "${marker.phrase}")`);
       } else {
-        console.warn(`Timestamp não encontrado para: "${marker.phrase}"`);
+        console.warn(`❌ Timestamp não encontrado para: "${marker.phrase}"`);
       }
     }
     
