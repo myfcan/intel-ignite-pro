@@ -198,21 +198,21 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       {/* ===== CONTEÚDO PRINCIPAL ===== */}
       <div className="container mx-auto px-4 pt-20 pb-32">
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-[280px_1fr] gap-6">
+          <div className="grid lg:grid-cols-[360px_1fr] gap-6">
             
             {/* ===== SIDEBAR: MAIA SEMPRE VISÍVEL ===== */}
-            <aside className="hidden md:block">
-              <div className="sticky top-24 space-y-4">
+            <aside className="hidden lg:block">
+              <div className="sticky top-20 space-y-4">
                 
                 {/* MAIA Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/50 shadow-lg">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 shadow-xl">
                   {/* Avatar */}
                   <div className="flex justify-center mb-4">
                     <div className="relative">
                       <img 
                         src="/maia-avatar.png" 
                         alt="MAIA" 
-                        className="w-24 h-24 object-contain drop-shadow-xl"
+                        className="w-32 h-32 object-contain drop-shadow-2xl"
                       />
                       {/* Indicador de áudio */}
                       {isPlaying && (
@@ -226,8 +226,8 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   </div>
                   
                   {/* Balão de fala compacto */}
-                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-3 border border-cyan-200/50">
-                    <p className="text-xs text-center text-slate-700 font-medium leading-relaxed">
+                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-4 border border-cyan-200/50">
+                    <p className="text-sm text-center text-slate-700 font-medium leading-relaxed">
                       {lessonData.sections[activeSection]?.speechBubbleText}
                     </p>
                   </div>
@@ -248,7 +248,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                           }
                         }}
                         className={`
-                          w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all
+                          w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                           ${activeSection === index
                             ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-md'
                             : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -257,7 +257,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                       >
                         <div className="flex items-center gap-2">
                           <span className={`
-                            w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0
+                            w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
                             ${activeSection === index ? 'bg-white/20' : 'bg-slate-200'}
                           `}>
                             {index + 1}
@@ -338,15 +338,15 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       </div>
       
       {/* ===== MOBILE: MAIA FLUTUANTE ===== */}
-      <div className="md:hidden fixed bottom-24 right-4 z-40">
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3 border border-cyan-300/50 shadow-2xl max-w-[200px]">
-          <div className="flex items-start gap-2">
+      <div className="lg:hidden fixed bottom-24 right-4 z-40">
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[240px]">
+          <div className="flex items-start gap-2.5">
             <img 
               src="/maia-avatar.png" 
               alt="MAIA" 
-              className="w-10 h-10 object-contain flex-shrink-0"
+              className="w-12 h-12 object-contain flex-shrink-0"
             />
-            <p className="text-[10px] text-slate-700 leading-tight">
+            <p className="text-xs text-slate-700 leading-tight">
               {lessonData.sections[activeSection]?.speechBubbleText}
             </p>
           </div>
