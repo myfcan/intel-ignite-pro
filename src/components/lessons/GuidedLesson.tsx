@@ -21,6 +21,29 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
   const audioRef = useRef<HTMLAudioElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Função para filtrar e normalizar timestamps para a seção ativa
+  const getSectionWordTimestamps = (sectionIndex: number): WordTimestamp[] => {
+    if (wordTimestamps.length === 0) return [];
+    
+    const section = lessonData.sections[sectionIndex];
+    const nextSection = lessonData.sections[sectionIndex + 1];
+    
+    const sectionStart = section.timestamp;
+    const sectionEnd = nextSection ? nextSection.timestamp : duration || Infinity;
+    
+    // Filtrar timestamps que estão dentro do intervalo da seção
+    const sectionTimestamps = wordTimestamps.filter(
+      wt => wt.start >= sectionStart && wt.start < sectionEnd
+    );
+    
+    // Normalizar timestamps (subtrair o tempo de início da seção)
+    return sectionTimestamps.map(wt => ({
+      word: wt.word,
+      start: wt.start - sectionStart,
+      end: wt.end - sectionStart
+    }));
+  };
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
@@ -268,8 +291,9 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
                       <SyncedText 
                         content={section.content}
                         isActive={index === activeSection}
-                        wordTimestamps={wordTimestamps}
-                        currentTime={currentTime}
+                        wordTimestamps={getSectionWordTimestamps(index)}
+                        currentTime={currentTime - section.timestamp}
+                        sectionStartTime={0}
                       />
                     ) : (
                       <AnimatedMarkdown 

@@ -7,15 +7,19 @@ interface SyncedTextProps {
   isActive: boolean;
   wordTimestamps: WordTimestamp[];
   currentTime: number;
+  sectionStartTime?: number; // Tempo de início da seção para ajustar sincronização
 }
 
-export const SyncedText = ({ content, isActive, wordTimestamps, currentTime }: SyncedTextProps) => {
+export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sectionStartTime = 0 }: SyncedTextProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wordRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
 
+  // Ajustar tempo atual baseado no início da seção
+  const adjustedTime = currentTime - sectionStartTime;
+
   // Encontrar índice da palavra ativa
   const activeWordIndex = wordTimestamps.findIndex(
-    (wt) => currentTime >= wt.start && currentTime < wt.end
+    (wt) => adjustedTime >= wt.start && adjustedTime < wt.end
   );
 
   // Scroll automático para palavra ativa
