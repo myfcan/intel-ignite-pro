@@ -126,12 +126,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       // Mapeamento de lesson IDs para dados das aulas guiadas
       // TODO: Criar um sistema mais escalável de mapeamento
       let guidedLessonData = null;
-      let audioUrl = null;
+      let audioUrl = lesson.audio_url || null; // Usar o áudio do banco de dados
       
       if (lesson.title.includes('O que é IA e por que você precisa dela')) {
         guidedLessonData = fundamentos01;
-        // Áudio já gerado está no public
-        audioUrl = '/audio/maia-fundamentos.mp3';
       }
 
       if (!guidedLessonData) {
