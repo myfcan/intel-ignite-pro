@@ -363,7 +363,7 @@ const TrailDetail = () => {
             <div className="h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden">
               <div 
                 className="h-full bg-white shadow-lg transition-all duration-500" 
-                style={{ width: `${progress}%` }}
+                style={{ width: `${Math.min(100, Math.round(progress))}%` }}
               />
             </div>
           </div>
