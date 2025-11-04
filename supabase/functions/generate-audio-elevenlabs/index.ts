@@ -100,6 +100,8 @@ serve(async (req) => {
     let wordTimestamps: Array<{word: string; start: number; end: number}> = [];
     if (alignment?.characters && alignment.characters.length > 0) {
       console.log('Processando', alignment.characters.length, 'timestamps de caracteres...');
+      console.log('📊 Primeiros 3 caracteres da API:', JSON.stringify(alignment.characters.slice(0, 3)));
+      console.log('📊 Estrutura do primeiro caractere:', Object.keys(alignment.characters[0]));
       wordTimestamps = processWordTimestamps(alignment.characters, text);
       console.log('✅ Timestamps processados:', wordTimestamps.length, 'palavras');
       
