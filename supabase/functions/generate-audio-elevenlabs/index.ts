@@ -192,24 +192,41 @@ function processWordTimestamps(charTimestamps: any[], text: string) {
   let wordStart = 0;
   
   for (let i = 0; i < charTimestamps.length; i++) {
-    const char = charTimestamps[i];
-    currentWord += char.character;
+    const charData = charTimestamps[i];
     
-    if (i === 0) {
-      wordStart = char.start_time;
+    // Verificar se o objeto tem a propriedade character corretamente
+    if (!charData || typeof charData.character !== 'string') {
+      console.warn(`Caractere inválido no índice ${i}:`, charData);
+      continue;
     }
     
-    // Se for espaço, pontuação ou último caractere, finalizar palavra
-    const isWordEnd = /[\s.,!?;:\n]/.test(char.character) || i === charTimestamps.length - 1;
+    const char = charData.character;
+    const startTime = charData.start_time_seconds || charData.start_time || 0;
+    const endTime = charData.end_time_seconds || charData.end_time || startTime + 0.05;
     
-    if (isWordEnd && currentWord.trim().length > 0) {
-      words.push({
-        word: currentWord.trim(),
-        start: wordStart,
-        end: char.end_time || char.start_time + 0.1
-      });
+    // Definir o início da palavra no primeiro caractere
+    if (currentWord.length === 0) {
+      wordStart = startTime;
+    }
+    
+    // Adicionar caractere à palavra atual
+    currentWord += char;
+    
+    // Se for espaço, pontuação ou último caractere, finalizar palavra
+    const isWordEnd = /[\s.,!?;:\n]/.test(char) || i === charTimestamps.length - 1;
+    
+    if (isWordEnd) {
+      const trimmedWord = currentWord.trim();
+      
+      if (trimmedWord.length > 0) {
+        words.push({
+          word: trimmedWord,
+          start: wordStart,
+          end: endTime
+        });
+      }
+      
       currentWord = '';
-      wordStart = charTimestamps[i + 1]?.start_time || 0;
     }
   }
   
