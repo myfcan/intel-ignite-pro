@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 interface Section {
   id: string;
@@ -19,21 +19,13 @@ interface LessonData {
   audioUrl?: string;
 }
 
-interface WordTimestamp {
-  word: string;
-  start: number;
-  end: number;
-}
-
 interface GuidedLessonProps {
   lessonData: LessonData;
   onComplete: () => void;
-  audioUrl?: string;
-  wordTimestamps?: WordTimestamp[];
 }
 
-export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
-  const navigate = useNavigate();
+export function GuidedLesson({ lessonData, onComplete }: GuidedLessonProps) {
+  const router = useRouter();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -159,11 +151,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* HEADER FIXO */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0">
+            <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0">
               <ChevronLeft className="w-5 h-5 text-slate-700" />
             </button>
             <div className="flex-1 min-w-0">
@@ -184,16 +175,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <div className="w-full px-4 sm:px-6 pt-24 pb-32">
         <div className="w-full max-w-[1800px] mx-auto">
           <div className="grid lg:grid-cols-[440px_1fr] gap-8">
             
-            {/* SIDEBAR ESQUERDA - MAIA */}
             <aside className="hidden lg:block">
               <div className="sticky top-28 space-y-5">
                 
-                {/* Card MAIA */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-5">
                     <div className="relative">
@@ -208,7 +196,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                   </div>
                   
-                  {/* BALÃO DE FALA */}
                   <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-5 border border-cyan-200/50">
                     <p className="text-sm text-center text-slate-700 font-medium leading-relaxed">
                       {lessonData.sections[currentSection]?.speechBubbleText || "Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial."}
@@ -216,7 +203,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   </div>
                 </div>
                 
-                {/* Navegação de seções */}
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/50 shadow-xl">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-4">Seções da aula</h3>
                   <div className="space-y-2">
@@ -246,7 +232,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               </div>
             </aside>
             
-            {/* CONTEÚDO DIREITA - SEÇÕES */}
             <main className="space-y-6 min-w-0">
               {lessonData.sections.map((section, index) => (
                 <div
@@ -286,7 +271,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* MOBILE - MAIA FLUTUANTE */}
       <div className="lg:hidden fixed bottom-28 right-4 z-40">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[260px]">
           <div className="flex items-start gap-3">
@@ -298,12 +282,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* PLAYER FIXO */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="max-w-[1800px] mx-auto">
             
-            {/* Desktop: flex horizontal */}
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={skipBackward} className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all">
@@ -336,7 +318,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               </button>
             </div>
             
-            {/* Mobile: flex vertical em 2 linhas */}
             <div className="flex md:hidden flex-col gap-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
@@ -370,11 +351,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* Elemento audio */}
-      {(audioUrl || lessonData.audioUrl) && (
+      {lessonData.audioUrl && (
         <audio
           ref={audioRef}
-          src={audioUrl || lessonData.audioUrl}
+          src={lessonData.audioUrl}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
