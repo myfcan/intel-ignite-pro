@@ -134,7 +134,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           section_markers: markers,
           voice_id: 'EXAVITQu4vr4xnSDxMaL', // Sarah
           model_id: 'eleven_multilingual_v2',
-          lesson_id: selectedLessonId || undefined // Passa lesson_id se selecionado
+          lesson_id: (selectedLessonId && selectedLessonId !== 'none') ? selectedLessonId : undefined
         }
       });
 
@@ -154,7 +154,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       setWordTimestamps(data.word_timestamps || []);
       
       // Se lesson_id foi fornecido, salvar também o áudio e marcar como salvo
-      if (selectedLessonId && data.word_timestamps && data.word_timestamps.length > 0) {
+      if (selectedLessonId && selectedLessonId !== 'none' && data.word_timestamps && data.word_timestamps.length > 0) {
         // Fazer upload do áudio para storage
         const fileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
         const { error: uploadError } = await supabase.storage
@@ -262,7 +262,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
                   <SelectValue placeholder="Selecione uma aula guiada..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (apenas gerar áudio)</SelectItem>
+                  <SelectItem value="none">Nenhuma (apenas gerar áudio)</SelectItem>
                   {lessons.map((lesson) => (
                     <SelectItem key={lesson.id} value={lesson.id}>
                       {lesson.title}
@@ -270,7 +270,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
                   ))}
                 </SelectContent>
               </Select>
-              {selectedLessonId && (
+              {selectedLessonId && selectedLessonId !== 'none' && (
                 <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
                   Áudio e timestamps serão salvos automaticamente no banco
