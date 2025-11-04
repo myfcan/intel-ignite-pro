@@ -12,49 +12,26 @@ export const AnimatedMarkdown = ({ content, isActive, speed = 50 }: AnimatedMark
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    if (!isActive) {
-      // Se não está ativo, mostra o conteúdo completo imediatamente
-      setDisplayedContent(content);
-      setIsComplete(true);
-      return;
-    }
-
-    // Reset quando seção fica ativa
-    setDisplayedContent('');
-    setIsComplete(false);
-    
-    let currentIndex = 0;
-    const interval = setInterval(() => {
-      if (currentIndex >= content.length) {
-        setIsComplete(true);
-        clearInterval(interval);
-        return;
-      }
-
-      // Revelar caracteres mais rapidamente
-      const chunkSize = Math.max(5, Math.ceil(speed / 8));
-      currentIndex = Math.min(currentIndex + chunkSize, content.length);
-      setDisplayedContent(content.slice(0, currentIndex));
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [isActive]);
+    // Mostra texto completo instantaneamente - sem animação de digitação
+    setDisplayedContent(content);
+    setIsComplete(true);
+  }, [content, isActive]);
 
   return (
-    <div className={`prose prose-lg max-w-none transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
+    <div className={`prose prose-lg max-w-none transition-all duration-700 ${isActive ? 'opacity-100 scale-100' : 'opacity-30 scale-[0.98]'}`}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 className="text-3xl font-bold text-gray-900 mb-4 animate-fade-in">{children}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-2xl font-bold text-gray-900 mb-3 mt-6 animate-fade-in">{children}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3 mt-6">{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-xl font-bold text-gray-800 mb-2 mt-4 animate-fade-in">{children}</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2 mt-4">{children}</h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-3 animate-fade-in">{children}</h4>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-3">{children}</h4>
           ),
           p: ({ children }) => (
             <p className="text-gray-700 leading-relaxed mb-4">{children}</p>
@@ -80,9 +57,6 @@ export const AnimatedMarkdown = ({ content, isActive, speed = 50 }: AnimatedMark
       >
         {displayedContent}
       </ReactMarkdown>
-      {!isComplete && isActive && (
-        <span className="inline-block w-1 h-5 bg-primary animate-pulse ml-1" />
-      )}
     </div>
   );
 };
