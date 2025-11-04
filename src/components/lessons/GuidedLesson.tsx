@@ -19,12 +19,20 @@ interface LessonData {
   audioUrl?: string;
 }
 
+interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface GuidedLessonProps {
   lessonData: LessonData;
   onComplete: () => void;
+  audioUrl?: string;
+  wordTimestamps?: WordTimestamp[];
 }
 
-export function GuidedLesson({ lessonData, onComplete }: GuidedLessonProps) {
+export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -351,10 +359,10 @@ export function GuidedLesson({ lessonData, onComplete }: GuidedLessonProps) {
         </div>
       </div>
 
-      {lessonData.audioUrl && (
+      {(audioUrl || lessonData.audioUrl) && (
         <audio
           ref={audioRef}
-          src={lessonData.audioUrl}
+          src={audioUrl || lessonData.audioUrl}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
