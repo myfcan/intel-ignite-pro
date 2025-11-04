@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, SkipForward, SkipBack } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { GuidedLessonProps } from '@/types/guidedLesson';
+import { AnimatedMarkdown } from './AnimatedMarkdown';
 
 export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,6 +36,8 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       });
       
       if (currentSectionIndex !== -1 && currentSectionIndex !== activeSection) {
+        console.log(`🎯 Mudando para seção ${currentSectionIndex} aos ${Math.floor(audio.currentTime)}s`);
+        console.log(`📊 Seção: "${lessonData.sections[currentSectionIndex].speechBubbleText}"`);
         setActiveSection(currentSectionIndex);
       }
     };
@@ -170,52 +172,18 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
               key={section.id}
               ref={(el) => (sectionRefs.current[index] = el)}
               className={`
-                transition-all duration-500 rounded-2xl p-8 shadow-md
+                transition-all duration-700 rounded-2xl p-8 shadow-md
                 ${index === activeSection 
-                  ? 'bg-gradient-to-br from-cyan-50 to-purple-50 border-l-4 border-cyan-500 shadow-2xl scale-[1.02]' 
-                  : 'bg-white opacity-60 hover:opacity-80'}
+                  ? 'bg-gradient-to-br from-cyan-50 to-purple-50 border-l-4 border-cyan-500 shadow-2xl scale-[1.02] animate-fade-in' 
+                  : 'bg-white opacity-40'}
+                ${index < activeSection ? 'opacity-70' : ''}
               `}
             >
-              <div className="prose prose-lg max-w-none">
-                <ReactMarkdown
-                  components={{
-                    h1: ({ children }) => (
-                      <h1 className="text-3xl font-bold text-gray-900 mb-4">{children}</h1>
-                    ),
-                    h2: ({ children }) => (
-                      <h2 className="text-2xl font-bold text-gray-900 mb-3 mt-6">{children}</h2>
-                    ),
-                    h3: ({ children }) => (
-                      <h3 className="text-xl font-bold text-gray-800 mb-2 mt-4">{children}</h3>
-                    ),
-                    h4: ({ children }) => (
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2 mt-3">{children}</h4>
-                    ),
-                    p: ({ children }) => (
-                      <p className="text-gray-700 leading-relaxed mb-4">{children}</p>
-                    ),
-                    ul: ({ children }) => (
-                      <ul className="space-y-2 mb-4">{children}</ul>
-                    ),
-                    li: ({ children }) => (
-                      <li className="text-gray-700 flex items-start">
-                        <span className="mr-2">•</span>
-                        <span>{children}</span>
-                      </li>
-                    ),
-                    blockquote: ({ children }) => (
-                      <blockquote className="border-l-4 border-primary pl-4 italic text-gray-700 my-4">
-                        {children}
-                      </blockquote>
-                    ),
-                    strong: ({ children }) => (
-                      <strong className="font-bold text-gray-900">{children}</strong>
-                    ),
-                  }}
-                >
-                  {section.content}
-                </ReactMarkdown>
-              </div>
+              <AnimatedMarkdown 
+                content={section.content}
+                isActive={index === activeSection}
+                speed={60}
+              />
             </div>
           ))}
         </div>
