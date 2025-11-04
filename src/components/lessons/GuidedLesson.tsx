@@ -146,7 +146,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       </header>
       <div className="w-full px-4 sm:px-6 pt-24 pb-32">
         <div className="w-full max-w-[2000px] mx-auto">
-          <div className="grid lg:grid-cols-[380px_1fr] gap-8 lg:gap-10">
+          <div className="grid lg:grid-cols-[340px_1fr] gap-10">
             <aside className="hidden lg:block">
               <div className="sticky top-28 space-y-5">
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 shadow-xl">
@@ -183,10 +183,10 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                 </div>
               </div>
             </aside>
-            <main className="space-y-8 min-w-0">
+            <main className="space-y-6 min-w-0">
               {lessonData.sections.map((section, index) => (
                 <div key={section.id} id={`section-${index}`} className={`transition-all duration-500 ${currentSection >= index ? 'opacity-100' : 'opacity-40'}`}>
-                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 sm:p-10 border shadow-xl ${currentSection === index ? 'border-cyan-300/50 ring-2 ring-cyan-400/20' : 'border-slate-200/50'}`}>
+                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl ${currentSection === index ? 'border-cyan-300/50 ring-2 ring-cyan-400/20' : 'border-slate-200/50'}`}>
                     <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md ${currentSection === index ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white' : 'bg-slate-100 text-slate-500'}`}>{index + 1}</div>
                       {currentSection === index && (<span className="text-xs font-medium text-cyan-600 flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />Você está aqui</span>)}
