@@ -636,7 +636,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      exercises_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          lesson_id: string | null
+          options: Json | null
+          order_index: number | null
+          question: string | null
+          type: Database["public"]["Enums"]["exercise_type"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          type?: Database["public"]["Enums"]["exercise_type"] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          type?: Database["public"]["Enums"]["exercise_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
