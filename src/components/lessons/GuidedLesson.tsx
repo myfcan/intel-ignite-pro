@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, SkipForward, SkipBack, ChevronLeft, Volume2, Sparkles } from 'lucide-react';
-import { GuidedLessonProps, WordTimestamp } from '@/types/guidedLesson';
+import { GuidedLessonProps } from '@/types/guidedLesson';
 import { SyncedText } from './SyncedText';
-import { AnimatedMarkdown } from './AnimatedMarkdown';
 
-export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps = [] }: GuidedLessonProps) => {
+export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonProps) => {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -21,38 +20,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
   const audioRef = useRef<HTMLAudioElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Função para filtrar e normalizar timestamps para a seção ativa
-  const getSectionWordTimestamps = (sectionIndex: number): WordTimestamp[] => {
-    if (wordTimestamps.length === 0) return [];
-    
-    const section = lessonData.sections[sectionIndex];
-    const nextSection = lessonData.sections[sectionIndex + 1];
-    
-    const sectionStart = section.timestamp;
-    const sectionEnd = nextSection ? nextSection.timestamp : duration;
-    
-    // Filtrar palavras que pertencem a esta seção
-    const sectionWords = wordTimestamps.filter(
-      wt => wt.start >= sectionStart && wt.start < sectionEnd
-    );
-    
-    // Normalizar timestamps para começar do zero da seção
-    const normalized = sectionWords.map(wt => ({
-      word: wt.word,
-      start: wt.start - sectionStart,
-      end: wt.end - sectionStart
-    }));
-
-    console.log(`📝 Seção ${sectionIndex} (${section.id}):`, {
-      sectionStart,
-      sectionEnd,
-      totalWords: sectionWords.length,
-      firstWord: normalized[0],
-      lastWord: normalized[normalized.length - 1]
-    });
-    
-    return normalized;
-  };
+  // Remover função de timestamps - não mais necessária
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -297,22 +265,12 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
                   
                   {/* Conteúdo da seção */}
                   <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-purple-100 prose-strong:text-cyan-400 prose-ul:text-purple-100 prose-li:text-purple-100 prose-li:marker:text-cyan-400">
-                    {wordTimestamps.length > 0 ? (
-                  <SyncedText
-                    visualContent={section.visualContent}
-                    spokenContent={section.spokenContent}
-                    isActive={index === activeSection}
-                    wordTimestamps={getSectionWordTimestamps(index)}
-                    currentTime={Math.max(0, currentTime - section.timestamp)}
-                    sectionStartTime={0}
-                  />
-                    ) : (
-                      <AnimatedMarkdown 
-                        content={section.visualContent}
-                        isActive={index === activeSection}
-                        speed={60}
-                      />
-                    )}
+                    <SyncedText
+                      content={section.visualContent}
+                      isActive={index === activeSection}
+                      isPast={index < activeSection}
+                      isFuture={index > activeSection}
+                    />
                   </div>
                 </div>
               </div>
