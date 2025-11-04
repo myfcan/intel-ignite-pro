@@ -151,13 +151,58 @@ serve(async (req) => {
       }
     }
     
+    // Gerar word timestamps
+    interface WordTimestamp {
+      word: string;
+      start: number;
+      end: number;
+    }
+    
+    const wordTimestamps: WordTimestamp[] = [];
+    let currentWord = '';
+    let wordStartIndex = 0;
+    
+    for (let i = 0; i < characters.length; i++) {
+      const char = characters[i];
+      
+      if (char === ' ' || char === '\n' || i === characters.length - 1) {
+        // Se é o último caractere e não é espaço, adiciona ao word atual
+        if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
+          currentWord += char;
+        }
+        
+        if (currentWord.trim().length > 0) {
+          const cleanWord = currentWord.trim();
+          const startTime = character_start_times_seconds[wordStartIndex];
+          const endTime = i < characters.length - 1 
+            ? character_start_times_seconds[i]
+            : character_start_times_seconds[character_start_times_seconds.length - 1];
+          
+          wordTimestamps.push({
+            word: cleanWord,
+            start: startTime,
+            end: endTime
+          });
+        }
+        
+        currentWord = '';
+        wordStartIndex = i + 1;
+      } else {
+        currentWord += char;
+      }
+    }
+    
+    console.log(`✅ Gerados ${wordTimestamps.length} word timestamps`);
+    
     return new Response(
       JSON.stringify({
         audio_base64,
         section_timestamps: sectionTimestamps,
+        word_timestamps: wordTimestamps,
         alignment_data: {
           total_characters: characters.length,
-          total_duration: character_start_times_seconds[character_start_times_seconds.length - 1]
+          total_duration: character_start_times_seconds[character_start_times_seconds.length - 1],
+          total_words: wordTimestamps.length
         }
       }),
       {

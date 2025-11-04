@@ -1,3 +1,9 @@
+export interface WordTimestamp {
+  word: string;
+  start: number; // em segundos
+  end: number; // em segundos
+}
+
 export interface LessonSection {
   id: string;
   timestamp: number; // segundo em que esta seção começa
@@ -18,4 +24,5 @@ export interface GuidedLessonProps {
   lessonData: GuidedLessonData;
   onComplete: () => void;
   audioUrl?: string; // URL do áudio gerado (opcional, pode ser gerado dinamicamente)
+  wordTimestamps?: WordTimestamp[]; // timestamps de palavras para sincronização precisa
 }

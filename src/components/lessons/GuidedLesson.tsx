@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, SkipForward, SkipBack } from 'lucide-react';
-import { GuidedLessonProps } from '@/types/guidedLesson';
+import { GuidedLessonProps, WordTimestamp } from '@/types/guidedLesson';
+import { SyncedText } from './SyncedText';
 import { AnimatedMarkdown } from './AnimatedMarkdown';
 
-export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonProps) => {
+export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps = [] }: GuidedLessonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -205,11 +206,20 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                 ${index < activeSection ? 'opacity-70' : ''}
               `}
             >
-              <AnimatedMarkdown 
-                content={section.content}
-                isActive={index === activeSection}
-                speed={60}
-              />
+              {wordTimestamps.length > 0 ? (
+                <SyncedText 
+                  content={section.content}
+                  isActive={index === activeSection}
+                  wordTimestamps={wordTimestamps}
+                  currentTime={currentTime}
+                />
+              ) : (
+                <AnimatedMarkdown 
+                  content={section.content}
+                  isActive={index === activeSection}
+                  speed={60}
+                />
+              )}
             </div>
           ))}
         </div>

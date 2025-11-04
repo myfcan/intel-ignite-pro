@@ -91,7 +91,8 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   ]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [timestamps, setTimestamps] = useState<Record<string, number> | null>(null);
+  const [sectionTimestamps, setSectionTimestamps] = useState<Record<string, number>>({});
+  const [wordTimestamps, setWordTimestamps] = useState<any[]>([]);
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -125,7 +126,8 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       const url = URL.createObjectURL(audioBlob);
       
       setAudioUrl(url);
-      setTimestamps(data.section_timestamps);
+      setSectionTimestamps(data.section_timestamps || {});
+      setWordTimestamps(data.word_timestamps || []);
       
       toast.success('Áudio gerado com sucesso! 🎉');
       
@@ -150,18 +152,16 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   };
 
   const copyTimestamps = () => {
-    if (!timestamps) return;
-    
-    const code = `sections: [
-  { id: 'gancho', timestamp: ${timestamps.gancho || 0}, ... },
-  { id: 'conceito', timestamp: ${timestamps.conceito || 0}, ... },
-  { id: 'onde-esta', timestamp: ${timestamps['onde-esta'] || 0}, ... },
-  { id: 'porque-voce-precisa', timestamp: ${timestamps['porque-voce-precisa'] || 0}, ... },
-  { id: 'proximos-passos', timestamp: ${timestamps['proximos-passos'] || 0}, ... }
-]`;
-    
-    navigator.clipboard.writeText(code);
-    toast.success('Timestamps copiados!');
+    const completeData = {
+      section_timestamps: sectionTimestamps,
+      word_timestamps: wordTimestamps,
+      stats: {
+        total_sections: Object.keys(sectionTimestamps).length,
+        total_words: wordTimestamps.length
+      }
+    };
+    navigator.clipboard.writeText(JSON.stringify(completeData, null, 2));
+    toast.success('Timestamps completos copiados para clipboard!');
   };
 
   const downloadAudio = () => {
@@ -235,7 +235,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           </div>
         </Card>
 
-        {audioUrl && timestamps && (
+        {audioUrl && Object.keys(sectionTimestamps).length > 0 && (
           <Card className="p-6 space-y-4">
             <h2 className="text-xl font-bold text-gray-900">✅ Áudio Gerado!</h2>
             
@@ -244,9 +244,9 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900">Timestamps Detectados:</h3>
+              <h3 className="font-semibold text-gray-900">Timestamps de Seções:</h3>
               <div className="bg-gray-50 p-4 rounded-lg border font-mono text-sm space-y-1">
-                {Object.entries(timestamps).map(([section, time]) => (
+                {Object.entries(sectionTimestamps).map(([section, time]) => (
                   <div key={section}>
                     <span className="text-purple-600 font-bold">{section}:</span>{' '}
                     <span className="text-gray-900">{time}s</span>
@@ -255,10 +255,32 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
               </div>
             </div>
 
+            {wordTimestamps.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">
+                  Timestamps de Palavras ({wordTimestamps.length} palavras):
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border max-h-64 overflow-y-auto">
+                  <div className="text-xs space-y-1 font-mono">
+                    {wordTimestamps.slice(0, 50).map((wt, i) => (
+                      <div key={i} className="text-gray-700">
+                        {wt.start.toFixed(2)}s - {wt.end.toFixed(2)}s: "{wt.word}"
+                      </div>
+                    ))}
+                    {wordTimestamps.length > 50 && (
+                      <div className="text-gray-500 italic pt-2">
+                        ... e mais {wordTimestamps.length - 50} palavras
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button onClick={copyTimestamps} variant="outline" className="flex-1">
                 <Copy className="w-4 h-4 mr-2" />
-                Copiar Timestamps
+                Copiar Todos os Timestamps
               </Button>
               <Button onClick={downloadAudio} variant="outline" className="flex-1">
                 <Download className="w-4 h-4 mr-2" />
