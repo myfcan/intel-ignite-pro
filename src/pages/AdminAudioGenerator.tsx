@@ -61,7 +61,7 @@ Imagina o que você pode fazer com essas horas extras que vai ganhar todo santo 
 
 SEGUNDO MOTIVO: Renda extra real.
 
-Pessoas completamente comuns, sem formação em tecnologia, estão oferecendo serviços usando IA e ganhando de quinhentos a três mil reais extras todo mês. Criação de conteúdo para empresas. Legendas para vídeos. Transcrições de áudio. Textos para sites e blogs. Posts profissionais para redes sociais.
+Pessoas comuns, sem formação e sem conhecimento em tecnologia, estão ganhando de 5 mil a 20 mil reais extras por mês, oferecendo: Criação de conteúdo para empresas. Legendas para vídeos. Transcrições de áudio. Textos para sites e blogs. Posts profissionais para redes sociais.
 
 A demanda por esses serviços é absolutamente gigantesca e só está crescendo. E você pode começar amanhã mesmo.
 
