@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Copy, Download } from 'lucide-react';
+import { Loader2, Copy, Download, CheckCircle2 } from 'lucide-react';
 
 interface SectionMarker {
   phrase: string;
@@ -93,6 +94,27 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [sectionTimestamps, setSectionTimestamps] = useState<Record<string, number>>({});
   const [wordTimestamps, setWordTimestamps] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>('');
+  const [timestampsSaved, setTimestampsSaved] = useState(false);
+
+  // Carregar lessons do tipo 'guided'
+  useEffect(() => {
+    const fetchLessons = async () => {
+      const { data } = await supabase
+        .from('lessons')
+        .select('id, title')
+        .eq('lesson_type', 'guided')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+      
+      if (data) {
+        setLessons(data);
+      }
+    };
+    
+    fetchLessons();
+  }, []);
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -101,6 +123,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     }
 
     setIsGenerating(true);
+    setTimestampsSaved(false);
     
     try {
       console.log('Chamando edge function para gerar áudio com timestamps...');
@@ -110,7 +133,8 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           text: text.trim(),
           section_markers: markers,
           voice_id: 'EXAVITQu4vr4xnSDxMaL', // Sarah
-          model_id: 'eleven_multilingual_v2'
+          model_id: 'eleven_multilingual_v2',
+          lesson_id: selectedLessonId || undefined // Passa lesson_id se selecionado
         }
       });
 
@@ -129,7 +153,45 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       setSectionTimestamps(data.section_timestamps || {});
       setWordTimestamps(data.word_timestamps || []);
       
-      toast.success('Áudio gerado com sucesso! 🎉');
+      // Se lesson_id foi fornecido, salvar também o áudio e marcar como salvo
+      if (selectedLessonId && data.word_timestamps && data.word_timestamps.length > 0) {
+        // Fazer upload do áudio para storage
+        const fileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
+        const { error: uploadError } = await supabase.storage
+          .from('lesson-audios')
+          .upload(fileName, audioBlob, {
+            contentType: 'audio/mpeg',
+            upsert: true
+          });
+        
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('lesson-audios')
+            .getPublicUrl(fileName);
+          
+          // Atualizar lesson com audio_url e word_timestamps
+          const { error: updateError } = await supabase
+            .from('lessons')
+            .update({ 
+              audio_url: urlData.publicUrl,
+              word_timestamps: data.word_timestamps
+            })
+            .eq('id', selectedLessonId);
+          
+          if (!updateError) {
+            setTimestampsSaved(true);
+            toast.success('✅ Áudio e timestamps salvos no banco!');
+          } else {
+            console.error('Erro ao atualizar lesson:', updateError);
+            toast.success('🎉 Áudio gerado! ⚠️ Erro ao salvar no banco');
+          }
+        } else {
+          console.error('Erro ao fazer upload:', uploadError);
+          toast.success('🎉 Áudio gerado! ⚠️ Erro ao fazer upload');
+        }
+      } else {
+        toast.success('Áudio gerado com sucesso! 🎉');
+      }
       
     } catch (error) {
       console.error('Erro ao gerar áudio:', error);
@@ -193,6 +255,31 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Selecionar Aula (Opcional - salva automaticamente no banco)
+              </label>
+              <Select value={selectedLessonId} onValueChange={setSelectedLessonId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma aula guiada..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (apenas gerar áudio)</SelectItem>
+                  {lessons.map((lesson) => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      {lesson.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedLessonId && (
+                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Áudio e timestamps serão salvos automaticamente no banco
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Texto da Lição (Audio Text)
               </label>
               <Textarea
@@ -237,7 +324,15 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
 
         {audioUrl && Object.keys(sectionTimestamps).length > 0 && (
           <Card className="p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900">✅ Áudio Gerado!</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">✅ Áudio Gerado!</h2>
+              {timestampsSaved && (
+                <div className="flex items-center gap-2 text-green-600 font-semibold">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Salvo no banco!
+                </div>
+              )}
+            </div>
             
             <div className="bg-white rounded-lg border p-4">
               <audio src={audioUrl} controls className="w-full" />
@@ -288,13 +383,21 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
               </Button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900">
-                <strong>Próximo passo:</strong> Copie os timestamps acima e atualize o arquivo{' '}
-                <code className="bg-blue-100 px-2 py-1 rounded">src/data/lessons/fundamentos-01.ts</code>{' '}
-                com os valores corretos.
-              </p>
-            </div>
+            {!timestampsSaved && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <strong>Dica:</strong> Selecione uma aula acima antes de gerar o áudio para salvar automaticamente no banco de dados!
+                </p>
+              </div>
+            )}
+            
+            {timestampsSaved && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm text-green-900">
+                  <strong>✅ Sucesso!</strong> O áudio e os timestamps foram salvos no banco de dados. Agora o efeito karaoke vai funcionar automaticamente na aula!
+                </p>
+              </div>
+            )}
           </Card>
         )}
       </div>

@@ -40,7 +40,7 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime }: S
     return words.map((segment, i) => {
       // Se for espaço, retorna como está
       if (/^\s+$/.test(segment)) {
-        return segment;
+        return <span key={i}>{segment}</span>;
       }
 
       const currentWordIndex = wordIndex;
@@ -57,10 +57,13 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime }: S
           }}
           className={`
             transition-all duration-200 inline-block
-            ${isCurrentWord ? 'bg-primary/20 text-primary font-semibold px-0.5 rounded scale-105' : ''}
-            ${isPastWord ? 'opacity-40' : ''}
-            ${!isCurrentWord && !isPastWord ? 'opacity-90' : ''}
+            ${isCurrentWord ? 'bg-cyan-400/20 text-cyan-400 font-bold px-1 rounded scale-105' : ''}
+            ${isPastWord ? 'text-white' : ''}
+            ${!isCurrentWord && !isPastWord ? 'text-purple-300/50' : ''}
           `}
+          style={{
+            transformOrigin: 'center',
+          }}
         >
           {segment}
         </span>
