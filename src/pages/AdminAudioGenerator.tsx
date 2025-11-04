@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Copy, Download, CheckCircle2 } from 'lucide-react';
+import { Loader2, Copy, Download, CheckCircle2, RefreshCw } from 'lucide-react';
+import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
 
 interface SectionMarker {
   phrase: string;
@@ -97,6 +98,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   const [lessons, setLessons] = useState<any[]>([]);
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
   const [timestampsSaved, setTimestampsSaved] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Carregar lessons do tipo 'guided'
   useEffect(() => {
@@ -115,6 +117,37 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     
     fetchLessons();
   }, []);
+
+  const handleRegenerateFundamentos = async () => {
+    setIsRegenerating(true);
+    
+    try {
+      const lessonId = '11111111-1111-1111-1111-111111111101';
+      
+      toast.info('Regenerando áudio com timestamps usando spokenContent...');
+      
+      // Usar o fundamentos01AudioText que é o texto falado completo
+      const { data, error } = await supabase.functions.invoke('generate-audio-elevenlabs', {
+        body: {
+          text: fundamentos01AudioText,
+          lesson_id: lessonId,
+          voice_id: 'EXAVITQu4vr4xnSDxMaL', // Sarah
+          model_id: 'eleven_multilingual_v2'
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success('✅ Timestamps regenerados e salvos automaticamente no banco!');
+      toast.info('🔄 Recarregue a página da lição para ver o efeito karaoke funcionando!');
+      
+    } catch (error) {
+      console.error('Erro ao regenerar:', error);
+      toast.error('Erro ao regenerar: ' + (error as Error).message);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -250,6 +283,48 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
             Cole o texto da lição e gere o áudio com timestamps automáticos
           </p>
         </div>
+
+        {/* Botão especial para regenerar Fundamentos 01 */}
+        <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <RefreshCw className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-900 mb-1">
+                  Regenerar Timestamps - Fundamentos 01
+                </h2>
+                <p className="text-sm text-gray-600 mb-3">
+                  Esta ferramenta vai regenerar os timestamps palavra-por-palavra para a lição "O que é IA e por que você precisa dela" 
+                  usando os novos campos <code className="bg-purple-100 px-1 rounded">spokenContent</code> de cada section.
+                </p>
+                <div className="bg-white/50 rounded p-3 text-xs text-gray-700 space-y-1 mb-3">
+                  <div>✅ Gera áudio completo com ElevenLabs</div>
+                  <div>✅ Extrai timestamps palavra-por-palavra automaticamente</div>
+                  <div>✅ Salva no banco de dados (tabela <code>lessons</code>)</div>
+                  <div>✅ Sincronização perfeita entre áudio e texto falado</div>
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={handleRegenerateFundamentos}
+              disabled={isRegenerating}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              size="lg"
+            >
+              {isRegenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Regenerando timestamps...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-5 h-5 mr-2" />
+                  Regenerar Timestamps Agora
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
 
         <Card className="p-6">
           <div className="space-y-4">
