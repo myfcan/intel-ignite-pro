@@ -147,6 +147,7 @@ export type Database = {
           passing_score: number | null
           title: string
           trail_id: string | null
+          word_timestamps: Json | null
         }
         Insert: {
           audio_url?: string | null
@@ -164,6 +165,7 @@ export type Database = {
           passing_score?: number | null
           title: string
           trail_id?: string | null
+          word_timestamps?: Json | null
         }
         Update: {
           audio_url?: string | null
@@ -181,6 +183,7 @@ export type Database = {
           passing_score?: number | null
           title?: string
           trail_id?: string | null
+          word_timestamps?: Json | null
         }
         Relationships: [
           {

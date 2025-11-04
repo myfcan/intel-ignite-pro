@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLesson } from '@/hooks/useLesson';
 import { FillBlanksLesson } from './FillBlanksLesson';
@@ -11,6 +11,7 @@ import { GuidedLesson } from './GuidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
+import { WordTimestamp } from '@/types/guidedLesson';
 
 interface InteractiveLessonProps {
   lessonId: string;
@@ -21,7 +22,27 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [startTime] = useState(Date.now());
   const [showMaia, setShowMaia] = useState(false);
   const [isLastLesson, setIsLastLesson] = useState(false);
+  const [wordTimestamps, setWordTimestamps] = useState<WordTimestamp[]>([]);
   const navigate = useNavigate();
+
+  // Buscar word_timestamps do banco para aulas guiadas
+  useEffect(() => {
+    const fetchWordTimestamps = async () => {
+      if (lesson?.lesson_type === 'guided') {
+        const { data } = await supabase
+          .from('lessons')
+          .select('word_timestamps')
+          .eq('id', lessonId)
+          .single();
+        
+        if (data?.word_timestamps) {
+          setWordTimestamps(data.word_timestamps as unknown as WordTimestamp[]);
+        }
+      }
+    };
+    
+    fetchWordTimestamps();
+  }, [lessonId, lesson?.lesson_type]);
 
   if (loading) {
     return (
@@ -154,6 +175,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             lessonData={guidedLessonData}
             onComplete={handleGuidedComplete}
             audioUrl={audioUrl}
+            wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
           />
         </>
       );
