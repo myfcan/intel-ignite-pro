@@ -29,19 +29,29 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
     const nextSection = lessonData.sections[sectionIndex + 1];
     
     const sectionStart = section.timestamp;
-    const sectionEnd = nextSection ? nextSection.timestamp : duration || Infinity;
+    const sectionEnd = nextSection ? nextSection.timestamp : duration;
     
-    // Filtrar timestamps que estão dentro do intervalo da seção
-    const sectionTimestamps = wordTimestamps.filter(
+    // Filtrar palavras que pertencem a esta seção
+    const sectionWords = wordTimestamps.filter(
       wt => wt.start >= sectionStart && wt.start < sectionEnd
     );
     
-    // Normalizar timestamps (subtrair o tempo de início da seção)
-    return sectionTimestamps.map(wt => ({
+    // Normalizar timestamps para começar do zero da seção
+    const normalized = sectionWords.map(wt => ({
       word: wt.word,
       start: wt.start - sectionStart,
       end: wt.end - sectionStart
     }));
+
+    console.log(`📝 Seção ${sectionIndex} (${section.id}):`, {
+      sectionStart,
+      sectionEnd,
+      totalWords: sectionWords.length,
+      firstWord: normalized[0],
+      lastWord: normalized[normalized.length - 1]
+    });
+    
+    return normalized;
   };
 
   useEffect(() => {
@@ -288,13 +298,13 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
                   {/* Conteúdo da seção */}
                   <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-purple-100 prose-strong:text-cyan-400 prose-ul:text-purple-100 prose-li:text-purple-100 prose-li:marker:text-cyan-400">
                     {wordTimestamps.length > 0 ? (
-                      <SyncedText 
-                        content={section.content}
-                        isActive={index === activeSection}
-                        wordTimestamps={getSectionWordTimestamps(index)}
-                        currentTime={currentTime - section.timestamp}
-                        sectionStartTime={0}
-                      />
+                  <SyncedText
+                    content={section.content}
+                    isActive={index === activeSection}
+                    wordTimestamps={getSectionWordTimestamps(index)}
+                    currentTime={Math.max(0, currentTime - section.timestamp)}
+                    sectionStartTime={0}
+                  />
                     ) : (
                       <AnimatedMarkdown 
                         content={section.content}

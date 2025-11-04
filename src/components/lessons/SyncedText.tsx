@@ -17,18 +17,40 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
   // Índice global que será resetado a cada render
   let globalWordIndex = 0;
 
-  // Ajustar tempo atual baseado no início da seção
-  const adjustedTime = currentTime - sectionStartTime;
+  // Como os timestamps já vêm normalizados do GuidedLesson, usamos currentTime diretamente
+  const adjustedTime = currentTime;
 
-  // Encontrar índice da palavra ativa
+  // Encontrar índice da palavra ativa (palavra atual sendo falada)
   const activeWordIndex = wordTimestamps.findIndex(
     (wt) => adjustedTime >= wt.start && adjustedTime < wt.end
   );
 
+  // Se não encontrou palavra ativa, usar a última palavra antes do tempo atual
+  const effectiveActiveIndex = activeWordIndex >= 0 
+    ? activeWordIndex 
+    : wordTimestamps.findIndex((wt, idx) => {
+        const nextWord = wordTimestamps[idx + 1];
+        return adjustedTime >= wt.end && (!nextWord || adjustedTime < nextWord.start);
+      });
+
+  // Log de debug a cada 2 segundos (aproximadamente)
+  useEffect(() => {
+    if (isActive && Math.floor(adjustedTime) % 2 === 0) {
+      const activeWord = wordTimestamps[effectiveActiveIndex];
+      console.log(`🎤 Karaoke:`, {
+        adjustedTime: adjustedTime.toFixed(2),
+        effectiveActiveIndex,
+        activeWord: activeWord?.word,
+        wordStart: activeWord?.start.toFixed(2),
+        wordEnd: activeWord?.end.toFixed(2)
+      });
+    }
+  }, [Math.floor(adjustedTime)]);
+
   // Scroll automático para palavra ativa
   useEffect(() => {
-    if (activeWordIndex >= 0 && isActive) {
-      const wordElement = wordRefs.current.get(activeWordIndex);
+    if (effectiveActiveIndex >= 0 && isActive) {
+      const wordElement = wordRefs.current.get(effectiveActiveIndex);
       if (wordElement) {
         wordElement.scrollIntoView({
           behavior: 'smooth',
@@ -37,7 +59,7 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
         });
       }
     }
-  }, [activeWordIndex, isActive]);
+  }, [effectiveActiveIndex, isActive]);
 
   // Processar markdown para adicionar spans nas palavras
   const processTextWithSpans = (text: string) => {
@@ -52,8 +74,8 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
       const currentWordIndex = globalWordIndex;
       globalWordIndex++;
 
-      const isCurrentWord = currentWordIndex === activeWordIndex;
-      const isPastWord = currentWordIndex < activeWordIndex;
+      const isCurrentWord = currentWordIndex === effectiveActiveIndex;
+      const isPastWord = effectiveActiveIndex >= 0 && currentWordIndex < effectiveActiveIndex;
 
       return (
         <span
