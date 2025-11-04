@@ -181,7 +181,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-xs font-semibold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">{Math.round(progress)}%</span>
-              <div className="w-20 sm:w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
@@ -193,12 +193,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-0 pb-32">
+      <div className="w-full px-4 sm:px-6 pt-20 pb-32">
         <div className="w-full max-w-[3200px] mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
             <aside className="hidden lg:block">
-              <div className="sticky top-0 space-y-3">
+              <div className="sticky top-20 space-y-3">
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
