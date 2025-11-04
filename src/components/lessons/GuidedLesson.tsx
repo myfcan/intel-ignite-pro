@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, ChevronLeft, Volume2, Sparkles } from 'lucide-react';
 import { GuidedLessonProps, WordTimestamp } from '@/types/guidedLesson';
 import { SyncedText } from './SyncedText';
 import { AnimatedMarkdown } from './AnimatedMarkdown';
 
 export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps = [] }: GuidedLessonProps) => {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [activeSection, setActiveSection] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [audioLoaded, setAudioLoaded] = useState(false);
+  const [isSkippingForward, setIsSkippingForward] = useState(false);
+  const [isSkippingBackward, setIsSkippingBackward] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -81,16 +85,10 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
   // Separate effect for smooth scrolling
   useEffect(() => {
     if (activeSection !== null && sectionRefs.current[activeSection]) {
-      // Scroll para o topo da seção com um offset para compensar o header fixo
       const element = sectionRefs.current[activeSection];
-      const headerOffset = 200; // Altura do header + espaço extra
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+      const yOffset = -120; // Offset para não ficar colado no topo
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
   }, [activeSection]);
 
@@ -106,16 +104,20 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
     setIsPlaying(!isPlaying);
   };
 
-  const skipToSection = (direction: 'prev' | 'next') => {
+  const skipBackward = () => {
     const audio = audioRef.current;
     if (!audio) return;
+    setIsSkippingBackward(true);
+    audio.currentTime = Math.max(0, audio.currentTime - 10);
+    setTimeout(() => setIsSkippingBackward(false), 300);
+  };
 
-    const newIndex = direction === 'next' 
-      ? Math.min(activeSection + 1, lessonData.sections.length - 1)
-      : Math.max(activeSection - 1, 0);
-    
-    audio.currentTime = lessonData.sections[newIndex].timestamp;
-    setActiveSection(newIndex);
+  const skipForward = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setIsSkippingForward(true);
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+    setTimeout(() => setIsSkippingForward(false), 300);
   };
 
   const cyclePlaybackRate = () => {
@@ -135,211 +137,328 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = percent * (audio.duration || 0);
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-[#0F0522] to-[#1A0B2E] text-white pb-32">
       {/* Header Fixo */}
-      <header className="sticky top-0 z-40 bg-white border-b-2 border-gray-100 shadow-soft">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{lessonData.title}</h1>
-              <p className="text-sm text-gray-600">{lessonData.trackName}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onComplete}
-              className="hidden md:flex"
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-xl border-b border-purple-500/20">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-purple-800/50 rounded-lg transition-all group"
+              title="Voltar"
             >
-              Ir para Exercício →
-            </Button>
+              <ChevronLeft className="w-5 h-5 text-purple-300 group-hover:text-white transition-colors" />
+            </button>
+            
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-white">{lessonData.title}</h1>
+              <p className="text-sm text-purple-300">{lessonData.trackName}</p>
+            </div>
+            
+            <button 
+              onClick={onComplete}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-medium hover:shadow-lg hover:shadow-cyan-400/25 transition-all flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Ir para Exercício</span>
+              <span className="sm:hidden">Exercício</span>
+            </button>
           </div>
-          <Progress value={progressPercent} className="h-2" />
+          
+          {/* Barra de progresso melhorada */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-purple-300">Progresso da aula</span>
+              <span className="text-white font-semibold">{Math.round(progressPercent)}%</span>
+            </div>
+            <div className="h-2 bg-purple-900/50 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-500 relative"
+                style={{ width: `${progressPercent}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* MAIA Narrator Section - Sticky Floating */}
-        <div className="sticky top-24 z-30 mb-8 transition-all duration-500">
-          <div className="flex items-start gap-6 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-2xl p-6 shadow-lg">
-            <div className="relative flex-shrink-0">
+      <main className="container mx-auto px-4 pt-36 pb-48">
+        <div className="max-w-4xl mx-auto">
+          {/* MAIA Narradora */}
+          <div className="mb-12 flex flex-col items-center">
+            <div className="mb-6 animate-fade-in">
               <img 
                 src="/maia-avatar.png" 
-                alt="MAIA"
-                className={`w-24 h-24 transition-transform duration-700 ${isPlaying ? 'animate-pulse' : ''}`}
+                alt="MAIA" 
+                className="w-32 h-32 object-contain drop-shadow-2xl"
               />
-              {isPlaying && (
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
-                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-100"></span>
-                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse delay-200"></span>
-                  </div>
-                </div>
-              )}
             </div>
             
-            {/* Balão de Fala da MAIA */}
-            <div className="relative bg-white rounded-2xl shadow-xl p-6 flex-1 border-2 border-cyan-100 animate-fade-in">
-              <div className="absolute -left-3 top-8 w-6 h-6 bg-white transform rotate-45 border-l-2 border-b-2 border-cyan-100"></div>
-              <p className="text-base text-gray-800 font-medium leading-relaxed">
-                {lessonData.sections[activeSection]?.speechBubbleText}
-              </p>
+            {/* Balão de fala sincronizado */}
+            <div className="relative max-w-2xl w-full">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-cyan-400/30 shadow-2xl relative overflow-hidden">
+                {isPlaying && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-ping" />
+                )}
+                <p className="text-lg text-white text-center font-medium leading-relaxed">
+                  {lessonData.sections[activeSection]?.speechBubbleText}
+                </p>
+              </div>
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[12px] border-b-white/10" />
             </div>
           </div>
-        </div>
 
-        {/* Seções de Conteúdo */}
-        <div className="space-y-6">
-          {lessonData.sections.map((section, index) => (
-            <div
-              key={section.id}
-              ref={(el) => (sectionRefs.current[index] = el)}
-              className={`
-                transition-all duration-700 rounded-2xl p-8 shadow-md
-                ${index === activeSection 
-                  ? 'bg-gradient-to-br from-cyan-50 to-purple-50 border-l-4 border-cyan-500 shadow-2xl scale-[1.02] animate-fade-in' 
-                  : 'bg-white opacity-40'}
-                ${index < activeSection ? 'opacity-70' : ''}
-              `}
-            >
-              {wordTimestamps.length > 0 ? (
-                <SyncedText 
-                  content={section.content}
-                  isActive={index === activeSection}
-                  wordTimestamps={wordTimestamps}
-                  currentTime={currentTime}
-                />
-              ) : (
-                <AnimatedMarkdown 
-                  content={section.content}
-                  isActive={index === activeSection}
-                  speed={60}
-                />
-              )}
-            </div>
-          ))}
+          {/* Seções de Conteúdo */}
+          <div className="space-y-8">
+            {lessonData.sections.map((section, index) => (
+              <div
+                key={section.id}
+                id={`section-${index}`}
+                ref={(el) => (sectionRefs.current[index] = el)}
+                className={`
+                  transition-all duration-500 transform
+                  ${activeSection >= index 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-30 translate-y-4'
+                  }
+                `}
+              >
+                <div className={`
+                  bg-purple-900/10 backdrop-blur-sm rounded-2xl p-8 border
+                  ${activeSection === index 
+                    ? 'border-cyan-400/50 shadow-2xl shadow-cyan-500/20 ring-2 ring-cyan-400/20' 
+                    : 'border-purple-500/20'
+                  }
+                `}>
+                  {/* Indicador de seção */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-all
+                      ${activeSection === index 
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white scale-110' 
+                        : 'bg-purple-900/30 text-purple-400'
+                      }
+                    `}>
+                      {index + 1}
+                    </div>
+                    {activeSection === index && (
+                      <span className="text-cyan-400 text-sm font-medium animate-pulse flex items-center gap-2">
+                        <span className="w-2 h-2 bg-cyan-400 rounded-full" />
+                        Você está aqui
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Conteúdo da seção */}
+                  <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-purple-100 prose-strong:text-cyan-400 prose-ul:text-purple-100 prose-li:text-purple-100 prose-li:marker:text-cyan-400">
+                    {wordTimestamps.length > 0 ? (
+                      <SyncedText 
+                        content={section.content}
+                        isActive={index === activeSection}
+                        wordTimestamps={wordTimestamps}
+                        currentTime={currentTime}
+                      />
+                    ) : (
+                      <AnimatedMarkdown 
+                        content={section.content}
+                        isActive={index === activeSection}
+                        speed={60}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
 
-      {/* Audio Player Fixo no Rodapé */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          {audioUrl && (
-            <>
-              <audio ref={audioRef} src={audioUrl} preload="auto" />
-              
-              <div className="flex flex-col gap-3">
-                {/* Controles Principais */}
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={() => skipToSection('prev')}
-                    size="icon"
-                    variant="outline"
-                    disabled={activeSection === 0}
-                    className="h-10 w-10"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button
-                    onClick={togglePlay}
-                    size="icon"
-                    className="h-14 w-14 rounded-full bg-gradient-primary"
-                    disabled={!audioLoaded}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-6 h-6" />
-                    ) : (
-                      <Play className="w-6 h-6 ml-0.5" />
-                    )}
-                  </Button>
-                  
-                  <Button
-                    onClick={() => skipToSection('next')}
-                    size="icon"
-                    variant="outline"
-                    disabled={activeSection === lessonData.sections.length - 1}
-                    className="h-10 w-10"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </Button>
-
-                  {/* Barra de Progresso com Marcadores de Seções */}
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Progress value={progressPercent} className="h-2" />
-                      {/* Section Markers */}
-                      {lessonData.sections.map((section, index) => {
-                        const markerPosition = duration > 0 ? (section.timestamp / duration) * 100 : 0;
-                        return (
-                          <div
-                            key={section.id}
-                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-purple-500 rounded-full shadow-md cursor-pointer hover:scale-125 transition-transform z-10"
-                            style={{ left: `${markerPosition}%` }}
-                            title={`Seção ${index + 1}`}
-                            onClick={() => {
-                              if (audioRef.current) {
-                                audioRef.current.currentTime = section.timestamp;
-                              }
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(currentTime)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(duration)}
-                      </span>
-                    </div>
+      {/* Audio Player Fixo no Rodapé - VERSÃO MELHORADA */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-purple-500/20 z-50">
+        <div className="container mx-auto px-4 py-6">
+          <div className="max-w-6xl mx-auto">
+            {audioUrl && (
+              <>
+                <audio ref={audioRef} src={audioUrl} preload="auto" />
+                
+                {/* Desktop layout */}
+                <div className="hidden md:flex items-center justify-between gap-4">
+                  {/* Controles de navegação */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={skipBackward}
+                      disabled={!audioLoaded}
+                      className={`
+                        w-11 h-11 bg-purple-800/50 hover:bg-purple-700/50 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all
+                        ${isSkippingBackward ? 'scale-90' : 'scale-100'}
+                      `}
+                      title="Voltar 10 segundos"
+                    >
+                      <SkipBack size={20} />
+                    </button>
+                    
+                    <button
+                      onClick={togglePlay}
+                      disabled={!audioLoaded}
+                      className="w-14 h-14 bg-gradient-to-r from-cyan-400 to-purple-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white hover:shadow-lg hover:shadow-cyan-400/25 transition-all hover:scale-105 active:scale-95"
+                    >
+                      {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+                    </button>
+                    
+                    <button
+                      onClick={skipForward}
+                      disabled={!audioLoaded}
+                      className={`
+                        w-11 h-11 bg-purple-800/50 hover:bg-purple-700/50 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all
+                        ${isSkippingForward ? 'scale-90' : 'scale-100'}
+                      `}
+                      title="Avançar 10 segundos"
+                    >
+                      <SkipForward size={20} />
+                    </button>
                   </div>
-
-                  {/* Velocidade */}
-                  <Button
+                  
+                  {/* Barra de progresso do áudio */}
+                  <div className="flex-1 flex items-center gap-3">
+                    <Volume2 className="text-cyan-400 flex-shrink-0" size={20} />
+                    
+                    <span className="text-sm text-purple-300 font-medium min-w-[45px] tabular-nums">
+                      {formatTime(currentTime)}
+                    </span>
+                    
+                    <div 
+                      className="flex-1 h-3 bg-purple-900/30 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all group"
+                      onClick={handleProgressBarClick}
+                      title="Clique para pular para um ponto específico"
+                    >
+                      <div 
+                        className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative"
+                        style={{ width: `${progressPercent}%` }}
+                      >
+                        <div className="absolute right-0 top-0 w-1 h-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    
+                    <span className="text-sm text-purple-300 font-medium min-w-[45px] tabular-nums">
+                      {formatTime(duration)}
+                    </span>
+                  </div>
+                  
+                  <button
                     onClick={cyclePlaybackRate}
-                    size="sm"
-                    variant="outline"
-                    className="text-xs font-mono h-10 px-3"
+                    disabled={!audioLoaded}
+                    className="px-5 py-3 bg-purple-600/80 hover:bg-purple-600 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all min-w-[70px] text-lg hover:scale-105 active:scale-95"
                   >
                     {playbackRate}x
-                  </Button>
-
-                  {/* Botão Continue (Desktop) */}
-                  <Button
+                  </button>
+                  
+                  <button
                     onClick={onComplete}
-                    className="hidden md:flex bg-gradient-primary"
+                    className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold hover:shadow-lg hover:shadow-cyan-400/25 transition-all whitespace-nowrap hover:scale-105 active:scale-95"
                   >
                     Continuar para Exercício
-                  </Button>
+                  </button>
                 </div>
+                
+                {/* Mobile layout */}
+                <div className="flex md:hidden flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <Volume2 className="text-cyan-400 flex-shrink-0" size={18} />
+                    
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div 
+                        className="h-3 bg-purple-900/30 rounded-full overflow-hidden cursor-pointer active:h-4 transition-all"
+                        onClick={handleProgressBarClick}
+                      >
+                        <div 
+                          className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      
+                      <div className="flex justify-between text-xs text-purple-300 font-medium tabular-nums">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={skipBackward}
+                        disabled={!audioLoaded}
+                        className={`
+                          w-10 h-10 bg-purple-800/50 active:bg-purple-700/50 disabled:opacity-30 rounded-full flex items-center justify-center text-white
+                          ${isSkippingBackward ? 'scale-90' : 'scale-100'}
+                        `}
+                      >
+                        <SkipBack size={18} />
+                      </button>
+                      
+                      <button
+                        onClick={togglePlay}
+                        disabled={!audioLoaded}
+                        className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-500 disabled:opacity-30 rounded-full flex items-center justify-center text-white active:scale-95"
+                      >
+                        {isPlaying ? <Pause size={22} /> : <Play size={22} className="ml-0.5" />}
+                      </button>
+                      
+                      <button
+                        onClick={skipForward}
+                        disabled={!audioLoaded}
+                        className={`
+                          w-10 h-10 bg-purple-800/50 active:bg-purple-700/50 disabled:opacity-30 rounded-full flex items-center justify-center text-white
+                          ${isSkippingForward ? 'scale-90' : 'scale-100'}
+                        `}
+                      >
+                        <SkipForward size={18} />
+                      </button>
+                      
+                      <button
+                        onClick={cyclePlaybackRate}
+                        disabled={!audioLoaded}
+                        className="px-3 py-2 bg-purple-600/80 active:bg-purple-600 disabled:opacity-30 rounded-lg text-white font-bold text-sm min-w-[50px]"
+                      >
+                        {playbackRate}x
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={onComplete}
+                      className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm active:scale-95"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
-                {/* Botão Continue (Mobile) */}
-                <Button
-                  onClick={onComplete}
-                  className="md:hidden w-full bg-gradient-primary"
-                >
+            {!audioUrl && (
+              <div className="text-center py-4">
+                <p className="text-sm text-purple-300 mb-3">
+                  Áudio não disponível para esta aula
+                </p>
+                <button onClick={onComplete} className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold">
                   Continuar para Exercício
-                </Button>
+                </button>
               </div>
-            </>
-          )}
-
-          {!audioUrl && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-3">
-                Áudio não disponível para esta aula
-              </p>
-              <Button onClick={onComplete} className="bg-gradient-primary">
-                Continuar para Exercício
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </footer>
     </div>
