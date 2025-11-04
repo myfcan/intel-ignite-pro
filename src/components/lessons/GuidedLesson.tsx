@@ -196,9 +196,9 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       </div>
       
       {/* ===== CONTEÚDO PRINCIPAL ===== */}
-      <div className="container mx-auto px-4 pt-20 pb-32">
-        <div className="max-w-[1230px] mx-auto">
-          <div className="grid lg:grid-cols-[360px_1fr] gap-6">
+      <div className="container mx-auto px-6 pt-20 pb-32">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-[400px_1fr] gap-8">
             
             {/* ===== SIDEBAR: MAIA SEMPRE VISÍVEL ===== */}
             <aside className="hidden lg:block">
@@ -248,7 +248,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                           }
                         }}
                         className={`
-                          w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                          w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all
                           ${activeSection === index
                             ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-md'
                             : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -272,7 +272,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
             </aside>
             
             {/* ===== CONTEÚDO: SEÇÕES COMPACTAS ===== */}
-            <main className="space-y-5">
+            <main className="space-y-6">
               {lessonData.sections.map((section, index) => (
                 <div
                   key={section.id}
@@ -284,7 +284,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   `}
                 >
                   <div className={`
-                    bg-white/80 backdrop-blur-xl rounded-2xl px-8 py-6 border shadow-lg
+                    bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-lg
                     ${activeSection === index 
                       ? 'border-cyan-300/50 ring-2 ring-cyan-400/20' 
                       : 'border-slate-200/50'
@@ -355,8 +355,8 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
 
       {/* ===== PLAYER FIXO - DESTACADO ===== */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
-        <div className="container mx-auto px-4 py-3">
-          <div className="max-w-[1230px] mx-auto">
+        <div className="container mx-auto px-6 py-3">
+          <div className="max-w-7xl mx-auto">
             
             {/* Desktop */}
             <div className="hidden md:flex items-center gap-4">
