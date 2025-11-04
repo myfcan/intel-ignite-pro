@@ -178,7 +178,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-0 pb-32">
+      <div className="w-full px-4 sm:px-6 pt-24 pb-32">
         <div className="w-full max-w-[3200px] mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
