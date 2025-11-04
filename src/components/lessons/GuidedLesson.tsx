@@ -284,7 +284,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   `}
                 >
                   <div className={`
-                    bg-white/80 backdrop-blur-xl rounded-2xl p-6 border shadow-lg
+                    bg-white/80 backdrop-blur-xl rounded-2xl px-8 py-6 border shadow-lg
                     ${activeSection === index 
                       ? 'border-cyan-300/50 ring-2 ring-cyan-400/20' 
                       : 'border-slate-200/50'
