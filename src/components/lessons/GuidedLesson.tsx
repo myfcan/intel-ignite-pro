@@ -76,6 +76,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const handleLoadedMetadata = () => {
       console.log(`✅ [ÁUDIO] Carregado com sucesso! Duração: ${audio.duration}s`);
       setDuration(audio.duration);
+      // Tentar dar play automaticamente
+      audio.play().then(() => {
+        console.log('🎵 [AUTOPLAY] Áudio iniciado automaticamente');
+        setIsPlaying(true);
+      }).catch(err => {
+        console.warn('⚠️ [AUTOPLAY] Navegador bloqueou autoplay:', err);
+      });
     };
     
     const handleError = (e: Event) => {
@@ -186,12 +193,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-40 pb-32">
+      <div className="w-full px-4 sm:px-6 pt-24 pb-32">
         <div className="w-full max-w-[3200px] mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
             <aside className="hidden lg:block">
-              <div className="sticky top-40 space-y-3">
+              <div className="sticky top-24 space-y-3">
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
@@ -369,6 +376,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
+          autoPlay
         />
       )}
     </div>
