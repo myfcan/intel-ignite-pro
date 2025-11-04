@@ -197,7 +197,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       
       {/* ===== CONTEÚDO PRINCIPAL ===== */}
       <div className="container mx-auto px-4 pt-20 pb-32">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-[1230px] mx-auto">
           <div className="grid lg:grid-cols-[360px_1fr] gap-6">
             
             {/* ===== SIDEBAR: MAIA SEMPRE VISÍVEL ===== */}
@@ -356,7 +356,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       {/* ===== PLAYER FIXO - DESTACADO ===== */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
         <div className="container mx-auto px-4 py-3">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-[1230px] mx-auto">
             
             {/* Desktop */}
             <div className="hidden md:flex items-center gap-4">
