@@ -299,7 +299,8 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
                   <div className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-purple-100 prose-strong:text-cyan-400 prose-ul:text-purple-100 prose-li:text-purple-100 prose-li:marker:text-cyan-400">
                     {wordTimestamps.length > 0 ? (
                   <SyncedText
-                    content={section.content}
+                    visualContent={section.visualContent}
+                    spokenContent={section.spokenContent}
                     isActive={index === activeSection}
                     wordTimestamps={getSectionWordTimestamps(index)}
                     currentTime={Math.max(0, currentTime - section.timestamp)}
@@ -307,7 +308,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl, wordTimestamps 
                   />
                     ) : (
                       <AnimatedMarkdown 
-                        content={section.content}
+                        content={section.visualContent}
                         isActive={index === activeSection}
                         speed={60}
                       />

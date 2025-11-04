@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import { WordTimestamp } from '@/types/guidedLesson';
 
 interface SyncedTextProps {
-  content: string;
+  visualContent: string;
+  spokenContent: string;
   isActive: boolean;
   wordTimestamps: WordTimestamp[];
   currentTime: number;
@@ -19,15 +20,15 @@ const extractPlainText = (markdown: string): string => {
     .trim();
 };
 
-export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sectionStartTime = 0 }: SyncedTextProps) => {
+export const SyncedText = ({ visualContent, spokenContent, isActive, wordTimestamps, currentTime, sectionStartTime = 0 }: SyncedTextProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wordRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
   
-  // Verificar se o conteúdo bate com os timestamps
+  // Verificar se o conteúdo falado bate com os timestamps
   const syncEnabled = useMemo(() => {
     if (wordTimestamps.length === 0) return false;
     
-    const plainText = extractPlainText(content);
+    const plainText = extractPlainText(spokenContent);
     const plainWords = plainText.split(/\s+/).filter(w => w.length > 0);
     
     if (plainWords.length === 0) return false;
@@ -49,9 +50,9 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
     });
     
     return matches;
-  }, [content, wordTimestamps]);
+  }, [spokenContent, wordTimestamps]);
   
-  // Se não sincronizar, retornar apenas renderização estática
+  // Se não sincronizar, retornar apenas renderização estática do visualContent
   if (!syncEnabled) {
     return (
       <div
@@ -61,7 +62,7 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
           ${isActive ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-2'}
         `}
       >
-        <ReactMarkdown>{content}</ReactMarkdown>
+        <ReactMarkdown>{visualContent}</ReactMarkdown>
       </div>
     );
   }
@@ -175,7 +176,7 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
           ),
         }}
       >
-        {content}
+        {visualContent}
       </ReactMarkdown>
     </div>
   );

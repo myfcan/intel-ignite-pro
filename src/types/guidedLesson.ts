@@ -8,7 +8,8 @@ export interface LessonSection {
   id: string;
   timestamp: number; // segundo em que esta seção começa
   speechBubbleText: string; // frase curta para balão da MAIA (1-2 linhas)
-  content: string; // texto completo da seção (pode usar markdown)
+  visualContent: string; // texto visual com markdown e emojis (exibido na tela)
+  spokenContent: string; // texto puro falado pela MAIA (para sincronização de áudio)
 }
 
 export interface GuidedLessonData {
