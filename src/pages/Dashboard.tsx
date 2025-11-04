@@ -47,12 +47,6 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchTrailsWithProgress();
-    }
-  }, [user]);
-
   const checkAuth = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -91,8 +85,12 @@ const Dashboard = () => {
           throw createError;
         }
         setUser(newUser);
+        // Fetch trails immediately after setting user
+        await fetchTrailsWithProgress(newUser.id);
       } else {
         setUser(userData);
+        // Fetch trails immediately after setting user
+        await fetchTrailsWithProgress(userData.id);
       }
     } catch (error: any) {
       console.error('Error checking auth:', error);
@@ -107,7 +105,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTrailsWithProgress = async () => {
+  const fetchTrailsWithProgress = async (userId: string) => {
     try {
       // Fetch all trails
       const { data: trailsData, error: trailsError } = await supabase
@@ -136,7 +134,7 @@ const Dashboard = () => {
         const { data: completedProgress } = await supabase
           .from('user_progress')
           .select('lesson_id')
-          .eq('user_id', user!.id)
+          .eq('user_id', userId)
           .eq('status', 'completed')
           .in('lesson_id', lessons?.map(l => l.id) || []);
 
