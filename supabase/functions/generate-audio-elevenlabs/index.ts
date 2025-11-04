@@ -98,11 +98,13 @@ serve(async (req) => {
     
     // Processar timestamps se disponíveis
     let wordTimestamps: Array<{word: string; start: number; end: number}> = [];
-    if (alignment?.characters && alignment.characters.length > 0) {
+    if (alignment?.characters && alignment?.character_start_times_seconds && 
+        alignment.characters.length > 0 && alignment.character_start_times_seconds.length > 0) {
       console.log('Processando', alignment.characters.length, 'timestamps de caracteres...');
-      console.log('📊 Primeiros 3 caracteres da API:', JSON.stringify(alignment.characters.slice(0, 3)));
-      console.log('📊 Estrutura do primeiro caractere:', Object.keys(alignment.characters[0]));
-      wordTimestamps = processWordTimestamps(alignment.characters, text);
+      wordTimestamps = processWordTimestamps(
+        alignment.characters, 
+        alignment.character_start_times_seconds
+      );
       console.log('✅ Timestamps processados:', wordTimestamps.length, 'palavras');
       
       // Log das primeiras 5 palavras para debug
@@ -188,45 +190,41 @@ serve(async (req) => {
 });
 
 // Helper: Processar timestamps de caracteres para palavras completas
-function processWordTimestamps(charTimestamps: any[], text: string) {
+function processWordTimestamps(
+  characters: string[], 
+  characterStartTimes: number[]
+): Array<{word: string; start: number; end: number}> {
   const words: Array<{word: string; start: number; end: number}> = [];
   let currentWord = '';
-  let wordStart = 0;
+  let wordStartIndex = 0;
   
-  for (let i = 0; i < charTimestamps.length; i++) {
-    const charData = charTimestamps[i];
+  for (let i = 0; i < characters.length; i++) {
+    const char = characters[i];
     
-    // Validação básica
-    if (!charData) continue;
-    
-    const char = charData.character || '';
-    if (!char) continue;
-    
-    const startTime = charData.start_time_seconds || 0;
-    const endTime = charData.end_time_seconds || startTime + 0.05;
-    
-    // Iniciar nova palavra
-    if (currentWord.length === 0) {
-      wordStart = startTime;
-    }
-    
-    currentWord += char;
-    
-    // Verificar fim de palavra
-    const isWordEnd = /[\s.,!?;:\n]/.test(char) || i === charTimestamps.length - 1;
-    
-    if (isWordEnd) {
-      const trimmedWord = currentWord.trim();
+    if (char === ' ' || char === '\n' || i === characters.length - 1) {
+      // Se é o último caractere e não é espaço, adiciona ao word atual
+      if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
+        currentWord += char;
+      }
       
-      if (trimmedWord.length > 0) {
+      if (currentWord.trim().length > 0) {
+        const cleanWord = currentWord.trim();
+        const startTime = characterStartTimes[wordStartIndex];
+        const endTime = i < characters.length - 1 
+          ? characterStartTimes[i]
+          : characterStartTimes[characterStartTimes.length - 1];
+        
         words.push({
-          word: trimmedWord,
-          start: wordStart,
+          word: cleanWord,
+          start: startTime,
           end: endTime
         });
       }
       
       currentWord = '';
+      wordStartIndex = i + 1;
+    } else {
+      currentWord += char;
     }
   }
   
