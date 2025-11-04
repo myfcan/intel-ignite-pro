@@ -2,35 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
-
-interface Section {
-  id: string;
-  content: string;
-  timestamp: number;
-  speechBubbleText: string;
-}
-
-interface LessonData {
-  id: string;
-  title: string;
-  trackName: string;
-  duration: number;
-  sections: Section[];
-  audioUrl?: string;
-}
-
-interface WordTimestamp {
-  word: string;
-  start: number;
-  end: number;
-}
-
-interface GuidedLessonProps {
-  lessonData: LessonData;
-  onComplete: () => void;
-  audioUrl?: string;
-  wordTimestamps?: WordTimestamp[];
-}
+import { GuidedLessonProps } from '@/types/guidedLesson';
 
 export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -268,7 +240,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       )}
                     </div>
                     <div className="prose prose-slate prose-base sm:prose-lg max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-headings:mb-4 prose-h1:text-2xl sm:prose-h1:text-3xl prose-h2:text-xl sm:prose-h2:text-2xl prose-h3:text-lg sm:prose-h3:text-xl prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-cyan-600 prose-strong:font-semibold prose-ul:my-4 prose-ul:space-y-2 prose-li:text-slate-700 prose-li:pl-2 prose-li:marker:text-cyan-500 prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 prose-blockquote:bg-cyan-50/50 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-lg prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm">
-                      <ReactMarkdown>{section.content}</ReactMarkdown>
+                      <ReactMarkdown>{section.visualContent}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
@@ -359,10 +331,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {(audioUrl || lessonData.audioUrl) && (
+      {audioUrl && (
         <audio
           ref={audioRef}
-          src={audioUrl || lessonData.audioUrl}
+          src={audioUrl}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
