@@ -5,7 +5,7 @@ export const fundamentos01: GuidedLessonData = {
   title: 'O que é IA e por que você precisa dela',
   trackId: '1',
   trackName: 'Fundamentos da IA',
-  duration: 270,
+  duration: 300,
   sections: [
     {
       id: 'gancho',
@@ -28,7 +28,7 @@ Quando você:
     },
     {
       id: 'conceito',
-      timestamp: 45,
+      timestamp: 60,
       speechBubbleText: 'Vou te explicar o que é IA sem complicação',
       content: `## O que é IA de verdade? 🤖
 
@@ -56,7 +56,7 @@ Por isso:
     },
     {
       id: 'onde-esta',
-      timestamp: 120,
+      timestamp: 140,
       speechBubbleText: 'A IA já está em todo lugar da sua vida!',
       content: `## Onde você já usa IA sem perceber 📱
 
@@ -89,7 +89,7 @@ Você pode **conversar DIRETAMENTE** com a IA:
     },
     {
       id: 'porque-voce-precisa',
-      timestamp: 180,
+      timestamp: 200,
       speechBubbleText: 'Por que VOCÊ precisa aprender isso agora?',
       content: `## Por que você precisa aprender IA? 💰
 
@@ -128,7 +128,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **R$ 500 a R$ 3.00
     },
     {
       id: 'proximos-passos',
-      timestamp: 240,
+      timestamp: 260,
       speechBubbleText: 'Agora é sua vez de praticar! Vamos lá!',
       content: `## Próximos passos 🚀
 
