@@ -13,6 +13,9 @@ interface SyncedTextProps {
 export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sectionStartTime = 0 }: SyncedTextProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wordRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
+  
+  // Índice global que será resetado a cada render
+  let globalWordIndex = 0;
 
   // Ajustar tempo atual baseado no início da seção
   const adjustedTime = currentTime - sectionStartTime;
@@ -39,7 +42,6 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
   // Processar markdown para adicionar spans nas palavras
   const processTextWithSpans = (text: string) => {
     const words = text.split(/(\s+)/); // Mantém os espaços
-    let wordIndex = 0;
 
     return words.map((segment, i) => {
       // Se for espaço, retorna como está
@@ -47,15 +49,15 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
         return <span key={i}>{segment}</span>;
       }
 
-      const currentWordIndex = wordIndex;
-      wordIndex++;
+      const currentWordIndex = globalWordIndex;
+      globalWordIndex++;
 
       const isCurrentWord = currentWordIndex === activeWordIndex;
       const isPastWord = currentWordIndex < activeWordIndex;
 
       return (
         <span
-          key={i}
+          key={`${currentWordIndex}-${i}`}
           ref={(el) => {
             if (el) wordRefs.current.set(currentWordIndex, el);
           }}
