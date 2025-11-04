@@ -275,7 +275,7 @@ const TrailDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {showAudioIntro && trail && (
         <TrailIntro
           trailId={getTrailSlug()}
@@ -292,50 +292,87 @@ const TrailDetail = () => {
           onClose={handleMaiaClose}
         />
       )}
-      {/* Header */}
-      <header className="bg-white border-b-2 border-gray-100 shadow-soft">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/dashboard')}
-            className="mb-4 -ml-2"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
+      {/* Header - Card com Gradiente */}
+      <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Botão Voltar */}
+        <button 
+          onClick={() => navigate('/dashboard')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-xl text-slate-700 hover:text-cyan-600 hover:border-cyan-300 transition-all mb-6 shadow-sm hover:shadow-md"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="font-medium">Voltar</span>
+        </button>
+
+        {/* Card de Header com Gradiente */}
+        <div className="relative overflow-hidden rounded-3xl shadow-2xl">
+          {/* Background com gradiente */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500" />
           
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {trail.icon} {trail.title}
-              </h1>
-              <p className="text-lg text-gray-600 max-w-2xl">
-                {trail.description}
-              </p>
-              <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
-                <span>{lessons.length} aulas</span>
-                <span>•</span>
-                <span>{lessons.reduce((acc, l) => acc + (l.estimated_time || 0), 0)} minutos</span>
+          {/* Padrão decorativo */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+          </div>
+          
+          {/* Conteúdo */}
+          <div className="relative z-10 p-8">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6">
+              {/* Lado esquerdo: Ícone e Info */}
+              <div className="flex-1">
+                <div className="flex items-start gap-4 mb-4">
+                  {/* Ícone grande */}
+                  <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-4xl">
+                    {trail.icon}
+                  </div>
+                  
+                  <div className="flex-1">
+                    {/* Título */}
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                      {trail.title}
+                    </h1>
+                    {/* Descrição */}
+                    <p className="text-white/90 text-lg">
+                      {trail.description}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Metadados */}
+                <div className="flex items-center gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {lessons.length} aulas
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {lessons.reduce((acc, l) => acc + (l.estimated_time || 0), 0)} minutos
+                  </span>
+                </div>
+              </div>
+              
+              {/* Lado direito: Progresso */}
+              <div className="text-right bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-sm text-white/80 mb-1">Seu progresso</div>
+                <div className="text-5xl font-bold text-white mb-1">{Math.round(progress)}%</div>
+                <div className="text-sm text-white/80">{completedLessons.length}/{lessons.length} completas</div>
               </div>
             </div>
             
-            <div className="hidden md:block text-right">
-              <p className="text-sm text-gray-600 mb-2">Seu progresso</p>
-              <p className="text-4xl font-bold text-cyan-600">{Math.round(progress)}%</p>
-              <p className="text-sm text-gray-500 mt-1">{completedLessons.length}/{lessons.length} completas</p>
+            {/* Barra de progresso */}
+            <div className="h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-white shadow-lg transition-all duration-500" 
+                style={{ width: `${progress}%` }}
+              />
             </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-6">
-            <Progress value={progress} className="h-3" />
           </div>
         </div>
       </header>
 
       {/* Lessons List */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Aulas</h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-6">Aulas</h2>
         
         <div className="space-y-4">
           {lessons.map((lesson, index) => {
@@ -344,67 +381,88 @@ const TrailDetail = () => {
             const isCompleted = status === 'completed';
             
             return (
-              <Card 
+              <div
                 key={lesson.id}
-                className={`
-                  transition-all duration-300 cursor-pointer
-                  ${isLocked ? 'opacity-60' : 'hover:shadow-lg hover:border-cyan-400'}
-                  ${isCompleted ? 'border-green-200 bg-green-50/30' : ''}
-                `}
                 onClick={() => handleLessonClick(lesson, status)}
+                className={`
+                  group relative bg-white/80 backdrop-blur-xl rounded-2xl border shadow-lg 
+                  overflow-hidden transition-all duration-300
+                  ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-xl hover:-translate-y-1'}
+                  ${isCompleted ? 'border-cyan-300/50' : 'border-slate-200/50'}
+                `}
               >
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Status Icon */}
-                    <div className={`
-                      w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-                      ${isCompleted ? 'bg-gradient-to-br from-green-400 to-green-500' : ''}
-                      ${!isCompleted && !isLocked ? 'bg-gradient-to-br from-cyan-400 to-cyan-500' : ''}
-                      ${isLocked ? 'bg-gray-200' : ''}
-                    `}>
-                      {isCompleted && <CheckCircle className="w-6 h-6 text-white" />}
-                      {!isCompleted && !isLocked && <PlayCircle className="w-6 h-6 text-white" />}
-                      {isLocked && <Lock className="w-6 h-6 text-gray-400" />}
-                    </div>
-
-                    <div className="flex-1">
-                      <CardTitle className={`text-xl mb-1 ${isCompleted ? 'text-green-700' : 'text-gray-900'}`}>
-                        Aula {index + 1}: {lesson.title}
-                      </CardTitle>
-                      <CardDescription className="text-base">
-                        {lesson.description}
-                      </CardDescription>
-                      
-                      <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {lesson.estimated_time || 10} min
-                        </span>
-                        {lesson.difficulty_level && (
-                          <>
-                            <span>•</span>
-                            <span className="capitalize">{lesson.difficulty_level}</span>
-                          </>
-                        )}
-                      </div>
+                {/* Borda gradiente no hover */}
+                {!isLocked && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity -z-10 blur-xl" />
+                )}
+                
+                <div className="relative z-10 p-6 flex flex-col md:flex-row items-start md:items-center gap-5">
+                  
+                  {/* Ícone de status - Gradiente */}
+                  <div className={`
+                    w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md transition-all
+                    ${isCompleted 
+                      ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white' 
+                      : isLocked
+                      ? 'bg-slate-100 text-slate-400'
+                      : 'bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 text-white'
+                    }
+                  `}>
+                    {isCompleted && <CheckCircle className="w-8 h-8" strokeWidth={3} />}
+                    {!isCompleted && !isLocked && <PlayCircle className="w-7 h-7" />}
+                    {isLocked && <Lock className="w-7 h-7" />}
+                  </div>
+                  
+                  {/* Conteúdo */}
+                  <div className="flex-1 min-w-0">
+                    {/* Título */}
+                    <h3 className={`text-lg font-semibold mb-1 transition-colors ${
+                      isCompleted ? 'text-slate-900' : 'text-slate-900 group-hover:text-cyan-600'
+                    }`}>
+                      Aula {index + 1}: {lesson.title}
+                    </h3>
+                    
+                    {/* Descrição */}
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                      {lesson.description}
+                    </p>
+                    
+                    {/* Metadados */}
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {lesson.estimated_time || 10} min
+                      </span>
+                      {lesson.difficulty_level && (
+                        <>
+                          <span>•</span>
+                          <span className="px-2 py-1 bg-slate-100 rounded-full capitalize">
+                            {lesson.difficulty_level}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
-
-                  {/* Action Button */}
-                  <Button
-                    variant={isCompleted ? "outline" : "default"}
+                  
+                  {/* Botão de ação */}
+                  <button 
                     className={`
-                      ${isLocked ? 'cursor-not-allowed' : ''}
-                      ${!isCompleted && !isLocked ? 'bg-gradient-to-r from-cyan-400 to-cyan-500' : ''}
+                      px-6 py-3 rounded-xl font-medium text-sm transition-all flex-shrink-0
+                      ${isCompleted
+                        ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 hover:from-purple-200 hover:to-blue-200'
+                        : isLocked
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40'
+                      }
                     `}
                     disabled={isLocked}
                   >
                     {isCompleted && 'Revisar'}
-                    {!isCompleted && !isLocked && 'Começar'}
+                    {!isCompleted && !isLocked && 'Iniciar'}
                     {isLocked && 'Bloqueada'}
-                  </Button>
-                </CardHeader>
-              </Card>
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
