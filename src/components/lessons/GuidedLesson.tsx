@@ -51,14 +51,11 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
         console.log(`⏱️ Tempo atual: ${currentSeconds}s`);
       }
       
-      // Determinar seção ativa baseada no tempo (com offset de 0.5s para antecipar)
-      const SYNC_OFFSET = 0.5; // Antecipar em 0.5 segundos
-      const adjustedTime = audio.currentTime + SYNC_OFFSET;
-      
+      // Determinar seção ativa baseada no tempo
       const currentSectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
-        return adjustedTime >= section.timestamp && 
-               (!nextSection || adjustedTime < nextSection.timestamp);
+        return audio.currentTime >= section.timestamp && 
+               (!nextSection || audio.currentTime < nextSection.timestamp);
       });
       
       if (currentSectionIndex !== -1 && currentSectionIndex !== activeSection) {
