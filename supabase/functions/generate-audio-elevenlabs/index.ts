@@ -97,7 +97,7 @@ serve(async (req) => {
     console.log('Áudio gerado com sucesso. Tamanho:', audioBase64.length, 'chars base64');
     
     // Processar timestamps se disponíveis
-    let wordTimestamps = [];
+    let wordTimestamps: Array<{word: string; start: number; end: number}> = [];
     if (alignment?.characters && alignment.characters.length > 0) {
       console.log('Processando', alignment.characters.length, 'timestamps de caracteres...');
       wordTimestamps = processWordTimestamps(alignment.characters, text);
@@ -194,25 +194,23 @@ function processWordTimestamps(charTimestamps: any[], text: string) {
   for (let i = 0; i < charTimestamps.length; i++) {
     const charData = charTimestamps[i];
     
-    // Verificar se o objeto tem a propriedade character corretamente
-    if (!charData || typeof charData.character !== 'string') {
-      console.warn(`Caractere inválido no índice ${i}:`, charData);
-      continue;
-    }
+    // Validação básica
+    if (!charData) continue;
     
-    const char = charData.character;
-    const startTime = charData.start_time_seconds || charData.start_time || 0;
-    const endTime = charData.end_time_seconds || charData.end_time || startTime + 0.05;
+    const char = charData.character || '';
+    if (!char) continue;
     
-    // Definir o início da palavra no primeiro caractere
+    const startTime = charData.start_time_seconds || 0;
+    const endTime = charData.end_time_seconds || startTime + 0.05;
+    
+    // Iniciar nova palavra
     if (currentWord.length === 0) {
       wordStart = startTime;
     }
     
-    // Adicionar caractere à palavra atual
     currentWord += char;
     
-    // Se for espaço, pontuação ou último caractere, finalizar palavra
+    // Verificar fim de palavra
     const isWordEnd = /[\s.,!?;:\n]/.test(char) || i === charTimestamps.length - 1;
     
     if (isWordEnd) {
