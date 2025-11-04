@@ -33,9 +33,9 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
     <div 
       onClick={handleClick}
       className={`
-        group relative bg-white rounded-2xl overflow-hidden
-        border-2 transition-all duration-300
-        ${isActive ? 'border-cyan-400 shadow-xl shadow-cyan-100' : 'border-gray-200'}
+        group relative bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden
+        border transition-all duration-300 shadow-lg
+        ${isActive ? 'border-cyan-300/50 shadow-cyan-500/10 ring-2 ring-cyan-400/20' : 'border-slate-200/50'}
         ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:scale-105 hover:shadow-2xl cursor-pointer'}
       `}
     >
@@ -85,10 +85,10 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
 
       {/* Body */}
       <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-cyan-600 transition-colors">
+        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-cyan-600 transition-colors">
           {trail.title}
         </h3>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        <p className="text-slate-600 text-sm mb-4 line-clamp-2">
           {trail.description}
         </p>
 
@@ -96,12 +96,12 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
         {!isLocked && (
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">{completedLessons}/{totalLessons} aulas</span>
-              <span className="font-semibold text-gray-900">{progress}%</span>
+              <span className="text-slate-600">{completedLessons}/{totalLessons} aulas</span>
+              <span className="font-semibold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">{progress}%</span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-200/50 rounded-full overflow-hidden">
               <div 
-                className={`h-full bg-gradient-to-r ${gradient} transition-all duration-500 shadow-cyan-glow`}
+                className={`h-full bg-gradient-to-r ${gradient} transition-all duration-500 shadow-sm`}
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -110,10 +110,10 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
 
         {/* CTA */}
         <button className={`
-          w-full py-3 rounded-xl font-semibold transition-all
+          w-full py-3 rounded-xl font-semibold transition-all shadow-md
           ${isLocked 
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-            : 'bg-gradient-to-r ' + gradient + ' text-white hover:shadow-lg hover:scale-105'
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+            : 'bg-gradient-to-r ' + gradient + ' text-white hover:shadow-lg hover:shadow-cyan-500/25 hover:scale-105'
           }
         `}
         disabled={isLocked}>
@@ -123,7 +123,7 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
         </button>
 
         {isLocked && trail.order_index > 1 && (
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-slate-500 mt-2 text-center">
             Complete a trilha anterior primeiro
           </p>
         )}

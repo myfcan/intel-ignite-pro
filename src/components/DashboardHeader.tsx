@@ -29,17 +29,17 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   };
 
   return (
-    <header className="bg-white border-b-2 border-gray-100 sticky top-0 z-50 shadow-soft">
+    <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-pink-400 
-                          rounded-xl flex items-center justify-center shadow-cyan-glow">
+            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
+                          rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/25">
               <span className="text-white font-bold text-lg">IA</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">
+            <span className="text-xl font-bold text-slate-900 hidden sm:block">
               Inteligência Ignite
             </span>
           </div>
@@ -48,40 +48,40 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             
             {/* Streak */}
-            <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-red-50 
-                          px-3 lg:px-4 py-2 rounded-full border-2 border-orange-200 
-                          hover:scale-105 transition-transform">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm
+                          px-3 lg:px-4 py-2 rounded-full border border-orange-300/50
+                          hover:scale-105 transition-transform shadow-sm">
               <Flame className="w-5 h-5 text-orange-500" />
               <div>
-                <p className="text-xs text-gray-600 leading-none">Sequência</p>
-                <p className="text-lg font-bold text-gray-900 leading-tight">{user.streak_days} dias</p>
+                <p className="text-xs text-slate-600 leading-none">Sequência</p>
+                <p className="text-lg font-bold text-slate-900 leading-tight">{user.streak_days} dias</p>
               </div>
             </div>
 
             {/* Pontos */}
-            <div className="flex items-center gap-2 bg-gradient-to-r from-cyan-50 to-blue-50 
-                          px-3 lg:px-4 py-2 rounded-full border-2 border-cyan-200
-                          hover:scale-105 transition-transform">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm
+                          px-3 lg:px-4 py-2 rounded-full border border-cyan-300/50
+                          hover:scale-105 transition-transform shadow-sm">
               <Trophy className="w-5 h-5 text-cyan-500" />
               <div>
-                <p className="text-xs text-gray-600 leading-none">Pontos</p>
-                <p className="text-lg font-bold text-gray-900 leading-tight">{user.total_points}</p>
+                <p className="text-xs text-slate-600 leading-none">Pontos</p>
+                <p className="text-lg font-bold text-slate-900 leading-tight">{user.total_points}</p>
               </div>
             </div>
 
             {/* Nível */}
-            <div className="flex items-center gap-3 bg-gradient-to-r from-pink-50 to-purple-50 
-                          px-3 lg:px-4 py-2 rounded-full border-2 border-pink-200
-                          hover:scale-105 transition-transform">
-              <Target className="w-5 h-5 text-pink-500" />
+            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm
+                          px-3 lg:px-4 py-2 rounded-full border border-purple-300/50
+                          hover:scale-105 transition-transform shadow-sm">
+              <Target className="w-5 h-5 text-purple-500" />
               <div className="min-w-[100px]">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-gray-600 leading-none">Nível {level}</p>
-                  <p className="text-xs text-gray-500 leading-none">{level + 1}</p>
+                  <p className="text-xs text-slate-600 leading-none">Nível {level}</p>
+                  <p className="text-xs text-slate-500 leading-none">{level + 1}</p>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-200/50 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-pink-600 
+                    className="h-full bg-gradient-to-r from-purple-400 via-pink-400 to-rose-500
                              transition-all duration-700 ease-out"
                     style={{ width: `${progressToNextLevel}%` }}
                   />
@@ -94,51 +94,51 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Limite de interações */}
             <div className="flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 
-                            flex items-center justify-center text-white font-semibold shadow-cyan-glow">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
+                            flex items-center justify-center text-white font-semibold shadow-lg shadow-cyan-500/25">
                 {interactionsRemaining}
               </div>
-              <span className="text-gray-600 hidden sm:inline">/ {user.daily_interaction_limit}</span>
+              <span className="text-slate-600 hidden sm:inline">/ {user.daily_interaction_limit}</span>
             </div>
 
             {/* Avatar + Dropdown */}
             <div className="relative group">
-              <button className="flex items-center gap-2 lg:gap-3 hover:bg-gray-50 
+              <button className="flex items-center gap-2 lg:gap-3 hover:bg-slate-50 
                                rounded-full pr-2 lg:pr-4 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-pink-400 
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
                               flex items-center justify-center text-white font-semibold text-lg
-                              shadow-pink-glow">
+                              shadow-lg shadow-cyan-500/25">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden lg:block text-left">
-                  <p className="text-sm font-semibold text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">Plano {user.plan}</p>
+                  <p className="text-sm font-semibold text-slate-900">{user.name}</p>
+                  <p className="text-xs text-slate-500">Plano {user.plan}</p>
                 </div>
-                <svg className="w-4 h-4 text-gray-400 hidden lg:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-400 hidden lg:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {/* Dropdown menu */}
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl 
-                            border border-gray-200 opacity-0 invisible group-hover:opacity-100 
+              <div className="absolute right-0 mt-2 w-56 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl 
+                            border border-slate-200/50 opacity-0 invisible group-hover:opacity-100 
                             group-hover:visible transition-all">
                 <div className="p-2">
                   <button 
                     onClick={() => navigate('/profile')}
-                    className="w-full text-left block px-4 py-3 text-sm text-gray-700 
-                                                hover:bg-gray-50 rounded-lg transition-colors"
+                    className="w-full text-left block px-4 py-3 text-sm text-slate-700 
+                                                hover:bg-slate-50 rounded-lg transition-colors"
                   >
                     👤 Meu Perfil
                   </button>
                   <button 
                     onClick={() => navigate('/achievements')}
-                    className="w-full text-left block px-4 py-3 text-sm text-gray-700 
-                                                     hover:bg-gray-50 rounded-lg transition-colors"
+                    className="w-full text-left block px-4 py-3 text-sm text-slate-700 
+                                                     hover:bg-slate-50 rounded-lg transition-colors"
                   >
                     🏆 Conquistas
                   </button>
-                  <div className="border-t border-gray-200 my-2"></div>
+                  <div className="border-t border-slate-200 my-2"></div>
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-3 text-sm text-red-600 

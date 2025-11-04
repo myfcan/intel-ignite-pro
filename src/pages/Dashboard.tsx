@@ -176,10 +176,10 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando seu dashboard...</p>
+          <p className="text-slate-600">Carregando seu dashboard...</p>
         </div>
       </div>
     );
@@ -193,14 +193,14 @@ const Dashboard = () => {
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
-    'Fundamentos de IA': 'from-blue-500 to-indigo-600',
-    'IA no Dia a Dia': 'from-cyan-500 to-blue-500',
-    'IA nos Negócios': 'from-purple-500 to-pink-500',
-    'Renda Extra com IA': 'from-green-500 to-emerald-600',
+    'Fundamentos de IA': 'from-blue-400 via-indigo-400 to-purple-500',
+    'IA no Dia a Dia': 'from-cyan-400 via-teal-400 to-blue-500',
+    'IA nos Negócios': 'from-purple-400 via-pink-400 to-rose-500',
+    'Renda Extra com IA': 'from-emerald-400 via-teal-400 to-cyan-500',
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <DashboardHeader user={user!} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -209,14 +209,14 @@ const Dashboard = () => {
         <div className="flex justify-end mb-4">
           <button
             onClick={() => navigate('/admin')}
-            className="text-sm text-gray-500 hover:text-gray-700 underline"
+            className="text-sm text-slate-500 hover:text-slate-700 underline"
           >
             Acessar Painel Admin
           </button>
         </div>
         
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-cyan-500 via-cyan-400 to-pink-400 
+        <div className="relative overflow-hidden bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
                       rounded-3xl p-8 md:p-12 mb-8 shadow-2xl">
           
           {/* Grid pattern overlay */}
@@ -231,13 +231,13 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <p className="text-cyan-100 text-sm font-semibold mb-2 uppercase tracking-wide">
+                <p className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">
                   Bem-vindo de volta!
                 </p>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
                   Continue sua jornada de aprendizado
                 </h2>
-                <p className="text-cyan-50 text-lg max-w-2xl">
+                <p className="text-white/90 text-lg max-w-2xl">
                   Escolha uma trilha abaixo para começar a aprender sobre Inteligência Artificial
                 </p>
               </div>
@@ -249,60 +249,60 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           
           {/* Sequência */}
-          <Card className="border-2 border-gray-200 hover:border-orange-300 hover:shadow-lg transition-all">
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-orange-300/50 hover:shadow-xl transition-all">
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400
-                              flex items-center justify-center shadow-soft">
-                  <Flame className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-red-400
+                              flex items-center justify-center shadow-lg shadow-orange-500/25">
+                  <Flame className="w-7 h-7 text-white" />
                 </div>
-                <span className="text-3xl font-bold text-gray-900">{user?.streak_days || 0}</span>
+                <span className="text-4xl font-bold text-slate-900">{user?.streak_days || 0}</span>
               </div>
-              <CardTitle className="text-base font-medium text-gray-600">Dias de sequência</CardTitle>
+              <CardTitle className="text-base font-medium text-slate-600">Dias de sequência</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">Continue assim! 🔥</p>
+              <p className="text-sm text-slate-500">Continue assim! 🔥</p>
             </CardContent>
           </Card>
 
           {/* Pontos */}
-          <Card className="border-2 border-gray-200 hover:border-cyan-300 hover:shadow-lg transition-all">
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-cyan-300/50 hover:shadow-xl transition-all">
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-400
-                              flex items-center justify-center shadow-soft">
-                  <Trophy className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
+                              flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                  <Trophy className="w-7 h-7 text-white" />
                 </div>
-                <span className="text-3xl font-bold text-gray-900">{user?.total_points || 0}</span>
+                <span className="text-4xl font-bold text-slate-900">{user?.total_points || 0}</span>
               </div>
-              <CardTitle className="text-base font-medium text-gray-600">Pontos totais</CardTitle>
+              <CardTitle className="text-base font-medium text-slate-600">Pontos totais</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">Continue aprendendo!</p>
+              <p className="text-sm text-slate-500">Continue aprendendo!</p>
             </CardContent>
           </Card>
 
           {/* Aulas */}
-          <Card className="border-2 border-gray-200 hover:border-pink-300 hover:shadow-lg transition-all">
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-purple-300/50 hover:shadow-xl transition-all">
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-400 to-purple-400
-                              flex items-center justify-center shadow-soft">
-                  <BookOpen className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500
+                              flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <BookOpen className="w-7 h-7 text-white" />
                 </div>
-                <span className="text-3xl font-bold text-gray-900">{user?.total_lessons_completed || 0}</span>
+                <span className="text-4xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</span>
               </div>
-              <CardTitle className="text-base font-medium text-gray-600">Aulas completas</CardTitle>
+              <CardTitle className="text-base font-medium text-slate-600">Aulas completas</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">Muito bem!</p>
+              <p className="text-sm text-slate-500">Muito bem!</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Trilhas */}
         <div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Suas Trilhas</h3>
+          <h3 className="text-2xl font-bold text-slate-900 mb-6">Suas Trilhas</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {trails.map((trail) => {
