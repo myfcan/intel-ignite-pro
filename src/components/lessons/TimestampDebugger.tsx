@@ -106,25 +106,10 @@ export const TimestampDebugger = ({ audioUrl, sections }: TimestampDebuggerProps
           <div className="space-y-3">
             <div className="p-4 bg-white rounded-lg border-2 border-purple-200">
               <div className="text-sm text-gray-600 mb-2">
-                🎯 Quando ouvir a MAIA começar a falar sobre este tema:
+                🎯 Quando ouvir a MAIA falar EXATAMENTE esta frase:
               </div>
-              <div className="text-lg font-bold text-purple-600 mb-3">
+              <div className="text-xl font-bold text-purple-600 leading-relaxed">
                 "{sections[currentSectionIndex]?.speechBubbleText}"
-              </div>
-              <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200">
-                <div className="font-semibold mb-1">Preview do conteúdo:</div>
-                <div className="italic line-clamp-3">
-                  {sections[currentSectionIndex]?.id === 'section-1' && 
-                    "Olá! Sabe aquela sensação de que você já usou inteligência artificial hoje, mas nem percebeu? Pois é! Quando você desbloqueou seu celular..."}
-                  {sections[currentSectionIndex]?.id === 'section-2' && 
-                    "Então, o que é Inteligência Artificial de verdade? Vou te explicar de um jeito que faz sentido..."}
-                  {sections[currentSectionIndex]?.id === 'section-3' && 
-                    "Agora você já sabe o que é IA. Mas deixa eu te mostrar onde ela está na sua vida..."}
-                  {sections[currentSectionIndex]?.id === 'section-4' && 
-                    "Ok, a IA já está em todo lugar. Mas por que VOCÊ precisa aprender sobre isso?..."}
-                  {sections[currentSectionIndex]?.id === 'section-5' && 
-                    "Ufa! Acabamos essa primeira aula! Mas não vai embora ainda..."}
-                </div>
               </div>
             </div>
             
@@ -174,18 +159,14 @@ export const TimestampDebugger = ({ audioUrl, sections }: TimestampDebuggerProps
 
         {/* Instruções */}
         <div className="text-sm text-gray-600 space-y-2 p-4 bg-blue-50 rounded-lg">
-          <div className="font-semibold text-blue-900 mb-2">📖 Como usar esta ferramenta:</div>
+          <div className="font-semibold text-blue-900 mb-2">📖 Como usar:</div>
           <ol className="list-decimal list-inside space-y-2 ml-2">
-            <li className="font-semibold">Clique em <span className="text-purple-600">Play</span> para iniciar o áudio</li>
+            <li>Clique em <span className="text-purple-600">Play</span> para iniciar o áudio</li>
             <li>Ouça atentamente o áudio da MAIA</li>
-            <li className="font-semibold">Quando ouvir a MAIA <span className="text-purple-600">começar a falar sobre o tema</span> mostrado acima (veja o "Preview do conteúdo"), clique em <span className="text-green-600">"Marcar Seção"</span></li>
+            <li className="font-semibold">Quando ouvir a <span className="text-purple-600">frase EXATA</span> mostrada acima, clique imediatamente em <span className="text-green-600">"Marcar Seção"</span></li>
             <li>Repita para todas as 5 seções</li>
-            <li>No final, clique em <span className="text-purple-600">"Copiar Todos os Timestamps"</span> e cole aqui no chat para mim</li>
+            <li>No final, clique em <span className="text-purple-600">"Copiar Todos os Timestamps"</span> e me envie</li>
           </ol>
-          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <div className="font-semibold text-yellow-900">⚠️ Importante:</div>
-            <p className="text-yellow-800 mt-1">Não procure pela frase exata do título! Marque quando a MAIA começar a falar sobre aquele ASSUNTO/TEMA.</p>
-          </div>
         </div>
       </Card>
     </div>

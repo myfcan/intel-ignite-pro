@@ -10,7 +10,7 @@ export const fundamentos01: GuidedLessonData = {
     {
       id: 'gancho',
       timestamp: 0,
-      speechBubbleText: 'Você já usou IA hoje e nem percebeu!',
+      speechBubbleText: 'Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial.',
       content: `# Bem-vindo à sua jornada em IA! 👋
 
 Você sabia que **já usa Inteligência Artificial várias vezes por dia**?
@@ -29,7 +29,7 @@ Quando você:
     {
       id: 'conceito',
       timestamp: 35,
-      speechBubbleText: 'Vou te explicar o que é IA sem complicação',
+      speechBubbleText: 'Então, o que é Inteligência Artificial de verdade?',
       content: `## O que é IA de verdade? 🤖
 
 **Inteligência Artificial** são sistemas de computador que **aprendem padrões** observando milhões de exemplos, e depois usam esse aprendizado para tomar decisões ou criar coisas novas.
@@ -57,7 +57,7 @@ Por isso:
     {
       id: 'onde-esta',
       timestamp: 110,
-      speechBubbleText: 'A IA já está em todo lugar da sua vida!',
+      speechBubbleText: 'Deixa eu te mostrar onde você já usa IA todos os dias sem perceber.',
       content: `## Onde você já usa IA sem perceber 📱
 
 ### Entretenimento:
@@ -90,7 +90,7 @@ Você pode **conversar DIRETAMENTE** com a IA:
     {
       id: 'porque-voce-precisa',
       timestamp: 175,
-      speechBubbleText: 'Por que VOCÊ precisa aprender isso agora?',
+      speechBubbleText: 'Agora a pergunta de ouro: por que VOCÊ, especificamente, precisa aprender isso agora?',
       content: `## Por que você precisa aprender IA? 💰
 
 ### Três motivos muito práticos:
@@ -129,7 +129,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **R$ 500 a R$ 3.00
     {
       id: 'proximos-passos',
       timestamp: 245,
-      speechBubbleText: 'Agora é sua vez de praticar! Vamos lá!',
+      speechBubbleText: 'Então, qual é o seu próximo passo concreto?',
       content: `## Próximos passos 🚀
 
 ### O que vem agora?
