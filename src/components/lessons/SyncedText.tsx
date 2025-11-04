@@ -17,13 +17,9 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
   // Índice global que será resetado a cada render
   let globalWordIndex = 0;
 
-  // Ajuste de sincronização: atrasamos o efeito visual em 0.4s para compensar latência
-  const SYNC_OFFSET = 0.4;
-  const adjustedTime = Math.max(0, currentTime - SYNC_OFFSET);
-
-  // Encontrar índice da palavra ativa (palavra atual sendo falada)
+  // Encontrar palavra ativa usando currentTime diretamente (sem offset)
   const activeWordIndex = wordTimestamps.findIndex(
-    (wt) => adjustedTime >= wt.start && adjustedTime < wt.end
+    (wt) => currentTime >= wt.start && currentTime < wt.end
   );
 
   // Se não encontrou palavra ativa, usar a última palavra antes do tempo atual
@@ -31,22 +27,26 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
     ? activeWordIndex 
     : wordTimestamps.findIndex((wt, idx) => {
         const nextWord = wordTimestamps[idx + 1];
-        return adjustedTime >= wt.end && (!nextWord || adjustedTime < nextWord.start);
+        return currentTime >= wt.end && (!nextWord || currentTime < nextWord.start);
       });
 
-  // Log de debug a cada 2 segundos (aproximadamente)
+  // Log de debug detalhado
   useEffect(() => {
-    if (isActive && Math.floor(adjustedTime) % 2 === 0) {
+    if (isActive && effectiveActiveIndex >= 0) {
       const activeWord = wordTimestamps[effectiveActiveIndex];
-      console.log(`🎤 Karaoke:`, {
-        adjustedTime: adjustedTime.toFixed(2),
-        effectiveActiveIndex,
-        activeWord: activeWord?.word,
+      const prevWord = wordTimestamps[effectiveActiveIndex - 1];
+      const nextWord = wordTimestamps[effectiveActiveIndex + 1];
+      
+      console.log(`🎤 [${currentTime.toFixed(2)}s]`, {
+        palavra: activeWord?.word,
         wordStart: activeWord?.start.toFixed(2),
-        wordEnd: activeWord?.end.toFixed(2)
+        wordEnd: activeWord?.end.toFixed(2),
+        diff: (currentTime - activeWord?.start).toFixed(2),
+        prev: prevWord?.word,
+        next: nextWord?.word,
       });
     }
-  }, [Math.floor(adjustedTime)]);
+  }, [effectiveActiveIndex, isActive]);
 
   // Scroll automático para palavra ativa
   useEffect(() => {
