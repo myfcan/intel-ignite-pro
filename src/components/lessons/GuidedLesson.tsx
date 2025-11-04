@@ -42,33 +42,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         return time >= section.timestamp && (!nextSection || time < nextSection.timestamp);
       });
       
-      if (sectionIndex !== -1) {
-        if (sectionIndex !== currentSection) {
-          console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
-          setCurrentSection(sectionIndex);
-          hasScrolledRef.current[sectionIndex] = false;
-        }
+      if (sectionIndex !== -1 && sectionIndex !== currentSection) {
+        console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
+        setCurrentSection(sectionIndex);
+        hasScrolledRef.current[sectionIndex] = false;
         
-        if (!hasScrolledRef.current[sectionIndex]) {
-          const currentSec = lessonData.sections[sectionIndex];
-          const nextSec = lessonData.sections[sectionIndex + 1];
-          
-          if (nextSec) {
-            const sectionDuration = nextSec.timestamp - currentSec.timestamp;
-            const sectionProgress = time - currentSec.timestamp;
-            const progressPercent = sectionProgress / sectionDuration;
-            
-            if (progressPercent >= 0.8) {
-              const sectionElement = document.getElementById(`section-${sectionIndex}`);
-              if (sectionElement) {
-                const yOffset = -140;
-                const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex} (${Math.round(progressPercent * 100)}% concluída)`);
-                window.scrollTo({ top: y, behavior: 'smooth' });
-                hasScrolledRef.current[sectionIndex] = true;
-              }
-            }
-          }
+        // Scroll suave para a nova seção
+        const sectionElement = document.getElementById(`section-${sectionIndex}`);
+        if (sectionElement) {
+          const yOffset = -140;
+          const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
+          window.scrollTo({ top: y, behavior: 'smooth' });
         }
       }
     };
@@ -105,7 +90,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('canplay', handleCanPlay);
     };
-  }, [currentSection, lessonData.sections, audioUrl]);
+  }, [lessonData.sections, audioUrl]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
