@@ -28,7 +28,7 @@ Quando você:
     },
     {
       id: 'conceito',
-      timestamp: 60,
+      timestamp: 35,
       speechBubbleText: 'Vou te explicar o que é IA sem complicação',
       content: `## O que é IA de verdade? 🤖
 
@@ -56,7 +56,7 @@ Por isso:
     },
     {
       id: 'onde-esta',
-      timestamp: 140,
+      timestamp: 110,
       speechBubbleText: 'A IA já está em todo lugar da sua vida!',
       content: `## Onde você já usa IA sem perceber 📱
 
@@ -89,7 +89,7 @@ Você pode **conversar DIRETAMENTE** com a IA:
     },
     {
       id: 'porque-voce-precisa',
-      timestamp: 200,
+      timestamp: 175,
       speechBubbleText: 'Por que VOCÊ precisa aprender isso agora?',
       content: `## Por que você precisa aprender IA? 💰
 
@@ -128,7 +128,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **R$ 500 a R$ 3.00
     },
     {
       id: 'proximos-passos',
-      timestamp: 260,
+      timestamp: 245,
       speechBubbleText: 'Agora é sua vez de praticar! Vamos lá!',
       content: `## Próximos passos 🚀
 
