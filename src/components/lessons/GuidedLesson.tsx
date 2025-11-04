@@ -197,8 +197,8 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       
       {/* ===== CONTEÚDO PRINCIPAL ===== */}
       <div className="container mx-auto px-6 pt-20 pb-32">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="grid lg:grid-cols-[400px_1fr] gap-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-[420px_1fr] gap-8">
             
             {/* ===== SIDEBAR: MAIA SEMPRE VISÍVEL ===== */}
             <aside className="hidden lg:block">
@@ -225,10 +225,10 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                     </div>
                   </div>
                   
-                  {/* Balão de fala compacto */}
-                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-4 border border-cyan-200/50">
+                  {/* BALÃO DE FALA DA MAIA */}
+                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-4 border border-cyan-200/50 mb-5">
                     <p className="text-sm text-center text-slate-700 font-medium leading-relaxed">
-                      {lessonData.sections[activeSection]?.speechBubbleText}
+                      {lessonData.sections[activeSection]?.speechBubbleText || "Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial."}
                     </p>
                   </div>
                 </div>
@@ -356,7 +356,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       {/* ===== PLAYER FIXO - DESTACADO ===== */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
         <div className="container mx-auto px-6 py-3">
-          <div className="max-w-[1600px] mx-auto">
+          <div className="max-w-7xl mx-auto">
             
             {/* Desktop */}
             <div className="hidden md:flex items-center gap-4">
