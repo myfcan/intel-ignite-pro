@@ -128,7 +128,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **R$ 500 a R$ 3.00
     },
     {
       id: 'proximos-passos',
-      timestamp: 337,
+      timestamp: 267,
       speechBubbleText: 'Então, qual é o seu próximo passo concreto?',
       content: `## Próximos passos 🚀
 
