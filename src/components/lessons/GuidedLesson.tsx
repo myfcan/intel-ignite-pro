@@ -23,6 +23,12 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
       setAudioLoaded(true);
+      // Autoplay após carregar
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.log('Autoplay bloqueado:', err);
+      });
     };
 
     const handleTimeUpdate = () => {

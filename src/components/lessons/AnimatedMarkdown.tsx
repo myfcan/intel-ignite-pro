@@ -13,7 +13,7 @@ export const AnimatedMarkdown = ({ content, isActive, speed = 50 }: AnimatedMark
 
   useEffect(() => {
     if (!isActive) {
-      // Se não está ativo, mostra o conteúdo completo mas com opacidade reduzida
+      // Se não está ativo, mostra o conteúdo completo imediatamente
       setDisplayedContent(content);
       setIsComplete(true);
       return;
@@ -31,17 +31,17 @@ export const AnimatedMarkdown = ({ content, isActive, speed = 50 }: AnimatedMark
         return;
       }
 
-      // Revelar caracteres gradualmente
-      const chunkSize = Math.ceil(speed / 10); // Ajusta velocidade
+      // Revelar caracteres mais rapidamente
+      const chunkSize = Math.max(5, Math.ceil(speed / 8));
       currentIndex = Math.min(currentIndex + chunkSize, content.length);
       setDisplayedContent(content.slice(0, currentIndex));
-    }, 100);
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [content, isActive, speed]);
+  }, [isActive]);
 
   return (
-    <div className={`prose prose-lg max-w-none transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-60'}`}>
+    <div className={`prose prose-lg max-w-none transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
