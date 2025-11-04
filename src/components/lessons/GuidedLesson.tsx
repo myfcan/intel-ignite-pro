@@ -16,7 +16,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio) {
+      console.log('🎵 [ÁUDIO] Áudio não disponível');
+      return;
+    }
+    
+    console.log('🎵 [ÁUDIO] Inicializando áudio:', audioUrl);
+    console.log('🎵 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
     
     const handleTimeUpdate = () => {
       const time = audio.currentTime;
@@ -29,6 +35,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       if (sectionIndex !== -1) {
         if (sectionIndex !== currentSection) {
+          console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
           setCurrentSection(sectionIndex);
           hasScrolledRef.current[sectionIndex] = false;
         }
@@ -45,8 +52,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             if (progressPercent >= 0.8) {
               const sectionElement = document.getElementById(`section-${sectionIndex}`);
               if (sectionElement) {
-                const yOffset = -120;
+                const yOffset = -140;
                 const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex} (${Math.round(progressPercent * 100)}% concluída)`);
                 window.scrollTo({ top: y, behavior: 'smooth' });
                 hasScrolledRef.current[sectionIndex] = true;
               }
@@ -57,6 +65,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     };
     
     const handleLoadedMetadata = () => {
+      console.log(`✅ [ÁUDIO] Carregado com sucesso! Duração: ${audio.duration}s`);
       setDuration(audio.duration);
     };
     
@@ -67,7 +76,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, [currentSection, lessonData.sections]);
+  }, [currentSection, lessonData.sections, audioUrl]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -155,15 +164,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-24 pb-32">
-        <div className="w-full max-w-[1800px] mx-auto">
-          <div className="grid lg:grid-cols-[440px_1fr] gap-8">
+      <div className="w-full px-4 sm:px-6 pt-32 pb-32">
+        <div className="w-full max-w-[2400px] mx-auto">
+          <div className="grid lg:grid-cols-[380px_1fr] gap-10">
             
             <aside className="hidden lg:block">
-              <div className="sticky top-28 space-y-5">
+              <div className="sticky top-32 space-y-4">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 shadow-xl">
-                  <div className="flex justify-center mb-5">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/50 shadow-xl">
+                  <div className="flex justify-center mb-4">
                     <div className="relative">
                       <img src="/maia-avatar.png" alt="MAIA" className="w-36 h-36 object-contain drop-shadow-2xl" />
                       {isPlaying && (
@@ -176,15 +185,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-5 border border-cyan-200/50">
+                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-4 border border-cyan-200/50">
                     <p className="text-sm text-center text-slate-700 font-medium leading-relaxed">
                       {lessonData.sections[currentSection]?.speechBubbleText || "Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial."}
                     </p>
                   </div>
                 </div>
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-200/50 shadow-xl">
-                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-4">Seções da aula</h3>
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Seções da aula</h3>
                   <div className="space-y-2">
                     {lessonData.sections.map((section, index) => (
                       <button
