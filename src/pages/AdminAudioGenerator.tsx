@@ -124,26 +124,31 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     try {
       const lessonId = '11111111-1111-1111-1111-111111111101';
       
-      toast.info('Regenerando áudio com timestamps usando spokenContent...');
+      toast.info('Regenerando áudio com timestamps...');
       
-      // Usar o fundamentos01AudioText que é o texto falado completo
       const { data, error } = await supabase.functions.invoke('generate-audio-elevenlabs', {
         body: {
           text: fundamentos01AudioText,
           lesson_id: lessonId,
-          voice_id: 'EXAVITQu4vr4xnSDxMaL', // Sarah
+          voice_id: 'EXAVITQu4vr4xnSDxMaL',
           model_id: 'eleven_multilingual_v2'
         }
       });
       
       if (error) throw error;
       
-      toast.success('✅ Timestamps regenerados e salvos automaticamente no banco!');
-      toast.info('🔄 Recarregue a página da lição para ver o efeito karaoke funcionando!');
+      console.log('Resposta da edge function:', data);
+      
+      if (data?.word_timestamps && data.word_timestamps.length > 0) {
+        toast.success(`✅ ${data.total_words} palavras com timestamps salvos no banco!`);
+        toast.info('🔄 Recarregue a página da lição para ver o karaoke funcionando!');
+      } else {
+        toast.warning('Áudio gerado mas timestamps não disponíveis');
+      }
       
     } catch (error) {
       console.error('Erro ao regenerar:', error);
-      toast.error('Erro ao regenerar: ' + (error as Error).message);
+      toast.error('Erro: ' + (error as Error).message);
     } finally {
       setIsRegenerating(false);
     }

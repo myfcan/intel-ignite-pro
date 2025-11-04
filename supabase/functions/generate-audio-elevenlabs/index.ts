@@ -94,17 +94,17 @@ serve(async (req) => {
       );
     }
     
-    // Converter base64 para buffer
-    const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
-    
-    console.log('Áudio gerado com sucesso. Tamanho:', audioBuffer.byteLength, 'bytes');
+    console.log('Áudio gerado com sucesso. Tamanho:', audioBase64.length, 'chars base64');
     
     // Processar timestamps se disponíveis
     let wordTimestamps = [];
     if (alignment?.characters && alignment.characters.length > 0) {
       console.log('Processando', alignment.characters.length, 'timestamps de caracteres...');
       wordTimestamps = processWordTimestamps(alignment.characters, text);
-      console.log('Timestamps processados:', wordTimestamps.length, 'palavras');
+      console.log('✅ Timestamps processados:', wordTimestamps.length, 'palavras');
+      
+      // Log das primeiras 5 palavras para debug
+      console.log('Primeiras 5 palavras:', wordTimestamps.slice(0, 5));
       
       // Salvar timestamps no banco se lesson_id fornecido
       if (lesson_id) {
@@ -113,32 +113,65 @@ serve(async (req) => {
           const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
           const supabase = createClient(supabaseUrl, supabaseKey);
           
-          const { error: updateError } = await supabase
-            .from('lessons')
-            .update({ word_timestamps: wordTimestamps })
-            .eq('id', lesson_id);
+          // Fazer upload do áudio para storage
+          const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+          const fileName = `lesson-${lesson_id}-${Date.now()}.mp3`;
           
-          if (updateError) {
-            console.error('Erro ao salvar timestamps:', updateError);
+          const { error: uploadError } = await supabase.storage
+            .from('lesson-audios')
+            .upload(fileName, audioBuffer, {
+              contentType: 'audio/mpeg',
+              upsert: true
+            });
+          
+          if (uploadError) {
+            console.error('Erro ao fazer upload do áudio:', uploadError);
           } else {
-            console.log('✅ Timestamps salvos no banco para lesson:', lesson_id);
+            console.log('✅ Áudio salvo no storage:', fileName);
+            
+            // Pegar URL pública
+            const { data: urlData } = supabase.storage
+              .from('lesson-audios')
+              .getPublicUrl(fileName);
+            
+            // Atualizar lesson com audio_url e timestamps
+            const { error: updateError } = await supabase
+              .from('lessons')
+              .update({ 
+                audio_url: urlData.publicUrl,
+                word_timestamps: wordTimestamps 
+              })
+              .eq('id', lesson_id);
+            
+            if (updateError) {
+              console.error('Erro ao atualizar lesson:', updateError);
+            } else {
+              console.log('✅ Lesson atualizada com audio_url e timestamps');
+            }
           }
         } catch (err) {
-          console.error('Erro ao conectar com banco:', err);
+          console.error('Erro ao salvar no banco:', err);
         }
       }
     } else {
       console.warn('⚠️ Nenhum timestamp recebido da API');
     }
     
-    return new Response(audioBuffer, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': audioBuffer.byteLength.toString(),
-      },
-    });
+    // Retornar JSON com audio_base64 e timestamps para o frontend processar também
+    return new Response(
+      JSON.stringify({
+        audio_base64: audioBase64,
+        word_timestamps: wordTimestamps,
+        total_words: wordTimestamps.length
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     
   } catch (error) {
     console.error('Erro ao processar requisição:', error);
