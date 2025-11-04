@@ -503,6 +503,7 @@ export type Database = {
           score: number | null
           started_at: string | null
           status: Database["public"]["Enums"]["lesson_status_type"] | null
+          time_spent: number | null
           time_spent_seconds: number | null
           user_id: string | null
         }
@@ -518,6 +519,7 @@ export type Database = {
           score?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["lesson_status_type"] | null
+          time_spent?: number | null
           time_spent_seconds?: number | null
           user_id?: string | null
         }
@@ -533,6 +535,7 @@ export type Database = {
           score?: number | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["lesson_status_type"] | null
+          time_spent?: number | null
           time_spent_seconds?: number | null
           user_id?: string | null
         }
