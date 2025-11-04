@@ -23,88 +23,62 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
   const containerRef = useRef<HTMLDivElement>(null);
   const wordRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
   
-  // Criar mapeamento entre palavras do texto puro e timestamps
-  const wordMap = useMemo(() => {
+  // Verificar se o conteúdo bate com os timestamps
+  const syncEnabled = useMemo(() => {
+    if (wordTimestamps.length === 0) return false;
+    
     const plainText = extractPlainText(content);
     const plainWords = plainText.split(/\s+/).filter(w => w.length > 0);
     
-    console.log('📖 Mapeamento:', {
-      totalTimestamps: wordTimestamps.length,
+    if (plainWords.length === 0) return false;
+    
+    // Verifica se as primeiras palavras batem (normalizado)
+    const firstPlainWord = plainWords[0]?.toLowerCase().replace(/[.,!?;:]/g, '');
+    const firstTimestamp = wordTimestamps[0]?.word.toLowerCase().replace(/[.,!?;:]/g, '');
+    
+    const matches = firstPlainWord === firstTimestamp || 
+                    firstPlainWord?.includes(firstTimestamp) ||
+                    firstTimestamp?.includes(firstPlainWord);
+    
+    console.log('🔍 Verificação de sincronização:', {
+      matches,
+      firstPlainWord,
+      firstTimestamp,
       totalPlainWords: plainWords.length,
-      firstTimestamp: wordTimestamps[0]?.word,
-      firstPlainWord: plainWords[0],
-      lastTimestamp: wordTimestamps[wordTimestamps.length - 1]?.word,
-      lastPlainWord: plainWords[plainWords.length - 1]
+      totalTimestamps: wordTimestamps.length
     });
     
-    // Mapa: índice no texto renderizado -> índice no array de timestamps
-    const map = new Map<number, number>();
-    let timestampIndex = 0;
-    
-    plainWords.forEach((plainWord, plainIndex) => {
-      if (timestampIndex < wordTimestamps.length) {
-        // Normaliza ambas as palavras para comparação
-        const normalizedPlain = plainWord.toLowerCase().replace(/[.,!?;:]/g, '');
-        const normalizedTimestamp = wordTimestamps[timestampIndex].word.toLowerCase().replace(/[.,!?;:]/g, '');
-        
-        if (normalizedPlain === normalizedTimestamp || normalizedPlain.includes(normalizedTimestamp)) {
-          map.set(plainIndex, timestampIndex);
-          timestampIndex++;
-        }
-      }
-    });
-    
-    return map;
+    return matches;
   }, [content, wordTimestamps]);
   
+  // Se não sincronizar, retornar apenas renderização estática
+  if (!syncEnabled) {
+    return (
+      <div
+        ref={containerRef}
+        className={`
+          transition-all duration-500 prose prose-sm max-w-none
+          ${isActive ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-2'}
+        `}
+      >
+        <ReactMarkdown>{content}</ReactMarkdown>
+      </div>
+    );
+  }
+
   // Índice global que será resetado a cada render
   let globalWordIndex = 0;
 
   // Encontrar palavra ativa usando currentTime diretamente
-  const activeTimestampIndex = wordTimestamps.findIndex(
+  const activeWordIndex = wordTimestamps.findIndex(
     (wt) => currentTime >= wt.start && currentTime < wt.end
   );
 
-  // Se não encontrou, usar a última palavra antes do tempo atual
-  const effectiveTimestampIndex = activeTimestampIndex >= 0 
-    ? activeTimestampIndex 
-    : wordTimestamps.findIndex((wt, idx) => {
-        const nextWord = wordTimestamps[idx + 1];
-        return currentTime >= wt.end && (!nextWord || currentTime < nextWord.start);
-      });
-
-  // Encontrar índice da palavra renderizada correspondente ao timestamp ativo
-  const activeRenderIndex = useMemo(() => {
-    if (effectiveTimestampIndex < 0) return -1;
-    
-    // Procura qual índice renderizado mapeia para este timestamp
-    for (const [renderIdx, timestampIdx] of wordMap.entries()) {
-      if (timestampIdx === effectiveTimestampIndex) {
-        return renderIdx;
-      }
-    }
-    return -1;
-  }, [effectiveTimestampIndex, wordMap]);
-
-  // Log de debug
-  useEffect(() => {
-    if (isActive && effectiveTimestampIndex >= 0) {
-      const activeWord = wordTimestamps[effectiveTimestampIndex];
-      
-      console.log(`🎤 [${currentTime.toFixed(2)}s]`, {
-        palavra: activeWord?.word,
-        timestampIdx: effectiveTimestampIndex,
-        renderIdx: activeRenderIndex,
-        wordStart: activeWord?.start.toFixed(2),
-        wordEnd: activeWord?.end.toFixed(2),
-      });
-    }
-  }, [effectiveTimestampIndex, isActive]);
 
   // Scroll automático para palavra ativa
   useEffect(() => {
-    if (activeRenderIndex >= 0 && isActive) {
-      const wordElement = wordRefs.current.get(activeRenderIndex);
+    if (activeWordIndex >= 0 && isActive) {
+      const wordElement = wordRefs.current.get(activeWordIndex);
       if (wordElement) {
         wordElement.scrollIntoView({
           behavior: 'smooth',
@@ -113,7 +87,7 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
         });
       }
     }
-  }, [activeRenderIndex, isActive]);
+  }, [activeWordIndex, isActive]);
 
   // Processar markdown para adicionar spans nas palavras (SEM emojis/formatação)
   const processTextWithSpans = (text: string) => {
@@ -129,8 +103,8 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
       const currentWordIndex = globalWordIndex;
       globalWordIndex++;
 
-      const isCurrentWord = currentWordIndex === activeRenderIndex;
-      const isPastWord = activeRenderIndex >= 0 && currentWordIndex < activeRenderIndex;
+      const isCurrentWord = currentWordIndex === activeWordIndex;
+      const isPastWord = activeWordIndex >= 0 && currentWordIndex < activeWordIndex;
 
       return (
         <span
