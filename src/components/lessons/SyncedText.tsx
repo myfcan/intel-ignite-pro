@@ -17,8 +17,9 @@ export const SyncedText = ({ content, isActive, wordTimestamps, currentTime, sec
   // Índice global que será resetado a cada render
   let globalWordIndex = 0;
 
-  // Como os timestamps já vêm normalizados do GuidedLesson, usamos currentTime diretamente
-  const adjustedTime = currentTime;
+  // Ajuste de sincronização: atrasamos o efeito visual em 0.4s para compensar latência
+  const SYNC_OFFSET = 0.4;
+  const adjustedTime = Math.max(0, currentTime - SYNC_OFFSET);
 
   // Encontrar índice da palavra ativa (palavra atual sendo falada)
   const activeWordIndex = wordTimestamps.findIndex(
