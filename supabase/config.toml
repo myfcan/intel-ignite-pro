@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-audio-elevenlabs]
 verify_jwt = false
+
+[functions.generate-audio-with-timestamps]
+verify_jwt = false

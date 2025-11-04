@@ -4,11 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Music } from 'lucide-react';
+import { Loader2, Music, Clock } from 'lucide-react';
 import { AudioPlayer } from '@/components/lesson/AudioPlayer';
+import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [generating, setGenerating] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -80,6 +82,29 @@ export default function Admin() {
             Gerencie e configure o sistema
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Gerador de Áudio com Timestamps Automáticos
+            </CardTitle>
+            <CardDescription>
+              🆕 Gere áudios com timestamps precisos automaticamente usando ElevenLabs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/audio-generator')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Abrir Gerador de Timestamps
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
