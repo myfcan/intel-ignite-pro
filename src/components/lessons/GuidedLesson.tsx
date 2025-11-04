@@ -80,9 +80,15 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
   // Separate effect for smooth scrolling
   useEffect(() => {
     if (activeSection !== null && sectionRefs.current[activeSection]) {
-      sectionRefs.current[activeSection].scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
+      // Scroll para o topo da seção com um offset para compensar o header fixo
+      const element = sectionRefs.current[activeSection];
+      const headerOffset = 200; // Altura do header + espaço extra
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
       });
     }
   }, [activeSection]);

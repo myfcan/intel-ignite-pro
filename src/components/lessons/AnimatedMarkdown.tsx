@@ -12,13 +12,27 @@ export const AnimatedMarkdown = ({ content, isActive, speed = 50 }: AnimatedMark
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    // Mostra texto completo instantaneamente - sem animação de digitação
-    setDisplayedContent(content);
-    setIsComplete(true);
+    if (!isActive) {
+      setDisplayedContent('');
+      setIsComplete(false);
+      return;
+    }
+
+    // Quando ativa, mostra o texto com um leve delay para efeito de entrada
+    const timer = setTimeout(() => {
+      setDisplayedContent(content);
+      setIsComplete(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [content, isActive]);
 
   return (
-    <div className={`prose prose-lg max-w-none transition-all duration-700 ${isActive ? 'opacity-100 scale-100' : 'opacity-30 scale-[0.98]'}`}>
+    <div className={`prose prose-lg max-w-none transition-all duration-500 ${
+      isActive 
+        ? 'opacity-100 translate-y-0' 
+        : 'opacity-0 translate-y-4'
+    }`}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
