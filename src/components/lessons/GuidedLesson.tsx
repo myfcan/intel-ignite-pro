@@ -23,6 +23,11 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
       setAudioLoaded(true);
+      console.log('🎵 DURAÇÃO TOTAL DO ÁUDIO:', Math.floor(audio.duration), 'segundos');
+      console.log('📋 TIMESTAMPS CONFIGURADOS:');
+      lessonData.sections.forEach((section, idx) => {
+        console.log(`  ${idx}: ${section.timestamp}s - "${section.speechBubbleText}"`);
+      });
       // Autoplay após carregar
       audio.play().then(() => {
         setIsPlaying(true);
@@ -32,7 +37,13 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
     };
 
     const handleTimeUpdate = () => {
+      const currentSeconds = Math.floor(audio.currentTime);
       setCurrentTime(audio.currentTime);
+      
+      // Log a cada 5 segundos para ajudar no mapeamento
+      if (currentSeconds % 5 === 0 && currentSeconds !== Math.floor(currentTime)) {
+        console.log(`⏱️ Tempo atual: ${currentSeconds}s`);
+      }
       
       // Determinar seção ativa baseada no tempo
       const currentSectionIndex = lessonData.sections.findIndex((section, index) => {
@@ -42,8 +53,11 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       });
       
       if (currentSectionIndex !== -1 && currentSectionIndex !== activeSection) {
-        console.log(`🎯 Mudando para seção ${currentSectionIndex} aos ${Math.floor(audio.currentTime)}s`);
-        console.log(`📊 Seção: "${lessonData.sections[currentSectionIndex].speechBubbleText}"`);
+        console.log(`\n🎯 ===== MUDANÇA DE SEÇÃO =====`);
+        console.log(`   Tempo: ${Math.floor(audio.currentTime)}s`);
+        console.log(`   Seção ${currentSectionIndex}: "${lessonData.sections[currentSectionIndex].speechBubbleText}"`);
+        console.log(`   Timestamp configurado: ${lessonData.sections[currentSectionIndex].timestamp}s`);
+        console.log(`===============================\n`);
         setActiveSection(currentSectionIndex);
       }
     };
