@@ -149,29 +149,29 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950 to-slate-900 text-white pb-32">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 pb-32">
       {/* Header Fixo */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-purple-500/10">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-1.5 hover:bg-purple-800/30 rounded-lg transition-all group"
+              className="p-2 hover:bg-slate-100 rounded-lg transition-all group"
               title="Voltar"
             >
-              <ChevronLeft className="w-5 h-5 text-purple-400 group-hover:text-white transition-colors" />
+              <ChevronLeft className="w-5 h-5 text-slate-700" />
             </button>
             
             <div className="flex-1">
-              <h1 className="text-lg font-semibold text-white">{lessonData.title}</h1>
-              <p className="text-xs text-purple-400">{lessonData.trackName}</p>
+              <h1 className="text-lg font-semibold text-slate-900">{lessonData.title}</h1>
+              <p className="text-xs text-slate-600">{lessonData.trackName}</p>
             </div>
             
             <button 
               onClick={onComplete}
-              className="px-3 py-1.5 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-cyan-400/20 transition-all flex items-center gap-1.5"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-xl text-white text-sm font-medium shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center gap-2"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">Exercício</span>
             </button>
           </div>
@@ -179,23 +179,21 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
           {/* Barra de progresso melhorada */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="text-purple-400">Progresso</span>
-              <span className="text-white font-semibold">{Math.round(progressPercent)}%</span>
+              <span className="text-slate-600">Progresso</span>
+              <span className="font-semibold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">{Math.round(progressPercent)}%</span>
             </div>
-            <div className="h-1.5 bg-purple-900/30 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-200/50 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-500 relative"
+                className="h-full bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 transition-all duration-500 shadow-sm"
                 style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-              </div>
+              />
             </div>
           </div>
         </div>
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="container mx-auto px-4 pt-28 pb-48">
+      <main className="container mx-auto px-4 pt-32 pb-48">
         <div className="max-w-4xl mx-auto">
           {/* MAIA Narradora */}
           <div className="mb-8 flex flex-col items-center">
@@ -209,15 +207,19 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
             
             {/* Balão de fala sincronizado */}
             <div className="relative max-w-2xl w-full">
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl p-5 border border-cyan-400/20 shadow-2xl relative overflow-hidden">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 shadow-xl relative">
                 {isPlaying && (
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-cyan-400 rounded-full animate-ping" />
+                  <div className="absolute -top-1 -right-1 flex gap-1">
+                    <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                    <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse delay-75" />
+                    <span className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-150" />
+                  </div>
                 )}
-                <p className="text-base text-white text-center font-medium leading-relaxed">
+                <p className="text-base text-slate-800 text-center font-medium leading-relaxed">
                   {lessonData.sections[activeSection]?.speechBubbleText}
                 </p>
               </div>
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[12px] border-b-slate-800/60" />
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white/80" />
             </div>
           </div>
 
@@ -232,38 +234,38 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   transition-all duration-500 transform
                   ${activeSection >= index 
                     ? 'opacity-100 translate-y-0' 
-                    : 'opacity-40 translate-y-4'
+                    : 'opacity-50 translate-y-4'
                   }
                 `}
               >
                 <div className={`
-                  bg-slate-800/40 backdrop-blur-sm rounded-2xl p-6 border
+                  bg-white/80 backdrop-blur-xl rounded-2xl p-6 border shadow-lg
                   ${activeSection === index 
-                    ? 'border-cyan-400/40 shadow-2xl shadow-cyan-500/10 ring-2 ring-cyan-400/20' 
-                    : 'border-slate-700/30'
+                    ? 'border-cyan-300/50 shadow-cyan-500/10 ring-2 ring-cyan-400/20' 
+                    : 'border-slate-200/50'
                   }
                 `}>
                   {/* Indicador de seção */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`
-                      w-9 h-9 rounded-full flex items-center justify-center font-bold text-base transition-all
+                      w-10 h-10 rounded-full flex items-center justify-center font-bold text-base transition-all shadow-md
                       ${activeSection === index 
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white scale-110' 
-                        : 'bg-slate-700/50 text-purple-300'
+                        ? 'bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 text-white scale-110' 
+                        : 'bg-slate-100 text-slate-600'
                       }
                     `}>
                       {index + 1}
                     </div>
                     {activeSection === index && (
-                      <span className="text-cyan-400 text-xs font-medium animate-pulse flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                      <span className="text-cyan-600 text-xs font-medium flex items-center gap-2">
+                        <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                         Você está aqui
                       </span>
                     )}
                   </div>
                   
                   {/* Conteúdo da seção */}
-                  <div className="prose prose-invert prose-base max-w-none prose-headings:text-white prose-headings:font-semibold prose-p:text-slate-100 prose-p:leading-relaxed prose-strong:text-cyan-300 prose-strong:font-semibold prose-ul:text-slate-100 prose-li:text-slate-100 prose-li:marker:text-cyan-400 prose-blockquote:border-l-cyan-400 prose-blockquote:text-slate-200">
+                  <div className="prose prose-slate prose-base max-w-none prose-headings:text-slate-900 prose-headings:font-semibold prose-p:text-slate-700 prose-p:leading-relaxed prose-strong:text-cyan-600 prose-strong:font-semibold prose-ul:text-slate-700 prose-li:text-slate-700 prose-li:marker:text-cyan-500 prose-blockquote:border-l-cyan-400 prose-blockquote:text-slate-600 prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded">
                     <SyncedText
                       content={section.visualContent}
                       isActive={index === activeSection}
@@ -279,7 +281,7 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
       </main>
 
       {/* Audio Player Fixo no Rodapé - VERSÃO MELHORADA */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/30 z-50">
+      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-6xl mx-auto">
             {audioUrl && (
@@ -289,12 +291,12 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                 {/* Desktop layout */}
                 <div className="hidden md:flex items-center justify-between gap-4">
                   {/* Controles de navegação */}
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={skipBackward}
                       disabled={!audioLoaded}
                       className={`
-                        w-10 h-10 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all
+                        w-11 h-11 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all hover:scale-105
                         ${isSkippingBackward ? 'scale-90' : 'scale-100'}
                       `}
                       title="Voltar 10 segundos"
@@ -305,16 +307,16 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                     <button
                       onClick={togglePlay}
                       disabled={!audioLoaded}
-                      className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white hover:shadow-lg hover:shadow-cyan-400/20 transition-all hover:scale-105 active:scale-95"
+                      className="w-14 h-14 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 active:scale-95"
                     >
-                      {isPlaying ? <Pause size={22} /> : <Play size={22} className="ml-0.5" />}
+                      {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
                     </button>
                     
                     <button
                       onClick={skipForward}
                       disabled={!audioLoaded}
                       className={`
-                        w-10 h-10 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all
+                        w-11 h-11 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all hover:scale-105
                         ${isSkippingForward ? 'scale-90' : 'scale-100'}
                       `}
                       title="Avançar 10 segundos"
@@ -325,26 +327,26 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   
                   {/* Barra de progresso do áudio */}
                   <div className="flex-1 flex items-center gap-3">
-                    <Volume2 className="text-cyan-400 flex-shrink-0" size={18} />
+                    <Volume2 className="text-cyan-400 flex-shrink-0" size={20} />
                     
-                    <span className="text-xs text-slate-400 font-medium min-w-[40px] tabular-nums">
+                    <span className="text-xs text-slate-400 font-medium min-w-[45px] tabular-nums">
                       {formatTime(currentTime)}
                     </span>
                     
                     <div 
-                      className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group"
+                      className="flex-1 h-3 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3.5 transition-all group"
                       onClick={handleProgressBarClick}
                       title="Clique para pular para um ponto específico"
                     >
                       <div 
-                        className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative"
+                        className="h-full bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 transition-all relative shadow-lg shadow-cyan-500/20"
                         style={{ width: `${progressPercent}%` }}
                       >
-                        <div className="absolute right-0 top-0 w-1 h-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
                     
-                    <span className="text-xs text-slate-400 font-medium min-w-[40px] tabular-nums">
+                    <span className="text-xs text-slate-400 font-medium min-w-[45px] tabular-nums">
                       {formatTime(duration)}
                     </span>
                   </div>
@@ -352,14 +354,14 @@ export const GuidedLesson = ({ lessonData, onComplete, audioUrl }: GuidedLessonP
                   <button
                     onClick={cyclePlaybackRate}
                     disabled={!audioLoaded}
-                    className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-white font-bold text-sm transition-all min-w-[60px]"
+                    className="px-4 py-2.5 bg-slate-700/50 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl text-white font-bold text-sm transition-all min-w-[65px] hover:scale-105"
                   >
                     {playbackRate}x
                   </button>
                   
                   <button
                     onClick={onComplete}
-                    className="px-5 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all whitespace-nowrap"
+                    className="px-6 py-2.5 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 rounded-xl text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all whitespace-nowrap hover:scale-105"
                   >
                     Continuar
                   </button>
