@@ -88,9 +88,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const handleLoadedMetadata = () => {
       console.log(`✅ [ÁUDIO] Carregado com sucesso! Duração: ${audio.duration}s`);
       setDuration(audio.duration);
-      // Configurar volume máximo
+      // Configurar volume MÁXIMO - forçar ao carregar
       audio.volume = 1.0;
-      console.log('🔊 [VOLUME] Configurado para 100%');
+      console.log('🔊 [VOLUME] MÁXIMO configurado: 100%');
+      
       // Tentar dar play automaticamente
       audio.play().then(() => {
         console.log('🎵 [AUTOPLAY] Áudio iniciado automaticamente');

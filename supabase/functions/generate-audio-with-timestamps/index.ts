@@ -69,11 +69,11 @@ serve(async (req) => {
           model_id: modelId,
           voice_settings: {
             stability: 0.5,
-            similarity_boost: 0.8,
+            similarity_boost: 1.0,
             style: 0.0,
-            use_speaker_boost: true,
-            volume: 1.0
-          }
+            use_speaker_boost: true
+          },
+          output_format: "mp3_44100_128"
         }),
       }
     );
