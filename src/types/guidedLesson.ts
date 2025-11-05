@@ -6,11 +6,71 @@ export interface WordTimestamp {
 
 export type LessonSectionType = 'text' | 'playground' | 'end-audio';
 
+export type PlaygroundType = 
+  | 'real-playground'
+  | 'multiple-choice-with-feedback';
+
+export interface RealPlaygroundConfig {
+  type: 'real-playground';
+  title: string;
+  maiaMessage: string;
+  scenario: {
+    title: string;
+    description: string;
+  };
+  prefilledText: string;
+  userPlaceholder: string;
+  validation: {
+    minLength: number;
+    requiredKeywords?: string[][];
+    feedback: {
+      tooShort: string;
+      good: string;
+      excellent: string;
+    };
+  };
+}
+
 export interface PlaygroundConfig {
   instruction: string;
-  type: 'multiple-choice-with-feedback';
-  options: string[];
-  feedback: Record<string, string>;
+  type: PlaygroundType;
+  options?: string[];
+  feedback?: Record<string, string>;
+  realConfig?: RealPlaygroundConfig;
+}
+
+export interface ExerciseConfig {
+  id: string;
+  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection';
+  title: string;
+  instruction: string;
+  data: any;
+}
+
+export interface FinalPlaygroundStep {
+  stepNumber: number;
+  title: string;
+  type: 'radio' | 'textarea' | 'prompt-builder';
+  question: string;
+  options?: Array<{ value: string; label: string; description: string; icon: string }>;
+  placeholder?: string;
+  minLength?: number;
+  template?: {
+    parts: Array<{
+      id: string;
+      label: string;
+      placeholder: string;
+      hint: string;
+    }>;
+  };
+}
+
+export interface FinalPlaygroundConfig {
+  id: string;
+  type: 'guided-prompt-builder';
+  title: string;
+  maiaIntro: string;
+  steps: FinalPlaygroundStep[];
 }
 
 export interface LessonSection {
@@ -28,8 +88,10 @@ export interface GuidedLessonData {
   title: string;
   trackId: string;
   trackName: string;
-  duration: number; // segundos estimados
+  duration: number;
   sections: LessonSection[];
+  exercisesConfig?: ExerciseConfig[];
+  finalPlaygroundConfig?: FinalPlaygroundConfig;
 }
 
 export interface GuidedLessonProps {

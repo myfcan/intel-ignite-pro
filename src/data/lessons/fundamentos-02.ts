@@ -6,6 +6,33 @@ export const fundamentos02: GuidedLessonData = {
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 305,
+  exercisesConfig: [
+    {
+      id: 'ex-complete-sentence',
+      type: 'complete-sentence',
+      title: 'Complete as Frases',
+      instruction: 'Complete cada frase com a ferramenta correta:',
+      data: {
+        sentences: [
+          {
+            id: '1',
+            text: 'Se eu preciso pesquisar informações atualizadas da internet, devo usar o ___________.',
+            correctAnswers: ['Google Gemini', 'Gemini', 'google gemini', 'gemini']
+          },
+          {
+            id: '2',
+            text: 'Para escrever um email profissional rápido, a ferramenta mais popular é o ___________.',
+            correctAnswers: ['ChatGPT', 'Chat GPT', 'chatgpt', 'chat gpt']
+          },
+          {
+            id: '3',
+            text: 'Se vou analisar um contrato longo e complexo, o ___________ seria ideal por ser mais detalhista.',
+            correctAnswers: ['Claude', 'claude']
+          }
+        ]
+      }
+    }
+  ],
   sections: [
     {
       id: 'tres-ferramentas',
@@ -120,13 +147,30 @@ Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmai
       visualContent: '',
       spokenContent: '',
       playgroundConfig: {
-        instruction: 'Imagine que você precisa escrever um email profissional pedindo orçamento de um serviço. Qual ferramenta você escolheria?',
-        type: 'multiple-choice-with-feedback',
-        options: ['ChatGPT', 'Google Gemini', 'Claude'],
-        feedback: {
-          'ChatGPT': 'Excelente escolha! ChatGPT é perfeito para emails profissionais rápidos!',
-          'Claude': 'Ótima escolha! Claude é ideal quando você quer um texto mais elaborado!',
-          'Google Gemini': 'Gemini funciona bem, mas ChatGPT ou Claude seriam ainda melhores para essa tarefa específica!'
+        instruction: '',
+        type: 'real-playground',
+        realConfig: {
+          type: 'real-playground',
+          title: 'Playground: Teste Rápido',
+          maiaMessage: 'Você acabou de aprender sobre ChatGPT, Gemini e Claude. Agora vamos testar na prática criando um prompt REAL!',
+          scenario: {
+            title: 'Situação Real:',
+            description: 'Imagine que você precisa escrever um email profissional para um fornecedor pedindo orçamento de produtos.'
+          },
+          prefilledText: 'Use o ChatGPT para escrever',
+          userPlaceholder: 'um email para meu fornecedor pedindo orçamento de 100 unidades do produto X, com tom formal e objetivo',
+          validation: {
+            minLength: 30,
+            requiredKeywords: [
+              ['fornecedor', 'cliente', 'para'],
+              ['formal', 'profissional', 'tom']
+            ],
+            feedback: {
+              tooShort: 'Continue... seu prompt está muito curto!',
+              good: 'Bom! Agora defina melhor o tom e o destinatário.',
+              excellent: 'Perfeito! Seu prompt está completo e bem estruturado! 🎯'
+            }
+          }
         }
       }
     },

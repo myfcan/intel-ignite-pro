@@ -4,6 +4,9 @@ import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import { GuidedLessonProps } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { TransitionCard } from './TransitionCard';
+import { ExercisesSection } from './ExercisesSection';
+import { GuidedPlayground } from './GuidedPlayground';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +24,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
   const [showPlaygroundOverlay, setShowPlaygroundOverlay] = useState(false);
   const [showEndCard, setShowEndCard] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState<
+    'audio' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
+  >('audio');
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
@@ -280,16 +286,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // Detectar fim do áudio (end-audio)
   useEffect(() => {
     const section = lessonData.sections[currentSection];
-    if (section?.type === 'end-audio' && !showEndCard) {
+    if (section?.type === 'end-audio' && !showEndCard && currentPhase === 'audio') {
       const audio = audioRef.current;
       if (audio) {
         audio.pause();
         setIsPlaying(false);
+      }
+      
+      // Verificar se tem exercícios/playground final
+      if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
+        setCurrentPhase('transition');
+        console.log('🎯 [END-AUDIO] Indo para transição (tem exercícios)');
+      } else {
         setShowEndCard(true);
         console.log('🎯 [END-AUDIO] Fim da mini-aula detectado');
       }
     }
-  }, [currentSection, lessonData.sections, showEndCard]);
+  }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase]);
 
   // Completar playground e retomar áudio
   const handlePlaygroundComplete = (answer: string | null) => {
@@ -342,10 +355,61 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
     setShowEndCard(false);
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      setCurrentPhase('exercises');
+    } else if (lessonData.finalPlaygroundConfig) {
+      setCurrentPhase('playground-final');
+    } else {
+      onComplete();
+    }
+  };
+
+  const handleExercisesComplete = () => {
+    if (lessonData.finalPlaygroundConfig) {
+      setCurrentPhase('playground-final');
+    } else {
+      onComplete();
+    }
+  };
+
+  const handleFinalPlaygroundComplete = () => {
+    setCurrentPhase('completed');
     onComplete();
   };
   
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  
+  // Renderizar fase de transição
+  if (currentPhase === 'transition') {
+    return (
+      <TransitionCard
+        title="🎉 Muito bem! Aula completa!"
+        description="Agora vamos fixar o que você aprendeu com exercícios práticos."
+        buttonText="🎯 Ir para Exercícios"
+        onContinue={handleGoToExercises}
+      />
+    );
+  }
+
+  // Renderizar fase de exercícios
+  if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
+    return (
+      <ExercisesSection
+        exercises={lessonData.exercisesConfig}
+        onComplete={handleExercisesComplete}
+      />
+    );
+  }
+
+  // Renderizar playground final
+  if (currentPhase === 'playground-final' && lessonData.finalPlaygroundConfig) {
+    return (
+      <GuidedPlayground
+        config={lessonData.finalPlaygroundConfig}
+        onComplete={handleFinalPlaygroundComplete}
+      />
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
