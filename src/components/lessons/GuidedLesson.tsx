@@ -11,6 +11,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(lessonData.duration || 0);
+  const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   
@@ -50,6 +51,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       if (sectionIndex !== -1 && sectionIndex !== currentSection) {
         console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
         setCurrentSection(sectionIndex);
+        
+        // Ativar efeito visual de mudança de seção
+        setSectionJustChanged(true);
+        setTimeout(() => setSectionJustChanged(false), 1000);
         
         // Scroll suave para a nova seção apenas se ainda não scrollou para ela
         if (!hasScrolledRef.current[sectionIndex]) {
@@ -249,21 +254,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   id={`section-${index}`}
                   className={`transition-all duration-500 ${currentSection >= index ? 'opacity-100' : 'opacity-40'}`}
                 >
-                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl ${
+                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl transition-all duration-500 ${
                     currentSection === index
-                      ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
+                      ? 'border-cyan-300/50 ring-2 ring-cyan-400/20 animate-pulse'
                       : 'border-slate-200/50'
-                  }`}>
+                  } ${currentSection === index && sectionJustChanged ? 'scale-[1.02]' : 'scale-100'}`}>
                     <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md ${
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all duration-300 ${
                         currentSection === index
                           ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
                           : 'bg-slate-100 text-slate-500'
-                      }`}>
+                      } ${currentSection === index && sectionJustChanged ? 'animate-bounce scale-110' : ''}`}>
                         {index + 1}
                       </div>
                       {currentSection === index && (
-                        <span className="text-xs font-medium text-cyan-600 flex items-center gap-1.5">
+                        <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-opacity duration-500 ${
+                          sectionJustChanged ? 'animate-fade-in' : ''
+                        }`}>
                           <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
                           Você está aqui
                         </span>
