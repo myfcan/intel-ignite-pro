@@ -196,9 +196,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-6 pt-24 pb-32">
+      <div className="w-full px-3 sm:px-6 pt-20 pb-32">
         <div className="w-full max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-[300px_1fr] gap-12">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-12">
             
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
@@ -275,14 +275,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               </div>
             </aside>
             
-            <main className="space-y-6 min-w-0">
+            <main className="space-y-4 sm:space-y-6 min-w-0">
               {lessonData.sections.map((section, index) => (
                 <div
                   key={section.id}
                   id={`section-${index}`}
                   className={`transition-all duration-500 ${currentSection >= index ? 'opacity-100' : 'opacity-40'}`}
                 >
-                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl transition-all relative overflow-hidden ${
+                  <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all relative overflow-hidden ${
                     currentSection === index
                       ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
                       : 'border-slate-200/50'
@@ -307,28 +307,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         </span>
                       )}
                     </div>
-                    <div className="prose prose-slate prose-lg max-w-none 
+                    <div className="prose prose-slate prose-sm sm:prose-base lg:prose-lg max-w-none 
   prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-  prose-h1:text-lg sm:prose-h1:text-xl prose-h1:mb-6 prose-h1:leading-tight
-  prose-h2:text-sm sm:prose-h2:text-base prose-h2:mb-4 prose-h2:mt-6 prose-h2:leading-snug
-  prose-h3:text-xs sm:prose-h3:text-sm prose-h3:mb-3 prose-h3:mt-5
-  prose-p:text-slate-700 prose-p:text-base prose-p:leading-relaxed prose-p:mb-4
+  prose-h1:text-base sm:prose-h1:text-lg lg:prose-h1:text-xl prose-h1:mb-4 sm:prose-h1:mb-6 prose-h1:leading-tight
+  prose-h2:text-sm sm:prose-h2:text-base prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:mt-4 sm:prose-h2:mt-6 prose-h2:leading-snug
+  prose-h3:text-xs sm:prose-h3:text-sm prose-h3:mb-2 sm:prose-h3:mb-3 prose-h3:mt-3 sm:prose-h3:mt-5
+  prose-p:text-slate-700 prose-p:text-sm sm:prose-p:text-base prose-p:leading-relaxed prose-p:mb-3 sm:prose-p:mb-4
   prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
   prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
-  prose-ul:my-4 prose-ul:space-y-2 prose-ul:text-base
-  prose-ol:my-4 prose-ol:space-y-2 prose-ol:text-base
-  prose-li:text-slate-700 prose-li:leading-relaxed prose-li:pl-2
+  prose-ul:my-3 sm:prose-ul:my-4 prose-ul:space-y-1.5 sm:prose-ul:space-y-2 prose-ul:text-sm sm:prose-ul:text-base
+  prose-ol:my-3 sm:prose-ol:my-4 prose-ol:space-y-1.5 sm:prose-ol:space-y-2 prose-ol:text-sm sm:prose-ol:text-base
+  prose-li:text-slate-700 prose-li:leading-relaxed prose-li:pl-1 sm:prose-li:pl-2
   prose-li:marker:text-cyan-500 prose-li:marker:font-bold
   prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 
   prose-blockquote:bg-gradient-to-r prose-blockquote:from-cyan-50/80 prose-blockquote:to-blue-50/50
-  prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl 
-  prose-blockquote:shadow-sm prose-blockquote:my-6
-  prose-blockquote:text-slate-700 prose-blockquote:font-medium
-  prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-2 prose-code:py-1 
-  prose-code:rounded-md prose-code:text-base prose-code:font-mono prose-code:font-semibold
-  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-4 prose-pre:rounded-xl prose-pre:my-6
+  prose-blockquote:py-3 sm:prose-blockquote:py-4 prose-blockquote:px-4 sm:prose-blockquote:px-6 prose-blockquote:rounded-r-xl 
+  prose-blockquote:shadow-sm prose-blockquote:my-4 sm:prose-blockquote:my-6
+  prose-blockquote:text-slate-700 prose-blockquote:font-medium prose-blockquote:text-sm sm:prose-blockquote:text-base
+  prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1.5 sm:prose-code:px-2 prose-code:py-0.5 sm:prose-code:py-1 
+  prose-code:rounded-md prose-code:text-xs sm:prose-code:text-sm lg:prose-code:text-base prose-code:font-mono prose-code:font-semibold
+  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 sm:prose-pre:p-4 prose-pre:rounded-xl prose-pre:my-4 sm:prose-pre:my-6 prose-pre:text-xs sm:prose-pre:text-sm
   prose-a:text-cyan-600 prose-a:no-underline prose-a:font-semibold hover:prose-a:text-cyan-700 hover:prose-a:underline
-  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8">
+  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-4 sm:prose-img:my-6 lg:prose-img:my-8">
                       <ReactMarkdown>{section.visualContent}</ReactMarkdown>
                     </div>
                   </div>
@@ -340,37 +340,39 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* MAIA Mobile - animações otimizadas */}
-      <div className="lg:hidden fixed bottom-28 right-4 z-40">
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[260px]">
-          <div className="flex items-start gap-3">
+      {/* MAIA Mobile - versão premium responsiva */}
+      <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
+          <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
               <img 
                 src="/maia-avatar-v3.png" 
                 alt="MAIA" 
                 className={`
-                  w-16 h-16 object-contain
+                  w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante animate-float
-                  ${isPlaying ? 'animate-pulse-glow' : ''}
+                  ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
                 `}
                 style={{
                   filter: !isPlaying 
-                    ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.1))' 
+                    ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))' 
                     : undefined
                 }}
               />
               {/* Indicadores de áudio para mobile */}
               {isPlaying && (
                 <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
-                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-audio-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-sm shadow-cyan-400" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce shadow-sm" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-audio-bounce shadow-sm shadow-purple-400" style={{ animationDelay: '300ms' }} />
                 </div>
               )}
             </div>
-            <p className="text-xs text-slate-700 leading-tight font-medium">
-              {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
+                {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
