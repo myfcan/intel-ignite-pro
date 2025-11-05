@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { WordTimestamp } from '@/types/guidedLesson';
+import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface InteractiveLessonProps {
   lessonId: string;
@@ -190,7 +192,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <FillBlanksLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <FillBlanksLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     case 'fill-text':
@@ -204,7 +225,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <FillTextLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <FillTextLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     case 'drag-drop':
@@ -218,7 +258,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <DragDropLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <DragDropLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     case 'quiz-playground':
@@ -232,7 +291,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <QuizPlaygroundLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <QuizPlaygroundLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     case 'flashcards':
@@ -246,7 +324,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <FlashcardsLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <FlashcardsLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     case 'before-after':
@@ -260,7 +357,26 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <BeforeAfterLesson {...componentProps} />
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+              <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                </div>
+              </div>
+            </header>
+            <div className="container mx-auto px-4 py-6">
+              <BeforeAfterLesson {...componentProps} />
+            </div>
+          </div>
         </>
       );
     default:
