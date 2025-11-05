@@ -232,6 +232,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
                           ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
+                          ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                         `}
                         style={{
                           filter: !isPlaying 
@@ -378,6 +379,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante animate-float
                   ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
+                  ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                 `}
                 style={{
                   filter: !isPlaying 
@@ -403,7 +405,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl">
+      <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 ${
+        !isAudioEnabled ? 'grayscale opacity-60' : ''
+      }`}>
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="max-w-[1800px] mx-auto">
             
