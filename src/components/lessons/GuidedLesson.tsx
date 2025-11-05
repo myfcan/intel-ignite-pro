@@ -211,7 +211,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         src="/maia-avatar-v3.png" 
                         alt="MAIA" 
                         className={`
-                          w-24 h-24 object-contain 
+                          w-44 h-44 object-contain
                           animate-fly-in-rasante animate-float
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
@@ -231,13 +231,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                           <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
                         </div>
                       )}
+                      
+                      {/* Balão fixo ao lado da cabeça */}
+                      <div className="absolute -top-2 -right-36 hidden xl:block">
+                        <div className="relative bg-white rounded-xl px-4 py-2 border-2 border-cyan-200 shadow-lg">
+                          <p className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                            Olá! Eu sou a MAIA!
+                          </p>
+                          {/* Rabinho do balão apontando para a MAIA */}
+                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-xl p-3 border border-cyan-200/50">
-                    <p className="text-xs text-center text-slate-700 font-medium leading-relaxed">
-                      {lessonData.sections[currentSection]?.speechBubbleText || "Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial."}
-                    </p>
                   </div>
                 </div>
                 
@@ -344,7 +349,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 src="/maia-avatar-v3.png" 
                 alt="MAIA" 
                 className={`
-                  w-14 h-14 object-contain 
+                  w-16 h-16 object-contain
                   animate-fly-in-rasante animate-float
                   ${isPlaying ? 'animate-pulse-glow' : ''}
                 `}
