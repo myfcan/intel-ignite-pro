@@ -2,7 +2,7 @@ import { GuidedLessonData } from '@/types/guidedLesson';
 
 export const fundamentos02: GuidedLessonData = {
   id: 'fundamentos-02',
-  title: 'Reconhecendo IA no dia a dia',
+  title: 'Principais Ferramentas Gratuitas',
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 300,
@@ -10,7 +10,8 @@ export const fundamentos02: GuidedLessonData = {
     {
       id: 'tres-ferramentas',
       timestamp: 0,
-      speechBubbleText: 'Existem dezenas de ferramentas de IA disponíveis hoje, mas você só precisa conhecer três para começar.',
+      type: 'text',
+      speechBubbleText: 'Você só precisa conhecer três ferramentas!',
       visualContent: `# As três ferramentas essenciais 🎯
 
 Existem **dezenas de ferramentas de IA** disponíveis hoje, mas você só precisa conhecer **três para começar**:
@@ -38,8 +39,9 @@ A melhor parte? Você não precisa escolher apenas uma. Muitas pessoas usam as t
     },
     {
       id: 'chatgpt',
-      timestamp: 0,
-      speechBubbleText: 'O ChatGPT é a ferramenta de IA mais conhecida do mundo.',
+      timestamp: 60,
+      type: 'text',
+      speechBubbleText: 'ChatGPT é a mais famosa!',
       visualContent: `## ChatGPT - O mais popular 🚀
 
 O **ChatGPT** é a ferramenta de IA mais conhecida do mundo, criada pela **OpenAI**.
@@ -72,8 +74,9 @@ Para usar, basta acessar chat ponto openai ponto com, criar uma conta gratuita e
     },
     {
       id: 'google-gemini',
-      timestamp: 0,
-      speechBubbleText: 'O Gemini é a resposta do Google para a IA conversacional.',
+      timestamp: 120,
+      type: 'text',
+      speechBubbleText: 'Gemini se conecta com tudo do Google!',
       visualContent: `## Google Gemini - Integração poderosa 🌐
 
 O **Gemini** é a resposta do Google para a IA conversacional.
@@ -110,9 +113,28 @@ Melhor para: pesquisar informações atualizadas na internet, trabalhar com seus
 Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmail ou Drive, vai adorar essa integração automática!`
     },
     {
+      id: 'playground-mid',
+      timestamp: 180,
+      type: 'playground',
+      speechBubbleText: 'Hora de praticar!',
+      visualContent: '',
+      spokenContent: '',
+      playgroundConfig: {
+        instruction: 'Imagine que você precisa escrever um email profissional pedindo orçamento de um serviço. Qual ferramenta você escolheria?',
+        type: 'multiple-choice-with-feedback',
+        options: ['ChatGPT', 'Google Gemini', 'Claude'],
+        feedback: {
+          'ChatGPT': 'Excelente escolha! ChatGPT é perfeito para emails profissionais rápidos!',
+          'Claude': 'Ótima escolha! Claude é ideal quando você quer um texto mais elaborado!',
+          'Google Gemini': 'Gemini funciona bem, mas ChatGPT ou Claude seriam ainda melhores para essa tarefa específica!'
+        }
+      }
+    },
+    {
       id: 'claude',
-      timestamp: 0,
-      speechBubbleText: 'Claude é especialmente bom quando você precisa de textos mais longos.',
+      timestamp: 180,
+      type: 'text',
+      speechBubbleText: 'Claude é o mais detalhista!',
       visualContent: `## Claude - Para textos longos e detalhados 📚
 
 **Claude**, desenvolvido pela Anthropic, é especialmente bom quando você precisa de **textos mais longos**, **análises detalhadas** ou trabalhar com **documentos complexos**.
@@ -143,8 +165,9 @@ Acesse claude ponto ai e crie sua conta gratuita. Claude tem reputação de ser 
     },
     {
       id: 'escolhendo-ferramenta',
-      timestamp: 0,
-      speechBubbleText: 'Agora você conhece as três principais ferramentas. Aqui vai um guia rápido!',
+      timestamp: 240,
+      type: 'text',
+      speechBubbleText: 'Agora você sabe qual usar!',
       visualContent: `## Como escolher a ferramenta certa 🎯
 
 Agora você conhece as **três principais ferramentas**. Aqui vai um guia rápido de **quando usar cada uma**:
@@ -185,6 +208,14 @@ Para tarefas rápidas e gerais, use ChatGPT. Para pesquisas e integração Googl
 A verdade é que todas são excelentes! Com o tempo você vai descobrir sua favorita, mas é muito útil conhecer as três. Muitos profissionais alternam entre elas dependendo da tarefa.
 
 O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e faça seu primeiro teste. Você vai se surpreender com o quanto elas podem facilitar sua vida!`
+    },
+    {
+      id: 'fim-audio',
+      timestamp: 300,
+      type: 'end-audio',
+      speechBubbleText: 'Aula completa! Parabéns!',
+      visualContent: '',
+      spokenContent: ''
     }
   ]
 };

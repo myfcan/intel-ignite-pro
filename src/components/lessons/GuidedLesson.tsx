@@ -3,6 +3,11 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } fr
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import { GuidedLessonProps } from '@/types/guidedLesson';
+import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { toast } from '@/hooks/use-toast';
 
 export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -14,6 +19,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
+  const [showPlaygroundOverlay, setShowPlaygroundOverlay] = useState(false);
+  const [showEndCard, setShowEndCard] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
@@ -235,6 +242,82 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Detectar playground mid-lesson
+  useEffect(() => {
+    const section = lessonData.sections[currentSection];
+    if (section?.type === 'playground' && isPlaying && !showPlaygroundOverlay) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+        setShowPlaygroundOverlay(true);
+        console.log('🎮 [PLAYGROUND] Pausando áudio para playground mid-lesson');
+      }
+    }
+  }, [currentSection, isPlaying, lessonData.sections, showPlaygroundOverlay]);
+
+  // Detectar fim do áudio (end-audio)
+  useEffect(() => {
+    const section = lessonData.sections[currentSection];
+    if (section?.type === 'end-audio' && !showEndCard) {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+        setShowEndCard(true);
+        console.log('🎯 [END-AUDIO] Fim da mini-aula detectado');
+      }
+    }
+  }, [currentSection, lessonData.sections, showEndCard]);
+
+  // Completar playground e retomar áudio
+  const handlePlaygroundComplete = (answer: string | null) => {
+    setShowPlaygroundOverlay(false);
+    
+    // Encontrar próxima seção após o playground
+    const playgroundIndex = currentSection;
+    const nextSectionIndex = playgroundIndex + 1;
+    
+    if (nextSectionIndex < lessonData.sections.length) {
+      const nextSection = lessonData.sections[nextSectionIndex];
+      const audio = audioRef.current;
+      
+      if (audio && nextSection) {
+        // Pular para o timestamp da próxima seção
+        audio.currentTime = nextSection.timestamp;
+        audio.play();
+        setIsPlaying(true);
+        
+        console.log(`🎮 [PLAYGROUND] Retomando áudio na seção ${nextSectionIndex} (${nextSection.timestamp}s)`);
+      }
+    }
+    
+    // Mostrar feedback se respondeu (não pulou)
+    if (answer) {
+      const section = lessonData.sections[currentSection];
+      const feedback = section?.playgroundConfig?.feedback[answer];
+      if (feedback) {
+        toast({
+          title: answer,
+          description: feedback,
+          duration: 4000,
+        });
+      }
+    } else {
+      toast({
+        title: "Exercício pulado",
+        description: "Você pode voltar depois para praticar!",
+        duration: 2000,
+      });
+    }
+  };
+
+  // Ir para exercícios após end-audio
+  const handleGoToExercises = () => {
+    setShowEndCard(false);
+    onComplete();
   };
   
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -470,13 +553,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={skipBackward} className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all">
+                <button 
+                  onClick={skipBackward} 
+                  disabled={showPlaygroundOverlay || showEndCard}
+                  className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                   <SkipBack size={16} />
                 </button>
-                <button onClick={togglePlayPause} className="w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105">
+                <button 
+                  onClick={togglePlayPause} 
+                  disabled={showPlaygroundOverlay || showEndCard}
+                  className="w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
                   {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                 </button>
-                <button onClick={skipForward} className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all">
+                <button 
+                  onClick={skipForward} 
+                  disabled={showPlaygroundOverlay || showEndCard}
+                  className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                   <SkipForward size={16} />
                 </button>
               </div>
@@ -532,6 +627,47 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           </div>
         </div>
       </div>
+
+      {/* Overlay do Playground Mid-Lesson */}
+      {showPlaygroundOverlay && lessonData.sections[currentSection]?.type === 'playground' && lessonData.sections[currentSection]?.playgroundConfig && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <PlaygroundMidLesson
+            config={lessonData.sections[currentSection].playgroundConfig!}
+            onComplete={handlePlaygroundComplete}
+          />
+        </div>
+      )}
+
+      {/* Card de Fim da Aula (End-Audio) */}
+      {showEndCard && (
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-500">
+          <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-cyan-300/50 shadow-2xl">
+            <div className="flex justify-center mb-6">
+              <Avatar className="w-32 h-32 border-4 border-cyan-400/30 shadow-xl animate-float">
+                <AvatarImage src="/maia-avatar-v3.png" alt="MAIA" />
+              </Avatar>
+            </div>
+            
+            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+              ✅ Aula completa! Parabéns! 🎉
+            </h2>
+            
+            <p className="text-slate-600 text-lg mb-8 leading-relaxed">
+              Você aprendeu sobre as três principais ferramentas de IA gratuitas!
+              <br />
+              Agora vamos fixar esse conhecimento com exercícios práticos.
+            </p>
+            
+            <Button 
+              onClick={handleGoToExercises} 
+              size="lg"
+              className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
+            >
+              🎯 Ir para Exercícios
+            </Button>
+          </Card>
+        </div>
+      )}
 
       {audioUrl && (
         <audio

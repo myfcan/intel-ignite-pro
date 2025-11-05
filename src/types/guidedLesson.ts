@@ -4,12 +4,23 @@ export interface WordTimestamp {
   end: number; // em segundos
 }
 
+export type LessonSectionType = 'text' | 'playground' | 'end-audio';
+
+export interface PlaygroundConfig {
+  instruction: string;
+  type: 'multiple-choice-with-feedback';
+  options: string[];
+  feedback: Record<string, string>;
+}
+
 export interface LessonSection {
   id: string;
   timestamp: number; // segundo em que esta seção começa
+  type?: LessonSectionType; // tipo da seção (text, playground, end-audio)
   speechBubbleText: string; // frase curta para balão da MAIA (1-2 linhas)
   visualContent: string; // texto visual com markdown e emojis (exibido na tela)
   spokenContent: string; // texto puro falado pela MAIA (para sincronização de áudio)
+  playgroundConfig?: PlaygroundConfig; // configuração do playground mid-lesson
 }
 
 export interface GuidedLessonData {
