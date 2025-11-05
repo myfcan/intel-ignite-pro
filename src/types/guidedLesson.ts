@@ -34,6 +34,8 @@ export interface RealPlaygroundConfig {
 export interface PlaygroundConfig {
   instruction: string;
   type: PlaygroundType;
+  triggerKeyword?: string; // 🆕 Palavra-chave para detectar e abrir playground (ex: "playground")
+  triggerAfterSection?: number; // 🆕 Só detecta após esta seção (índice)
   options?: string[];
   feedback?: Record<string, string>;
   realConfig?: RealPlaygroundConfig;

@@ -27,13 +27,66 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [currentPhase, setCurrentPhase] = useState<
     'audio' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
   >('audio');
+  const [playgroundDetected, setPlaygroundDetected] = useState(false);
+  const [playgroundOpening, setPlaygroundOpening] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
+  const playgroundTriggeredRef = useRef(false);
   
   // 🔧 Helper: Verificar se seção é renderizável no DOM
   const isSectionRenderable = (section: any) => {
     return !section.type || section.type === 'text';
+  };
+  
+  // 🎮 Detectar palavra-gatilho para abrir playground
+  const checkForPlaygroundTrigger = (currentTime: number) => {
+    // Não faz nada se já foi acionado
+    if (playgroundTriggeredRef.current) return;
+    
+    const playgroundSection = lessonData.sections.find(s => s.type === 'playground');
+    if (!playgroundSection?.playgroundConfig?.triggerKeyword) return;
+    
+    const { triggerKeyword, triggerAfterSection } = playgroundSection.playgroundConfig;
+    
+    // Só detecta após a seção especificada
+    if (triggerAfterSection !== undefined && currentSection < triggerAfterSection) return;
+    
+    const currentSectionData = lessonData.sections[currentSection];
+    if (!currentSectionData) return;
+    
+    // Verifica se o conteúdo contém a palavra-gatilho
+    const content = currentSectionData.visualContent + ' ' + currentSectionData.spokenContent;
+    if (content.toLowerCase().includes(triggerKeyword.toLowerCase())) {
+      console.log(`🎮 [TRIGGER] Palavra-gatilho "${triggerKeyword}" detectada na seção ${currentSection}`);
+      
+      // Marca como detectado
+      playgroundTriggeredRef.current = true;
+      setPlaygroundDetected(true);
+      
+      // Inicia sequência de transição
+      startPlaygroundTransition();
+    }
+  };
+  
+  const startPlaygroundTransition = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    console.log('🎬 [TRANSITION] Iniciando transição para playground...');
+    
+    // 1. Mostrar aviso
+    setPlaygroundOpening(true);
+    
+    // 2. Após 1 segundo: pausar áudio e abrir playground
+    setTimeout(() => {
+      audio.pause();
+      setIsPlaying(false);
+      setShowPlaygroundOverlay(true);
+      setPlaygroundOpening(false);
+      
+      console.log('🎮 [PLAYGROUND] Overlay aberto');
+    }, 1000);
   };
   
   useEffect(() => {
@@ -81,6 +134,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         console.log(`🔍 [SCROLL DEBUG] hasScrolled: ${hasScrolledRef.current[sectionIndex]}, isRenderable: ${isSectionRenderable(lessonData.sections[sectionIndex])}`);
         lastSectionRef.current = sectionIndex;
         setCurrentSection(sectionIndex);
+        
+        // 🆕 Verificar gatilho de playground
+        checkForPlaygroundTrigger(time);
         
         // Ativar efeito visual de mudança de seção
         setSectionJustChanged(true);
@@ -556,7 +612,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               </div>
             </aside>
             
-            <main className="space-y-4 sm:space-y-6 min-w-0">
+            <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500 ${playgroundDetected && !showPlaygroundOverlay ? 'opacity-30' : 'opacity-100'}`}>
               {lessonData.sections
                 .map((section, originalIndex) => ({ section, originalIndex }))
                 .filter(({ section }) => !section.type || section.type === 'text')
@@ -745,9 +801,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
+      {/* 🎮 Aviso de transição para playground */}
+      {playgroundOpening && (
+        <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md animate-scale-in mx-4">
+            <div className="text-center">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center animate-pulse">
+                <span className="text-4xl">🎮</span>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                Abrindo Playground...
+              </h3>
+              <p className="text-slate-600">
+                Prepare-se para testar seus conhecimentos!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay do Playground Mid-Lesson */}
       {showPlaygroundOverlay && lessonData.sections[currentSection]?.type === 'playground' && lessonData.sections[currentSection]?.playgroundConfig && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300 ${playgroundDetected ? 'transition-opacity duration-500' : ''}`}>
           <PlaygroundMidLesson
             config={lessonData.sections[currentSection].playgroundConfig!}
             onComplete={handlePlaygroundComplete}

@@ -5,7 +5,7 @@ export const fundamentos02: GuidedLessonData = {
   title: 'Principais Ferramentas Gratuitas',
   trackId: '1',
   trackName: 'Fundamentos da IA',
-  duration: 305,
+  duration: 310,
   exercisesConfig: [
     {
       id: 'ex-complete-sentence',
@@ -140,15 +140,37 @@ Melhor para: pesquisar informações atualizadas na internet, trabalhar com seus
 Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmail ou Drive, vai adorar essa integração automática!`
     },
     {
+      id: 'transition-to-playground',
+      timestamp: 175,
+      type: 'text',
+      speechBubbleText: 'Hora de praticar! 🎮',
+      visualContent: `## 🎮 Hora de Praticar!
+
+Muito bem! Você acabou de conhecer as **três principais ferramentas de IA**:
+
+- 💬 **ChatGPT** para o dia a dia
+- 🔍 **Gemini** para pesquisas e Google
+- 📄 **Claude** para textos longos
+
+Mas aprender só na teoria não basta, né? Agora é hora de **colocar a mão na massa**! 
+
+Vamos fazer um teste rápido no nosso **playground** para você ver como funciona na prática.
+
+Fique tranquilo, é bem simples e rapidinho! Vamos lá para o **playground**! 🚀`,
+      spokenContent: 'Muito bem! Você acabou de conhecer as três principais ferramentas de IA: ChatGPT para o dia a dia, Gemini para pesquisas e integração com Google, e Claude para textos longos. Mas aprender só na teoria não basta, né? Agora é hora de colocar a mão na massa! Vamos fazer um teste rápido no nosso playground para você ver como funciona na prática. Fique tranquilo, é bem simples e rapidinho! Vamos lá para o playground!'
+    },
+    {
       id: 'playground-mid',
       timestamp: 180,
       type: 'playground',
-      speechBubbleText: 'Hora de praticar!',
+      speechBubbleText: '',
       visualContent: '',
       spokenContent: '',
       playgroundConfig: {
         instruction: '',
         type: 'real-playground',
+        triggerKeyword: 'playground',
+        triggerAfterSection: 3,
         realConfig: {
           type: 'real-playground',
           title: 'Playground: Teste Rápido',
@@ -176,7 +198,7 @@ Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmai
     },
     {
       id: 'claude',
-      timestamp: 185,
+      timestamp: 190,
       type: 'text',
       speechBubbleText: 'Claude é o mais detalhista!',
       visualContent: `## Claude - Para textos longos e detalhados 📚
@@ -209,7 +231,7 @@ Acesse claude ponto ai e crie sua conta gratuita. Claude tem reputação de ser 
     },
     {
       id: 'escolhendo-ferramenta',
-      timestamp: 245,
+      timestamp: 250,
       type: 'text',
       speechBubbleText: 'Agora você sabe qual usar!',
       visualContent: `## Como escolher a ferramenta certa 🎯
@@ -255,7 +277,7 @@ O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e f
     },
     {
       id: 'fim-audio',
-      timestamp: 305,
+      timestamp: 310,
       type: 'end-audio',
       speechBubbleText: 'Aula completa! Parabéns!',
       visualContent: '',
