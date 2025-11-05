@@ -243,14 +243,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                           animate-fly-in-rasante animate-float
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
-                          ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
+                          ${isPlaying && isAudioEnabled ? 'animate-pulse-glow brightness-110' : ''}
                         `}
                         style={{
                           filter: !isAudioEnabled 
                             ? 'grayscale(100%) opacity(0.5) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
-                            : !isPlaying 
-                              ? 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
-                              : undefined
+                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
                         }}
                       />
                       {/* Indicadores de áudio melhorados */}
@@ -354,9 +352,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       )}
                     </div>
                     <div className="prose prose-slate prose-sm max-w-none
-  [&_h1]:!text-2xl [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
-  [&_h2]:!text-xl [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
-  [&_h3]:!text-lg [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
+  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
+  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
+  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
   [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-slate-700
   [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
   [&_ul]:!my-3 [&_ul]:!space-y-2
@@ -391,14 +389,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 className={`
                   w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante animate-float
-                  ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
+                  ${isPlaying && isAudioEnabled ? 'animate-pulse-glow brightness-110' : ''}
                 `}
                 style={{
                   filter: !isAudioEnabled 
                     ? 'grayscale(100%) opacity(0.5) drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
-                    : !isPlaying 
-                      ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))' 
-                      : undefined
+                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
                 }}
               />
               {/* Indicadores de áudio para mobile */}
