@@ -240,10 +240,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         alt="MAIA" 
                         className={`
                           w-44 h-44 object-contain
-                          animate-fly-in-rasante animate-float
+                          animate-fly-in-rasante
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
-                          ${isPlaying && isAudioEnabled ? 'animate-pulse-glow brightness-110' : ''}
+                          ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
                         `}
                         style={{
                           filter: !isAudioEnabled 
@@ -388,8 +388,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 alt="MAIA" 
                 className={`
                   w-14 h-14 sm:w-16 sm:h-16 object-contain
-                  animate-fly-in-rasante animate-float
-                  ${isPlaying && isAudioEnabled ? 'animate-pulse-glow brightness-110' : ''}
+                  animate-fly-in-rasante
+                  ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
                 `}
                 style={{
                   filter: !isAudioEnabled 
