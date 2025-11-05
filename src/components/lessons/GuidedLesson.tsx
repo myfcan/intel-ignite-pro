@@ -12,6 +12,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(lessonData.duration || 0);
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
@@ -161,6 +162,21 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
   };
   
+  const toggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    if (isAudioEnabled) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+    }
+    
+    setIsAudioEnabled(!isAudioEnabled);
+  };
+  
   const formatTime = (seconds: number): string => {
     if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
@@ -224,7 +240,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         }}
                       />
                       {/* Indicadores de áudio melhorados */}
-                      {isPlaying && (
+                      {isPlaying && isAudioEnabled && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
                           <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
                           <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
@@ -245,6 +261,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                   </div>
                 </div>
+                
+                {/* Botão Silenciar MAIA */}
+                <button
+                  onClick={toggleAudio}
+                  className={`w-full px-4 py-3 rounded-full font-medium text-sm text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                    isAudioEnabled 
+                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
+                      : 'bg-green-500'
+                  }`}
+                >
+                  {isAudioEnabled ? '🔊 Silenciar MAIA' : '🔇 Ativar Áudio'}
+                </button>
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
@@ -280,7 +308,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 <div
                   key={section.id}
                   id={`section-${index}`}
-                  className={`transition-all duration-500 ${currentSection >= index ? 'opacity-100' : 'opacity-40'}`}
+                  className={`transition-all duration-500 ${
+                    isAudioEnabled 
+                      ? (currentSection >= index ? 'opacity-100' : 'opacity-40')
+                      : 'opacity-100'
+                  }`}
                 >
                   <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all relative overflow-hidden ${
                     currentSection === index
@@ -354,7 +386,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 }}
               />
               {/* Indicadores de áudio para mobile */}
-              {isPlaying && (
+              {isPlaying && isAudioEnabled && (
                 <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
                   <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-sm shadow-cyan-400" style={{ animationDelay: '0ms' }} />
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce shadow-sm" style={{ animationDelay: '150ms' }} />
