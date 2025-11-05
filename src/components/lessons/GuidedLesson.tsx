@@ -47,6 +47,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     console.log('✅ [ÁUDIO] Inicializando áudio:', audioUrl);
     console.log('📋 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
     
+    // ✅ CONFIGURAR VOLUME PRIMEIRO, ANTES DE TUDO
+    audio.volume = 1.0;
+    console.log('🔊 [VOLUME] Configurado IMEDIATAMENTE no useEffect: 100%');
+    
     const handleTimeUpdate = () => {
       const time = audio.currentTime;
       setCurrentTime(time);
@@ -680,7 +684,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
-          autoPlay
         />
       )}
     </div>
