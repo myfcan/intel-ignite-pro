@@ -111,6 +111,47 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       audio.removeEventListener('canplay', handleCanPlay);
     };
   }, [lessonData.sections, audioUrl]);
+
+  // 🔥 SINCRONIZAÇÃO CONTÍNUA - Polling manual para manter sincronização mesmo quando pausado
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
+    const intervalId = setInterval(() => {
+      const time = audio.currentTime;
+      setCurrentTime(time);
+
+      // Mesma lógica de sincronização do handleTimeUpdate
+      const SYNC_BUFFER = 2;
+      const sectionIndex = lessonData.sections.findIndex((section, index) => {
+        const nextSection = lessonData.sections[index + 1];
+        const sectionStart = section.timestamp + SYNC_BUFFER;
+        const sectionEnd = nextSection ? nextSection.timestamp + SYNC_BUFFER : Infinity;
+        return time >= sectionStart && time < sectionEnd;
+      });
+
+      if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
+        console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}`);
+        lastSectionRef.current = sectionIndex;
+        setCurrentSection(sectionIndex);
+        setSectionJustChanged(true);
+        setTimeout(() => setSectionJustChanged(false), 1000);
+
+        // Scroll apenas se áudio estiver tocando E habilitado
+        if (isPlaying && isAudioEnabled && !hasScrolledRef.current[sectionIndex]) {
+          const sectionElement = document.getElementById(`section-${sectionIndex}`);
+          if (sectionElement) {
+            const yOffset = -80;
+            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            hasScrolledRef.current[sectionIndex] = true;
+          }
+        }
+      }
+    }, 100); // Verifica a cada 100ms
+
+    return () => clearInterval(intervalId);
+  }, [lessonData.sections, audioUrl, isPlaying, isAudioEnabled]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -248,7 +289,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         style={{
                           filter: !isAudioEnabled 
                             ? 'grayscale(100%) opacity(0.5) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
-                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
+                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
+                          // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
+                          animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
+                          animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
                         }}
                       />
                       {/* Indicadores de áudio melhorados */}
@@ -394,7 +438,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 style={{
                   filter: !isAudioEnabled 
                     ? 'grayscale(100%) opacity(0.5) drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
-                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
+                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))',
+                  // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
+                  animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
+                  animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
                 }}
               />
               {/* Indicadores de áudio para mobile */}
