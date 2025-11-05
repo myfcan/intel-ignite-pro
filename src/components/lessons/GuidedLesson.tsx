@@ -65,7 +65,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         if (!hasScrolledRef.current[sectionIndex]) {
           const sectionElement = document.getElementById(`section-${sectionIndex}`);
           if (sectionElement) {
-            const yOffset = -140;
+            // Offset ajustado: header (64px) + espaçamento adicional (32px) = 96px
+            const yOffset = -96;
             const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
             console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
             window.scrollTo({ top: y, behavior: 'smooth' });
