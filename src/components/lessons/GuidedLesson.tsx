@@ -307,28 +307,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         </span>
                       )}
                     </div>
-                    <div className="prose prose-slate prose-sm sm:prose-base lg:prose-lg max-w-none 
+                    <div className="prose prose-slate prose-base max-w-none 
   prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-  prose-h1:text-base sm:prose-h1:text-lg lg:prose-h1:text-xl prose-h1:mb-4 sm:prose-h1:mb-6 prose-h1:leading-tight
-  prose-h2:text-sm sm:prose-h2:text-base prose-h2:mb-3 sm:prose-h2:mb-4 prose-h2:mt-4 sm:prose-h2:mt-6 prose-h2:leading-snug
-  prose-h3:text-xs sm:prose-h3:text-sm prose-h3:mb-2 sm:prose-h3:mb-3 prose-h3:mt-3 sm:prose-h3:mt-5
-  prose-p:text-slate-700 prose-p:text-sm sm:prose-p:text-base prose-p:leading-relaxed prose-p:mb-3 sm:prose-p:mb-4
-  prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
+  prose-h1:text-xl sm:prose-h1:text-2xl prose-h1:mb-4 prose-h1:leading-tight
+  prose-h2:text-lg sm:prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-6 prose-h2:leading-snug
+  prose-h3:text-base sm:prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-4
+  prose-p:text-slate-700 prose-p:text-base prose-p:leading-relaxed prose-p:mb-3
+  prose-strong:text-cyan-600 prose-strong:font-semibold prose-strong:px-0.5
   prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
-  prose-ul:my-3 sm:prose-ul:my-4 prose-ul:space-y-1.5 sm:prose-ul:space-y-2 prose-ul:text-sm sm:prose-ul:text-base
-  prose-ol:my-3 sm:prose-ol:my-4 prose-ol:space-y-1.5 sm:prose-ol:space-y-2 prose-ol:text-sm sm:prose-ol:text-base
-  prose-li:text-slate-700 prose-li:leading-relaxed prose-li:pl-1 sm:prose-li:pl-2
-  prose-li:marker:text-cyan-500 prose-li:marker:font-bold
+  prose-ul:my-3 prose-ul:space-y-2 prose-ul:text-base
+  prose-ol:my-3 prose-ol:space-y-2 prose-ol:text-base
+  prose-li:text-slate-700 prose-li:text-base prose-li:leading-relaxed prose-li:pl-1
+  prose-li:marker:text-cyan-500
   prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 
-  prose-blockquote:bg-gradient-to-r prose-blockquote:from-cyan-50/80 prose-blockquote:to-blue-50/50
-  prose-blockquote:py-3 sm:prose-blockquote:py-4 prose-blockquote:px-4 sm:prose-blockquote:px-6 prose-blockquote:rounded-r-xl 
-  prose-blockquote:shadow-sm prose-blockquote:my-4 sm:prose-blockquote:my-6
-  prose-blockquote:text-slate-700 prose-blockquote:font-medium prose-blockquote:text-sm sm:prose-blockquote:text-base
-  prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1.5 sm:prose-code:px-2 prose-code:py-0.5 sm:prose-code:py-1 
-  prose-code:rounded-md prose-code:text-xs sm:prose-code:text-sm lg:prose-code:text-base prose-code:font-mono prose-code:font-semibold
-  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 sm:prose-pre:p-4 prose-pre:rounded-xl prose-pre:my-4 sm:prose-pre:my-6 prose-pre:text-xs sm:prose-pre:text-sm
-  prose-a:text-cyan-600 prose-a:no-underline prose-a:font-semibold hover:prose-a:text-cyan-700 hover:prose-a:underline
-  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-4 sm:prose-img:my-6 lg:prose-img:my-8">
+  prose-blockquote:bg-gradient-to-r prose-blockquote:from-cyan-50/60 prose-blockquote:to-blue-50/40
+  prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:rounded-r-lg 
+  prose-blockquote:shadow-sm prose-blockquote:my-4
+  prose-blockquote:text-slate-700 prose-blockquote:text-base
+  prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1.5 prose-code:py-0.5 
+  prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:font-medium
+  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-4 prose-pre:rounded-lg prose-pre:my-4 prose-pre:text-sm
+  prose-a:text-cyan-600 prose-a:no-underline prose-a:font-medium hover:prose-a:text-cyan-700 hover:prose-a:underline
+  prose-img:rounded-lg prose-img:shadow-md prose-img:my-6">
                       <ReactMarkdown>{section.visualContent}</ReactMarkdown>
                     </div>
                   </div>
