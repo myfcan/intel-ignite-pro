@@ -205,13 +205,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
-                    <div className="relative">
-                      <img src="/maia-avatar-v3.png" alt="MAIA" className="w-24 h-24 object-contain drop-shadow-2xl" />
+                    <div className="relative group cursor-pointer">
+                      {/* MAIA com todas as animações */}
+                      <img 
+                        src="/maia-avatar-v3.png" 
+                        alt="MAIA" 
+                        className={`
+                          w-24 h-24 object-contain 
+                          animate-float animate-maia-entrance
+                          transition-all duration-300 ease-in-out
+                          lg:group-hover:scale-105
+                          ${isPlaying ? 'animate-pulse-glow' : 'drop-shadow-2xl'}
+                        `}
+                      />
+                      {/* Indicadores de áudio melhorados */}
                       {isPlaying && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
-                          <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2.5 h-2.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2.5 h-2.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
                         </div>
                       )}
                     </div>
@@ -318,10 +330,29 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
+      {/* MAIA Mobile - com todas as animações */}
       <div className="lg:hidden fixed bottom-28 right-4 z-40">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[260px]">
           <div className="flex items-start gap-3">
-            <img src="/maia-avatar-v3.png" alt="MAIA" className="w-14 h-14 object-contain flex-shrink-0" />
+            <div className="relative flex-shrink-0">
+              <img 
+                src="/maia-avatar-v3.png" 
+                alt="MAIA" 
+                className={`
+                  w-14 h-14 object-contain
+                  animate-float animate-maia-entrance
+                  ${isPlaying ? 'animate-pulse-glow' : ''}
+                `}
+              />
+              {/* Indicadores de áudio para mobile */}
+              {isPlaying && (
+                <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
+                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-audio-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
+            </div>
             <p className="text-xs text-slate-700 leading-tight font-medium">
               {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
             </p>
