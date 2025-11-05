@@ -45,15 +45,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       if (sectionIndex !== -1 && sectionIndex !== currentSection) {
         console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
         setCurrentSection(sectionIndex);
-        hasScrolledRef.current[sectionIndex] = false;
         
-        // Scroll suave para a nova seção
-        const sectionElement = document.getElementById(`section-${sectionIndex}`);
-        if (sectionElement) {
-          const yOffset = -140;
-          const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
-          window.scrollTo({ top: y, behavior: 'smooth' });
+        // Scroll suave para a nova seção apenas se ainda não scrollou para ela
+        if (!hasScrolledRef.current[sectionIndex]) {
+          const sectionElement = document.getElementById(`section-${sectionIndex}`);
+          if (sectionElement) {
+            const yOffset = -140;
+            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            hasScrolledRef.current[sectionIndex] = true;
+          }
         }
       }
     };
@@ -139,7 +141,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const section = lessonData.sections[index];
     if (section && section.timestamp !== undefined) {
       audio.currentTime = section.timestamp;
-      hasScrolledRef.current = {};
+      hasScrolledRef.current[index] = false;
     }
   };
   
