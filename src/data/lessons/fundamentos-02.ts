@@ -306,6 +306,8 @@ Melhor para: pesquisar informações atualizadas na internet, trabalhar com seus
 
 Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmail ou Drive, vai adorar essa integração automática!
 
+Muito bem! Você acabou de conhecer as três principais ferramentas de IA: ChatGPT para o dia a dia, Gemini para pesquisas e integração com Google, e Claude para textos longos. Mas aprender só na teoria não basta, né? Agora é hora de colocar a mão na massa! Vamos fazer um teste rápido no nosso playground para você ver como funciona na prática. Fique tranquilo, é bem simples e rapidinho! Vamos lá para o playground!
+
 Claude, desenvolvido pela Anthropic, é especialmente bom quando você precisa de textos mais longos, análises detalhadas ou trabalhar com documentos complexos.
 
 Melhor para: escrever relatórios e documentos longos, analisar contratos e textos jurídicos, ter conversas mais profundas e reflexivas, e trabalhar com arquivos PDF e documentos.

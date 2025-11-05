@@ -35,6 +35,7 @@ const LESSON_CONTENT_MAP: Record<string, {
       { phrase: 'Existem dezenas de ferramentas de IA', sectionId: 'tres-ferramentas' },
       { phrase: 'O ChatGPT é a ferramenta de IA mais conhecida', sectionId: 'chatgpt' },
       { phrase: 'O Gemini é a resposta do Google', sectionId: 'google-gemini' },
+      { phrase: 'Muito bem! Você acabou de conhecer as três principais ferramentas de IA', sectionId: 'transition-to-playground' },
       { phrase: 'Claude, desenvolvido pela Anthropic', sectionId: 'claude' },
       { phrase: 'Agora você conhece as três principais ferramentas', sectionId: 'escolhendo-ferramenta' }
     ]
