@@ -5,7 +5,7 @@ export const fundamentos02: GuidedLessonData = {
   title: 'Principais Ferramentas Gratuitas',
   trackId: '1',
   trackName: 'Fundamentos da IA',
-  duration: 300,
+  duration: 305,
   sections: [
     {
       id: 'tres-ferramentas',
@@ -132,7 +132,7 @@ Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmai
     },
     {
       id: 'claude',
-      timestamp: 180,
+      timestamp: 185,
       type: 'text',
       speechBubbleText: 'Claude é o mais detalhista!',
       visualContent: `## Claude - Para textos longos e detalhados 📚
@@ -165,7 +165,7 @@ Acesse claude ponto ai e crie sua conta gratuita. Claude tem reputação de ser 
     },
     {
       id: 'escolhendo-ferramenta',
-      timestamp: 240,
+      timestamp: 245,
       type: 'text',
       speechBubbleText: 'Agora você sabe qual usar!',
       visualContent: `## Como escolher a ferramenta certa 🎯
@@ -211,7 +211,7 @@ O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e f
     },
     {
       id: 'fim-audio',
-      timestamp: 300,
+      timestamp: 305,
       type: 'end-audio',
       speechBubbleText: 'Aula completa! Parabéns!',
       visualContent: '',

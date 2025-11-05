@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Copy, Download, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Loader2, Copy, Download, CheckCircle2, RefreshCw, TestTube, AlertTriangle, CheckCircle } from 'lucide-react';
 import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
 import { fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 
@@ -127,6 +127,9 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
   const [timestampsSaved, setTimestampsSaved] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [qualityAnalysis, setQualityAnalysis] = useState<any>(null);
+  const [audioBase64, setAudioBase64] = useState<string | null>(null);
 
   // Carregar lessons do tipo 'guided'
   useEffect(() => {
@@ -202,7 +205,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
         body: {
           text: lessonContent.text.trim(),
           section_markers: lessonContent.markers,
-          voice_id: 'EXAVITQu4vr4xnSDxMaL',
+          voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice
           model_id: 'eleven_multilingual_v2',
           lesson_id: selectedLessonId
         }
@@ -287,7 +290,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
         body: {
           text: text.trim(),
           section_markers: markers,
-          voice_id: 'EXAVITQu4vr4xnSDxMaL', // Sarah
+          voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice
           model_id: 'eleven_multilingual_v2',
           lesson_id: (selectedLessonId && selectedLessonId !== 'none') ? selectedLessonId : undefined
         }
@@ -305,8 +308,10 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       const url = URL.createObjectURL(audioBlob);
       
       setAudioUrl(url);
+      setAudioBase64(data.audio_base64);
       setSectionTimestamps(data.section_timestamps || {});
-      setWordTimestamps(data.word_timestamps || []);
+      setWordTimestamps(data.word_timestamps || {});
+      setQualityAnalysis(null); // Reset analysis quando gera novo áudio
       
       // Se lesson_id foi fornecido, salvar também o áudio e marcar como salvo
       if (selectedLessonId && selectedLessonId !== 'none' && data.word_timestamps && data.word_timestamps.length > 0) {
@@ -392,6 +397,41 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     document.body.removeChild(a);
     
     toast.success('Download iniciado!');
+  };
+
+  const analyzeQuality = async () => {
+    if (!audioBase64) {
+      toast.error('Nenhum áudio para analisar');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    try {
+      toast.info('Analisando qualidade do áudio...');
+      
+      const { data, error } = await supabase.functions.invoke('analyze-audio-quality', {
+        body: { audio_base64: audioBase64 }
+      });
+
+      if (error) throw error;
+
+      setQualityAnalysis(data);
+      
+      if (data.recommendation === 'regenerate') {
+        toast.error(`Score: ${data.quality_score}/100 - Recomendado regenerar!`, { duration: 5000 });
+      } else if (data.recommendation === 'review') {
+        toast.warning(`Score: ${data.quality_score}/100 - Revisar problemas detectados`, { duration: 5000 });
+      } else {
+        toast.success(`✅ Qualidade excelente! Score: ${data.quality_score}/100`, { duration: 5000 });
+      }
+      
+    } catch (error) {
+      console.error('Erro ao analisar qualidade:', error);
+      toast.error('Erro ao analisar qualidade do áudio');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -574,9 +614,22 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
             )}
 
             <div className="flex gap-3">
+              <Button onClick={analyzeQuality} disabled={isAnalyzing} variant="outline" className="flex-1">
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analisando...
+                  </>
+                ) : (
+                  <>
+                    <TestTube className="w-4 h-4 mr-2" />
+                    Testar Qualidade
+                  </>
+                )}
+              </Button>
               <Button onClick={copyTimestamps} variant="outline" className="flex-1">
                 <Copy className="w-4 h-4 mr-2" />
-                Copiar Todos os Timestamps
+                Copiar Timestamps
               </Button>
               <Button onClick={downloadAudio} variant="outline" className="flex-1">
                 <Download className="w-4 h-4 mr-2" />
@@ -598,6 +651,95 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
                   <strong>✅ Sucesso!</strong> O áudio e os timestamps foram salvos no banco de dados. Agora o efeito karaoke vai funcionar automaticamente na aula!
                 </p>
               </div>
+            )}
+
+            {qualityAnalysis && (
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-gray-900">📊 Análise de Qualidade</h3>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                    qualityAnalysis.quality_score >= 80 ? 'bg-green-100 text-green-700' :
+                    qualityAnalysis.quality_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {qualityAnalysis.quality_score >= 80 ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                    Score: {qualityAnalysis.quality_score}/100
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-xs text-gray-600">Volume Médio</div>
+                    <div className="text-lg font-bold">{qualityAnalysis.stats.avg_volume}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-xs text-gray-600">Duração</div>
+                    <div className="text-lg font-bold">{qualityAnalysis.stats.total_duration}s</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-xs text-gray-600">Silêncios</div>
+                    <div className="text-lg font-bold">{qualityAnalysis.stats.silence_count}</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded">
+                    <div className="text-xs text-gray-600">Recomendação</div>
+                    <div className="text-lg font-bold capitalize">{qualityAnalysis.recommendation}</div>
+                  </div>
+                </div>
+
+                {qualityAnalysis.issues.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-900">⚠️ Problemas Detectados:</h4>
+                    <div className="space-y-2">
+                      {qualityAnalysis.issues.map((issue: any, idx: number) => (
+                        <div key={idx} className={`p-3 rounded border-l-4 ${
+                          issue.severity === 'high' ? 'bg-red-50 border-red-500' :
+                          issue.severity === 'medium' ? 'bg-yellow-50 border-yellow-500' :
+                          'bg-blue-50 border-blue-500'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                              issue.severity === 'high' ? 'text-red-600' :
+                              issue.severity === 'medium' ? 'text-yellow-600' :
+                              'text-blue-600'
+                            }`} />
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm capitalize">{issue.type.replace('_', ' ')}</div>
+                              <div className="text-xs text-gray-700 mt-1">{issue.description}</div>
+                              {issue.timestamp > 0 && (
+                                <div className="text-xs text-gray-500 mt-1">Timestamp: {issue.timestamp}s</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {qualityAnalysis.recommendation === 'regenerate' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm text-red-900">
+                      <strong>❌ Qualidade baixa detectada!</strong> Recomendamos regenerar o áudio para melhor experiência do usuário.
+                    </p>
+                  </div>
+                )}
+                
+                {qualityAnalysis.recommendation === 'review' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-900">
+                      <strong>⚠️ Atenção!</strong> Alguns problemas foram detectados. Revise os problemas acima antes de publicar.
+                    </p>
+                  </div>
+                )}
+                
+                {qualityAnalysis.recommendation === 'ok' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-900">
+                      <strong>✅ Excelente!</strong> O áudio tem qualidade suficiente para ser publicado.
+                    </p>
+                  </div>
+                )}
+              </Card>
             )}
           </Card>
         )}
