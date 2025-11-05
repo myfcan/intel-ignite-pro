@@ -260,19 +260,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Botão Silenciar MAIA - dentro do card */}
+                  <button
+                    onClick={toggleAudio}
+                    className={`w-full px-3 py-2 rounded-full font-medium text-xs text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                      isAudioEnabled 
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
+                        : 'bg-green-500'
+                    }`}
+                  >
+                    {isAudioEnabled ? '🔊 Silenciar MAIA' : '🔇 Ativar Áudio'}
+                  </button>
                 </div>
-                
-                {/* Botão Silenciar MAIA */}
-                <button
-                  onClick={toggleAudio}
-                  className={`w-full px-4 py-3 rounded-full font-medium text-sm text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isAudioEnabled 
-                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
-                      : 'bg-green-500'
-                  }`}
-                >
-                  {isAudioEnabled ? '🔊 Silenciar MAIA' : '🔇 Ativar Áudio'}
-                </button>
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
