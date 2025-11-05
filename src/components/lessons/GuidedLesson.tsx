@@ -37,9 +37,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const time = audio.currentTime;
       setCurrentTime(time);
       
+      // Buffer de 2 segundos para sincronização mais precisa com o áudio
+      const SYNC_BUFFER = 2;
+      
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
-        return time >= section.timestamp && (!nextSection || time < nextSection.timestamp);
+        const sectionStart = section.timestamp + SYNC_BUFFER;
+        const sectionEnd = nextSection ? nextSection.timestamp + SYNC_BUFFER : Infinity;
+        return time >= sectionStart && time < sectionEnd;
       });
       
       if (sectionIndex !== -1 && sectionIndex !== currentSection) {
