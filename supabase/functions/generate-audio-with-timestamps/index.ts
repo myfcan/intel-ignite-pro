@@ -42,8 +42,8 @@ serve(async (req) => {
       );
     }
     
-    // Voice ID padrão: Sarah (voz feminina profissional em português)
-    const voiceId = voice_id || 'EXAVITQu4vr4xnSDxMaL';
+    // Voice ID padrão: Alice (Xb7hH8MSUJpSbSDYk0k2)
+    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
     
     // Model ID padrão: eleven_multilingual_v2 (melhor para português)
     const modelId = model_id || 'eleven_multilingual_v2';
