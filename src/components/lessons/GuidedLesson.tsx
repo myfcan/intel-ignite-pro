@@ -232,12 +232,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
                           ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
-                          ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                         `}
                         style={{
-                          filter: !isPlaying 
-                            ? 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
-                            : undefined
+                          filter: !isAudioEnabled 
+                            ? 'grayscale(100%) opacity(0.5) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
+                            : !isPlaying 
+                              ? 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
+                              : undefined
                         }}
                       />
                       {/* Indicadores de áudio melhorados */}
@@ -379,12 +380,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante animate-float
                   ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
-                  ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                 `}
                 style={{
-                  filter: !isPlaying 
-                    ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))' 
-                    : undefined
+                  filter: !isAudioEnabled 
+                    ? 'grayscale(100%) opacity(0.5) drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
+                    : !isPlaying 
+                      ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))' 
+                      : undefined
                 }}
               />
               {/* Indicadores de áudio para mobile */}
