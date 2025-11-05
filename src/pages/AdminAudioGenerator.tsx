@@ -240,8 +240,17 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
             .eq('id', selectedLessonId);
           
           if (!updateError) {
-            toast.success(`✅ Áudio, section timestamps e ${data.word_timestamps?.length || 0} word timestamps salvos no banco!`);
-            toast.info('🔄 Recarregue a página da lição para ver funcionando!');
+            const sectionCount = data.section_timestamps?.length || 0;
+            const wordCount = data.word_timestamps?.length || 0;
+            
+            toast.success(
+              `✅ Geração completa!\n• Áudio salvo\n• ${sectionCount} seções mapeadas\n• ${wordCount} palavras sincronizadas`,
+              { duration: 5000 }
+            );
+            
+            toast.info('🎧 Teste agora na página da lição!', { 
+              duration: 4000 
+            });
           } else {
             console.error('Erro ao atualizar lesson:', updateError);
             toast.error('Erro ao salvar no banco de dados');
