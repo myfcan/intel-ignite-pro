@@ -206,17 +206,22 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
                     <div className="relative group cursor-pointer">
-                      {/* MAIA com todas as animações */}
+                      {/* MAIA com animações otimizadas (sem piscamento) */}
                       <img 
                         src="/maia-avatar-v3.png" 
                         alt="MAIA" 
                         className={`
                           w-24 h-24 object-contain 
-                          animate-float animate-maia-entrance
+                          animate-float
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105
-                          ${isPlaying ? 'animate-pulse-glow' : 'drop-shadow-2xl'}
+                          ${isPlaying ? 'brightness-110' : ''}
                         `}
+                        style={{
+                          filter: isPlaying 
+                            ? 'drop-shadow(0 0 12px rgba(6, 182, 212, 0.5)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.4))' 
+                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
+                        }}
                       />
                       {/* Indicadores de áudio melhorados */}
                       {isPlaying && (
@@ -299,9 +304,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                     <div className="prose prose-slate prose-lg max-w-none 
   prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-  prose-h1:text-3xl sm:prose-h1:text-4xl prose-h1:mb-6 prose-h1:leading-tight
-  prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mb-5 prose-h2:mt-8 prose-h2:leading-snug
-  prose-h3:text-xl sm:prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-6
+  prose-h1:text-2xl sm:prose-h1:text-3xl prose-h1:mb-6 prose-h1:leading-tight
+  prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:mb-5 prose-h2:mt-8 prose-h2:leading-snug
+  prose-h3:text-lg sm:prose-h3:text-xl prose-h3:mb-4 prose-h3:mt-6
   prose-p:text-slate-700 prose-p:text-lg prose-p:leading-relaxed prose-p:mb-6
   prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
   prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
@@ -330,7 +335,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* MAIA Mobile - com todas as animações */}
+      {/* MAIA Mobile - animações otimizadas */}
       <div className="lg:hidden fixed bottom-28 right-4 z-40">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[260px]">
           <div className="flex items-start gap-3">
@@ -338,11 +343,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <img 
                 src="/maia-avatar-v3.png" 
                 alt="MAIA" 
-                className={`
-                  w-14 h-14 object-contain
-                  animate-float animate-maia-entrance
-                  ${isPlaying ? 'animate-pulse-glow' : ''}
-                `}
+                className="w-14 h-14 object-contain animate-float"
+                style={{
+                  filter: isPlaying 
+                    ? 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.4)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.3))' 
+                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.1))'
+                }}
               />
               {/* Indicadores de áudio para mobile */}
               {isPlaying && (
