@@ -254,21 +254,26 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   id={`section-${index}`}
                   className={`transition-all duration-500 ${currentSection >= index ? 'opacity-100' : 'opacity-40'}`}
                 >
-                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl transition-all ${
+                  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-8 border shadow-xl transition-all relative overflow-hidden ${
                     currentSection === index
                       ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
                       : 'border-slate-200/50'
-                  } ${currentSection === index && sectionJustChanged ? 'duration-200 shadow-2xl shadow-cyan-400/30' : 'duration-500'}`}>
-                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50">
+                  }`}>
+                    {currentSection === index && sectionJustChanged && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-transparent animate-[slide-in-right_0.8s_ease-out]" />
+                    )}
+                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
                         currentSection === index
                           ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
                           : 'bg-slate-100 text-slate-500'
-                      } ${currentSection === index && sectionJustChanged ? 'duration-200 scale-110 shadow-lg shadow-cyan-400/50' : 'duration-300 scale-100'}`}>
+                      } ${currentSection === index && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl shadow-cyan-400/60 rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}>
                         {index + 1}
                       </div>
                       {currentSection === index && (
-                        <span className="text-xs font-medium text-cyan-600 flex items-center gap-1.5">
+                        <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
+                          sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
+                        }`}>
                           <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
                           Você está aqui
                         </span>
