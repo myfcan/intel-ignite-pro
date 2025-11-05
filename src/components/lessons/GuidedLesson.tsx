@@ -253,14 +253,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       <button
                         key={section.id}
                         onClick={() => jumpToSection(index)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                           currentSection === index
                             ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
                             : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                             currentSection === index ? 'bg-white/20' : 'bg-slate-200'
                           }`}>
                             {index + 1}
