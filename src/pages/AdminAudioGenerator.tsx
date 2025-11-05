@@ -218,6 +218,14 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       // Converter base64 para blob e fazer upload
       if (data?.audio_base64) {
         const audioBlob = base64ToBlob(data.audio_base64, 'audio/mpeg');
+        const localUrl = URL.createObjectURL(audioBlob);
+        
+        // ATUALIZAR ESTADOS LOCAIS para mostrar UI
+        setAudioUrl(localUrl);
+        setAudioBase64(data.audio_base64);
+        setSectionTimestamps(data.section_timestamps || {});
+        setWordTimestamps(data.word_timestamps || []);
+        setQualityAnalysis(null);
         
         // Upload para storage
         const fileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
@@ -247,13 +255,9 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
             const wordCount = data.word_timestamps?.length || 0;
             
             toast.success(
-              `✅ Geração completa!\n• Áudio salvo\n• ${sectionCount} seções mapeadas\n• ${wordCount} palavras sincronizadas`,
-              { duration: 5000 }
+              `✅ Geração completa!\n• Áudio salvo\n• ${sectionCount} seções\n• ${wordCount} palavras\n\n🎧 Player e análise disponíveis abaixo!`,
+              { duration: 6000 }
             );
-            
-            toast.info('🎧 Teste agora na página da lição!', { 
-              duration: 4000 
-            });
           } else {
             console.error('Erro ao atualizar lesson:', updateError);
             toast.error('Erro ao salvar no banco de dados');
