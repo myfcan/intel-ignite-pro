@@ -130,6 +130,7 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [qualityAnalysis, setQualityAnalysis] = useState<any>(null);
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
+  const [regeneratingLessonId, setRegeneratingLessonId] = useState<string | null>(null);
 
   // Carregar lessons do tipo 'guided'
   useEffect(() => {
@@ -275,6 +276,74 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       toast.error('Erro: ' + (error as Error).message);
     } finally {
       setIsRegenerating(false);
+    }
+  };
+
+  const handleRegenerateIndividual = async (lessonId: string) => {
+    const lessonContent = LESSON_CONTENT_MAP[lessonId];
+    if (!lessonContent) {
+      toast.error('Conteúdo da aula não encontrado no mapeamento');
+      return;
+    }
+
+    setRegeneratingLessonId(lessonId);
+    
+    try {
+      const lessonTitle = lessons.find(l => l.id === lessonId)?.title || 'Aula';
+      toast.info(`🎙️ Regenerando áudio: ${lessonTitle}...`);
+      
+      const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
+        body: {
+          text: lessonContent.text.trim(),
+          section_markers: lessonContent.markers,
+          voice_id: 'Xb7hH8MSUJpSbSDYk0k2',
+          model_id: 'eleven_multilingual_v2',
+          lesson_id: lessonId
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.audio_base64) {
+        const audioBlob = base64ToBlob(data.audio_base64, 'audio/mpeg');
+        
+        // Upload para storage
+        const fileName = `lesson-${lessonId}-${Date.now()}.mp3`;
+        const { error: uploadError } = await supabase.storage
+          .from('lesson-audios')
+          .upload(fileName, audioBlob, {
+            contentType: 'audio/mpeg',
+            upsert: true
+          });
+        
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('lesson-audios')
+            .getPublicUrl(fileName);
+          
+          const { error: updateError } = await supabase
+            .from('lessons')
+            .update({ 
+              audio_url: urlData.publicUrl,
+              word_timestamps: data.word_timestamps
+            })
+            .eq('id', lessonId);
+          
+          if (!updateError) {
+            toast.success(`✅ ${lessonTitle} - Áudio regenerado!`);
+          } else {
+            throw new Error('Erro ao atualizar banco de dados');
+          }
+        } else {
+          throw new Error('Erro ao fazer upload do áudio');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Erro ao regenerar:', error);
+      toast.error(`Erro ao regenerar: ${(error as Error).message}`);
+    } finally {
+      setRegeneratingLessonId(null);
     }
   };
 
@@ -450,17 +519,17 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           </p>
         </div>
 
-        {/* Regeneração rápida com seção timestamps */}
+        {/* Lista de Lições com Regeneração Individual */}
         <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-start gap-3">
               <RefreshCw className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-gray-900 mb-1">
-                  Regenerar Timestamps
+                  Regenerar Áudio Individual
                 </h2>
                 <p className="text-sm text-gray-600 mb-3">
-                  Esta ferramenta vai regenerar os timestamps palavra-por-palavra e de seção para a aula selecionada.
+                  Clique no botão ao lado de cada lição para regenerar seu áudio rapidamente.
                 </p>
                 <div className="bg-white/50 rounded p-3 text-xs text-gray-700 space-y-1 mb-3">
                   <div>✅ Gera áudio completo com ElevenLabs</div>
@@ -470,29 +539,103 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handleQuickRegenerate}
-              disabled={isRegenerating || !selectedLessonId || selectedLessonId === 'none'}
-              className="w-full bg-purple-600 hover:bg-purple-700"
-              size="lg"
-            >
-              {isRegenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Regenerando timestamps...
-                </>
-              ) : (!selectedLessonId || selectedLessonId === 'none') ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  Selecione uma aula primeiro
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  Regenerar {lessons.find(l => l.id === selectedLessonId)?.title || 'Aula'}
-                </>
-              )}
-            </Button>
+
+            <div className="space-y-2">
+              {lessons.map((lesson) => {
+                const hasContent = !!LESSON_CONTENT_MAP[lesson.id];
+                const isRegenerating = regeneratingLessonId === lesson.id;
+                
+                return (
+                  <div 
+                    key={lesson.id} 
+                    className="flex items-center justify-between p-3 rounded-lg border bg-white hover:bg-purple-50/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${hasContent ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="font-medium text-gray-900">{lesson.title}</span>
+                      {!hasContent && (
+                        <span className="text-xs text-gray-500">(sem conteúdo mapeado)</span>
+                      )}
+                    </div>
+                    
+                    <Button
+                      onClick={() => handleRegenerateIndividual(lesson.id)}
+                      disabled={!hasContent || isRegenerating}
+                      size="sm"
+                      variant={hasContent ? "default" : "ghost"}
+                      className={hasContent ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    >
+                      {isRegenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-3 w-3" />
+                          Regenerar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+        
+        {/* Regeneração com Preview (mantido para ver resultados) */}
+        <Card className="p-6 border-2 border-gray-200">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <TestTube className="w-6 h-6 text-gray-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-900 mb-1">
+                  Regenerar com Preview
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Regenera e mostra o resultado abaixo para análise e testes.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Selecione a Aula</label>
+                <Select value={selectedLessonId} onValueChange={setSelectedLessonId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha uma aula..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma (teste manual)</SelectItem>
+                    {lessons.map((lesson) => (
+                      <SelectItem key={lesson.id} value={lesson.id}>
+                        {lesson.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button
+                onClick={handleQuickRegenerate}
+                disabled={isRegenerating || !selectedLessonId || selectedLessonId === 'none'}
+                className="min-w-[200px]"
+                size="lg"
+              >
+                {isRegenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Regenerando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    Regenerar com Preview
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </Card>
 
