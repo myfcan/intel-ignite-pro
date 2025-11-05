@@ -12,22 +12,46 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
-    const { action, user_id, lesson_id, time_spent } = await req.json();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (!user_id || !lesson_id) {
+    // Parse request body - user_id now comes from authenticated user
+    const { action, lesson_id, time_spent } = await req.json();
+
+    if (!lesson_id) {
       throw new Error('Missing required fields');
     }
+
+    // Use service role key for database operations
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === 'start') {
       // Start lesson
       const { data: existing } = await supabase
         .from('user_progress')
         .select('*')
-        .eq('user_id', user_id)
+        .eq('user_id', user.id)
         .eq('lesson_id', lesson_id)
         .single();
 
@@ -53,7 +77,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from('user_progress')
         .insert({
-          user_id,
+          user_id: user.id,
           lesson_id,
           status: 'in_progress',
           started_at: new Date().toISOString()
@@ -73,7 +97,7 @@ serve(async (req) => {
       const { data: progress } = await supabase
         .from('user_progress')
         .select('*')
-        .eq('user_id', user_id)
+        .eq('user_id', user.id)
         .eq('lesson_id', lesson_id)
         .single();
 
@@ -94,10 +118,10 @@ serve(async (req) => {
       if (updateError) throw updateError;
 
       // Get user data
-      const { data: user } = await supabase
+      const { data: userData } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user_id)
+        .eq('id', user.id)
         .single();
 
       // Calculate points
@@ -109,18 +133,18 @@ serve(async (req) => {
       }
       
       // Streak bonus (max 10 points)
-      const streakBonus = Math.min(user.streak_days * 2, 10);
+      const streakBonus = Math.min(userData.streak_days * 2, 10);
       points += streakBonus;
 
       // Update user stats
       const { error: userError } = await supabase
         .from('users')
         .update({
-          total_lessons_completed: (user.total_lessons_completed || 0) + 1,
-          total_points: (user.total_points || 0) + points,
+          total_lessons_completed: (userData.total_lessons_completed || 0) + 1,
+          total_points: (userData.total_points || 0) + points,
           last_activity_date: new Date().toISOString().split('T')[0]
         })
-        .eq('id', user_id);
+        .eq('id', user.id);
 
       if (userError) throw userError;
 
@@ -128,11 +152,11 @@ serve(async (req) => {
       const achievements = [];
       
       // First lesson achievement
-      if (user.total_lessons_completed === 0) {
+      if (userData.total_lessons_completed === 0) {
         const { data: achievement } = await supabase
           .from('user_achievements')
           .insert({
-            user_id,
+            user_id: user.id,
             achievement_type: 'first_lesson',
             achievement_name: 'Primeira Aula Completa',
             achievement_icon: '🎉',
@@ -145,11 +169,11 @@ serve(async (req) => {
       }
 
       // Streak achievements
-      if (user.streak_days === 3) {
+      if (userData.streak_days === 3) {
         const { data: achievement } = await supabase
           .from('user_achievements')
           .insert({
-            user_id,
+            user_id: user.id,
             achievement_type: 'streak_3',
             achievement_name: '3 Dias Seguidos',
             achievement_icon: '🔥',

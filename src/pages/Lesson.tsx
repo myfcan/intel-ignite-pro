@@ -99,7 +99,6 @@ const Lesson = () => {
       await supabase.functions.invoke("user-progress", {
         body: {
           action: "start",
-          user_id: session.user.id,
           lesson_id: id,
         },
       });
@@ -156,7 +155,6 @@ const Lesson = () => {
       const { data, error } = await supabase.functions.invoke("user-progress", {
         body: {
           action: "complete",
-          user_id: userId,
           lesson_id: id,
           time_spent: timeSpent,
         },

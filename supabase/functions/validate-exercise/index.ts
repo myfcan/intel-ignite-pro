@@ -12,15 +12,39 @@ serve(async (req) => {
   }
 
   try {
-    const { exercise_id, user_answer, user_id } = await req.json();
-
-    if (!exercise_id || !user_answer || !user_id) {
-      throw new Error('Missing required fields');
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse request body
+    const { exercise_id, user_answer } = await req.json();
+
+    if (!exercise_id || !user_answer) {
+      throw new Error('Missing required fields');
+    }
+
+    // Use service role key for database operations
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get exercise details
     const { data: exercise, error: exerciseError } = await supabase
@@ -35,12 +59,12 @@ serve(async (req) => {
     const isCorrect = exercise.correct_answer.toLowerCase().trim() === 
                       user_answer.toLowerCase().trim();
 
-    // Update user progress
+    // Update user progress using authenticated user ID
     if (isCorrect) {
       const { data: progress } = await supabase
         .from('user_progress')
         .select('*')
-        .eq('user_id', user_id)
+        .eq('user_id', user.id)
         .eq('lesson_id', exercise.lessons.id)
         .single();
 

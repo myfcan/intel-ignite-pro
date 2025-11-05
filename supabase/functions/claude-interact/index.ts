@@ -12,33 +12,56 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, lesson_id, message, context_type } = await req.json();
-
-    if (!user_id || !message) {
-      throw new Error('Missing required fields: user_id or message');
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse request body - user_id now comes from authenticated user
+    const { lesson_id, message, context_type } = await req.json();
+
+    if (!message) {
+      throw new Error('Missing required field: message');
+    }
+
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Use service role key for database operations
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check user's daily limit
-    const { data: user, error: userError } = await supabase
+    const { data: userData, error: userDataError } = await supabase
       .from('users')
       .select('plan, daily_interaction_limit, interactions_used_today, last_interaction_reset')
-      .eq('id', user_id)
+      .eq('id', user.id)
       .single();
 
-    if (userError) throw userError;
+    if (userDataError) throw userDataError;
 
     // Reset daily counter if needed
-    const lastReset = new Date(user.last_interaction_reset);
+    const lastReset = new Date(userData.last_interaction_reset);
     const now = new Date();
     const shouldReset = lastReset.getDate() !== now.getDate() || 
                        lastReset.getMonth() !== now.getMonth() || 
@@ -51,18 +74,18 @@ serve(async (req) => {
           interactions_used_today: 0,
           last_interaction_reset: now.toISOString()
         })
-        .eq('id', user_id);
-      user.interactions_used_today = 0;
+        .eq('id', user.id);
+      userData.interactions_used_today = 0;
     }
 
     // Check if limit reached
-    if (user.interactions_used_today >= user.daily_interaction_limit) {
+    if (userData.interactions_used_today >= userData.daily_interaction_limit) {
       return new Response(
         JSON.stringify({ 
           error: 'Limite diário atingido',
           limit_reached: true,
-          limit: user.daily_interaction_limit,
-          used: user.interactions_used_today
+          limit: userData.daily_interaction_limit,
+          used: userData.interactions_used_today
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -151,16 +174,16 @@ serve(async (req) => {
     await supabase
       .from('users')
       .update({ 
-        interactions_used_today: user.interactions_used_today + 1
+        interactions_used_today: userData.interactions_used_today + 1
       })
-      .eq('id', user_id);
+      .eq('id', user.id);
 
     return new Response(
       JSON.stringify({
         response: aiResponse,
         cached: false,
         limit_reached: false,
-        remaining: user.daily_interaction_limit - user.interactions_used_today - 1
+        remaining: userData.daily_interaction_limit - userData.interactions_used_today - 1
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

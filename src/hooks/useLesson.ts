@@ -104,7 +104,6 @@ export const useLesson = (lessonId: string) => {
         const { data: progressResult, error: progressError } = await supabase.functions.invoke('user-progress', {
           body: {
             action: 'complete',
-            user_id: session.user.id,
             lesson_id: lesson.id,
             time_spent: timeSpent,
           },

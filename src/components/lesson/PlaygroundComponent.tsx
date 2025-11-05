@@ -48,7 +48,6 @@ export const PlaygroundComponent = ({
 
       const { data, error } = await supabase.functions.invoke("claude-interact", {
         body: {
-          user_id: userId,
           lesson_id: lessonId,
           message: prompt,
           context_type: "playground",
