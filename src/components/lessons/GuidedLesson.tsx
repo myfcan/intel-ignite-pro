@@ -304,14 +304,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                     <div className="prose prose-slate prose-lg max-w-none 
   prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-  prose-h1:text-xl sm:prose-h1:text-2xl prose-h1:mb-6 prose-h1:leading-tight
-  prose-h2:text-lg sm:prose-h2:text-xl prose-h2:mb-5 prose-h2:mt-8 prose-h2:leading-snug
-  prose-h3:text-base sm:prose-h3:text-lg prose-h3:mb-4 prose-h3:mt-6
-  prose-p:text-slate-700 prose-p:text-lg prose-p:leading-relaxed prose-p:mb-6
+  prose-h1:text-2xl sm:prose-h1:text-3xl prose-h1:mb-6 prose-h1:leading-tight
+  prose-h2:text-lg sm:prose-h2:text-xl prose-h2:mb-4 prose-h2:mt-6 prose-h2:leading-snug
+  prose-h3:text-base sm:prose-h3:text-lg prose-h3:mb-3 prose-h3:mt-5
+  prose-p:text-slate-700 prose-p:text-base prose-p:leading-relaxed prose-p:mb-4
   prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
   prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
-  prose-ul:my-6 prose-ul:space-y-3 prose-ul:text-lg
-  prose-ol:my-6 prose-ol:space-y-3 prose-ol:text-lg
+  prose-ul:my-4 prose-ul:space-y-2 prose-ul:text-base
+  prose-ol:my-4 prose-ol:space-y-2 prose-ol:text-base
   prose-li:text-slate-700 prose-li:leading-relaxed prose-li:pl-2
   prose-li:marker:text-cyan-500 prose-li:marker:font-bold
   prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 
