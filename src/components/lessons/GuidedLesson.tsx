@@ -248,7 +248,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       <button
                         key={section.id}
                         onClick={() => jumpToSection(index)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
                           currentSection === index
                             ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
                             : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -304,9 +304,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     </div>
                     <div className="prose prose-slate prose-lg max-w-none 
   prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-  prose-h1:text-xl sm:prose-h1:text-2xl prose-h1:mb-6 prose-h1:leading-tight
-  prose-h2:text-base sm:prose-h2:text-lg prose-h2:mb-4 prose-h2:mt-6 prose-h2:leading-snug
-  prose-h3:text-sm sm:prose-h3:text-base prose-h3:mb-3 prose-h3:mt-5
+  prose-h1:text-lg sm:prose-h1:text-xl prose-h1:mb-6 prose-h1:leading-tight
+  prose-h2:text-sm sm:prose-h2:text-base prose-h2:mb-4 prose-h2:mt-6 prose-h2:leading-snug
+  prose-h3:text-xs sm:prose-h3:text-sm prose-h3:mb-3 prose-h3:mt-5
   prose-p:text-slate-700 prose-p:text-base prose-p:leading-relaxed prose-p:mb-4
   prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
   prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
