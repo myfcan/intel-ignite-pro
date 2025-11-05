@@ -178,20 +178,33 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     }
   }, [selectedLessonId, lessons]);
 
-  const handleRegenerateFundamentos = async () => {
+  const handleQuickRegenerate = async () => {
+    // Validar se uma aula está selecionada
+    if (!selectedLessonId || selectedLessonId === 'none') {
+      toast.error('Por favor, selecione uma aula primeiro');
+      return;
+    }
+
+    // Buscar conteúdo e markers da aula selecionada
+    const lessonContent = LESSON_CONTENT_MAP[selectedLessonId];
+    if (!lessonContent) {
+      toast.error('Conteúdo da aula não encontrado no mapeamento');
+      return;
+    }
+
     setIsRegenerating(true);
     
     try {
-      const lessonId = '11111111-1111-1111-1111-111111111101';
+      const lessonTitle = lessons.find(l => l.id === selectedLessonId)?.title || 'Aula';
+      toast.info(`Regenerando áudio e timestamps para "${lessonTitle}"...`);
       
-      toast.info('Regenerando áudio com timestamps...');
-      
-      const { data, error } = await supabase.functions.invoke('generate-audio-elevenlabs', {
+      const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
         body: {
-          text: fundamentos01AudioText,
-          lesson_id: lessonId,
+          text: lessonContent.text.trim(),
+          section_markers: lessonContent.markers,
           voice_id: 'EXAVITQu4vr4xnSDxMaL',
-          model_id: 'eleven_multilingual_v2'
+          model_id: 'eleven_multilingual_v2',
+          lesson_id: selectedLessonId
         }
       });
       
@@ -199,11 +212,46 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
       
       console.log('Resposta da edge function:', data);
       
-      if (data?.word_timestamps && data.word_timestamps.length > 0) {
-        toast.success(`✅ ${data.total_words} palavras com timestamps salvos no banco!`);
-        toast.info('🔄 Recarregue a página da lição para ver o karaoke funcionando!');
+      // Converter base64 para blob e fazer upload
+      if (data?.audio_base64) {
+        const audioBlob = base64ToBlob(data.audio_base64, 'audio/mpeg');
+        
+        // Upload para storage
+        const fileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
+        const { error: uploadError } = await supabase.storage
+          .from('lesson-audios')
+          .upload(fileName, audioBlob, {
+            contentType: 'audio/mpeg',
+            upsert: true
+          });
+        
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('lesson-audios')
+            .getPublicUrl(fileName);
+          
+          // Atualizar lesson com audio_url e word_timestamps
+          const { error: updateError } = await supabase
+            .from('lessons')
+            .update({ 
+              audio_url: urlData.publicUrl,
+              word_timestamps: data.word_timestamps
+            })
+            .eq('id', selectedLessonId);
+          
+          if (!updateError) {
+            toast.success(`✅ Áudio, section timestamps e ${data.word_timestamps?.length || 0} word timestamps salvos no banco!`);
+            toast.info('🔄 Recarregue a página da lição para ver funcionando!');
+          } else {
+            console.error('Erro ao atualizar lesson:', updateError);
+            toast.error('Erro ao salvar no banco de dados');
+          }
+        } else {
+          console.error('Erro ao fazer upload:', uploadError);
+          toast.error('Erro ao fazer upload do áudio');
+        }
       } else {
-        toast.warning('Áudio gerado mas timestamps não disponíveis');
+        toast.warning('Áudio não foi gerado corretamente');
       }
       
     } catch (error) {
@@ -349,30 +397,29 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
           </p>
         </div>
 
-        {/* Botão especial para regenerar Fundamentos 01 */}
+        {/* Regeneração rápida com seção timestamps */}
         <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <RefreshCw className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-gray-900 mb-1">
-                  Regenerar Timestamps - Fundamentos 01
+                  Regenerar Timestamps
                 </h2>
                 <p className="text-sm text-gray-600 mb-3">
-                  Esta ferramenta vai regenerar os timestamps palavra-por-palavra para a lição "O que é IA e por que você precisa dela" 
-                  usando os novos campos <code className="bg-purple-100 px-1 rounded">spokenContent</code> de cada section.
+                  Esta ferramenta vai regenerar os timestamps palavra-por-palavra e de seção para a aula selecionada.
                 </p>
                 <div className="bg-white/50 rounded p-3 text-xs text-gray-700 space-y-1 mb-3">
                   <div>✅ Gera áudio completo com ElevenLabs</div>
-                  <div>✅ Extrai timestamps palavra-por-palavra automaticamente</div>
+                  <div>✅ Extrai timestamps de seção e palavra automaticamente</div>
                   <div>✅ Salva no banco de dados (tabela <code>lessons</code>)</div>
                   <div>✅ Sincronização perfeita entre áudio e texto falado</div>
                 </div>
               </div>
             </div>
             <Button
-              onClick={handleRegenerateFundamentos}
-              disabled={isRegenerating}
+              onClick={handleQuickRegenerate}
+              disabled={isRegenerating || !selectedLessonId || selectedLessonId === 'none'}
               className="w-full bg-purple-600 hover:bg-purple-700"
               size="lg"
             >
@@ -381,10 +428,15 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   Regenerando timestamps...
                 </>
+              ) : (!selectedLessonId || selectedLessonId === 'none') ? (
+                <>
+                  <RefreshCw className="w-5 h-5 mr-2" />
+                  Selecione uma aula primeiro
+                </>
               ) : (
                 <>
                   <RefreshCw className="w-5 h-5 mr-2" />
-                  Regenerar Timestamps Agora
+                  Regenerar {lessons.find(l => l.id === selectedLessonId)?.title || 'Aula'}
                 </>
               )}
             </Button>
