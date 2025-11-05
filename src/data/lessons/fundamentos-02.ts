@@ -2,7 +2,7 @@ import { GuidedLessonData } from '@/types/guidedLesson';
 
 export const fundamentos02: GuidedLessonData = {
   id: 'fundamentos-02',
-  title: 'Principais Ferramentas Gratuitas',
+  title: 'Reconhecendo IA no dia a dia',
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 310,
