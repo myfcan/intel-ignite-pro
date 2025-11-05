@@ -119,8 +119,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const time = audio.currentTime;
       setCurrentTime(time);
       
-      // Buffer reduzido para 0.3s - sincronização mais precisa
-      const SYNC_BUFFER = 0.3;
+      // Buffer reduzido para sincronização mais precisa
+      const SYNC_BUFFER = 0.1;
       
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
@@ -142,19 +142,16 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
         
-        // Scroll suave para a nova seção apenas se ainda não scrollou para ela E se renderizável
-        if (!hasScrolledRef.current[sectionIndex]) {
-          const section = lessonData.sections[sectionIndex];
-          if (isSectionRenderable(section)) {
-            const sectionElement = document.getElementById(`section-${sectionIndex}`);
-            if (sectionElement) {
-              // Offset ajustado para alinhar com o topo do box da MAIA
-              const yOffset = -80;
-              const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-              console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}: ${section.id}`);
-              window.scrollTo({ top: y, behavior: 'smooth' });
-              hasScrolledRef.current[sectionIndex] = true;
-            }
+        // Scroll sempre que mudar de seção (permite voltar no áudio)
+        const section = lessonData.sections[sectionIndex];
+        if (isSectionRenderable(section)) {
+          const sectionElement = document.getElementById(`section-${sectionIndex}`);
+          if (sectionElement) {
+            // Offset ajustado para alinhar com o topo do box da MAIA
+            const yOffset = -100;
+            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}: ${section.id}`);
+            window.scrollTo({ top: y, behavior: 'smooth' });
           }
         }
       }
@@ -208,7 +205,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       setCurrentTime(time);
 
       // Mesma lógica de sincronização do handleTimeUpdate
-      const SYNC_BUFFER = 0.3;
+      const SYNC_BUFFER = 0.1;
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
         const sectionStart = section.timestamp + SYNC_BUFFER;
@@ -224,16 +221,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
 
-        // Scroll apenas se áudio estiver tocando E habilitado E seção renderizável
-        if (isPlaying && isAudioEnabled && !hasScrolledRef.current[sectionIndex]) {
+        // Scroll sempre que mudar de seção durante o áudio
+        if (isPlaying && isAudioEnabled) {
           const section = lessonData.sections[sectionIndex];
           if (isSectionRenderable(section)) {
             const sectionElement = document.getElementById(`section-${sectionIndex}`);
             if (sectionElement) {
-              const yOffset = -80;
+              const yOffset = -100;
               const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
               window.scrollTo({ top: y, behavior: 'smooth' });
-              hasScrolledRef.current[sectionIndex] = true;
             }
           }
         }

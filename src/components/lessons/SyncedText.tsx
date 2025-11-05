@@ -15,12 +15,17 @@ export const SyncedText = ({ content, isActive, isPast, isFuture }: SyncedTextPr
   // Scroll automático quando a seção fica ativa
   useEffect(() => {
     if (isActive && containerRef.current) {
-      containerRef.current.scrollIntoView({
+      const yOffset = -100; // Margem superior para melhor visualização
+      const y = containerRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      
+      window.scrollTo({
+        top: y,
         behavior: 'smooth',
-        block: 'center',
       });
+      
+      console.log(`📜 [SyncedText] Scroll para seção ativa: ${content.substring(0, 50)}...`);
     }
-  }, [isActive]);
+  }, [isActive, content]);
 
   return (
     <div
