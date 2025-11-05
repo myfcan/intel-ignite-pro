@@ -212,15 +212,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         alt="MAIA" 
                         className={`
                           w-24 h-24 object-contain 
-                          animate-float
+                          animate-fly-in-rasante animate-float
                           transition-all duration-300 ease-in-out
-                          lg:group-hover:scale-105
-                          ${isPlaying ? 'brightness-110' : ''}
+                          lg:group-hover:scale-105 cursor-pointer
+                          ${isPlaying ? 'animate-pulse-glow brightness-110' : ''}
                         `}
                         style={{
-                          filter: isPlaying 
-                            ? 'drop-shadow(0 0 12px rgba(6, 182, 212, 0.5)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.4))' 
-                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
+                          filter: !isPlaying 
+                            ? 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
+                            : undefined
                         }}
                       />
                       {/* Indicadores de áudio melhorados */}
@@ -343,11 +343,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <img 
                 src="/maia-avatar-v3.png" 
                 alt="MAIA" 
-                className="w-14 h-14 object-contain animate-float"
+                className={`
+                  w-14 h-14 object-contain 
+                  animate-fly-in-rasante animate-float
+                  ${isPlaying ? 'animate-pulse-glow' : ''}
+                `}
                 style={{
-                  filter: isPlaying 
-                    ? 'drop-shadow(0 0 8px rgba(6, 182, 212, 0.4)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.3))' 
-                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.1))'
+                  filter: !isPlaying 
+                    ? 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.1))' 
+                    : undefined
                 }}
               />
               {/* Indicadores de áudio para mobile */}
