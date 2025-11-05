@@ -7,11 +7,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Copy, Download, CheckCircle2, RefreshCw } from 'lucide-react';
 import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
+import { fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 
 interface SectionMarker {
   phrase: string;
   sectionId: string;
 }
+
+// Mapeamento lesson_id → conteúdo + markers
+const LESSON_CONTENT_MAP: Record<string, {
+  text: string;
+  markers: SectionMarker[];
+}> = {
+  '11111111-1111-1111-1111-111111111101': {
+    text: fundamentos01AudioText,
+    markers: [
+      { phrase: 'Olá! Eu sou a MAIA', sectionId: 'gancho' },
+      { phrase: 'Então, o que é Inteligência Artificial de verdade?', sectionId: 'conceito' },
+      { phrase: 'Deixa eu te mostrar onde você já usa IA', sectionId: 'onde-esta' },
+      { phrase: 'Agora a pergunta de ouro:', sectionId: 'porque-voce-precisa' },
+      { phrase: 'Então, qual é o seu próximo passo concreto?', sectionId: 'proximos-passos' }
+    ]
+  },
+  '11111111-1111-1111-1111-111111111102': {
+    text: fundamentos02AudioText,
+    markers: [
+      { phrase: 'Existem dezenas de ferramentas de IA', sectionId: 'tres-ferramentas' },
+      { phrase: 'O ChatGPT é a ferramenta de IA mais conhecida', sectionId: 'chatgpt' },
+      { phrase: 'O Gemini é a resposta do Google', sectionId: 'google-gemini' },
+      { phrase: 'Claude, desenvolvido pela Anthropic', sectionId: 'claude' },
+      { phrase: 'Agora você conhece as três principais ferramentas', sectionId: 'escolhendo-ferramenta' }
+    ]
+  }
+};
 
 export default function AdminAudioGenerator() {
   // Texto padrão pré-preenchido para facilitar
@@ -117,6 +145,38 @@ Preparado para dar o primeiro passo dessa jornada incrível? Então vamos nessa!
     
     fetchLessons();
   }, []);
+
+  // Auto-carregar conteúdo quando lesson é selecionada
+  useEffect(() => {
+    if (selectedLessonId && selectedLessonId !== 'none') {
+      const lessonContent = LESSON_CONTENT_MAP[selectedLessonId];
+      if (lessonContent) {
+        setText(lessonContent.text);
+        setMarkers(lessonContent.markers);
+        toast.info(`📚 Conteúdo carregado: ${lessons.find(l => l.id === selectedLessonId)?.title || 'Aula'}`);
+      } else {
+        // Resetar para default se não encontrar
+        setText(defaultText);
+        setMarkers([
+          { phrase: 'Olá! Eu sou a MAIA', sectionId: 'gancho' },
+          { phrase: 'Então, o que é Inteligência Artificial de verdade?', sectionId: 'conceito' },
+          { phrase: 'Deixa eu te mostrar onde você já usa IA', sectionId: 'onde-esta' },
+          { phrase: 'Agora a pergunta de ouro:', sectionId: 'porque-voce-precisa' },
+          { phrase: 'Então, qual é o seu próximo passo concreto?', sectionId: 'proximos-passos' }
+        ]);
+      }
+    } else if (selectedLessonId === 'none') {
+      // Resetar para default quando seleciona "Nenhuma"
+      setText(defaultText);
+      setMarkers([
+        { phrase: 'Olá! Eu sou a MAIA', sectionId: 'gancho' },
+        { phrase: 'Então, o que é Inteligência Artificial de verdade?', sectionId: 'conceito' },
+        { phrase: 'Deixa eu te mostrar onde você já usa IA', sectionId: 'onde-esta' },
+        { phrase: 'Agora a pergunta de ouro:', sectionId: 'porque-voce-precisa' },
+        { phrase: 'Então, qual é o seu próximo passo concreto?', sectionId: 'proximos-passos' }
+      ]);
+    }
+  }, [selectedLessonId, lessons]);
 
   const handleRegenerateFundamentos = async () => {
     setIsRegenerating(true);
