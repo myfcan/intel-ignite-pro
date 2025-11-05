@@ -183,7 +183,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
             <aside className="hidden lg:block">
-              <div className="sticky top-0 space-y-3">
+              <div className="sticky top-24 space-y-3">
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
