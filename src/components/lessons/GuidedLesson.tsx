@@ -206,7 +206,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
                     <div className="relative">
-                      <img src="/maia-avatar.png" alt="MAIA" className="w-24 h-24 object-contain drop-shadow-2xl" />
+                      <img src="/maia-avatar-v3.png" alt="MAIA" className="w-24 h-24 object-contain drop-shadow-2xl" />
                       {isPlaying && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
                           <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -321,7 +321,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       <div className="lg:hidden fixed bottom-28 right-4 z-40">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-3.5 border border-cyan-300/50 shadow-2xl max-w-[260px]">
           <div className="flex items-start gap-3">
-            <img src="/maia-avatar.png" alt="MAIA" className="w-14 h-14 object-contain flex-shrink-0" />
+            <img src="/maia-avatar-v3.png" alt="MAIA" className="w-14 h-14 object-contain flex-shrink-0" />
             <p className="text-xs text-slate-700 leading-tight font-medium">
               {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
             </p>

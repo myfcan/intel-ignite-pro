@@ -184,7 +184,7 @@ export function TrailIntro({ trailId, trailName, userName, onClose }: TrailIntro
         <div className="flex justify-center mb-6">
           <div className="relative">
             <img 
-              src="/maia-avatar.png" 
+              src="/maia-avatar-v3.png" 
               alt="MAIA"
               className="w-32 h-32 animate-bounce-slow"
             />

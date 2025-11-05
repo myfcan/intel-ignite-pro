@@ -94,7 +94,7 @@ export const MiniMaia = ({
             
             <div className={`relative w-40 h-40 md:w-48 md:h-48 ${isAnimating ? getAnimationClass() : 'animate-float'}`}>
               <img
-                src="/maia-avatar.png"
+                src="/maia-avatar-v3.png"
                 alt="MAIA - Assistente IA"
                 className="w-full h-full object-contain drop-shadow-2xl"
               />
@@ -179,7 +179,7 @@ export const MiniMaiaFloating = ({
         <div className="flex gap-3 items-start">
           <div className="w-12 h-12 flex-shrink-0 animate-float">
             <img
-              src="/maia-avatar.png"
+              src="/maia-avatar-v3.png"
               alt="MAIA"
               className="w-full h-full object-contain"
             />
