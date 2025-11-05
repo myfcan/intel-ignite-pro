@@ -197,7 +197,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       </header>
 
       <div className="w-full px-4 sm:px-6 pt-24 pb-32">
-        <div className="w-full max-w-[3200px] mx-auto">
+        <div className="w-full max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-12">
             
             <aside className="hidden lg:block">
@@ -285,7 +285,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                         </span>
                       )}
                     </div>
-                    <div className="prose prose-slate prose-base sm:prose-lg max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-headings:mb-4 prose-h1:text-2xl sm:prose-h1:text-3xl prose-h2:text-xl sm:prose-h2:text-2xl prose-h3:text-lg sm:prose-h3:text-xl prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-cyan-600 prose-strong:font-semibold prose-ul:my-4 prose-ul:space-y-2 prose-li:text-slate-700 prose-li:pl-2 prose-li:marker:text-cyan-500 prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 prose-blockquote:bg-cyan-50/50 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-lg prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm">
+                    <div className="prose prose-slate prose-lg max-w-none 
+  prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
+  prose-h1:text-3xl sm:prose-h1:text-4xl prose-h1:mb-6 prose-h1:leading-tight
+  prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:mb-5 prose-h2:mt-8 prose-h2:leading-snug
+  prose-h3:text-xl sm:prose-h3:text-2xl prose-h3:mb-4 prose-h3:mt-6
+  prose-p:text-slate-700 prose-p:text-lg prose-p:leading-relaxed prose-p:mb-6
+  prose-strong:text-cyan-600 prose-strong:font-bold prose-strong:bg-cyan-50/50 prose-strong:px-1 prose-strong:rounded
+  prose-em:text-slate-600 prose-em:not-italic prose-em:font-medium
+  prose-ul:my-6 prose-ul:space-y-3 prose-ul:text-lg
+  prose-ol:my-6 prose-ol:space-y-3 prose-ol:text-lg
+  prose-li:text-slate-700 prose-li:leading-relaxed prose-li:pl-2
+  prose-li:marker:text-cyan-500 prose-li:marker:font-bold
+  prose-blockquote:border-l-4 prose-blockquote:border-l-cyan-400 
+  prose-blockquote:bg-gradient-to-r prose-blockquote:from-cyan-50/80 prose-blockquote:to-blue-50/50
+  prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl 
+  prose-blockquote:shadow-sm prose-blockquote:my-6
+  prose-blockquote:text-slate-700 prose-blockquote:font-medium
+  prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-2 prose-code:py-1 
+  prose-code:rounded-md prose-code:text-base prose-code:font-mono prose-code:font-semibold
+  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-4 prose-pre:rounded-xl prose-pre:my-6
+  prose-a:text-cyan-600 prose-a:no-underline prose-a:font-semibold hover:prose-a:text-cyan-700 hover:prose-a:underline
+  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8">
                       <ReactMarkdown>{section.visualContent}</ReactMarkdown>
                     </div>
                   </div>
