@@ -66,7 +66,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           const sectionElement = document.getElementById(`section-${sectionIndex}`);
           if (sectionElement) {
             // Offset ajustado para alinhar com o topo do box da MAIA
-            const yOffset = -120;
+            const yOffset = -150;
             const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
             console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
             window.scrollTo({ top: y, behavior: 'smooth' });
