@@ -11,6 +11,7 @@ import { GuidedLesson } from './GuidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
+import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { WordTimestamp } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -153,12 +154,15 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       
       if (lesson.title.includes('O que é IA e por que você precisa dela')) {
         guidedLessonData = fundamentos01;
+      } else if (lesson.title.includes('Reconhecendo IA') || lesson.title.includes('Principais Ferramentas') || lesson.title.includes('Ferramentas Gratuitas')) {
+        guidedLessonData = fundamentos02;
       }
 
       if (!guidedLessonData) {
         return (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">Conteúdo da aula guiada não encontrado</p>
+            <p className="text-sm text-muted-foreground mt-2">Título da aula: {lesson.title}</p>
           </div>
         );
       }
