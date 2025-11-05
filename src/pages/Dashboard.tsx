@@ -117,28 +117,41 @@ const Dashboard = () => {
       if (trailsError) throw trailsError;
       setTrails(trailsData || []);
 
-      // Fetch all lessons for each trail and user progress
+      // OPTIMIZATION: Fetch all data with only 2 queries instead of N queries per trail
+      // 1. Fetch all active lessons at once
+      const { data: allLessons } = await supabase
+        .from('lessons')
+        .select('id, trail_id')
+        .eq('is_active', true);
+
+      // 2. Fetch all user progress at once
+      const { data: allProgress } = await supabase
+        .from('user_progress')
+        .select('lesson_id, status')
+        .eq('user_id', userId)
+        .eq('status', 'completed');
+
+      // Create a map of completed lesson IDs for fast lookup
+      const completedLessonIds = new Set(allProgress?.map(p => p.lesson_id) || []);
+
+      // Group lessons by trail_id in memory
+      const lessonsByTrail = new Map<string, string[]>();
+      allLessons?.forEach(lesson => {
+        if (!lessonsByTrail.has(lesson.trail_id)) {
+          lessonsByTrail.set(lesson.trail_id, []);
+        }
+        lessonsByTrail.get(lesson.trail_id)!.push(lesson.id);
+      });
+
+      // Calculate progress for each trail in memory
       const progressData: TrailProgress[] = [];
       
       for (const trail of trailsData || []) {
-        // Get all lessons for this trail
-        const { data: lessons } = await supabase
-          .from('lessons')
-          .select('id')
-          .eq('trail_id', trail.id)
-          .eq('is_active', true);
-
-        const totalLessons = lessons?.length || 0;
-
-        // Get completed lessons for this user in this trail
-        const { data: completedProgress } = await supabase
-          .from('user_progress')
-          .select('lesson_id')
-          .eq('user_id', userId)
-          .eq('status', 'completed')
-          .in('lesson_id', lessons?.map(l => l.id) || []);
-
-        const completedLessons = completedProgress?.length || 0;
+        const lessonIds = lessonsByTrail.get(trail.id) || [];
+        const totalLessons = lessonIds.length;
+        
+        // Count how many of this trail's lessons are completed
+        const completedLessons = lessonIds.filter(id => completedLessonIds.has(id)).length;
         const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
         // Determine status
