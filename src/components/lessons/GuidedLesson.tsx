@@ -25,6 +25,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
   
+  // 🔧 Helper: Verificar se seção é renderizável no DOM
+  const isSectionRenderable = (section: any) => {
+    return !section.type || section.type === 'text';
+  };
+  
   useEffect(() => {
     const audio = audioRef.current;
     
@@ -74,16 +79,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
         
-        // Scroll suave para a nova seção apenas se ainda não scrollou para ela
+        // Scroll suave para a nova seção apenas se ainda não scrollou para ela E se renderizável
         if (!hasScrolledRef.current[sectionIndex]) {
-          const sectionElement = document.getElementById(`section-${sectionIndex}`);
-          if (sectionElement) {
-            // Offset ajustado para alinhar com o topo do box da MAIA
-            const yOffset = -80;
-            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}`);
-            window.scrollTo({ top: y, behavior: 'smooth' });
-            hasScrolledRef.current[sectionIndex] = true;
+          const section = lessonData.sections[sectionIndex];
+          if (isSectionRenderable(section)) {
+            const sectionElement = document.getElementById(`section-${sectionIndex}`);
+            if (sectionElement) {
+              // Offset ajustado para alinhar com o topo do box da MAIA
+              const yOffset = -80;
+              const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+              console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}: ${section.id}`);
+              window.scrollTo({ top: y, behavior: 'smooth' });
+              hasScrolledRef.current[sectionIndex] = true;
+            }
           }
         }
       }
@@ -152,14 +160,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
 
-        // Scroll apenas se áudio estiver tocando E habilitado
+        // Scroll apenas se áudio estiver tocando E habilitado E seção renderizável
         if (isPlaying && isAudioEnabled && !hasScrolledRef.current[sectionIndex]) {
-          const sectionElement = document.getElementById(`section-${sectionIndex}`);
-          if (sectionElement) {
-            const yOffset = -80;
-            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            window.scrollTo({ top: y, behavior: 'smooth' });
-            hasScrolledRef.current[sectionIndex] = true;
+          const section = lessonData.sections[sectionIndex];
+          if (isSectionRenderable(section)) {
+            const sectionElement = document.getElementById(`section-${sectionIndex}`);
+            if (sectionElement) {
+              const yOffset = -80;
+              const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+              hasScrolledRef.current[sectionIndex] = true;
+            }
           }
         }
       }
@@ -282,23 +293,29 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
   // Completar playground e retomar áudio
   const handlePlaygroundComplete = (answer: string | null) => {
+    console.log('🎮 [PLAYGROUND] Resposta recebida:', answer);
+    
     setShowPlaygroundOverlay(false);
     
-    // Encontrar próxima seção após o playground
     const playgroundIndex = currentSection;
-    const nextSectionIndex = playgroundIndex + 1;
     
-    if (nextSectionIndex < lessonData.sections.length) {
-      const nextSection = lessonData.sections[nextSectionIndex];
+    // 🔥 ENCONTRAR próxima seção renderizável (tipo 'text' ou sem tipo)
+    const nextRenderableIndex = lessonData.sections.findIndex(
+      (section, index) => 
+        index > playgroundIndex && 
+        (!section.type || section.type === 'text')
+    );
+    
+    if (nextRenderableIndex !== -1) {
+      const nextSection = lessonData.sections[nextRenderableIndex];
       const audio = audioRef.current;
       
       if (audio && nextSection) {
-        // Pular para o timestamp da próxima seção
         audio.currentTime = nextSection.timestamp;
         audio.play();
         setIsPlaying(true);
         
-        console.log(`🎮 [PLAYGROUND] Retomando áudio na seção ${nextSectionIndex} (${nextSection.timestamp}s)`);
+        console.log(`🎮 [PLAYGROUND] Retomando na seção ${nextRenderableIndex}: ${nextSection.id} (${nextSection.timestamp}s)`);
       }
     }
     
@@ -424,26 +441,34 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
                   <div className="space-y-1.5">
-                    {lessonData.sections.map((section, index) => (
-                      <button
-                        key={section.id}
-                        onClick={() => jumpToSection(index)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
-                          currentSection === index
-                            ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
-                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                            currentSection === index ? 'bg-white/20' : 'bg-slate-200'
-                          }`}>
-                            {index + 1}
-                          </span>
-                          <span className="truncate">{section.id}</span>
-                        </div>
-                      </button>
-                    ))}
+              {lessonData.sections.map((section, index) => {
+                const isRenderable = !section.type || section.type === 'text';
+                const isSpecial = section.type === 'playground' || section.type === 'end-audio';
+                
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => isRenderable ? jumpToSection(index) : null}
+                    disabled={!isRenderable}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
+                      currentSection === index
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
+                        : isSpecial
+                        ? 'bg-amber-50 text-amber-600 cursor-default'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    } ${!isRenderable ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        currentSection === index ? 'bg-white/20' : 'bg-slate-200'
+                      }`}>
+                        {isSpecial ? '🎮' : index + 1}
+                      </span>
+                      <span className="truncate">{section.id}</span>
+                    </div>
+                  </button>
+                );
+              })}
                   </div>
                 </div>
                 
@@ -451,42 +476,45 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             </aside>
             
             <main className="space-y-4 sm:space-y-6 min-w-0">
-              {lessonData.sections.map((section, index) => (
-                <div
-                  key={section.id}
-                  id={`section-${index}`}
-                  className={`transition-all duration-500 ${
-                    isAudioEnabled 
-                      ? (currentSection >= index ? 'opacity-100' : 'opacity-40')
-                      : 'opacity-100'
-                  }`}
-                >
-                  <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all relative overflow-hidden ${
-                    currentSection === index
-                      ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
-                      : 'border-slate-200/50'
-                  }`}>
-                    {currentSection === index && sectionJustChanged && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-transparent animate-[slide-in-right_0.8s_ease-out]" />
-                    )}
-                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
-                        currentSection === index
-                          ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
-                          : 'bg-slate-100 text-slate-500'
-                      } ${currentSection === index && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl shadow-cyan-400/60 rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}>
-                        {index + 1}
-                      </div>
-                      {currentSection === index && (
-                        <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
-                          sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
-                        }`}>
-                          <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-                          Você está aqui
-                        </span>
+              {lessonData.sections
+                .map((section, originalIndex) => ({ section, originalIndex }))
+                .filter(({ section }) => !section.type || section.type === 'text')
+                .map(({ section, originalIndex }) => (
+                  <div
+                    key={section.id}
+                    id={`section-${originalIndex}`}
+                    className={`transition-all duration-500 ${
+                      isAudioEnabled 
+                        ? (currentSection >= originalIndex ? 'opacity-100' : 'opacity-40')
+                        : 'opacity-100'
+                    }`}
+                  >
+                    <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all relative overflow-hidden ${
+                      currentSection === originalIndex
+                        ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
+                        : 'border-slate-200/50'
+                    }`}>
+                      {currentSection === originalIndex && sectionJustChanged && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-transparent animate-[slide-in-right_0.8s_ease-out]" />
                       )}
-                    </div>
-                    <div className="prose prose-slate prose-sm max-w-none
+                      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
+                          currentSection === originalIndex
+                            ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
+                            : 'bg-slate-100 text-slate-500'
+                        } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl shadow-cyan-400/60 rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}>
+                          {originalIndex + 1}
+                        </div>
+                        {currentSection === originalIndex && (
+                          <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
+                            sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
+                          }`}>
+                            <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                            Você está aqui
+                          </span>
+                        )}
+                      </div>
+                      <div className="prose prose-slate prose-sm max-w-none
   [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
   [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
   [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
@@ -502,11 +530,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
   [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6">
-                      <ReactMarkdown>{section.visualContent}</ReactMarkdown>
+                        <ReactMarkdown>{section.visualContent}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </main>
             
           </div>
