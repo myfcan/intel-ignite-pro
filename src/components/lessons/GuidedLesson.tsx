@@ -66,8 +66,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const time = audio.currentTime;
       setCurrentTime(time);
       
-      // Buffer de 2 segundos para sincronização mais precisa com o áudio
-      const SYNC_BUFFER = 2;
+      // Buffer reduzido para 0.3s - sincronização mais precisa
+      const SYNC_BUFFER = 0.3;
       
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
@@ -77,7 +77,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       });
       
       if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
+        console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
+        console.log(`🔍 [SCROLL DEBUG] hasScrolled: ${hasScrolledRef.current[sectionIndex]}, isRenderable: ${isSectionRenderable(lessonData.sections[sectionIndex])}`);
         lastSectionRef.current = sectionIndex;
         setCurrentSection(sectionIndex);
         
@@ -151,7 +152,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       setCurrentTime(time);
 
       // Mesma lógica de sincronização do handleTimeUpdate
-      const SYNC_BUFFER = 2;
+      const SYNC_BUFFER = 0.3;
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
         const sectionStart = section.timestamp + SYNC_BUFFER;
@@ -160,7 +161,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       });
 
       if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}`);
+        console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
+        console.log(`🔍 [POLLING DEBUG] hasScrolled: ${hasScrolledRef.current[sectionIndex]}, isRenderable: ${isSectionRenderable(lessonData.sections[sectionIndex])}`);
         lastSectionRef.current = sectionIndex;
         setCurrentSection(sectionIndex);
         setSectionJustChanged(true);
@@ -324,11 +326,26 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const audio = audioRef.current;
       
       if (audio && nextSection) {
+        // 🔥 RESETAR hasScrolledRef para forçar scroll na próxima seção
+        hasScrolledRef.current[nextRenderableIndex] = false;
+        
         audio.currentTime = nextSection.timestamp;
         audio.play();
         setIsPlaying(true);
         
         console.log(`🎮 [PLAYGROUND] Retomando na seção ${nextRenderableIndex}: ${nextSection.id} (${nextSection.timestamp}s)`);
+        
+        // 🔥 FORÇAR SCROLL imediato após um pequeno delay
+        setTimeout(() => {
+          const sectionElement = document.getElementById(`section-${nextRenderableIndex}`);
+          if (sectionElement) {
+            const yOffset = -80;
+            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            console.log(`📜 [FORCE SCROLL] Forçando scroll para seção ${nextRenderableIndex} após playground`);
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            hasScrolledRef.current[nextRenderableIndex] = true;
+          }
+        }, 100);
       }
     }
     
