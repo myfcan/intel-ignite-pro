@@ -233,8 +233,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       )}
                       
                       {/* Balão fixo ao lado da cabeça */}
-                      <div className="absolute -top-2 -right-36 hidden xl:block">
-                        <div className="relative bg-white rounded-xl px-4 py-2 border-2 border-cyan-200 shadow-lg">
+                      <div className="absolute -top-6 -right-32 hidden lg:block">
+                        <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
                           <p className="text-sm font-medium text-slate-700 whitespace-nowrap">
                             Olá! Eu sou a MAIA!
                           </p>
