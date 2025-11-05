@@ -13,6 +13,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [duration, setDuration] = useState(lessonData.duration || 0);
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
@@ -167,11 +168,22 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     if (!audio) return;
     
     if (isAudioEnabled) {
+      // Desligando o áudio - guardar seção atual
       audio.pause();
       setIsPlaying(false);
+      setSectionWhenMuted(currentSection);
     } else {
+      // Religando o áudio - voltar para seção onde estava
       audio.play();
       setIsPlaying(true);
+      
+      // Fazer scroll de volta para a seção onde o áudio estava
+      const sectionElement = document.getElementById(`section-${sectionWhenMuted}`);
+      if (sectionElement) {
+        const yOffset = -80;
+        const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
     }
     
     setIsAudioEnabled(!isAudioEnabled);
