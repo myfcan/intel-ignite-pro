@@ -14,9 +14,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
+  const lastSectionRef = useRef<number>(0);
   
   useEffect(() => {
     const audio = audioRef.current;
+    
+    // Inicializar o ref na primeira montagem
+    lastSectionRef.current = 0;
     
     console.log('🔍 [DEBUG] audioUrl recebido:', audioUrl);
     console.log('🔍 [DEBUG] audioRef.current:', audio);
@@ -48,8 +52,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         return time >= sectionStart && time < sectionEnd;
       });
       
-      if (sectionIndex !== -1 && sectionIndex !== currentSection) {
+      if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
         console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id}`);
+        lastSectionRef.current = sectionIndex;
         setCurrentSection(sectionIndex);
         
         // Ativar efeito visual de mudança de seção
