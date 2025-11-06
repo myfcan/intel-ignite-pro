@@ -7,17 +7,41 @@ export default function AdminUpdateTimestamps() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const lessonText = `Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber? Vamos descobrir juntos onde a IA está escondida no seu celular!
+  const lessonText = `Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
 
-Sabe aquela sensação de que o Netflix conhece seu gosto? Não é mágica, é inteligência artificial! O algoritmo aprende com o que você assiste e sugere filmes que você provavelmente vai gostar. A mesma coisa acontece no Spotify quando ele cria aquelas playlists personalizadas que parecem ler sua mente.
+A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
 
-Já reparou como o Instagram e o Facebook sempre mostram exatamente o tipo de conteúdo que você gosta? Isso é IA trabalhando nos bastidores, aprendendo seus interesses e te mostrando mais do que você curte. Às vezes até assusta um pouco, né?
+A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.
 
-Muito bem! Você acabou de descobrir como a IA está presente no seu dia a dia de maneiras que você nem imaginava. Agora vou te mostrar mais um exemplo super comum.
+Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
 
-O WhatsApp também usa IA de várias formas! Aquelas sugestões de resposta rápida que aparecem, a correção automática quando você digita errado, e até a organização das suas conversas mais importantes. Tudo isso é inteligência artificial ajudando você sem você nem perceber. E os assistentes virtuais como Siri, Google Assistente e Alexa? Eles são pura IA!
+Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
 
-Agora você tem um superpoder: consegue identificar a IA no seu dia a dia! Sempre que usar o celular, vai perceber como ela está ali, facilitando sua vida de formas que antes passavam despercebidas. Legal, né?`;
+É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!
+
+Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
+
+Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
+
+A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.
+
+Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
+
+Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
+
+É rapidinho e bem divertido! Vamos lá?
+
+O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
+
+E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
+
+Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!
+
+Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
+
+A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
+
+O futuro já começou, e você está pronto pra aproveitar!`.trim();
 
   const sectionMarkers = [
     {
