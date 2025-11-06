@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import TrailDetail from "./pages/TrailDetail";
 import Lesson from "./pages/Lesson";
 import LessonInteractive from "./pages/LessonInteractive";
+import AdminUpdateTimestamps from "./pages/AdminUpdateTimestamps";
 import Admin from "./pages/Admin";
 import AdminAudioGenerator from "./pages/AdminAudioGenerator";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/audio-generator" element={<AdminAudioGenerator />} />
+          <Route path="/admin/update-timestamps" element={<AdminUpdateTimestamps />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
