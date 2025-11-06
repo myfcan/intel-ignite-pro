@@ -102,7 +102,7 @@ O futuro já começou, e você está pronto pra aproveitar!`.trim();
       toast.info('Atualizando banco de dados...');
 
       const updatePayload = {
-        audio_url: 'maia-dia-a-dia.mp3',
+        audio_url: '/audio/maia-dia-a-dia.mp3',
         word_timestamps: timestampsData.word_timestamps
       };
 
