@@ -126,10 +126,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       // Buffer reduzido para sincronização mais precisa
       const SYNC_BUFFER = 0.1;
       
+      console.log(`⏰ [SYNC] time=${time.toFixed(1)}s, checking ${lessonData.sections.length} sections`);
+      
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
-        const sectionStart = section.timestamp + SYNC_BUFFER;
-        const sectionEnd = nextSection ? nextSection.timestamp + SYNC_BUFFER : Infinity;
+        const sectionStart = section.timestamp - SYNC_BUFFER; // Antecipar início
+        const sectionEnd = nextSection ? nextSection.timestamp : Infinity; // Sem buffer no fim
+        
+        console.log(`🔍 [SECTION ${index}] ${section.id}: ${sectionStart.toFixed(1)}-${sectionEnd === Infinity ? '∞' : sectionEnd.toFixed(1)}s`);
+        
         return time >= sectionStart && time < sectionEnd;
       });
       
@@ -186,16 +191,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       console.log('🎵 [ÁUDIO] Pronto para reproduzir');
     };
     
+    const handleSeeking = () => {
+      console.log('🔄 [SEEKING] Áudio pulou para:', audio.currentTime);
+      lastSectionRef.current = -1; // Forçar redetecção
+    };
+    
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('error', handleError);
     audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('seeking', handleSeeking);
     
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('seeking', handleSeeking);
     };
   }, [lessonData.sections, audioUrl]);
 
@@ -212,8 +224,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const SYNC_BUFFER = 0.1;
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
-        const sectionStart = section.timestamp + SYNC_BUFFER;
-        const sectionEnd = nextSection ? nextSection.timestamp + SYNC_BUFFER : Infinity;
+        const sectionStart = section.timestamp - SYNC_BUFFER; // Antecipar início
+        const sectionEnd = nextSection ? nextSection.timestamp : Infinity; // Sem buffer no fim
         return time >= sectionStart && time < sectionEnd;
       });
 
@@ -327,28 +339,49 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Calcular duração real do áudio de cada seção
+  const getAudioDurationForSection = (sectionIndex: number) => {
+    const section = lessonData.sections[sectionIndex];
+    const nextSection = lessonData.sections[sectionIndex + 1];
+    
+    if (!nextSection) return 0;
+    
+    // Duração = diferença entre timestamps
+    return nextSection.timestamp - section.timestamp;
+  };
+
   // Detectar fim da Seção 4 com showPlaygroundCall
+  const [section4SpeechEnded, setSection4SpeechEnded] = useState(false);
+  
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || section4AudioCompleted) return;
     
-    const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
     const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
-    const nextSectionIndex = section4Index + 1;
-    const nextSection = lessonData.sections[nextSectionIndex];
+    if (section4Index === -1) return;
     
-    if (!section4 || !nextSection) return;
+    const section4 = lessonData.sections[section4Index];
+    const section4Duration = getAudioDurationForSection(section4Index);
+    const section4EndTime = section4.timestamp + section4Duration;
     
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
       
-      if (currentTime >= (nextSection.timestamp - 0.5) && currentTime < nextSection.timestamp) {
-        audio.pause();
-        setIsPlaying(false);
+      // Aguardar o áudio terminar COMPLETAMENTE
+      if (currentTime >= (section4EndTime - 0.3) && currentTime < section4EndTime && !section4SpeechEnded) {
+        console.log('🎤 [SPEECH] Fala da Seção 4 terminando...');
+        setSection4SpeechEnded(true);
         
+        // Aguardar 800ms (pausa natural) e pausar
         setTimeout(() => {
-          setShowPlaygroundCall(true);
-          console.log('🎮 [PLAYGROUND CALL] Card de convite exibido');
+          audio.pause();
+          setIsPlaying(false);
+          
+          // Aguardar mais 800ms antes de mostrar card
+          setTimeout(() => {
+            setShowPlaygroundCall(true);
+            console.log('🎮 [PLAYGROUND CALL] Card de convite exibido após pausa natural');
+          }, 800);
         }, 800);
         
         setSection4AudioCompleted(true);
@@ -357,7 +390,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [lessonData.sections, section4AudioCompleted]);
+  }, [lessonData.sections, section4AudioCompleted, section4SpeechEnded]);
 
   // Detectar playground mid-lesson (tipo antigo)
   useEffect(() => {
@@ -499,13 +532,31 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
   };
 
+  const [exercisesCompleted, setExercisesCompleted] = useState(false);
+
   const handleExercisesComplete = () => {
+    if (exercisesCompleted) {
+      console.warn('⚠️ [EXERCISES] Já foi completado, ignorando chamada duplicada');
+      return;
+    }
+    
+    setExercisesCompleted(true);
+    console.log('✅ [EXERCISES] Completados com sucesso');
+    
     if (lessonData.finalPlaygroundConfig) {
       setCurrentPhase('playground-final');
     } else {
       onComplete();
     }
   };
+  
+  // Resetar estado ao entrar na fase de exercícios
+  useEffect(() => {
+    if (currentPhase === 'exercises') {
+      console.log('🎯 [EXERCISES] Entrando na fase de exercícios');
+      setExercisesCompleted(false);
+    }
+  }, [currentPhase]);
 
   const handleFinalPlaygroundComplete = () => {
     setCurrentPhase('completed');
@@ -530,6 +581,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
     return (
       <ExercisesSection
+        key="exercises-phase" // Força remount ao entrar na fase
         exercises={lessonData.exercisesConfig}
         onComplete={handleExercisesComplete}
       />

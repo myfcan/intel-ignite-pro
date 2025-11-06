@@ -19,11 +19,16 @@ export function ExercisesSection({ exercises, onComplete }: ExercisesSectionProp
     const newScores = [...scores, score];
     setScores(newScores);
 
+    console.log(`✅ [EXERCISE ${currentExerciseIndex + 1}] Completo com score: ${score}`);
+
     if (currentExerciseIndex < exercises.length - 1) {
+      console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
       setTimeout(() => {
         setCurrentExerciseIndex(prev => prev + 1);
       }, 1500);
     } else {
+      // Último exercício
+      console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
       setTimeout(() => {
         onComplete();
       }, 2000);
