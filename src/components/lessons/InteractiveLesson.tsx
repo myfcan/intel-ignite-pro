@@ -147,12 +147,16 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         }
       };
 
-      // Mapeamento de lesson IDs para dados das aulas guiadas
-      // TODO: Criar um sistema mais escalável de mapeamento
+      // Usar o content do banco de dados ou fallback para dados hardcoded
       let guidedLessonData = null;
-      let audioUrl = lesson.audio_url || null; // Usar o áudio do banco de dados
+      let audioUrl = lesson.audio_url || null;
       
-      if (lesson.title.includes('O que é IA e por que você precisa dela')) {
+      // Primeiro, tentar usar o content do banco de dados
+      if (lesson.content && typeof lesson.content === 'object' && 'sections' in lesson.content) {
+        guidedLessonData = lesson.content;
+      } 
+      // Fallback para dados hardcoded das aulas antigas
+      else if (lesson.title.includes('O que é IA e por que você precisa dela')) {
         guidedLessonData = fundamentos01;
       } else if (lesson.title.includes('Reconhecendo IA') || lesson.title.includes('Principais Ferramentas') || lesson.title.includes('Ferramentas Gratuitas')) {
         guidedLessonData = fundamentos02;
