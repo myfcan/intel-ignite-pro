@@ -230,28 +230,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       });
 
       if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        // PROTEÇÃO: Só atualizar se for progressão natural (não permitir voltar)
-        if (sectionIndex >= lastSectionRef.current || 
-            Math.abs(audio.currentTime - lessonData.sections[sectionIndex].timestamp) < 2) {
-          
-          console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
-          lastSectionRef.current = sectionIndex;
-          setCurrentSection(sectionIndex);
-          setSectionJustChanged(true);
-          setTimeout(() => setSectionJustChanged(false), 1000);
+        console.log(`📍 [SYNC] Seção ${lastSectionRef.current} → ${sectionIndex} (${lessonData.sections[sectionIndex].id}) @ ${time.toFixed(1)}s`);
+        
+        lastSectionRef.current = sectionIndex;
+        setCurrentSection(sectionIndex);
+        setSectionJustChanged(true);
+        setTimeout(() => setSectionJustChanged(false), 1000);
 
-          // Scroll sempre que mudar de seção durante o áudio
-          if (isPlaying && isAudioEnabled) {
-            const section = lessonData.sections[sectionIndex];
-            if (isSectionRenderable(section)) {
-              const sectionElement = document.getElementById(`section-${sectionIndex}`);
-              if (sectionElement) {
-                const yOffset = -100;
-                const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                window.scrollTo({ top: y, behavior: 'smooth' });
-              }
+        // Scroll automático para a nova seção
+        const section = lessonData.sections[sectionIndex];
+        if (isSectionRenderable(section)) {
+          setTimeout(() => {
+            const sectionElement = document.getElementById(`section-${sectionIndex}`);
+            if (sectionElement) {
+              sectionElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center'
+              });
             }
-          }
+          }, 100);
         }
       }
     }, 100); // Verifica a cada 100ms
