@@ -230,22 +230,26 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       });
 
       if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
-        console.log(`🔍 [POLLING DEBUG] hasScrolled: ${hasScrolledRef.current[sectionIndex]}, isRenderable: ${isSectionRenderable(lessonData.sections[sectionIndex])}`);
-        lastSectionRef.current = sectionIndex;
-        setCurrentSection(sectionIndex);
-        setSectionJustChanged(true);
-        setTimeout(() => setSectionJustChanged(false), 1000);
+        // PROTEÇÃO: Só atualizar se for progressão natural (não permitir voltar)
+        if (sectionIndex >= lastSectionRef.current || 
+            Math.abs(audio.currentTime - lessonData.sections[sectionIndex].timestamp) < 2) {
+          
+          console.log(`📍 [POLLING] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
+          lastSectionRef.current = sectionIndex;
+          setCurrentSection(sectionIndex);
+          setSectionJustChanged(true);
+          setTimeout(() => setSectionJustChanged(false), 1000);
 
-        // Scroll sempre que mudar de seção durante o áudio
-        if (isPlaying && isAudioEnabled) {
-          const section = lessonData.sections[sectionIndex];
-          if (isSectionRenderable(section)) {
-            const sectionElement = document.getElementById(`section-${sectionIndex}`);
-            if (sectionElement) {
-              const yOffset = -100;
-              const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-              window.scrollTo({ top: y, behavior: 'smooth' });
+          // Scroll sempre que mudar de seção durante o áudio
+          if (isPlaying && isAudioEnabled) {
+            const section = lessonData.sections[sectionIndex];
+            if (isSectionRenderable(section)) {
+              const sectionElement = document.getElementById(`section-${sectionIndex}`);
+              if (sectionElement) {
+                const yOffset = -100;
+                const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+              }
             }
           }
         }
@@ -339,69 +343,33 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calcular duração real do áudio de cada seção
-  const getAudioDurationForSection = (sectionIndex: number) => {
-    const section = lessonData.sections[sectionIndex];
-    const nextSection = lessonData.sections[sectionIndex + 1];
-    
-    if (!nextSection) return 0;
-    
-    // Duração = diferença entre timestamps
-    return nextSection.timestamp - section.timestamp;
-  };
-
-  // Detectar fim da Seção 4 com showPlaygroundCall
-  const [section4SpeechEnded, setSection4SpeechEnded] = useState(false);
-  
+  // 🎮 DETECTAR FIM DA SEÇÃO 4 E ATIVAR PLAYGROUND
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || section4AudioCompleted) return;
     
-    const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
-    
-    // 🔍 DEBUG: Ver se encontrou a seção
-    console.log('🔍 [DEBUG] section4Index:', section4Index);
-    console.log('🔍 [DEBUG] Todas as seções:', lessonData.sections.map(s => ({ 
-      id: s.id, 
-      showPlaygroundCall: s.showPlaygroundCall,
-      timestamp: s.timestamp 
-    })));
-    
-    if (section4Index === -1) {
-      console.warn('⚠️ [WARNING] Seção com showPlaygroundCall não encontrada!');
-      return;
-    }
-    
-    const section4 = lessonData.sections[section4Index];
-    const section4Duration = getAudioDurationForSection(section4Index);
-    const section4EndTime = section4.timestamp + section4Duration;
-    
-    // 🔍 DEBUG: Ver cálculos
-    console.log('🔍 [DEBUG] Seção 4:', {
-      index: section4Index,
-      timestamp: section4.timestamp,
-      duration: section4Duration,
-      endTime: section4EndTime
-    });
-    
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
       
-      // Aguardar o áudio terminar COMPLETAMENTE
-      if (currentTime >= (section4EndTime - 0.3) && currentTime < section4EndTime && !section4SpeechEnded) {
-        console.log('🎤 [SPEECH] Fala da Seção 4 terminando... currentTime:', currentTime, 'target:', section4EndTime - 0.3);
-        setSection4SpeechEnded(true);
+      // Encontrar seção 4 (índice 3) e seção 5 (índice 4)
+      const section4 = lessonData.sections[3];
+      const section5 = lessonData.sections[4];
+      
+      // Detectar fim da Seção 4 (0.5s antes da Seção 5 começar)
+      if (section4?.showPlaygroundCall && 
+          currentTime >= (section5.timestamp - 0.5) && 
+          currentTime < section5.timestamp) {
         
-        // Aguardar 800ms (pausa natural) e pausar
+        console.log('🎮 [PLAYGROUND] Pausando no fim da Seção 4:', currentTime);
+        
+        // Pausar IMEDIATAMENTE
+        audio.pause();
+        setIsPlaying(false);
+        
+        // Aguardar 800ms (pausa natural)
         setTimeout(() => {
-          audio.pause();
-          setIsPlaying(false);
-          
-          // Aguardar mais 800ms antes de mostrar card
-          setTimeout(() => {
-            setShowPlaygroundCall(true);
-            console.log('🎮 [PLAYGROUND CALL] Card de convite exibido após pausa natural');
-          }, 800);
+          setShowPlaygroundCall(true);
+          console.log('🎮 [PLAYGROUND] Card exibido');
         }, 800);
         
         setSection4AudioCompleted(true);
@@ -410,43 +378,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [lessonData.sections, section4AudioCompleted, section4SpeechEnded]);
-
-  // Fallback: verificar a cada segundo se estamos perto do fim da Seção 4
-  useEffect(() => {
-    if (section4AudioCompleted || !audioRef.current) return;
-    
-    const checkInterval = setInterval(() => {
-      const audio = audioRef.current;
-      if (!audio) return;
-      
-      const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
-      if (section4Index === -1) return;
-      
-      const section4 = lessonData.sections[section4Index];
-      const nextSection = lessonData.sections[section4Index + 1];
-      
-      if (nextSection && currentSection === section4Index) {
-        const timeUntilNextSection = nextSection.timestamp - audio.currentTime;
-        
-        console.log('⏰ [FALLBACK] Checando tempo até próxima seção:', timeUntilNextSection, 's');
-        
-        if (timeUntilNextSection <= 2 && timeUntilNextSection > 0 && !section4SpeechEnded) {
-          console.log('🎮 [FALLBACK] Ativando playground por fallback');
-          audio.pause();
-          setIsPlaying(false);
-          setSection4SpeechEnded(true);
-          setTimeout(() => {
-            setShowPlaygroundCall(true);
-            setSection4AudioCompleted(true);
-          }, 1000);
-          clearInterval(checkInterval);
-        }
-      }
-    }, 1000);
-    
-    return () => clearInterval(checkInterval);
-  }, [lessonData.sections, currentSection, section4AudioCompleted, section4SpeechEnded]);
+  }, [lessonData.sections, section4AudioCompleted, isPlaying]);
 
   // Detectar playground mid-lesson (tipo antigo)
   useEffect(() => {
@@ -493,85 +425,45 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   };
   
   const handleSkipPlayground = () => {
+    console.log('⏭️ [PLAYGROUND] Usuário pulou o playground');
     setShowPlaygroundCall(false);
-    const audio = audioRef.current;
     
     setTimeout(() => {
+      const audio = audioRef.current;
       if (audio) {
-        const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
-        const nextSectionIndex = section4Index + 1;
-        const nextSection = lessonData.sections[nextSectionIndex];
-        
-        if (nextSection) {
-          audio.currentTime = nextSection.timestamp;
-          audio.play();
-          setIsPlaying(true);
-          setCurrentSection(nextSectionIndex);
-          console.log('⏭️ [SKIP] Usuário pulou, continuando na próxima seção');
-        }
+        // Retomar EXATAMENTE na Seção 5 (índice 4)
+        audio.currentTime = lessonData.sections[4].timestamp;
+        audio.play();
+        setIsPlaying(true);
+        setCurrentSection(4);
+        console.log('⏭️ [SKIP] Retomando na Seção 5:', lessonData.sections[4].timestamp, 's');
       }
     }, 300);
   };
 
-  // Completar playground e retomar áudio
+  // Completar playground mid-lesson e retomar áudio
   const handlePlaygroundComplete = (answer: string | null) => {
-    console.log('🎮 [PLAYGROUND] Resposta recebida:', answer);
-    
+    console.log('✅ [PLAYGROUND] Usuário completou:', answer);
     setShowPlaygroundOverlay(false);
     
-    const playgroundIndex = currentSection;
-    
-    // 🔥 ENCONTRAR próxima seção renderizável (tipo 'text' ou sem tipo)
-    const nextRenderableIndex = lessonData.sections.findIndex(
-      (section, index) => 
-        index > playgroundIndex && 
-        (!section.type || section.type === 'text')
-    );
-    
-    if (nextRenderableIndex !== -1) {
-      const nextSection = lessonData.sections[nextRenderableIndex];
+    setTimeout(() => {
       const audio = audioRef.current;
-      
-      if (audio && nextSection) {
-        // 🔥 RESETAR hasScrolledRef para forçar scroll na próxima seção
-        hasScrolledRef.current[nextRenderableIndex] = false;
-        
-        audio.currentTime = nextSection.timestamp;
+      if (audio) {
+        // Retomar EXATAMENTE na Seção 5 (índice 4)
+        audio.currentTime = lessonData.sections[4].timestamp;
         audio.play();
         setIsPlaying(true);
-        
-        console.log(`🎮 [PLAYGROUND] Retomando na seção ${nextRenderableIndex}: ${nextSection.id} (${nextSection.timestamp}s)`);
-        
-        // 🔥 FORÇAR SCROLL imediato após um pequeno delay
-        setTimeout(() => {
-          const sectionElement = document.getElementById(`section-${nextRenderableIndex}`);
-          if (sectionElement) {
-            const yOffset = -80;
-            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            console.log(`📜 [FORCE SCROLL] Forçando scroll para seção ${nextRenderableIndex} após playground`);
-            window.scrollTo({ top: y, behavior: 'smooth' });
-            hasScrolledRef.current[nextRenderableIndex] = true;
-          }
-        }, 100);
+        setCurrentSection(4);
+        console.log('✅ [PLAYGROUND] Retomando na Seção 5:', lessonData.sections[4].timestamp, 's');
       }
-    }
+    }, 1500);
     
-    // Mostrar feedback se respondeu (não pulou)
+    // Mostrar feedback
     if (answer) {
-      const section = lessonData.sections[currentSection];
-      const feedback = section?.playgroundConfig?.feedback[answer];
-      if (feedback) {
-        toast({
-          title: answer,
-          description: feedback,
-          duration: 4000,
-        });
-      }
-    } else {
       toast({
-        title: "Exercício pulado",
-        description: "Você pode voltar depois para praticar!",
-        duration: 2000,
+        title: "Ótimo trabalho! 🎉",
+        description: "Você entendeu o conceito!",
+        duration: 3000,
       });
     }
   };
