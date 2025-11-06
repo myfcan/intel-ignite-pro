@@ -68,10 +68,10 @@ export default function AdminAudioGenerator() {
         
         if (content.sections && Array.isArray(content.sections)) {
           content.sections.forEach((section: any, index: number) => {
-            if (section.speechBubbleText) {
-              lessonText += section.speechBubbleText + '\n\n';
+            if (section.spokenContent) {
+              lessonText += section.spokenContent + '\n\n---\n\n';
               lessonMarkers.push({
-                phrase: section.speechBubbleText.substring(0, 50),
+                phrase: section.spokenContent.substring(0, 50),
                 sectionId: section.id || `section_${index}`
               });
             }
