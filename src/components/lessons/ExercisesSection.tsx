@@ -3,6 +3,8 @@ import { ExerciseConfig } from '@/types/guidedLesson';
 import { DragDropLesson } from './DragDropLesson';
 import { CompleteSentenceExercise } from './CompleteSentenceExercise';
 import { ScenarioSelectionExercise } from './ScenarioSelectionExercise';
+import { FillInBlanksExercise } from './FillInBlanksExercise';
+import { TrueFalseExercise } from './TrueFalseExercise';
 
 interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
@@ -78,6 +80,26 @@ export function ExercisesSection({ exercises, onComplete }: ExercisesSectionProp
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
+            onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'fill-in-blanks' && (
+          <FillInBlanksExercise
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            sentences={currentExercise.data.sentences}
+            feedback={currentExercise.data.feedback}
+            onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'true-false' && (
+          <TrueFalseExercise
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            statements={currentExercise.data.statements}
+            feedback={currentExercise.data.feedback}
             onComplete={handleExerciseComplete}
           />
         )}

@@ -1,341 +1,352 @@
 import { GuidedLessonData } from '@/types/guidedLesson';
 
+// ID Interno: aula-2-trilha-1 (para referência humana)
 export const fundamentos02: GuidedLessonData = {
   id: 'fundamentos-02',
-  title: 'Reconhecendo IA no dia a dia',
-  trackId: '1',
+  title: 'Como a IA Aprende com Você',
+  trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
-  duration: 187,
-  exercisesConfig: [
-    {
-      id: 'ex-complete-sentence',
-      type: 'complete-sentence',
-      title: 'Identifique a IA',
-      instruction: 'Complete cada frase sobre IA no cotidiano:',
-      data: {
-        sentences: [
-          {
-            id: '1',
-            text: 'Quando o ___________ sugere filmes baseados no que você já assistiu, está usando IA.',
-            correctAnswers: ['Netflix', 'netflix']
-          },
-          {
-            id: '2',
-            text: 'O ___________ usa IA para corrigir automaticamente palavras digitadas erradas.',
-            correctAnswers: ['WhatsApp', 'Whatsapp', 'whatsapp']
-          },
-          {
-            id: '3',
-            text: 'Assistentes como Alexa, ___________ e Siri são exemplos de IA avançada.',
-            correctAnswers: ['Google Assistant', 'Google', 'google assistant', 'google']
-          }
-        ]
-      }
-    }
-  ],
+  duration: 360, // 6 minutos
+
   sections: [
     {
-      id: 'ia-em-todo-lugar',
+      id: 'secao-1',
       timestamp: 0,
       type: 'text',
-      speechBubbleText: 'A IA já faz parte da sua vida!',
-      visualContent: `# IA está em todo lugar! 🤖
+      speechBubbleText: 'Já reparou como o Netflix sempre sabe o que você quer ver?',
+      visualContent: `## 🎯 O segredo por trás das sugestões perfeitas
 
-Você sabia que você já usa **inteligência artificial** várias vezes por dia, mesmo sem perceber?
+Você já parou pra pensar como o **Netflix** sempre sabe o que você quer assistir? 
 
-A IA está presente:
+Ou como o **Spotify** cria aquela playlist que parece que foi feita especialmente pra você? 🎵
 
-- 📱 No seu **celular** quando você desbloqueia com o rosto
-- 🎬 No **Netflix** quando ele sugere filmes que você vai gostar
-- 💬 No **WhatsApp** quando ele corrige suas palavras
-- 🗺️ No **Google Maps** quando ele te mostra o melhor caminho
+O segredo está em como a Inteligência Artificial **aprende**. Ela observa tudo que você faz, identifica padrões e usa essas informações pra melhorar cada vez mais.
 
----
-
-### A verdade é que...
-
-**A IA já faz parte da sua vida há muito tempo!**
-
-E agora você vai aprender a **reconhecer onde ela está** e como usar isso **a seu favor**.
-
-> 💡 Prepare-se para descobrir um mundo de possibilidades que já está ao seu alcance!`,
-      spokenContent: `Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
-
-A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
-
-A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.`
+É como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa! 💡`,
+      spokenContent: 'Você já parou pra pensar como o Netflix sempre sabe o que você quer assistir? Ou como o Spotify cria aquela playlist que parece que foi feita especialmente pra você? O segredo está em como a Inteligência Artificial aprende. Ela observa tudo que você faz, identifica padrões e usa essas informações pra melhorar cada vez mais. É como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa!'
     },
     {
-      id: 'netflix-spotify',
-      timestamp: 33,
+      id: 'secao-2',
+      timestamp: 30,
       type: 'text',
-      speechBubbleText: 'Netflix e Spotify conhecem você!',
-      visualContent: `## Como Netflix e Spotify te conhecem tão bem? 🎬🎵
+      speechBubbleText: 'A IA registra cada detalhe do que você assiste',
+      visualContent: `## 🎬 Netflix - A escola da IA
 
-Sabe aquela sensação de que o **Netflix conhece seu gosto?** Ou quando o **Spotify** monta aquela playlist perfeita?
+Vamos usar o Netflix como exemplo. Toda vez que você assiste algo, a IA registra:
 
-### Isso é inteligência artificial! 🤖
+- 📊 Qual gênero
+- 👥 Quais atores
+- ⏱️ Quanto tempo você assistiu
+- ⏭️ Se você pulou a introdução
+- ✅ Se assistiu até o final
 
-Essas plataformas:
+Com milhões de pessoas fazendo isso, a IA começa a identificar padrões:
 
-- 👀 **Analisam** tudo que você assiste e ouve
-- 🧠 **Usam IA** para entender seus gostos
-- 📈 **Aprendem** mais sobre você a cada uso
-- 🎯 **Melhoram** as sugestões continuamente
+> "Quem assistiu A também gostou de B"  
+> "Quem para de assistir no episódio três geralmente não gosta desse tipo de série"
 
----
-
-### É como ter um amigo que...
-
-✨ Conhece **perfeitamente** seu gosto  
-✨ Está **sempre atento** ao que você gosta  
-✨ **Nunca esquece** suas preferências  
-✨ Sempre te indica coisas **incríveis!**
-
-> 💡 Quanto mais você usa, mais a IA aprende e melhores ficam as recomendações!`,
-      spokenContent: `Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
-
-Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
-
-É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!`
+**Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!** 📈`,
+      spokenContent: 'Vamos usar o Netflix como exemplo. Toda vez que você assiste algo, a IA registra: qual gênero, quais atores, quanto tempo você assistiu, se você pulou a introdução, se assistiu até o final. Com milhões de pessoas fazendo isso, a IA começa a identificar padrões. Quem assistiu A também gostou de B. Quem para de assistir no episódio três geralmente não gosta desse tipo de série. Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!'
     },
     {
-      id: 'redes-sociais',
-      timestamp: 66,
+      id: 'secao-3',
+      timestamp: 75,
       type: 'text',
-      speechBubbleText: 'Redes sociais usam IA o tempo todo!',
-      visualContent: `## Redes Sociais e a IA Invisível 📱
+      speechBubbleText: 'O Spotify conhece seus humores melhor que ninguém',
+      visualContent: `## 🎵 Spotify e a mágica da música
 
-Já reparou como o **Instagram** e o **Facebook** sempre mostram posts de assuntos que você gosta?
+O Spotify funciona parecido, mas vai além. Ele não só vê o que você ouve, mas **QUANDO** você ouve.
 
-Ou como aparecem **anúncios de produtos** que você estava pensando em comprar?
+🌅 Segunda de manhã → você gosta de um estilo  
+🌃 Sexta à noite → outro completamente diferente
 
-### Isso também é inteligência artificial! 🎯
+A IA aprende seus **humores**, suas **rotinas**, até prevê o que você vai querer ouvir dependendo da hora do dia.
 
-A IA das redes sociais:
+Por isso aquela playlist **"Descobertas da Semana"** parece mágica! ✨
 
-- 👍 Analisa o que você **curte**
-- 💬 Observa o que você **comenta**
-- 🔄 Monitora o que você **compartilha**
-- 🎨 **Personaliza** tudo que você vê
-
----
-
-### O resultado?
-
-A IA está **constantemente aprendendo** sobre seus interesses para tornar sua experiência **melhor e mais relevante**.
-
-É como ter um feed **feito sob medida** só para você!
-
-> 💡 Cada interação ensina a IA um pouco mais sobre o que você gosta!`,
-      spokenContent: `Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
-
-Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
-
-A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.`
+Ela está literalmente aprendendo com você **24 horas por dia, 7 dias por semana**. 🔄`,
+      spokenContent: 'O Spotify funciona parecido, mas vai além. Ele não só vê o que você ouve, mas QUANDO você ouve. Segunda de manhã você gosta de um estilo, sexta à noite é outro completamente diferente. A IA aprende seus humores, suas rotinas, até prevê o que você vai querer ouvir dependendo da hora do dia. Por isso aquela playlist Descobertas da Semana parece mágica! Ela está literalmente aprendendo com você vinte e quatro horas por dia, sete dias por semana.'
     },
     {
-      id: 'transition-to-playground',
-      timestamp: 96,
-      type: 'text',
-      speechBubbleText: 'Hora de praticar! 🎮',
-      visualContent: `## 🎮 Hora de Praticar!
-
-Muito bem! Você acabou de descobrir que **já usa IA todos os dias** sem perceber!
-
-### Legal, né? 🌟
-
-Mas não para por aí! Agora você pode usar IA de forma:
-
-- 🎯 **Consciente** - sabendo o que está fazendo
-- 💡 **Intencional** - para objetivos específicos
-- ⚡ **Eficiente** - facilitando ainda mais sua vida
-
----
-
-### Que tal um teste rápido?
-
-Vamos ver se você consegue **identificar onde mais a IA está presente!**
-
-É rapidinho e bem **divertido!** 🚀
-
-> 💪 Vamos lá?`,
-      spokenContent: `Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
-
-Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
-
-É rapidinho e bem divertido! Vamos lá?`
-    },
-    {
-      id: 'playground-mid',
-      timestamp: 122,
+      id: 'secao-4-playground',
+      timestamp: 120,
       type: 'playground',
-      speechBubbleText: '',
-      visualContent: '',
-      spokenContent: '',
+      speechBubbleText: 'Vamos ver a IA aprendendo em tempo real!',
+      visualContent: `## 🎮 Hora de descobrir como funciona
+
+Incrível, né? A IA não é programada com gostos específicos. **Ela aprende observando o que VOCÊ faz!**
+
+Agora que você entendeu o conceito, que tal descobrir na prática como isso funciona?
+
+Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! 🚀
+
+É super rápido e você vai ter aquele momento **"aha!"** quando entender de verdade.
+
+**Vamos lá?** 👇`,
+      spokenContent: 'Incrível, né? A IA não é programada com gostos específicos. Ela aprende observando o que VOCÊ faz! Agora que você entendeu o conceito, que tal descobrir na prática como isso funciona? Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! É super rápido e você vai ter aquele momento aha quando entender de verdade. Vamos lá?',
       playgroundConfig: {
-        instruction: '',
-        type: 'real-playground',
-        triggerKeyword: 'playground',
-        triggerAfterSection: 3,
-        realConfig: {
-          type: 'real-playground',
-          title: 'Playground: Reconheça a IA!',
-          maiaMessage: 'Você acabou de aprender onde a IA está presente no seu dia a dia. Agora me diga: onde VOCÊ percebe a IA na SUA vida?',
+        instruction: 'Veja a IA Aprendendo em Tempo Real',
+        type: 'interactive-simulation',
+        simulationConfig: {
+          type: 'interactive-simulation',
+          title: 'Veja a IA Aprendendo em Tempo Real',
           scenario: {
-            title: 'Reflita sobre sua experiência:',
-            description: 'Pense em uma situação do seu dia a dia onde você usa IA sem perceber.'
+            icon: '🎬',
+            text: 'Você acabou de criar uma conta no Netflix. Vamos ver como a IA aprende com suas escolhas!'
           },
-          prefilledText: 'Eu percebo a IA quando',
-          userPlaceholder: 'o Google me sugere respostas antes de terminar de digitar / meu banco detecta transações suspeitas / etc...',
-          validation: {
-            minLength: 20,
-            requiredKeywords: [
-              ['quando', 'onde', 'uso', 'percebo', 'vejo'],
-              ['app', 'celular', 'google', 'aplicativo', 'site', 'internet', 'assistente', 'banco', 'whatsapp', 'instagram', 'facebook', 'netflix', 'spotify']
-            ],
-            feedback: {
-              tooShort: 'Continue... descreva melhor a situação!',
-              good: 'Bom! Agora seja mais específico sobre ONDE você percebe isso.',
-              excellent: 'Perfeito! Você está reconhecendo a IA no seu cotidiano! 🎯'
+          steps: [
+            {
+              step: 1,
+              prompt: 'Escolha seu primeiro filme:',
+              options: [
+                { id: 'acao', title: 'Velozes e Furiosos', genre: 'Ação', emoji: '🚗' },
+                { id: 'romance', title: 'Diário de uma Paixão', genre: 'Romance', emoji: '💕' },
+                { id: 'comedia', title: 'Se Beber Não Case', genre: 'Comédia', emoji: '😂' }
+              ],
+              feedback: 'A IA registrou: você gostou de {genre}!'
+            },
+            {
+              step: 2,
+              prompt: 'Escolha outro filme:',
+              options: 'dynamic',
+              logic: 'Mostrar 2 filmes do mesmo gênero + 1 diferente',
+              feedback: 'A IA está aprendendo! Ela notou seu padrão.'
+            },
+            {
+              step: 3,
+              prompt: 'Última escolha:',
+              options: 'dynamic',
+              logic: 'Mostrar 3 filmes do gênero favorito',
+              feedback: 'Pronto! A IA já sabe o que você gosta! 🎯'
+            }
+          ],
+          completion: {
+            visual: 'Gráfico mostrando as preferências identificadas',
+            message: 'Viu como funciona? A IA aprendeu seu gosto em apenas 3 escolhas! Imagina com centenas de filmes...',
+            badge: {
+              id: 'badge-entendeu-aprendizado',
+              title: 'Entendeu o Aprendizado!',
+              icon: '🧠'
             }
           }
         }
       }
     },
     {
-      id: 'whatsapp-assistentes',
-      timestamp: 123,
+      id: 'secao-5',
+      timestamp: 180,
       type: 'text',
-      speechBubbleText: 'Assistentes virtuais são IA pura!',
-      visualContent: `## WhatsApp e Assistentes Virtuais 🤖💬
+      speechBubbleText: 'As redes sociais são ainda mais sofisticadas',
+      visualContent: `## 📱 Instagram e Facebook - IA social
 
-O **WhatsApp** também usa IA de várias formas!
+As redes sociais usam o mesmo princípio, mas de um jeito ainda mais sofisticado.
 
-### WhatsApp + IA:
+### Instagram 📸
+O Instagram analisa:
+- Em quais fotos você **para pra ver**
+- Quais você dá **like**
+- Quais você só **passa direto**
 
-- 💬 Sugere **respostas rápidas**
-- ✍️ Corrige palavras **automaticamente**
-- 🚫 Identifica **spam**
-- 🔔 Prioriza **mensagens importantes**
+### Facebook 👥
+O Facebook observa:
+- Quais posts você **lê até o final**
+- Quais você **compartilha**
+- Com quem você **mais interage**
 
----
+E usa tudo isso pra montar seu **feed personalizado**. 🎯
 
-### E os Assistentes Virtuais?
-
-**Alexa, Google Assistant e Siri** são **pura inteligência artificial!**
-
-Eles são capazes de:
-
-- 🎤 **Entender** sua voz
-- 🧠 **Processar** o que você pediu
-- ⚙️ **Executar** tarefas complexas
-- 💡 **Aprender** com suas preferências
-
----
-
-### Exemplos práticos:
-
-Cada vez que você pede:
-
-- *"Alexa, qual a previsão do tempo?"* ☀️
-- *"Ok Google, toca uma música"* 🎵
-
-**Você está usando IA avançada!**
-
-> 🚀 É tecnologia de ponta funcionando para tornar sua vida mais fácil!`,
-      spokenContent: `O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
-
-E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
-
-Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!`
+Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. **Cada feed é único**, moldado pela IA que aprendeu com você! ✨`,
+      spokenContent: 'As redes sociais usam o mesmo princípio, mas de um jeito ainda mais sofisticado. O Instagram analisa em quais fotos você para pra ver, quais você dá like, quais você só passa direto. O Facebook observa quais posts você lê até o final, quais você compartilha, com quem você mais interage. E usa tudo isso pra montar seu feed personalizado. Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. Cada feed é único, moldado pela IA que aprendeu com você!'
     },
     {
-      id: 'seu-superpoder',
-      timestamp: 156,
-      type: 'text',
-      speechBubbleText: 'Você tem um novo superpoder! 💪',
-      visualContent: `## Seu Novo Superpoder! 💪✨
-
-Agora você tem um **superpoder**: consegue identificar onde a IA está trabalhando!
-
-### E o melhor de tudo?
-
-Você aprendeu que a IA **não é algo complicado ou distante**. 
-
-Ela **já está aqui**, facilitando sua vida **todos os dias**! 🌟
-
----
-
-### O que vem agora?
-
-Nas **próximas aulas**, você vai aprender a usar ferramentas de IA de forma consciente para:
-
-- ⏰ **Economizar tempo** em tarefas repetitivas
-- 💡 **Ter ideias criativas** quando precisar
-- 🎯 **Resolver problemas** de forma mais eficiente
-
----
-
-### 🚀 O futuro já começou!
-
-E você está **pronto** para aproveitar todas as possibilidades que a IA oferece!
-
-> 💎 Continue explorando e descobrindo novas formas de usar a IA a seu favor!
-
-**Preparado para a próxima jornada?** 🌈`,
-      spokenContent: `Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
-
-A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
-
-O futuro já começou, e você está pronto pra aproveitar!`
-    },
-    {
-      id: 'fim-audio',
-      timestamp: 187,
+      id: 'secao-6',
+      timestamp: 240,
       type: 'end-audio',
-      speechBubbleText: 'Aula completa! Parabéns!',
-      visualContent: '',
-      spokenContent: ''
+      speechBubbleText: 'Você ensina IA sem perceber, a cada clique!',
+      visualContent: `## 🎓 Você está ensinando IA o tempo todo
+
+Aqui está o mais interessante: **você não precisa fazer nada especial**. 
+
+Só de usar esses apps normalmente, você está ensinando a IA! 🎯
+
+- Cada **curtida** 👍
+- Cada **busca** 🔍
+- Cada **clique** 🖱️
+
+...é uma aula pra IA. E ela é uma aluna excelente - **nunca esquece nada** e está **sempre melhorando**. 📚
+
+---
+
+### 🚀 Agora você sabe o segredo!
+
+E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor**, criando seus próprios comandos para IA.
+
+**Vai ser incrível!** ✨`,
+      spokenContent: 'Aqui está o mais interessante: você não precisa fazer nada especial. Só de usar esses apps normalmente, você está ensinando a IA! Cada curtida, cada busca, cada clique é uma aula pra IA. E ela é uma aluna excelente - nunca esquece nada e está sempre melhorando. Agora você sabe o segredo! E nas próximas aulas, você vai aprender a usar esse conhecimento a seu favor, criando seus próprios comandos para IA. Vai ser incrível!'
     }
-  ]
+  ],
+
+  exercisesConfig: [
+    {
+      id: 'ex-final-1-aula-2-trilha-1',
+      type: 'drag-drop',
+      title: 'O que cada IA Aprende?',
+      instruction: 'Arraste cada item para a plataforma correta',
+      data: {
+        items: [
+          { id: 'item-1', text: 'Filmes e séries que você assiste', correctZone: 'netflix' },
+          { id: 'item-2', text: 'Músicas que você ouve em cada horário', correctZone: 'spotify' },
+          { id: 'item-3', text: 'Fotos em que você para pra ver', correctZone: 'instagram' },
+          { id: 'item-4', text: 'Posts que você lê completamente', correctZone: 'facebook' },
+          { id: 'item-5', text: 'Se você assistiu até o final', correctZone: 'netflix' },
+          { id: 'item-6', text: 'Quem você mais interage', correctZone: 'facebook' }
+        ],
+        zones: [
+          { id: 'netflix', label: 'Netflix', icon: '🎬' },
+          { id: 'spotify', label: 'Spotify', icon: '🎵' },
+          { id: 'instagram', label: 'Instagram', icon: '📸' },
+          { id: 'facebook', label: 'Facebook', icon: '👥' }
+        ]
+      }
+    },
+    {
+      id: 'ex-final-2-aula-2-trilha-1',
+      type: 'fill-in-blanks',
+      title: 'Complete o que Você Aprendeu',
+      instruction: 'Preencha as lacunas com as palavras corretas',
+      data: {
+        sentences: [
+          {
+            id: 'sent-1',
+            text: 'Quanto mais você usa um app, mais _______ a IA tem para aprender.',
+            correctAnswers: ['dados', 'informações', 'informação'],
+            hint: 'O que a IA coleta de você?'
+          },
+          {
+            id: 'sent-2',
+            text: 'O Spotify não só aprende o que você ouve, mas também _______ você ouve.',
+            correctAnswers: ['quando', 'a hora que', 'o horário que'],
+            hint: 'Pense no tempo...'
+          },
+          {
+            id: 'sent-3',
+            text: 'Você está ensinando IA toda vez que _______ um app normalmente.',
+            correctAnswers: ['usa', 'utiliza', 'mexe'],
+            hint: 'O que você faz com apps?'
+          }
+        ],
+        feedback: {
+          allCorrect: 'Excelente! Você dominou o conceito! 🎯',
+          someCorrect: 'Bom trabalho! Você acertou {count} de 3.',
+          needsReview: 'Vamos revisar? A IA aprende observando seus dados e quando você age.'
+        }
+      }
+    },
+    {
+      id: 'ex-final-3-aula-2-trilha-1',
+      type: 'true-false',
+      title: 'Verdadeiro ou Falso?',
+      instruction: 'Marque se cada afirmação é verdadeira ou falsa',
+      data: {
+        statements: [
+          {
+            id: 'tf-1',
+            text: 'A IA precisa que você ensine manualmente o que você gosta',
+            correct: false,
+            explanation: 'Falso! A IA aprende sozinha só observando o que você faz.'
+          },
+          {
+            id: 'tf-2',
+            text: 'Quanto mais você usa um app, melhor a IA fica',
+            correct: true,
+            explanation: 'Verdadeiro! Mais uso = mais dados = IA mais inteligente.'
+          },
+          {
+            id: 'tf-3',
+            text: 'Duas pessoas veem o mesmo feed no Instagram',
+            correct: false,
+            explanation: 'Falso! Cada feed é personalizado pela IA que aprendeu com você.'
+          },
+          {
+            id: 'tf-4',
+            text: 'O Netflix sabe se você assistiu até o final de um episódio',
+            correct: true,
+            explanation: 'Verdadeiro! A IA registra tudo que você faz pra aprender melhor.'
+          }
+        ],
+        feedback: {
+          perfect: 'Perfeito! Você dominou como a IA aprende! 🏆',
+          good: 'Muito bem! Você entendeu a maior parte!',
+          needsReview: 'Que tal revisar a aula? O conceito principal é que a IA aprende observando.'
+        }
+      }
+    }
+  ],
+
+  finalPlaygroundConfig: {
+    id: 'pg-final-aula-2-trilha-1',
+    type: 'guided-prompt-builder',
+    title: 'Crie Seu Primeiro Pedido Personalizado',
+    maiaIntro: 'Você aprendeu como a IA aprende com você. Agora vamos criar um pedido personalizado usando seus próprios gostos!',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Escolha o que você quer',
+        type: 'radio',
+        question: 'O que você gostaria de receber?',
+        options: [
+          { 
+            value: 'filme', 
+            label: 'Sugestão de filme/série', 
+            description: 'Receba recomendações personalizadas',
+            icon: '🎬' 
+          },
+          { 
+            value: 'musica', 
+            label: 'Playlist personalizada', 
+            description: 'Monte uma playlist perfeita',
+            icon: '🎵' 
+          },
+          { 
+            value: 'receita', 
+            label: 'Receita baseada no seu gosto', 
+            description: 'Encontre receitas que você vai amar',
+            icon: '🍳' 
+          },
+          { 
+            value: 'presente', 
+            label: 'Ideia de presente', 
+            description: 'Ache o presente perfeito',
+            icon: '🎁' 
+          }
+        ]
+      },
+      {
+        stepNumber: 2,
+        title: 'Conte seus gostos',
+        type: 'textarea',
+        question: 'O que você costuma gostar?',
+        placeholder: 'Ex: filmes de ação, comédias românticas, terror...',
+        minLength: 10
+      },
+      {
+        stepNumber: 3,
+        title: 'Adicione contexto',
+        type: 'radio',
+        question: 'Para qual situação?',
+        options: [
+          { value: 'sozinho', label: 'Para assistir sozinho(a)', description: '', icon: '🧘' },
+          { value: 'familia', label: 'Para ver com a família', description: '', icon: '👨‍👩‍👧‍👦' },
+          { value: 'fimdesemana', label: 'Para o fim de semana', description: '', icon: '🎉' },
+          { value: 'relaxar', label: 'Para relaxar depois do trabalho', description: '', icon: '😌' },
+          { value: 'animar', label: 'Para animar o dia', description: '', icon: '✨' }
+        ]
+      }
+    ]
+  }
 };
 
-// Texto completo para geração de áudio
-export const fundamentos02AudioText = `
-Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
-
-A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
-
-A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.
-
-Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
-
-Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
-
-É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!
-
-Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
-
-Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
-
-A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.
-
-Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
-
-Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
-
-É rapidinho e bem divertido! Vamos lá?
-
-O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
-
-E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
-
-Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!
-
-Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
-
-A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
-
-O futuro já começou, e você está pronto pra aproveitar!
-`.trim();
+// Texto concatenado para geração de áudio (será usado no AdminAudioGenerator)
+export const fundamentos02AudioText = fundamentos02.sections
+  .map(section => section.spokenContent)
+  .join('\n\n---\n\n');

@@ -8,7 +8,8 @@ export type LessonSectionType = 'text' | 'playground' | 'end-audio';
 
 export type PlaygroundType = 
   | 'real-playground'
-  | 'multiple-choice-with-feedback';
+  | 'multiple-choice-with-feedback'
+  | 'interactive-simulation';
 
 export interface RealPlaygroundConfig {
   type: 'real-playground';
@@ -31,19 +32,40 @@ export interface RealPlaygroundConfig {
   };
 }
 
+export interface InteractiveSimulationStep {
+  step: number;
+  prompt: string;
+  options: Array<{ id: string; title: string; genre: string; emoji: string }> | 'dynamic';
+  logic?: string;
+  feedback: string;
+}
+
+export interface InteractiveSimulationConfig {
+  type: 'interactive-simulation';
+  title: string;
+  scenario: { icon: string; text: string };
+  steps: InteractiveSimulationStep[];
+  completion: {
+    visual: string;
+    message: string;
+    badge: { id: string; title: string; icon: string };
+  };
+}
+
 export interface PlaygroundConfig {
   instruction: string;
   type: PlaygroundType;
-  triggerKeyword?: string; // 🆕 Palavra-chave para detectar e abrir playground (ex: "playground")
-  triggerAfterSection?: number; // 🆕 Só detecta após esta seção (índice)
+  triggerKeyword?: string;
+  triggerAfterSection?: number;
   options?: string[];
   feedback?: Record<string, string>;
   realConfig?: RealPlaygroundConfig;
+  simulationConfig?: InteractiveSimulationConfig;
 }
 
 export interface ExerciseConfig {
   id: string;
-  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection';
+  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection' | 'fill-in-blanks' | 'true-false';
   title: string;
   instruction: string;
   data: any;
