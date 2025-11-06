@@ -358,18 +358,38 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     if (!audio || section4AudioCompleted) return;
     
     const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
-    if (section4Index === -1) return;
+    
+    // 🔍 DEBUG: Ver se encontrou a seção
+    console.log('🔍 [DEBUG] section4Index:', section4Index);
+    console.log('🔍 [DEBUG] Todas as seções:', lessonData.sections.map(s => ({ 
+      id: s.id, 
+      showPlaygroundCall: s.showPlaygroundCall,
+      timestamp: s.timestamp 
+    })));
+    
+    if (section4Index === -1) {
+      console.warn('⚠️ [WARNING] Seção com showPlaygroundCall não encontrada!');
+      return;
+    }
     
     const section4 = lessonData.sections[section4Index];
     const section4Duration = getAudioDurationForSection(section4Index);
     const section4EndTime = section4.timestamp + section4Duration;
+    
+    // 🔍 DEBUG: Ver cálculos
+    console.log('🔍 [DEBUG] Seção 4:', {
+      index: section4Index,
+      timestamp: section4.timestamp,
+      duration: section4Duration,
+      endTime: section4EndTime
+    });
     
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
       
       // Aguardar o áudio terminar COMPLETAMENTE
       if (currentTime >= (section4EndTime - 0.3) && currentTime < section4EndTime && !section4SpeechEnded) {
-        console.log('🎤 [SPEECH] Fala da Seção 4 terminando...');
+        console.log('🎤 [SPEECH] Fala da Seção 4 terminando... currentTime:', currentTime, 'target:', section4EndTime - 0.3);
         setSection4SpeechEnded(true);
         
         // Aguardar 800ms (pausa natural) e pausar
@@ -391,6 +411,42 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
   }, [lessonData.sections, section4AudioCompleted, section4SpeechEnded]);
+
+  // Fallback: verificar a cada segundo se estamos perto do fim da Seção 4
+  useEffect(() => {
+    if (section4AudioCompleted || !audioRef.current) return;
+    
+    const checkInterval = setInterval(() => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      
+      const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
+      if (section4Index === -1) return;
+      
+      const section4 = lessonData.sections[section4Index];
+      const nextSection = lessonData.sections[section4Index + 1];
+      
+      if (nextSection && currentSection === section4Index) {
+        const timeUntilNextSection = nextSection.timestamp - audio.currentTime;
+        
+        console.log('⏰ [FALLBACK] Checando tempo até próxima seção:', timeUntilNextSection, 's');
+        
+        if (timeUntilNextSection <= 2 && timeUntilNextSection > 0 && !section4SpeechEnded) {
+          console.log('🎮 [FALLBACK] Ativando playground por fallback');
+          audio.pause();
+          setIsPlaying(false);
+          setSection4SpeechEnded(true);
+          setTimeout(() => {
+            setShowPlaygroundCall(true);
+            setSection4AudioCompleted(true);
+          }, 1000);
+          clearInterval(checkInterval);
+        }
+      }
+    }, 1000);
+    
+    return () => clearInterval(checkInterval);
+  }, [lessonData.sections, currentSection, section4AudioCompleted, section4SpeechEnded]);
 
   // Detectar playground mid-lesson (tipo antigo)
   useEffect(() => {
