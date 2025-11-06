@@ -34,19 +34,46 @@ export interface RealPlaygroundConfig {
 
 export interface InteractiveSimulationStep {
   step: number;
+  week?: string;
+  context?: string;
+  iaKnowledge?: string;
   prompt: string;
-  options: Array<{ id: string; title: string; genre: string; emoji: string }> | 'dynamic';
+  options: Array<{ id: string; title: string; genre: string; emoji: string; description?: string }> | 'dynamic';
   logic?: string;
-  feedback: string;
+  feedback: string | {
+    title: string;
+    learning: string[];
+    confidence?: string;
+    visual?: string;
+  };
 }
 
 export interface InteractiveSimulationConfig {
   type: 'interactive-simulation';
   title: string;
+  intro?: {
+    icon: string;
+    title: string;
+    description: string;
+    visual: string;
+  };
   scenario: { icon: string; text: string };
   steps: InteractiveSimulationStep[];
   completion: {
     visual: string;
+    chart?: {
+      type: string;
+      data: any[];
+    };
+    summary?: {
+      icon: string;
+      title: string;
+      insights: string[];
+      realWorldContext?: {
+        title: string;
+        points: string[];
+      };
+    };
     message: string;
     badge: { id: string; title: string; icon: string };
   };
@@ -105,6 +132,7 @@ export interface LessonSection {
   visualContent: string; // texto visual com markdown e emojis (exibido na tela)
   spokenContent: string; // texto puro falado pela MAIA (para sincronização de áudio)
   playgroundConfig?: PlaygroundConfig; // configuração do playground mid-lesson
+  showPlaygroundCall?: boolean; // se deve mostrar card de convite do playground
 }
 
 export interface GuidedLessonData {

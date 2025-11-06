@@ -7,7 +7,8 @@ import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
-import { InteractiveSimulationPlayground } from './InteractiveSimulationPlayground';
+import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
+import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +26,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
   const [showPlaygroundOverlay, setShowPlaygroundOverlay] = useState(false);
   const [showEndCard, setShowEndCard] = useState(false);
+  const [showPlaygroundCall, setShowPlaygroundCall] = useState(false);
+  const [section4AudioCompleted, setSection4AudioCompleted] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<
     'audio' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
   >('audio');
@@ -324,7 +327,39 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Detectar playground mid-lesson
+  // Detectar fim da Seção 4 com showPlaygroundCall
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || section4AudioCompleted) return;
+    
+    const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
+    const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
+    const nextSectionIndex = section4Index + 1;
+    const nextSection = lessonData.sections[nextSectionIndex];
+    
+    if (!section4 || !nextSection) return;
+    
+    const handleTimeUpdate = () => {
+      const currentTime = audio.currentTime;
+      
+      if (currentTime >= (nextSection.timestamp - 0.5) && currentTime < nextSection.timestamp) {
+        audio.pause();
+        setIsPlaying(false);
+        
+        setTimeout(() => {
+          setShowPlaygroundCall(true);
+          console.log('🎮 [PLAYGROUND CALL] Card de convite exibido');
+        }, 800);
+        
+        setSection4AudioCompleted(true);
+      }
+    };
+    
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [lessonData.sections, section4AudioCompleted]);
+
+  // Detectar playground mid-lesson (tipo antigo)
   useEffect(() => {
     const section = lessonData.sections[currentSection];
     if (section?.type === 'playground' && isPlaying && !showPlaygroundOverlay) {
@@ -358,6 +393,36 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       }
     }
   }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase]);
+
+  // Handlers do PlaygroundCallCard
+  const handleOpenPlayground = () => {
+    setShowPlaygroundCall(false);
+    setTimeout(() => {
+      setShowPlaygroundOverlay(true);
+      console.log('🎮 [PLAYGROUND] Usuário aceitou, abrindo playground');
+    }, 300);
+  };
+  
+  const handleSkipPlayground = () => {
+    setShowPlaygroundCall(false);
+    const audio = audioRef.current;
+    
+    setTimeout(() => {
+      if (audio) {
+        const section4Index = lessonData.sections.findIndex(s => s.showPlaygroundCall);
+        const nextSectionIndex = section4Index + 1;
+        const nextSection = lessonData.sections[nextSectionIndex];
+        
+        if (nextSection) {
+          audio.currentTime = nextSection.timestamp;
+          audio.play();
+          setIsPlaying(true);
+          setCurrentSection(nextSectionIndex);
+          console.log('⏭️ [SKIP] Usuário pulou, continuando na próxima seção');
+        }
+      }
+    }, 300);
+  };
 
   // Completar playground e retomar áudio
   const handlePlaygroundComplete = (answer: string | null) => {
@@ -817,23 +882,38 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       )}
 
+      {/* Card de Convite do Playground */}
+      {showPlaygroundCall && (() => {
+        const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
+        return section4 ? (
+          <PlaygroundCallCard
+            title="Hora da Prática!"
+            description="Que tal ver a IA aprendendo em tempo real? É rápido e você vai ter aquele momento 'aha!' de verdade!"
+            onOpen={handleOpenPlayground}
+            onSkip={handleSkipPlayground}
+          />
+        ) : null;
+      })()}
+
       {/* Overlay do Playground Mid-Lesson */}
-      {showPlaygroundOverlay && lessonData.sections[currentSection]?.type === 'playground' && lessonData.sections[currentSection]?.playgroundConfig && (
-        <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300 ${playgroundDetected ? 'transition-opacity duration-500' : ''}`}>
-          {lessonData.sections[currentSection]?.playgroundConfig?.type === 'interactive-simulation' && 
-           lessonData.sections[currentSection]?.playgroundConfig?.simulationConfig ? (
+      {showPlaygroundOverlay && (() => {
+        const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
+        const playgroundSection = section4 || lessonData.sections[currentSection];
+        return playgroundSection?.playgroundConfig ? (
+          playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
+           playgroundSection.playgroundConfig.simulationConfig ? (
             <InteractiveSimulationPlayground
-              config={lessonData.sections[currentSection].playgroundConfig!.simulationConfig!}
+              config={playgroundSection.playgroundConfig.simulationConfig}
               onComplete={() => handlePlaygroundComplete(null)}
             />
           ) : (
             <PlaygroundMidLesson
-              config={lessonData.sections[currentSection].playgroundConfig!}
+              config={playgroundSection.playgroundConfig}
               onComplete={handlePlaygroundComplete}
             />
-          )}
-        </div>
-      )}
+          )
+        ) : null;
+      })()}
 
       {/* Card de Fim da Aula (End-Audio) */}
       {showEndCard && (

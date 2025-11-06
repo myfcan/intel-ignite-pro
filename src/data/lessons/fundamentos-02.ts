@@ -68,11 +68,11 @@ Ela está literalmente aprendendo com você **24 horas por dia, 7 dias por seman
       spokenContent: 'O Spotify funciona parecido, mas vai além. Ele não só vê o que você ouve, mas QUANDO você ouve. Segunda de manhã você gosta de um estilo, sexta à noite é outro completamente diferente. A IA aprende seus humores, suas rotinas, até prevê o que você vai querer ouvir dependendo da hora do dia. Por isso aquela playlist Descobertas da Semana parece mágica! Ela está literalmente aprendendo com você vinte e quatro horas por dia, sete dias por semana.'
     },
     {
-      id: 'secao-4-playground',
+      id: 'secao-4',
       timestamp: 120,
-      type: 'playground',
+      type: 'text',
       speechBubbleText: 'Vamos ver a IA aprendendo em tempo real!',
-      visualContent: `## 🎮 Hora de descobrir como funciona
+      visualContent: `## 🎮 Hora de descobrir na prática
 
 Incrível, né? A IA não é programada com gostos específicos. **Ela aprende observando o que VOCÊ faz!**
 
@@ -83,50 +83,121 @@ Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! �
 É super rápido e você vai ter aquele momento **"aha!"** quando entender de verdade.
 
 **Vamos lá?** 👇`,
-      spokenContent: 'Incrível, né? A IA não é programada com gostos específicos. Ela aprende observando o que VOCÊ faz! Agora que você entendeu o conceito, que tal descobrir na prática como isso funciona? Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! É super rápido e você vai ter aquele momento aha quando entender de verdade. Vamos lá?',
+      spokenContent: 'Incrível, né? A IA não é programada com gostos específicos. Ela aprende observando o que VOCÊ faz! Agora que você entendeu o conceito, preparei uma simulação interativa onde você vai VER a IA aprendendo em tempo real. É bem rápido e muito legal! Mas fique tranquilo, você escolhe: pode fazer agora ou deixar pra depois e continuar a aula.',
+      showPlaygroundCall: true,
       playgroundConfig: {
-        instruction: 'Veja a IA Aprendendo em Tempo Real',
+        instruction: 'Como o Netflix Aprendeu o Que Você Gosta',
         type: 'interactive-simulation',
         simulationConfig: {
           type: 'interactive-simulation',
-          title: 'Veja a IA Aprendendo em Tempo Real',
+          title: 'Como o Netflix Aprendeu o Que Você Gosta',
+          intro: {
+            icon: '🎬',
+            title: 'Simulação: Seu Primeiro Mês no Netflix',
+            description: 'Vamos simular como a IA aprende com você. Cada escolha sua ensina algo novo para a inteligência artificial!',
+            visual: 'Linha do tempo: Semana 1 → Semana 2 → Semana 3 → Resultado'
+          },
           scenario: {
             icon: '🎬',
-            text: 'Você acabou de criar uma conta no Netflix. Vamos ver como a IA aprende com suas escolhas!'
+            text: 'Você acabou de criar uma conta no Netflix. A IA ainda não sabe NADA sobre você!'
           },
           steps: [
             {
               step: 1,
-              prompt: 'Escolha seu primeiro filme:',
+              week: 'Semana 1 - Primeira Escolha',
+              context: 'Você acabou de criar sua conta. O Netflix ainda não sabe NADA sobre você.',
+              iaKnowledge: '🤷 IA sabe: Nada ainda',
+              prompt: 'Escolha seu primeiro filme para assistir hoje à noite:',
               options: [
-                { id: 'acao', title: 'Velozes e Furiosos', genre: 'Ação', emoji: '🚗' },
-                { id: 'romance', title: 'Diário de uma Paixão', genre: 'Romance', emoji: '💕' },
-                { id: 'comedia', title: 'Se Beber Não Case', genre: 'Comédia', emoji: '😂' }
+                { id: 'acao', title: 'Velozes e Furiosos 7', genre: 'Ação', emoji: '🚗', description: 'Carros, explosões, adrenalina' },
+                { id: 'romance', title: 'Diário de uma Paixão', genre: 'Romance', emoji: '💕', description: 'História de amor emocionante' },
+                { id: 'comedia', title: 'Se Beber Não Case', genre: 'Comédia', emoji: '😂', description: 'Risadas garantidas' }
               ],
-              feedback: 'A IA registrou: você gostou de {genre}!'
+              feedback: {
+                title: 'O que a IA Aprendeu:',
+                learning: [
+                  '✓ Você gostou de {genre}',
+                  '✓ Assistiu em horário noturno',
+                  '✓ Primeira impressão registrada'
+                ],
+                visual: 'Barra de aprendizado: 33% completa',
+                confidence: 'Confiança da IA: 25%'
+              }
             },
             {
               step: 2,
-              prompt: 'Escolha outro filme:',
+              week: 'Semana 2 - IA Fazendo Sugestões',
+              context: 'Uma semana depois. A IA já começou a aprender!',
+              iaKnowledge: '🧠 IA sabe: Você gostou de {previousGenre}',
+              prompt: 'O Netflix montou sugestões pra você. Escolha um filme:',
               options: 'dynamic',
-              logic: 'Mostrar 2 filmes do mesmo gênero + 1 diferente',
-              feedback: 'A IA está aprendendo! Ela notou seu padrão.'
+              logic: '2 filmes do mesmo gênero escolhido + 1 diferente',
+              feedback: {
+                title: 'A IA Está Ficando Mais Esperta:',
+                learning: [
+                  '✓✓ CONFIRMOU: Você realmente gosta de {genre}',
+                  '✓ IA aumentou confiança nessa preferência',
+                  '✓ Próximas sugestões serão ainda mais precisas'
+                ],
+                confidence: 'Confiança da IA: 60%',
+                visual: 'Barra de aprendizado: 66% completa'
+              }
             },
             {
               step: 3,
-              prompt: 'Última escolha:',
+              week: 'Semana 3 - IA Experiente',
+              context: 'Três semanas depois. A IA já te conhece bem!',
+              iaKnowledge: '🎯 IA sabe: Suas preferências + padrões + horários',
+              prompt: 'Sexta-feira, 21h. Veja as sugestões personalizadas:',
               options: 'dynamic',
-              logic: 'Mostrar 3 filmes do gênero favorito',
-              feedback: 'Pronto! A IA já sabe o que você gosta! 🎯'
+              logic: '3 filmes altamente personalizados baseados no perfil',
+              feedback: {
+                title: 'IA Totalmente Treinada! 🎯',
+                learning: [
+                  '✓✓✓ IA dominou suas preferências',
+                  '✓ Conhece seus gêneros favoritos',
+                  '✓ Sabe seus horários típicos',
+                  '✓ Prevê o que você vai gostar'
+                ],
+                confidence: 'Confiança da IA: 95%',
+                visual: 'Barra de aprendizado: 100% completa! 🎉'
+              }
             }
           ],
           completion: {
-            visual: 'Gráfico mostrando as preferências identificadas',
+            visual: 'Gráfico de progressão mostrando evolução',
+            chart: {
+              type: 'progressionChart',
+              data: [
+                { week: 'Semana 1', accuracy: 25, label: 'IA não sabia nada' },
+                { week: 'Semana 2', accuracy: 60, label: 'IA começou a aprender' },
+                { week: 'Semana 3', accuracy: 95, label: 'IA te conhece bem!' }
+              ]
+            },
+            summary: {
+              icon: '📊',
+              title: 'Veja o que aconteceu:',
+              insights: [
+                '🎬 Você escolheu {totalPicks} filmes',
+                '🧠 A IA aprendeu {learnedPatterns} padrões',
+                '🎯 Taxa de acerto final: {accuracy}%',
+                '⚡ Em 3 semanas a IA te conheceu!'
+              ],
+              realWorldContext: {
+                title: 'Na vida real:',
+                points: [
+                  'O Netflix analisa CENTENAS de escolhas suas',
+                  'Aprende com MILHÕES de usuários ao mesmo tempo',
+                  'Por isso as sugestões ficam TÃO boas!',
+                  'Você ensina IA só de usar o app normalmente'
+                ]
+              }
+            },
             message: 'Viu como funciona? A IA aprendeu seu gosto em apenas 3 escolhas! Imagina com centenas de filmes...',
-            badge: {
-              id: 'badge-entendeu-aprendizado',
-              title: 'Entendeu o Aprendizado!',
-              icon: '🧠'
+            badge: { 
+              id: 'badge-entendeu-aprendizado-ia', 
+              title: 'Mestre do Aprendizado de IA!', 
+              icon: '🧠' 
             }
           }
         }
