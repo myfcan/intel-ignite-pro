@@ -95,21 +95,37 @@ O futuro já começou, e você está pronto pra aproveitar!`.trim();
       }
 
       console.log('📊 Timestamps recebidos:', timestampsData);
+      console.log('📊 Total de word_timestamps:', timestampsData.word_timestamps?.length);
+      console.log('📊 Primeiras 3 palavras:', timestampsData.word_timestamps?.slice(0, 3));
 
       // Passo 2: Atualizar banco de dados
       toast.info('Atualizando banco de dados...');
 
-      const { error: updateError } = await supabase
+      const updatePayload = {
+        audio_url: 'maia-dia-a-dia.mp3',
+        word_timestamps: timestampsData.word_timestamps
+      };
+
+      console.log('📝 Payload do update:', {
+        audio_url: updatePayload.audio_url,
+        word_timestamps_count: updatePayload.word_timestamps?.length,
+        first_word: updatePayload.word_timestamps?.[0]
+      });
+
+      const { data: updateData, error: updateError } = await supabase
         .from('lessons')
-        .update({
-          audio_url: 'maia-dia-a-dia.mp3',
-          word_timestamps: timestampsData.word_timestamps
-        })
-        .eq('id', '11111111-1111-1111-1111-111111111102');
+        .update(updatePayload)
+        .eq('id', '11111111-1111-1111-1111-111111111102')
+        .select();
+
+      console.log('✅ Update response:', updateData);
 
       if (updateError) {
         throw new Error(`Erro ao atualizar banco: ${updateError.message}`);
       }
+
+      // Aguardar 1 segundo para garantir que o update foi processado
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Passo 3: Verificar resultado
       const { data: verifyData, error: verifyError } = await supabase
