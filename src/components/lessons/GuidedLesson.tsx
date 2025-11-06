@@ -701,12 +701,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     key={section.id}
                     onClick={() => isRenderable ? jumpToSection(index) : null}
                     disabled={!isRenderable}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-300 hover:scale-[1.02] ${
                       currentSection === index
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg'
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg shadow-cyan-400/30 scale-[1.02]'
                         : isSpecial
                         ? 'bg-amber-50 text-amber-600 cursor-default'
-                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
                     } ${!isRenderable ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-2">
@@ -734,17 +734,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   <div
                     key={section.id}
                     id={`section-${originalIndex}`}
-                    className={`transition-all duration-500 ${
+                    className={`transition-all duration-700 ${
                       isAudioEnabled 
-                        ? (currentSection >= originalIndex ? 'opacity-100' : 'opacity-40')
-                        : 'opacity-100'
-                    }`}
+                        ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4')
+                        : 'opacity-100 translate-y-0'
+                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-fade-in' : ''}`}
                   >
-                    <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all relative overflow-hidden ${
+                    <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-500 relative overflow-hidden ${
                       currentSection === originalIndex
-                        ? 'border-cyan-300/50 ring-2 ring-cyan-400/20'
-                        : 'border-slate-200/50'
-                    }`}>
+                        ? 'border-cyan-300/50 ring-2 ring-cyan-400/20 shadow-2xl shadow-cyan-400/10'
+                        : 'border-slate-200/50 hover:border-slate-300/50 hover:shadow-2xl'
+                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''}`}>
                       {currentSection === originalIndex && sectionJustChanged && (
                         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-transparent animate-[slide-in-right_0.8s_ease-out]" />
                       )}
@@ -765,7 +765,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                           </span>
                         )}
                       </div>
-                      <div className="prose prose-slate prose-sm max-w-none
+                      <div className={`prose prose-slate prose-sm max-w-none transition-all duration-500
   [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
   [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
   [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
@@ -780,7 +780,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   [&_blockquote]:!py-3 [&_blockquote]:!px-4 [&_blockquote]:!rounded-r-lg [&_blockquote]:!my-4 [&_blockquote]:!text-base
   [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
   [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
-  [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6">
+  [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
+    currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
+  }`}>
                         <ReactMarkdown>{section.visualContent}</ReactMarkdown>
                       </div>
                     </div>
