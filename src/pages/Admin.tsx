@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Music, Clock } from 'lucide-react';
+import { Loader2, Music, Clock, RefreshCw } from 'lucide-react';
 import { AudioPlayer } from '@/components/lesson/AudioPlayer';
 import { useNavigate } from 'react-router-dom';
 
@@ -82,6 +82,29 @@ export default function Admin() {
             Gerencie e configure o sistema
           </p>
         </div>
+
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5" />
+              🔧 Corrigir Timestamps da Aula 02
+            </CardTitle>
+            <CardDescription>
+              Atualizar timestamps e áudio da aula "Reconhecendo IA no dia a dia"
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/update-timestamps')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Corrigir Aula 02
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
