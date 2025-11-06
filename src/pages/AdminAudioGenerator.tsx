@@ -30,14 +30,49 @@ const LESSON_CONTENT_MAP: Record<string, {
     ]
   },
   '11111111-1111-1111-1111-111111111102': {
-    text: fundamentos02AudioText,
+    text: `Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
+
+A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
+
+A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.
+
+Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
+
+Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
+
+É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!
+
+Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
+
+Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
+
+A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.
+
+Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
+
+Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
+
+É rapidinho e bem divertido! Vamos lá?
+
+O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
+
+E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
+
+Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!
+
+Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
+
+A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
+
+O futuro já começou, e você está pronto pra aproveitar!`,
     markers: [
-      { phrase: 'Existem dezenas de ferramentas de IA', sectionId: 'tres-ferramentas' },
-      { phrase: 'O ChatGPT é a ferramenta de IA mais conhecida', sectionId: 'chatgpt' },
-      { phrase: 'O Gemini é a resposta do Google', sectionId: 'google-gemini' },
-      { phrase: 'Muito bem! Você acabou de conhecer as três principais ferramentas de IA', sectionId: 'transition-to-playground' },
-      { phrase: 'Claude, desenvolvido pela Anthropic', sectionId: 'claude' },
-      { phrase: 'Agora você conhece as três principais ferramentas', sectionId: 'escolhendo-ferramenta' }
+      { phrase: 'Você sabia que você já usa inteligência artificial', sectionId: 'ia-em-todo-lugar' },
+      { phrase: 'Sabe aquela sensação de que o Netflix conhece seu gosto', sectionId: 'netflix-spotify' },
+      { phrase: 'Já reparou como o Instagram e o Facebook sempre mostram posts', sectionId: 'redes-sociais' },
+      { phrase: 'Muito bem! Você acabou de descobrir que já usa IA', sectionId: 'transition-to-playground' },
+      { phrase: '', sectionId: 'playground-mid' },
+      { phrase: 'O WhatsApp também usa IA de várias formas', sectionId: 'whatsapp-assistentes' },
+      { phrase: 'Agora você tem um superpoder', sectionId: 'seu-superpoder' }
     ]
   }
 };
