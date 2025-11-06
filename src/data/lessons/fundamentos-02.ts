@@ -5,29 +5,29 @@ export const fundamentos02: GuidedLessonData = {
   title: 'Reconhecendo IA no dia a dia',
   trackId: '1',
   trackName: 'Fundamentos da IA',
-  duration: 310,
+  duration: 187,
   exercisesConfig: [
     {
       id: 'ex-complete-sentence',
       type: 'complete-sentence',
-      title: 'Complete as Frases',
-      instruction: 'Complete cada frase com a ferramenta correta:',
+      title: 'Identifique a IA',
+      instruction: 'Complete cada frase sobre IA no cotidiano:',
       data: {
         sentences: [
           {
             id: '1',
-            text: 'Se eu preciso pesquisar informações atualizadas da internet, devo usar o ___________.',
-            correctAnswers: ['Google Gemini', 'Gemini', 'google gemini', 'gemini']
+            text: 'Quando o ___________ sugere filmes baseados no que você já assistiu, está usando IA.',
+            correctAnswers: ['Netflix', 'netflix']
           },
           {
             id: '2',
-            text: 'Para escrever um email profissional rápido, a ferramenta mais popular é o ___________.',
-            correctAnswers: ['ChatGPT', 'Chat GPT', 'chatgpt', 'chat gpt']
+            text: 'O ___________ usa IA para corrigir automaticamente palavras digitadas erradas.',
+            correctAnswers: ['WhatsApp', 'Whatsapp', 'whatsapp']
           },
           {
             id: '3',
-            text: 'Se vou analisar um contrato longo e complexo, o ___________ seria ideal por ser mais detalhista.',
-            correctAnswers: ['Claude', 'claude']
+            text: 'Assistentes como Alexa, ___________ e Siri são exemplos de IA avançada.',
+            correctAnswers: ['Google Assistant', 'Google', 'google assistant', 'google']
           }
         ]
       }
@@ -35,133 +35,140 @@ export const fundamentos02: GuidedLessonData = {
   ],
   sections: [
     {
-      id: 'tres-ferramentas',
+      id: 'ia-em-todo-lugar',
       timestamp: 0,
       type: 'text',
-      speechBubbleText: 'Você só precisa conhecer três ferramentas!',
-      visualContent: `# As três ferramentas essenciais 🎯
+      speechBubbleText: 'A IA já faz parte da sua vida!',
+      visualContent: `# IA está em todo lugar! 🤖
 
-Existem **dezenas de ferramentas de IA** disponíveis hoje, mas você só precisa conhecer **três para começar**:
+Você sabia que você já usa **inteligência artificial** várias vezes por dia, mesmo sem perceber?
 
-## 🤖 ChatGPT | 🌟 Google Gemini | 💎 Claude
+A IA está presente:
 
-Todas são **completamente gratuitas** e podem resolver **90% das suas necessidades** no dia a dia.
-
-Pense nelas como **três assistentes inteligentes**, cada um com suas especialidades.
+- 📱 No seu **celular** quando você desbloqueia com o rosto
+- 🎬 No **Netflix** quando ele sugere filmes que você vai gostar
+- 💬 No **WhatsApp** quando ele corrige suas palavras
+- 🗺️ No **Google Maps** quando ele te mostra o melhor caminho
 
 ---
 
-### A melhor parte?
+### A verdade é que...
 
-**Você não precisa escolher apenas uma!**
+**A IA já faz parte da sua vida há muito tempo!**
 
-Muitas pessoas usam as **três no mesmo dia** para tarefas diferentes, aproveitando o melhor de cada ferramenta.
+E agora você vai aprender a **reconhecer onde ela está** e como usar isso **a seu favor**.
 
-> 💡 Vamos conhecer cada uma delas e descobrir quando usar cada ferramenta!`,
-      spokenContent: `Existem dezenas de ferramentas de IA disponíveis hoje, mas você só precisa conhecer três para começar: ChatGPT, Google Gemini e Claude.
+> 💡 Prepare-se para descobrir um mundo de possibilidades que já está ao seu alcance!`,
+      spokenContent: `Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
 
-Todas são completamente gratuitas e podem resolver noventa por cento das suas necessidades no dia a dia. Pense nelas como três assistentes inteligentes, cada um com suas especialidades.
+A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
 
-A melhor parte? Você não precisa escolher apenas uma. Muitas pessoas usam as três no mesmo dia para tarefas diferentes!`
+A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.`
     },
     {
-      id: 'chatgpt',
-      timestamp: 60,
+      id: 'netflix-spotify',
+      timestamp: 33,
       type: 'text',
-      speechBubbleText: 'ChatGPT é a mais famosa!',
-      visualContent: `## ChatGPT - O mais popular 🚀
+      speechBubbleText: 'Netflix e Spotify conhecem você!',
+      visualContent: `## Como Netflix e Spotify te conhecem tão bem? 🎬🎵
 
-O **ChatGPT** é a ferramenta de IA mais conhecida do mundo, criada pela **OpenAI**.
+Sabe aquela sensação de que o **Netflix conhece seu gosto?** Ou quando o **Spotify** monta aquela playlist perfeita?
 
-É como ter um **assistente que sabe conversar sobre qualquer assunto** de forma natural.
+### Isso é inteligência artificial! 🤖
 
-### Melhor para:
+Essas plataformas:
 
-- ✍️ **Escrever emails e textos profissionais**
-- 💡 **Tirar dúvidas e aprender coisas novas**
-- 📋 **Criar listas, roteiros e resumos**
-- 🎨 **Gerar ideias criativas**
+- 👀 **Analisam** tudo que você assiste e ouve
+- 🧠 **Usam IA** para entender seus gostos
+- 📈 **Aprendem** mais sobre você a cada uso
+- 🎯 **Melhoram** as sugestões continuamente
 
 ---
 
-### Como usar:
+### É como ter um amigo que...
 
-1. Acesse **chat.openai.com**
-2. Crie uma **conta gratuita**
-3. Comece a **conversar**
+✨ Conhece **perfeitamente** seu gosto  
+✨ Está **sempre atento** ao que você gosta  
+✨ **Nunca esquece** suas preferências  
+✨ Sempre te indica coisas **incríveis!**
 
-É realmente **tão simples quanto parece!**
+> 💡 Quanto mais você usa, mais a IA aprende e melhores ficam as recomendações!`,
+      spokenContent: `Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
 
-> 🎯 ChatGPT é perfeito para começar sua jornada em IA. Interface intuitiva e resultados impressionantes!`,
-      spokenContent: `O ChatGPT é a ferramenta de IA mais conhecida do mundo, criada pela OpenAI. É como ter um assistente que sabe conversar sobre qualquer assunto de forma natural.
+Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
 
-Melhor para: escrever emails e textos profissionais, tirar dúvidas e aprender coisas novas, criar listas, roteiros e resumos, e gerar ideias criativas.
-
-Para usar, basta acessar chat ponto openai ponto com, criar uma conta gratuita e começar a conversar. É realmente tão simples quanto parece!`
+É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!`
     },
     {
-      id: 'google-gemini',
-      timestamp: 120,
+      id: 'redes-sociais',
+      timestamp: 66,
       type: 'text',
-      speechBubbleText: 'Gemini se conecta com tudo do Google!',
-      visualContent: `## Google Gemini - Integração poderosa 🌐
+      speechBubbleText: 'Redes sociais usam IA o tempo todo!',
+      visualContent: `## Redes Sociais e a IA Invisível 📱
 
-O **Gemini** é a resposta do Google para a IA conversacional.
+Já reparou como o **Instagram** e o **Facebook** sempre mostram posts de assuntos que você gosta?
 
-Sua grande vantagem é estar **conectado com todo o ecossistema Google**:
+Ou como aparecem **anúncios de produtos** que você estava pensando em comprar?
 
-### Integrado com:
+### Isso também é inteligência artificial! 🎯
 
-- 📧 **Gmail** - Escreve e organiza emails
-- 📁 **Drive** - Trabalha com seus arquivos
-- 🗺️ **Maps** - Planeja rotas e viagens
-- 📺 **YouTube** - Encontra e resume vídeos
+A IA das redes sociais:
 
----
-
-### Melhor para:
-
-- 🔍 **Pesquisar informações atualizadas na internet**
-- 💾 **Trabalhar com seus arquivos do Google Drive**
-- ✈️ **Planejar viagens com rotas e mapas**
-- 🎬 **Encontrar e resumir vídeos do YouTube**
+- 👍 Analisa o que você **curte**
+- 💬 Observa o que você **comenta**
+- 🔄 Monitora o que você **compartilha**
+- 🎨 **Personaliza** tudo que você vê
 
 ---
 
-### Como usar:
+### O resultado?
 
-Acesse **gemini.google.com** com sua conta Google.
+A IA está **constantemente aprendendo** sobre seus interesses para tornar sua experiência **melhor e mais relevante**.
 
-> 💡 Se você já usa Gmail ou Drive, vai **adorar essa integração automática!**`,
-      spokenContent: `O Gemini é a resposta do Google para a IA conversacional. Sua grande vantagem é estar conectado com todo o ecossistema Google: Gmail, Drive, Maps, YouTube e muito mais.
+É como ter um feed **feito sob medida** só para você!
 
-Melhor para: pesquisar informações atualizadas na internet, trabalhar com seus arquivos do Google Drive, planejar viagens com rotas e mapas, e encontrar e resumir vídeos do YouTube.
+> 💡 Cada interação ensina a IA um pouco mais sobre o que você gosta!`,
+      spokenContent: `Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
 
-Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmail ou Drive, vai adorar essa integração automática!`
+Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
+
+A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.`
     },
     {
       id: 'transition-to-playground',
-      timestamp: 175,
+      timestamp: 96,
       type: 'text',
       speechBubbleText: 'Hora de praticar! 🎮',
       visualContent: `## 🎮 Hora de Praticar!
 
-Muito bem! Você acabou de conhecer as **três principais ferramentas de IA**:
+Muito bem! Você acabou de descobrir que **já usa IA todos os dias** sem perceber!
 
-- 💬 **ChatGPT** para o dia a dia
-- 🔍 **Gemini** para pesquisas e Google
-- 📄 **Claude** para textos longos
+### Legal, né? 🌟
 
-Mas aprender só na teoria não basta, né? Agora é hora de **colocar a mão na massa**! 
+Mas não para por aí! Agora você pode usar IA de forma:
 
-Vamos fazer um teste rápido no nosso **playground** para você ver como funciona na prática.
+- 🎯 **Consciente** - sabendo o que está fazendo
+- 💡 **Intencional** - para objetivos específicos
+- ⚡ **Eficiente** - facilitando ainda mais sua vida
 
-Fique tranquilo, é bem simples e rapidinho! Vamos lá para o **playground**! 🚀`,
-      spokenContent: 'Muito bem! Você acabou de conhecer as três principais ferramentas de IA: ChatGPT para o dia a dia, Gemini para pesquisas e integração com Google, e Claude para textos longos. Mas aprender só na teoria não basta, né? Agora é hora de colocar a mão na massa! Vamos fazer um teste rápido no nosso playground para você ver como funciona na prática. Fique tranquilo, é bem simples e rapidinho! Vamos lá para o playground!'
+---
+
+### Que tal um teste rápido?
+
+Vamos ver se você consegue **identificar onde mais a IA está presente!**
+
+É rapidinho e bem **divertido!** 🚀
+
+> 💪 Vamos lá?`,
+      spokenContent: `Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
+
+Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
+
+É rapidinho e bem divertido! Vamos lá?`
     },
     {
       id: 'playground-mid',
-      timestamp: 180,
+      timestamp: 122,
       type: 'playground',
       speechBubbleText: '',
       visualContent: '',
@@ -173,111 +180,119 @@ Fique tranquilo, é bem simples e rapidinho! Vamos lá para o **playground**! �
         triggerAfterSection: 3,
         realConfig: {
           type: 'real-playground',
-          title: 'Playground: Teste Rápido',
-          maiaMessage: 'Você acabou de aprender sobre ChatGPT, Gemini e Claude. Agora vamos testar na prática criando um prompt REAL!',
+          title: 'Playground: Reconheça a IA!',
+          maiaMessage: 'Você acabou de aprender onde a IA está presente no seu dia a dia. Agora me diga: onde VOCÊ percebe a IA na SUA vida?',
           scenario: {
-            title: 'Situação Real:',
-            description: 'Imagine que você precisa escrever um email profissional para um fornecedor pedindo orçamento de produtos.'
+            title: 'Reflita sobre sua experiência:',
+            description: 'Pense em uma situação do seu dia a dia onde você usa IA sem perceber.'
           },
-          prefilledText: 'Use o ChatGPT para escrever',
-          userPlaceholder: 'um email para meu fornecedor pedindo orçamento de 100 unidades do produto X, com tom formal e objetivo',
+          prefilledText: 'Eu percebo a IA quando',
+          userPlaceholder: 'o Google me sugere respostas antes de terminar de digitar / meu banco detecta transações suspeitas / etc...',
           validation: {
-            minLength: 30,
+            minLength: 20,
             requiredKeywords: [
-              ['fornecedor', 'cliente', 'para'],
-              ['formal', 'profissional', 'tom']
+              ['quando', 'onde', 'uso', 'percebo', 'vejo'],
+              ['app', 'celular', 'google', 'aplicativo', 'site', 'internet', 'assistente', 'banco', 'whatsapp', 'instagram', 'facebook', 'netflix', 'spotify']
             ],
             feedback: {
-              tooShort: 'Continue... seu prompt está muito curto!',
-              good: 'Bom! Agora defina melhor o tom e o destinatário.',
-              excellent: 'Perfeito! Seu prompt está completo e bem estruturado! 🎯'
+              tooShort: 'Continue... descreva melhor a situação!',
+              good: 'Bom! Agora seja mais específico sobre ONDE você percebe isso.',
+              excellent: 'Perfeito! Você está reconhecendo a IA no seu cotidiano! 🎯'
             }
           }
         }
       }
     },
     {
-      id: 'claude',
-      timestamp: 190,
+      id: 'whatsapp-assistentes',
+      timestamp: 123,
       type: 'text',
-      speechBubbleText: 'Claude é o mais detalhista!',
-      visualContent: `## Claude - Para textos longos e detalhados 📚
+      speechBubbleText: 'Assistentes virtuais são IA pura!',
+      visualContent: `## WhatsApp e Assistentes Virtuais 🤖💬
 
-**Claude**, desenvolvido pela Anthropic, é especialmente bom quando você precisa de **textos mais longos**, **análises detalhadas** ou trabalhar com **documentos complexos**.
+O **WhatsApp** também usa IA de várias formas!
 
-### Melhor para:
+### WhatsApp + IA:
 
-- 📄 **Escrever relatórios e documentos longos**
-- ⚖️ **Analisar contratos e textos jurídicos**
-- 💭 **Ter conversas mais profundas e reflexivas**
-- 📎 **Trabalhar com arquivos PDF e documentos**
+- 💬 Sugere **respostas rápidas**
+- ✍️ Corrige palavras **automaticamente**
+- 🚫 Identifica **spam**
+- 🔔 Prioriza **mensagens importantes**
 
 ---
 
-### Como usar:
+### E os Assistentes Virtuais?
 
-Acesse **claude.ai** e crie sua conta gratuita.
+**Alexa, Google Assistant e Siri** são **pura inteligência artificial!**
 
-### Por que Claude se destaca?
+Eles são capazes de:
 
-Claude tem reputação de ser **mais cuidadoso e preciso**, ideal para trabalhos que exigem **atenção aos detalhes!**
+- 🎤 **Entender** sua voz
+- 🧠 **Processar** o que você pediu
+- ⚙️ **Executar** tarefas complexas
+- 💡 **Aprender** com suas preferências
 
-> 🎯 Perfeito para quem precisa de qualidade premium em textos profissionais e análises complexas.`,
-      spokenContent: `Claude, desenvolvido pela Anthropic, é especialmente bom quando você precisa de textos mais longos, análises detalhadas ou trabalhar com documentos complexos.
+---
 
-Melhor para: escrever relatórios e documentos longos, analisar contratos e textos jurídicos, ter conversas mais profundas e reflexivas, e trabalhar com arquivos PDF e documentos.
+### Exemplos práticos:
 
-Acesse claude ponto ai e crie sua conta gratuita. Claude tem reputação de ser mais cuidadoso e preciso, ideal para trabalhos que exigem atenção aos detalhes!`
+Cada vez que você pede:
+
+- *"Alexa, qual a previsão do tempo?"* ☀️
+- *"Ok Google, toca uma música"* 🎵
+
+**Você está usando IA avançada!**
+
+> 🚀 É tecnologia de ponta funcionando para tornar sua vida mais fácil!`,
+      spokenContent: `O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
+
+E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
+
+Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!`
     },
     {
-      id: 'escolhendo-ferramenta',
-      timestamp: 250,
+      id: 'seu-superpoder',
+      timestamp: 156,
       type: 'text',
-      speechBubbleText: 'Agora você sabe qual usar!',
-      visualContent: `## Como escolher a ferramenta certa 🎯
+      speechBubbleText: 'Você tem um novo superpoder! 💪',
+      visualContent: `## Seu Novo Superpoder! 💪✨
 
-Agora você conhece as **três principais ferramentas**. Aqui vai um guia rápido de **quando usar cada uma**:
+Agora você tem um **superpoder**: consegue identificar onde a IA está trabalhando!
 
-### Guia Rápido:
+### E o melhor de tudo?
 
-| Situação | Ferramenta Ideal |
-|----------|------------------|
-| 📝 Tarefas rápidas e gerais | **ChatGPT** |
-| 🔍 Pesquisas e integração Google | **Gemini** |
-| 📚 Textos longos e análises | **Claude** |
+Você aprendeu que a IA **não é algo complicado ou distante**. 
+
+Ela **já está aqui**, facilitando sua vida **todos os dias**! 🌟
 
 ---
 
-### A verdade é que todas são excelentes!
+### O que vem agora?
 
-Com o tempo você vai descobrir **sua favorita**, mas é muito útil conhecer as três.
+Nas **próximas aulas**, você vai aprender a usar ferramentas de IA de forma consciente para:
 
-Muitos **profissionais alternam** entre elas dependendo da tarefa específica.
+- ⏰ **Economizar tempo** em tarefas repetitivas
+- 💡 **Ter ideias criativas** quando precisar
+- 🎯 **Resolver problemas** de forma mais eficiente
 
 ---
 
-### 🚀 O mais importante?
+### 🚀 O futuro já começou!
 
-**Comece hoje mesmo!**
+E você está **pronto** para aproveitar todas as possibilidades que a IA oferece!
 
-1. ✅ Crie sua conta em **pelo menos uma** delas
-2. ✅ Faça seu **primeiro teste**
-3. ✅ Experimente fazer uma **pergunta simples**
+> 💎 Continue explorando e descobrindo novas formas de usar a IA a seu favor!
 
-> 💡 Você vai se surpreender com o quanto elas podem **facilitar sua vida!**
+**Preparado para a próxima jornada?** 🌈`,
+      spokenContent: `Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
 
-**Preparado para o próximo passo?**`,
-      spokenContent: `Agora você conhece as três principais ferramentas. Aqui vai um guia rápido de quando usar cada uma:
+A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
 
-Para tarefas rápidas e gerais, use ChatGPT. Para pesquisas e integração Google, use Gemini. Para textos longos e análises, use Claude.
-
-A verdade é que todas são excelentes! Com o tempo você vai descobrir sua favorita, mas é muito útil conhecer as três. Muitos profissionais alternam entre elas dependendo da tarefa.
-
-O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e faça seu primeiro teste. Você vai se surpreender com o quanto elas podem facilitar sua vida!`
+O futuro já começou, e você está pronto pra aproveitar!`
     },
     {
       id: 'fim-audio',
-      timestamp: 310,
+      timestamp: 187,
       type: 'end-audio',
       speechBubbleText: 'Aula completa! Parabéns!',
       visualContent: '',
@@ -288,37 +303,39 @@ O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e f
 
 // Texto completo para geração de áudio
 export const fundamentos02AudioText = `
-Existem dezenas de ferramentas de IA disponíveis hoje, mas você só precisa conhecer três para começar: ChatGPT, Google Gemini e Claude.
+Você sabia que você já usa inteligência artificial várias vezes por dia, mesmo sem perceber?
 
-Todas são completamente gratuitas e podem resolver noventa por cento das suas necessidades no dia a dia. Pense nelas como três assistentes inteligentes, cada um com suas especialidades.
+A IA está presente no seu celular quando você desbloqueia com o rosto, no Netflix quando ele sugere filmes que você vai gostar, no WhatsApp quando ele corrige suas palavras, e até no Google Maps quando ele te mostra o melhor caminho.
 
-A melhor parte? Você não precisa escolher apenas uma. Muitas pessoas usam as três no mesmo dia para tarefas diferentes!
+A verdade é que a IA já faz parte da sua vida há muito tempo! E agora você vai aprender a reconhecer onde ela está e como usar isso a seu favor.
 
-O ChatGPT é a ferramenta de IA mais conhecida do mundo, criada pela OpenAI. É como ter um assistente que sabe conversar sobre qualquer assunto de forma natural.
+Sabe aquela sensação de que o Netflix conhece seu gosto? Ou quando o Spotify monta aquela playlist perfeita? Isso é inteligência artificial!
 
-Melhor para: escrever emails e textos profissionais, tirar dúvidas e aprender coisas novas, criar listas, roteiros e resumos, e gerar ideias criativas.
+Essas plataformas analisam tudo que você assiste e ouve, e usam IA para entender seus gostos. Quanto mais você usa, mais a IA aprende sobre você e melhores ficam as sugestões.
 
-Para usar, basta acessar chat ponto openai ponto com, criar uma conta gratuita e começar a conversar. É realmente tão simples quanto parece!
+É como ter um amigo que conhece perfeitamente seu gosto e sempre te indica coisas incríveis!
 
-O Gemini é a resposta do Google para a IA conversacional. Sua grande vantagem é estar conectado com todo o ecossistema Google: Gmail, Drive, Maps, YouTube e muito mais.
+Já reparou como o Instagram e o Facebook sempre mostram posts de assuntos que você gosta? Ou como aparecem anúncios de produtos que você estava pensando em comprar?
 
-Melhor para: pesquisar informações atualizadas na internet, trabalhar com seus arquivos do Google Drive, planejar viagens com rotas e mapas, e encontrar e resumir vídeos do YouTube.
+Isso também é inteligência artificial! Ela analisa o que você curte, comenta e compartilha, e usa essas informações para personalizar o que você vê.
 
-Acesse gemini ponto google ponto com com sua conta Google. Se você já usa Gmail ou Drive, vai adorar essa integração automática!
+A IA está constantemente aprendendo sobre seus interesses para tornar sua experiência melhor.
 
-Muito bem! Você acabou de conhecer as três principais ferramentas de IA: ChatGPT para o dia a dia, Gemini para pesquisas e integração com Google, e Claude para textos longos. Mas aprender só na teoria não basta, né? Agora é hora de colocar a mão na massa! Vamos fazer um teste rápido no nosso playground para você ver como funciona na prática. Fique tranquilo, é bem simples e rapidinho! Vamos lá para o playground!
+Muito bem! Você acabou de descobrir que já usa IA todos os dias sem perceber! Legal, né?
 
-Claude, desenvolvido pela Anthropic, é especialmente bom quando você precisa de textos mais longos, análises detalhadas ou trabalhar com documentos complexos.
+Mas não para por aí. Agora você pode usar IA de forma consciente e intencional para facilitar ainda mais sua vida. Que tal fazer um teste rápido pra ver se você consegue identificar onde mais a IA está presente?
 
-Melhor para: escrever relatórios e documentos longos, analisar contratos e textos jurídicos, ter conversas mais profundas e reflexivas, e trabalhar com arquivos PDF e documentos.
+É rapidinho e bem divertido! Vamos lá?
 
-Acesse claude ponto ai e crie sua conta gratuita. Claude tem reputação de ser mais cuidadoso e preciso, ideal para trabalhos que exigem atenção aos detalhes!
+O WhatsApp também usa IA de várias formas! Quando ele sugere respostas rápidas, quando corrige suas palavras automaticamente, ou quando identifica spam.
 
-Agora você conhece as três principais ferramentas. Aqui vai um guia rápido de quando usar cada uma:
+E os assistentes como Alexa, Google Assistant e Siri? São pura inteligência artificial! Eles entendem sua voz, processam o que você pediu e executam tarefas.
 
-Para tarefas rápidas e gerais, use ChatGPT. Para pesquisas e integração Google, use Gemini. Para textos longos e análises, use Claude.
+Cada vez que você pede "Alexa, qual a previsão do tempo?" ou "Ok Google, toca uma música", você está usando IA avançada!
 
-A verdade é que todas são excelentes! Com o tempo você vai descobrir sua favorita, mas é muito útil conhecer as três. Muitos profissionais alternam entre elas dependendo da tarefa.
+Agora você tem um superpoder: consegue identificar onde a IA está trabalhando! E o melhor: você aprendeu que ela não é algo complicado ou distante.
 
-O mais importante? Comece hoje mesmo! Crie sua conta em pelo menos uma delas e faça seu primeiro teste. Você vai se surpreender com o quanto elas podem facilitar sua vida!
+A IA já está aqui, facilitando sua vida todos os dias. E nas próximas aulas, você vai aprender a usar ferramentas de IA de forma consciente para economizar tempo, ter ideias criativas e resolver problemas.
+
+O futuro já começou, e você está pronto pra aproveitar!
 `.trim();
