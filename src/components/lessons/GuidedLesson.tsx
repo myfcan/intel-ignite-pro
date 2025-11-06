@@ -7,6 +7,7 @@ import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
+import { InteractiveSimulationPlayground } from './InteractiveSimulationPlayground';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -819,10 +820,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       {/* Overlay do Playground Mid-Lesson */}
       {showPlaygroundOverlay && lessonData.sections[currentSection]?.type === 'playground' && lessonData.sections[currentSection]?.playgroundConfig && (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300 ${playgroundDetected ? 'transition-opacity duration-500' : ''}`}>
-          <PlaygroundMidLesson
-            config={lessonData.sections[currentSection].playgroundConfig!}
-            onComplete={handlePlaygroundComplete}
-          />
+          {lessonData.sections[currentSection]?.playgroundConfig?.type === 'interactive-simulation' && 
+           lessonData.sections[currentSection]?.playgroundConfig?.simulationConfig ? (
+            <InteractiveSimulationPlayground
+              config={lessonData.sections[currentSection].playgroundConfig!.simulationConfig!}
+              onComplete={() => handlePlaygroundComplete(null)}
+            />
+          ) : (
+            <PlaygroundMidLesson
+              config={lessonData.sections[currentSection].playgroundConfig!}
+              onComplete={handlePlaygroundComplete}
+            />
+          )}
         </div>
       )}
 
