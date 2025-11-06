@@ -715,7 +715,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                       }`}>
                         {isSpecial ? '🎮' : index + 1}
                       </span>
-                      <span className="truncate">{section.id}</span>
+                      <span className="truncate">{section.title || section.id}</span>
                     </div>
                   </button>
                 );

@@ -126,6 +126,7 @@ export interface FinalPlaygroundConfig {
 
 export interface LessonSection {
   id: string;
+  title?: string; // título descritivo para exibição na sidebar
   timestamp: number; // segundo em que esta seção começa
   type?: LessonSectionType; // tipo da seção (text, playground, end-audio)
   speechBubbleText: string; // frase curta para balão da MAIA (1-2 linhas)
