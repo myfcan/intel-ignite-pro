@@ -68,19 +68,24 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return !section.type || section.type === 'text';
   };
   
-  // 📊 Helper: Calcular seção ativa de forma direta
+  // 📊 Helper: Calcular seção ativa com binary search O(log n)
   const calculateActiveSection = (currentTime: number): number => {
-    let activeIndex = 0;
+    let left = 0;
+    let right = lessonData.sections.length - 1;
+    let result = 0;
     
-    for (let i = 0; i < lessonData.sections.length; i++) {
-      if (currentTime >= lessonData.sections[i].timestamp) {
-        activeIndex = i;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      
+      if (lessonData.sections[mid].timestamp <= currentTime) {
+        result = mid;
+        left = mid + 1;
       } else {
-        break;
+        right = mid - 1;
       }
     }
     
-    return activeIndex;
+    return result;
   };
   
   // 🎮 Helper: Ativar playground
@@ -259,12 +264,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
         if (nextSection) {
-          // JANELA AMPLIADA: 3 segundos antes da próxima seção
-          const triggerStart = nextSection.timestamp - 3.0; // 177s
-          const triggerEnd = nextSection.timestamp + 1.0;   // 181s
+          // Ativar 2 segundos ANTES da próxima seção (final da Seção 4)
+          const triggerTime = nextSection.timestamp - 2.0; // 178s para Seção 5 em 180s
           
-          if (time >= triggerStart && time < triggerEnd && isPlaying) {
-            console.log(`🎮 [TRIGGER-1] Timestamp detectado: ${time.toFixed(1)}s`);
+          if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
+            console.log(`🎮 [TRIGGER-1] Timestamp detectado: ${time.toFixed(1)}s (fim da Seção ${playgroundSectionIndex})`);
             logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'timestamp', time });
             activatePlayground();
             cancelAnimationFrame(rafId);
@@ -456,12 +460,16 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     setTimeout(() => {
       const audio = audioRef.current;
-      if (audio && lessonData.sections[4]) {
-        audio.currentTime = lessonData.sections[4].timestamp; // 180s
+      // Encontrar próxima seção após playground
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+      
+      if (audio && nextSection) {
+        audio.currentTime = nextSection.timestamp; // 180s (Seção 5)
         audio.play();
         setIsPlaying(true);
-        setCurrentSection(4);
-        logTelemetry('AUDIO_RESUMED', { section: 4 });
+        console.log(`🎮 [PLAYGROUND] Retomando na Seção ${playgroundSectionIndex + 1} (${nextSection.timestamp}s)`);
+        logTelemetry('AUDIO_RESUMED', { section: playgroundSectionIndex + 1, timestamp: nextSection.timestamp });
       }
     }, 300);
   };
@@ -474,17 +482,16 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     setTimeout(() => {
       const audio = audioRef.current;
-      if (audio && lessonData.sections[4]) {
-        audio.currentTime = lessonData.sections[4].timestamp; // 180s
+      // Encontrar próxima seção após playground
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+      
+      if (audio && nextSection) {
+        audio.currentTime = nextSection.timestamp; // 180s (Seção 5)
         audio.play();
         setIsPlaying(true);
-        setCurrentSection(4);
-        logTelemetry('AUDIO_RESUMED', { section: 4 });
-        audio.currentTime = lessonData.sections[4].timestamp;
-        audio.play();
-        setIsPlaying(true);
-        setCurrentSection(4);
-        console.log('✅ [PLAYGROUND] Retomando na Seção 5:', lessonData.sections[4].timestamp, 's');
+        console.log(`✅ [PLAYGROUND] Completado! Retomando na Seção ${playgroundSectionIndex + 1} (${nextSection.timestamp}s)`);
+        logTelemetry('AUDIO_RESUMED', { section: playgroundSectionIndex + 1, timestamp: nextSection.timestamp });
       }
     }, 1500);
     
