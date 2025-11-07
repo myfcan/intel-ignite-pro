@@ -232,7 +232,7 @@ Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente
     {
       id: 'secao-6',
       timestamp: 166,
-      type: 'text',
+      type: 'end-audio',
       speechBubbleText: 'Você ensina IA sem perceber, a cada clique!',
       visualContent: `## 🎓 Você está ensinando IA o tempo todo
 
