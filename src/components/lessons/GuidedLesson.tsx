@@ -715,6 +715,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         exercises={lessonData.exercisesConfig}
         onComplete={handleExercisesComplete}
         onScoreUpdate={(scores) => setExerciseScores(scores)}
+        onBack={() => {
+          console.log('⬅️ [EXERCISES] Voltando para aula');
+          setCurrentPhase('audio');
+          // Voltar para a última seção antes dos exercícios
+          const lastTextSection = lessonData.sections
+            .filter(s => !s.type || s.type === 'text')
+            .length - 1;
+          setCurrentSection(Math.max(0, lastTextSection));
+        }}
       />
     );
   }

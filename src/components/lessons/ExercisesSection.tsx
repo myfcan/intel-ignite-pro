@@ -6,16 +6,30 @@ import { ScenarioSelectionExercise } from './ScenarioSelectionExercise';
 import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
 import { PlatformMatchExercise } from './PlatformMatchExercise';
+import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
   onComplete: () => void;
   onScoreUpdate?: (scores: number[]) => void;
+  onBack?: () => void; // Callback para voltar à aula
 }
 
-export function ExercisesSection({ exercises, onComplete, onScoreUpdate }: ExercisesSectionProps) {
+export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack }: ExercisesSectionProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
+  const [showBackDialog, setShowBackDialog] = useState(false);
 
   const handleExerciseComplete = (score: number) => {
     const newScores = [...scores, score];
@@ -42,17 +56,64 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate }: Exerc
     }
   };
 
+  const handleBackClick = () => {
+    if (scores.length > 0) {
+      // Tem progresso - mostrar confirmação
+      setShowBackDialog(true);
+    } else {
+      // Sem progresso - voltar direto
+      onBack?.();
+    }
+  };
+
+  const handleConfirmBack = () => {
+    setShowBackDialog(false);
+    onBack?.();
+  };
+
   const currentExercise = exercises[currentExerciseIndex];
 
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold mb-2">Exercícios Finais</h2>
-          <p className="text-muted-foreground">
-            Exercício {currentExerciseIndex + 1} de {exercises.length}
-          </p>
-        </div>
+    <>
+      <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Voltar para a aula?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você já completou {scores.length} de {exercises.length} exercícios. 
+              Seu progresso não será salvo se voltar agora.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar exercícios</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBack}>Voltar para aula</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+            {onBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBackClick}
+                className="flex-shrink-0"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            )}
+            <div className="flex-1">
+              <h2 className="text-lg sm:text-xl font-bold">Exercícios Finais</h2>
+              <p className="text-sm text-muted-foreground">
+                Exercício {currentExerciseIndex + 1} de {exercises.length}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
         {currentExercise.type === 'drag-drop' && (
           <DragDropLesson
@@ -127,5 +188,6 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate }: Exerc
         )}
       </div>
     </div>
+    </>
   );
 }
