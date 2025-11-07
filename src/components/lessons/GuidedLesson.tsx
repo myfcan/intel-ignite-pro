@@ -345,8 +345,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
         if (nextSection) {
-          // Ativar 2 segundos ANTES da próxima seção (final da Seção 4)
-          const triggerTime = nextSection.timestamp - 2.0; // 178s para Seção 5 em 180s
+          // Ativar 0.5 segundos ANTES da próxima seção (final da Seção 4)
+          const triggerTime = nextSection.timestamp - 0.5; // 127.5s para Seção 5 em 128s
           
           if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
             console.log(`🎮 [TRIGGER-1] Timestamp detectado: ${time.toFixed(1)}s (fim da Seção ${playgroundSectionIndex})`);

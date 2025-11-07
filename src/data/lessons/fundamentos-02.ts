@@ -6,7 +6,7 @@ export const fundamentos02: GuidedLessonData = {
   title: 'Como a IA Aprende com Você',
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
-  duration: 360, // 6 minutos
+  duration: 198, // 3min 18s
 
   sections: [
     {
@@ -27,7 +27,7 @@ O segredo está em como a Inteligência Artificial **aprende**. Ela observa tudo
     },
     {
       id: 'secao-2',
-      timestamp: 30,
+      timestamp: 31,
       type: 'text',
       speechBubbleText: 'A IA registra cada detalhe do que você assiste',
       visualContent: `## 🎬 Netflix - A escola da IA
@@ -50,7 +50,7 @@ Com milhões de pessoas fazendo isso, a IA começa a identificar padrões:
     },
     {
       id: 'secao-3',
-      timestamp: 75,
+      timestamp: 66,
       type: 'text',
       speechBubbleText: 'O Spotify conhece seus humores melhor que ninguém',
       visualContent: `## 🎵 Spotify e a mágica da música
@@ -69,7 +69,7 @@ Ela está literalmente aprendendo com você **24 horas por dia, 7 dias por seman
     },
     {
       id: 'secao-4',
-      timestamp: 120,
+      timestamp: 101,
       type: 'text',
       speechBubbleText: 'Vamos ver a IA aprendendo em tempo real!',
       visualContent: `## 🎮 Hora de descobrir na prática
@@ -205,7 +205,7 @@ Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! �
     },
     {
       id: 'secao-5',
-      timestamp: 180,
+      timestamp: 128,
       type: 'text',
       speechBubbleText: 'As redes sociais são ainda mais sofisticadas',
       visualContent: `## 📱 Instagram e Facebook - IA social
@@ -231,7 +231,7 @@ Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente
     },
     {
       id: 'secao-6',
-      timestamp: 240,
+      timestamp: 166,
       type: 'text',
       speechBubbleText: 'Você ensina IA sem perceber, a cada clique!',
       visualContent: `## 🎓 Você está ensinando IA o tempo todo
