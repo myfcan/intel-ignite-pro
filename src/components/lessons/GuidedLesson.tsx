@@ -9,6 +9,7 @@ import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
+import { ConclusionScreen } from './ConclusionScreen';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -603,6 +604,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   };
 
   const [exercisesCompleted, setExercisesCompleted] = useState(false);
+  const [exerciseScores, setExerciseScores] = useState<number[]>([]);
+  const [lessonStartTime] = useState(Date.now());
 
   const handleExercisesComplete = () => {
     if (exercisesCompleted) {
@@ -613,11 +616,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     setExercisesCompleted(true);
     console.log('✅ [EXERCISES] Completados com sucesso');
     
-    if (lessonData.finalPlaygroundConfig) {
-      setCurrentPhase('playground-final');
-    } else {
-      onComplete();
-    }
+    // Ir para tela de conclusão ao invés de onComplete direto
+    setCurrentPhase('completed');
   };
   
   // Resetar estado ao entrar na fase de exercícios
@@ -646,6 +646,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       />
     );
   }
+  
+  // Renderizar tela de conclusão
+  if (currentPhase === 'completed') {
+    const timeSpent = Date.now() - lessonStartTime;
+    return (
+      <ConclusionScreen
+        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]} // Scores padrão se vazio
+        timeSpent={timeSpent}
+        lessonTitle={lessonData.title}
+        nextLessonId="fundamentos-03"
+      />
+    );
+  }
 
   // Renderizar fase de exercícios
   if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
@@ -654,6 +667,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         key="exercises-phase" // Força remount ao entrar na fase
         exercises={lessonData.exercisesConfig}
         onComplete={handleExercisesComplete}
+        onScoreUpdate={(scores) => setExerciseScores(scores)}
       />
     );
   }

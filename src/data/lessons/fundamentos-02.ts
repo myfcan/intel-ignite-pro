@@ -262,54 +262,83 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
       id: 'ex-final-1-aula-2-trilha-1',
       type: 'drag-drop',
       title: 'O que cada IA Aprende?',
-      instruction: 'Arraste cada item para a plataforma correta',
+      instruction: 'Arraste cada item para a plataforma correta que aprende com essa informação:',
       data: {
         items: [
-          { id: 'item-1', text: 'Filmes e séries que você assiste', correctZone: 'netflix' },
-          { id: 'item-2', text: 'Músicas que você ouve em cada horário', correctZone: 'spotify' },
-          { id: 'item-3', text: 'Fotos em que você para pra ver', correctZone: 'instagram' },
-          { id: 'item-4', text: 'Posts que você lê completamente', correctZone: 'facebook' },
-          { id: 'item-5', text: 'Se você assistiu até o final', correctZone: 'netflix' },
-          { id: 'item-6', text: 'Quem você mais interage', correctZone: 'facebook' }
+          { id: 'item-1', text: 'Quais filmes você assiste até o final', correctZone: 'netflix', emoji: '🎬' },
+          { id: 'item-2', text: 'Músicas que você ouve de manhã vs à noite', correctZone: 'spotify', emoji: '🎵' },
+          { id: 'item-3', text: 'Fotos onde você para para ver', correctZone: 'instagram', emoji: '📸' },
+          { id: 'item-4', text: 'Posts que você lê completamente', correctZone: 'facebook', emoji: '👥' },
+          { id: 'item-5', text: 'Se você pulou a introdução do episódio', correctZone: 'netflix', emoji: '⏭️' },
+          { id: 'item-6', text: 'Playlists que você salva', correctZone: 'spotify', emoji: '💾' },
+          { id: 'item-7', text: 'Contas que você mais interage', correctZone: 'instagram', emoji: '💬' },
+          { id: 'item-8', text: 'Amigos com quem você mais conversa', correctZone: 'facebook', emoji: '🗨️' }
         ],
         zones: [
-          { id: 'netflix', label: 'Netflix', icon: '🎬' },
-          { id: 'spotify', label: 'Spotify', icon: '🎵' },
-          { id: 'instagram', label: 'Instagram', icon: '📸' },
-          { id: 'facebook', label: 'Facebook', icon: '👥' }
-        ]
+          { id: 'netflix', label: 'Netflix', icon: '🎬', color: '#E50914' },
+          { id: 'spotify', label: 'Spotify', icon: '🎵', color: '#1DB954' },
+          { id: 'instagram', label: 'Instagram', icon: '📸', color: '#E4405F' },
+          { id: 'facebook', label: 'Facebook', icon: '👥', color: '#1877F2' }
+        ],
+        feedback: {
+          perfect: {
+            title: '🎉 Perfeito!',
+            message: 'Você entendeu exatamente como cada IA aprende! Todas as respostas corretas!',
+            emoji: '🏆'
+          },
+          good: {
+            title: '👏 Muito bem!',
+            message: 'Você está no caminho certo!',
+            emoji: '✨'
+          },
+          needsReview: {
+            title: '🤔 Quase lá!',
+            message: 'Lembre-se: cada plataforma aprende coisas diferentes com você!',
+            emoji: '💡'
+          }
+        }
       }
     },
     {
       id: 'ex-final-2-aula-2-trilha-1',
       type: 'fill-in-blanks',
       title: 'Complete o que Você Aprendeu',
-      instruction: 'Preencha as lacunas com as palavras corretas',
+      instruction: 'Preencha as lacunas com as palavras corretas:',
       data: {
         sentences: [
           {
             id: 'sent-1',
             text: 'Quanto mais você usa um app, mais _______ a IA tem para aprender.',
-            correctAnswers: ['dados', 'informações', 'informação'],
-            hint: 'O que a IA coleta de você?'
+            correctAnswers: ['dados', 'informações', 'informação', 'data'],
+            hint: 'O que a IA coleta de você?',
+            explanation: 'A IA precisa de DADOS (informações) para aprender. Quanto mais você usa, mais dados ela coleta!'
           },
           {
             id: 'sent-2',
             text: 'O Spotify não só aprende o que você ouve, mas também _______ você ouve.',
-            correctAnswers: ['quando', 'a hora que', 'o horário que'],
-            hint: 'Pense no tempo...'
+            correctAnswers: ['quando', 'a hora que', 'o horário que', 'em que momento', 'que horas'],
+            hint: 'Pense no TEMPO...',
+            explanation: 'O Spotify aprende QUANDO você ouve cada estilo de música (manhã, tarde, noite) para sugerir no momento certo!'
           },
           {
             id: 'sent-3',
             text: 'Você está ensinando IA toda vez que _______ um app normalmente.',
-            correctAnswers: ['usa', 'utiliza', 'mexe'],
-            hint: 'O que você faz com apps?'
+            correctAnswers: ['usa', 'utiliza', 'mexe', 'acessa', 'abre', 'interage'],
+            hint: 'O que você FAZ com apps?',
+            explanation: 'Só de USAR o app normalmente, você já está ensinando a IA! Cada clique, cada scroll, cada like é uma aula.'
+          },
+          {
+            id: 'sent-4',
+            text: 'Duas pessoas vendo o Instagram ao mesmo tempo veem feeds _______, moldados pela IA.',
+            correctAnswers: ['diferentes', 'distintos', 'únicos', 'personalizados', 'variados'],
+            hint: 'O que é o oposto de iguais?',
+            explanation: 'Cada feed é DIFERENTE porque a IA personalizou baseado no que VOCÊ gosta, não no que todo mundo gosta!'
           }
         ],
         feedback: {
-          allCorrect: 'Excelente! Você dominou o conceito! 🎯',
-          someCorrect: 'Bom trabalho! Você acertou {count} de 3.',
-          needsReview: 'Vamos revisar? A IA aprende observando seus dados e quando você age.'
+          allCorrect: '🎯 Perfeito! Você dominou os conceitos! Todas as 4 frases corretas!',
+          someCorrect: '👍 Muito bem! Você acertou {count} de 4! Excelente compreensão!',
+          needsReview: '💡 Quase lá! Você acertou {count} de 4. Leia as explicações para entender melhor!'
         }
       }
     },
@@ -317,38 +346,50 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
       id: 'ex-final-3-aula-2-trilha-1',
       type: 'true-false',
       title: 'Verdadeiro ou Falso?',
-      instruction: 'Marque se cada afirmação é verdadeira ou falsa',
+      instruction: 'Marque V para verdadeiro ou F para falso em cada afirmação:',
       data: {
         statements: [
           {
             id: 'tf-1',
             text: 'A IA precisa que você ensine manualmente o que você gosta',
             correct: false,
-            explanation: 'Falso! A IA aprende sozinha só observando o que você faz.'
+            explanation: '❌ FALSO! A IA aprende sozinha só observando o que você faz. Você não precisa ensinar nada manualmente!'
           },
           {
             id: 'tf-2',
             text: 'Quanto mais você usa um app, melhor a IA fica',
             correct: true,
-            explanation: 'Verdadeiro! Mais uso = mais dados = IA mais inteligente.'
+            explanation: '✅ VERDADEIRO! Mais uso = mais dados = IA mais inteligente e precisa nas sugestões!'
           },
           {
             id: 'tf-3',
             text: 'Duas pessoas veem o mesmo feed no Instagram',
             correct: false,
-            explanation: 'Falso! Cada feed é personalizado pela IA que aprendeu com você.'
+            explanation: '❌ FALSO! Cada feed é personalizado pela IA que aprendeu com VOCÊ. Por isso você e seu amigo veem coisas diferentes!'
           },
           {
             id: 'tf-4',
             text: 'O Netflix sabe se você assistiu até o final de um episódio',
             correct: true,
-            explanation: 'Verdadeiro! A IA registra tudo que você faz pra aprender melhor.'
+            explanation: '✅ VERDADEIRO! A IA registra tudo: quanto tempo você assistiu, se pulou, se voltou... Ela usa isso para aprender!'
+          },
+          {
+            id: 'tf-5',
+            text: 'O Spotify só aprende quais músicas você ouve',
+            correct: false,
+            explanation: '❌ FALSO! O Spotify vai ALÉM: aprende QUANDO você ouve cada estilo (manhã, tarde, noite) e sugere no momento certo!'
+          },
+          {
+            id: 'tf-6',
+            text: 'Você ensina IA toda vez que usa um app normalmente',
+            correct: true,
+            explanation: '✅ VERDADEIRO! Cada clique, scroll, like é uma "aula" para a IA. Você é professor sem perceber!'
           }
         ],
         feedback: {
-          perfect: 'Perfeito! Você dominou como a IA aprende! 🏆',
-          good: 'Muito bem! Você entendeu a maior parte!',
-          needsReview: 'Que tal revisar a aula? O conceito principal é que a IA aprende observando.'
+          perfect: '🏆 Perfeito! 6 de 6 corretas! Você é um expert em como a IA aprende!',
+          good: '⭐ Excelente! Você dominou o conteúdo!',
+          needsReview: '📚 Revise o conteúdo. Leia as explicações com atenção!'
         }
       }
     }

@@ -9,15 +9,21 @@ import { TrueFalseExercise } from './TrueFalseExercise';
 interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
   onComplete: () => void;
+  onScoreUpdate?: (scores: number[]) => void;
 }
 
-export function ExercisesSection({ exercises, onComplete }: ExercisesSectionProps) {
+export function ExercisesSection({ exercises, onComplete, onScoreUpdate }: ExercisesSectionProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
 
   const handleExerciseComplete = (score: number) => {
     const newScores = [...scores, score];
     setScores(newScores);
+    
+    // Atualizar scores no componente pai
+    if (onScoreUpdate) {
+      onScoreUpdate(newScores);
+    }
 
     console.log(`✅ [EXERCISE ${currentExerciseIndex + 1}] Completo com score: ${score}`);
 
