@@ -260,43 +260,24 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
   exercisesConfig: [
     {
       id: 'ex-final-1-aula-2-trilha-1',
-      type: 'drag-drop',
+      type: 'platform-match',
       title: 'O que cada IA Aprende?',
-      instruction: 'Arraste cada item para a plataforma correta que aprende com essa informação:',
+      instruction: 'Para cada situação, escolha qual plataforma aprende com essa informação:',
       data: {
-        items: [
-          { id: 'item-1', text: 'Quais filmes você assiste até o final', correctZone: 'netflix', emoji: '🎬' },
-          { id: 'item-2', text: 'Músicas que você ouve de manhã vs à noite', correctZone: 'spotify', emoji: '🎵' },
-          { id: 'item-3', text: 'Fotos onde você para para ver', correctZone: 'instagram', emoji: '📸' },
-          { id: 'item-4', text: 'Posts que você lê completamente', correctZone: 'facebook', emoji: '👥' },
-          { id: 'item-5', text: 'Se você pulou a introdução do episódio', correctZone: 'netflix', emoji: '⏭️' },
-          { id: 'item-6', text: 'Playlists que você salva', correctZone: 'spotify', emoji: '💾' },
-          { id: 'item-7', text: 'Contas que você mais interage', correctZone: 'instagram', emoji: '💬' },
-          { id: 'item-8', text: 'Amigos com quem você mais conversa', correctZone: 'facebook', emoji: '🗨️' }
+        scenarios: [
+          { id: 'scenario-1', text: 'Você assiste uma série até o final sem pular nenhum episódio', correctPlatform: 'netflix', emoji: '🎬' },
+          { id: 'scenario-2', text: 'Você cria uma playlist e escuta ela toda manhã', correctPlatform: 'spotify', emoji: '🎵' },
+          { id: 'scenario-3', text: 'Você para o scroll para ver uma foto com atenção', correctPlatform: 'instagram', emoji: '📸' },
+          { id: 'scenario-4', text: 'Você lê um post completo de um amigo', correctPlatform: 'facebook', emoji: '👥' },
+          { id: 'scenario-5', text: 'Você pula a introdução de vários episódios seguidos', correctPlatform: 'netflix', emoji: '⏭️' },
+          { id: 'scenario-6', text: 'Você adiciona músicas aos favoritos enquanto escuta', correctPlatform: 'spotify', emoji: '💾' }
         ],
-        zones: [
-          { id: 'netflix', label: 'Netflix', icon: '🎬', color: '#E50914' },
-          { id: 'spotify', label: 'Spotify', icon: '🎵', color: '#1DB954' },
-          { id: 'instagram', label: 'Instagram', icon: '📸', color: '#E4405F' },
-          { id: 'facebook', label: 'Facebook', icon: '👥', color: '#1877F2' }
-        ],
-        feedback: {
-          perfect: {
-            title: '🎉 Perfeito!',
-            message: 'Você entendeu exatamente como cada IA aprende! Todas as respostas corretas!',
-            emoji: '🏆'
-          },
-          good: {
-            title: '👏 Muito bem!',
-            message: 'Você está no caminho certo!',
-            emoji: '✨'
-          },
-          needsReview: {
-            title: '🤔 Quase lá!',
-            message: 'Lembre-se: cada plataforma aprende coisas diferentes com você!',
-            emoji: '💡'
-          }
-        }
+        platforms: [
+          { id: 'netflix', name: 'Netflix', icon: '🎬', color: '#E50914' },
+          { id: 'spotify', name: 'Spotify', icon: '🎵', color: '#1DB954' },
+          { id: 'instagram', name: 'Instagram', icon: '📸', color: '#E4405F' },
+          { id: 'facebook', name: 'Facebook', icon: '👥', color: '#1877F2' }
+        ]
       }
     },
     {

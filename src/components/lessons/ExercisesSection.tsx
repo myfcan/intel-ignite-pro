@@ -5,6 +5,7 @@ import { CompleteSentenceExercise } from './CompleteSentenceExercise';
 import { ScenarioSelectionExercise } from './ScenarioSelectionExercise';
 import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
+import { PlatformMatchExercise } from './PlatformMatchExercise';
 
 interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
@@ -111,6 +112,16 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate }: Exerc
             instruction={currentExercise.instruction}
             statements={currentExercise.data.statements}
             feedback={currentExercise.data.feedback}
+            onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'platform-match' && (
+          <PlatformMatchExercise
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            scenarios={currentExercise.data.scenarios}
+            platforms={currentExercise.data.platforms}
             onComplete={handleExerciseComplete}
           />
         )}
