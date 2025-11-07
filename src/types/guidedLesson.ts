@@ -146,6 +146,7 @@ export interface GuidedLessonData {
   sections: LessonSection[];
   exercisesConfig?: ExerciseConfig[];
   finalPlaygroundConfig?: FinalPlaygroundConfig;
+  contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
 }
 
 export interface GuidedLessonProps {

@@ -1,12 +1,14 @@
 import { GuidedLessonData } from '@/types/guidedLesson';
 
 // ID Interno: aula-2-trilha-1 (para referência humana)
+// 🔄 CACHE BUSTING: Sempre que alterar o conteúdo, incremente contentVersion
 export const fundamentos02: GuidedLessonData = {
   id: 'fundamentos-02',
   title: 'Como a IA Aprende com Você',
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
   duration: 198, // 3min 18s
+  contentVersion: 2, // Versão atual do conteúdo (incrementar quando alterar exercícios)
 
   sections: [
     {

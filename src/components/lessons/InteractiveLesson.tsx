@@ -147,19 +147,38 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         }
       };
 
-      // Usar o content do banco de dados ou fallback para dados hardcoded
+      // 🔄 CACHE BUSTING: Usar o content mais recente (banco vs arquivo)
       let guidedLessonData = null;
       let audioUrl = lesson.audio_url || null;
       
-      // Primeiro, tentar usar o content do banco de dados
-      if (lesson.content && typeof lesson.content === 'object' && 'sections' in lesson.content) {
-        guidedLessonData = lesson.content;
-      } 
-      // Fallback para dados hardcoded das aulas antigas
-      else if (lesson.title.includes('O que é IA e por que você precisa dela')) {
-        guidedLessonData = fundamentos01;
-      } else if (lesson.title.includes('Reconhecendo IA') || lesson.title.includes('Principais Ferramentas') || lesson.title.includes('Ferramentas Gratuitas')) {
-        guidedLessonData = fundamentos02;
+      // Determinar qual fonte de dados usar baseado na versão
+      const dbContent = lesson.content && typeof lesson.content === 'object' && 'sections' in lesson.content 
+        ? lesson.content as any 
+        : null;
+      
+      let localContent = null;
+      if (lesson.title.includes('O que é IA e por que você precisa dela')) {
+        localContent = fundamentos01;
+      } else if (lesson.title.includes('Como a IA Aprende')) {
+        localContent = fundamentos02;
+      }
+      
+      // Comparar versões e usar a mais recente
+      const dbVersion = dbContent?.contentVersion || 0;
+      const localVersion = localContent?.contentVersion || 0;
+      
+      if (localVersion > dbVersion && localContent) {
+        // Arquivo local é mais recente - usar ele (CACHE BUSTING ATIVO)
+        console.log(`🔄 [CACHE-BUST] Usando versão local (v${localVersion}) ao invés do DB (v${dbVersion})`);
+        guidedLessonData = localContent;
+      } else if (dbContent) {
+        // Banco é igual ou mais recente - usar ele
+        console.log(`✅ [CACHE] Usando versão do banco (v${dbVersion})`);
+        guidedLessonData = dbContent;
+      } else if (localContent) {
+        // Fallback para dados locais se não houver no banco
+        console.log(`⚠️ [FALLBACK] Usando dados locais (v${localVersion})`);
+        guidedLessonData = localContent;
       }
 
       if (!guidedLessonData) {

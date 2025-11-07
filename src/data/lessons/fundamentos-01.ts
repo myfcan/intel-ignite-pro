@@ -6,6 +6,7 @@ export const fundamentos01: GuidedLessonData = {
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 300,
+  contentVersion: 1, // Versão do conteúdo (incrementar ao fazer alterações)
   sections: [
     {
       id: 'gancho',
