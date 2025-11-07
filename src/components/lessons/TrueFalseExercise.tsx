@@ -64,11 +64,21 @@ export function TrueFalseExercise({
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="text-center space-y-2">
+    <motion.div 
+      className="space-y-6 p-6"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div 
+        className="text-center space-y-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         <h2 className="text-2xl font-bold">{title}</h2>
         <p className="text-muted-foreground">{instruction}</p>
-      </div>
+      </motion.div>
 
       <div className="space-y-4">
         {statements.map((statement, index) => {
@@ -98,8 +108,20 @@ export function TrueFalseExercise({
                     <p className="flex-1 text-lg pt-1">{statement.text}</p>
                     {isRevealed && (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ 
+                          scale: 1, 
+                          rotate: 0,
+                          ...(isCorrect && {
+                            y: [0, -8, 0],
+                            transition: { duration: 0.6, repeat: 2 }
+                          }),
+                          ...(!isCorrect && {
+                            x: [0, -8, 8, -8, 8, 0],
+                            transition: { duration: 0.6 }
+                          })
+                        }}
+                        transition={{ type: "spring", stiffness: 500, damping: 15 }}
                       >
                         {isCorrect ? (
                           <Check className="h-6 w-6 text-green-500" />
@@ -111,24 +133,41 @@ export function TrueFalseExercise({
                   </div>
 
                   {!isRevealed && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleAnswer(statement.id, true)}
-                        variant="outline"
+                    <motion.div 
+                      className="flex gap-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <motion.div
                         className="flex-1"
-                        size="lg"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        ✅ Verdadeiro
-                      </Button>
-                      <Button
-                        onClick={() => handleAnswer(statement.id, false)}
-                        variant="outline"
+                        <Button
+                          onClick={() => handleAnswer(statement.id, true)}
+                          variant="outline"
+                          className="w-full"
+                          size="lg"
+                        >
+                          ✅ Verdadeiro
+                        </Button>
+                      </motion.div>
+                      <motion.div
                         className="flex-1"
-                        size="lg"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        ❌ Falso
-                      </Button>
-                    </div>
+                        <Button
+                          onClick={() => handleAnswer(statement.id, false)}
+                          variant="outline"
+                          className="w-full"
+                          size="lg"
+                        >
+                          ❌ Falso
+                        </Button>
+                      </motion.div>
+                    </motion.div>
                   )}
 
                   <AnimatePresence>
@@ -156,25 +195,51 @@ export function TrueFalseExercise({
         })}
       </div>
 
-      {allRevealed && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          <Card className="p-6 bg-primary/5 border-primary/20">
-            <div className="text-center space-y-2">
-              <div className="text-4xl mb-2">
-                {correctCount === statements.length ? '🏆' : correctCount >= statements.length / 2 ? '👍' : '💪'}
+      <AnimatePresence>
+        {allRevealed && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -30 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="space-y-4"
+          >
+            <Card className="p-6 bg-primary/5 border-primary/20">
+              <div className="text-center space-y-2">
+                <motion.div 
+                  className="text-4xl mb-2"
+                  initial={{ scale: 0, rotate: -360 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 400, 
+                    damping: 20,
+                    delay: 0.2 
+                  }}
+                >
+                  {correctCount === statements.length ? '🏆' : correctCount >= statements.length / 2 ? '👍' : '💪'}
+                </motion.div>
+                <motion.h3 
+                  className="text-xl font-bold"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {correctCount} de {statements.length} corretas
+                </motion.h3>
+                <motion.p 
+                  className="text-muted-foreground"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  {getFeedbackMessage()}
+                </motion.p>
               </div>
-              <h3 className="text-xl font-bold">
-                {correctCount} de {statements.length} corretas
-              </h3>
-              <p className="text-muted-foreground">{getFeedbackMessage()}</p>
-            </div>
-          </Card>
-        </motion.div>
-      )}
-    </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

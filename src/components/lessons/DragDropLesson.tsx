@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical, CheckCircle, XCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DragDropLessonProps {
   content: {
@@ -64,7 +65,12 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
   const isCorrect = result?.passed;
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <Card>
         <CardHeader>
           <CardTitle>🎯 Arraste e Solte na Ordem Correta</CardTitle>
@@ -72,54 +78,99 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            {items.map((item, index) => (
-              <div
-                key={`${item}-${index}`}
-                draggable={!result}
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(index)}
-                className={`
-                  flex items-center gap-3 p-4 rounded-lg border-2 
-                  ${!result ? 'cursor-move hover:border-primary hover:bg-accent' : ''}
-                  ${result && items[index] === content.correctOrder[index] ? 'border-green-500 bg-green-50' : ''}
-                  ${result && items[index] !== content.correctOrder[index] ? 'border-red-500 bg-red-50' : ''}
-                  transition-all
-                `}
-              >
-                {!result && <GripVertical className="w-5 h-5 text-muted-foreground" />}
-                
-                {result && (
-                  <div>
-                    {items[index] === content.correctOrder[index] ? (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-600" />
+            <AnimatePresence mode="popLayout">
+              {items.map((item, index) => (
+                <motion.div
+                  key={`${item}-${index}`}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ 
+                    layout: { type: "spring", stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.2 }
+                  }}
+                  whileHover={!result ? { scale: 1.02, y: -2 } : {}}
+                  whileTap={!result ? { scale: 0.98 } : {}}
+                  draggable={!result}
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(index)}
+                  className={`
+                    flex items-center gap-3 p-4 rounded-lg border-2 
+                    ${!result ? 'cursor-move hover:border-primary hover:bg-accent' : ''}
+                    ${result && items[index] === content.correctOrder[index] ? 'border-green-500 bg-green-50' : ''}
+                    ${result && items[index] !== content.correctOrder[index] ? 'border-red-500 bg-red-50' : ''}
+                    transition-all
+                  `}
+                >
+                  <AnimatePresence mode="wait">
+                    {!result && (
+                      <motion.div
+                        initial={{ opacity: 0, rotate: -180 }}
+                        animate={{ opacity: 1, rotate: 0 }}
+                        exit={{ opacity: 0, rotate: 180 }}
+                      >
+                        <GripVertical className="w-5 h-5 text-muted-foreground" />
+                      </motion.div>
                     )}
-                  </div>
-                )}
+                    
+                    {result && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ 
+                          scale: 1, 
+                          rotate: 0,
+                          ...(items[index] !== content.correctOrder[index] && {
+                            x: [0, -5, 5, -5, 5, 0],
+                            transition: { duration: 0.5 }
+                          })
+                        }}
+                        transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                      >
+                        {items[index] === content.correctOrder[index] ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-600" />
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                <div className="flex-1">
-                  <span className="font-medium">{index + 1}.</span>
-                  <span className="ml-2">{item}</span>
-                </div>
-              </div>
-            ))}
+                  <div className="flex-1">
+                    <span className="font-medium">{index + 1}.</span>
+                    <span className="ml-2">{item}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || !!result}
-            className="w-full"
-            size="lg"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            {submitting ? 'Verificando...' : 'Verificar Ordem'}
-          </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !!result}
+              className="w-full"
+              size="lg"
+            >
+              {submitting ? 'Verificando...' : 'Verificar Ordem'}
+            </Button>
+          </motion.div>
 
-          {result && (
-            <div className="space-y-4">
-              <Card className={isCorrect ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'}>
-                <CardContent className="pt-6 space-y-4">
+          <AnimatePresence>
+            {result && (
+              <motion.div 
+                className="space-y-4"
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              >
+                <Card className={isCorrect ? 'border-green-500 bg-green-50' : 'border-orange-500 bg-orange-50'}>
+                  <CardContent className="pt-6 space-y-4">
                   <div>
                     <h3 className="text-xl font-bold mb-2">Resultado: {result.score}%</h3>
                     <p className="text-lg">{result.feedback}</p>
@@ -136,51 +187,73 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
                   </div>
                   
                   {!result.passed && (
-                    <div className="flex gap-3">
-                      <Button
-                        type="button"
-                        onClick={handleTryAgain}
-                        variant="outline"
-                        className="flex-1"
-                        size="lg"
-                      >
-                        🔄 Tentar Novamente
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => window.history.back()}
-                        variant="secondary"
-                        className="flex-1"
-                        size="lg"
-                      >
-                        Voltar
-                      </Button>
-                    </div>
+                    <motion.div 
+                      className="flex gap-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1">
+                        <Button
+                          type="button"
+                          onClick={handleTryAgain}
+                          variant="outline"
+                          className="w-full"
+                          size="lg"
+                        >
+                          🔄 Tentar Novamente
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1">
+                        <Button
+                          type="button"
+                          onClick={() => window.history.back()}
+                          variant="secondary"
+                          className="w-full"
+                          size="lg"
+                        >
+                          Voltar
+                        </Button>
+                      </motion.div>
+                    </motion.div>
                   )}
                 </CardContent>
               </Card>
 
               {!isCorrect && (
-                <Card className="bg-blue-50">
-                  <CardHeader>
-                    <CardTitle className="text-base">✅ Ordem Correta:</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ol className="space-y-2">
-                      {content.correctOrder.map((item, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="font-bold">{index + 1}.</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className="bg-blue-50">
+                    <CardHeader>
+                      <CardTitle className="text-base">✅ Ordem Correta:</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ol className="space-y-2">
+                        {content.correctOrder.map((item, index) => (
+                          <motion.li 
+                            key={index} 
+                            className="flex items-center gap-2"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 + index * 0.1 }}
+                          >
+                            <span className="font-bold">{index + 1}.</span>
+                            <span>{item}</span>
+                          </motion.li>
+                        ))}
+                      </ol>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               )}
-            </div>
-          )}
+            </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 };
