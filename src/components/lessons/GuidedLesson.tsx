@@ -82,6 +82,30 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return result;
   };
   
+  // 🎯 Helper: Pular direto para exercícios
+  const skipToExercises = () => {
+    // Verificar se tem exercícios ou playground final
+    const hasExercises = lessonData.exercisesConfig || lessonData.finalPlaygroundConfig;
+    
+    if (!hasExercises) {
+      console.log('⚠️ [SKIP] Aula não tem exercícios, chamando onComplete');
+      onComplete();
+      return;
+    }
+    
+    console.log('⏭️ [SKIP] Pulando direto para exercícios');
+    
+    // Pausar áudio
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
+    }
+    
+    // Ir direto para transição
+    setCurrentPhase('transition');
+  };
+
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
     const audio = audioRef.current;
@@ -723,9 +747,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                 <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
-            <button onClick={onComplete} className="px-3 py-1.5 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0">
+            <button 
+              onClick={skipToExercises}
+              disabled={!lessonData.exercisesConfig && !lessonData.finalPlaygroundConfig}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0 ${
+                lessonData.exercisesConfig || lessonData.finalPlaygroundConfig
+                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 cursor-pointer'
+                  : 'bg-gray-300 cursor-not-allowed opacity-50'
+              }`}
+            >
               <Sparkles className="w-3 h-3 inline mr-1" />
-              <span className="hidden sm:inline">Exercício</span>
+              <span className="hidden sm:inline">Exercícios</span>
             </button>
           </div>
         </div>
