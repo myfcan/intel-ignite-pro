@@ -374,7 +374,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       // Aguardar 5 segundos na seção 4
       const fallbackTimer = setTimeout(() => {
         const audio = audioRef.current;
-        if (audio && audio.currentTime >= 120 && audio.currentTime < 181) {
+        if (audio && audio.currentTime >= 101 && audio.currentTime < 128) {
           console.log('🎮 [TRIGGER-2] Fallback section-based ativado');
           logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'section-fallback' });
           activatePlayground();
@@ -404,7 +404,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           const audio = audioRef.current;
           if (audio) {
             // Voltar para seção 4
-            audio.currentTime = 120;
+            audio.currentTime = 101;
             setCurrentSection(3);
             activatePlayground();
           }
