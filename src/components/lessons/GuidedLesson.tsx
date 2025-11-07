@@ -508,7 +508,30 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   };
 
 
-  // Detectar fim do áudio (end-audio)
+  // Detectar fim do áudio (end-audio ou quando áudio terminar)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleAudioEnded = () => {
+      console.log('🎯 [AUDIO-ENDED] Áudio terminou naturalmente');
+      setIsPlaying(false);
+      
+      // Se tem exercícios, ir para transição
+      if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
+        setCurrentPhase('transition');
+        console.log('🎯 [AUDIO-ENDED] Indo para transição (tem exercícios)');
+      } else {
+        setShowEndCard(true);
+        console.log('🎯 [AUDIO-ENDED] Mostrando end card');
+      }
+    };
+
+    audio.addEventListener('ended', handleAudioEnded);
+    return () => audio.removeEventListener('ended', handleAudioEnded);
+  }, [lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, currentPhase]);
+
+  // Detectar seção end-audio
   useEffect(() => {
     const section = lessonData.sections[currentSection];
     if (section?.type === 'end-audio' && !showEndCard && currentPhase === 'audio') {
