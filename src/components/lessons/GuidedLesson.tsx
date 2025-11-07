@@ -136,8 +136,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Extrair lesson_id do primeiro section
-      const lessonId = lessonData.sections[0]?.id.split('-').slice(0, 2).join('-') || 'unknown';
+      // Usar o ID da aula diretamente
+      const lessonId = lessonData.id;
       
       await supabase.from('diagnostic_logs').insert({
         user_id: user?.id,
