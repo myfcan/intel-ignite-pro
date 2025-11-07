@@ -38,6 +38,22 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const lastSectionRef = useRef<number>(0);
   const playgroundTriggeredRef = useRef(false);
   
+  // 🔍 DEBUG: Ver dados carregados
+  useEffect(() => {
+    console.log('📦 [LESSON DATA]', {
+      id: lessonData.id,
+      title: lessonData.title,
+      numSections: lessonData.sections.length,
+      sections: lessonData.sections.map((s, i) => ({
+        index: i,
+        id: s.id,
+        timestamp: s.timestamp,
+        showPlaygroundCall: s.showPlaygroundCall,
+        hasContent: !!(s.visualContent || s.content)
+      }))
+    });
+  }, [lessonData]);
+  
   // 🔧 Helper: Verificar se seção é renderizável no DOM
   const isSectionRenderable = (section: any) => {
     return !section.type || section.type === 'text';
@@ -211,7 +227,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     };
   }, [lessonData.sections, audioUrl]);
 
-  // 🔥 SINCRONIZAÇÃO CONTÍNUA - Polling manual para manter sincronização mesmo quando pausado
+  // 🔥 SINCRONIZAÇÃO UNIFICADA - Polling com detecção de playground integrada
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
@@ -220,24 +236,24 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const time = audio.currentTime;
       setCurrentTime(time);
 
-      // Mesma lógica de sincronização do handleTimeUpdate
+      // ========== SINCRONIZAÇÃO DE SEÇÃO ==========
       const SYNC_BUFFER = 0.1;
       const sectionIndex = lessonData.sections.findIndex((section, index) => {
         const nextSection = lessonData.sections[index + 1];
-        const sectionStart = section.timestamp - SYNC_BUFFER; // Antecipar início
-        const sectionEnd = nextSection ? nextSection.timestamp : Infinity; // Sem buffer no fim
+        const sectionStart = section.timestamp - SYNC_BUFFER;
+        const sectionEnd = nextSection ? nextSection.timestamp : Infinity;
         return time >= sectionStart && time < sectionEnd;
       });
 
       if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [SYNC] Seção ${lastSectionRef.current} → ${sectionIndex} (${lessonData.sections[sectionIndex].id}) @ ${time.toFixed(1)}s`);
+        console.log(`📍 [SYNC] ${time.toFixed(1)}s → Seção ${sectionIndex} (${lessonData.sections[sectionIndex].id})`);
         
         lastSectionRef.current = sectionIndex;
         setCurrentSection(sectionIndex);
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
 
-        // Scroll automático para a nova seção
+        // Scroll automático
         const section = lessonData.sections[sectionIndex];
         if (isSectionRenderable(section)) {
           setTimeout(() => {
@@ -251,10 +267,42 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           }, 100);
         }
       }
-    }, 100); // Verifica a cada 100ms
+
+      // ========== DETECÇÃO PLAYGROUND MID-LESSON ==========
+      if (!section4AudioCompleted && isPlaying) {
+        // Encontrar seção com showPlaygroundCall
+        const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+        
+        if (playgroundSectionIndex !== -1) {
+          const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+          
+          if (nextSection) {
+            // Detectar 1 segundo antes da próxima seção
+            const triggerTime = nextSection.timestamp - 1.0;
+            
+            if (time >= triggerTime && time < nextSection.timestamp) {
+              console.log(`🎮 [PLAYGROUND] Detectado em ${time.toFixed(1)}s, pausando...`);
+              
+              // Pausar áudio
+              audio.pause();
+              setIsPlaying(false);
+              
+              // Aguardar 500ms e mostrar card
+              setTimeout(() => {
+                setShowPlaygroundCall(true);
+                console.log('🎮 [PLAYGROUND] Card exibido');
+              }, 500);
+              
+              setSection4AudioCompleted(true);
+            }
+          }
+        }
+      }
+
+    }, 100); // Polling a cada 100ms
 
     return () => clearInterval(intervalId);
-  }, [lessonData.sections, audioUrl, isPlaying, isAudioEnabled]);
+  }, [lessonData.sections, audioUrl, isPlaying, section4AudioCompleted]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -340,42 +388,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // 🎮 DETECTAR FIM DA SEÇÃO 4 E ATIVAR PLAYGROUND
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || section4AudioCompleted) return;
-    
-    const handleTimeUpdate = () => {
-      const currentTime = audio.currentTime;
-      
-      // Encontrar seção 4 (índice 3) e seção 5 (índice 4)
-      const section4 = lessonData.sections[3];
-      const section5 = lessonData.sections[4];
-      
-      // Detectar fim da Seção 4 (0.5s antes da Seção 5 começar)
-      if (section4?.showPlaygroundCall && 
-          currentTime >= (section5.timestamp - 0.5) && 
-          currentTime < section5.timestamp) {
-        
-        console.log('🎮 [PLAYGROUND] Pausando no fim da Seção 4:', currentTime);
-        
-        // Pausar IMEDIATAMENTE
-        audio.pause();
-        setIsPlaying(false);
-        
-        // Aguardar 800ms (pausa natural)
-        setTimeout(() => {
-          setShowPlaygroundCall(true);
-          console.log('🎮 [PLAYGROUND] Card exibido');
-        }, 800);
-        
-        setSection4AudioCompleted(true);
-      }
-    };
-    
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [lessonData.sections, section4AudioCompleted, isPlaying]);
 
   // Detectar playground mid-lesson (tipo antigo)
   useEffect(() => {
@@ -728,7 +740,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
     currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
-                        <ReactMarkdown>{section.visualContent}</ReactMarkdown>
+                        <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
                       </div>
                     </div>
                   </div>
