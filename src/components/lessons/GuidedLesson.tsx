@@ -331,7 +331,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     let rafId: number;
     
     const checkPlaygroundTrigger = () => {
-      if (getPlaygroundStatus() !== 'not_triggered') {
+      const currentStatus = getPlaygroundStatus();
+      
+      if (currentStatus !== 'not_triggered') {
+        console.log(`🎮 [TRIGGER-CHECK] Status atual: ${currentStatus} - Não vai ativar`);
         rafId = requestAnimationFrame(checkPlaygroundTrigger);
         return;
       }
@@ -340,6 +343,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       // Encontrar seção com showPlaygroundCall
       const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      console.log(`🎮 [TRIGGER-CHECK] Time: ${time.toFixed(1)}s | Playground section: ${playgroundSectionIndex}`);
       
       if (playgroundSectionIndex !== -1) {
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
@@ -348,13 +352,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           // Ativar 0.5 segundos ANTES da próxima seção (final da Seção 4)
           const triggerTime = nextSection.timestamp - 0.5; // 127.5s para Seção 5 em 128s
           
+          console.log(`🎮 [TRIGGER-CHECK] Trigger time: ${triggerTime.toFixed(1)}s | Next section: ${nextSection.timestamp}s | isPlaying: ${isPlaying}`);
+          
           if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
-            console.log(`🎮 [TRIGGER-1] Timestamp detectado: ${time.toFixed(1)}s (fim da Seção ${playgroundSectionIndex})`);
+            console.log(`🎮 [TRIGGER-1] ✅ ATIVANDO! Timestamp: ${time.toFixed(1)}s (fim da Seção ${playgroundSectionIndex})`);
             logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'timestamp', time });
             activatePlayground();
             cancelAnimationFrame(rafId);
             return;
           }
+        } else {
+          console.log(`🎮 [TRIGGER-CHECK] ⚠️ Próxima seção não encontrada!`);
         }
       }
       
