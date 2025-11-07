@@ -86,6 +86,48 @@ export type Database = {
           },
         ]
       }
+      diagnostic_logs: {
+        Row: {
+          audio_time: number | null
+          created_at: string | null
+          current_section: number | null
+          event_type: string
+          id: string
+          latency_ms: number | null
+          lesson_id: string
+          metadata: Json | null
+          performance_timestamp: number | null
+          target_section: number | null
+          user_id: string | null
+        }
+        Insert: {
+          audio_time?: number | null
+          created_at?: string | null
+          current_section?: number | null
+          event_type: string
+          id?: string
+          latency_ms?: number | null
+          lesson_id: string
+          metadata?: Json | null
+          performance_timestamp?: number | null
+          target_section?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          audio_time?: number | null
+          created_at?: string | null
+          current_section?: number | null
+          event_type?: string
+          id?: string
+          latency_ms?: number | null
+          lesson_id?: string
+          metadata?: Json | null
+          performance_timestamp?: number | null
+          target_section?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           correct_answer: string | null

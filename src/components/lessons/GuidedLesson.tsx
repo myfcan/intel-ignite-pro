@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -119,6 +120,41 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       data || ''
     );
   };
+
+  // 📊 Função para enviar logs de diagnóstico ao Supabase
+  const sendDiagnosticLog = async (
+    eventType: 'SYNC_STATE' | 'DETECTION' | 'STATE_UPDATE' | 'SCROLL',
+    data: {
+      audioTime: number;
+      currentSection: number;
+      targetSection?: number;
+      performanceTimestamp: number;
+      latencyMs?: number;
+      metadata?: any;
+    }
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Extrair lesson_id do primeiro section
+      const lessonId = lessonData.sections[0]?.id.split('-').slice(0, 2).join('-') || 'unknown';
+      
+      await supabase.from('diagnostic_logs').insert({
+        user_id: user?.id,
+        lesson_id: lessonId,
+        event_type: eventType,
+        audio_time: data.audioTime,
+        current_section: data.currentSection,
+        target_section: data.targetSection,
+        performance_timestamp: data.performanceTimestamp,
+        latency_ms: data.latencyMs,
+        metadata: data.metadata
+      });
+    } catch (error) {
+      // Silenciosamente falha para não quebrar a aula
+      console.error('[TELEMETRY-ERROR]', error);
+    }
+  };
   
   // 🔧 INICIALIZAÇÃO DO ÁUDIO
   useEffect(() => {
@@ -206,6 +242,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       // 📊 LOG 1: Estado atual a cada segundo (diagnóstico)
       if (Math.floor(currentTime) !== Math.floor(lastLoggedTime)) {
         console.log(`[SYNC-STATE] Time: ${currentTime.toFixed(2)}s | Current: ${lastSectionRef.current} | Should be: ${activeIndex}`);
+        sendDiagnosticLog('SYNC_STATE', {
+          audioTime: currentTime,
+          currentSection: lastSectionRef.current,
+          targetSection: activeIndex,
+          performanceTimestamp: performance.now()
+        });
         lastLoggedTime = currentTime;
       }
       
@@ -215,6 +257,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         
         // 📊 LOG 2: Detecção de mudança
         console.log(`[DETECTION] ${currentTime.toFixed(2)}s | Transition: ${lastSectionRef.current}→${activeIndex} | Detection timestamp: ${detectionTime.toFixed(2)}`);
+        sendDiagnosticLog('DETECTION', {
+          audioTime: currentTime,
+          currentSection: lastSectionRef.current,
+          targetSection: activeIndex,
+          performanceTimestamp: detectionTime
+        });
         
         logTelemetry('SECTION_CHANGED', { from: lastSectionRef.current, to: activeIndex });
         
@@ -240,6 +288,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const audioTime = audioRef.current?.currentTime || 0;
     
     console.log(`[STATE-UPDATE] Section changed to: ${currentSection} | Audio time: ${audioTime.toFixed(2)}s | Update timestamp: ${updateTime.toFixed(2)}`);
+    sendDiagnosticLog('STATE_UPDATE', {
+      audioTime: audioTime,
+      currentSection: currentSection,
+      performanceTimestamp: updateTime
+    });
     
     // Scroll após state update
     const section = lessonData.sections[currentSection];
@@ -255,7 +308,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           });
           
           const scrollEnd = performance.now();
-          console.log(`[SCROLL] Completed in ${(scrollEnd - scrollStart).toFixed(2)}ms`);
+          const latency = scrollEnd - scrollStart;
+          console.log(`[SCROLL] Completed in ${latency.toFixed(2)}ms`);
+          sendDiagnosticLog('SCROLL', {
+            audioTime: audioTime,
+            currentSection: currentSection,
+            performanceTimestamp: scrollEnd,
+            latencyMs: latency
+          });
         } else {
           console.warn(`[SCROLL] Element #section-${currentSection} not found`);
         }
