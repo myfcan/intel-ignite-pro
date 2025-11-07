@@ -92,7 +92,7 @@ export interface PlaygroundConfig {
 
 export interface ExerciseConfig {
   id: string;
-  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection' | 'fill-in-blanks' | 'true-false' | 'platform-match';
+  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection' | 'fill-in-blanks' | 'true-false' | 'platform-match' | 'data-collection';
   title: string;
   instruction: string;
   data: any;

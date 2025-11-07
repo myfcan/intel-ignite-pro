@@ -8,7 +8,7 @@ export const fundamentos02: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
   duration: 198, // 3min 18s
-  contentVersion: 2, // Versão atual do conteúdo (incrementar quando alterar exercícios)
+  contentVersion: 3, // Versão atual do conteúdo (incrementar quando alterar exercícios)
 
   sections: [
     {
@@ -262,23 +262,59 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
   exercisesConfig: [
     {
       id: 'ex-final-1-aula-2-trilha-1',
-      type: 'platform-match',
-      title: 'O que cada IA Aprende?',
-      instruction: 'Para cada situação, escolha qual plataforma aprende com essa informação:',
+      type: 'data-collection',
+      title: 'O que a IA Está Aprendendo?',
+      instruction: 'Veja cada situação e identifique TODOS os dados que a IA está coletando ao mesmo tempo:',
       data: {
         scenarios: [
-          { id: 'scenario-1', text: 'Você assiste uma série até o final sem pular nenhum episódio', correctPlatform: 'netflix', emoji: '🎬' },
-          { id: 'scenario-2', text: 'Você cria uma playlist e escuta ela toda manhã', correctPlatform: 'spotify', emoji: '🎵' },
-          { id: 'scenario-3', text: 'Você para o scroll para ver uma foto com atenção', correctPlatform: 'instagram', emoji: '📸' },
-          { id: 'scenario-4', text: 'Você lê um post completo de um amigo', correctPlatform: 'facebook', emoji: '👥' },
-          { id: 'scenario-5', text: 'Você pula a introdução de vários episódios seguidos', correctPlatform: 'netflix', emoji: '⏭️' },
-          { id: 'scenario-6', text: 'Você adiciona músicas aos favoritos enquanto escuta', correctPlatform: 'spotify', emoji: '💾' }
-        ],
-        platforms: [
-          { id: 'netflix', name: 'Netflix', icon: '🎬', color: '#E50914' },
-          { id: 'spotify', name: 'Spotify', icon: '🎵', color: '#1DB954' },
-          { id: 'instagram', name: 'Instagram', icon: '📸', color: '#E4405F' },
-          { id: 'facebook', name: 'Facebook', icon: '👥', color: '#1877F2' }
+          {
+            id: 'scenario-netflix',
+            emoji: '🎬',
+            platform: 'Netflix',
+            context: 'Sexta-feira, 22h',
+            situation: 'Você começou uma série de comédia, assistiu 3 episódios seguidos sem pausar, pulou a intro de todos, e deu like no último episódio.',
+            dataPoints: [
+              { id: 'genre', label: 'Qual gênero você prefere (comédia)', isCorrect: true, explanation: '✅ Sim! A IA registra o gênero para sugerir conteúdo similar.' },
+              { id: 'binge', label: 'Que você assiste vários episódios seguidos', isCorrect: true, explanation: '✅ Correto! Padrão de "binge watching" é importante.' },
+              { id: 'skip-intro', label: 'Que você sempre pula a introdução', isCorrect: true, explanation: '✅ Exato! A IA aprende suas preferências de navegação.' },
+              { id: 'timing', label: 'Horário que você costuma assistir (noite)', isCorrect: true, explanation: '✅ Sim! Horários ajudam a personalizar notificações.' },
+              { id: 'engagement', label: 'Seu nível de engajamento (like)', isCorrect: true, explanation: '✅ Perfeito! Likes são sinais fortes de preferência.' },
+              { id: 'device', label: 'Qual dispositivo você está usando', isCorrect: false, explanation: '❌ Não mencionado neste cenário específico.' },
+              { id: 'volume', label: 'Volume que você prefere assistir', isCorrect: false, explanation: '❌ Volume não é coletado neste contexto.' }
+            ]
+          },
+          {
+            id: 'scenario-spotify',
+            emoji: '🎵',
+            platform: 'Spotify',
+            context: 'Segunda-feira, 7h da manhã',
+            situation: 'Você está se arrumando para trabalhar e coloca uma playlist de rock animado. Pula 2 músicas lentas, adiciona 3 músicas aos favoritos, e ouve tudo no volume alto.',
+            dataPoints: [
+              { id: 'time-context', label: 'Horário e contexto (manhã, preparação)', isCorrect: true, explanation: '✅ Sim! Contexto temporal é essencial para sugestões.' },
+              { id: 'energy-level', label: 'Preferência por músicas animadas de manhã', isCorrect: true, explanation: '✅ Correto! Energia da música vs horário é padrão importante.' },
+              { id: 'skips', label: 'Quais tipos de música você rejeita (lentas)', isCorrect: true, explanation: '✅ Exato! Pulos ensinam o que você NÃO quer.' },
+              { id: 'favorites', label: 'Músicas que você realmente ama (favoritos)', isCorrect: true, explanation: '✅ Perfeito! Favoritos são sinais muito fortes.' },
+              { id: 'genre-rock', label: 'Seu gênero favorito (rock)', isCorrect: true, explanation: '✅ Sim! Gênero é fundamental para curadoria.' },
+              { id: 'lyrics', label: 'Se você prefere músicas com ou sem letra', isCorrect: false, explanation: '❌ Não foi mencionado no cenário.' },
+              { id: 'volume-pref', label: 'Preferência de volume (alto)', isCorrect: false, explanation: '❌ Volume é configuração pessoal, não padrão de gosto musical.' }
+            ]
+          },
+          {
+            id: 'scenario-instagram',
+            emoji: '📸',
+            platform: 'Instagram',
+            context: 'Domingo à tarde',
+            situation: 'Você está rolando o feed. Para por 30 segundos numa foto de viagem, dá like, salva nos favoritos, e clica no perfil para ver mais fotos daquele lugar.',
+            dataPoints: [
+              { id: 'time-spent', label: 'Quanto tempo você para em cada foto', isCorrect: true, explanation: '✅ Sim! Tempo de visualização é métrica-chave de interesse.' },
+              { id: 'interest-topic', label: 'Seus interesses (viagens)', isCorrect: true, explanation: '✅ Correto! Tópicos de interesse direcionam seu feed.' },
+              { id: 'engagement-like', label: 'Conteúdo que você considera bom (like)', isCorrect: true, explanation: '✅ Exato! Likes indicam aprovação.' },
+              { id: 'save-intent', label: 'Intenção de rever depois (salvar)', isCorrect: true, explanation: '✅ Perfeito! Salvos mostram alto interesse.' },
+              { id: 'explore-more', label: 'Curiosidade para explorar mais do mesmo tema', isCorrect: true, explanation: '✅ Sim! Clicar no perfil mostra interesse profundo.' },
+              { id: 'friends', label: 'Quais amigos você mais interage', isCorrect: false, explanation: '❌ Não houve interação com amigos neste cenário.' },
+              { id: 'location', label: 'Sua localização atual', isCorrect: false, explanation: '❌ Localização não foi relevante nesta ação.' }
+            ]
+          }
         ]
       }
     },
