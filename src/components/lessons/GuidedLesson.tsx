@@ -84,7 +84,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
     const audio = audioRef.current;
-    if (!audio || playgroundTriggered) return;
+    console.log(`🔍 [activatePlayground] chamada | audio=${!!audio} | triggered=${playgroundTriggered}`);
+    if (!audio || playgroundTriggered) {
+      console.log(`🚫 [activatePlayground] BLOQUEADA | motivo=${!audio ? 'no-audio' : 'already-triggered'}`);
+      return;
+    }
     
     console.log('🎮 [PLAYGROUND] Ativando...');
     
@@ -201,6 +205,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     const handleSeeking = () => {
       console.log('🔄 [SEEKING] Áudio pulou para:', audio.currentTime);
       lastSectionRef.current = -1; // Forçar redetecção
+    };
+    
+    // 🔍 DEBUG: Monitorar play/pause
+    audio.onplay = () => {
+      console.log('▶️ [AUDIO] Play iniciado');
+      setIsPlaying(true);
+    };
+
+    audio.onpause = () => {
+      console.log('⏸️ [AUDIO] Pausado');
+      setIsPlaying(false);
     };
     
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -338,6 +353,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         
         if (nextSection) {
           const triggerTime = nextSection.timestamp - 0.5;
+          
+          // 🔍 DEBUG: Log contínuo para debug (125s-129s)
+          if (time >= 125 && time <= 129) {
+            console.log(`🔍 [DEBUG] t=${time.toFixed(2)}s | trigger=${triggerTime.toFixed(2)}s | playing=${isPlaying} | triggered=${playgroundTriggered}`);
+          }
           
           if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
             console.log(`🎮 [TRIGGER-1] ✅ ATIVANDO aos ${time.toFixed(1)}s`);
