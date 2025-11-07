@@ -36,17 +36,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const lastSectionRef = useRef<number>(0);
   const prevSectionRef = useRef<number>(-1);
   
-  // 🔑 SessionStorage keys para playground
-  const PLAYGROUND_STORAGE_KEY = `playground_${lessonData.id}_section4`;
-  
-  // 🔑 Helpers de status do playground
-  const getPlaygroundStatus = (): string => {
-    return sessionStorage.getItem(PLAYGROUND_STORAGE_KEY) || 'not_triggered';
-  };
-  
-  const setPlaygroundStatus = (status: 'not_triggered' | 'triggered' | 'completed' | 'skipped') => {
-    sessionStorage.setItem(PLAYGROUND_STORAGE_KEY, status);
-  };
+  // 🎮 Estado do playground (sem persistência - sempre reseta)
+  const [playgroundTriggered, setPlaygroundTriggered] = useState(false);
+  const [playgroundCompleted, setPlaygroundCompleted] = useState(false);
   
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
@@ -92,7 +84,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
     const audio = audioRef.current;
-    if (!audio || getPlaygroundStatus() !== 'not_triggered') return;
+    if (!audio || playgroundTriggered) return;
     
     console.log('🎮 [PLAYGROUND] Ativando...');
     
@@ -101,7 +93,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     setIsPlaying(false);
     
     // Marcar como triggered
-    setPlaygroundStatus('triggered');
+    setPlaygroundTriggered(true);
     
     // Mostrar card após 500ms
     setTimeout(() => {
@@ -331,10 +323,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     let rafId: number;
     
     const checkPlaygroundTrigger = () => {
-      const currentStatus = getPlaygroundStatus();
-      
-      if (currentStatus !== 'not_triggered') {
-        console.log(`🎮 [TRIGGER-CHECK] Status atual: ${currentStatus} - Não vai ativar`);
+      if (playgroundTriggered) {
         rafId = requestAnimationFrame(checkPlaygroundTrigger);
         return;
       }
@@ -343,26 +332,20 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       // Encontrar seção com showPlaygroundCall
       const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
-      console.log(`🎮 [TRIGGER-CHECK] Time: ${time.toFixed(1)}s | Playground section: ${playgroundSectionIndex}`);
       
       if (playgroundSectionIndex !== -1) {
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
         if (nextSection) {
-          // Ativar 0.5 segundos ANTES da próxima seção (final da Seção 4)
-          const triggerTime = nextSection.timestamp - 0.5; // 127.5s para Seção 5 em 128s
-          
-          console.log(`🎮 [TRIGGER-CHECK] Trigger time: ${triggerTime.toFixed(1)}s | Next section: ${nextSection.timestamp}s | isPlaying: ${isPlaying}`);
+          const triggerTime = nextSection.timestamp - 0.5;
           
           if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
-            console.log(`🎮 [TRIGGER-1] ✅ ATIVANDO! Timestamp: ${time.toFixed(1)}s (fim da Seção ${playgroundSectionIndex})`);
+            console.log(`🎮 [TRIGGER-1] ✅ ATIVANDO aos ${time.toFixed(1)}s`);
             logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'timestamp', time });
             activatePlayground();
             cancelAnimationFrame(rafId);
             return;
           }
-        } else {
-          console.log(`🎮 [TRIGGER-CHECK] ⚠️ Próxima seção não encontrada!`);
         }
       }
       
@@ -378,12 +361,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 🎮 TRIGGER 2 (FALLBACK): Section-based (5s após entrar na seção 4)
   useEffect(() => {
-    if (currentSection === 3 && getPlaygroundStatus() === 'not_triggered') {
-      // Aguardar 5 segundos na seção 4
+    if (currentSection === 3 && !playgroundTriggered) {
       const fallbackTimer = setTimeout(() => {
         const audio = audioRef.current;
         if (audio && audio.currentTime >= 101 && audio.currentTime < 128) {
-          console.log('🎮 [TRIGGER-2] Fallback section-based ativado');
+          console.log('🎮 [TRIGGER-2] Fallback ativado');
           logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'section-fallback' });
           activatePlayground();
         }
@@ -391,39 +373,34 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       return () => clearTimeout(fallbackTimer);
     }
-  }, [currentSection]);
+  }, [currentSection, playgroundTriggered]);
   
-  // 🎮 TRIGGER 3 (SAFETY NET): Transition detection (se pular da seção 3 para 5)
+  // 🎮 TRIGGER 3 (SAFETY NET): Transition detection
   useEffect(() => {
     const prevSection = prevSectionRef.current;
     
-    // Se pulou da seção 3 para 5 sem trigger
-    if (currentSection === 4 && prevSection === 3 && getPlaygroundStatus() === 'not_triggered') {
+    if (currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
       console.log('🎮 [TRIGGER-3] Safety net - usuário pulou seção 4');
       logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'safety-net' });
       
       setTimeout(() => {
-        // Oferecer playground retroativamente
         const wantToTry = window.confirm(
-          '🎮 Você passou pelo exercício interativo!\n\nQuer voltar e tentar? (Recomendado - leva só 2 minutos)'
+          '🎮 Você passou pelo exercício interativo!\n\nQuer voltar e tentar?'
         );
         
         if (wantToTry) {
           const audio = audioRef.current;
           if (audio) {
-            // Voltar para seção 4
             audio.currentTime = 101;
             setCurrentSection(3);
             activatePlayground();
           }
-        } else {
-          setPlaygroundStatus('skipped');
         }
       }, 1000);
     }
     
     prevSectionRef.current = currentSection;
-  }, [currentSection]);
+  }, [currentSection, playgroundTriggered]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -544,7 +521,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const handleSkipPlayground = () => {
     console.log('🎮 [PLAYGROUND] Usuário clicou em "Pular"');
     logTelemetry('PLAYGROUND_SKIP');
-    setPlaygroundStatus('skipped');
     setShowPlaygroundCall(false);
     
     setTimeout(() => {
@@ -566,7 +542,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const handlePlaygroundComplete = (answer?: string | null) => {
     console.log('✅ [PLAYGROUND] Usuário completou:', answer);
     logTelemetry('PLAYGROUND_COMPLETE', { answer });
-    setPlaygroundStatus('completed');
+    setPlaygroundCompleted(true);
     setShowPlaygroundMid(false);
     
     setTimeout(() => {
