@@ -24,19 +24,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
-  const [showPlaygroundOverlay, setShowPlaygroundOverlay] = useState(false);
   const [showEndCard, setShowEndCard] = useState(false);
   const [showPlaygroundCall, setShowPlaygroundCall] = useState(false);
-  const [section4AudioCompleted, setSection4AudioCompleted] = useState(false);
+  const [showPlaygroundMid, setShowPlaygroundMid] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<
     'audio' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
   >('audio');
-  const [playgroundDetected, setPlaygroundDetected] = useState(false);
-  const [playgroundOpening, setPlaygroundOpening] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
-  const playgroundTriggeredRef = useRef(false);
+  const prevSectionRef = useRef<number>(-1);
+  
+  // 🔑 SessionStorage keys para playground
+  const PLAYGROUND_STORAGE_KEY = `playground_${lessonData.id}_section4`;
+  
+  // 🔑 Helpers de status do playground
+  const getPlaygroundStatus = (): string => {
+    return sessionStorage.getItem(PLAYGROUND_STORAGE_KEY) || 'not_triggered';
+  };
+  
+  const setPlaygroundStatus = (status: 'not_triggered' | 'triggered' | 'completed' | 'skipped') => {
+    sessionStorage.setItem(PLAYGROUND_STORAGE_KEY, status);
+  };
   
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
@@ -59,56 +68,54 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return !section.type || section.type === 'text';
   };
   
-  // 🎮 Detectar palavra-gatilho para abrir playground
-  const checkForPlaygroundTrigger = (currentTime: number) => {
-    // Não faz nada se já foi acionado
-    if (playgroundTriggeredRef.current) return;
+  // 📊 Helper: Calcular seção ativa de forma direta
+  const calculateActiveSection = (currentTime: number): number => {
+    let activeIndex = 0;
     
-    const playgroundSection = lessonData.sections.find(s => s.type === 'playground');
-    if (!playgroundSection?.playgroundConfig?.triggerKeyword) return;
-    
-    const { triggerKeyword, triggerAfterSection } = playgroundSection.playgroundConfig;
-    
-    // Só detecta após a seção especificada
-    if (triggerAfterSection !== undefined && currentSection < triggerAfterSection) return;
-    
-    const currentSectionData = lessonData.sections[currentSection];
-    if (!currentSectionData) return;
-    
-    // Verifica se o conteúdo contém a palavra-gatilho
-    const content = currentSectionData.visualContent + ' ' + currentSectionData.spokenContent;
-    if (content.toLowerCase().includes(triggerKeyword.toLowerCase())) {
-      console.log(`🎮 [TRIGGER] Palavra-gatilho "${triggerKeyword}" detectada na seção ${currentSection}`);
-      
-      // Marca como detectado
-      playgroundTriggeredRef.current = true;
-      setPlaygroundDetected(true);
-      
-      // Inicia sequência de transição
-      startPlaygroundTransition();
+    for (let i = 0; i < lessonData.sections.length; i++) {
+      if (currentTime >= lessonData.sections[i].timestamp) {
+        activeIndex = i;
+      } else {
+        break;
+      }
     }
+    
+    return activeIndex;
   };
   
-  const startPlaygroundTransition = () => {
+  // 🎮 Helper: Ativar playground
+  const activatePlayground = () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || getPlaygroundStatus() !== 'not_triggered') return;
     
-    console.log('🎬 [TRANSITION] Iniciando transição para playground...');
+    console.log('🎮 [PLAYGROUND] Ativando...');
     
-    // 1. Mostrar aviso
-    setPlaygroundOpening(true);
+    // Pausar áudio
+    audio.pause();
+    setIsPlaying(false);
     
-    // 2. Após 1 segundo: pausar áudio e abrir playground
+    // Marcar como triggered
+    setPlaygroundStatus('triggered');
+    
+    // Mostrar card após 500ms
     setTimeout(() => {
-      audio.pause();
-      setIsPlaying(false);
-      setShowPlaygroundOverlay(true);
-      setPlaygroundOpening(false);
-      
-      console.log('🎮 [PLAYGROUND] Overlay aberto');
-    }, 1000);
+      setShowPlaygroundCall(true);
+      console.log('🎮 [PLAYGROUND] Card exibido');
+    }, 500);
   };
   
+  // 📊 Helper: Telemetria
+  const logTelemetry = (event: string, data?: any) => {
+    const timestamp = performance.now().toFixed(0);
+    const audioTime = audioRef.current?.currentTime.toFixed(1) || '0.0';
+    
+    console.log(
+      `[TELEMETRY] ${timestamp}ms | Audio: ${audioTime}s | ${event}`,
+      data || ''
+    );
+  };
+  
+  // 🔧 INICIALIZAÇÃO DO ÁUDIO
   useEffect(() => {
     const audio = audioRef.current;
     
@@ -131,70 +138,21 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     console.log('✅ [ÁUDIO] Inicializando áudio:', audioUrl);
     console.log('📋 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
     
-    // ✅ CONFIGURAR VOLUME PRIMEIRO, ANTES DE TUDO
+    // ✅ CONFIGURAR VOLUME
     audio.volume = 1.0;
-    console.log('🔊 [VOLUME] Configurado IMEDIATAMENTE no useEffect: 100%');
-    
-    const handleTimeUpdate = () => {
-      const time = audio.currentTime;
-      setCurrentTime(time);
-      
-      // Buffer reduzido para sincronização mais precisa
-      const SYNC_BUFFER = 0.1;
-      
-      console.log(`⏰ [SYNC] time=${time.toFixed(1)}s, checking ${lessonData.sections.length} sections`);
-      
-      const sectionIndex = lessonData.sections.findIndex((section, index) => {
-        const nextSection = lessonData.sections[index + 1];
-        const sectionStart = section.timestamp - SYNC_BUFFER; // Antecipar início
-        const sectionEnd = nextSection ? nextSection.timestamp : Infinity; // Sem buffer no fim
-        
-        console.log(`🔍 [SECTION ${index}] ${section.id}: ${sectionStart.toFixed(1)}-${sectionEnd === Infinity ? '∞' : sectionEnd.toFixed(1)}s`);
-        
-        return time >= sectionStart && time < sectionEnd;
-      });
-      
-      if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [SEÇÃO] Mudando para seção ${sectionIndex}: ${lessonData.sections[sectionIndex].id} @ ${time.toFixed(1)}s`);
-        console.log(`🔍 [SCROLL DEBUG] hasScrolled: ${hasScrolledRef.current[sectionIndex]}, isRenderable: ${isSectionRenderable(lessonData.sections[sectionIndex])}`);
-        lastSectionRef.current = sectionIndex;
-        setCurrentSection(sectionIndex);
-        
-        // 🆕 Verificar gatilho de playground
-        checkForPlaygroundTrigger(time);
-        
-        // Ativar efeito visual de mudança de seção
-        setSectionJustChanged(true);
-        setTimeout(() => setSectionJustChanged(false), 1000);
-        
-        // Scroll sempre que mudar de seção (permite voltar no áudio)
-        const section = lessonData.sections[sectionIndex];
-        if (isSectionRenderable(section)) {
-          const sectionElement = document.getElementById(`section-${sectionIndex}`);
-          if (sectionElement) {
-            // Offset ajustado para alinhar com o topo do box da MAIA
-            const yOffset = -100;
-            const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            console.log(`📜 [SCROLL] Rolando para seção ${sectionIndex}: ${section.id}`);
-            window.scrollTo({ top: y, behavior: 'smooth' });
-          }
-        }
-      }
-    };
+    console.log('🔊 [VOLUME] Configurado: 100%');
     
     const handleLoadedMetadata = () => {
-      console.log(`✅ [ÁUDIO] Carregado com sucesso! Duração: ${audio.duration}s`);
+      console.log(`✅ [ÁUDIO] Carregado! Duração: ${audio.duration}s`);
       setDuration(audio.duration);
-      // Configurar volume MÁXIMO - forçar ao carregar
       audio.volume = 1.0;
-      console.log('🔊 [VOLUME] MÁXIMO configurado: 100%');
       
-      // Tentar dar play automaticamente
+      // Tentar autoplay
       audio.play().then(() => {
-        console.log('🎵 [AUTOPLAY] Áudio iniciado automaticamente');
+        console.log('🎵 [AUTOPLAY] Iniciado automaticamente');
         setIsPlaying(true);
       }).catch(err => {
-        console.warn('⚠️ [AUTOPLAY] Navegador bloqueou autoplay:', err);
+        console.warn('⚠️ [AUTOPLAY] Bloqueado pelo navegador:', err);
       });
     };
     
@@ -212,14 +170,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       lastSectionRef.current = -1; // Forçar redetecção
     };
     
-    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('error', handleError);
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('seeking', handleSeeking);
     
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('canplay', handleCanPlay);
@@ -227,37 +183,40 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     };
   }, [lessonData.sections, audioUrl]);
 
-  // 🔥 SINCRONIZAÇÃO UNIFICADA - Polling com detecção de playground integrada
+  // 🔥 SINCRONIZAÇÃO COM requestAnimationFrame (60fps, <100ms latência)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
-
-    const intervalId = setInterval(() => {
-      const time = audio.currentTime;
-      setCurrentTime(time);
-
-      // ========== SINCRONIZAÇÃO DE SEÇÃO ==========
-      const SYNC_BUFFER = 0.1;
-      const sectionIndex = lessonData.sections.findIndex((section, index) => {
-        const nextSection = lessonData.sections[index + 1];
-        const sectionStart = section.timestamp - SYNC_BUFFER;
-        const sectionEnd = nextSection ? nextSection.timestamp : Infinity;
-        return time >= sectionStart && time < sectionEnd;
-      });
-
-      if (sectionIndex !== -1 && sectionIndex !== lastSectionRef.current) {
-        console.log(`📍 [SYNC] ${time.toFixed(1)}s → Seção ${sectionIndex} (${lessonData.sections[sectionIndex].id})`);
+    
+    let animationFrameId: number;
+    let lastLogTime = 0;
+    
+    const syncLoop = () => {
+      const currentTime = audio.currentTime;
+      setCurrentTime(currentTime);
+      
+      // Calcular seção ativa
+      const activeIndex = calculateActiveSection(currentTime);
+      
+      if (activeIndex !== lastSectionRef.current) {
+        // Log de sincronização (throttled para cada 5s)
+        if (currentTime - lastLogTime > 5 || lastLogTime === 0) {
+          console.log(`📍 [SYNC] ${currentTime.toFixed(1)}s → Seção ${activeIndex} (${lessonData.sections[activeIndex].id})`);
+          lastLogTime = currentTime;
+        }
         
-        lastSectionRef.current = sectionIndex;
-        setCurrentSection(sectionIndex);
+        logTelemetry('SECTION_CHANGED', { from: lastSectionRef.current, to: activeIndex });
+        
+        lastSectionRef.current = activeIndex;
+        setCurrentSection(activeIndex);
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
-
+        
         // Scroll automático
-        const section = lessonData.sections[sectionIndex];
+        const section = lessonData.sections[activeIndex];
         if (isSectionRenderable(section)) {
           setTimeout(() => {
-            const sectionElement = document.getElementById(`section-${sectionIndex}`);
+            const sectionElement = document.getElementById(`section-${activeIndex}`);
             if (sectionElement) {
               sectionElement.scrollIntoView({ 
                 behavior: 'smooth', 
@@ -267,42 +226,111 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           }, 100);
         }
       }
-
-      // ========== DETECÇÃO PLAYGROUND MID-LESSON ==========
-      if (!section4AudioCompleted && isPlaying) {
-        // Encontrar seção com showPlaygroundCall
-        const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      
+      animationFrameId = requestAnimationFrame(syncLoop);
+    };
+    
+    animationFrameId = requestAnimationFrame(syncLoop);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [lessonData.sections, audioUrl]);
+  
+  // 🎮 TRIGGER 1 (PRIMARY): Timestamp-based com janela ampliada (3s)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+    
+    let rafId: number;
+    
+    const checkPlaygroundTrigger = () => {
+      if (getPlaygroundStatus() !== 'not_triggered') {
+        rafId = requestAnimationFrame(checkPlaygroundTrigger);
+        return;
+      }
+      
+      const time = audio.currentTime;
+      
+      // Encontrar seção com showPlaygroundCall
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      
+      if (playgroundSectionIndex !== -1) {
+        const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
-        if (playgroundSectionIndex !== -1) {
-          const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+        if (nextSection) {
+          // JANELA AMPLIADA: 3 segundos antes da próxima seção
+          const triggerStart = nextSection.timestamp - 3.0; // 177s
+          const triggerEnd = nextSection.timestamp + 1.0;   // 181s
           
-          if (nextSection) {
-            // Detectar 1 segundo antes da próxima seção
-            const triggerTime = nextSection.timestamp - 1.0;
-            
-            if (time >= triggerTime && time < nextSection.timestamp) {
-              console.log(`🎮 [PLAYGROUND] Detectado em ${time.toFixed(1)}s, pausando...`);
-              
-              // Pausar áudio
-              audio.pause();
-              setIsPlaying(false);
-              
-              // Aguardar 500ms e mostrar card
-              setTimeout(() => {
-                setShowPlaygroundCall(true);
-                console.log('🎮 [PLAYGROUND] Card exibido');
-              }, 500);
-              
-              setSection4AudioCompleted(true);
-            }
+          if (time >= triggerStart && time < triggerEnd && isPlaying) {
+            console.log(`🎮 [TRIGGER-1] Timestamp detectado: ${time.toFixed(1)}s`);
+            logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'timestamp', time });
+            activatePlayground();
+            cancelAnimationFrame(rafId);
+            return;
           }
         }
       }
-
-    }, 100); // Polling a cada 100ms
-
-    return () => clearInterval(intervalId);
-  }, [lessonData.sections, audioUrl, isPlaying, section4AudioCompleted]);
+      
+      rafId = requestAnimationFrame(checkPlaygroundTrigger);
+    };
+    
+    rafId = requestAnimationFrame(checkPlaygroundTrigger);
+    
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [lessonData.sections, audioUrl, isPlaying]);
+  
+  // 🎮 TRIGGER 2 (FALLBACK): Section-based (5s após entrar na seção 4)
+  useEffect(() => {
+    if (currentSection === 3 && getPlaygroundStatus() === 'not_triggered') {
+      // Aguardar 5 segundos na seção 4
+      const fallbackTimer = setTimeout(() => {
+        const audio = audioRef.current;
+        if (audio && audio.currentTime >= 120 && audio.currentTime < 181) {
+          console.log('🎮 [TRIGGER-2] Fallback section-based ativado');
+          logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'section-fallback' });
+          activatePlayground();
+        }
+      }, 5000);
+      
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [currentSection]);
+  
+  // 🎮 TRIGGER 3 (SAFETY NET): Transition detection (se pular da seção 3 para 5)
+  useEffect(() => {
+    const prevSection = prevSectionRef.current;
+    
+    // Se pulou da seção 3 para 5 sem trigger
+    if (currentSection === 4 && prevSection === 3 && getPlaygroundStatus() === 'not_triggered') {
+      console.log('🎮 [TRIGGER-3] Safety net - usuário pulou seção 4');
+      logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'safety-net' });
+      
+      setTimeout(() => {
+        // Oferecer playground retroativamente
+        const wantToTry = window.confirm(
+          '🎮 Você passou pelo exercício interativo!\n\nQuer voltar e tentar? (Recomendado - leva só 2 minutos)'
+        );
+        
+        if (wantToTry) {
+          const audio = audioRef.current;
+          if (audio) {
+            // Voltar para seção 4
+            audio.currentTime = 120;
+            setCurrentSection(3);
+            activatePlayground();
+          }
+        } else {
+          setPlaygroundStatus('skipped');
+        }
+      }, 1000);
+    }
+    
+    prevSectionRef.current = currentSection;
+  }, [currentSection]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -389,20 +417,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   };
 
 
-  // Detectar playground mid-lesson (tipo antigo)
-  useEffect(() => {
-    const section = lessonData.sections[currentSection];
-    if (section?.type === 'playground' && isPlaying && !showPlaygroundOverlay) {
-      const audio = audioRef.current;
-      if (audio) {
-        audio.pause();
-        setIsPlaying(false);
-        setShowPlaygroundOverlay(true);
-        console.log('🎮 [PLAYGROUND] Pausando áudio para playground mid-lesson');
-      }
-    }
-  }, [currentSection, isPlaying, lessonData.sections, showPlaygroundOverlay]);
-
   // Detectar fim do áudio (end-audio)
   useEffect(() => {
     const section = lessonData.sections[currentSection];
@@ -424,41 +438,48 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
   }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase]);
 
-  // Handlers do PlaygroundCallCard
+  // 🎮 Handlers do Playground
   const handleOpenPlayground = () => {
+    console.log('🎮 [PLAYGROUND] Usuário clicou em "Abrir"');
+    logTelemetry('PLAYGROUND_OPEN');
     setShowPlaygroundCall(false);
     setTimeout(() => {
-      setShowPlaygroundOverlay(true);
-      console.log('🎮 [PLAYGROUND] Usuário aceitou, abrindo playground');
+      setShowPlaygroundMid(true);
     }, 300);
   };
   
   const handleSkipPlayground = () => {
-    console.log('⏭️ [PLAYGROUND] Usuário pulou o playground');
+    console.log('🎮 [PLAYGROUND] Usuário clicou em "Pular"');
+    logTelemetry('PLAYGROUND_SKIP');
+    setPlaygroundStatus('skipped');
     setShowPlaygroundCall(false);
     
     setTimeout(() => {
       const audio = audioRef.current;
-      if (audio) {
-        // Retomar EXATAMENTE na Seção 5 (índice 4)
-        audio.currentTime = lessonData.sections[4].timestamp;
+      if (audio && lessonData.sections[4]) {
+        audio.currentTime = lessonData.sections[4].timestamp; // 180s
         audio.play();
         setIsPlaying(true);
         setCurrentSection(4);
-        console.log('⏭️ [SKIP] Retomando na Seção 5:', lessonData.sections[4].timestamp, 's');
+        logTelemetry('AUDIO_RESUMED', { section: 4 });
       }
     }, 300);
   };
 
-  // Completar playground mid-lesson e retomar áudio
-  const handlePlaygroundComplete = (answer: string | null) => {
+  const handlePlaygroundComplete = (answer?: string | null) => {
     console.log('✅ [PLAYGROUND] Usuário completou:', answer);
-    setShowPlaygroundOverlay(false);
+    logTelemetry('PLAYGROUND_COMPLETE', { answer });
+    setPlaygroundStatus('completed');
+    setShowPlaygroundMid(false);
     
     setTimeout(() => {
       const audio = audioRef.current;
-      if (audio) {
-        // Retomar EXATAMENTE na Seção 5 (índice 4)
+      if (audio && lessonData.sections[4]) {
+        audio.currentTime = lessonData.sections[4].timestamp; // 180s
+        audio.play();
+        setIsPlaying(true);
+        setCurrentSection(4);
+        logTelemetry('AUDIO_RESUMED', { section: 4 });
         audio.currentTime = lessonData.sections[4].timestamp;
         audio.play();
         setIsPlaying(true);
@@ -683,7 +704,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               </div>
             </aside>
             
-            <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500 ${playgroundDetected && !showPlaygroundOverlay ? 'opacity-30' : 'opacity-100'}`}>
+            <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
               {lessonData.sections
                 .map((section, originalIndex) => ({ section, originalIndex }))
                 .filter(({ section }) => !section.type || section.type === 'text')
@@ -801,21 +822,21 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button 
                   onClick={skipBackward} 
-                  disabled={showPlaygroundOverlay || showEndCard}
+                  disabled={showPlaygroundMid || showEndCard}
                   className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <SkipBack size={16} />
                 </button>
                 <button 
                   onClick={togglePlayPause} 
-                  disabled={showPlaygroundOverlay || showEndCard}
+                  disabled={showPlaygroundMid || showEndCard}
                   className="w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                 </button>
                 <button 
                   onClick={skipForward} 
-                  disabled={showPlaygroundOverlay || showEndCard}
+                  disabled={showPlaygroundMid || showEndCard}
                   className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <SkipForward size={16} />
@@ -874,25 +895,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* 🎮 Aviso de transição para playground */}
-      {playgroundOpening && (
-        <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md animate-scale-in mx-4">
-            <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center animate-pulse">
-                <span className="text-4xl">🎮</span>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                Abrindo Playground...
-              </h3>
-              <p className="text-slate-600">
-                Prepare-se para testar seus conhecimentos!
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Card de Convite do Playground */}
       {showPlaygroundCall && (() => {
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
@@ -907,7 +909,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       })()}
 
       {/* Overlay do Playground Mid-Lesson */}
-      {showPlaygroundOverlay && (() => {
+      {showPlaygroundMid && (() => {
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
         const playgroundSection = section4 || lessonData.sections[currentSection];
         return playgroundSection?.playgroundConfig ? (
