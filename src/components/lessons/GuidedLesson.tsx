@@ -194,7 +194,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     if (!audio || !audioUrl) return;
     
     let animationFrameId: number;
-    let lastLogTime = 0;
+    let lastLoggedTime = -1;
     
     const syncLoop = () => {
       const currentTime = audio.currentTime;
@@ -203,12 +203,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       // Calcular seção ativa
       const activeIndex = calculateActiveSection(currentTime);
       
+      // 📊 LOG 1: Estado atual a cada segundo (diagnóstico)
+      if (Math.floor(currentTime) !== Math.floor(lastLoggedTime)) {
+        console.log(`[SYNC-STATE] Time: ${currentTime.toFixed(2)}s | Current: ${lastSectionRef.current} | Should be: ${activeIndex}`);
+        lastLoggedTime = currentTime;
+      }
+      
+      // 🔍 Verificar se precisa mudar de seção
       if (activeIndex !== lastSectionRef.current) {
-        // Log de sincronização (throttled para cada 5s)
-        if (currentTime - lastLogTime > 5 || lastLogTime === 0) {
-          console.log(`📍 [SYNC] ${currentTime.toFixed(1)}s → Seção ${activeIndex} (${lessonData.sections[activeIndex].id})`);
-          lastLogTime = currentTime;
-        }
+        const detectionTime = performance.now();
+        
+        // 📊 LOG 2: Detecção de mudança
+        console.log(`[DETECTION] ${currentTime.toFixed(2)}s | Transition: ${lastSectionRef.current}→${activeIndex} | Detection timestamp: ${detectionTime.toFixed(2)}`);
         
         logTelemetry('SECTION_CHANGED', { from: lastSectionRef.current, to: activeIndex });
         
@@ -216,20 +222,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         setCurrentSection(activeIndex);
         setSectionJustChanged(true);
         setTimeout(() => setSectionJustChanged(false), 1000);
-        
-        // Scroll automático
-        const section = lessonData.sections[activeIndex];
-        if (isSectionRenderable(section)) {
-          setTimeout(() => {
-            const sectionElement = document.getElementById(`section-${activeIndex}`);
-            if (sectionElement) {
-              sectionElement.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center'
-              });
-            }
-          }, 100);
-        }
       }
       
       animationFrameId = requestAnimationFrame(syncLoop);
@@ -241,6 +233,35 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       cancelAnimationFrame(animationFrameId);
     };
   }, [lessonData.sections, audioUrl]);
+  
+  // 📊 LOG 3: Medir latência do state update e scroll
+  useEffect(() => {
+    const updateTime = performance.now();
+    const audioTime = audioRef.current?.currentTime || 0;
+    
+    console.log(`[STATE-UPDATE] Section changed to: ${currentSection} | Audio time: ${audioTime.toFixed(2)}s | Update timestamp: ${updateTime.toFixed(2)}`);
+    
+    // Scroll após state update
+    const section = lessonData.sections[currentSection];
+    if (isSectionRenderable(section)) {
+      const scrollStart = performance.now();
+      
+      setTimeout(() => {
+        const sectionElement = document.getElementById(`section-${currentSection}`);
+        if (sectionElement) {
+          sectionElement.scrollIntoView({ 
+            behavior: 'instant', // Mudado para instant para diagnóstico
+            block: 'center'
+          });
+          
+          const scrollEnd = performance.now();
+          console.log(`[SCROLL] Completed in ${(scrollEnd - scrollStart).toFixed(2)}ms`);
+        } else {
+          console.warn(`[SCROLL] Element #section-${currentSection} not found`);
+        }
+      }, 50); // Reduzido de 100ms
+    }
+  }, [currentSection]);
   
   // 🎮 TRIGGER 1 (PRIMARY): Timestamp-based com janela ampliada (3s)
   useEffect(() => {
