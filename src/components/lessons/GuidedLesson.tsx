@@ -379,17 +379,17 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     };
   }, [lessonData.sections, audioUrl, isPlaying]);
   
-  // 🎮 TRIGGER 2 (FALLBACK): Section-based (22s após entrar na seção 4 = ~123s)
+  // 🎮 TRIGGER 2 (FALLBACK): Section-based (26.5s após entrar na seção 4 = ~127.5s)
   useEffect(() => {
     if (currentSection === 3 && !playgroundTriggered) {
       const fallbackTimer = setTimeout(() => {
         const audio = audioRef.current;
         if (audio && audio.currentTime >= 101 && audio.currentTime < 128) {
-          console.log('🎮 [TRIGGER-2] Fallback ativado aos 123s');
+          console.log('🎮 [TRIGGER-2] Fallback ativado aos ~127.5s');
           logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'section-fallback' });
           activatePlayground();
         }
-      }, 22000); // Mudado de 5000ms para 22000ms (22 segundos)
+      }, 26500); // 26.5 segundos após entrar na Seção 4
       
       return () => clearTimeout(fallbackTimer);
     }
