@@ -168,7 +168,34 @@ export default function AdminAudioGenerator() {
       if (selectedLessonId) {
         toast.info('Salvando no banco de dados...');
         
-        // Upload do áudio
+        // 🧹 Buscar áudio anterior para deletar
+        const { data: lessonData } = await supabase
+          .from('lessons')
+          .select('audio_url')
+          .eq('id', selectedLessonId)
+          .single();
+
+        // Deletar áudio antigo se existir
+        if (lessonData?.audio_url) {
+          try {
+            const oldAudioPath = lessonData.audio_url.split('/lesson-audios/')[1];
+            if (oldAudioPath) {
+              const { error: deleteError } = await supabase.storage
+                .from('lesson-audios')
+                .remove([oldAudioPath]);
+              
+              if (deleteError) {
+                console.warn('Erro ao deletar áudio antigo:', deleteError);
+              } else {
+                console.log('✅ Áudio antigo deletado:', oldAudioPath);
+              }
+            }
+          } catch (err) {
+            console.warn('Erro ao processar deleção:', err);
+          }
+        }
+        
+        // Upload do novo áudio
         const audioFileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
         const { error: uploadError } = await supabase.storage
           .from('lesson-audios')
