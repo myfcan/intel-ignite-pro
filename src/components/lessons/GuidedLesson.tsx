@@ -547,6 +547,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       console.log('🎯 [AUDIO-ENDED] Áudio terminou naturalmente');
       setIsPlaying(false);
       
+      // 🆕 Marcar que usuário NÃO pulou (completou a aula)
+      setJumpedToExercises(false);
+      
       // Se tem exercícios, ir para transição
       if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
         setCurrentPhase('transition');
@@ -570,6 +573,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         audio.pause();
         setIsPlaying(false);
       }
+      
+      // 🆕 Marcar que usuário NÃO pulou (completou a aula)
+      setJumpedToExercises(false);
       
       // Verificar se tem exercícios/playground final
       if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
@@ -646,9 +652,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
-    // 🆕 Marcar que usuário NÃO pulou (completou a aula naturalmente)
-    setJumpedToExercises(false);
-    
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       setCurrentPhase('exercises');
