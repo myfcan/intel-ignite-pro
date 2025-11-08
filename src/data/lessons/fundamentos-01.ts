@@ -6,11 +6,11 @@ export const fundamentos01: GuidedLessonData = {
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 300,
-  contentVersion: 1, // Versão do conteúdo (incrementar ao fazer alterações)
+  contentVersion: 2, // Versão do conteúdo (incrementar ao fazer alterações)
   sections: [
     {
       id: 'gancho',
-      timestamp: 7,
+      timestamp: 0,
       speechBubbleText: 'Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial.',
       visualContent: `# Bem-vindo à sua jornada em IA! 👋
 
@@ -29,7 +29,7 @@ Quando você:
     },
     {
       id: 'conceito',
-      timestamp: 55,
+      timestamp: 41,
       speechBubbleText: 'Então, o que é Inteligência Artificial de verdade?',
       visualContent: `## O que é IA de verdade? 🤖
 
@@ -57,7 +57,7 @@ Por isso:
     },
     {
       id: 'onde-esta',
-      timestamp: 136,
+      timestamp: 122,
       speechBubbleText: 'Deixa eu te mostrar onde você já usa IA todos os dias sem perceber.',
       visualContent: `## Onde você já usa IA sem perceber 📱
 
@@ -90,7 +90,7 @@ Você pode **conversar DIRETAMENTE** com a IA:
     },
     {
       id: 'porque-voce-precisa',
-      timestamp: 206,
+      timestamp: 192,
       speechBubbleText: 'Agora a pergunta de ouro: por que VOCÊ, especificamente, precisa aprender isso agora?',
       visualContent: `## Por que você precisa aprender IA? 💰
 
@@ -129,7 +129,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **de 5 mil a 20 mi
     },
     {
       id: 'proximos-passos',
-      timestamp: 297,
+      timestamp: 283,
       speechBubbleText: 'Então, qual é o seu próximo passo concreto?',
       visualContent: `## Próximos passos 🚀
 
