@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 interface BatchLesson {
   name: string;
   content: string;
+  orderIndex?: number;
   status: 'pending' | 'generating' | 'generated' | 'approved' | 'error';
   audioUrl?: string;
   timestamps?: any;
@@ -26,6 +27,16 @@ export default function AdminAudioBatch() {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const extractOrderIndex = (name: string): number => {
+    // Padrões: trilha01-aula03, Aula 03, aula-03, etc
+    const match = name.match(/aula[_-\s]*(\d+)/i);
+    if (match) return parseInt(match[1], 10);
+    
+    // Fallback: pegar qualquer número no nome
+    const anyNumber = name.match(/(\d+)/);
+    return anyNumber ? parseInt(anyNumber[1], 10) : 1;
+  };
+
   const addLesson = () => {
     setLessons([...lessons, { name: '', content: '', status: 'pending' }]);
   };
@@ -33,6 +44,10 @@ export default function AdminAudioBatch() {
   const updateLesson = (index: number, field: 'name' | 'content', value: string) => {
     const updated = [...lessons];
     updated[index][field] = value;
+    // Recalcular orderIndex quando o nome muda
+    if (field === 'name' && value.trim()) {
+      updated[index].orderIndex = extractOrderIndex(value);
+    }
     setLessons(updated);
   };
 
@@ -63,9 +78,11 @@ export default function AdminAudioBatch() {
       const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
       
       if (values[nameIndex] && values[contentIndex]) {
+        const lessonName = values[nameIndex];
         parsed.push({
-          name: values[nameIndex],
+          name: lessonName,
           content: values[contentIndex],
+          orderIndex: extractOrderIndex(lessonName),
           status: 'pending'
         });
       }
@@ -93,25 +110,37 @@ export default function AdminAudioBatch() {
         
         // Support different JSON formats
         if (Array.isArray(data)) {
-          importedLessons = data.map((item: any) => ({
-            name: item.name || item.title || item.nome || item.titulo || '',
-            content: item.content || item.text || item.conteudo || item.texto || '',
-            status: 'pending' as const
-          }));
+          importedLessons = data.map((item: any) => {
+            const lessonName = item.name || item.title || item.nome || item.titulo || '';
+            return {
+              name: lessonName,
+              content: item.content || item.text || item.conteudo || item.texto || '',
+              orderIndex: item.orderIndex || item.order_index || extractOrderIndex(lessonName),
+              status: 'pending' as const
+            };
+          });
         } else if (data.lessons && Array.isArray(data.lessons)) {
-          importedLessons = data.lessons.map((item: any) => ({
-            name: item.name || item.title || item.nome || item.titulo || '',
-            content: item.content || item.text || item.conteudo || item.texto || '',
-            status: 'pending' as const
-          }));
+          importedLessons = data.lessons.map((item: any) => {
+            const lessonName = item.name || item.title || item.nome || item.titulo || '';
+            return {
+              name: lessonName,
+              content: item.content || item.text || item.conteudo || item.texto || '',
+              orderIndex: item.orderIndex || item.order_index || extractOrderIndex(lessonName),
+              status: 'pending' as const
+            };
+          });
         } else if (data.trail) {
           setTrail(data.trail);
           if (data.lessons && Array.isArray(data.lessons)) {
-            importedLessons = data.lessons.map((item: any) => ({
-              name: item.name || item.title || item.nome || item.titulo || '',
-              content: item.content || item.text || item.conteudo || item.texto || '',
-              status: 'pending' as const
-            }));
+            importedLessons = data.lessons.map((item: any) => {
+              const lessonName = item.name || item.title || item.nome || item.titulo || '';
+              return {
+                name: lessonName,
+                content: item.content || item.text || item.conteudo || item.texto || '',
+                orderIndex: item.orderIndex || item.order_index || extractOrderIndex(lessonName),
+                status: 'pending' as const
+              };
+            });
           }
         }
       } else if (file.name.endsWith('.csv')) {
@@ -305,6 +334,7 @@ export default function AdminAudioBatch() {
         .getPublicUrl(audioFileName);
 
       // Criar ou atualizar lesson
+      const finalOrderIndex = lesson.orderIndex || extractOrderIndex(lesson.name);
       const { error: lessonError } = await supabase
         .from('lessons')
         .upsert({
@@ -314,7 +344,7 @@ export default function AdminAudioBatch() {
           word_timestamps: lesson.timestamps,
           lesson_type: 'guided',
           content: { audioText: lesson.content },
-          order_index: index + 1
+          order_index: finalOrderIndex
         });
 
       if (lessonError) throw lessonError;
@@ -415,7 +445,14 @@ export default function AdminAudioBatch() {
               }>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Aula {index + 1}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {lesson.name || `Aula ${index + 1}`}
+                      {lesson.orderIndex && (
+                        <span className="text-muted-foreground ml-2 text-base font-normal">
+                          (order_index: {lesson.orderIndex})
+                        </span>
+                      )}
+                    </CardTitle>
                     <div className="flex gap-2">
                       {lesson.status === 'pending' && (
                         <Button
