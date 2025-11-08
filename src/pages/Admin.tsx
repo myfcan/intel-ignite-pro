@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, TestTube } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -58,6 +58,29 @@ export default function Admin() {
             >
               <Zap className="w-4 h-4 mr-2" />
               Abrir Gerador em Lote
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TestTube className="w-5 h-5" />
+              Testar Sincronização
+            </CardTitle>
+            <CardDescription>
+              Teste a sincronização entre áudio e texto das aulas com interface interativa
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/sync-tester')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <TestTube className="w-4 h-4 mr-2" />
+              Abrir Testador de Sincronização
             </Button>
           </CardContent>
         </Card>
