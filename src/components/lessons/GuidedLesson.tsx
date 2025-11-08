@@ -130,15 +130,21 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     console.log(`🔄 [RESET-AUDIO] Resetando para seção ${sectionIndex} (${targetTime}s)`);
     
-    // Resetar tempo do áudio
-    audio.currentTime = targetTime;
+    // 🔥 CRÍTICO: Resetar estados na ordem correta para sincronização funcionar
     
-    // Atualizar refs para evitar conflitos
+    // 1. Atualizar ref ANTES de mudar currentTime (previne race condition no loop)
     lastSectionRef.current = sectionIndex;
     
-    // Pausar áudio (usuário decide quando dar play)
+    // 2. Resetar tempo do áudio
+    audio.currentTime = targetTime;
+    
+    // 3. Pausar áudio (usuário decide quando dar play)
     audio.pause();
     setIsPlaying(false);
+    
+    // 4. 🔥 FORÇAR UPDATE DOS STATES para garantir re-render e scroll
+    setCurrentSection(sectionIndex);
+    setCurrentTime(targetTime);
   };
 
   // 🔄 useEffect: Resetar áudio quando voltar para fase 'audio'
