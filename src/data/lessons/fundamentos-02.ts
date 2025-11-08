@@ -471,12 +471,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
   }
 };
 
-// Texto concatenado para geração de áudio (speechBubbleText + visualContent de cada seção)
+// Texto concatenado para geração de áudio (usando visualContent de cada seção)
 export const fundamentos02AudioText = fundamentos02.sections
-  .map(section => {
-    const parts = [];
-    if (section.speechBubbleText) parts.push(section.speechBubbleText);
-    if (section.visualContent) parts.push(section.visualContent);
-    return parts.join('\n\n');
-  })
+  .map(section => section.visualContent)
   .join('\n\n---\n\n');
