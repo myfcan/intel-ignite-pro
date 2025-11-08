@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Download, Copy, Play, Pause, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
+import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 
 interface SectionMarker {
   phrase: string;
@@ -71,6 +72,10 @@ export default function AdminAudioGenerator() {
           '11111111-1111-1111-1111-111111111101': {
             audioText: fundamentos01AudioText,
             sections: fundamentos01.sections
+          },
+          'fundamentos-02': {
+            audioText: fundamentos02AudioText,
+            sections: fundamentos02.sections
           }
           // Add more lessons here as they are created
         };
@@ -83,7 +88,7 @@ export default function AdminAudioGenerator() {
           // Create markers from sections
           localData.sections.forEach((section: any, index: number) => {
             lessonMarkers.push({
-              phrase: section.spokenContent.substring(0, 50),
+              phrase: section.visualContent?.substring(0, 50) || '',
               sectionId: section.id || `section_${index}`
             });
           });
@@ -100,10 +105,10 @@ export default function AdminAudioGenerator() {
           
           if (content.sections && Array.isArray(content.sections)) {
             content.sections.forEach((section: any, index: number) => {
-              if (section.spokenContent) {
-                lessonText += section.spokenContent + '\n\n---\n\n';
+              if (section.visualContent) {
+                lessonText += section.visualContent + '\n\n---\n\n';
                 lessonMarkers.push({
-                  phrase: section.spokenContent.substring(0, 50),
+                  phrase: section.visualContent.substring(0, 50),
                   sectionId: section.id || `section_${index}`
                 });
               }

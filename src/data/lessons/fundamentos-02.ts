@@ -24,8 +24,7 @@ Ou como o **Spotify** cria aquela playlist que parece que foi feita especialment
 
 O segredo está em como a Inteligência Artificial **aprende**. Ela observa tudo que você faz, identifica padrões e usa essas informações pra melhorar cada vez mais.
 
-É como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa! 💡`,
-      spokenContent: 'Você já parou pra pensar como o Netflix sempre sabe o que você quer assistir? Ou como o Spotify cria aquela playlist que parece que foi feita especialmente pra você? O segredo está em como a Inteligência Artificial aprende. Ela observa tudo que você faz, identifica padrões e usa essas informações pra melhorar cada vez mais. É como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa!'
+É como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa! 💡`
     },
     {
       id: 'secao-2',
@@ -47,8 +46,7 @@ Com milhões de pessoas fazendo isso, a IA começa a identificar padrões:
 > "Quem assistiu A também gostou de B"  
 > "Quem para de assistir no episódio três geralmente não gosta desse tipo de série"
 
-**Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!** 📈`,
-      spokenContent: 'Vamos usar o Netflix como exemplo. Toda vez que você assiste algo, a IA registra: qual gênero, quais atores, quanto tempo você assistiu, se você pulou a introdução, se assistiu até o final. Com milhões de pessoas fazendo isso, a IA começa a identificar padrões. Quem assistiu A também gostou de B. Quem para de assistir no episódio três geralmente não gosta desse tipo de série. Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!'
+**Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!** 📈`
     },
     {
       id: 'secao-3',
@@ -66,8 +64,7 @@ A IA aprende seus **humores**, suas **rotinas**, até prevê o que você vai que
 
 Por isso aquela playlist **"Descobertas da Semana"** parece mágica! ✨
 
-Ela está literalmente aprendendo com você **24 horas por dia, 7 dias por semana**. 🔄`,
-      spokenContent: 'O Spotify funciona parecido, mas vai além. Ele não só vê o que você ouve, mas QUANDO você ouve. Segunda de manhã você gosta de um estilo, sexta à noite é outro completamente diferente. A IA aprende seus humores, suas rotinas, até prevê o que você vai querer ouvir dependendo da hora do dia. Por isso aquela playlist Descobertas da Semana parece mágica! Ela está literalmente aprendendo com você vinte e quatro horas por dia, sete dias por semana.'
+Ela está literalmente aprendendo com você **24 horas por dia, 7 dias por semana**. 🔄`
     },
     {
       id: 'secao-4',
@@ -85,7 +82,6 @@ Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! �
 É super rápido e você vai ter aquele momento **"aha!"** quando entender de verdade.
 
 **Vamos lá?** 👇`,
-      spokenContent: 'Incrível, né? A IA não é programada com gostos específicos. Ela aprende observando o que VOCÊ faz! Agora que você entendeu o conceito, preparei uma simulação interativa onde você vai VER a IA aprendendo em tempo real. É bem rápido e muito legal! Mas fique tranquilo, você escolhe: pode fazer agora ou deixar pra depois e continuar a aula.',
       showPlaygroundCall: true,
       playgroundConfig: {
         instruction: 'Como o Netflix Aprendeu o Que Você Gosta',
@@ -228,8 +224,7 @@ O Facebook observa:
 
 E usa tudo isso pra montar seu **feed personalizado**. 🎯
 
-Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. **Cada feed é único**, moldado pela IA que aprendeu com você! ✨`,
-      spokenContent: 'As redes sociais usam o mesmo princípio, mas de um jeito ainda mais sofisticado. O Instagram analisa em quais fotos você para pra ver, quais você dá like, quais você só passa direto. O Facebook observa quais posts você lê até o final, quais você compartilha, com quem você mais interage. E usa tudo isso pra montar seu feed personalizado. Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. Cada feed é único, moldado pela IA que aprendeu com você!'
+Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. **Cada feed é único**, moldado pela IA que aprendeu com você! ✨`
     },
     {
       id: 'secao-6',
@@ -254,8 +249,7 @@ Só de usar esses apps normalmente, você está ensinando a IA! 🎯
 
 E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor**, criando seus próprios comandos para IA.
 
-**Vai ser incrível!** ✨`,
-      spokenContent: 'Aqui está o mais interessante: você não precisa fazer nada especial. Só de usar esses apps normalmente, você está ensinando a IA! Cada curtida, cada busca, cada clique é uma aula pra IA. E ela é uma aluna excelente - nunca esquece nada e está sempre melhorando. Agora você sabe o segredo! E nas próximas aulas, você vai aprender a usar esse conhecimento a seu favor, criando seus próprios comandos para IA. Vai ser incrível!'
+**Vai ser incrível!** ✨`
     }
   ],
 
@@ -477,7 +471,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
   }
 };
 
-// Texto concatenado para geração de áudio (será usado no AdminAudioGenerator)
+// Texto concatenado para geração de áudio (usando visualContent de cada seção)
 export const fundamentos02AudioText = fundamentos02.sections
-  .map(section => section.spokenContent)
+  .map(section => section.visualContent)
   .join('\n\n---\n\n');
