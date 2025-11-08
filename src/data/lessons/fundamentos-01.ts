@@ -6,11 +6,11 @@ export const fundamentos01: GuidedLessonData = {
   trackId: '1',
   trackName: 'Fundamentos da IA',
   duration: 300,
-  contentVersion: 2, // Versão do conteúdo (incrementar ao fazer alterações)
+  contentVersion: 3, // ✅ Atualizado: timestamps corrigidos com base na análise de áudio real (2025-01-08)
   sections: [
     {
       id: 'gancho',
-      timestamp: 0,
+      timestamp: 7, // ✅ Timestamp correto da análise de áudio
       speechBubbleText: 'Olá! Eu sou a MAIA, e vou te guiar nesta jornada pela Inteligência Artificial.',
       visualContent: `# Bem-vindo à sua jornada em IA! 👋
 
@@ -29,7 +29,7 @@ Quando você:
     },
     {
       id: 'conceito',
-      timestamp: 41,
+      timestamp: 55, // ✅ Timestamp correto da análise de áudio
       speechBubbleText: 'Então, o que é Inteligência Artificial de verdade?',
       visualContent: `## O que é IA de verdade? 🤖
 
@@ -57,7 +57,7 @@ Por isso:
     },
     {
       id: 'onde-esta',
-      timestamp: 122,
+      timestamp: 136, // ✅ Timestamp correto da análise de áudio
       speechBubbleText: 'Deixa eu te mostrar onde você já usa IA todos os dias sem perceber.',
       visualContent: `## Onde você já usa IA sem perceber 📱
 
@@ -90,7 +90,7 @@ Você pode **conversar DIRETAMENTE** com a IA:
     },
     {
       id: 'porque-voce-precisa',
-      timestamp: 192,
+      timestamp: 206, // ✅ Timestamp correto da análise de áudio
       speechBubbleText: 'Agora a pergunta de ouro: por que VOCÊ, especificamente, precisa aprender isso agora?',
       visualContent: `## Por que você precisa aprender IA? 💰
 
@@ -129,7 +129,7 @@ Pessoas comuns, sem formação em tecnologia, estão ganhando **de 5 mil a 20 mi
     },
     {
       id: 'proximos-passos',
-      timestamp: 283,
+      timestamp: 297, // ✅ Timestamp correto da análise de áudio
       speechBubbleText: 'Então, qual é o seu próximo passo concreto?',
       visualContent: `## Próximos passos 🚀
 
