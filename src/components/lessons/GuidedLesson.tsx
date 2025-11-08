@@ -112,6 +112,29 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     setCurrentPhase('transition');
   };
 
+  // 🔄 Helper: Resetar áudio para uma seção específica
+  const resetAudioToSection = (sectionIndex: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const targetSection = lessonData.sections[sectionIndex];
+    if (!targetSection) return;
+    
+    const targetTime = targetSection.timestamp;
+    
+    console.log(`🔄 [RESET-AUDIO] Resetando para seção ${sectionIndex} (${targetTime}s)`);
+    
+    // Resetar tempo do áudio
+    audio.currentTime = targetTime;
+    
+    // Atualizar refs para evitar conflitos
+    lastSectionRef.current = sectionIndex;
+    
+    // Pausar áudio (usuário decide quando dar play)
+    audio.pause();
+    setIsPlaying(false);
+  };
+
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
     const audio = audioRef.current;
@@ -705,6 +728,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           console.log('⬅️ [TRANSITION] Voltando para aula');
           setCurrentPhase('audio');
           setJumpedToExercises(false);
+          
+          // 🆕 RESETAR ÁUDIO PARA SEÇÃO 0
+          setCurrentSection(0);
+          resetAudioToSection(0);
         }}
         onContinue={handleGoToExercises}
       />
@@ -736,11 +763,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           console.log('⬅️ [EXERCISES] Voltando para aula');
           setCurrentPhase('audio');
           
-          // 🆕 REGRA DE NEGÓCIO
+          // 🆕 REGRA DE NEGÓCIO COM RESET DE ÁUDIO
           if (jumpedToExercises) {
             // Usuário pulou → voltar para início (seção 0)
             console.log('🔄 [BACK] Usuário pulou para exercícios, voltando para seção 0');
             setCurrentSection(0);
+            resetAudioToSection(0);
           } else {
             // Usuário completou → voltar para última seção
             console.log('✅ [BACK] Usuário completou aula, voltando para última seção');
@@ -748,6 +776,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               .filter(s => !s.type || s.type === 'text')
               .length - 1;
             setCurrentSection(Math.max(0, lastTextSection));
+            resetAudioToSection(Math.max(0, lastTextSection));
           }
         }}
       />
