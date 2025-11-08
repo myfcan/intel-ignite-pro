@@ -402,7 +402,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       performanceTimestamp: updateTime
     });
     
-    // Scroll após state update
+    // Scroll após state update - com offset para não cortar o título
     const section = lessonData.sections[currentSection];
     if (isSectionRenderable(section)) {
       const scrollStart = performance.now();
@@ -410,14 +410,20 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       setTimeout(() => {
         const sectionElement = document.getElementById(`section-${currentSection}`);
         if (sectionElement) {
-          sectionElement.scrollIntoView({ 
-            behavior: 'instant', // Mudado para instant para diagnóstico
-            block: 'center'
+          // Calcular posição com offset para compensar header fixo
+          const headerHeight = 100; // altura aproximada do header + margem de segurança
+          const elementTop = sectionElement.getBoundingClientRect().top;
+          const offsetTop = elementTop + window.pageYOffset;
+          const targetPosition = offsetTop - headerHeight;
+          
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
           });
           
           const scrollEnd = performance.now();
           const latency = scrollEnd - scrollStart;
-          console.log(`[SCROLL] Completed in ${latency.toFixed(2)}ms`);
+          console.log(`[SCROLL] Completed in ${latency.toFixed(2)}ms to position ${targetPosition}`);
           sendDiagnosticLog('SCROLL', {
             audioTime: audioTime,
             currentSection: currentSection,
@@ -427,7 +433,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         } else {
           console.warn(`[SCROLL] Element #section-${currentSection} not found`);
         }
-      }, 50); // Reduzido de 100ms
+      }, 50);
     }
   }, [currentSection]);
   
