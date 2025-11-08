@@ -13,6 +13,7 @@ import LessonInteractive from "./pages/LessonInteractive";
 import AdminUpdateTimestamps from "./pages/AdminUpdateTimestamps";
 import Admin from "./pages/Admin";
 import AdminAudioGenerator from "./pages/AdminAudioGenerator";
+import AdminAudioBatch from "./pages/AdminAudioBatch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/audio-generator" element={<AdminAudioGenerator />} />
+          <Route path="/admin/audio-batch" element={<AdminAudioBatch />} />
           <Route path="/admin/update-timestamps" element={<AdminUpdateTimestamps />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
