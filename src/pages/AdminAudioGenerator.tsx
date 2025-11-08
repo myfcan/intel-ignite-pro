@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Download, Copy, Play, Pause, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
 
 interface SectionMarker {
   phrase: string;
@@ -59,28 +60,64 @@ export default function AdminAudioGenerator() {
   useEffect(() => {
     if (selectedLessonId) {
       const lesson = lessons.find(l => l.id === selectedLessonId);
-      if (lesson && lesson.content) {
-        const content = lesson.content;
-        
-        // Extract text from sections
+      if (lesson) {
+        // 🔥 PRIORITY: Try to load from local TypeScript files first
+        // This is where we have the complete audioText
         let lessonText = '';
         const lessonMarkers: SectionMarker[] = [];
         
-        if (content.sections && Array.isArray(content.sections)) {
-          content.sections.forEach((section: any, index: number) => {
-            if (section.spokenContent) {
-              lessonText += section.spokenContent + '\n\n---\n\n';
-              lessonMarkers.push({
-                phrase: section.spokenContent.substring(0, 50),
-                sectionId: section.id || `section_${index}`
-              });
-            }
+        // Map lesson IDs to their local data
+        const localLessons: Record<string, { audioText: string; sections: any[] }> = {
+          '11111111-1111-1111-1111-111111111101': {
+            audioText: fundamentos01AudioText,
+            sections: fundamentos01.sections
+          }
+          // Add more lessons here as they are created
+        };
+        
+        // Check if we have local data for this lesson
+        if (localLessons[selectedLessonId]) {
+          const localData = localLessons[selectedLessonId];
+          lessonText = localData.audioText;
+          
+          // Create markers from sections
+          localData.sections.forEach((section: any, index: number) => {
+            lessonMarkers.push({
+              phrase: section.spokenContent.substring(0, 50),
+              sectionId: section.id || `section_${index}`
+            });
           });
+          
+          setText(lessonText);
+          setMarkers(lessonMarkers);
+          toast.success('✅ Conteúdo carregado do arquivo local!');
+          return;
         }
         
-        setText(lessonText.trim());
-        setMarkers(lessonMarkers);
-        toast.success('Conteúdo da lição carregado!');
+        // Fallback: Try to extract from database content
+        if (lesson.content) {
+          const content = lesson.content;
+          
+          if (content.sections && Array.isArray(content.sections)) {
+            content.sections.forEach((section: any, index: number) => {
+              if (section.spokenContent) {
+                lessonText += section.spokenContent + '\n\n---\n\n';
+                lessonMarkers.push({
+                  phrase: section.spokenContent.substring(0, 50),
+                  sectionId: section.id || `section_${index}`
+                });
+              }
+            });
+          }
+          
+          if (lessonText) {
+            setText(lessonText.trim());
+            setMarkers(lessonMarkers);
+            toast.success('Conteúdo da lição carregado!');
+          } else {
+            toast.error('⚠️ Nenhum texto encontrado. Cole o texto manualmente.');
+          }
+        }
       }
     }
   }, [selectedLessonId, lessons]);
