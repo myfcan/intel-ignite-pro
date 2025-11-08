@@ -198,6 +198,25 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
             onComplete={handleExerciseComplete}
           />
         )}
+
+        {currentExercise.type === 'matching' && (
+          <MatchingExercise
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            pairs={currentExercise.data.pairs}
+            onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'scenario-drag-drop' && (
+          <ScenarioDragDropExercise
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            categories={currentExercise.data.categories}
+            scenarios={currentExercise.data.scenarios}
+            onComplete={handleExerciseComplete}
+          />
+        )}
       </div>
     </div>
     </>
