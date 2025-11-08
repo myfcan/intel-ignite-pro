@@ -5,13 +5,15 @@ interface TransitionCardProps {
   description?: string;
   buttonText?: string;
   onContinue: () => void;
+  onBack?: () => void;
 }
 
 export function TransitionCard({ 
   title, 
   description = 'Agora vamos fixar o que você aprendeu com exercícios práticos.',
   buttonText = '🎯 Ir para Exercícios',
-  onContinue 
+  onContinue,
+  onBack
 }: TransitionCardProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
@@ -24,13 +26,25 @@ export function TransitionCard({
       <p className="text-muted-foreground text-center mb-8 max-w-md">
         {description}
       </p>
-      <Button 
-        onClick={onContinue}
-        size="lg"
-        className="px-8 py-6 text-lg font-bold"
-      >
-        {buttonText}
-      </Button>
+      <div className="space-y-3">
+        <Button 
+          onClick={onContinue}
+          size="lg"
+          className="w-full px-8 py-6 text-lg font-bold"
+        >
+          {buttonText}
+        </Button>
+        {onBack && (
+          <Button 
+            onClick={onBack}
+            variant="ghost"
+            size="sm"
+            className="w-full"
+          >
+            ⬅️ Voltar para a aula
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

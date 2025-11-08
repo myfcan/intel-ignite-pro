@@ -701,6 +701,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         title="🎉 Muito bem! Aula completa!"
         description="Agora vamos fixar o que você aprendeu com exercícios práticos."
         buttonText="🎯 Ir para Exercícios"
+        onBack={() => {
+          console.log('⬅️ [TRANSITION] Voltando para aula');
+          setCurrentPhase('audio');
+          setJumpedToExercises(false);
+        }}
         onContinue={handleGoToExercises}
       />
     );
