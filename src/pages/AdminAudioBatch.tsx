@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload } from 'lucide-react';
+import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface BatchLesson {
@@ -24,6 +24,7 @@ export default function AdminAudioBatch() {
   const [lessons, setLessons] = useState<BatchLesson[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addLesson = () => {
     setLessons([...lessons, { name: '', content: '', status: 'pending' }]);
@@ -37,6 +38,113 @@ export default function AdminAudioBatch() {
 
   const removeLesson = (index: number) => {
     setLessons(lessons.filter((_, i) => i !== index));
+  };
+
+  const parseCSV = (text: string): BatchLesson[] => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV deve conter cabeçalho e pelo menos uma linha de dados');
+    }
+
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim());
+    const nameIndex = header.findIndex(h => h === 'name' || h === 'nome' || h === 'title' || h === 'titulo');
+    const contentIndex = header.findIndex(h => h === 'content' || h === 'conteudo' || h === 'texto' || h === 'text');
+
+    if (nameIndex === -1 || contentIndex === -1) {
+      throw new Error('CSV deve conter colunas "name" e "content" (ou "nome" e "conteudo")');
+    }
+
+    const parsed: BatchLesson[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+
+      // Simple CSV parsing (doesn't handle commas inside quotes perfectly)
+      const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+      
+      if (values[nameIndex] && values[contentIndex]) {
+        parsed.push({
+          name: values[nameIndex],
+          content: values[contentIndex],
+          status: 'pending'
+        });
+      }
+    }
+
+    return parsed;
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('Arquivo muito grande. Máximo: 5MB');
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      let importedLessons: BatchLesson[] = [];
+
+      if (file.name.endsWith('.json')) {
+        const data = JSON.parse(text);
+        
+        // Support different JSON formats
+        if (Array.isArray(data)) {
+          importedLessons = data.map((item: any) => ({
+            name: item.name || item.title || item.nome || item.titulo || '',
+            content: item.content || item.text || item.conteudo || item.texto || '',
+            status: 'pending' as const
+          }));
+        } else if (data.lessons && Array.isArray(data.lessons)) {
+          importedLessons = data.lessons.map((item: any) => ({
+            name: item.name || item.title || item.nome || item.titulo || '',
+            content: item.content || item.text || item.conteudo || item.texto || '',
+            status: 'pending' as const
+          }));
+        } else if (data.trail) {
+          setTrail(data.trail);
+          if (data.lessons && Array.isArray(data.lessons)) {
+            importedLessons = data.lessons.map((item: any) => ({
+              name: item.name || item.title || item.nome || item.titulo || '',
+              content: item.content || item.text || item.conteudo || item.texto || '',
+              status: 'pending' as const
+            }));
+          }
+        }
+      } else if (file.name.endsWith('.csv')) {
+        importedLessons = parseCSV(text);
+      } else {
+        toast.error('Formato não suportado. Use JSON ou CSV');
+        return;
+      }
+
+      // Validate imported data
+      const validLessons = importedLessons.filter(l => l.name.trim() && l.content.trim());
+      
+      if (validLessons.length === 0) {
+        toast.error('Nenhuma aula válida encontrada no arquivo');
+        return;
+      }
+
+      if (validLessons.length < importedLessons.length) {
+        toast.warning(`${importedLessons.length - validLessons.length} aula(s) ignorada(s) por dados incompletos`);
+      }
+
+      setLessons(validLessons);
+      toast.success(`${validLessons.length} aula(s) importada(s) com sucesso!`);
+      
+    } catch (error: any) {
+      console.error('Erro ao importar arquivo:', error);
+      toast.error('Erro ao processar arquivo: ' + error.message);
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const base64ToBlob = (base64: string, contentType: string) => {
@@ -247,26 +355,52 @@ export default function AdminAudioBatch() {
               />
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={addLesson} variant="outline" className="flex-1">
-                <Upload className="w-4 h-4 mr-2" />
-                Adicionar Aula
-              </Button>
-              <Button 
-                onClick={generateAllAudios} 
-                disabled={isGenerating || lessons.length === 0}
-                className="flex-1"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  'Gerar Todos os Áudios'
-                )}
-              </Button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Importar Aulas</label>
+              <div className="flex gap-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,.csv"
+                  onChange={handleFileImport}
+                  className="hidden"
+                  id="file-import"
+                />
+                <Button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  <FileUp className="w-4 h-4 mr-2" />
+                  Importar JSON/CSV
+                </Button>
+                <Button onClick={addLesson} variant="outline" className="flex-1">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Adicionar Manualmente
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                JSON: {"{"}"trail": "Nome", "lessons": [{"{"}"name": "...", "content": "..."{"}"}]{"}"}
+                <br />
+                CSV: name,content (ou nome,conteudo)
+              </p>
             </div>
+
+            <Button 
+              onClick={generateAllAudios} 
+              disabled={isGenerating || lessons.length === 0}
+              className="w-full"
+              size="lg"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                'Gerar Todos os Áudios'
+              )}
+            </Button>
           </CardContent>
         </Card>
 
