@@ -41,6 +41,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [playgroundTriggered, setPlaygroundTriggered] = useState(false);
   const [playgroundCompleted, setPlaygroundCompleted] = useState(false);
   
+  // 📍 Estado para controlar se usuário pulou para exercícios
+  const [jumpedToExercises, setJumpedToExercises] = useState(false);
+  
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
     console.log('📦 [LESSON DATA]', {
@@ -94,6 +97,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
     
     console.log('⏭️ [SKIP] Pulando direto para exercícios');
+    
+    // 🆕 Marcar que usuário pulou (não completou a aula)
+    setJumpedToExercises(true);
     
     // Pausar áudio
     const audio = audioRef.current;
@@ -640,6 +646,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
+    // 🆕 Marcar que usuário NÃO pulou (completou a aula naturalmente)
+    setJumpedToExercises(false);
+    
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       setCurrentPhase('exercises');
@@ -718,11 +727,20 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         onBack={() => {
           console.log('⬅️ [EXERCISES] Voltando para aula');
           setCurrentPhase('audio');
-          // Voltar para a última seção antes dos exercícios
-          const lastTextSection = lessonData.sections
-            .filter(s => !s.type || s.type === 'text')
-            .length - 1;
-          setCurrentSection(Math.max(0, lastTextSection));
+          
+          // 🆕 REGRA DE NEGÓCIO
+          if (jumpedToExercises) {
+            // Usuário pulou → voltar para início (seção 0)
+            console.log('🔄 [BACK] Usuário pulou para exercícios, voltando para seção 0');
+            setCurrentSection(0);
+          } else {
+            // Usuário completou → voltar para última seção
+            console.log('✅ [BACK] Usuário completou aula, voltando para última seção');
+            const lastTextSection = lessonData.sections
+              .filter(s => !s.type || s.type === 'text')
+              .length - 1;
+            setCurrentSection(Math.max(0, lastTextSection));
+          }
         }}
       />
     );
