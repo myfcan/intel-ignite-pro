@@ -8,7 +8,6 @@ import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
-import { InteractiveQuizPlayground } from './InteractiveQuizPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { ConclusionScreen } from './ConclusionScreen';
 import { Card } from '@/components/ui/card';
@@ -1084,51 +1083,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
         const playgroundSection = section4 || lessonData.sections[currentSection];
         return playgroundSection?.playgroundConfig ? (
-          playgroundSection.playgroundConfig.type === 'interactive-quiz' ? (
-            <InteractiveQuizPlayground
-              title="Quiz Interativo"
-              maiaIntro="Vamos testar o que você aprendeu!"
-              questions={[
-                {
-                  id: 'q1',
-                  question: 'Qual é a principal especialidade do ChatGPT?',
-                  options: [
-                    { id: 'a', text: 'Criar imagens artísticas' },
-                    { id: 'b', text: 'Conversar e criar textos' },
-                    { id: 'c', text: 'Analisar documentos longos' },
-                    { id: 'd', text: 'Processar planilhas' }
-                  ],
-                  correctAnswer: 'b',
-                  explanation: 'O ChatGPT é especializado em conversação natural e criação de textos. Ele entende contexto e pode ajudar com e-mails, ideias, aprendizado e muito mais!'
-                },
-                {
-                  id: 'q2',
-                  question: 'Para que tipo de tarefa o Midjourney é mais adequado?',
-                  options: [
-                    { id: 'a', text: 'Escrever relatórios' },
-                    { id: 'b', text: 'Criar logos e imagens' },
-                    { id: 'c', text: 'Revisar contratos' },
-                    { id: 'd', text: 'Fazer cálculos' }
-                  ],
-                  correctAnswer: 'b',
-                  explanation: 'O Midjourney é uma ferramenta de geração de imagens! Ele transforma suas descrições em texto em imagens visuais incríveis.'
-                },
-                {
-                  id: 'q3',
-                  question: 'Qual ferramenta você usaria para analisar um contrato de 50 páginas?',
-                  options: [
-                    { id: 'a', text: 'ChatGPT' },
-                    { id: 'b', text: 'Midjourney' },
-                    { id: 'c', text: 'Claude' },
-                    { id: 'd', text: 'Nenhuma delas' }
-                  ],
-                  correctAnswer: 'c',
-                  explanation: 'O Claude é especializado em análise profunda de documentos longos! Ele pode processar muito texto de uma vez e extrair informações precisas.'
-                }
-              ]}
-              onComplete={() => handlePlaygroundComplete(null)}
-            />
-          ) : playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
+          playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
            playgroundSection.playgroundConfig.simulationConfig ? (
             <InteractiveSimulationPlayground
               config={playgroundSection.playgroundConfig.simulationConfig}

@@ -7,8 +7,6 @@ import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
 import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
-import { MatchingExercise } from './MatchingExercise';
-import { ScenarioDragDropExercise } from './ScenarioDragDropExercise';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -195,25 +193,6 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
             platforms={currentExercise.data.platforms}
-            onComplete={handleExerciseComplete}
-          />
-        )}
-
-        {currentExercise.type === 'matching' && (
-          <MatchingExercise
-            title={currentExercise.title}
-            instruction={currentExercise.instruction}
-            pairs={currentExercise.data.pairs}
-            onComplete={handleExerciseComplete}
-          />
-        )}
-
-        {currentExercise.type === 'scenario-drag-drop' && (
-          <ScenarioDragDropExercise
-            title={currentExercise.title}
-            instruction={currentExercise.instruction}
-            categories={currentExercise.data.categories}
-            scenarios={currentExercise.data.scenarios}
             onComplete={handleExerciseComplete}
           />
         )}

@@ -9,8 +9,7 @@ export type LessonSectionType = 'text' | 'playground' | 'end-audio';
 export type PlaygroundType = 
   | 'real-playground'
   | 'multiple-choice-with-feedback'
-  | 'interactive-simulation'
-  | 'interactive-quiz';
+  | 'interactive-simulation';
 
 export interface RealPlaygroundConfig {
   type: 'real-playground';
@@ -93,7 +92,7 @@ export interface PlaygroundConfig {
 
 export interface ExerciseConfig {
   id: string;
-  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection' | 'fill-in-blanks' | 'true-false' | 'platform-match' | 'data-collection' | 'matching' | 'scenario-drag-drop';
+  type: 'drag-drop' | 'complete-sentence' | 'scenario-selection' | 'fill-in-blanks' | 'true-false' | 'platform-match' | 'data-collection';
   title: string;
   instruction: string;
   data: any;
