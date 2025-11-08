@@ -7,6 +7,8 @@ import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
 import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
+import { MatchingExercise } from './MatchingExercise';
+import { ScenarioDragDropExercise } from './ScenarioDragDropExercise';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
