@@ -47,6 +47,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 🔄 Estado para controlar reset de áudio pendente
   const [pendingAudioReset, setPendingAudioReset] = useState<number | null>(null);
   
+  // 🔒 Flag para prevenir race condition no syncLoop durante reset
+  const [isResetting, setIsResetting] = useState(false);
+  
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
     console.log('📦 [LESSON DATA]', {
@@ -130,7 +133,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     console.log(`🔄 [RESET-AUDIO] Resetando para seção ${sectionIndex} (${targetTime}s)`);
     
-    // 🔥 CRÍTICO: Resetar estados na ordem correta para sincronização funcionar
+    // 🔥 ATIVAR FLAG PARA BLOQUEAR SYNCLOOP
+    setIsResetting(true);
     
     // 1. Atualizar ref ANTES de mudar currentTime (previne race condition no loop)
     lastSectionRef.current = sectionIndex;
@@ -142,9 +146,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     audio.pause();
     setIsPlaying(false);
     
-    // 4. 🔥 FORÇAR UPDATE DOS STATES para garantir re-render e scroll
+    // 4. Forçar update dos states
     setCurrentSection(sectionIndex);
     setCurrentTime(targetTime);
+    
+    // 5. 🔥 AGUARDAR O ÁUDIO PROCESSAR O SEEK E ENTÃO LIBERAR O SYNCLOOP
+    const handleSeeked = () => {
+      console.log(`✅ [RESET-AUDIO] Seek concluído, liberando syncLoop`);
+      setIsResetting(false);
+      audio.removeEventListener('seeked', handleSeeked);
+    };
+    
+    audio.addEventListener('seeked', handleSeeked);
+    
+    // Fallback: se 'seeked' não disparar em 200ms, liberar mesmo assim
+    setTimeout(() => {
+      console.log(`✅ [RESET-AUDIO] Fallback timeout, liberando syncLoop`);
+      setIsResetting(false);
+      audio.removeEventListener('seeked', handleSeeked);
+    }, 200);
   };
 
   // 🔄 useEffect: Resetar áudio quando voltar para fase 'audio'
@@ -339,8 +359,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         lastLoggedTime = currentTime;
       }
       
-      // 🔍 Verificar se precisa mudar de seção
-      if (activeIndex !== lastSectionRef.current) {
+      // 🔍 Verificar se precisa mudar de seção (mas NÃO durante reset)
+      if (activeIndex !== lastSectionRef.current && !isResetting) {
         const detectionTime = performance.now();
         
         // 📊 LOG 2: Detecção de mudança
