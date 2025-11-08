@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp } from 'lucide-react';
+import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface BatchLesson {
   name: string;
@@ -17,6 +18,8 @@ interface BatchLesson {
   audioUrl?: string;
   timestamps?: any;
   error?: string;
+  hasConflict?: boolean;
+  conflictingLessonTitle?: string;
 }
 
 export default function AdminAudioBatch() {
@@ -25,6 +28,7 @@ export default function AdminAudioBatch() {
   const [lessons, setLessons] = useState<BatchLesson[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractOrderIndex = (name: string): number => {
@@ -36,6 +40,72 @@ export default function AdminAudioBatch() {
     const anyNumber = name.match(/(\d+)/);
     return anyNumber ? parseInt(anyNumber[1], 10) : 1;
   };
+
+  const checkForConflicts = async (lessonsToCheck: BatchLesson[]) => {
+    if (!trail.trim()) return lessonsToCheck;
+
+    setIsCheckingConflicts(true);
+    try {
+      // Buscar trilha
+      const { data: trailData } = await supabase
+        .from('trails')
+        .select('id')
+        .eq('title', trail)
+        .maybeSingle();
+
+      if (!trailData) {
+        // Trilha não existe, sem conflitos
+        return lessonsToCheck.map(l => ({ ...l, hasConflict: false }));
+      }
+
+      // Buscar todas as aulas existentes na trilha
+      const { data: existingLessons } = await supabase
+        .from('lessons')
+        .select('order_index, title')
+        .eq('trail_id', trailData.id);
+
+      if (!existingLessons || existingLessons.length === 0) {
+        return lessonsToCheck.map(l => ({ ...l, hasConflict: false }));
+      }
+
+      // Mapear order_index existentes
+      const existingOrderIndexes = new Map(
+        existingLessons.map(l => [l.order_index, l.title])
+      );
+
+      // Verificar conflitos
+      const updatedLessons = lessonsToCheck.map(lesson => {
+        const orderIndex = lesson.orderIndex || extractOrderIndex(lesson.name);
+        const conflictingTitle = existingOrderIndexes.get(orderIndex);
+        
+        return {
+          ...lesson,
+          hasConflict: !!conflictingTitle,
+          conflictingLessonTitle: conflictingTitle || undefined
+        };
+      });
+
+      const conflictCount = updatedLessons.filter(l => l.hasConflict).length;
+      if (conflictCount > 0) {
+        toast.warning(`⚠️ ${conflictCount} aula(s) com order_index conflitante detectada(s)`);
+      }
+
+      return updatedLessons;
+    } catch (error: any) {
+      console.error('Erro ao verificar conflitos:', error);
+      toast.error('Erro ao verificar conflitos: ' + error.message);
+      return lessonsToCheck;
+    } finally {
+      setIsCheckingConflicts(false);
+    }
+  };
+
+  // Verificar conflitos quando a trilha muda
+  useEffect(() => {
+    if (trail.trim() && lessons.length > 0) {
+      checkForConflicts(lessons).then(setLessons);
+    }
+  }, [trail]);
 
   const addLesson = () => {
     setLessons([...lessons, { name: '', content: '', status: 'pending' }]);
@@ -162,7 +232,9 @@ export default function AdminAudioBatch() {
         toast.warning(`${importedLessons.length - validLessons.length} aula(s) ignorada(s) por dados incompletos`);
       }
 
-      setLessons(validLessons);
+      // Verificar conflitos antes de adicionar
+      const lessonsWithConflicts = await checkForConflicts(validLessons);
+      setLessons(lessonsWithConflicts);
       toast.success(`${validLessons.length} aula(s) importada(s) com sucesso!`);
       
     } catch (error: any) {
@@ -201,6 +273,11 @@ export default function AdminAudioBatch() {
     if (!lesson.content.trim()) {
       toast.error('Conteúdo vazio para: ' + lesson.name);
       return;
+    }
+
+    // Avisar sobre conflito antes de gerar
+    if (lesson.hasConflict) {
+      toast.warning(`⚠️ Esta aula substituirá "${lesson.conflictingLessonTitle}" (order_index: ${lesson.orderIndex})`);
     }
 
     const updated = [...lessons];
@@ -441,18 +518,27 @@ export default function AdminAudioBatch() {
             {lessons.map((lesson, index) => (
               <Card key={index} className={
                 lesson.status === 'approved' ? 'border-green-500' :
-                lesson.status === 'error' ? 'border-red-500' : ''
+                lesson.status === 'error' ? 'border-red-500' :
+                lesson.hasConflict ? 'border-amber-500' : ''
               }>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      {lesson.name || `Aula ${index + 1}`}
-                      {lesson.orderIndex && (
-                        <span className="text-muted-foreground ml-2 text-base font-normal">
-                          (order_index: {lesson.orderIndex})
-                        </span>
-                      )}
-                    </CardTitle>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {lesson.name || `Aula ${index + 1}`}
+                        {lesson.orderIndex && (
+                          <span className="text-muted-foreground text-base font-normal">
+                            (order_index: {lesson.orderIndex})
+                          </span>
+                        )}
+                        {lesson.hasConflict && (
+                          <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                            <AlertTriangle className="w-4 h-4" />
+                            Conflito
+                          </span>
+                        )}
+                      </CardTitle>
+                    </div>
                     <div className="flex gap-2">
                       {lesson.status === 'pending' && (
                         <Button
@@ -498,6 +584,16 @@ export default function AdminAudioBatch() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {lesson.hasConflict && (
+                    <Alert className="border-amber-500 bg-amber-50">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-amber-800">
+                        Já existe uma aula "{lesson.conflictingLessonTitle}" com order_index {lesson.orderIndex}.
+                        Ao aprovar esta aula, ela será substituída no banco de dados.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   {lesson.status === 'generating' && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" />
