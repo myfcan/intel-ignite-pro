@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp, AlertTriangle } from 'lucide-react';
+import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp, AlertTriangle, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import AudioSyncPreview from '@/components/admin/AudioSyncPreview';
 
 interface BatchLesson {
   name: string;
@@ -20,6 +21,7 @@ interface BatchLesson {
   error?: string;
   hasConflict?: boolean;
   conflictingLessonTitle?: string;
+  sections?: Array<{ id: string; text: string; timestamp: number }>;
 }
 
 export default function AdminAudioBatch() {
@@ -29,6 +31,7 @@ export default function AdminAudioBatch() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractOrderIndex = (name: string): number => {
@@ -360,6 +363,12 @@ export default function AdminAudioBatch() {
     }
   };
 
+  const handleSaveSections = (index: number, sections: Array<{ id: string; text: string; timestamp: number }>) => {
+    const updated = [...lessons];
+    updated[index].sections = sections;
+    setLessons(updated);
+  };
+
   const approveLesson = async (index: number) => {
     const lesson = lessons[index];
     
@@ -410,6 +419,12 @@ export default function AdminAudioBatch() {
         .from('lesson-audios')
         .getPublicUrl(audioFileName);
 
+      // Preparar content com sections se disponível
+      const contentData: any = { audioText: lesson.content };
+      if (lesson.sections && lesson.sections.length > 0) {
+        contentData.sections = lesson.sections;
+      }
+
       // Criar ou atualizar lesson
       const finalOrderIndex = lesson.orderIndex || extractOrderIndex(lesson.name);
       const { error: lessonError } = await supabase
@@ -420,7 +435,7 @@ export default function AdminAudioBatch() {
           audio_url: publicUrl,
           word_timestamps: lesson.timestamps,
           lesson_type: 'guided',
-          content: { audioText: lesson.content },
+          content: contentData,
           order_index: finalOrderIndex
         });
 
@@ -560,6 +575,14 @@ export default function AdminAudioBatch() {
                           </Button>
                           <Button
                             size="sm"
+                            variant="outline"
+                            onClick={() => setPreviewIndex(index)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm"
                             onClick={() => approveLesson(index)}
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -666,6 +689,19 @@ export default function AdminAudioBatch() {
           </Button>
         </div>
       </div>
+
+      {/* Audio Sync Preview Dialog */}
+      {previewIndex !== null && lessons[previewIndex] && (
+        <AudioSyncPreview
+          open={previewIndex !== null}
+          onOpenChange={(open) => !open && setPreviewIndex(null)}
+          audioUrl={lessons[previewIndex].audioUrl || ''}
+          content={lessons[previewIndex].content}
+          lessonName={lessons[previewIndex].name}
+          onSave={(sections) => handleSaveSections(previewIndex, sections)}
+          onApprove={() => approveLesson(previewIndex)}
+        />
+      )}
     </div>
   );
 }
