@@ -44,6 +44,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 📍 Estado para controlar se usuário pulou para exercícios
   const [jumpedToExercises, setJumpedToExercises] = useState(false);
   
+  // 🔄 Estado para controlar reset de áudio pendente
+  const [pendingAudioReset, setPendingAudioReset] = useState<number | null>(null);
+  
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
     console.log('📦 [LESSON DATA]', {
@@ -115,7 +118,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 🔄 Helper: Resetar áudio para uma seção específica
   const resetAudioToSection = (sectionIndex: number) => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio) {
+      console.warn('⚠️ [RESET-AUDIO] Áudio não disponível, ignorando reset');
+      return;
+    }
     
     const targetSection = lessonData.sections[sectionIndex];
     if (!targetSection) return;
@@ -134,6 +140,21 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     audio.pause();
     setIsPlaying(false);
   };
+
+  // 🔄 useEffect: Resetar áudio quando voltar para fase 'audio'
+  useEffect(() => {
+    if (currentPhase !== 'audio' || pendingAudioReset === null) return;
+    
+    const audio = audioRef.current;
+    if (!audio) {
+      console.warn('⚠️ [RESET-PENDING] Áudio ainda não disponível');
+      return;
+    }
+    
+    console.log(`🔄 [RESET-PENDING] Executando reset pendente para seção ${pendingAudioReset}`);
+    resetAudioToSection(pendingAudioReset);
+    setPendingAudioReset(null);
+  }, [currentPhase, pendingAudioReset]);
 
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
@@ -718,25 +739,26 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   
   // Renderizar fase de transição
-  if (currentPhase === 'transition') {
-    return (
-      <TransitionCard
-        title="🎉 Muito bem! Aula completa!"
-        description="Agora vamos fixar o que você aprendeu com exercícios práticos."
-        buttonText="🎯 Ir para Exercícios"
-        onBack={() => {
-          console.log('⬅️ [TRANSITION] Voltando para aula');
-          setCurrentPhase('audio');
-          setJumpedToExercises(false);
-          
-          // 🆕 RESETAR ÁUDIO PARA SEÇÃO 0
-          setCurrentSection(0);
-          resetAudioToSection(0);
-        }}
-        onContinue={handleGoToExercises}
-      />
-    );
-  }
+    if (currentPhase === 'transition') {
+      return (
+        <TransitionCard
+          title={jumpedToExercises ? "🎯 Vamos praticar?" : "🎉 Muito bem! Aula completa!"}
+          description={jumpedToExercises 
+            ? "Você pode fazer os exercícios agora e continuar a aula depois."
+            : "Agora vamos fixar o que você aprendeu com exercícios práticos."
+          }
+          buttonText="🎯 Ir para Exercícios"
+          onBack={() => {
+            console.log('⬅️ [TRANSITION] Voltando para aula');
+            setJumpedToExercises(false);
+            setCurrentSection(0);
+            setPendingAudioReset(0);  // ← Agendar reset
+            setCurrentPhase('audio');  // ← Mudar fase por último
+          }}
+          onContinue={handleGoToExercises}
+        />
+      );
+    }
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
@@ -761,14 +783,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         onScoreUpdate={(scores) => setExerciseScores(scores)}
         onBack={() => {
           console.log('⬅️ [EXERCISES] Voltando para aula');
-          setCurrentPhase('audio');
           
           // 🆕 REGRA DE NEGÓCIO COM RESET DE ÁUDIO
           if (jumpedToExercises) {
             // Usuário pulou → voltar para início (seção 0)
             console.log('🔄 [BACK] Usuário pulou para exercícios, voltando para seção 0');
             setCurrentSection(0);
-            resetAudioToSection(0);
+            setPendingAudioReset(0);  // ← Agendar reset para seção 0
           } else {
             // Usuário completou → voltar para última seção
             console.log('✅ [BACK] Usuário completou aula, voltando para última seção');
@@ -776,8 +797,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               .filter(s => !s.type || s.type === 'text')
               .length - 1;
             setCurrentSection(Math.max(0, lastTextSection));
-            resetAudioToSection(Math.max(0, lastTextSection));
+            setPendingAudioReset(Math.max(0, lastTextSection));  // ← Agendar reset para última seção
           }
+          
+          setCurrentPhase('audio');  // ← Mudar fase por último
         }}
       />
     );
