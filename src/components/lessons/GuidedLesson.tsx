@@ -734,6 +734,44 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       // Última seção terminada: ir para transição ou end card
       if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
+        // 🎉 Disparar confetti (aula 100% completa!)
+        console.log('🎉 [CONFETTI] Última seção completa! Disparando celebração...');
+        
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+        
+        const interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            return;
+          }
+          
+          const particleCount = 50 * (timeLeft / duration);
+          
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+          });
+          
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+          });
+        }, 250);
+        
+        toast({
+          title: "🎉 Aula completa!",
+          description: "Você dominou o conteúdo! Agora vamos praticar!",
+          duration: 4000,
+        });
+        
         setCurrentPhase('transition');
         console.log('🎯 [AUDIO-ENDED] Indo para transição (tem exercícios)');
       } else {
@@ -843,48 +881,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
     console.log('🎯 [TRANSITION] Indo para exercícios');
-    
-    // 🎉 Disparar confetti quando transicionar para exercícios (aula 100% completa!)
-    console.log('🎉 [CONFETTI] Aula 100% completa! Disparando celebração...');
-    const duration = 3000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval = setInterval(() => {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        return;
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      
-      // Confetti da esquerda
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-        colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
-      });
-      
-      // Confetti da direita
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-        colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
-      });
-    }, 250);
-    
-    // Toast de celebração
-    toast({
-      title: "🎉 Aula completa!",
-      description: "Parabéns! Agora vamos praticar o que você aprendeu!",
-      duration: 4000,
-    });
     
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
