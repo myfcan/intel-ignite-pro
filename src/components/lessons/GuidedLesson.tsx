@@ -11,6 +11,7 @@ import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { ConclusionScreen } from './ConclusionScreen';
+import { AchievementBadge } from './AchievementBadge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -877,8 +878,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [exercisesCompleted, setExercisesCompleted] = useState(false);
   const [exerciseScores, setExerciseScores] = useState<number[]>([]);
   const [lessonStartTime] = useState(Date.now());
+  const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
 
-  const handleExercisesComplete = () => {
+  const handleExercisesComplete = async () => {
     if (exercisesCompleted) {
       console.warn('⚠️ [EXERCISES] Já foi completado, ignorando chamada duplicada');
       return;
@@ -887,7 +889,65 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     setExercisesCompleted(true);
     console.log('✅ [EXERCISES] Completados com sucesso');
     
-    // Ir para tela de conclusão ao invés de onComplete direto
+    // Verificar conquistas (total de aulas completadas)
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Buscar quantas aulas o usuário já completou
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_progress')
+          .select('lesson_id')
+          .eq('user_id', user.id)
+          .eq('status', 'completed');
+        
+        if (!progressError && progressData) {
+          const totalCompleted = progressData.length + 1; // +1 para a aula atual
+          console.log(`🎯 [ACHIEVEMENT] Total de aulas completadas: ${totalCompleted}`);
+          
+          // Verificar marcos e salvar conquista
+          const milestones = [1, 5, 10, 25, 50];
+          const achievedMilestone = milestones.find(m => m === totalCompleted);
+          
+          if (achievedMilestone) {
+            console.log(`🏆 [ACHIEVEMENT] Marco atingido: ${achievedMilestone} aulas!`);
+            
+            // Verificar se já conquistou esse badge antes
+            const { data: existingAchievement } = await supabase
+              .from('user_achievements')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('achievement_type', 'lessons_completed')
+              .eq('achievement_name', `${achievedMilestone}_lessons`)
+              .single();
+            
+            if (!existingAchievement) {
+              // Salvar conquista no banco
+              const { error: achievementError } = await supabase
+                .from('user_achievements')
+                .insert({
+                  user_id: user.id,
+                  achievement_type: 'lessons_completed',
+                  achievement_name: `${achievedMilestone}_lessons`,
+                  points_earned: achievedMilestone * 10,
+                  lesson_id: lessonData.id
+                });
+              
+              if (!achievementError) {
+                console.log(`✅ [ACHIEVEMENT] Conquista salva: ${achievedMilestone} aulas`);
+                setAchievementMilestone(achievedMilestone);
+              }
+            } else {
+              console.log(`ℹ️ [ACHIEVEMENT] Conquista já obtida anteriormente`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ [ACHIEVEMENT] Erro ao verificar conquistas:', error);
+    }
+    
+    // Ir para tela de conclusão
     setCurrentPhase('completed');
   };
   
@@ -1416,6 +1476,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
+        />
+      )}
+      
+      {/* Achievement Badge */}
+      {achievementMilestone && (
+        <AchievementBadge
+          milestone={achievementMilestone}
+          onClose={() => setAchievementMilestone(null)}
         />
       )}
     </div>
