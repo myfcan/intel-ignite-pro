@@ -35,11 +35,11 @@ export async function syncFundamentos01(): Promise<{ success: boolean; message: 
     const { data: trails } = await supabase
       .from('trails')
       .select('id')
-      .eq('title', 'Fundamentos da IA')
+      .eq('title', 'Fundamentos de IA')
       .single();
 
     if (!trails) {
-      throw new Error('Trail "Fundamentos da IA" não encontrada');
+      throw new Error('Trail "Fundamentos de IA" não encontrada');
     }
 
     const trailId = trails.id;
