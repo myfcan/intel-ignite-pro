@@ -12,6 +12,7 @@ import Lesson from "./pages/Lesson";
 import LessonInteractive from "./pages/LessonInteractive";
 import Achievements from "./pages/Achievements";
 import AchievementsPage from "./pages/AchievementsPage";
+import Leaderboard from "./pages/Leaderboard";
 import AdminUpdateTimestamps from "./pages/AdminUpdateTimestamps";
 import Admin from "./pages/Admin";
 import AdminAudioGenerator from "./pages/AdminAudioGenerator";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/gamification" element={<AchievementsPage />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/trails/:id" element={<TrailDetail />} />
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />

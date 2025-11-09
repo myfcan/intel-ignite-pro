@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 
@@ -310,6 +310,43 @@ const Dashboard = () => {
             <CardContent>
               <p className="text-sm text-slate-500">Muito bem!</p>
             </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions - Gamification */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Card 
+            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+            onClick={() => navigate('/leaderboard')}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Trophy className="w-9 h-9 text-white" />
+                </div>
+                <div className="text-white">
+                  <CardTitle className="text-xl font-bold mb-1">Ranking Global</CardTitle>
+                  <p className="text-white/90 text-sm">Compare-se com outros estudantes</p>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+            onClick={() => navigate('/gamification')}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Award className="w-9 h-9 text-white" />
+                </div>
+                <div className="text-white">
+                  <CardTitle className="text-xl font-bold mb-1">Suas Conquistas</CardTitle>
+                  <p className="text-white/90 text-sm">Desbloqueie badges e prêmios</p>
+                </div>
+              </div>
+            </CardHeader>
           </Card>
         </div>
 
