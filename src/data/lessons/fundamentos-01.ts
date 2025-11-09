@@ -121,36 +121,36 @@ E você acabou de começar.`
     {
       id: 'ex-final-1-aula-1-trilha-1',
       type: 'fill-in-blanks',
-      title: 'Você já usou IA hoje?',
-      instruction: 'Complete as lacunas para descobrir onde a IA já faz parte da sua rotina:',
+      title: 'A IA já trabalha para você',
+      instruction: 'Complete as lacunas descobrindo como a IA te ajuda todos os dias:',
       data: {
         sentences: [
           {
             id: 'sent-1',
-            text: 'Quando eu uso o _______ para achar o melhor caminho, eu estou usando IA.',
-            correctAnswers: ['waze', 'Waze', 'GPS', 'gps', 'maps', 'Maps', 'Google Maps'],
-            hint: 'Pense no app de navegação que você usa!',
-            explanation: 'Exato! O Waze usa IA para prever trânsito e encontrar a melhor rota.'
+            text: 'Quando o _______ me sugere um filme perfeito para assistir, é a IA analisando meu histórico.',
+            correctAnswers: ['netflix', 'Netflix', 'Prime Video', 'prime video', 'Disney+', 'disney', 'streaming'],
+            hint: 'Pense no serviço de filmes e séries que você assiste!',
+            explanation: 'Isso mesmo! A Netflix usa IA para entender seu gosto e recomendar conteúdos que você vai adorar.'
           },
           {
             id: 'sent-2',
-            text: 'Quando eu uso o _______ para ouvir músicas que combinam com meu gosto, eu estou usando IA.',
-            correctAnswers: ['spotify', 'Spotify', 'YouTube Music', 'youtube music', 'Deezer', 'deezer', 'Apple Music'],
-            hint: 'Pense no app de streaming de música!',
-            explanation: 'Isso! O Spotify usa IA para aprender suas preferências musicais.'
+            text: 'A pasta de _______ do meu e-mail usa IA para filtrar mensagens indesejadas automaticamente.',
+            correctAnswers: ['spam', 'Spam', 'lixo eletrônico', 'lixo', 'lixeira'],
+            hint: 'Onde vão aquelas mensagens chatas que você não pediu!',
+            explanation: 'Perfeito! Os filtros de spam usam IA para identificar e-mails suspeitos antes de chegarem até você.'
           },
           {
             id: 'sent-3',
-            text: 'Quando eu uso o _______ do celular para corrigir meus erros de digitação, eu estou usando IA.',
-            correctAnswers: ['corretor', 'Corretor', 'corretor automático', 'autocorretor', 'auto-corretor'],
-            hint: 'Aquele recurso que corrige suas palavras enquanto você digita!',
-            explanation: 'Perfeito! O corretor automático usa IA para prever e corrigir o que você quis escrever.'
+            text: 'O _______ mostra primeiro as publicações de pessoas que eu mais interajo, graças à IA.',
+            correctAnswers: ['instagram', 'Instagram', 'facebook', 'Facebook', 'feed', 'Feed'],
+            hint: 'A rede social onde você vê fotos e vídeos dos amigos!',
+            explanation: 'Exato! As redes sociais usam IA para organizar seu feed e mostrar o que mais te interessa.'
           }
         ],
         feedback: {
-          allCorrect: '🎯 Perfeito! Você identificou corretamente onde a IA está no seu dia a dia!',
-          someCorrect: '👍 Muito bem! Você está começando a perceber a IA ao seu redor!',
-          needsReview: '💡 Quase lá! Leia a explicação para entender melhor!'
+          allCorrect: '🎯 Perfeito! Agora você sabe como a IA trabalha por você nos bastidores!',
+          someCorrect: '👍 Muito bem! A IA está mais presente do que você imaginava!',
+          needsReview: '💡 Continue aprendendo! Releia as explicações para entender melhor!'
         }
       }
     },
