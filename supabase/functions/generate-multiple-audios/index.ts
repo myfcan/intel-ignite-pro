@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { audios, voiceId = '9BWtsMINqrJLrRacOk9x' } = await req.json() as {
+    const { audios, voiceId = 'Xb7hH8MSUJpSbSDYk0k2' } = await req.json() as {
       audios: AudioRequest[];
       voiceId?: string;
     };

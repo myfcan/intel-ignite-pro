@@ -23,6 +23,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(lessonData.duration || 0);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   
   // 🆕 V2: Detectar se é aula modelo V2 (áudios separados por seção)
   const isV2 = lessonData.sections[0]?.audio_url !== undefined;
@@ -310,10 +311,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       // Tentar autoplay
       audio.play().then(() => {
-        console.log('🎵 [AUTOPLAY] Iniciado automaticamente');
+        console.log('✅ [AUTOPLAY] Áudio iniciado automaticamente');
         setIsPlaying(true);
+        setIsAudioInitialized(true);
       }).catch(err => {
         console.warn('⚠️ [AUTOPLAY] Bloqueado pelo navegador:', err);
+        setIsAudioInitialized(true);
+        // Usuário precisará clicar no play
       });
     };
     
@@ -368,14 +372,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       const currentTime = audio.currentTime;
       setCurrentTime(currentTime);
       
-      // V2: detectar fim da seção e avançar automaticamente
+      // V2: NÃO avançar seção aqui, deixar o evento 'ended' cuidar disso
       if (isV2) {
-        if (audio.ended && currentSection < lessonData.sections.length - 1) {
-          console.log(`🔄 [V2] Seção ${currentSection} terminou, avançando para ${currentSection + 1}`);
-          setCurrentSection(prev => prev + 1);
-          return;
-        }
-        // Para V2, manter a seção atual (não usar calculateActiveSection)
+        // Apenas manter sincronização, sem auto-avanço de seção
         animationFrameId = requestAnimationFrame(syncLoop);
         return;
       }
@@ -600,7 +599,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play();
+      audio.play().then(() => {
+        setIsAudioInitialized(true);
+      });
     }
     setIsPlaying(!isPlaying);
   };
