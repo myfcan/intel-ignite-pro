@@ -105,7 +105,8 @@ export async function syncFundamentos01(): Promise<SyncResult> {
     // Verificar se precisa gerar áudio OU timestamps
     // Verificar timestamps no NOVO conteúdo que acabamos de salvar
     const newContent = lessonData.content as any;
-    const needsTimestamps = !newContent?.sections?.[0]?.timestamp;
+    // Verificar se TODAS as seções têm timestamps válidos (não apenas a primeira!)
+    const needsTimestamps = !newContent?.sections?.every((s: any) => s.timestamp && s.timestamp > 0);
     const needsAudio = !existingLesson?.audio_url;
 
     if (needsAudio || needsTimestamps) {
@@ -227,7 +228,8 @@ export async function syncFundamentos02(): Promise<SyncResult> {
 
     // Verificar timestamps no NOVO conteúdo que acabamos de salvar
     const newContent = lessonData.content as any;
-    const needsTimestamps = !newContent?.sections?.[0]?.timestamp;
+    // Verificar se TODAS as seções têm timestamps válidos (não apenas a primeira!)
+    const needsTimestamps = !newContent?.sections?.every((s: any) => s.timestamp && s.timestamp > 0);
     const needsAudio = !existingLesson?.audio_url;
 
     if (needsAudio || needsTimestamps) {
