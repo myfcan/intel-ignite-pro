@@ -437,7 +437,7 @@ Em poucos minutos, você vai ter sua **primeira conversa real** com uma Intelig�
 > **Clique no botão "Continuar para Exercício"** abaixo.
 
 > 💡 **Lembre-se:** não existe pergunta boba. A IA está aqui para te ajudar!`,
-      type: 'end-audio'
+      type: 'text'
     }
   ],
 
