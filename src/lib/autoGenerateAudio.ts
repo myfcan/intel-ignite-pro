@@ -107,6 +107,29 @@ export async function autoGenerateAudio(
 
     console.log('✅ Áudio gerado com sucesso');
 
+    // Mapear timestamps para as seções do content
+    const updatedSections = content.sections?.map((section) => {
+      const sectionId = section.id;
+      const timestamp = audioData.section_timestamps?.[sectionId] || 0;
+      
+      console.log(`📍 Seção ${sectionId}: ${timestamp}s`);
+      
+      return {
+        ...section,
+        timestamp: timestamp
+      };
+    });
+
+    // Criar content atualizado com timestamps e duração
+    const updatedContent = {
+      ...content,
+      sections: updatedSections,
+      duration: audioData.alignment_data?.total_duration || 0
+    };
+
+    console.log(`⏱️ Duração total: ${updatedContent.duration}s`);
+    console.log(`📌 Seções atualizadas: ${updatedSections?.length}`);
+
     // Converter base64 para Blob
     const audioBase64 = audioData.audio_base64;
     const byteCharacters = atob(audioBase64);
@@ -168,12 +191,13 @@ export async function autoGenerateAudio(
 
     console.log('🔗 URL pública:', publicUrl);
 
-    // Atualizar registro da lição
+    // Atualizar registro da lição com timestamps das seções
     const { error: updateError } = await supabase
       .from('lessons')
       .update({
         audio_url: publicUrl,
-        word_timestamps: audioData.word_timestamps
+        word_timestamps: audioData.word_timestamps,
+        content: updatedContent
       })
       .eq('id', lessonId);
 
