@@ -1137,7 +1137,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       data-testid="guided-lesson"
       data-current-phase={currentPhase}
       data-current-section={currentSection}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in"
     >
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
         <div className="w-full px-4 sm:px-6 py-3">

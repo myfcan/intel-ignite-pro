@@ -96,7 +96,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
         data-testid="exercises-section"
         data-exercise-index={currentExerciseIndex}
         data-total-exercises={exercises.length}
-        className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+        className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 animate-fade-in"
       >
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
