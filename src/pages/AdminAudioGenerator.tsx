@@ -227,6 +227,44 @@ export default function AdminAudioGenerator() {
         toast.success('✅ Áudio salvo no banco de dados!');
       }
 
+      // 🎯 Análise automática de qualidade
+      toast.info('🔍 Analisando qualidade do áudio...');
+      setIsAnalyzing(true);
+      
+      try {
+        // Calcular duração esperada: 300s (5 minutos) como padrão baseado no texto
+        const expectedDuration = Math.round(text.length / 15); // ~15 chars/second para fala natural
+        
+        const { data: qualityData, error: qualityError } = await supabase.functions.invoke('analyze-audio-quality', {
+          body: {
+            audio_base64: data.audio_base64,
+            expected_duration: expectedDuration,
+            text_length: text.length
+          }
+        });
+
+        if (qualityError) {
+          console.error('Erro na análise de qualidade:', qualityError);
+          toast.error('⚠️ Análise de qualidade falhou, mas o áudio foi gerado');
+        } else {
+          setQualityAnalysis(qualityData);
+          
+          // Feedback baseado na recomendação
+          if (qualityData.recommendation === 'regenerate') {
+            toast.error(`❌ Qualidade baixa (${qualityData.quality_score}/100). Recomendado regenerar!`);
+          } else if (qualityData.recommendation === 'review') {
+            toast.warning(`⚠️ Qualidade média (${qualityData.quality_score}/100). Revisar antes de publicar.`);
+          } else {
+            toast.success(`✅ Qualidade excelente (${qualityData.quality_score}/100)! Inteligibilidade: ${qualityData.intelligibility_score}/100`);
+          }
+        }
+      } catch (qualityError: any) {
+        console.error('Erro ao analisar qualidade:', qualityError);
+        toast.error('⚠️ Análise de qualidade não disponível');
+      } finally {
+        setIsAnalyzing(false);
+      }
+
     } catch (error: any) {
       console.error('Erro ao gerar áudio:', error);
       toast.error(error.message || 'Erro ao gerar áudio');
@@ -291,18 +329,29 @@ export default function AdminAudioGenerator() {
         reader.readAsDataURL(audioBlob);
       });
 
+      // Calcular duração esperada
+      const expectedDuration = Math.round(text.length / 15);
+
       const { data, error } = await supabase.functions.invoke('analyze-audio-quality', {
         body: {
           audio_base64: audioBase64,
-          text: text,
-          word_timestamps: timestamps.word_timestamps
+          expected_duration: expectedDuration,
+          text_length: text.length
         }
       });
 
       if (error) throw error;
 
       setQualityAnalysis(data);
-      toast.success('Análise de qualidade concluída!');
+      
+      // Feedback baseado na análise
+      if (data.recommendation === 'regenerate') {
+        toast.error(`Qualidade baixa (${data.quality_score}/100). Regenerar recomendado!`);
+      } else if (data.recommendation === 'review') {
+        toast.warning(`Qualidade média (${data.quality_score}/100). Revisar antes de publicar.`);
+      } else {
+        toast.success(`Qualidade excelente (${data.quality_score}/100)!`);
+      }
       
     } catch (error: any) {
       console.error('Erro ao analisar qualidade:', error);
@@ -545,14 +594,115 @@ export default function AdminAudioGenerator() {
 
             {/* Análise de Qualidade */}
             {qualityAnalysis && (
-              <Card>
+              <Card className={
+                qualityAnalysis.recommendation === 'regenerate' ? 'border-destructive' :
+                qualityAnalysis.recommendation === 'review' ? 'border-warning' :
+                'border-success'
+              }>
                 <CardHeader>
-                  <CardTitle>Análise de Qualidade</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Análise de Qualidade</span>
+                    <span className={`text-2xl font-bold ${
+                      qualityAnalysis.recommendation === 'regenerate' ? 'text-destructive' :
+                      qualityAnalysis.recommendation === 'review' ? 'text-warning' :
+                      'text-success'
+                    }`}>
+                      {qualityAnalysis.quality_score}/100
+                    </span>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-[300px]">
-                    {JSON.stringify(qualityAnalysis, null, 2)}
-                  </pre>
+                <CardContent className="space-y-4">
+                  {/* Métricas principais */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Qualidade Geral</p>
+                      <p className="text-2xl font-bold">{qualityAnalysis.quality_score}/100</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Inteligibilidade</p>
+                      <p className="text-2xl font-bold">{qualityAnalysis.intelligibility_score}/100</p>
+                    </div>
+                  </div>
+
+                  {/* Estatísticas */}
+                  <div className="border-t pt-4 space-y-2">
+                    <p className="font-semibold text-sm">Estatísticas:</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Duração:</span>
+                        <span className="font-mono">{qualityAnalysis.stats.total_duration}s</span>
+                      </div>
+                      {qualityAnalysis.stats.expected_duration && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Esperada:</span>
+                          <span className="font-mono">{qualityAnalysis.stats.expected_duration}s</span>
+                        </div>
+                      )}
+                      {qualityAnalysis.stats.duration_diff_percent !== undefined && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Diferença:</span>
+                          <span className={`font-mono ${qualityAnalysis.stats.duration_diff_percent > 10 ? 'text-warning' : ''}`}>
+                            {qualityAnalysis.stats.duration_diff_percent}%
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Volume médio:</span>
+                        <span className="font-mono">{qualityAnalysis.stats.avg_volume}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Silêncios:</span>
+                        <span className="font-mono">{qualityAnalysis.stats.silence_count}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Problemas encontrados */}
+                  {qualityAnalysis.issues.length > 0 && (
+                    <div className="border-t pt-4 space-y-2">
+                      <p className="font-semibold text-sm">Problemas Encontrados:</p>
+                      <div className="space-y-2">
+                        {qualityAnalysis.issues.map((issue, index) => (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            issue.severity === 'high' ? 'bg-destructive/10 border-destructive' :
+                            issue.severity === 'medium' ? 'bg-warning/10 border-warning' :
+                            'bg-muted border-border'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              <span className={`text-xs font-semibold uppercase px-2 py-1 rounded ${
+                                issue.severity === 'high' ? 'bg-destructive text-destructive-foreground' :
+                                issue.severity === 'medium' ? 'bg-warning text-warning-foreground' :
+                                'bg-muted-foreground text-muted'
+                              }`}>
+                                {issue.severity}
+                              </span>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium capitalize">{issue.type.replace(/_/g, ' ')}</p>
+                                <p className="text-sm text-muted-foreground mt-1">{issue.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recomendação */}
+                  <div className={`p-4 rounded-lg ${
+                    qualityAnalysis.recommendation === 'regenerate' ? 'bg-destructive/10' :
+                    qualityAnalysis.recommendation === 'review' ? 'bg-warning/10' :
+                    'bg-success/10'
+                  }`}>
+                    <p className="font-semibold text-sm mb-1">Recomendação:</p>
+                    <p className="text-sm">
+                      {qualityAnalysis.recommendation === 'regenerate' && 
+                        '❌ Qualidade insuficiente. Regenerar o áudio é altamente recomendado.'}
+                      {qualityAnalysis.recommendation === 'review' && 
+                        '⚠️ Qualidade aceitável, mas revisar antes de publicar.'}
+                      {qualityAnalysis.recommendation === 'ok' && 
+                        '✅ Qualidade excelente! Pronto para uso.'}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}

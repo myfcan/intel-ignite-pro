@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface QualityIssue {
-  type: 'volume_drop' | 'silence' | 'clipping' | 'distortion'
+  type: 'volume_drop' | 'silence' | 'clipping' | 'distortion' | 'duration_mismatch' | 'unintelligible'
   timestamp: number
   severity: 'low' | 'medium' | 'high'
   description: string
@@ -16,12 +16,15 @@ interface QualityAnalysis {
   quality_score: number
   issues: QualityIssue[]
   recommendation: 'ok' | 'review' | 'regenerate'
+  intelligibility_score: number
   stats: {
     avg_volume: number
     max_volume: number
     min_volume: number
     silence_count: number
     total_duration: number
+    expected_duration?: number
+    duration_diff_percent?: number
   }
 }
 
@@ -32,19 +35,21 @@ serve(async (req) => {
   }
 
   try {
-    const { audio_base64 } = await req.json()
+    const { audio_base64, expected_duration, text_length } = await req.json()
 
     if (!audio_base64) {
       throw new Error('audio_base64 is required')
     }
 
     console.log('Analyzing audio quality...')
+    console.log('Expected duration:', expected_duration, 'seconds')
+    console.log('Text length:', text_length, 'characters')
 
     // Decode base64 to bytes
     const audioBytes = Uint8Array.from(atob(audio_base64), c => c.charCodeAt(0))
     
     // Analyze audio properties
-    const analysis = analyzeAudioBytes(audioBytes)
+    const analysis = analyzeAudioBytes(audioBytes, expected_duration, text_length)
 
     console.log('Analysis complete:', analysis)
 
@@ -67,12 +72,35 @@ serve(async (req) => {
   }
 })
 
-function analyzeAudioBytes(audioBytes: Uint8Array): QualityAnalysis {
+function analyzeAudioBytes(
+  audioBytes: Uint8Array, 
+  expectedDuration?: number,
+  textLength?: number
+): QualityAnalysis {
   const issues: QualityIssue[] = []
   let qualityScore = 100
+  let intelligibilityScore = 100
   
   // Estimate duration (rough approximation for MP3)
   const totalDuration = estimateMP3Duration(audioBytes)
+  
+  // Check duration mismatch
+  let durationDiffPercent = 0
+  if (expectedDuration) {
+    const durationDiff = Math.abs(totalDuration - expectedDuration)
+    durationDiffPercent = Math.round((durationDiff / expectedDuration) * 100)
+    
+    if (durationDiffPercent > 10) {
+      issues.push({
+        type: 'duration_mismatch',
+        timestamp: 0,
+        severity: durationDiffPercent > 20 ? 'high' : 'medium',
+        description: `Duração ${totalDuration}s difere ${durationDiffPercent}% da esperada (${expectedDuration}s)`
+      })
+      qualityScore -= durationDiffPercent > 20 ? 25 : 15
+      intelligibilityScore -= 10
+    }
+  }
   
   // Analyze volume levels (simplified analysis)
   const volumeStats = analyzeVolumeLevels(audioBytes)
@@ -108,18 +136,58 @@ function analyzeAudioBytes(audioBytes: Uint8Array): QualityAnalysis {
       description: `Detectado clipping (distorção) em ${volumeStats.clippingCount} pontos`
     })
     qualityScore -= 25
+    intelligibilityScore -= 20
+  }
+  
+  // Check intelligibility (speech rate and rhythm)
+  if (textLength && totalDuration > 0) {
+    const charsPerSecond = textLength / totalDuration
+    
+    // Normal Portuguese speech: 12-18 chars/second
+    if (charsPerSecond < 8) {
+      issues.push({
+        type: 'unintelligible',
+        timestamp: 0,
+        severity: 'medium',
+        description: `Fala muito lenta (${charsPerSecond.toFixed(1)} chars/s). Pode ter pausas excessivas.`
+      })
+      intelligibilityScore -= 15
+      qualityScore -= 10
+    } else if (charsPerSecond > 22) {
+      issues.push({
+        type: 'unintelligible',
+        timestamp: 0,
+        severity: 'high',
+        description: `Fala muito rápida (${charsPerSecond.toFixed(1)} chars/s). Dificulta compreensão.`
+      })
+      intelligibilityScore -= 25
+      qualityScore -= 20
+    }
+  }
+  
+  // Check for patterns indicating unintelligibility
+  if (volumeStats.silenceCount > 5 && volumeStats.volumeDrops > 3) {
+    issues.push({
+      type: 'unintelligible',
+      timestamp: 0,
+      severity: 'high',
+      description: 'Padrão irregular: muitos silêncios e quedas de volume podem indicar cortes no áudio'
+    })
+    intelligibilityScore -= 20
+    qualityScore -= 15
   }
   
   // Determine recommendation
   let recommendation: 'ok' | 'review' | 'regenerate' = 'ok'
-  if (qualityScore < 60) {
+  if (qualityScore < 60 || intelligibilityScore < 60) {
     recommendation = 'regenerate'
-  } else if (qualityScore < 80) {
+  } else if (qualityScore < 80 || intelligibilityScore < 80) {
     recommendation = 'review'
   }
   
   return {
     quality_score: Math.max(0, qualityScore),
+    intelligibility_score: Math.max(0, intelligibilityScore),
     issues,
     recommendation,
     stats: {
@@ -127,7 +195,9 @@ function analyzeAudioBytes(audioBytes: Uint8Array): QualityAnalysis {
       max_volume: volumeStats.maxVolume,
       min_volume: volumeStats.minVolume,
       silence_count: volumeStats.silenceCount,
-      total_duration: totalDuration
+      total_duration: totalDuration,
+      expected_duration: expectedDuration,
+      duration_diff_percent: durationDiffPercent
     }
   }
 }
