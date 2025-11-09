@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -58,6 +58,29 @@ export default function Admin() {
             >
               <Zap className="w-4 h-4 mr-2" />
               Abrir Gerador em Lote
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5" />
+              Sincronizar Lições
+            </CardTitle>
+            <CardDescription>
+              Sincroniza lições do código TypeScript para o banco e gera áudios automaticamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/sync-lessons')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Abrir Sincronização
             </Button>
           </CardContent>
         </Card>
