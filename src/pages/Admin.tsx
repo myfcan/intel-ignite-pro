@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw, Bug } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -127,6 +127,29 @@ export default function Admin() {
             >
               <Bug className="w-4 h-4 mr-2" />
               Abrir Debug de Timestamps
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5" />
+              Testador de Aulas
+            </CardTitle>
+            <CardDescription>
+              Validação automatizada completa do fluxo: áudio → playground → exercícios
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/lesson-tester')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <FlaskConical className="w-4 h-4 mr-2" />
+              Abrir Testador de Aulas
             </Button>
           </CardContent>
         </Card>
