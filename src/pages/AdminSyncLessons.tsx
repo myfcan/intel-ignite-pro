@@ -5,6 +5,7 @@ import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock
 import { useNavigate } from 'react-router-dom';
 import { 
   syncFundamentos02, 
+  syncFundamentos03,
   syncAllLessons,
   regenerateAudio 
 } from '@/lib/syncLessonToDatabase';
@@ -22,10 +23,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExercisePreview } from '@/components/admin/ExercisePreview';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
+import { fundamentos03 } from '@/data/lessons/fundamentos-03';
 
 interface SyncStatus {
   lesson01: 'idle' | 'syncing' | 'success' | 'error';
   lesson02: 'idle' | 'syncing' | 'success' | 'error';
+  lesson03: 'idle' | 'syncing' | 'success' | 'error';
   all: 'idle' | 'syncing' | 'success' | 'error';
 }
 
@@ -34,6 +37,7 @@ export default function AdminSyncLessons() {
   const [status, setStatus] = useState<SyncStatus>({
     lesson01: 'idle',
     lesson02: 'idle',
+    lesson03: 'idle',
     all: 'idle'
   });
 
@@ -70,6 +74,24 @@ export default function AdminSyncLessons() {
     setStatus(prev => ({ 
       ...prev, 
       lesson02: success ? 'success' : 'error' 
+    }));
+  };
+
+  const handleSyncLesson03 = async () => {
+    setStatus(prev => ({ ...prev, lesson03: 'syncing' }));
+    const result = await syncFundamentos03();
+    setStatus(prev => ({ 
+      ...prev, 
+      lesson03: result.success ? 'success' : 'error' 
+    }));
+  };
+
+  const handleRegenerateAudio03 = async () => {
+    setStatus(prev => ({ ...prev, lesson03: 'syncing' }));
+    const success = await regenerateAudio('Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes');
+    setStatus(prev => ({ 
+      ...prev, 
+      lesson03: success ? 'success' : 'error' 
     }));
   };
 
@@ -203,7 +225,7 @@ export default function AdminSyncLessons() {
               {getStatusIcon(status.all)}
             </CardTitle>
             <CardDescription>
-              Sincroniza todas as lições de uma vez (Fundamentos 02)
+              Sincroniza todas as lições de uma vez (Fundamentos 02 e 03)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -310,6 +332,102 @@ export default function AdminSyncLessons() {
               variant="outline"
             >
               {status.lesson02 === 'syncing' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Clock className="mr-2 h-4 w-4" />
+                  Regenerar Áudio + Timestamps
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Lesson 03 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>🧠 Fundamentos 03</span>
+              {getStatusIcon(status.lesson03)}
+            </CardTitle>
+            <CardDescription>
+              Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
+              {status.lesson03 === 'success' ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
+                </>
+              ) : status.lesson03 === 'error' ? (
+                <>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm text-red-600">Erro na sincronização</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
+                </>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh]">
+                  <DialogHeader>
+                    <DialogTitle>Preview - Fundamentos 03</DialogTitle>
+                    <DialogDescription>
+                      Visualize como os exercícios vão aparecer para os alunos
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+                    <ExercisePreview lesson={fundamentos03} />
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                onClick={handleSyncLesson03}
+                disabled={status.lesson03 === 'syncing'}
+                className="flex-1"
+                variant="secondary"
+              >
+                {status.lesson03 === 'syncing' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sincronizar Lição + Timestamps
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <Button
+              onClick={handleRegenerateAudio03}
+              disabled={status.lesson03 === 'syncing'}
+              className="w-full"
+              variant="outline"
+            >
+              {status.lesson03 === 'syncing' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Gerando...
