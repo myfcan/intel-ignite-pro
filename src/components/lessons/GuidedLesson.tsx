@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { GuidedLessonProps } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
@@ -496,6 +497,59 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       }, 50); // Pequeno delay para garantir que a animação de fade-in comece primeiro
     }
   }, [currentSection]);
+  
+  // 🎉 Celebração com confetti ao completar 100% da aula
+  useEffect(() => {
+    const renderableSections = lessonData.sections.filter(s => isSectionRenderable(s));
+    const totalSections = renderableSections.length;
+    const progressPercentage = (currentSection / Math.max(1, totalSections - 1)) * 100;
+    
+    // Disparar confetti quando chegar em 100%
+    if (progressPercentage === 100 && currentSection > 0) {
+      console.log('🎉 [CONFETTI] Aula 100% completa! Disparando celebração...');
+      
+      // Confetti dourado dos lados
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        
+        // Confetti da esquerda
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+        });
+        
+        // Confetti da direita
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+        });
+      }, 250);
+      
+      // Toast de celebração
+      toast({
+        title: "🎉 Parabéns!",
+        description: "Você completou 100% da aula!",
+        duration: 4000,
+      });
+    }
+  }, [currentSection, lessonData.sections]);
   
   // 🎮 TRIGGER 1 (PRIMARY): Timestamp-based com janela ampliada (3s)
   useEffect(() => {
