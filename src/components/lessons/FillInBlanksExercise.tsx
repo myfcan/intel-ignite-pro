@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Check, X, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 interface Sentence {
   id: string;
@@ -35,13 +36,20 @@ export function FillInBlanksExercise({
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
   const [showHints, setShowHints] = useState<Record<string, boolean>>({});
+  const [hintsUsed, setHintsUsed] = useState<Set<string>>(new Set());
 
   const handleAnswerChange = (sentenceId: string, value: string) => {
     setAnswers({ ...answers, [sentenceId]: value });
   };
 
   const toggleHint = (sentenceId: string) => {
-    setShowHints({ ...showHints, [sentenceId]: !showHints[sentenceId] });
+    const newShowHints = { ...showHints, [sentenceId]: !showHints[sentenceId] };
+    setShowHints(newShowHints);
+    
+    // Marcar que o hint foi usado
+    if (newShowHints[sentenceId]) {
+      setHintsUsed(prev => new Set([...prev, sentenceId]));
+    }
   };
 
   const handleSubmit = () => {
@@ -60,6 +68,33 @@ export function FillInBlanksExercise({
 
     const correctCount = Object.values(newResults).filter(Boolean).length;
     const score = Math.round((correctCount / sentences.length) * 100);
+    const isPerfect = correctCount === sentences.length && hintsUsed.size === 0;
+    
+    // Confetti especial para pontuação perfeita sem dicas
+    if (isPerfect) {
+      console.log('🏆 [PERFECT] Acertou tudo de primeira!');
+      
+      const duration = 4000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 45, spread: 360, ticks: 80, zIndex: 9999 };
+      
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+        
+        const particleCount = 60 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: Math.random() * 0.4 + 0.3, y: Math.random() * 0.5 + 0.1 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#FFFF00', '#FFD700']
+        });
+      }, 200);
+    }
     
     setTimeout(() => {
       onComplete(score);
@@ -68,6 +103,7 @@ export function FillInBlanksExercise({
 
   const correctCount = Object.values(results).filter(Boolean).length;
   const allAnswered = sentences.every(s => answers[s.id]?.trim());
+  const isPerfect = submitted && correctCount === sentences.length && hintsUsed.size === 0;
 
   const getFeedbackMessage = () => {
     if (correctCount === sentences.length) return feedback.allCorrect;
@@ -248,6 +284,53 @@ export function FillInBlanksExercise({
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="space-y-4"
           >
+            {isPerfect && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: -20 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1, 
+                  y: 0,
+                  transition: {
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 20
+                  }
+                }}
+                className="relative overflow-hidden"
+              >
+                <Card className="p-6 bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-yellow-500/40 shadow-lg">
+                  <div className="text-center space-y-3">
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 10, -10, 10, 0],
+                        scale: [1, 1.1, 1, 1.1, 1]
+                      }}
+                      transition={{ 
+                        duration: 0.8,
+                        repeat: Infinity,
+                        repeatDelay: 2
+                      }}
+                      className="text-5xl mb-2"
+                    >
+                      🏆
+                    </motion.div>
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                      Perfeito!
+                    </h3>
+                    <p className="text-sm font-medium text-foreground/80">
+                      Você acertou tudo de primeira sem usar dicas!
+                    </p>
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <div className="px-4 py-1.5 bg-yellow-500/20 border border-yellow-500/40 rounded-full text-xs font-bold text-yellow-700 dark:text-yellow-300">
+                        +50 XP Bônus
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+            
             <Card className="p-6 bg-primary/5 border-primary/20">
               <div className="text-center space-y-2">
                 <motion.div 
