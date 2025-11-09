@@ -86,9 +86,12 @@ export default function AdminAudioGenerator() {
           lessonText = localData.audioText;
           
           // Create markers from sections
+          // CRITICAL: Include speechBubbleText because that's what's sent to ElevenLabs!
           localData.sections.forEach((section: any, index: number) => {
+            // Concatenate speechBubbleText + visualContent (matching audio generation)
+            const fullText = `${section.speechBubbleText || ''} ${section.visualContent || ''}`.trim();
             lessonMarkers.push({
-              phrase: section.visualContent?.substring(0, 50) || '',
+              phrase: fullText.substring(0, 50) || '',
               sectionId: section.id || `section_${index}`
             });
           });
