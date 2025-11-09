@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  syncFundamentos01, 
   syncFundamentos02, 
   syncAllLessons,
   regenerateAudio 
@@ -12,7 +11,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 interface SyncStatus {
-  lesson01: 'idle' | 'syncing' | 'success' | 'error';
   lesson02: 'idle' | 'syncing' | 'success' | 'error';
   all: 'idle' | 'syncing' | 'success' | 'error';
 }
@@ -20,19 +18,9 @@ interface SyncStatus {
 export default function AdminSyncLessons() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<SyncStatus>({
-    lesson01: 'idle',
     lesson02: 'idle',
     all: 'idle'
   });
-
-  const handleSyncLesson01 = async () => {
-    setStatus(prev => ({ ...prev, lesson01: 'syncing' }));
-    const result = await syncFundamentos01();
-    setStatus(prev => ({ 
-      ...prev, 
-      lesson01: result.success ? 'success' : 'error' 
-    }));
-  };
 
   const handleSyncLesson02 = async () => {
     setStatus(prev => ({ ...prev, lesson02: 'syncing' }));
@@ -49,15 +37,6 @@ export default function AdminSyncLessons() {
     setStatus(prev => ({ 
       ...prev, 
       all: result.successful === result.total ? 'success' : 'error' 
-    }));
-  };
-
-  const handleRegenerateAudio01 = async () => {
-    setStatus(prev => ({ ...prev, lesson01: 'syncing' }));
-    const success = await regenerateAudio('O que é a IA e por que nós precisamos dela');
-    setStatus(prev => ({ 
-      ...prev, 
-      lesson01: success ? 'success' : 'error' 
     }));
   };
 
@@ -111,7 +90,7 @@ export default function AdminSyncLessons() {
               {getStatusIcon(status.all)}
             </CardTitle>
             <CardDescription>
-              Sincroniza todas as lições de uma vez (Fundamentos 01 e 02)
+              Sincroniza todas as lições de uma vez (Fundamentos 02)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -130,77 +109,6 @@ export default function AdminSyncLessons() {
                 <>
                   <RefreshCw className="mr-2 h-5 w-5" />
                   Sincronizar Todas
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Lesson 01 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>📚 Fundamentos 01</span>
-              {getStatusIcon(status.lesson01)}
-            </CardTitle>
-            <CardDescription>
-              O que é a IA e por que nós precisamos dela
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
-              {status.lesson01 === 'success' ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
-                </>
-              ) : status.lesson01 === 'error' ? (
-                <>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600">Erro na sincronização</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
-                </>
-              )}
-            </div>
-            
-            <Button
-              onClick={handleSyncLesson01}
-              disabled={status.lesson01 === 'syncing'}
-              className="w-full"
-              variant="secondary"
-            >
-              {status.lesson01 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sincronizar Lição + Timestamps
-                </>
-              )}
-            </Button>
-            
-            <Button
-              onClick={handleRegenerateAudio01}
-              disabled={status.lesson01 === 'syncing'}
-              className="w-full"
-              variant="outline"
-            >
-              {status.lesson01 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Clock className="mr-2 h-4 w-4" />
-                  Regenerar Áudio + Timestamps
                 </>
               )}
             </Button>
