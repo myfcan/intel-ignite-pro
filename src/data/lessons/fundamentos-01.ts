@@ -111,7 +111,7 @@ export const fundamentos01: GuidedLessonData = {
   title: 'O que é a IA e por que nós precisamos dela',
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
-  duration: 300, // Será atualizado após geração do áudio
+  duration: 280, // Tempo real do áudio (260s + 20s de buffer)
   contentVersion: 1,
   
   sections: [
@@ -260,6 +260,7 @@ Pessoas comuns, **sem formação em tecnologia**, estão ganhando de **R$ 5 mil 
     {
       id: 'secao-5',
       timestamp: 220,
+      type: 'text',
       speechBubbleText: 'Agora teste você mesmo! 🚀',
       visualContent: `## 🎮 Hora de Praticar!
 
@@ -286,10 +287,10 @@ Você vai testar uma conversa real com IA e ver na prática como ela responde!`,
           steps: [
             {
               step: 1,
-              week: 'Sua Primeira Pergunta',
-              context: 'Escolha uma pergunta simples para fazer à IA',
-              iaKnowledge: '🤖 IA pronta para responder',
-              prompt: 'O que você quer perguntar para a IA?',
+              week: 'Primeira Pergunta',
+              context: 'Você nunca conversou com IA antes. Vamos começar!',
+              iaKnowledge: '🤷 IA sabe: Nada sobre você ainda',
+              prompt: 'Escolha sua primeira pergunta para a IA:',
               options: [
                 {
                   id: 'receita',
@@ -318,34 +319,82 @@ Você vai testar uma conversa real com IA e ver na prática como ela responde!`,
                 learning: [
                   '✓ IA entendeu sua pergunta',
                   '✓ Gerou resposta personalizada',
-                  '✓ Você pode fazer quantas perguntas quiser!'
+                  '✓ Primeira interação registrada'
                 ],
-                visual: 'Conversa iniciada! 🎯',
-                confidence: 'Pronto para usar IA!'
+                visual: 'Barra de aprendizado: 33% completa',
+                confidence: 'Confiança da IA: 30%'
+              }
+            },
+            {
+              step: 2,
+              week: 'Segunda Pergunta - Aprofundando',
+              context: 'Agora a IA já sabe um pouco sobre você!',
+              iaKnowledge: '🧠 IA sabe: Você gosta de {previousGenre}',
+              prompt: 'Faça outra pergunta relacionada:',
+              options: 'dynamic',
+              logic: '2 perguntas relacionadas ao tema anterior + 1 diferente',
+              feedback: {
+                title: 'A IA Está Aprendendo:',
+                learning: [
+                  '✓✓ IA confirmou seu interesse em {genre}',
+                  '✓ IA adaptou as respostas ao seu perfil',
+                  '✓ Próximas respostas serão ainda mais personalizadas'
+                ],
+                confidence: 'Confiança da IA: 65%',
+                visual: 'Barra de aprendizado: 66% completa'
+              }
+            },
+            {
+              step: 3,
+              week: 'Terceira Pergunta - Domínio',
+              context: 'A IA já conhece suas preferências!',
+              iaKnowledge: '🎯 IA sabe: Seus interesses + estilo de perguntas',
+              prompt: 'Veja como a IA já te conhece bem:',
+              options: 'dynamic',
+              logic: '3 perguntas altamente personalizadas baseadas no histórico',
+              feedback: {
+                title: 'IA Totalmente Adaptada! 🎯',
+                learning: [
+                  '✓✓✓ IA dominou suas preferências',
+                  '✓ Entende seu estilo de comunicação',
+                  '✓ Sabe antecipar suas necessidades',
+                  '✓ Respostas cada vez mais úteis'
+                ],
+                confidence: 'Confiança da IA: 95%',
+                visual: 'Barra de aprendizado: 100% completa! 🎉'
               }
             }
           ],
           completion: {
-            visual: 'teste',
+            visual: 'Linha do tempo mostrando sua evolução conversando com IA',
+            chart: {
+              type: 'progressionChart',
+              data: [
+                { step: 'Pergunta 1', progress: 30, label: 'Primeira tentativa' },
+                { step: 'Pergunta 2', progress: 65, label: 'IA aprendendo' },
+                { step: 'Pergunta 3', progress: 95, label: 'Domínio total!' }
+              ]
+            },
             summary: {
-              icon: '🎉',
-              title: 'Parabéns! Você conversou com IA!',
+              icon: '📊',
+              title: 'Veja o que aconteceu:',
               insights: [
-                '💬 Você fez sua primeira pergunta',
-                '🤖 A IA respondeu instantaneamente',
-                '✨ Agora você sabe como usar IA!'
+                '💬 Você fez {totalPicks} perguntas',
+                '🧠 A IA aprendeu {learnedPatterns} padrões',
+                '🎯 Taxa de adaptação final: {accuracy}%',
+                '⚡ Em 3 perguntas a IA te conheceu!'
               ],
               realWorldContext: {
-                title: 'Na prática:',
+                title: 'Na vida real:',
                 points: [
                   'Você pode fazer QUALQUER pergunta',
                   'IA responde em segundos',
                   'Funciona 24 horas por dia',
-                  'Totalmente de graça!'
+                  'Quanto mais você usa, melhor ela fica!'
                 ]
               }
             },
-            message: 'Agora você já sabe conversar com IA! Nas próximas aulas vamos aprofundar ainda mais.',
+            message: 'Parabéns! Você dominou sua primeira conversa com IA. Nas próximas aulas vamos aprofundar ainda mais!',
             badge: {
               id: 'badge-primeira-conversa-ia',
               title: 'Primeira Conversa com IA!',
