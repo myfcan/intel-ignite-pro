@@ -350,20 +350,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     let lastLoggedTime = -1;
     
     const syncLoop = () => {
-      // V2: tempo local dentro da seção atual
-      // V1: tempo global do áudio único
-      const currentTime = isV2 ? audio.currentTime : audio.currentTime;
+      const currentTime = audio.currentTime;
       setCurrentTime(currentTime);
       
-      // V2: detectar fim da seção
-      if (isV2 && audio.ended && currentSection < lessonData.sections.length - 1) {
-        console.log(`🔄 [V2] Seção ${currentSection} terminou, avançando para ${currentSection + 1}`);
-        setCurrentSection(prev => prev + 1);
+      // V2: detectar fim da seção e avançar automaticamente
+      if (isV2) {
+        if (audio.ended && currentSection < lessonData.sections.length - 1) {
+          console.log(`🔄 [V2] Seção ${currentSection} terminou, avançando para ${currentSection + 1}`);
+          setCurrentSection(prev => prev + 1);
+          return;
+        }
+        // Para V2, manter a seção atual (não usar calculateActiveSection)
+        animationFrameId = requestAnimationFrame(syncLoop);
         return;
       }
       
-      // V1: Calcular seção ativa
-      const activeIndex = isV2 ? currentSection : calculateActiveSection(currentTime);
+      // V1: Calcular seção ativa baseado no tempo do áudio único
+      const activeIndex = calculateActiveSection(currentTime);
       
       // 📊 LOG 1: Estado atual a cada segundo (diagnóstico)
       if (Math.floor(currentTime) !== Math.floor(lastLoggedTime)) {
@@ -410,23 +413,27 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 🆕 V2: Trocar áudio ao mudar de seção
   useEffect(() => {
-    if (!isV2 || !audioRef.current) return;
+    if (!isV2 || !audioRef.current || currentSection === 0) return;
     
     const section = lessonData.sections[currentSection];
     if (!section?.audio_url) return;
     
+    const audio = audioRef.current;
+    const wasPlaying = !audio.paused;
+    
     console.log(`🔄 [V2] Mudando para áudio da seção ${currentSection}: ${section.audio_url}`);
     
-    audioRef.current.src = section.audio_url;
-    audioRef.current.load();
-    audioRef.current.currentTime = 0;
+    // Trocar fonte do áudio
+    audio.src = section.audio_url;
+    audio.load();
     
-    if (isPlaying) {
-      audioRef.current.play().catch((err) => {
+    // Se estava tocando, continuar tocando
+    if (wasPlaying) {
+      audio.play().catch((err) => {
         console.warn('⚠️ [V2] Erro ao reproduzir áudio:', err);
       });
     }
-  }, [currentSection, isV2]);
+  }, [currentSection, isV2, lessonData.sections]);
   
   // 📊 LOG 3: Medir latência do state update e scroll
   useEffect(() => {
@@ -664,7 +671,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       // 🆕 Marcar que usuário NÃO pulou (completou a aula)
       setJumpedToExercises(false);
       
-      // Se tem exercícios, ir para transição
+      // V2: verificar se ainda há seções restantes
+      if (isV2 && currentSection < lessonData.sections.length - 1) {
+        console.log('🎯 [V2] Avançando para próxima seção automaticamente');
+        setCurrentSection(prev => prev + 1);
+        return;
+      }
+      
+      // Última seção terminada: ir para transição ou end card
       if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
         setCurrentPhase('transition');
         console.log('🎯 [AUDIO-ENDED] Indo para transição (tem exercícios)');
@@ -676,12 +690,20 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
     audio.addEventListener('ended', handleAudioEnded);
     return () => audio.removeEventListener('ended', handleAudioEnded);
-  }, [lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, currentPhase]);
+  }, [lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, currentPhase, isV2, currentSection, lessonData.sections.length]);
 
   // Detectar seção end-audio
   useEffect(() => {
     const section = lessonData.sections[currentSection];
-    if (section?.type === 'end-audio' && !showEndCard && currentPhase === 'audio') {
+    
+    // V2: end-audio deve tocar normalmente, não pausar imediatamente
+    if (isV2 && section?.type === 'end-audio') {
+      console.log('🎯 [V2] Seção end-audio detectada, deixando áudio tocar até o fim');
+      return; // Não pausar, deixar o áudio.ended cuidar da transição
+    }
+    
+    // V1: comportamento original (pausa imediatamente)
+    if (!isV2 && section?.type === 'end-audio' && !showEndCard && currentPhase === 'audio') {
       const audio = audioRef.current;
       if (audio) {
         audio.pause();
@@ -700,7 +722,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         console.log('🎯 [END-AUDIO] Fim da mini-aula detectado');
       }
     }
-  }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase]);
+  }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase, isV2]);
 
   // 🎮 Handlers do Playground
   const handleOpenPlayground = () => {
@@ -1030,7 +1052,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
               {lessonData.sections
                 .map((section, originalIndex) => ({ section, originalIndex }))
-                .filter(({ section }) => !section.type || section.type === 'text')
                 .map(({ section, originalIndex }) => (
                   <div
                     key={section.id}
@@ -1286,10 +1307,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       )}
 
-      {audioUrl && (
+      {(audioUrl || isV2) && (
         <audio
           ref={audioRef}
-          src={audioUrl}
+          src={isV2 ? lessonData.sections[0]?.audio_url : audioUrl}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           preload="auto"
