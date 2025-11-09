@@ -127,10 +127,24 @@ E você acabou de começar.`
         sentences: [
           {
             id: 'sent-1',
-            text: 'Quando eu uso o _______ para achar o melhor caminho, o _______ para ouvir música e o _______ para corrigir meu texto, eu estou usando IA.',
-            correctAnswers: ['waze', 'spotify', 'corretor', 'corretor do celular'],
-            hint: 'Pense nos apps que você usa todo dia!',
-            explanation: 'Exato! Essas ferramentas usam IA para aprender com seus hábitos e te ajudar de forma automática.'
+            text: 'Quando eu uso o _______ para achar o melhor caminho, eu estou usando IA.',
+            correctAnswers: ['waze', 'Waze', 'GPS', 'gps', 'maps', 'Maps', 'Google Maps'],
+            hint: 'Pense no app de navegação que você usa!',
+            explanation: 'Exato! O Waze usa IA para prever trânsito e encontrar a melhor rota.'
+          },
+          {
+            id: 'sent-2',
+            text: 'Quando eu uso o _______ para ouvir músicas que combinam com meu gosto, eu estou usando IA.',
+            correctAnswers: ['spotify', 'Spotify', 'YouTube Music', 'youtube music', 'Deezer', 'deezer', 'Apple Music'],
+            hint: 'Pense no app de streaming de música!',
+            explanation: 'Isso! O Spotify usa IA para aprender suas preferências musicais.'
+          },
+          {
+            id: 'sent-3',
+            text: 'Quando eu uso o _______ do celular para corrigir meus erros de digitação, eu estou usando IA.',
+            correctAnswers: ['corretor', 'Corretor', 'corretor automático', 'autocorretor', 'auto-corretor'],
+            hint: 'Aquele recurso que corrige suas palavras enquanto você digita!',
+            explanation: 'Perfeito! O corretor automático usa IA para prever e corrigir o que você quis escrever.'
           }
         ],
         feedback: {

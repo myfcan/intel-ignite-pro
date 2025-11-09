@@ -499,58 +499,6 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
   }, [currentSection]);
   
-  // 🎉 Celebração com confetti ao completar 100% da aula
-  useEffect(() => {
-    const renderableSections = lessonData.sections.filter(s => isSectionRenderable(s));
-    const totalSections = renderableSections.length;
-    const progressPercentage = (currentSection / Math.max(1, totalSections - 1)) * 100;
-    
-    // Disparar confetti quando chegar em 100%
-    if (progressPercentage === 100 && currentSection > 0) {
-      console.log('🎉 [CONFETTI] Aula 100% completa! Disparando celebração...');
-      
-      // Confetti dourado dos lados
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-        
-        // Confetti da esquerda
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-          colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
-        });
-        
-        // Confetti da direita
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-          colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
-        });
-      }, 250);
-      
-      // Toast de celebração
-      toast({
-        title: "🎉 Parabéns!",
-        description: "Você completou 100% da aula!",
-        duration: 4000,
-      });
-    }
-  }, [currentSection, lessonData.sections]);
   
   // 🎮 TRIGGER 1 (PRIMARY): Timestamp-based com janela ampliada (3s)
   useEffect(() => {
@@ -865,6 +813,50 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
+    console.log('🎯 [TRANSITION] Indo para exercícios');
+    
+    // 🎉 Disparar confetti quando transicionar para exercícios (aula 100% completa!)
+    console.log('🎉 [CONFETTI] Aula 100% completa! Disparando celebração...');
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      
+      // Confetti da esquerda
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+      });
+      
+      // Confetti da direita
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+      });
+    }, 250);
+    
+    // Toast de celebração
+    toast({
+      title: "🎉 Aula completa!",
+      description: "Parabéns! Agora vamos praticar o que você aprendeu!",
+      duration: 4000,
+    });
+    
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       setCurrentPhase('exercises');
@@ -1058,27 +1050,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <ChevronLeft className="w-5 h-5 text-slate-700" />
             </button>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-3 mb-1.5">
-                <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs font-semibold text-slate-700 tabular-nums">
-                    {Math.min(currentSection + 1, lessonData.sections.filter(s => isSectionRenderable(s)).length)}/{lessonData.sections.filter(s => isSectionRenderable(s)).length}
-                  </span>
-                  <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">
-                    {Math.round((currentSection / Math.max(1, lessonData.sections.filter(s => isSectionRenderable(s)).length - 1)) * 100)}%
-                  </span>
-                </div>
-              </div>
-              <div className="relative h-1.5 bg-slate-200 rounded-full overflow-hidden mb-1">
-                <div 
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm"
-                  style={{ 
-                    width: `${(currentSection / Math.max(1, lessonData.sections.filter(s => isSectionRenderable(s)).length - 1)) * 100}%` 
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-[slide-in-right_2s_ease-in-out_infinite]" />
-                </div>
-              </div>
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
               <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
