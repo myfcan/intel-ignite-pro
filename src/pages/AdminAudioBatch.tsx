@@ -252,22 +252,31 @@ export default function AdminAudioBatch() {
   };
 
   const base64ToBlob = (base64: string, contentType: string) => {
-    const byteCharacters = atob(base64);
-    const byteArrays = [];
-    
-    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-      const slice = byteCharacters.slice(offset, offset + 512);
-      const byteNumbers = new Array(slice.length);
-      
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i);
-      }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      byteArrays.push(byteArray);
+    if (!base64 || typeof base64 !== 'string') {
+      throw new Error('Base64 inválido ou vazio');
     }
     
-    return new Blob(byteArrays, { type: contentType });
+    try {
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+      
+      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      
+      return new Blob(byteArrays, { type: contentType });
+    } catch (error: any) {
+      console.error('Erro ao decodificar base64:', error);
+      throw new Error('Falha ao converter base64 para blob: ' + error.message);
+    }
   };
 
   const generateAudio = async (index: number) => {
@@ -278,7 +287,6 @@ export default function AdminAudioBatch() {
       return;
     }
 
-    // Avisar sobre conflito antes de gerar
     if (lesson.hasConflict) {
       toast.warning(`⚠️ Esta aula substituirá "${lesson.conflictingLessonTitle}" (order_index: ${lesson.orderIndex})`);
     }
@@ -288,6 +296,9 @@ export default function AdminAudioBatch() {
     setLessons(updated);
 
     try {
+      console.log('🎤 Gerando áudio para:', lesson.name);
+      console.log('📝 Tamanho do texto:', lesson.content.length);
+      
       const { data, error } = await supabase.functions.invoke('generate-audio-elevenlabs', {
         body: {
           text: lesson.content,
@@ -296,23 +307,43 @@ export default function AdminAudioBatch() {
         }
       });
 
-      if (error) throw error;
+      console.log('📦 Resposta recebida:', { 
+        hasData: !!data, 
+        hasError: !!error,
+        dataKeys: data ? Object.keys(data) : [],
+        audioBase64Length: data?.audio_base64?.length,
+        wordTimestampsCount: data?.word_timestamps?.length
+      });
 
+      if (error) {
+        console.error('❌ Erro da edge function:', error);
+        throw error;
+      }
+
+      if (!data?.audio_base64) {
+        console.error('❌ Resposta sem audio_base64:', data);
+        throw new Error('Resposta da API não contém áudio');
+      }
+
+      console.log('🔄 Convertendo base64 para blob...');
       const blob = base64ToBlob(data.audio_base64, 'audio/mpeg');
       const url = URL.createObjectURL(blob);
+      console.log('✅ Blob URL criado:', url);
 
       updated[index].audioUrl = url;
       updated[index].timestamps = data.word_timestamps;
       updated[index].status = 'generated';
       setLessons(updated);
       
+      console.log('✅ Estado atualizado para:', updated[index].status);
       toast.success(`Áudio gerado: ${lesson.name}`);
     } catch (error: any) {
-      console.error('Erro ao gerar áudio:', error);
+      console.error('💥 Erro ao gerar áudio:', error);
+      console.error('Stack trace:', error.stack);
       updated[index].status = 'error';
       updated[index].error = error.message;
       setLessons(updated);
-      toast.error(`Erro ao gerar: ${lesson.name}`);
+      toast.error(`Erro ao gerar: ${lesson.name} - ${error.message}`);
     }
   };
 
