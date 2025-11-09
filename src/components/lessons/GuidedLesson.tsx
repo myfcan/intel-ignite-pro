@@ -470,7 +470,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         const sectionElement = document.getElementById(`section-${currentSection}`);
         if (sectionElement) {
           // Calcular posição com offset para compensar header fixo
-          const headerHeight = 100; // altura aproximada do header + margem de segurança
+          const headerHeight = 120; // altura aumentada para melhor visualização
           const elementTop = sectionElement.getBoundingClientRect().top;
           const offsetTop = elementTop + window.pageYOffset;
           const targetPosition = offsetTop - headerHeight;
@@ -482,7 +482,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           
           const scrollEnd = performance.now();
           const latency = scrollEnd - scrollStart;
-          console.log(`[SCROLL] Completed in ${latency.toFixed(2)}ms to position ${targetPosition}`);
+          console.log(`📜 [SCROLL] Animação suave completada em ${latency.toFixed(2)}ms para seção ${currentSection}`);
+          
           sendDiagnosticLog('SCROLL', {
             audioTime: audioTime,
             currentSection: currentSection,
@@ -492,7 +493,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         } else {
           console.warn(`[SCROLL] Element #section-${currentSection} not found`);
         }
-      }, 50);
+      }, 50); // Pequeno delay para garantir que a animação de fade-in comece primeiro
     }
   }, [currentSection]);
   
@@ -1081,19 +1082,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                     data-section-index={originalIndex}
                     data-is-active={currentSection === originalIndex}
                     data-section-updated={currentSection === originalIndex && sectionJustChanged ? 'true' : 'false'}
-                    className={`transition-all duration-700 ${
+                    className={`transition-all duration-1000 ease-out ${
                       isAudioEnabled 
-                        ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4')
-                        : 'opacity-100 translate-y-0'
-                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-fade-in' : ''}`}
+                        ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0 scale-100' : 'opacity-30 translate-y-8 scale-95')
+                        : 'opacity-100 translate-y-0 scale-100'
+                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[fade-in_0.6s_ease-out]' : ''}`}
+                    style={{
+                      transitionDelay: currentSection === originalIndex ? '0ms' : `${Math.abs(originalIndex - currentSection) * 50}ms`
+                    }}
                   >
-                    <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-500 relative overflow-hidden ${
+                    <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-700 ease-out relative overflow-hidden ${
                       currentSection === originalIndex
-                        ? 'border-cyan-300/50 ring-2 ring-cyan-400/20 shadow-2xl shadow-cyan-400/10'
+                        ? 'border-cyan-300/60 ring-2 ring-cyan-400/30 shadow-2xl shadow-cyan-400/20 scale-[1.01]'
                         : 'border-slate-200/50 hover:border-slate-300/50 hover:shadow-2xl'
-                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''}`}>
+                    } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[scale-in_0.5s_ease-out]' : ''}`}>
                       {currentSection === originalIndex && sectionJustChanged && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-transparent animate-[slide-in-right_0.8s_ease-out]" />
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-transparent animate-[slide-in-right_1s_ease-out]" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/5 to-purple-300/5 animate-pulse" />
+                        </>
                       )}
                       <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
