@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   syncFundamentos02, 
@@ -10,6 +10,18 @@ import {
 } from '@/lib/syncLessonToDatabase';
 import { syncFundamentos01 } from '@/lib/syncLessonV2';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ExercisePreview } from '@/components/admin/ExercisePreview';
+import { fundamentos01 } from '@/data/lessons/fundamentos-01';
+import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 
 interface SyncStatus {
   lesson01: 'idle' | 'syncing' | 'success' | 'error';
@@ -125,24 +137,50 @@ export default function AdminSyncLessons() {
               )}
             </div>
             
-            <Button
-              onClick={handleSyncLesson01}
-              disabled={status.lesson01 === 'syncing'}
-              className="w-full"
-              size="lg"
-            >
-              {status.lesson01 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Gerando 5 áudios + Sincronizando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-5 w-5" />
-                  Sincronizar Aula 01 (V2)
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="flex-1"
+                  >
+                    <Eye className="mr-2 h-5 w-5" />
+                    Preview dos Exercícios
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh]">
+                  <DialogHeader>
+                    <DialogTitle>Preview - Fundamentos 01</DialogTitle>
+                    <DialogDescription>
+                      Visualize como os exercícios vão aparecer para os alunos
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+                    <ExercisePreview lesson={fundamentos01} />
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                onClick={handleSyncLesson01}
+                disabled={status.lesson01 === 'syncing'}
+                className="flex-1"
+                size="lg"
+              >
+                {status.lesson01 === 'syncing' ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Gerando 5 áudios + Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-5 w-5" />
+                    Sincronizar Aula 01 (V2)
+                  </>
+                )}
+              </Button>
+            </div>
             
             <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
               <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
@@ -221,24 +259,49 @@ export default function AdminSyncLessons() {
               )}
             </div>
             
-            <Button
-              onClick={handleSyncLesson02}
-              disabled={status.lesson02 === 'syncing'}
-              className="w-full"
-              variant="secondary"
-            >
-              {status.lesson02 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sincronizar Lição + Timestamps
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh]">
+                  <DialogHeader>
+                    <DialogTitle>Preview - Fundamentos 02</DialogTitle>
+                    <DialogDescription>
+                      Visualize como os exercícios vão aparecer para os alunos
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+                    <ExercisePreview lesson={fundamentos02} />
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                onClick={handleSyncLesson02}
+                disabled={status.lesson02 === 'syncing'}
+                className="flex-1"
+                variant="secondary"
+              >
+                {status.lesson02 === 'syncing' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sincronizar Lição + Timestamps
+                  </>
+                )}
+              </Button>
+            </div>
             
             <Button
               onClick={handleRegenerateAudio02}
