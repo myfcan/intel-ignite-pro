@@ -64,16 +64,26 @@ export async function autoGenerateAudio(
       return text.split(/\s+/).slice(0, wordCount).join(' ');
     };
 
+    // Helper para limpar texto de markdown e emojis
+    const cleanText = (text: string): string => {
+      return text
+        .replace(/[#*_~`\[\]()]/g, '') // Remove markdown
+        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, ' ') // Remove emojis mas mantém acentos
+        .replace(/\s+/g, ' ') // Normaliza espaços
+        .trim();
+    };
+
     // Gerar section markers do content
     const sectionMarkers: SectionMarker[] = [];
     if (content?.sections && Array.isArray(content.sections)) {
       content.sections.forEach((section, index) => {
-        // Concatenar speechBubbleText + visualContent (matching audio generation)
-        const fullText = `${section.speechBubbleText || ''} ${section.visualContent || ''}`.trim();
+        // Usar apenas visualContent (que é o que vai ser narrado) ou speechBubbleText como fallback
+        const textToNarrate = section.visualContent || section.speechBubbleText || '';
         
-        if (fullText) {
+        if (textToNarrate) {
+          const cleanedText = cleanText(textToNarrate);
           sectionMarkers.push({
-            phrase: getFirstWords(fullText, 6), // Primeiras 6 palavras completas
+            phrase: getFirstWords(cleanedText, 6), // Primeiras 6 palavras completas
             sectionId: section.id || `section_${index}`
           });
         }
