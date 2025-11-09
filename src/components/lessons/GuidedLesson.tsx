@@ -12,11 +12,13 @@ import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { ConclusionScreen } from './ConclusionScreen';
 import { AchievementBadge } from './AchievementBadge';
+import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 
 export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -871,6 +873,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [exerciseScores, setExerciseScores] = useState<number[]>([]);
   const [lessonStartTime] = useState(Date.now());
   const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
+  
+  // 🎮 Gamification states
+  const [pointsNotification, setPointsNotification] = useState<{
+    show: boolean;
+    points: number;
+    reason: string;
+  }>({ show: false, points: 0, reason: '' });
 
   const handleExercisesComplete = async () => {
     if (exercisesCompleted) {
@@ -881,11 +890,52 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     setExercisesCompleted(true);
     console.log('✅ [EXERCISES] Completados com sucesso');
     
-    // Verificar conquistas (total de aulas completadas)
+    // 🎮 Gamification logic
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        // Calcular pontos da aula
+        const timeSpent = (Date.now() - lessonStartTime) / 1000 / 60; // minutos
+        const avgScore = exerciseScores.length > 0 
+          ? exerciseScores.reduce((a, b) => a + b, 0) / exerciseScores.length 
+          : 0;
+        
+        let totalPoints = POINTS.LESSON_COMPLETE;
+        let bonusReasons: string[] = [];
+        
+        // Bônus de perfeição (100% nos exercícios)
+        if (avgScore >= 100) {
+          totalPoints += POINTS.PERFECT_SCORE;
+          bonusReasons.push('+50 perfeição');
+        }
+        
+        // Bônus de velocidade (<15 min)
+        if (timeSpent < 15) {
+          totalPoints += POINTS.FAST_COMPLETION;
+          bonusReasons.push('+30 velocidade');
+        }
+        
+        // Atualizar streak
+        const newStreak = await updateStreak(user.id);
+        
+        // Aplicar bônus de streak (7+ dias = x1.5)
+        if (newStreak >= 7) {
+          totalPoints = Math.round(totalPoints * POINTS.STREAK_BONUS_MULTIPLIER);
+          bonusReasons.push('x1.5 streak');
+        }
+        
+        // Dar pontos
+        await awardPoints(user.id, totalPoints, 'Aula completada');
+        
+        // Mostrar notificação
+        const bonusText = bonusReasons.length > 0 ? ` (${bonusReasons.join(', ')})` : '';
+        setPointsNotification({
+          show: true,
+          points: totalPoints,
+          reason: `Aula completada${bonusText}`,
+        });
+        
         // Buscar quantas aulas o usuário já completou
         const { data: progressData, error: progressError } = await supabase
           .from('user_progress')
@@ -897,46 +947,25 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           const totalCompleted = progressData.length + 1; // +1 para a aula atual
           console.log(`🎯 [ACHIEVEMENT] Total de aulas completadas: ${totalCompleted}`);
           
-          // Verificar marcos e salvar conquista
+          // Verificar e dar conquistas usando o novo sistema
+          if (totalCompleted === 1) await checkAndAwardAchievement(user.id, '1_lesson');
+          if (totalCompleted === 5) await checkAndAwardAchievement(user.id, '5_lessons');
+          if (totalCompleted === 10) await checkAndAwardAchievement(user.id, '10_lessons');
+          if (totalCompleted === 25) await checkAndAwardAchievement(user.id, '25_lessons');
+          if (totalCompleted === 50) await checkAndAwardAchievement(user.id, '50_lessons');
+          
+          // Verificar marcos para o badge visual
           const milestones = [1, 5, 10, 25, 50];
           const achievedMilestone = milestones.find(m => m === totalCompleted);
           
           if (achievedMilestone) {
             console.log(`🏆 [ACHIEVEMENT] Marco atingido: ${achievedMilestone} aulas!`);
-            
-            // Verificar se já conquistou esse badge antes
-            const { data: existingAchievement } = await supabase
-              .from('user_achievements')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('achievement_type', 'lessons_completed')
-              .eq('achievement_name', `${achievedMilestone}_lessons`)
-              .single();
-            
-            if (!existingAchievement) {
-              // Salvar conquista no banco
-              const { error: achievementError } = await supabase
-                .from('user_achievements')
-                .insert({
-                  user_id: user.id,
-                  achievement_type: 'lessons_completed',
-                  achievement_name: `${achievedMilestone}_lessons`,
-                  points_earned: achievedMilestone * 10,
-                  lesson_id: lessonData.id
-                });
-              
-              if (!achievementError) {
-                console.log(`✅ [ACHIEVEMENT] Conquista salva: ${achievedMilestone} aulas`);
-                setAchievementMilestone(achievedMilestone);
-              }
-            } else {
-              console.log(`ℹ️ [ACHIEVEMENT] Conquista já obtida anteriormente`);
-            }
+            setAchievementMilestone(achievedMilestone);
           }
         }
       }
     } catch (error) {
-      console.error('❌ [ACHIEVEMENT] Erro ao verificar conquistas:', error);
+      console.error('❌ [GAMIFICATION] Erro:', error);
     }
     
     // Ir para tela de conclusão
@@ -1458,6 +1487,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
           onClose={() => setAchievementMilestone(null)}
         />
       )}
+      
+      {/* Points Notification */}
+      <PointsNotification
+        points={pointsNotification.points}
+        reason={pointsNotification.reason}
+        show={pointsNotification.show}
+        onHide={() => setPointsNotification(prev => ({ ...prev, show: false }))}
+      />
     </div>
   );
 }
