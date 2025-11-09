@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ExerciseConfig } from '@/types/guidedLesson';
 import { DragDropLesson } from './DragDropLesson';
 import { CompleteSentenceExercise } from './CompleteSentenceExercise';
@@ -7,8 +7,10 @@ import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
 import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+import confetti from 'canvas-confetti';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +33,13 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
   const [showBackDialog, setShowBackDialog] = useState(false);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+
+  // Calcular progresso e animar barra
+  useEffect(() => {
+    const newProgress = (scores.length / exercises.length) * 100;
+    setProgressPercentage(newProgress);
+  }, [scores.length, exercises.length]);
 
   const handleExerciseComplete = (score: number) => {
     const newScores = [...scores, score];
@@ -42,6 +51,20 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
     }
 
     console.log(`✅ [EXERCISE ${currentExerciseIndex + 1}] Completo com score: ${score}`);
+
+    // 🎉 Feedback visual: confetti + toast
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ['#10b981', '#3b82f6', '#8b5cf6']
+    });
+
+    toast({
+      title: "Exercício completo!",
+      description: `${scores.length + 1} de ${exercises.length} concluídos`,
+      duration: 2000,
+    });
 
     if (currentExerciseIndex < exercises.length - 1) {
       console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
@@ -112,10 +135,24 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
             )}
             <div className="flex-1">
               <h2 className="text-lg sm:text-xl font-bold">Exercícios Finais</h2>
-              <p className="text-sm text-muted-foreground">
-                Exercício {currentExerciseIndex + 1} de {exercises.length}
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <span>Exercício {currentExerciseIndex + 1} de {exercises.length}</span>
+                {scores.length > 0 && (
+                  <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 animate-fade-in">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {scores.length} completos
+                  </span>
+                )}
               </p>
             </div>
+          </div>
+          
+          {/* Barra de progresso animada */}
+          <div className="w-full h-1 bg-slate-200 dark:bg-slate-700">
+            <div 
+              className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 transition-all duration-700 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
           </div>
         </header>
 
