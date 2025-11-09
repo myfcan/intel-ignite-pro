@@ -64,11 +64,20 @@ export async function autoGenerateAudio(
       return text.split(/\s+/).slice(0, wordCount).join(' ');
     };
 
-    // Helper para limpar texto de markdown e emojis
+    // Helper para limpar texto e pegar APENAS conteúdo narrado
     const cleanText = (text: string): string => {
       return text
-        .replace(/[#*_~`\[\]()]/g, '') // Remove markdown
-        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, ' ') // Remove emojis mas mantém acentos
+        .split('\n')  // Quebrar em linhas
+        .filter(line => {
+          const trimmed = line.trim();
+          // Remover linhas vazias, títulos markdown, linhas só com emojis/símbolos
+          return trimmed && 
+                 !trimmed.startsWith('#') && 
+                 !trimmed.match(/^[^\w\s\u00C0-\u024F\u1E00-\u1EFF]+$/); // linha só com símbolos
+        })
+        .join(' ')  // Juntar tudo
+        .replace(/[#*_~`\[\]()]/g, '') // Remove markdown restante
+        .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, ' ') // Remove emojis
         .replace(/\s+/g, ' ') // Normaliza espaços
         .trim();
     };
