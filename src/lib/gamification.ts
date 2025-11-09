@@ -79,10 +79,22 @@ export async function awardPoints(
     // Update user points
     const { error: updateError } = await supabase
       .from('users')
-      .update({ total_points: currentPoints + finalPoints })
+      .update({ 
+        total_points: currentPoints + finalPoints,
+        level: calculateLevel(currentPoints + finalPoints)
+      })
       .eq('id', userId);
 
     if (updateError) throw updateError;
+
+    // Register in points history
+    await supabase
+      .from('points_history')
+      .insert({
+        user_id: userId,
+        points: finalPoints,
+        reason: reason
+      });
 
     console.log(`✅ [POINTS] +${finalPoints} pts para ${userId} (${reason})`);
     return true;
