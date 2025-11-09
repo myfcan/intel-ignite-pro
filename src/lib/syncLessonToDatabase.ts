@@ -103,8 +103,9 @@ export async function syncFundamentos01(): Promise<SyncResult> {
     }
 
     // Verificar se precisa gerar áudio OU timestamps
-    const existingContent = existingLesson?.content as any;
-    const needsTimestamps = !existingContent?.sections?.[0]?.timestamp;
+    // Verificar timestamps no NOVO conteúdo que acabamos de salvar
+    const newContent = lessonData.content as any;
+    const needsTimestamps = !newContent?.sections?.[0]?.timestamp;
     const needsAudio = !existingLesson?.audio_url;
 
     if (needsAudio || needsTimestamps) {
@@ -224,8 +225,9 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       toast.success('✨ Lição 02 criada');
     }
 
-    const existingContent = existingLesson?.content as any;
-    const needsTimestamps = !existingContent?.sections?.[0]?.timestamp;
+    // Verificar timestamps no NOVO conteúdo que acabamos de salvar
+    const newContent = lessonData.content as any;
+    const needsTimestamps = !newContent?.sections?.[0]?.timestamp;
     const needsAudio = !existingLesson?.audio_url;
 
     if (needsAudio || needsTimestamps) {
