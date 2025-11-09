@@ -134,6 +134,7 @@ export interface LessonSection {
   content?: string; // campo alternativo de conteúdo (usado em algumas aulas antigas)
   playgroundConfig?: PlaygroundConfig; // configuração do playground mid-lesson
   showPlaygroundCall?: boolean; // se deve mostrar card de convite do playground
+  audio_url?: string; // 🆕 V2: URL do áudio específico desta seção
 }
 
 export interface GuidedLessonData {

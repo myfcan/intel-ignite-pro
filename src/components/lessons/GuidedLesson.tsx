@@ -23,6 +23,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(lessonData.duration || 0);
+  
+  // 🆕 V2: Detectar se é aula modelo V2 (áudios separados por seção)
+  const isV2 = lessonData.sections[0]?.audio_url !== undefined;
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
@@ -260,6 +263,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     // Inicializar o ref na primeira montagem
     lastSectionRef.current = 0;
     
+    console.log('🔍 [DEBUG] isV2:', isV2);
     console.log('🔍 [DEBUG] audioUrl recebido:', audioUrl);
     console.log('🔍 [DEBUG] audioRef.current:', audio);
     
@@ -268,12 +272,16 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       return;
     }
     
-    if (!audioUrl) {
+    // V2: usar audio_url da primeira seção
+    // V1: usar audioUrl prop
+    const initialAudioUrl = isV2 ? lessonData.sections[0]?.audio_url : audioUrl;
+    
+    if (!initialAudioUrl) {
       console.error('❌ [ÁUDIO] URL do áudio não fornecida');
       return;
     }
     
-    console.log('✅ [ÁUDIO] Inicializando áudio:', audioUrl);
+    console.log(`✅ [ÁUDIO] Inicializando áudio (${isV2 ? 'V2' : 'V1'}):`, initialAudioUrl);
     console.log('📋 [ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
     
     // ✅ CONFIGURAR VOLUME
@@ -330,22 +338,32 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('seeking', handleSeeking);
     };
-  }, [lessonData.sections, audioUrl]);
+  }, [lessonData.sections, audioUrl, isV2]);
 
   // 🔥 SINCRONIZAÇÃO COM requestAnimationFrame (60fps, <100ms latência)
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !audioUrl) return;
+    const hasAudio = isV2 ? lessonData.sections[0]?.audio_url : audioUrl;
+    if (!audio || !hasAudio) return;
     
     let animationFrameId: number;
     let lastLoggedTime = -1;
     
     const syncLoop = () => {
-      const currentTime = audio.currentTime;
+      // V2: tempo local dentro da seção atual
+      // V1: tempo global do áudio único
+      const currentTime = isV2 ? audio.currentTime : audio.currentTime;
       setCurrentTime(currentTime);
       
-      // Calcular seção ativa
-      const activeIndex = calculateActiveSection(currentTime);
+      // V2: detectar fim da seção
+      if (isV2 && audio.ended && currentSection < lessonData.sections.length - 1) {
+        console.log(`🔄 [V2] Seção ${currentSection} terminou, avançando para ${currentSection + 1}`);
+        setCurrentSection(prev => prev + 1);
+        return;
+      }
+      
+      // V1: Calcular seção ativa
+      const activeIndex = isV2 ? currentSection : calculateActiveSection(currentTime);
       
       // 📊 LOG 1: Estado atual a cada segundo (diagnóstico)
       if (Math.floor(currentTime) !== Math.floor(lastLoggedTime)) {
@@ -388,7 +406,27 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [lessonData.sections, audioUrl]);
+  }, [lessonData.sections, audioUrl, isV2, currentSection]);
+  
+  // 🆕 V2: Trocar áudio ao mudar de seção
+  useEffect(() => {
+    if (!isV2 || !audioRef.current) return;
+    
+    const section = lessonData.sections[currentSection];
+    if (!section?.audio_url) return;
+    
+    console.log(`🔄 [V2] Mudando para áudio da seção ${currentSection}: ${section.audio_url}`);
+    
+    audioRef.current.src = section.audio_url;
+    audioRef.current.load();
+    audioRef.current.currentTime = 0;
+    
+    if (isPlaying) {
+      audioRef.current.play().catch((err) => {
+        console.warn('⚠️ [V2] Erro ao reproduzir áudio:', err);
+      });
+    }
+  }, [currentSection, isV2]);
   
   // 📊 LOG 3: Medir latência do state update e scroll
   useEffect(() => {

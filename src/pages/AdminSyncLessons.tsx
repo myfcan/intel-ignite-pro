@@ -8,9 +8,11 @@ import {
   syncAllLessons,
   regenerateAudio 
 } from '@/lib/syncLessonToDatabase';
+import { syncFundamentos01 } from '@/lib/syncLessonV2';
 import { Badge } from '@/components/ui/badge';
 
 interface SyncStatus {
+  lesson01: 'idle' | 'syncing' | 'success' | 'error';
   lesson02: 'idle' | 'syncing' | 'success' | 'error';
   all: 'idle' | 'syncing' | 'success' | 'error';
 }
@@ -18,9 +20,19 @@ interface SyncStatus {
 export default function AdminSyncLessons() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<SyncStatus>({
+    lesson01: 'idle',
     lesson02: 'idle',
     all: 'idle'
   });
+
+  const handleSyncLesson01 = async () => {
+    setStatus(prev => ({ ...prev, lesson01: 'syncing' }));
+    const result = await syncFundamentos01();
+    setStatus(prev => ({ 
+      ...prev, 
+      lesson01: result.success ? 'success' : 'error' 
+    }));
+  };
 
   const handleSyncLesson02 = async () => {
     setStatus(prev => ({ ...prev, lesson02: 'syncing' }));
@@ -82,6 +94,69 @@ export default function AdminSyncLessons() {
       </div>
 
       <div className="space-y-6">
+        {/* Lesson 01 - V2 */}
+        <Card className="border-2 border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>🆕 Fundamentos 01 (Modelo V2)</span>
+              {getStatusIcon(status.lesson01)}
+            </CardTitle>
+            <CardDescription>
+              O que é a IA e por que nós precisamos dela - Áudios separados + Timestamps reais
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
+              {status.lesson01 === 'success' ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600">✅ Sincronizada com 5 áudios separados</span>
+                </>
+              ) : status.lesson01 === 'error' ? (
+                <>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm text-red-600">Erro na sincronização</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-600">Pronta para sincronizar</span>
+                </>
+              )}
+            </div>
+            
+            <Button
+              onClick={handleSyncLesson01}
+              disabled={status.lesson01 === 'syncing'}
+              className="w-full"
+              size="lg"
+            >
+              {status.lesson01 === 'syncing' ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Gerando 5 áudios + Sincronizando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-5 w-5" />
+                  Sincronizar Aula 01 (V2)
+                </>
+              )}
+            </Button>
+            
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                🆕 Modelo V2: 5 áudios separados (~48s cada)
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                • Timestamps reais acumulados (não fixos)<br/>
+                • Sincronização precisa seção por seção<br/>
+                • ~1 minuto para gerar todos os áudios
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Sync All */}
         <Card>
           <CardHeader>
