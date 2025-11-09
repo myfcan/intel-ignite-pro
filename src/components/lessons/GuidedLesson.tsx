@@ -59,6 +59,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   // 🔒 Flag para prevenir race condition no syncLoop durante reset
   const [isResetting, setIsResetting] = useState(false);
   
+  // 🎯 Estado para animação pulse no botão play
+  const [shouldShowPlayPulse, setShouldShowPlayPulse] = useState(false);
+  
   // 🔍 DEBUG: Ver dados carregados
   useEffect(() => {
     console.log('📦 [LESSON DATA]', {
@@ -232,6 +235,33 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     console.log(`🔄 [RESET-PENDING] Executando reset pendente para seção ${pendingAudioReset}`);
     resetAudioToSection(pendingAudioReset);
     setPendingAudioReset(null);
+    
+    // 🎯 Tentar autoplay ao retornar para a aula
+    const tryAutoplay = async () => {
+      try {
+        await audio.play();
+        setIsPlaying(true);
+        console.log('✅ [AUTOPLAY-RESUME] Áudio reiniciado automaticamente');
+      } catch (error) {
+        console.warn('⚠️ [AUTOPLAY-RESUME] Bloqueado pelo navegador, mostrando hint');
+        
+        // Mostrar toast
+        toast({
+          title: "▶️ Continue sua aula",
+          description: "Clique em Play para retomar o áudio",
+          duration: 5000,
+        });
+        
+        // Ativar animação pulse no botão play
+        setShouldShowPlayPulse(true);
+        
+        // Remover pulse após 8 segundos
+        setTimeout(() => setShouldShowPlayPulse(false), 8000);
+      }
+    };
+    
+    // Executar após um pequeno delay para garantir que o áudio foi resetado
+    setTimeout(tryAutoplay, 100);
   }, [currentPhase, pendingAudioReset]);
 
   // 🎮 Helper: Ativar playground
@@ -1408,9 +1438,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   <SkipBack size={16} />
                 </button>
                 <button 
-                  onClick={togglePlayPause} 
                   disabled={showPlaygroundMid || showEndCard}
-                  className="w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
+                  }`}
+                  onClick={() => {
+                    togglePlayPause();
+                    // Remover pulse ao clicar
+                    if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
+                  }}
                 >
                   {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                 </button>
@@ -1490,7 +1526,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   <button onClick={skipBackward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
                     <SkipBack size={16} />
                   </button>
-                  <button onClick={togglePlayPause} className="w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
+                  <button 
+                    className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 ${
+                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
+                    }`}
+                    onClick={() => {
+                      togglePlayPause();
+                      if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
+                    }}
+                  >
                     {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                   </button>
                   <button onClick={skipForward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
