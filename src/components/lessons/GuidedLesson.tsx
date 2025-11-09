@@ -189,6 +189,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   const activatePlayground = () => {
     const audio = audioRef.current;
     console.log(`🔍 [activatePlayground] chamada | audio=${!!audio} | triggered=${playgroundTriggered}`);
+    
+    // 🛡️ Verificar se realmente existe uma seção com playground configurado
+    const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
+    if (!hasPlaygroundSection) {
+      console.log('🚫 [activatePlayground] Nenhum playground configurado nesta aula');
+      return;
+    }
+    
     if (!audio || playgroundTriggered) {
       console.log(`🚫 [activatePlayground] BLOQUEADA | motivo=${!audio ? 'no-audio' : 'already-triggered'}`);
       return;
@@ -497,8 +505,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       const time = audio.currentTime;
       
-      // Encontrar seção com showPlaygroundCall
-      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true);
+      // Encontrar seção com showPlaygroundCall e playgroundConfig
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig);
       
       if (playgroundSectionIndex !== -1) {
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
@@ -551,7 +559,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   useEffect(() => {
     const prevSection = prevSectionRef.current;
     
-    if (currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
+    // 🛡️ Verificar se existe playground antes de ativar safety net
+    const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
+    
+    if (hasPlaygroundSection && currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
       console.log('🎮 [TRIGGER-3] Safety net - usuário pulou seção 4');
       logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'safety-net' });
       
@@ -1245,7 +1256,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
       {/* Card de Convite do Playground */}
       {showPlaygroundCall && (() => {
-        const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
+        const section4 = lessonData.sections.find(s => s.showPlaygroundCall && s.playgroundConfig);
         return section4 ? (
           <PlaygroundCallCard
             title="Hora da Prática!"
@@ -1258,7 +1269,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
       {/* Overlay do Playground Mid-Lesson */}
       {showPlaygroundMid && (() => {
-        const section4 = lessonData.sections.find(s => s.showPlaygroundCall);
+        const section4 = lessonData.sections.find(s => s.showPlaygroundCall && s.playgroundConfig);
         const playgroundSection = section4 || lessonData.sections[currentSection];
         return playgroundSection?.playgroundConfig ? (
           playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
