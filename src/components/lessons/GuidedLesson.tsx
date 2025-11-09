@@ -944,7 +944,27 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <ChevronLeft className="w-5 h-5 text-slate-700" />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-semibold text-slate-700 tabular-nums">
+                    {Math.min(currentSection + 1, lessonData.sections.filter(s => isSectionRenderable(s)).length)}/{lessonData.sections.filter(s => isSectionRenderable(s)).length}
+                  </span>
+                  <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">
+                    {Math.round((currentSection / Math.max(1, lessonData.sections.filter(s => isSectionRenderable(s)).length - 1)) * 100)}%
+                  </span>
+                </div>
+              </div>
+              <div className="relative h-1.5 bg-slate-200 rounded-full overflow-hidden mb-1">
+                <div 
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm"
+                  style={{ 
+                    width: `${(currentSection / Math.max(1, lessonData.sections.filter(s => isSectionRenderable(s)).length - 1)) * 100}%` 
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-[slide-in-right_2s_ease-in-out_infinite]" />
+                </div>
+              </div>
               <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
