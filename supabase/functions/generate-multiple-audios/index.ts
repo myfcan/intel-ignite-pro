@@ -70,7 +70,7 @@ serve(async (req) => {
       }
 
       const audioBlob = await response.arrayBuffer();
-      const audio_base64 = btoa(String.fromCharCode(...new Uint8Array(audioBlob)));
+      const audio_base64 = arrayBufferToBase64(audioBlob);
 
       // Calcular duração do áudio
       const duration = await getAudioDuration(audioBlob);
@@ -103,6 +103,20 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper: Converter ArrayBuffer para Base64 sem estouro de pilha
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000; // 32KB chunks
+  let binary = '';
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  
+  return btoa(binary);
+}
 
 // Helper: Calcular duração do áudio usando Web Audio API
 async function getAudioDuration(audioBuffer: ArrayBuffer): Promise<number> {
