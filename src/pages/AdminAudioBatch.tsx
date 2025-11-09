@@ -11,6 +11,11 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import AudioSyncPreview from '@/components/admin/AudioSyncPreview';
 
+interface SectionMarker {
+  phrase: string;
+  sectionId: string;
+}
+
 interface BatchLesson {
   name: string;
   content: string;
@@ -22,6 +27,8 @@ interface BatchLesson {
   hasConflict?: boolean;
   conflictingLessonTitle?: string;
   sections?: Array<{ id: string; text: string; timestamp: number }>;
+  sectionMarkers?: SectionMarker[];
+  sectionTimestamps?: Record<string, number>;
 }
 
 export default function AdminAudioBatch() {
@@ -42,6 +49,45 @@ export default function AdminAudioBatch() {
     // Fallback: pegar qualquer número no nome
     const anyNumber = name.match(/(\d+)/);
     return anyNumber ? parseInt(anyNumber[1], 10) : 1;
+  };
+
+  const detectSectionMarkers = (content: string): SectionMarker[] => {
+    const markers: SectionMarker[] = [];
+    
+    // Padrão 1: Detectar marcadores explícitos como "--- SECTION_01 ---"
+    const explicitMarkerRegex = /---\s*([A-Z_0-9-]+)\s*---/g;
+    let match;
+    
+    while ((match = explicitMarkerRegex.exec(content)) !== null) {
+      const sectionId = match[1].toLowerCase().replace(/_/g, '-');
+      const sectionStart = match.index + match[0].length;
+      
+      // Pegar as primeiras 50 palavras após o marcador como phrase
+      const textAfter = content.substring(sectionStart).trim();
+      const phrase = textAfter.substring(0, 100).split(/\s+/).slice(0, 10).join(' ');
+      
+      if (phrase) {
+        markers.push({
+          phrase: phrase.trim(),
+          sectionId: sectionId
+        });
+      }
+    }
+    
+    // Padrão 2: Se não encontrou marcadores explícitos, dividir por parágrafos
+    if (markers.length === 0) {
+      const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 50);
+      paragraphs.forEach((paragraph, index) => {
+        const phrase = paragraph.trim().substring(0, 100).split(/\s+/).slice(0, 10).join(' ');
+        markers.push({
+          phrase: phrase.trim(),
+          sectionId: `section-${index + 1}`
+        });
+      });
+    }
+    
+    console.log(`🔍 Detectados ${markers.length} section markers:`, markers);
+    return markers;
   };
 
   const checkForConflicts = async (lessonsToCheck: BatchLesson[]) => {
@@ -299,11 +345,19 @@ export default function AdminAudioBatch() {
       console.log('🎤 Gerando áudio para:', lesson.name);
       console.log('📝 Tamanho do texto:', lesson.content.length);
       
-      const { data, error } = await supabase.functions.invoke('generate-audio-elevenlabs', {
+      // Detectar section markers automaticamente
+      const sectionMarkers = detectSectionMarkers(lesson.content);
+      updated[index].sectionMarkers = sectionMarkers;
+      
+      console.log(`🔍 Detectados ${sectionMarkers.length} section markers`);
+      
+      // Usar generate-audio-with-timestamps para obter section timestamps
+      const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
         body: {
           text: lesson.content,
           voice_id: 'Xb7hH8MSUJpSbSDYk0k2',
-          model_id: 'eleven_multilingual_v2'
+          model_id: 'eleven_multilingual_v2',
+          section_markers: sectionMarkers
         }
       });
 
@@ -312,7 +366,8 @@ export default function AdminAudioBatch() {
         hasError: !!error,
         dataKeys: data ? Object.keys(data) : [],
         audioBase64Length: data?.audio_base64?.length,
-        wordTimestampsCount: data?.word_timestamps?.length
+        wordTimestampsCount: data?.word_timestamps?.length,
+        sectionTimestampsCount: data?.section_timestamps ? Object.keys(data.section_timestamps).length : 0
       });
 
       if (error) {
@@ -330,13 +385,30 @@ export default function AdminAudioBatch() {
       const url = URL.createObjectURL(blob);
       console.log('✅ Blob URL criado:', url);
 
+      // Processar section timestamps
+      const sections: Array<{ id: string; text: string; timestamp: number }> = [];
+      if (data.section_timestamps) {
+        Object.entries(data.section_timestamps).forEach(([sectionId, timestamp]) => {
+          const marker = sectionMarkers.find(m => m.sectionId === sectionId);
+          sections.push({
+            id: sectionId,
+            text: marker?.phrase || '',
+            timestamp: timestamp as number
+          });
+        });
+        console.log(`✅ ${sections.length} section timestamps mapeados`);
+      }
+
       updated[index].audioUrl = url;
       updated[index].timestamps = data.word_timestamps;
+      updated[index].sectionTimestamps = data.section_timestamps;
+      updated[index].sections = sections;
       updated[index].status = 'generated';
       setLessons(updated);
       
       console.log('✅ Estado atualizado para:', updated[index].status);
-      toast.success(`Áudio gerado: ${lesson.name}`);
+      console.log('✅ Sections:', sections);
+      toast.success(`✅ Áudio gerado com ${sections.length} seções detectadas: ${lesson.name}`);
     } catch (error: any) {
       console.error('💥 Erro ao gerar áudio:', error);
       console.error('Stack trace:', error.stack);
@@ -683,29 +755,64 @@ export default function AdminAudioBatch() {
                   </div>
 
                   {lesson.audioUrl && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Preview do Áudio</label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded">
-                        <audio
-                          id={`audio-${index}`}
-                          src={lesson.audioUrl}
-                          onEnded={() => setPlayingIndex(null)}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => togglePlay(index)}
-                        >
-                          {playingIndex === index ? (
-                            <Pause className="w-4 h-4" />
-                          ) : (
-                            <Play className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <span className="text-sm text-muted-foreground">
-                          Áudio gerado com sucesso
-                        </span>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Preview do Áudio</label>
+                        <div className="flex items-center gap-3 p-3 bg-muted rounded">
+                          <audio
+                            id={`audio-${index}`}
+                            src={lesson.audioUrl}
+                            onEnded={() => setPlayingIndex(null)}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => togglePlay(index)}
+                          >
+                            {playingIndex === index ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            Áudio gerado com sucesso
+                          </span>
+                        </div>
                       </div>
+
+                      {lesson.sections && lesson.sections.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">
+                            🎯 Seções Detectadas ({lesson.sections.length})
+                          </label>
+                          <div className="border rounded-lg p-4 bg-background space-y-2 max-h-[300px] overflow-y-auto">
+                            {lesson.sections.map((section, sIdx) => (
+                              <div 
+                                key={sIdx} 
+                                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                              >
+                                <div className="flex-shrink-0 w-16 text-center">
+                                  <div className="text-sm font-mono font-bold text-primary">
+                                    {Math.floor(section.timestamp / 60)}:{String(section.timestamp % 60).padStart(2, '0')}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {section.timestamp}s
+                                  </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-mono text-muted-foreground mb-1">
+                                    {section.id}
+                                  </div>
+                                  <div className="text-sm text-foreground line-clamp-2">
+                                    {section.text}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
