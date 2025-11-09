@@ -29,8 +29,8 @@ export default function AdminSyncTester() {
       const { data, error } = await supabase
         .from('lessons')
         .select('id, title, audio_url')
-        .eq('lesson_type', 'guided')
-        .order('title');
+        .in('lesson_type', ['guided', 'interactive'])
+        .order('order_index');
 
       if (error) throw error;
 
