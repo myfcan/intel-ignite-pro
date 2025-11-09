@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Play, Square, RotateCcw, TestTube, FlaskConical, Terminal } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Terminal, Accessibility, ArrowLeft, Play, Square, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAutomatedLessonTest } from '@/hooks/useAutomatedLessonTest';
 import { LessonTestReport } from '@/components/admin/LessonTestReport';
@@ -28,6 +28,13 @@ export default function AdminLessonTester() {
   const handleRunE2E = () => {
     toast.info('🧪 Testes E2E com Playwright', {
       description: 'Para rodar os testes E2E, execute no terminal: npm run test:e2e',
+      duration: 8000,
+    });
+  };
+
+  const handleRunA11y = () => {
+    toast.info('♿ Testes de Acessibilidade', {
+      description: 'Para rodar os testes a11y, execute: npm run test:e2e -- accessibility.spec.ts',
       duration: 8000,
     });
   };
@@ -150,6 +157,27 @@ export default function AdminLessonTester() {
                 Testes completos que simulam usuário real navegando pela aula
               </p>
             </div>
+
+            {/* A11y Tests Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Accessibility className="w-4 h-4" />
+                  Testes de Acessibilidade (WCAG 2.1 AA)
+                </label>
+              </div>
+              <Button
+                onClick={handleRunA11y}
+                variant="outline"
+                className="w-full"
+              >
+                <Terminal className="w-4 h-4 mr-2" />
+                Ver Comandos a11y
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Valida conformidade com WCAG, navegação por teclado, leitores de tela
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -200,6 +228,29 @@ export default function AdminLessonTester() {
                 <p>npm run test:e2e</p>
                 <p className="text-foreground mb-1 mt-2"># Modo visual:</p>
                 <p>npm run test:e2e:ui</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Accessibility className="w-4 h-4" />
+                Testes de Acessibilidade (a11y):
+              </h4>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                <li><strong>WCAG 2.1 AA:</strong> Conformidade completa</li>
+                <li><strong>Navegação:</strong> Teclado, tab sequence, focus</li>
+                <li><strong>Leitores:</strong> ARIA labels, roles, screen readers</li>
+                <li><strong>Visual:</strong> Contraste, headings, landmarks</li>
+                <li><strong>Relatórios:</strong> HTML detalhado com correções</li>
+              </ul>
+              
+              <div className="mt-2 p-2 bg-muted rounded text-xs font-mono">
+                <p className="text-foreground mb-1"># Rodar testes a11y:</p>
+                <p>npm run test:e2e -- accessibility.spec.ts</p>
+                <p className="text-foreground mb-1 mt-2"># Com relatório HTML:</p>
+                <p>npm run test:e2e -- accessibility.spec.ts --reporter=html</p>
+                <p className="text-foreground mb-1 mt-2"># Relatórios em:</p>
+                <p>test-results/a11y-reports/</p>
               </div>
             </div>
 

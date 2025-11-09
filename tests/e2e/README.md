@@ -91,13 +91,25 @@ Relatórios são salvos em `playwright-report/`
   - Validação sem erros de console
   - Performance em conexão lenta
 
+- **accessibility.spec.ts** ⭐ NOVO
+  - WCAG 2.1 Level AA compliance
+  - Estrutura de headings
+  - Landmarks ARIA
+  - Contraste de cores
+  - Navegação por teclado
+  - Labels de formulários
+  - Textos alternativos de imagens
+  - Simulação de leitores de tela
+  - Modo alto contraste
+  - Relatórios HTML detalhados
+
 ### 🔜 Próximos Testes
 
 - Testes de responsividade (mobile/tablet)
-- Testes de acessibilidade (a11y)
 - Testes de múltiplas aulas
 - Testes de progresso do usuário
 - Testes de gamificação
+- Visual regression testing
 
 ## 🐛 Debug
 
