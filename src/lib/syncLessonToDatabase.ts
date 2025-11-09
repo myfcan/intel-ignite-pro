@@ -51,7 +51,7 @@ export async function syncFundamentos01(): Promise<SyncResult> {
       description: 'Introdução aos conceitos fundamentais de IA',
       trail_id: trail.id,
       order_index: 1,
-      lesson_type: 'interactive' as const,
+      lesson_type: 'guided' as const,
       passing_score: 70,
       estimated_time: fundamentos01.duration,
       difficulty_level: 'beginner' as const,
