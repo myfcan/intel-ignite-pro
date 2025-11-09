@@ -21,41 +21,63 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExercisePreview } from '@/components/admin/ExercisePreview';
-import { fundamentos01 } from '@/data/lessons/fundamentos-01';
-import { fundamentos02 } from '@/data/lessons/fundamentos-02';
-import { fundamentos03 } from '@/data/lessons/fundamentos-03';
+
+// ✨ Sistema de auto-descoberta de aulas
+import { LESSONS_ARRAY } from '@/data/lessons';
+
+// ✨ Status dinâmico baseado nas aulas descobertas
+type SyncStatusState = 'idle' | 'syncing' | 'success' | 'error';
 
 interface SyncStatus {
-  lesson01: 'idle' | 'syncing' | 'success' | 'error';
-  lesson02: 'idle' | 'syncing' | 'success' | 'error';
-  lesson03: 'idle' | 'syncing' | 'success' | 'error';
-  all: 'idle' | 'syncing' | 'success' | 'error';
+  [key: string]: SyncStatusState;
 }
+
+// Mapeia as funções de sync por chave de aula
+const SYNC_FUNCTIONS: Record<string, () => Promise<any>> = {
+  'fundamentos-01': syncFundamentos01,
+  'fundamentos-02': syncFundamentos02,
+  'fundamentos-03': syncFundamentos03,
+};
+
+// Mapeia títulos das lições para regeneração de áudio
+const LESSON_TITLES: Record<string, string> = {
+  'fundamentos-02': 'Como a IA Aprende com Você',
+  'fundamentos-03': 'Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes',
+};
 
 export default function AdminSyncLessons() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<SyncStatus>({
-    lesson01: 'idle',
-    lesson02: 'idle',
-    lesson03: 'idle',
-    all: 'idle'
-  });
+  
+  // ✨ Status inicial dinâmico baseado nas aulas descobertas
+  const initialStatus: SyncStatus = {
+    all: 'idle',
+    ...Object.fromEntries(LESSONS_ARRAY.map(l => [l.key, 'idle']))
+  };
+  
+  const [status, setStatus] = useState<SyncStatus>(initialStatus);
 
-  const handleSyncLesson01 = async () => {
-    setStatus(prev => ({ ...prev, lesson01: 'syncing' }));
-    const result = await syncFundamentos01();
+  // ✨ Handlers dinâmicos
+  const handleSyncLesson = async (lessonKey: string) => {
+    const syncFn = SYNC_FUNCTIONS[lessonKey];
+    if (!syncFn) return;
+    
+    setStatus(prev => ({ ...prev, [lessonKey]: 'syncing' }));
+    const result = await syncFn();
     setStatus(prev => ({ 
       ...prev, 
-      lesson01: result.success ? 'success' : 'error' 
+      [lessonKey]: result.success ? 'success' : 'error' 
     }));
   };
 
-  const handleSyncLesson02 = async () => {
-    setStatus(prev => ({ ...prev, lesson02: 'syncing' }));
-    const result = await syncFundamentos02();
+  const handleRegenerateAudio = async (lessonKey: string) => {
+    const title = LESSON_TITLES[lessonKey];
+    if (!title) return;
+    
+    setStatus(prev => ({ ...prev, [lessonKey]: 'syncing' }));
+    const success = await regenerateAudio(title);
     setStatus(prev => ({ 
       ...prev, 
-      lesson02: result.success ? 'success' : 'error' 
+      [lessonKey]: success ? 'success' : 'error' 
     }));
   };
 
@@ -68,34 +90,7 @@ export default function AdminSyncLessons() {
     }));
   };
 
-  const handleRegenerateAudio02 = async () => {
-    setStatus(prev => ({ ...prev, lesson02: 'syncing' }));
-    const success = await regenerateAudio('Como a IA Aprende com Você');
-    setStatus(prev => ({ 
-      ...prev, 
-      lesson02: success ? 'success' : 'error' 
-    }));
-  };
-
-  const handleSyncLesson03 = async () => {
-    setStatus(prev => ({ ...prev, lesson03: 'syncing' }));
-    const result = await syncFundamentos03();
-    setStatus(prev => ({ 
-      ...prev, 
-      lesson03: result.success ? 'success' : 'error' 
-    }));
-  };
-
-  const handleRegenerateAudio03 = async () => {
-    setStatus(prev => ({ ...prev, lesson03: 'syncing' }));
-    const success = await regenerateAudio('Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes');
-    setStatus(prev => ({ 
-      ...prev, 
-      lesson03: success ? 'success' : 'error' 
-    }));
-  };
-
-  const getStatusIcon = (state: 'idle' | 'syncing' | 'success' | 'error') => {
+  const getStatusIcon = (state: SyncStatusState) => {
     switch (state) {
       case 'syncing':
         return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
@@ -106,6 +101,16 @@ export default function AdminSyncLessons() {
       default:
         return null;
     }
+  };
+
+  const getStatusText = (lessonKey: string, state: SyncStatusState) => {
+    if (state === 'success') {
+      const metadata = LESSONS_ARRAY.find(l => l.key === lessonKey);
+      const audioInfo = metadata?.model === 'V2' ? '5 áudios separados' : 'áudio único';
+      return `✅ Sincronizada com ${audioInfo}`;
+    }
+    if (state === 'error') return 'Erro na sincronização';
+    return 'Pronta para sincronizar';
   };
 
   return (
@@ -128,94 +133,139 @@ export default function AdminSyncLessons() {
       </div>
 
       <div className="space-y-6">
-        {/* Lesson 01 - V2 */}
-        <Card className="border-2 border-primary">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>🆕 Fundamentos 01 (Modelo V2)</span>
-              {getStatusIcon(status.lesson01)}
-            </CardTitle>
-            <CardDescription>
-              O que é a IA e por que nós precisamos dela - Áudios separados + Timestamps reais
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
-              {status.lesson01 === 'success' ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">✅ Sincronizada com 5 áudios separados</span>
-                </>
-              ) : status.lesson01 === 'error' ? (
-                <>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600">Erro na sincronização</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-blue-600">Pronta para sincronizar</span>
-                </>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="flex-1"
-                  >
-                    <Eye className="mr-2 h-5 w-5" />
-                    Preview dos Exercícios
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh]">
-                  <DialogHeader>
-                    <DialogTitle>Preview - Fundamentos 01</DialogTitle>
-                    <DialogDescription>
-                      Visualize como os exercícios vão aparecer para os alunos
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
-                    <ExercisePreview lesson={fundamentos01} />
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+        {/* ✨ Renderização dinâmica de todas as aulas */}
+        {LESSONS_ARRAY.map((metadata) => {
+          const lessonStatus = status[metadata.key] || 'idle';
+          const isV2 = metadata.model === 'V2';
+          const hasRegenerateAudio = LESSON_TITLES[metadata.key];
 
-              <Button
-                onClick={handleSyncLesson01}
-                disabled={status.lesson01 === 'syncing'}
-                className="flex-1"
-                size="lg"
-              >
-                {status.lesson01 === 'syncing' ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Gerando 5 áudios + Sincronizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-5 w-5" />
-                    Sincronizar Aula 01 (V2)
-                  </>
+          return (
+            <Card 
+              key={metadata.key} 
+              className={isV2 ? "border-2 border-primary" : ""}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>
+                    {metadata.emoji} {metadata.trackName} {metadata.orderIndex.toString().padStart(2, '0')}
+                    {isV2 && ' (Modelo V2)'}
+                  </span>
+                  {getStatusIcon(lessonStatus)}
+                </CardTitle>
+                <CardDescription>{metadata.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Status Badge */}
+                <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
+                  {lessonStatus === 'success' ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-600">
+                        {getStatusText(metadata.key, lessonStatus)}
+                      </span>
+                    </>
+                  ) : lessonStatus === 'error' ? (
+                    <>
+                      <XCircle className="h-4 w-4 text-red-600" />
+                      <span className="text-sm text-red-600">Erro na sincronização</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className={`h-4 w-4 ${isV2 ? 'text-blue-600' : 'text-orange-600'}`} />
+                      <span className={`text-sm ${isV2 ? 'text-blue-600' : 'text-orange-600'}`}>
+                        {isV2 ? 'Pronta para sincronizar' : 'Aguardando sincronização'}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size={isV2 ? "lg" : "default"}
+                        className="flex-1"
+                      >
+                        <Eye className={`mr-2 ${isV2 ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                        Preview{isV2 && ' dos Exercícios'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh]">
+                      <DialogHeader>
+                        <DialogTitle>Preview - {metadata.trackName} {metadata.orderIndex.toString().padStart(2, '0')}</DialogTitle>
+                        <DialogDescription>
+                          Visualize como os exercícios vão aparecer para os alunos
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+                        <ExercisePreview lesson={metadata.lesson} />
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button
+                    onClick={() => handleSyncLesson(metadata.key)}
+                    disabled={lessonStatus === 'syncing'}
+                    className="flex-1"
+                    size={isV2 ? "lg" : "default"}
+                    variant={isV2 ? "default" : "secondary"}
+                  >
+                    {lessonStatus === 'syncing' ? (
+                      <>
+                        <Loader2 className={`mr-2 ${isV2 ? 'h-5 w-5' : 'h-4 w-4'} animate-spin`} />
+                        {isV2 ? `Gerando ${metadata.lesson.sections.length} áudios + Sincronizando...` : 'Sincronizando...'}
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className={`mr-2 ${isV2 ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                        Sincronizar {isV2 && `Aula ${metadata.orderIndex.toString().padStart(2, '0')} (V2)`}
+                        {!isV2 && ' Lição + Timestamps'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Regenerate Audio Button (only for lessons with audio) */}
+                {hasRegenerateAudio && (
+                  <Button
+                    onClick={() => handleRegenerateAudio(metadata.key)}
+                    disabled={lessonStatus === 'syncing'}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {lessonStatus === 'syncing' ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Regenerar Áudio + Timestamps
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
-            </div>
-            
-            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
-                🆕 Modelo V2: 5 áudios separados (~48s cada)
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                • Timestamps reais acumulados (não fixos)<br/>
-                • Sincronização precisa seção por seção<br/>
-                • ~1 minuto para gerar todos os áudios
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+
+                {/* Model Info (V2 only) */}
+                {isV2 && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                      🆕 Modelo V2: {metadata.lesson.sections.length} áudios separados (~48s cada)
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      • Timestamps reais acumulados (não fixos)<br/>
+                      • Sincronização precisa seção por seção<br/>
+                      • ~1 minuto para gerar todos os áudios
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
 
         {/* Sync All */}
         <Card>
@@ -225,7 +275,7 @@ export default function AdminSyncLessons() {
               {getStatusIcon(status.all)}
             </CardTitle>
             <CardDescription>
-              Sincroniza todas as lições de uma vez (Fundamentos 02 e 03)
+              Sincroniza todas as lições de uma vez (exceto Fundamentos 01)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -244,198 +294,6 @@ export default function AdminSyncLessons() {
                 <>
                   <RefreshCw className="mr-2 h-5 w-5" />
                   Sincronizar Todas
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Lesson 02 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>📚 Fundamentos 02</span>
-              {getStatusIcon(status.lesson02)}
-            </CardTitle>
-            <CardDescription>
-              Como a IA Aprende com Você
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
-              {status.lesson02 === 'success' ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
-                </>
-              ) : status.lesson02 === 'error' ? (
-                <>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600">Erro na sincronização</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
-                </>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh]">
-                  <DialogHeader>
-                    <DialogTitle>Preview - Fundamentos 02</DialogTitle>
-                    <DialogDescription>
-                      Visualize como os exercícios vão aparecer para os alunos
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
-                    <ExercisePreview lesson={fundamentos02} />
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                onClick={handleSyncLesson02}
-                disabled={status.lesson02 === 'syncing'}
-                className="flex-1"
-                variant="secondary"
-              >
-                {status.lesson02 === 'syncing' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sincronizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Sincronizar Lição + Timestamps
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            <Button
-              onClick={handleRegenerateAudio02}
-              disabled={status.lesson02 === 'syncing'}
-              className="w-full"
-              variant="outline"
-            >
-              {status.lesson02 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Clock className="mr-2 h-4 w-4" />
-                  Regenerar Áudio + Timestamps
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Lesson 03 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>🧠 Fundamentos 03</span>
-              {getStatusIcon(status.lesson03)}
-            </CardTitle>
-            <CardDescription>
-              Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
-              {status.lesson03 === 'success' ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
-                </>
-              ) : status.lesson03 === 'error' ? (
-                <>
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600">Erro na sincronização</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
-                </>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh]">
-                  <DialogHeader>
-                    <DialogTitle>Preview - Fundamentos 03</DialogTitle>
-                    <DialogDescription>
-                      Visualize como os exercícios vão aparecer para os alunos
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ScrollArea className="h-[calc(90vh-120px)] pr-4">
-                    <ExercisePreview lesson={fundamentos03} />
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                onClick={handleSyncLesson03}
-                disabled={status.lesson03 === 'syncing'}
-                className="flex-1"
-                variant="secondary"
-              >
-                {status.lesson03 === 'syncing' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sincronizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Sincronizar Lição + Timestamps
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            <Button
-              onClick={handleRegenerateAudio03}
-              disabled={status.lesson03 === 'syncing'}
-              className="w-full"
-              variant="outline"
-            >
-              {status.lesson03 === 'syncing' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Clock className="mr-2 h-4 w-4" />
-                  Regenerar Áudio + Timestamps
                 </>
               )}
             </Button>

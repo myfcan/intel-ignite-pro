@@ -5,23 +5,17 @@ import { ArrowLeft, CheckCircle, AlertCircle, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fundamentos01 } from '@/data/lessons/fundamentos-01';
-import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { supabase } from '@/integrations/supabase/client';
-import { GuidedLessonData } from '@/types/guidedLesson';
+import { Badge } from '@/components/ui/badge';
+
+// ✨ Sistema de auto-descoberta de aulas
+import { ALL_LESSONS, LESSONS_ARRAY, LessonKey } from '@/data/lessons';
 
 // Componentes reais de exercício
 import { FillInBlanksExercise } from '@/components/lessons/FillInBlanksExercise';
 import { TrueFalseExercise } from '@/components/lessons/TrueFalseExercise';
 import { ScenarioSelectionExercise } from '@/components/lessons/ScenarioSelectionExercise';
 import { DataCollectionExercise } from '@/components/lessons/DataCollectionExercise';
-import { Badge } from '@/components/ui/badge';
-
-// Mapa de aulas disponíveis
-const AVAILABLE_LESSONS = {
-  'fundamentos-01': fundamentos01,
-  'fundamentos-02': fundamentos02,
-};
 
 type ExerciseStatus = 'pending' | 'approved' | 'needs-review';
 
@@ -37,7 +31,7 @@ export default function AdminLessonTester() {
   const [publishing, setPublishing] = useState(false);
 
   const selectedLesson = selectedLessonKey 
-    ? AVAILABLE_LESSONS[selectedLessonKey as keyof typeof AVAILABLE_LESSONS]
+    ? ALL_LESSONS[selectedLessonKey as LessonKey]
     : null;
 
   const handleExerciseComplete = (exerciseId: string) => {
@@ -108,11 +102,14 @@ export default function AdminLessonTester() {
         .eq('title', selectedLesson.title)
         .maybeSingle();
 
+      // ✨ Usa metadados da auto-descoberta
+      const metadata = LESSONS_ARRAY.find(l => l.key === selectedLessonKey);
+      
       const lessonData = {
         title: selectedLesson.title,
         description: `Aula ${selectedLesson.trackName}`,
         trail_id: trail.id,
-        order_index: selectedLessonKey === 'fundamentos-01' ? 1 : 2,
+        order_index: metadata?.orderIndex || 1,
         lesson_type: 'guided' as const,
         passing_score: 70,
         estimated_time: selectedLesson.duration,
@@ -213,12 +210,12 @@ export default function AdminLessonTester() {
                 <SelectValue placeholder="Escolha uma aula para testar..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fundamentos-01">
-                  Fundamentos 01 - O que é a IA
-                </SelectItem>
-                <SelectItem value="fundamentos-02">
-                  Fundamentos 02 - Como a IA Aprende
-                </SelectItem>
+                {/* ✨ Renderização automática de todas as aulas */}
+                {LESSONS_ARRAY.map((metadata) => (
+                  <SelectItem key={metadata.key} value={metadata.key}>
+                    {metadata.emoji} {metadata.trackName} {metadata.orderIndex.toString().padStart(2, '0')} - {metadata.title}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
