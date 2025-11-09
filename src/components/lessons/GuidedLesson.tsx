@@ -73,7 +73,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 🔧 Helper: Verificar se seção é renderizável no DOM
   const isSectionRenderable = (section: any) => {
-    return !section.type || section.type === 'text';
+    return !section.type || section.type === 'text' || section.type === 'end-audio';
   };
   
   // 📊 Helper: Calcular seção ativa com binary search O(log n)
