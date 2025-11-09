@@ -10,7 +10,7 @@ export const fundamentos01: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos da IA',
   duration: 240, // será atualizado após geração
-  contentVersion: 2, // V2: áudios separados + timestamps reais
+  contentVersion: 3, // V3: exercícios atualizados
   
   sections: [
     {
