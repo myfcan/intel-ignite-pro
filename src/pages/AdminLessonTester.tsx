@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Play, Square, RotateCcw, TestTube } from 'lucide-react';
+import { ArrowLeft, Play, Square, RotateCcw, TestTube, FlaskConical, Terminal } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAutomatedLessonTest } from '@/hooks/useAutomatedLessonTest';
 import { LessonTestReport } from '@/components/admin/LessonTestReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,13 @@ export default function AdminLessonTester() {
   const handleStartTest = async () => {
     if (!selectedLessonId) return;
     await runTest();
+  };
+
+  const handleRunE2E = () => {
+    toast.info('🧪 Testes E2E com Playwright', {
+      description: 'Para rodar os testes E2E, execute no terminal: npm run test:e2e',
+      duration: 8000,
+    });
   };
 
   return (
@@ -121,6 +129,27 @@ export default function AdminLessonTester() {
                 <li>Gera relatório detalhado com tempos de execução</li>
               </ul>
             </div>
+
+            {/* E2E Tests Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4" />
+                  Testes E2E com Playwright
+                </label>
+              </div>
+              <Button
+                onClick={handleRunE2E}
+                variant="outline"
+                className="w-full"
+              >
+                <Terminal className="w-4 h-4 mr-2" />
+                Ver Comandos E2E
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Testes completos que simulam usuário real navegando pela aula
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -134,9 +163,12 @@ export default function AdminLessonTester() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Documentação</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-4 text-sm">
             <div>
-              <h4 className="font-medium mb-1">Checkpoints Validados:</h4>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <TestTube className="w-4 h-4" />
+                Checkpoints Validados (Testes Rápidos):
+              </h4>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground ml-2">
                 <li><strong>Timestamps:</strong> Verifica se todas seções têm timestamps válidos (≥0)</li>
                 <li><strong>Áudio:</strong> Testa se audio_url existe e carrega corretamente</li>
@@ -148,13 +180,39 @@ export default function AdminLessonTester() {
               </ol>
             </div>
 
-            <div>
-              <h4 className="font-medium mb-1">Próximos Passos (Futuro):</h4>
+            <div className="border-t pt-3">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <FlaskConical className="w-4 h-4" />
+                Testes E2E com Playwright:
+              </h4>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                <li>Testes E2E com navegador real (Playwright)</li>
-                <li>Validação de latência de sincronização (&lt;100ms)</li>
-                <li>Análise de telemetria dos diagnostic_logs</li>
-                <li>Testes de cenários de erro (áudio falha, sem internet)</li>
+                <li><strong>Usuário Real:</strong> Simula navegação completa pela aula</li>
+                <li><strong>Multi-browser:</strong> Testa em Chrome, Firefox, Safari</li>
+                <li><strong>Performance:</strong> Mede latência de sincronização (&lt;150ms)</li>
+                <li><strong>Cenários:</strong> Conexão lenta, seeks rápidos, erros de console</li>
+                <li><strong>Visual:</strong> Screenshots e vídeos de falhas</li>
+              </ul>
+              
+              <div className="mt-2 p-2 bg-muted rounded text-xs font-mono">
+                <p className="text-foreground mb-1"># Setup inicial:</p>
+                <p>npx playwright install</p>
+                <p className="text-foreground mb-1 mt-2"># Rodar testes:</p>
+                <p>npm run test:e2e</p>
+                <p className="text-foreground mb-1 mt-2"># Modo visual:</p>
+                <p>npm run test:e2e:ui</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
+              <h4 className="font-medium mb-1">📂 Estrutura de Arquivos:</h4>
+              <ul className="list-none space-y-1 text-muted-foreground ml-2 font-mono text-xs">
+                <li>📄 playwright.config.ts</li>
+                <li>📁 tests/e2e/</li>
+                <li className="ml-4">├── 📄 lesson-flow.spec.ts</li>
+                <li className="ml-4">├── 📁 helpers/</li>
+                <li className="ml-8">└── 📄 lesson-helpers.ts</li>
+                <li className="ml-4">└── 📁 fixtures/</li>
+                <li className="ml-8">└── 📄 auth.ts</li>
               </ul>
             </div>
           </CardContent>
