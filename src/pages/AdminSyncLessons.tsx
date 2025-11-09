@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   syncFundamentos01, 
@@ -9,6 +9,7 @@ import {
   syncAllLessons,
   regenerateAudio 
 } from '@/lib/syncLessonToDatabase';
+import { Badge } from '@/components/ui/badge';
 
 interface SyncStatus {
   lesson01: 'idle' | 'syncing' | 'success' | 'error';
@@ -147,6 +148,25 @@ export default function AdminSyncLessons() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
+              {status.lesson01 === 'success' ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
+                </>
+              ) : status.lesson01 === 'error' ? (
+                <>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm text-red-600">Erro na sincronização</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
+                </>
+              )}
+            </div>
+            
             <Button
               onClick={handleSyncLesson01}
               disabled={status.lesson01 === 'syncing'}
@@ -161,7 +181,7 @@ export default function AdminSyncLessons() {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Sincronizar Lição
+                  Sincronizar Lição + Timestamps
                 </>
               )}
             </Button>
@@ -178,7 +198,10 @@ export default function AdminSyncLessons() {
                   Gerando...
                 </>
               ) : (
-                '🎙️ Regenerar Apenas Áudio'
+                <>
+                  <Clock className="mr-2 h-4 w-4" />
+                  Regenerar Áudio + Timestamps
+                </>
               )}
             </Button>
           </CardContent>
@@ -196,6 +219,25 @@ export default function AdminSyncLessons() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-muted rounded-lg">
+              {status.lesson02 === 'success' ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600">Sincronizada com timestamps</span>
+                </>
+              ) : status.lesson02 === 'error' ? (
+                <>
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm text-red-600">Erro na sincronização</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-600">Aguardando sincronização</span>
+                </>
+              )}
+            </div>
+            
             <Button
               onClick={handleSyncLesson02}
               disabled={status.lesson02 === 'syncing'}
@@ -210,7 +252,7 @@ export default function AdminSyncLessons() {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Sincronizar Lição
+                  Sincronizar Lição + Timestamps
                 </>
               )}
             </Button>
@@ -227,7 +269,10 @@ export default function AdminSyncLessons() {
                   Gerando...
                 </>
               ) : (
-                '🎙️ Regenerar Apenas Áudio'
+                <>
+                  <Clock className="mr-2 h-4 w-4" />
+                  Regenerar Áudio + Timestamps
+                </>
               )}
             </Button>
           </CardContent>
@@ -239,24 +284,35 @@ export default function AdminSyncLessons() {
             <CardTitle className="text-blue-900 dark:text-blue-100">ℹ️ Como Funciona</CardTitle>
           </CardHeader>
           <CardContent className="text-blue-800 dark:text-blue-200 space-y-2 text-sm">
-            <p><strong>Sincronizar Lição:</strong></p>
+            <p><strong>Sincronizar Lição + Timestamps:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Verifica se a lição existe no banco</li>
               <li>Se existir: atualiza o conteúdo</li>
               <li>Se não existir: cria a lição</li>
-              <li>Se não tiver áudio: gera automaticamente</li>
+              <li>✨ <strong>Gera áudio automaticamente se não existir</strong></li>
+              <li>✨ <strong>Gera timestamps automaticamente se estiverem faltando</strong></li>
             </ul>
             
-            <p className="mt-4"><strong>Regenerar Apenas Áudio:</strong></p>
+            <p className="mt-4"><strong>Regenerar Áudio + Timestamps:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Deleta o áudio anterior</li>
-              <li>Gera novo áudio com timestamps</li>
+              <li>Gera novo áudio com timestamps sincronizados</li>
+              <li>Atualiza todos os markers de seção</li>
               <li>Faz upload no storage</li>
               <li>Atualiza URL no banco</li>
             </ul>
             
+            <div className="mt-4 p-3 bg-green-100 dark:bg-green-900 rounded border border-green-300 dark:border-green-700">
+              <p className="text-xs text-green-700 dark:text-green-300 font-semibold">
+                ✅ Sistema agora detecta automaticamente timestamps faltando!
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Ao sincronizar, se a lição não tiver timestamps, eles são gerados automaticamente junto com o áudio.
+              </p>
+            </div>
+            
             <p className="mt-4 text-xs text-blue-600 dark:text-blue-300">
-              ⏱️ Cada lição leva ~10-20 segundos para gerar o áudio
+              ⏱️ Cada lição leva ~10-20 segundos para gerar áudio + timestamps
             </p>
           </CardContent>
         </Card>

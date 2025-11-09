@@ -215,7 +215,7 @@ Você pode **conversar diretamente** com a IA:
     },
     {
       id: 'secao-4',
-      timestamp: 0, // Será atualizado após geração do áudio
+      timestamp: 0,
       speechBubbleText: "Economize tempo, ganhe renda extra e não fique para trás 💰",
       visualContent: `## 🎯 Por que você precisa aprender IA
 
@@ -258,8 +258,106 @@ Pessoas comuns, **sem formação em tecnologia**, estão ganhando de **R$ 5 mil 
       type: 'text'
     },
     {
+      id: 'secao-4-5',
+      timestamp: 0,
+      speechBubbleText: 'Agora teste você mesmo! 🚀',
+      visualContent: `## 🎮 Hora de Praticar!
+
+Agora que você entendeu como a IA funciona, vamos fazer um teste prático.
+
+Você vai testar uma conversa real com IA e ver na prática como ela responde!`,
+      showPlaygroundCall: true,
+      playgroundConfig: {
+        instruction: 'Sua Primeira Conversa com IA',
+        type: 'interactive-simulation',
+        simulationConfig: {
+          type: 'interactive-simulation',
+          title: 'Teste sua Primeira Pergunta para IA',
+          intro: {
+            icon: '💬',
+            title: 'Converse com a IA',
+            description: 'Faça uma pergunta simples e veja como a IA responde!',
+            visual: 'Passo 1: Pergunte → Passo 2: IA responde → Passo 3: Entenda!'
+          },
+          scenario: {
+            icon: '🤖',
+            text: 'A IA está pronta para responder sua primeira pergunta!'
+          },
+          steps: [
+            {
+              step: 1,
+              week: 'Sua Primeira Pergunta',
+              context: 'Escolha uma pergunta simples para fazer à IA',
+              iaKnowledge: '🤖 IA pronta para responder',
+              prompt: 'O que você quer perguntar para a IA?',
+              options: [
+                {
+                  id: 'receita',
+                  title: 'Como fazer um bolo de chocolate?',
+                  genre: 'Culinária',
+                  emoji: '🍰',
+                  description: 'Receita passo a passo'
+                },
+                {
+                  id: 'dica',
+                  title: 'Dicas para economizar dinheiro?',
+                  genre: 'Finanças',
+                  emoji: '💰',
+                  description: 'Conselhos práticos'
+                },
+                {
+                  id: 'exercicio',
+                  title: 'Exercícios para fazer em casa?',
+                  genre: 'Saúde',
+                  emoji: '💪',
+                  description: 'Treino rápido'
+                }
+              ],
+              feedback: {
+                title: 'A IA Respondeu!',
+                learning: [
+                  '✓ IA entendeu sua pergunta',
+                  '✓ Gerou resposta personalizada',
+                  '✓ Você pode fazer quantas perguntas quiser!'
+                ],
+                visual: 'Conversa iniciada! 🎯',
+                confidence: 'Pronto para usar IA!'
+              }
+            }
+          ],
+          completion: {
+            visual: 'teste',
+            summary: {
+              icon: '🎉',
+              title: 'Parabéns! Você conversou com IA!',
+              insights: [
+                '💬 Você fez sua primeira pergunta',
+                '🤖 A IA respondeu instantaneamente',
+                '✨ Agora você sabe como usar IA!'
+              ],
+              realWorldContext: {
+                title: 'Na prática:',
+                points: [
+                  'Você pode fazer QUALQUER pergunta',
+                  'IA responde em segundos',
+                  'Funciona 24 horas por dia',
+                  'Totalmente de graça!'
+                ]
+              }
+            },
+            message: 'Agora você já sabe conversar com IA! Nas próximas aulas vamos aprofundar ainda mais.',
+            badge: {
+              id: 'badge-primeira-conversa-ia',
+              title: 'Primeira Conversa com IA!',
+              icon: '💬'
+            }
+          }
+        }
+      }
+    },
+    {
       id: 'secao-5',
-      timestamp: 0, // Será atualizado após geração do áudio
+      timestamp: 0,
       speechBubbleText: "Seu primeiro exercício está te esperando! 🚀",
       visualContent: `## 🎓 Próximos passos
 

@@ -13,6 +13,7 @@ interface SyncResult {
   success: boolean;
   lessonId?: string;
   audioGenerated?: boolean;
+  timestampsGenerated?: boolean;
   error?: string;
   action?: 'created' | 'updated' | 'skipped';
 }
@@ -101,11 +102,19 @@ export async function syncFundamentos01(): Promise<SyncResult> {
       toast.success('✨ Lição criada no banco');
     }
 
-    // Verificar se precisa gerar áudio
+    // Verificar se precisa gerar áudio OU timestamps
+    const existingContent = existingLesson?.content as any;
+    const needsTimestamps = !existingContent?.sections?.[0]?.timestamp;
     const needsAudio = !existingLesson?.audio_url;
 
-    if (needsAudio) {
-      console.log('🎙️ Gerando áudio...');
+    if (needsAudio || needsTimestamps) {
+      if (needsAudio) {
+        console.log('🎙️ Gerando áudio completo...');
+        toast.info('🎙️ Gerando áudio com timestamps...');
+      } else {
+        console.log('⏱️ Regenerando apenas timestamps...');
+        toast.info('⏱️ Adicionando timestamps ao áudio...');
+      }
       
       const audioSuccess = await autoGenerateAudioWithToast(
         lessonId,
@@ -117,11 +126,12 @@ export async function syncFundamentos01(): Promise<SyncResult> {
         success: true,
         lessonId,
         audioGenerated: audioSuccess,
-        action
+        action,
+        timestampsGenerated: needsTimestamps
       };
     } else {
-      console.log('✅ Áudio já existe, pulando geração');
-      toast.info('ℹ️ Áudio já existe para esta lição');
+      console.log('✅ Áudio e timestamps já existem');
+      toast.info('✅ Lição já tem áudio e timestamps');
       
       return {
         success: true,
@@ -165,7 +175,7 @@ export async function syncFundamentos02(): Promise<SyncResult> {
 
     const { data: existingLesson } = await supabase
       .from('lessons')
-      .select('id, audio_url')
+      .select('id, audio_url, content')
       .eq('title', fundamentos02.title)
       .maybeSingle();
 
@@ -214,9 +224,19 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       toast.success('✨ Lição 02 criada');
     }
 
+    const existingContent = existingLesson?.content as any;
+    const needsTimestamps = !existingContent?.sections?.[0]?.timestamp;
     const needsAudio = !existingLesson?.audio_url;
 
-    if (needsAudio) {
+    if (needsAudio || needsTimestamps) {
+      if (needsAudio) {
+        console.log('🎙️ Gerando áudio completo para lição 02...');
+        toast.info('🎙️ Gerando áudio com timestamps...');
+      } else {
+        console.log('⏱️ Regenerando apenas timestamps para lição 02...');
+        toast.info('⏱️ Adicionando timestamps ao áudio...');
+      }
+
       const audioSuccess = await autoGenerateAudioWithToast(
         lessonId,
         fundamentos02AudioText,
@@ -227,10 +247,11 @@ export async function syncFundamentos02(): Promise<SyncResult> {
         success: true,
         lessonId,
         audioGenerated: audioSuccess,
-        action
+        action,
+        timestampsGenerated: needsTimestamps
       };
     } else {
-      toast.info('ℹ️ Áudio já existe para lição 02');
+      toast.info('✅ Lição 02 já tem áudio e timestamps');
       return {
         success: true,
         lessonId,
