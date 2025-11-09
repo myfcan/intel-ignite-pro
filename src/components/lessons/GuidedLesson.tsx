@@ -73,19 +73,32 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 📊 Helper: Calcular seção ativa com binary search O(log n)
   const calculateActiveSection = (currentTime: number): number => {
+    // Log para debug: mostrar todos os timestamps disponíveis
+    if (currentTime === 0) {
+      console.log('🔍 [TIMESTAMPS-DEBUG] Seções disponíveis:', lessonData.sections.map((s, i) => 
+        `${i}: ${s.id} @ ${s.timestamp}s`
+      ));
+    }
+    
     let left = 0;
     let right = lessonData.sections.length - 1;
     let result = 0;
     
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
+      const sectionTimestamp = lessonData.sections[mid].timestamp;
       
-      if (lessonData.sections[mid].timestamp <= currentTime) {
+      if (sectionTimestamp <= currentTime) {
         result = mid;
         left = mid + 1;
       } else {
         right = mid - 1;
       }
+    }
+    
+    // Log crítico: mostrar decisão
+    if (Math.floor(currentTime) % 10 === 0 && Math.abs(currentTime - Math.floor(currentTime)) < 0.1) {
+      console.log(`🎯 [CALC] Time ${currentTime.toFixed(1)}s → Section ${result} (${lessonData.sections[result]?.id})`);
     }
     
     return result;
