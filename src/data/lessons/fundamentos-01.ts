@@ -145,7 +145,7 @@ Você está no lugar certo para mudar isso agora mesmo. 🚀`,
     },
     {
       id: 'secao-2',
-      timestamp: 0, // Será atualizado após geração do áudio
+      timestamp: 48,
       speechBubbleText: "IA não é mágica, é matemática muito bem aplicada 🧠",
       visualContent: `## 🤖 O que é IA de verdade?
 
@@ -180,7 +180,7 @@ Você ensina seu filho a reconhecer um **cachorro** mostrando várias fotos dife
     },
     {
       id: 'secao-3',
-      timestamp: 0, // Será atualizado após geração do áudio
+      timestamp: 117,
       speechBubbleText: "IA está em todo lugar: Netflix, Waze, WhatsApp... 📱",
       visualContent: `## 🌐 Onde você já usa IA sem perceber
 
@@ -215,7 +215,7 @@ Você pode **conversar diretamente** com a IA:
     },
     {
       id: 'secao-4',
-      timestamp: 0,
+      timestamp: 174,
       speechBubbleText: "Economize tempo, ganhe renda extra e não fique para trás 💰",
       visualContent: `## 🎯 Por que você precisa aprender IA
 
@@ -258,8 +258,8 @@ Pessoas comuns, **sem formação em tecnologia**, estão ganhando de **R$ 5 mil 
       type: 'text'
     },
     {
-      id: 'secao-4-5',
-      timestamp: 0,
+      id: 'secao-5',
+      timestamp: 220,
       speechBubbleText: 'Agora teste você mesmo! 🚀',
       visualContent: `## 🎮 Hora de Praticar!
 
@@ -356,8 +356,8 @@ Você vai testar uma conversa real com IA e ver na prática como ela responde!`,
       }
     },
     {
-      id: 'secao-5',
-      timestamp: 0,
+      id: 'secao-6',
+      timestamp: 260,
       speechBubbleText: "Seu primeiro exercício está te esperando! 🚀",
       visualContent: `## 🎓 Próximos passos
 
