@@ -50,6 +50,21 @@ npm run test:e2e -- --debug
 - **playwright.config.ts**: Configuração principal
 - **tests/e2e/fixtures/auth.ts**: Fixtures de autenticação
 - **tests/e2e/helpers/lesson-helpers.ts**: Helpers reutilizáveis
+- **tests/e2e/data-testid-reference.md**: 📚 **Guia completo de data-testid**
+
+## 📚 Data-TestID Reference
+
+Todos os componentes principais possuem `data-testid` para facilitar os testes:
+
+### Principais:
+- `guided-lesson` - Container principal (com `data-current-phase` e `data-current-section`)
+- `lesson-section` - Cada seção (com `data-section-index`, `data-is-active`)
+- `audio-player` - Player de áudio
+- `exercises-section` - Seção de exercícios
+- `playground-call` - Convite do playground
+- `conclusion-screen` - Tela de conclusão
+
+**Ver documentação completa:** `tests/e2e/data-testid-reference.md`
 
 ## 📊 Relatórios
 

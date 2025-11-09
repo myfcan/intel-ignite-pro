@@ -40,12 +40,16 @@ export class LessonTestHelpers {
    * Verifica se seção atual está correta
    */
   async verifyCurrentSection(expectedSectionIndex: number) {
-    const currentSection = await this.page.evaluate(() => {
-      const element = document.querySelector('[data-current-section]');
-      return element ? parseInt(element.getAttribute('data-current-section') || '0') : 0;
-    });
+    const currentSection = await this.page.locator('[data-testid="guided-lesson"]').getAttribute('data-current-section');
+    expect(parseInt(currentSection || '0')).toBe(expectedSectionIndex);
+  }
 
-    expect(currentSection).toBe(expectedSectionIndex);
+  /**
+   * Verifica fase atual da aula
+   */
+  async verifyCurrentPhase(expectedPhase: string) {
+    const currentPhase = await this.page.locator('[data-testid="guided-lesson"]').getAttribute('data-current-phase');
+    expect(currentPhase).toBe(expectedPhase);
   }
 
   /**
@@ -110,7 +114,7 @@ export class LessonTestHelpers {
    * Verifica se playground está visível
    */
   async isPlaygroundVisible(): Promise<boolean> {
-    return await this.page.isVisible('[data-testid="playground-call"]').catch(() => false);
+    return await this.page.locator('[data-testid="playground-call"]').isVisible().catch(() => false);
   }
 
   /**
@@ -126,7 +130,7 @@ export class LessonTestHelpers {
    * Verifica se exercícios estão visíveis
    */
   async areExercisesVisible(): Promise<boolean> {
-    return await this.page.isVisible('[data-testid="exercises-section"]').catch(() => false);
+    return await this.page.locator('[data-testid="exercises-section"]').isVisible().catch(() => false);
   }
 
   /**
@@ -171,7 +175,7 @@ export class LessonTestHelpers {
    * Verifica se tela de conclusão está visível
    */
   async isConclusionVisible(): Promise<boolean> {
-    return await this.page.isVisible('[data-testid="conclusion-screen"]').catch(() => false);
+    return await this.page.locator('[data-testid="conclusion-screen"]').isVisible().catch(() => false);
   }
 
   /**
@@ -203,12 +207,8 @@ export class LessonTestHelpers {
     // Aguardar sincronização processar
     await this.page.waitForTimeout(300);
     
-    const currentSection = await this.page.evaluate(() => {
-      const element = document.querySelector('[data-current-section]');
-      return element ? parseInt(element.getAttribute('data-current-section') || '0') : 0;
-    });
-
-    expect(currentSection).toBe(expectedSection);
+    const currentSection = await this.page.locator('[data-testid="guided-lesson"]').getAttribute('data-current-section');
+    expect(parseInt(currentSection || '0')).toBe(expectedSection);
   }
 
   /**
@@ -218,10 +218,8 @@ export class LessonTestHelpers {
     const startTime = Date.now();
     await this.seekAudio(audioTime);
     
-    // Aguardar até UI atualizar
-    await this.page.waitForFunction(() => {
-      return document.querySelector('[data-section-updated="true"]');
-    }, { timeout: 2000 });
+    // Aguardar até atributo data-section-updated estar presente
+    await this.page.waitForSelector('[data-section-updated="true"]', { timeout: 2000 });
     
     return Date.now() - startTime;
   }

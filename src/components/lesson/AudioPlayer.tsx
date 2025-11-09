@@ -99,14 +99,18 @@ export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => 
   };
 
   return (
-    <div className="w-full p-4 bg-primary/5 rounded-lg border-2 border-primary/10 space-y-3">
-      <audio ref={audioRef} src={audioUrl} />
+    <div 
+      data-testid="audio-player"
+      className="w-full p-4 bg-primary/5 rounded-lg border-2 border-primary/10 space-y-3"
+    >
+      <audio ref={audioRef} src={audioUrl} data-testid="audio-element" />
       
       <div className="flex items-center gap-3">
         <Button
           onClick={togglePlay}
           size="icon"
           className="w-12 h-12 rounded-full"
+          data-testid="audio-play-pause-button"
         >
           {isPlaying ? (
             <Pause className="w-5 h-5" />
@@ -122,6 +126,7 @@ export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => 
             step={1}
             onValueChange={handleSeek}
             className="cursor-pointer"
+            data-testid="audio-seek-slider"
           />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{formatTime(currentTime)}</span>
@@ -156,6 +161,7 @@ export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => 
             size="sm"
             variant="outline"
             className="text-xs font-mono"
+            data-testid="audio-playback-rate"
           >
             {playbackRate}x
           </Button>

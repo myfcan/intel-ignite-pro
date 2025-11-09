@@ -30,6 +30,10 @@ export const SyncedText = ({ content, isActive, isPast, isFuture }: SyncedTextPr
   return (
     <div
       ref={containerRef}
+      data-testid="synced-text-section"
+      data-is-active={isActive}
+      data-is-past={isPast}
+      data-is-future={isFuture}
       className={`
         relative transition-all duration-700 
         ${isActive ? 'opacity-100 scale-100' : ''}

@@ -73,7 +73,10 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-8">
+    <div 
+      data-testid="conclusion-screen"
+      className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-8"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -273,6 +276,7 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId 
                 size="lg"
                 className="flex-1"
                 onClick={handleGoToNextLesson}
+                data-testid="conclusion-next-lesson"
               >
                 Ir para Próxima Aula
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -284,6 +288,7 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId 
               variant="outline"
               className={nextLessonId ? '' : 'flex-1'}
               onClick={handleGoToDashboard}
+              data-testid="conclusion-dashboard"
             >
               <Home className="w-4 h-4 mr-2" />
               Voltar ao Dashboard

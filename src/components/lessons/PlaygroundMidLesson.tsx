@@ -77,7 +77,11 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
     const fullPrompt = `${config.realConfig.prefilledText} ${userInput}`;
 
     return (
-      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+      <div 
+        data-testid="playground-mid-lesson"
+        data-playground-type="real"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+      >
         <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="bg-gradient-to-r from-cyan-400 to-purple-500 p-6 sticky top-0 z-10">
@@ -179,6 +183,7 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
               disabled={!validationState.isValid}
               className="w-full py-6 text-lg font-bold"
               size="lg"
+              data-testid="playground-mid-continue"
             >
               {validationState.isValid ? '✅ Continuar Aula' : '⏳ Complete o prompt para continuar'}
             </Button>
@@ -190,7 +195,11 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
 
   // Renderizar múltipla escolha (retrocompatibilidade)
   return (
-    <Card className="max-w-xl w-full mx-4 p-8 animate-in fade-in zoom-in-95 duration-300">
+    <Card 
+      data-testid="playground-mid-lesson"
+      data-playground-type="multiple-choice"
+      className="max-w-xl w-full mx-4 p-8 animate-in fade-in zoom-in-95 duration-300"
+    >
       <div className="flex justify-center mb-6">
         <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-lg">
           <AvatarImage src="/maia-avatar-v3.png" alt="MAIA" />

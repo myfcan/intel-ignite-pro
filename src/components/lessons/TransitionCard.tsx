@@ -16,7 +16,10 @@ export function TransitionCard({
   onBack
 }: TransitionCardProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
+    <div 
+      data-testid="transition-card"
+      className="flex flex-col items-center justify-center min-h-screen p-8"
+    >
       <img 
         src="/maia-avatar-v3.png" 
         alt="MAIA" 
@@ -31,6 +34,7 @@ export function TransitionCard({
           onClick={onContinue}
           size="lg"
           className="w-full px-8 py-6 text-lg font-bold"
+          data-testid="transition-continue"
         >
           {buttonText}
         </Button>
@@ -40,6 +44,7 @@ export function TransitionCard({
             variant="ghost"
             size="sm"
             className="w-full"
+            data-testid="transition-back"
           >
             ⬅️ Voltar para a aula
           </Button>

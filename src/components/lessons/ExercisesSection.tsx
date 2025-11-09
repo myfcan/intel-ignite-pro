@@ -92,7 +92,12 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+      <div 
+        data-testid="exercises-section"
+        data-exercise-index={currentExerciseIndex}
+        data-total-exercises={exercises.length}
+        className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+      >
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
             {onBack && (
@@ -118,6 +123,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
 
         {currentExercise.type === 'drag-drop' && (
           <DragDropLesson
+            data-testid={`exercise-drag-drop-${currentExerciseIndex}`}
             content={{
               items: currentExercise.data.items.map((item: any) => item.text),
               correctOrder: currentExercise.data.items.map((item: any) => item.text),

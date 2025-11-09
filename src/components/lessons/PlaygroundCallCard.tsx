@@ -10,7 +10,10 @@ interface PlaygroundCallCardProps {
 
 export function PlaygroundCallCard({ title, description, onOpen, onSkip }: PlaygroundCallCardProps) {
   return (
-    <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
+    <div 
+      data-testid="playground-call"
+      className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500"
+    >
       <Card className="max-w-lg w-full p-8 animate-in zoom-in-95 duration-500 shadow-2xl">
         <div className="flex justify-center mb-6">
           <img 
@@ -33,6 +36,7 @@ export function PlaygroundCallCard({ title, description, onOpen, onSkip }: Playg
             onClick={onOpen} 
             className="w-full py-6 text-lg font-bold shadow-lg hover:shadow-xl transition-all" 
             size="lg"
+            data-testid="playground-call-open"
           >
             🚀 Vamos lá!
           </Button>
@@ -42,6 +46,7 @@ export function PlaygroundCallCard({ title, description, onOpen, onSkip }: Playg
             variant="ghost" 
             className="w-full text-sm hover:bg-muted/50" 
             size="sm"
+            data-testid="playground-call-skip"
           >
             ⏭️ Deixar pra depois (continuar aula)
           </Button>

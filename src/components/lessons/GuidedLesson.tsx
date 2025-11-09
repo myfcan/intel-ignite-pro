@@ -849,7 +849,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div 
+      data-testid="guided-lesson"
+      data-current-phase={currentPhase}
+      data-current-section={currentSection}
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"
+    >
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
@@ -992,6 +997,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
                   <div
                     key={section.id}
                     id={`section-${originalIndex}`}
+                    data-testid="lesson-section"
+                    data-section-index={originalIndex}
+                    data-is-active={currentSection === originalIndex}
+                    data-section-updated={currentSection === originalIndex && sectionJustChanged ? 'true' : 'false'}
                     className={`transition-all duration-700 ${
                       isAudioEnabled 
                         ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4')

@@ -60,7 +60,12 @@ export function GuidedPlayground({ config, onComplete }: GuidedPlaygroundProps) 
   };
 
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div 
+      data-testid="guided-playground"
+      data-current-step={currentStepIndex}
+      data-total-steps={config.steps.length}
+      className="min-h-screen p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+    >
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -208,6 +213,7 @@ export function GuidedPlayground({ config, onComplete }: GuidedPlaygroundProps) 
             disabled={!canProceed()}
             size="lg"
             className="flex-1"
+            data-testid="guided-playground-next"
           >
             {isLastStep ? '🎉 Finalizar Aula' : 'Próximo →'}
           </Button>
