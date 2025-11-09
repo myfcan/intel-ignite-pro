@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Download, Copy, Play, Pause, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
 import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 
 interface SectionMarker {
@@ -69,10 +68,6 @@ export default function AdminAudioGenerator() {
         
         // Map lesson IDs to their local data
         const localLessons: Record<string, { audioText: string; sections: any[] }> = {
-          '11111111-1111-1111-1111-111111111101': {
-            audioText: fundamentos01AudioText,
-            sections: fundamentos01.sections
-          },
           'fundamentos-02': {
             audioText: fundamentos02AudioText,
             sections: fundamentos02.sections

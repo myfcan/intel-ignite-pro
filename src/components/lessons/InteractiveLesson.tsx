@@ -10,7 +10,6 @@ import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { GuidedLesson } from './GuidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
-import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { WordTimestamp } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
@@ -157,9 +156,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         : null;
       
       let localContent = null;
-      if (lesson.title.includes('O que é IA e por que você precisa dela')) {
-        localContent = fundamentos01;
-      } else if (lesson.title.includes('Como a IA Aprende')) {
+      if (lesson.title.includes('Como a IA Aprende')) {
         localContent = fundamentos02;
       }
       
