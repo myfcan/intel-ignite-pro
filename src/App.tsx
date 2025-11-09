@@ -16,6 +16,7 @@ import AdminAudioGenerator from "./pages/AdminAudioGenerator";
 import AdminAudioBatch from "./pages/AdminAudioBatch";
 import AdminSyncTester from "./pages/AdminSyncTester";
 import AdminSyncLessons from "./pages/AdminSyncLessons";
+import AdminDebugTimestamps from "./pages/AdminDebugTimestamps";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/admin/sync-tester" element={<AdminSyncTester />} />
           <Route path="/admin/sync-lessons" element={<AdminSyncLessons />} />
           <Route path="/admin/update-timestamps" element={<AdminUpdateTimestamps />} />
+          <Route path="/admin/debug-timestamps" element={<AdminDebugTimestamps />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -104,6 +104,29 @@ export default function Admin() {
             >
               <TestTube className="w-4 h-4 mr-2" />
               Abrir Testador de Sincronização
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bug className="w-5 h-5" />
+              Debug de Timestamps
+            </CardTitle>
+            <CardDescription>
+              Visualize os timestamps salvos de cada seção e valide a sincronização
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/debug-timestamps')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <Bug className="w-4 h-4 mr-2" />
+              Abrir Debug de Timestamps
             </Button>
           </CardContent>
         </Card>
