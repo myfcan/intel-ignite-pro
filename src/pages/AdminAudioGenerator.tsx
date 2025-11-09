@@ -30,6 +30,14 @@ export default function AdminAudioGenerator() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [qualityAnalysis, setQualityAnalysis] = useState<any>(null);
   
+  // Estados para aprovação de áudio
+  const [pendingAudioData, setPendingAudioData] = useState<{
+    blob: Blob;
+    timestamps: any;
+    audioBase64: string;
+  } | null>(null);
+  const [audioApproved, setAudioApproved] = useState(false);
+  
   // Estados para reprodução de áudio
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -159,68 +167,15 @@ export default function AdminAudioGenerator() {
       const url = URL.createObjectURL(blob);
       setAudioUrl(url);
       setTimestamps(data);
+      
+      // Armazenar dados pendentes para aprovação
+      setPendingAudioData({
+        blob,
+        timestamps: data,
+        audioBase64: data.audio_base64
+      });
 
-      toast.success('✅ Áudio gerado com sucesso!');
-
-      // Se tiver lesson selecionada, salvar automaticamente
-      if (selectedLessonId) {
-        toast.info('Salvando no banco de dados...');
-        
-        // 🧹 Buscar áudio anterior para deletar
-        const { data: lessonData } = await supabase
-          .from('lessons')
-          .select('audio_url')
-          .eq('id', selectedLessonId)
-          .single();
-
-        // Deletar áudio antigo se existir
-        if (lessonData?.audio_url) {
-          try {
-            const oldAudioPath = lessonData.audio_url.split('/lesson-audios/')[1];
-            if (oldAudioPath) {
-              const { error: deleteError } = await supabase.storage
-                .from('lesson-audios')
-                .remove([oldAudioPath]);
-              
-              if (deleteError) {
-                console.warn('Erro ao deletar áudio antigo:', deleteError);
-              } else {
-                console.log('✅ Áudio antigo deletado:', oldAudioPath);
-              }
-            }
-          } catch (err) {
-            console.warn('Erro ao processar deleção:', err);
-          }
-        }
-        
-        // Upload do novo áudio
-        const audioFileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
-        const { error: uploadError } = await supabase.storage
-          .from('lesson-audios')
-          .upload(audioFileName, blob, {
-            contentType: 'audio/mpeg',
-            upsert: true
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('lesson-audios')
-          .getPublicUrl(audioFileName);
-
-        // Atualizar a lesson
-        const { error: updateError } = await supabase
-          .from('lessons')
-          .update({
-            audio_url: publicUrl,
-            word_timestamps: data.word_timestamps
-          })
-          .eq('id', selectedLessonId);
-
-        if (updateError) throw updateError;
-
-        toast.success('✅ Áudio salvo no banco de dados!');
-      }
+      toast.success('✅ Áudio gerado com sucesso! Teste e aprove para salvar.');
 
       // 🎯 Análise automática de qualidade
       toast.info('🔍 Analisando qualidade do áudio...');
@@ -371,6 +326,79 @@ export default function AdminAudioGenerator() {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleRecreate = () => {
+    setAudioUrl(null);
+    setTimestamps(null);
+    setQualityAnalysis(null);
+    setPendingAudioData(null);
+    setAudioApproved(false);
+    toast.info('Pronto para gerar novo áudio');
+  };
+
+  const handleApprove = async () => {
+    if (!pendingAudioData || !selectedLessonId) {
+      toast.error('Selecione uma lição primeiro');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      toast.info('Salvando áudio no banco...');
+      
+      // 1. Buscar e deletar áudio anterior (se existir)
+      const { data: lessonData } = await supabase
+        .from('lessons')
+        .select('audio_url')
+        .eq('id', selectedLessonId)
+        .single();
+
+      if (lessonData?.audio_url) {
+        const oldAudioPath = lessonData.audio_url.split('/lesson-audios/')[1];
+        if (oldAudioPath) {
+          await supabase.storage
+            .from('lesson-audios')
+            .remove([oldAudioPath]);
+        }
+      }
+      
+      // 2. Upload do novo áudio
+      const audioFileName = `lesson-${selectedLessonId}-${Date.now()}.mp3`;
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-audios')
+        .upload(audioFileName, pendingAudioData.blob, {
+          contentType: 'audio/mpeg',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 3. Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(audioFileName);
+
+      // 4. Atualizar registro da lição
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({
+          audio_url: publicUrl,
+          word_timestamps: pendingAudioData.timestamps.word_timestamps
+        })
+        .eq('id', selectedLessonId);
+
+      if (updateError) throw updateError;
+
+      setAudioApproved(true);
+      toast.success('✅ Áudio aprovado e salvo com sucesso!');
+      
+    } catch (error: any) {
+      console.error('Erro ao aprovar áudio:', error);
+      toast.error('Erro ao salvar áudio aprovado');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -550,24 +578,79 @@ export default function AdminAudioGenerator() {
               </Card>
             )}
 
-            {/* Botões de Ação */}
+            {/* Botões de Decisão - Aprovar/Rejeitar */}
+            {!audioApproved && (
+              <Card className="border-2 border-primary">
+                <CardHeader>
+                  <CardTitle>🎯 Decisão do Áudio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Teste o áudio, analise a qualidade e decida:
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Botão Testar Qualidade */}
+                      <Button
+                        variant="outline"
+                        onClick={analyzeQuality}
+                        disabled={isAnalyzing}
+                        className="w-full"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Analisando...
+                          </>
+                        ) : (
+                          <>
+                            🔍 Testar Qualidade
+                          </>
+                        )}
+                      </Button>
+                      
+                      {/* Botão Re-criar */}
+                      <Button
+                        variant="destructive"
+                        onClick={handleRecreate}
+                        className="w-full"
+                      >
+                        🔄 Re-criar Áudio
+                      </Button>
+                      
+                      {/* Botão Aprovar */}
+                      <Button
+                        variant="default"
+                        onClick={handleApprove}
+                        disabled={!selectedLessonId || isGenerating}
+                        className="w-full bg-success hover:bg-success/90"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Salvando...
+                          </>
+                        ) : (
+                          <>
+                            ✅ Aprovar e Salvar
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {!selectedLessonId && (
+                      <p className="text-xs text-warning">
+                        ⚠️ Selecione uma lição para poder aprovar o áudio
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Ações Auxiliares */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={analyzeQuality}
-                disabled={isAnalyzing}
-                className="flex-1"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  'Testar Qualidade'
-                )}
-              </Button>
-              
               <Button
                 variant="outline"
                 onClick={copyTimestamps}
@@ -586,6 +669,49 @@ export default function AdminAudioGenerator() {
                 Baixar Áudio
               </Button>
             </div>
+
+            {/* Mensagem de Sucesso após Aprovação */}
+            {audioApproved && (
+              <Card className="border-2 border-success bg-success/5">
+                <CardHeader>
+                  <CardTitle className="text-success">✅ Áudio Aprovado!</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm mb-4">
+                    O áudio foi salvo com sucesso no banco de dados. Próximos passos:
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-success">✓</span>
+                      <span>Áudio salvo no storage</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-success">✓</span>
+                      <span>Timestamps atualizados no banco</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-success">✓</span>
+                      <span>Lição pronta para uso</span>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAudioUrl(null);
+                      setAudioApproved(false);
+                      setPendingAudioData(null);
+                      setSelectedLessonId('');
+                      setQualityAnalysis(null);
+                      setTimestamps(null);
+                    }}
+                    className="w-full mt-4"
+                  >
+                    Criar Nova Aula
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Análise de Qualidade */}
             {qualityAnalysis && (
