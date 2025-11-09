@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Terminal, Accessibility, ArrowLeft, Play, Square, RotateCcw } from 'lucide-react';
@@ -7,18 +7,35 @@ import { toast } from 'sonner';
 import { useAutomatedLessonTest } from '@/hooks/useAutomatedLessonTest';
 import { LessonTestReport } from '@/components/admin/LessonTestReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminLessonTester() {
   const navigate = useNavigate();
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
+  const [lessons, setLessons] = useState<Array<{ id: string; name: string }>>([]);
+  const [loading, setLoading] = useState(true);
   
   const { testResult, runTest, stopTest, resetTest } = useAutomatedLessonTest(selectedLessonId);
 
-  // IDs das aulas (em produção, buscar do banco)
-  const lessons = [
-    { id: '550e8400-e29b-41d4-a716-446655440001', name: 'Aula 01 - Fundamentos de IA' },
-    { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Aula 02 - O que é IA Generativa' },
-  ];
+  useEffect(() => {
+    const fetchLessons = async () => {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('id, title')
+        .order('created_at', { ascending: true });
+      
+      if (data && !error) {
+        setLessons(data.map(l => ({ id: l.id, name: l.title })));
+      } else if (error) {
+        toast.error('Erro ao carregar aulas', {
+          description: error.message
+        });
+      }
+      setLoading(false);
+    };
+    
+    fetchLessons();
+  }, []);
 
   const handleStartTest = async () => {
     if (!selectedLessonId) return;
@@ -74,13 +91,13 @@ export default function AdminLessonTester() {
             {/* Lesson Selector */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Selecionar Aula</label>
-              <Select
+            <Select
                 value={selectedLessonId}
                 onValueChange={setSelectedLessonId}
-                disabled={testResult.status === 'running'}
+                disabled={testResult.status === 'running' || loading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Escolha uma aula..." />
+                  <SelectValue placeholder={loading ? "Carregando aulas..." : "Escolha uma aula..."} />
                 </SelectTrigger>
                 <SelectContent>
                   {lessons.map((lesson) => (
