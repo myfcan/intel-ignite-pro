@@ -99,56 +99,50 @@ serve(async (req) => {
     const { alignment, audio_base64 } = result;
     const { characters, character_start_times_seconds } = alignment;
     
-    // Normalizar texto para busca (remover espaços extras, quebras de linha)
-    const normalizeText = (text: string) => {
-      return text
-        .toLowerCase()
-        .replace(/\s+/g, ' ')  // Substituir múltiplos espaços por um único
-        .replace(/\n/g, ' ')    // Substituir quebras de linha por espaço
-        .trim();
-    };
-    
     const fullText = characters.join('');
-    const normalizedInputText = normalizeText(text);
+    console.log(`📝 Texto completo tem ${fullText.length} caracteres`);
     
     // Encontrar timestamps de cada seção
     const sectionTimestamps: Record<string, number> = {};
     
     for (const marker of section_markers as SectionMarker[]) {
-      const normalizedPhrase = normalizeText(marker.phrase);
-      const phraseIndex = normalizedInputText.indexOf(normalizedPhrase);
+      // Buscar a frase no texto original (case insensitive)
+      const phraseRegex = new RegExp(
+        marker.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), // escape special chars
+        'i'
+      );
       
-      if (phraseIndex === -1) {
-        console.warn(`Frase não encontrada no texto: "${marker.phrase}"`);
-        console.log(`Texto normalizado procurado: "${normalizedPhrase}"`);
-        console.log(`Primeiros 200 chars do texto: "${normalizedInputText.substring(0, 200)}"`);
+      const match = fullText.match(phraseRegex);
+      
+      if (!match || match.index === undefined) {
+        console.warn(`⚠️ Frase não encontrada: "${marker.phrase}"`);
+        console.log(`Primeiros 300 chars: "${fullText.substring(0, 300)}"`);
+        
+        // Fallback: buscar primeira palavra da frase
+        const firstWord = marker.phrase.split(/\s+/)[0];
+        const firstWordMatch = fullText.match(new RegExp(firstWord, 'i'));
+        
+        if (firstWordMatch && firstWordMatch.index !== undefined) {
+          const charIndex = firstWordMatch.index;
+          if (charIndex < character_start_times_seconds.length) {
+            const timestamp = character_start_times_seconds[charIndex];
+            sectionTimestamps[marker.sectionId] = Math.round(timestamp);
+            console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (fallback: "${firstWord}")`);
+          }
+        } else {
+          console.error(`❌ Nem frase nem primeira palavra encontrada para "${marker.sectionId}"`);
+        }
         continue;
       }
       
-      // Calcular índice aproximado no array de caracteres
-      // Como normalizamos o texto, precisamos mapear de volta
-      let charsSeen = 0;
-      let foundIndex = -1;
+      const charIndex = match.index;
       
-      for (let i = 0; i < fullText.length; i++) {
-        const normalizedChar = fullText.substring(0, i + 1)
-          .toLowerCase()
-          .replace(/\s+/g, ' ')
-          .replace(/\n/g, ' ')
-          .trim();
-        
-        if (normalizedChar.length >= phraseIndex) {
-          foundIndex = i;
-          break;
-        }
-      }
-      
-      if (foundIndex !== -1 && foundIndex < character_start_times_seconds.length) {
-        const timestamp = character_start_times_seconds[foundIndex];
+      if (charIndex < character_start_times_seconds.length) {
+        const timestamp = character_start_times_seconds[charIndex];
         sectionTimestamps[marker.sectionId] = Math.round(timestamp);
-        console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (frase: "${marker.phrase}")`);
+        console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (índice: ${charIndex})`);
       } else {
-        console.warn(`❌ Timestamp não encontrado para: "${marker.phrase}"`);
+        console.warn(`⚠️ Índice ${charIndex} fora do range de timestamps`);
       }
     }
     
