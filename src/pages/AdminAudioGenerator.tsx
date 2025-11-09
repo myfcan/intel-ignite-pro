@@ -53,7 +53,7 @@ export default function AdminAudioGenerator() {
     const { data, error } = await supabase
       .from('lessons')
       .select('id, title, content')
-      .eq('lesson_type', 'guided')
+      .in('lesson_type', ['guided', 'interactive'])
       .order('title');
 
     if (error) {
