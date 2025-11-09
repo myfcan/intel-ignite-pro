@@ -310,7 +310,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     const handleLoadedMetadata = () => {
       console.log(`✅ [ÁUDIO] Carregado! Duração: ${audio.duration}s`);
-      setDuration(audio.duration);
+      
+      // 🆕 V2: Não sobrescrever duration a cada seção, manter a duração inicial
+      if (!isV2) {
+        setDuration(audio.duration);
+      }
+      
       audio.volume = 1.0;
       
       // Tentar autoplay
@@ -431,7 +436,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 🆕 V2: Trocar áudio ao mudar de seção
   useEffect(() => {
-    if (!isV2 || !audioRef.current || currentSection === 0) return;
+    if (!isV2 || !audioRef.current) return;
+    
+    // 🛡️ Não trocar áudio na primeira montagem (seção 0 já foi carregada)
+    if (currentSection === 0) return;
     
     const section = lessonData.sections[currentSection];
     if (!section?.audio_url) return;
@@ -441,15 +449,28 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     console.log(`🔄 [V2] Mudando para áudio da seção ${currentSection}: ${section.audio_url}`);
     
+    // 🎯 IMPORTANTE: Pausar antes de trocar para evitar race conditions
+    audio.pause();
+    
     // Trocar fonte do áudio
     audio.src = section.audio_url;
+    audio.currentTime = 0; // Resetar para início
     audio.load();
     
-    // Se estava tocando, continuar tocando
+    // Se estava tocando, continuar tocando após carregar
     if (wasPlaying) {
-      audio.play().catch((err) => {
-        console.warn('⚠️ [V2] Erro ao reproduzir áudio:', err);
-      });
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log(`✅ [V2] Áudio da seção ${currentSection} reproduzindo`);
+            setIsPlaying(true);
+          })
+          .catch((err) => {
+            console.warn('⚠️ [V2] Erro ao reproduzir áudio:', err);
+            setIsPlaying(false);
+          });
+      }
     }
   }, [currentSection, isV2, lessonData.sections]);
   
@@ -692,17 +713,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     if (!audio) return;
 
     const handleAudioEnded = () => {
-      console.log('🎯 [AUDIO-ENDED] Áudio terminou naturalmente');
+      console.log(`🎯 [AUDIO-ENDED] Áudio da seção ${currentSection} terminou naturalmente`);
       setIsPlaying(false);
       
       // 🆕 Marcar que usuário NÃO pulou (completou a aula)
       setJumpedToExercises(false);
       
       // V2: verificar se ainda há seções restantes
-      if (isV2 && currentSection < lessonData.sections.length - 1) {
-        console.log('🎯 [V2] Avançando para próxima seção automaticamente');
-        setCurrentSection(prev => prev + 1);
-        return;
+      if (isV2) {
+        const isLastSection = currentSection >= lessonData.sections.length - 1;
+        
+        if (!isLastSection) {
+          console.log(`🎯 [V2] Avançando para próxima seção (${currentSection} → ${currentSection + 1})`);
+          setCurrentSection(prev => prev + 1);
+          return;
+        }
+        
+        console.log('🎯 [V2] Última seção completada');
       }
       
       // Última seção terminada: ir para transição ou end card
@@ -985,7 +1012,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     onComplete();
   };
   
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // 📊 Calcular progresso correto (V1 vs V2)
+  const progress = isV2
+    ? // V2: Progresso baseado em seções completadas
+      ((currentSection / Math.max(1, lessonData.sections.length - 1)) * 100)
+    : // V1: Progresso baseado no tempo do áudio único
+      (duration > 0 ? (currentTime / duration) * 100 : 0);
   
   // Renderizar fase de transição
     if (currentPhase === 'transition') {
@@ -1083,7 +1115,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-semibold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">{Math.round(progress)}%</span>
+              <span className="text-xs font-semibold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+                {Math.round(progress)}%
+              </span>
               <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
               </div>
@@ -1356,13 +1390,32 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
               
               <div className="flex-1 flex items-center gap-3 min-w-0">
                 <Volume2 className="text-cyan-400 flex-shrink-0" size={18} />
-                <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
-                <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group min-w-0" onClick={handleProgressBarClick}>
-                  <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-                <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                
+                {!isV2 && (
+                  <>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group min-w-0" onClick={handleProgressBarClick}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                  </>
+                )}
+                
+                {isV2 && (
+                  <>
+                    <span className="text-xs text-slate-300 font-medium">
+                      Seção {currentSection + 1} de {lessonData.sections.length}
+                    </span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden group min-w-0">
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                  </>
+                )}
               </div>
               
               <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-white font-bold text-xs transition-all min-w-[55px] flex-shrink-0">
@@ -1375,11 +1428,27 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
             
             <div className="flex md:hidden flex-col gap-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
-                <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
-                  <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
-                </div>
-                <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                {!isV2 && (
+                  <>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                  </>
+                )}
+                
+                {isV2 && (
+                  <>
+                    <span className="text-xs text-slate-300 font-medium flex-shrink-0">
+                      {currentSection + 1}/{lessonData.sections.length}
+                    </span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                  </>
+                )}
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
