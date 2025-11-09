@@ -140,13 +140,13 @@ export function FillInBlanksExercise({
                     )}
                   </AnimatePresence>
 
-                  <div className="flex flex-wrap items-center gap-2 text-lg">
-                    <span>{parts[0]}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-lg leading-relaxed">
+                    <span className="inline">{parts[0]}</span>
                     <Input
                       value={answers[sentence.id] || ''}
                       onChange={(e) => handleAnswerChange(sentence.id, e.target.value)}
                       disabled={submitted}
-                      className={`w-48 ${
+                      className={`w-48 inline-block ${
                         submitted
                           ? isCorrect
                             ? 'border-green-500'
@@ -155,7 +155,7 @@ export function FillInBlanksExercise({
                       }`}
                       placeholder="..."
                     />
-                    <span>{parts[1]}</span>
+                    {parts[1] && <span className="inline">{parts[1]}</span>}
                     <AnimatePresence>
                       {submitted && (
                         <motion.div
