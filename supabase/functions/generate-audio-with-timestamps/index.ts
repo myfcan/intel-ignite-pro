@@ -115,22 +115,35 @@ serve(async (req) => {
       const match = fullText.match(phraseRegex);
       
       if (!match || match.index === undefined) {
-        console.warn(`⚠️ Frase não encontrada: "${marker.phrase}"`);
-        console.log(`Primeiros 300 chars: "${fullText.substring(0, 300)}"`);
+        console.warn(`⚠️ Frase completa não encontrada: "${marker.phrase}"`);
         
-        // Fallback: buscar primeira palavra da frase
-        const firstWord = marker.phrase.split(/\s+/)[0];
-        const firstWordMatch = fullText.match(new RegExp(firstWord, 'i'));
+        // Fallback progressivo: tentar 3 palavras, 2 palavras, depois 1 palavra
+        const words = marker.phrase.split(/\s+/);
+        let foundMatch = false;
         
-        if (firstWordMatch && firstWordMatch.index !== undefined) {
-          const charIndex = firstWordMatch.index;
-          if (charIndex < character_start_times_seconds.length) {
-            const timestamp = character_start_times_seconds[charIndex];
-            sectionTimestamps[marker.sectionId] = Math.round(timestamp);
-            console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (fallback: "${firstWord}")`);
+        for (let wordCount = Math.min(3, words.length); wordCount >= 1 && !foundMatch; wordCount--) {
+          const partialPhrase = words.slice(0, wordCount).join(' ');
+          const partialRegex = new RegExp(
+            partialPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+            'i'
+          );
+          
+          const partialMatch = fullText.match(partialRegex);
+          
+          if (partialMatch && partialMatch.index !== undefined) {
+            const charIndex = partialMatch.index;
+            if (charIndex < character_start_times_seconds.length) {
+              const timestamp = character_start_times_seconds[charIndex];
+              sectionTimestamps[marker.sectionId] = Math.round(timestamp);
+              console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (fallback ${wordCount} palavras: "${partialPhrase}")`);
+              foundMatch = true;
+            }
           }
-        } else {
-          console.error(`❌ Nem frase nem primeira palavra encontrada para "${marker.sectionId}"`);
+        }
+        
+        if (!foundMatch) {
+          console.error(`❌ Nenhuma correspondência encontrada para "${marker.sectionId}"`);
+          console.log(`Primeiros 300 chars: "${fullText.substring(0, 300)}"`);
         }
         continue;
       }

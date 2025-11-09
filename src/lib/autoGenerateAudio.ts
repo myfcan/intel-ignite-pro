@@ -59,6 +59,11 @@ export async function autoGenerateAudio(
       };
     }
 
+    // Helper para extrair primeiras N palavras completas
+    const getFirstWords = (text: string, wordCount: number = 6): string => {
+      return text.split(/\s+/).slice(0, wordCount).join(' ');
+    };
+
     // Gerar section markers do content
     const sectionMarkers: SectionMarker[] = [];
     if (content?.sections && Array.isArray(content.sections)) {
@@ -68,7 +73,7 @@ export async function autoGenerateAudio(
         
         if (fullText) {
           sectionMarkers.push({
-            phrase: fullText.substring(0, 50), // Primeiros 50 caracteres como identificador
+            phrase: getFirstWords(fullText, 6), // Primeiras 6 palavras completas
             sectionId: section.id || `section_${index}`
           });
         }
