@@ -98,14 +98,94 @@ export const minhaAulaV1: GuidedLessonData = {
 
 ---
 
-## 🔜 Modelo V2
+## ✅ Modelo V2 - Aula com Áudio Separado por Seção
 
-**Status:** 🚧 A ser implementado
+**Status:** ✅ Implementado
 
-**Descrição:** _A ser definido quando criarmos a primeira aula V2_
+**Exemplo de Referência:** `fundamentos-01` (Fundamentos da IA)
 
-### Características Planejadas:
-- _A ser especificado_
+### Características:
+
+#### 1. **Estrutura de Conteúdo**
+- Áudio separado por seção (cada seção tem seu próprio arquivo de áudio)
+- Timestamps reais de palavras (`wordTimestamps`)
+- Balão de fala da MAIA (`speechBubbleText`)
+- Conteúdo visual rico com markdown e emojis (`visualContent`)
+- Sem conteúdo falado separado (o texto visual é o que é falado)
+
+#### 2. **Diferenças do V1**
+- **SEM Playground Mid-Lesson**: V2 não usa `showPlaygroundCall` ou `playgroundConfig` durante a aula
+- **SEM Playground Final**: V2 não tem `finalPlaygroundConfig`
+- **Áudio por Seção**: Cada seção tem `audioUrl` próprio, não um arquivo único para toda aula
+- **Foco em Conteúdo**: A experiência é mais linear, focada em consumo de conteúdo
+
+#### 3. **Exercícios Finais** (`exercisesConfig`)
+Mesmos tipos disponíveis do V1:
+- `data-collection`: Identificar múltiplos pontos de dados em cenários
+- `fill-in-blanks`: Completar frases com conceitos-chave
+- `true-false`: Avaliar afirmações verdadeiras/falsas
+- `scenario-selection`: Selecionar melhor opção em cenários
+- E outros tipos suportados
+
+#### 4. **Tecnologias**
+- Tipo de aula: `lesson_type: 'guided'`
+- Identificador de versão: `contentVersion: 2`
+- Arquivo de dados: TypeScript (`*.ts`)
+- Interface: `GuidedLessonData` (em `src/types/guidedLesson.ts`)
+- Componente: `GuidedLesson.tsx` (com suporte a V2)
+
+### Estrutura de Arquivo Típica:
+
+```typescript
+export const minhaAulaV2: GuidedLessonData = {
+  id: "unique-id",
+  title: "Título da Aula",
+  trackId: "trail-id",
+  trackName: "Nome da Trilha",
+  duration: 300, // segundos totais estimados
+  contentVersion: 2, // IMPORTANTE: identifica V2
+  
+  sections: [
+    {
+      id: "section-1",
+      title: "Seção 1",
+      timestamp: 0,
+      type: 'text',
+      audioUrl: "/audio/secao-1.mp3", // Áudio específico desta seção
+      wordTimestamps: [ /* timestamps reais */ ],
+      speechBubbleText: "Texto curto para balão",
+      visualContent: "## Conteúdo visual com markdown"
+      // SEM spokenContent - visualContent é usado
+      // SEM showPlaygroundCall
+      // SEM playgroundConfig
+    },
+    // ... mais seções
+  ],
+  
+  exercisesConfig: [
+    {
+      id: "ex-1",
+      type: "scenario-selection",
+      title: "Título",
+      instruction: "Instrução",
+      data: { /* config específica */ }
+    },
+    // ... mais exercícios
+  ]
+  
+  // SEM finalPlaygroundConfig
+};
+```
+
+### Fluxo de Experiência V2:
+1. **Seção 1** → Áudio toca → Texto sincroniza → Termina
+2. **Seção 2** → Áudio toca → Texto sincroniza → Termina
+3. **Seção 3** → Áudio toca → Texto sincroniza → Termina
+4. **Seção 4** → Áudio toca → Texto sincroniza → Termina
+5. **Seção 5** (`end-audio`) → Transição para exercícios
+6. **Exercícios Finais** → Conclusão
+
+**Sem interrupções de playground durante o fluxo!**
 
 ---
 

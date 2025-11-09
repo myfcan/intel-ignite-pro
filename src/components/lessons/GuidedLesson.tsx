@@ -26,6 +26,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   
   // 🆕 V2: Detectar se é aula modelo V2 (áudios separados por seção)
   const isV2 = lessonData.sections[0]?.audio_url !== undefined;
+  const hasPlaygroundSupport = lessonData.contentVersion !== 2; // V2 não tem playground
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
@@ -187,6 +188,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
 
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
+    // 🛡️ V2 não tem playground - retornar imediatamente
+    if (!hasPlaygroundSupport) {
+      console.log('🚫 [activatePlayground] V2 não suporta playground');
+      return;
+    }
+    
     const audio = audioRef.current;
     console.log(`🔍 [activatePlayground] chamada | audio=${!!audio} | triggered=${playgroundTriggered}`);
     
@@ -505,8 +512,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
       
       const time = audio.currentTime;
       
-      // Encontrar seção com showPlaygroundCall e playgroundConfig
-      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig);
+      // Encontrar seção com showPlaygroundCall e playgroundConfig (apenas se V1)
+      const playgroundSectionIndex = hasPlaygroundSupport 
+        ? lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig)
+        : -1;
       
       if (playgroundSectionIndex !== -1) {
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
@@ -559,10 +568,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
   useEffect(() => {
     const prevSection = prevSectionRef.current;
     
-    // 🛡️ Verificar se existe playground antes de ativar safety net
-    const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
-    
-    if (hasPlaygroundSection && currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
+    // 🛡️ Safety net apenas para V1 com playground
+    if (hasPlaygroundSupport && currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
+      const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
+      if (!hasPlaygroundSection) return;
       console.log('🎮 [TRIGGER-3] Safety net - usuário pulou seção 4');
       logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'safety-net' });
       
@@ -1254,8 +1263,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         </div>
       </div>
 
-      {/* Card de Convite do Playground */}
-      {showPlaygroundCall && (() => {
+      {/* Card de Convite do Playground (apenas V1) */}
+      {hasPlaygroundSupport && showPlaygroundCall && (() => {
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall && s.playgroundConfig);
         return section4 ? (
           <PlaygroundCallCard
@@ -1267,8 +1276,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         ) : null;
       })()}
 
-      {/* Overlay do Playground Mid-Lesson */}
-      {showPlaygroundMid && (() => {
+      {/* Overlay do Playground Mid-Lesson (apenas V1) */}
+      {hasPlaygroundSupport && showPlaygroundMid && (() => {
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall && s.playgroundConfig);
         const playgroundSection = section4 || lessonData.sections[currentSection];
         return playgroundSection?.playgroundConfig ? (
