@@ -133,6 +133,13 @@ export function FillInBlanksExercise({
           const parts = sentence.text.split('_______');
           const isCorrect = results[sentence.id];
           
+          // Debug: verificar se o split está funcionando corretamente
+          console.log('📝 [DEBUG] Sentence parts:', {
+            full: sentence.text,
+            parts,
+            partsCount: parts.length
+          });
+          
           return (
             <motion.div
               key={sentence.id}
@@ -176,50 +183,52 @@ export function FillInBlanksExercise({
                     )}
                   </AnimatePresence>
 
-                  <div className="flex flex-wrap items-center gap-2 text-lg leading-relaxed">
-                    <span className="inline">{parts[0]}</span>
-                    <Input
-                      value={answers[sentence.id] || ''}
-                      onChange={(e) => handleAnswerChange(sentence.id, e.target.value)}
-                      disabled={submitted}
-                      className={`w-48 inline-block ${
-                        submitted
-                          ? isCorrect
-                            ? 'border-green-500'
-                            : 'border-red-500'
-                          : ''
-                      }`}
-                      placeholder="..."
-                    />
-                    {parts[1] && <span className="inline">{parts[1]}</span>}
-                    <AnimatePresence>
-                      {submitted && (
-                        <motion.div
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ 
-                            scale: 1, 
-                            rotate: 0,
-                            ...(isCorrect && {
-                              y: [0, -5, 0],
-                              transition: { duration: 0.5, repeat: 1 }
-                            }),
-                            ...(!isCorrect && {
-                              x: [0, -5, 5, -5, 5, 0],
-                              transition: { duration: 0.5 }
-                            })
-                          }}
-                          exit={{ scale: 0, rotate: 180 }}
-                          className="ml-2"
-                          transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                        >
-                          {isCorrect ? (
-                            <Check className="h-6 w-6 text-green-500" />
-                          ) : (
-                            <X className="h-6 w-6 text-red-500" />
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                  <div className="text-lg leading-relaxed">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {parts[0] && <span>{parts[0]}</span>}
+                      <Input
+                        value={answers[sentence.id] || ''}
+                        onChange={(e) => handleAnswerChange(sentence.id, e.target.value)}
+                        disabled={submitted}
+                        className={`w-48 ${
+                          submitted
+                            ? isCorrect
+                              ? 'border-green-500'
+                              : 'border-red-500'
+                            : ''
+                        }`}
+                        placeholder="..."
+                      />
+                      {parts.length > 1 && parts[1] && <span>{parts[1]}</span>}
+                      <AnimatePresence>
+                        {submitted && (
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ 
+                              scale: 1, 
+                              rotate: 0,
+                              ...(isCorrect && {
+                                y: [0, -5, 0],
+                                transition: { duration: 0.5, repeat: 1 }
+                              }),
+                              ...(!isCorrect && {
+                                x: [0, -5, 5, -5, 5, 0],
+                                transition: { duration: 0.5 }
+                              })
+                            }}
+                            exit={{ scale: 0, rotate: 180 }}
+                            className="ml-2"
+                            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                          >
+                            {isCorrect ? (
+                              <Check className="h-6 w-6 text-green-500" />
+                            ) : (
+                              <X className="h-6 w-6 text-red-500" />
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                   
                   {/* Opções visuais de referência */}
