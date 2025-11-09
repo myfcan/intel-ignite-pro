@@ -136,7 +136,10 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     }
     
     const targetSection = lessonData.sections[sectionIndex];
-    if (!targetSection) return;
+    if (!targetSection) {
+      console.warn('⚠️ [RESET-AUDIO] Seção não encontrada, ignorando reset');
+      return;
+    }
     
     const targetTime = targetSection.timestamp;
     
@@ -147,19 +150,27 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     // 1. Atualizar ref ANTES de mudar currentTime (previne race condition no loop)
     lastSectionRef.current = sectionIndex;
+    prevSectionRef.current = sectionIndex - 1;
     
-    // 2. Resetar tempo do áudio
+    // 2. Para V2, trocar a fonte do áudio se necessário
+    if (isV2 && targetSection.audio_url) {
+      audio.pause();
+      audio.src = targetSection.audio_url;
+      audio.load();
+    }
+    
+    // 3. Resetar tempo do áudio
     audio.currentTime = targetTime;
     
-    // 3. Pausar áudio (usuário decide quando dar play)
+    // 4. Pausar áudio (usuário decide quando dar play)
     audio.pause();
     setIsPlaying(false);
     
-    // 4. Forçar update dos states
+    // 5. Forçar update dos states
     setCurrentSection(sectionIndex);
     setCurrentTime(targetTime);
     
-    // 5. 🔥 AGUARDAR O ÁUDIO PROCESSAR O SEEK E ENTÃO LIBERAR O SYNCLOOP
+    // 6. 🔥 AGUARDAR O ÁUDIO PROCESSAR O SEEK E ENTÃO LIBERAR O SYNCLOOP
     const handleSeeked = () => {
       console.log(`✅ [RESET-AUDIO] Seek concluído, liberando syncLoop`);
       setIsResetting(false);
@@ -168,12 +179,44 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     audio.addEventListener('seeked', handleSeeked);
     
-    // Fallback: se 'seeked' não disparar em 200ms, liberar mesmo assim
+    // Fallback: se 'seeked' não disparar em 300ms, liberar mesmo assim
     setTimeout(() => {
       console.log(`✅ [RESET-AUDIO] Fallback timeout, liberando syncLoop`);
       setIsResetting(false);
       audio.removeEventListener('seeked', handleSeeked);
-    }, 200);
+    }, 300);
+  };
+
+  // 🔄 Helper: Resetar completamente a aula para o início
+  const resetLessonToBeginning = (targetSection: number) => {
+    console.log(`🔄 [RESET] Resetando aula para seção ${targetSection}`);
+    
+    // 1. Parar e resetar áudio
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
+    }
+    
+    // 2. Resetar estados do playground
+    setPlaygroundTriggered(false);
+    setPlaygroundCompleted(false);
+    setShowPlaygroundCall(false);
+    setShowPlaygroundMid(false);
+    
+    // 3. Resetar estados de UI
+    setShowEndCard(false);
+    setSectionJustChanged(false);
+    
+    // 4. Limpar refs
+    hasScrolledRef.current = {};
+    lastSectionRef.current = targetSection;
+    prevSectionRef.current = -1;
+    
+    // 5. Agendar reset do áudio
+    setPendingAudioReset(targetSection);
+    
+    console.log('✅ [RESET] Estados resetados, áudio será resetado quando fase mudar para audio');
   };
 
   // 🔄 useEffect: Resetar áudio quando voltar para fase 'audio'
@@ -182,7 +225,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
     
     const audio = audioRef.current;
     if (!audio) {
-      console.warn('⚠️ [RESET-PENDING] Áudio ainda não disponível');
+      console.warn('⚠️ [RESET-PENDING] Áudio ainda não disponível, aguardando...');
       return;
     }
     
@@ -1061,23 +1104,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         onBack={() => {
           console.log('⬅️ [EXERCISES] Voltando para aula');
           
-          // 🆕 REGRA DE NEGÓCIO COM RESET DE ÁUDIO
-          if (jumpedToExercises) {
-            // Usuário pulou → voltar para início (seção 0)
-            console.log('🔄 [BACK] Usuário pulou para exercícios, voltando para seção 0');
-            setCurrentSection(0);
-            setPendingAudioReset(0);  // ← Agendar reset para seção 0
-          } else {
-            // Usuário completou → voltar para última seção
-            console.log('✅ [BACK] Usuário completou aula, voltando para última seção');
-            const lastTextSection = lessonData.sections
-              .filter(s => !s.type || s.type === 'text')
-              .length - 1;
-            setCurrentSection(Math.max(0, lastTextSection));
-            setPendingAudioReset(Math.max(0, lastTextSection));  // ← Agendar reset para última seção
-          }
+          // Determinar para qual seção voltar
+          const targetSection = jumpedToExercises 
+            ? 0  // Pulou → voltar para início
+            : Math.max(0, lessonData.sections.filter(s => !s.type || s.type === 'text').length - 1); // Completou → voltar para última seção
           
-          setCurrentPhase('audio');  // ← Mudar fase por último
+          // Resetar tudo
+          resetLessonToBeginning(targetSection);
+          
+          // Resetar flag de "pulou"
+          setJumpedToExercises(false);
+          
+          // Voltar para fase de áudio
+          setCurrentPhase('audio');
         }}
       />
     );
