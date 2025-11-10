@@ -1,13 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { autoGenerateAudioWithToast } from './autoGenerateAudio';
+import { processLessonData, logValidation } from './lessonDataProcessor';
+import type { GuidedLessonData } from '@/types/guidedLesson';
 
 /**
- * EXEMPLO DE USO: Como criar uma lição com áudio automático
+ * CRIAÇÃO DE LIÇÃO COM PROCESSADOR CENTRALIZADO
  * 
- * Esta função demonstra o fluxo completo de:
- * 1. Inserir lição no banco
- * 2. Gerar áudio automaticamente
- * 3. Retornar lição completa com audio_url
+ * Agora usa o processador centralizado para garantir:
+ * ✅ audioText sempre limpo (sem emojis/markdown)
+ * ✅ estimated_time sempre INTEGER
+ * ✅ content estruturado corretamente
+ * ✅ Validação antes de salvar
  */
 
 interface CreateLessonParams {
@@ -16,32 +19,43 @@ interface CreateLessonParams {
   trail_id: string;
   order_index: number;
   lesson_type: 'guided' | 'interactive' | 'fill-blanks' | 'quiz-playground';
+  lessonData: GuidedLessonData; // Dados estruturados da lição
   audioText: string;  // Texto para narração
-  content: any;       // Conteúdo estruturado da lição
   autoGenerateAudio?: boolean; // Default: true
 }
 
 /**
- * Cria uma lição e automaticamente gera o áudio
+ * Cria uma lição usando o processador centralizado
  */
 export async function createLessonWithAudio(params: CreateLessonParams) {
-  const { autoGenerateAudio = true, ...lessonData } = params;
+  const { autoGenerateAudio = true, lessonData, audioText, ...otherParams } = params;
   
   try {
-    console.log('📝 Criando lição:', lessonData.title);
+    console.log('📝 Criando lição:', params.title);
     
-    // 1. Inserir lição no banco
+    // 1. PROCESSAR dados com o processador centralizado
+    const processed = processLessonData({
+      lessonData,
+      audioText,
+      trailId: params.trail_id,
+      orderIndex: params.order_index,
+      title: params.title,
+      description: params.description
+    });
+
+    // 2. Log de validação
+    logValidation(processed, params.title);
+
+    // 3. Verificar se passou nas validações
+    if (!processed.validation.allPassed) {
+      console.warn('⚠️ Lição tem problemas mas continuando...');
+      processed.validation.warnings.forEach(w => console.warn(`  - ${w}`));
+    }
+
+    // 4. Inserir lição no banco com dados processados
     const { data: lesson, error: insertError } = await supabase
       .from('lessons')
-      .insert({
-        title: lessonData.title,
-        description: lessonData.description,
-        trail_id: lessonData.trail_id,
-        order_index: lessonData.order_index,
-        lesson_type: lessonData.lesson_type,
-        content: lessonData.content,
-        is_active: true,
-      })
+      .insert(processed.databaseData)
       .select()
       .single();
 
@@ -51,14 +65,14 @@ export async function createLessonWithAudio(params: CreateLessonParams) {
 
     console.log('✅ Lição criada:', lesson.id);
 
-    // 2. Gerar áudio automaticamente (se habilitado)
+    // 5. Gerar áudio automaticamente (se habilitado)
     if (autoGenerateAudio) {
       console.log('🎙️ Iniciando geração automática de áudio...');
       
       const audioSuccess = await autoGenerateAudioWithToast(
         lesson.id,
-        lessonData.audioText,
-        lessonData.content
+        processed.audioData.cleanAudioText, // ✅ Usa texto limpo
+        processed.databaseData.content
       );
 
       if (!audioSuccess) {
@@ -75,14 +89,16 @@ export async function createLessonWithAudio(params: CreateLessonParams) {
       return {
         success: true,
         lesson: updatedLesson || lesson,
-        audioGenerated: audioSuccess
+        audioGenerated: audioSuccess,
+        validation: processed.validation
       };
     }
 
     return {
       success: true,
       lesson,
-      audioGenerated: false
+      audioGenerated: false,
+      validation: processed.validation
     };
 
   } catch (error: any) {
@@ -100,47 +116,58 @@ export async function createLessonWithAudio(params: CreateLessonParams) {
  * EXEMPLO DE USO PRÁTICO
  */
 export async function exampleUsage() {
-  const result = await createLessonWithAudio({
+  // Criar dados estruturados da lição
+  const exampleLesson: GuidedLessonData = {
+    id: 'example-lesson',
     title: 'O que é a IA e por que nós precisamos dela',
+    trackId: 'fundamentos',
+    trackName: 'Fundamentos de IA',
+    contentVersion: 1,
+    duration: 120.5,
+    sections: [
+      {
+        id: 'intro',
+        type: 'text',
+        timestamp: 0,
+        speechBubbleText: 'Olá! Bem-vindo à primeira aula sobre IA',
+        visualContent: 'Olá! Bem-vindo à primeira aula sobre Inteligência Artificial.'
+      },
+      {
+        id: 'definicao',
+        type: 'text',
+        timestamp: 30,
+        speechBubbleText: 'A IA é a capacidade de máquinas aprenderem',
+        visualContent: 'A Inteligência Artificial é a capacidade de máquinas aprenderem e tomarem decisões.'
+      },
+      {
+        id: 'importancia',
+        type: 'text',
+        timestamp: 60,
+        speechBubbleText: 'Ela transforma como vivemos e trabalhamos',
+        visualContent: 'Ela é importante porque transforma a forma como vivemos e trabalhamos.'
+      }
+    ],
+    exercisesConfig: []
+  };
+
+  const exampleAudioText = `
+    Olá! Bem-vindo à primeira aula sobre Inteligência Artificial.
+    
+    Hoje vamos explorar o que é IA e por que ela é tão importante no mundo moderno.
+    
+    A Inteligência Artificial é a capacidade de máquinas aprenderem e tomarem decisões.
+    
+    Vamos começar!
+  `;
+
+  const result = await createLessonWithAudio({
+    title: exampleLesson.title,
     description: 'Introdução aos conceitos fundamentais de IA',
     trail_id: 'trail-fundamentos-id',
     order_index: 1,
-    lesson_type: 'interactive',
-    
-    // Texto completo que será narrado
-    audioText: `
-      Olá! Bem-vindo à primeira aula sobre Inteligência Artificial.
-      
-      Hoje vamos explorar o que é IA e por que ela é tão importante no mundo moderno.
-      
-      A Inteligência Artificial é a capacidade de máquinas aprenderem e tomarem decisões.
-      
-      Vamos começar!
-    `,
-    
-    // Conteúdo estruturado da lição
-    content: {
-      audioText: 'Olá! Bem-vindo à primeira aula sobre Inteligência Artificial...',
-      sections: [
-        {
-          id: 'intro',
-          speechBubbleText: 'Olá! Bem-vindo à primeira aula sobre Inteligência Artificial.',
-          visualContent: 'Introdução ao tema'
-        },
-        {
-          id: 'definicao',
-          speechBubbleText: 'A Inteligência Artificial é a capacidade de máquinas aprenderem e tomarem decisões.',
-          visualContent: 'Definição de IA'
-        },
-        {
-          id: 'importancia',
-          speechBubbleText: 'Ela é importante porque transforma a forma como vivemos e trabalhamos.',
-          visualContent: 'Importância da IA'
-        }
-      ]
-    },
-    
-    // Gerar áudio automaticamente (default: true)
+    lesson_type: 'guided',
+    lessonData: exampleLesson,
+    audioText: exampleAudioText,
     autoGenerateAudio: true
   });
 

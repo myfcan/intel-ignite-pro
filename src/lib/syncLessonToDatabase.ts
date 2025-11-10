@@ -2,12 +2,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 import { fundamentos03, fundamentos03AudioText } from '@/data/lessons/fundamentos-03';
 import { autoGenerateAudioWithToast } from './autoGenerateAudio';
-import { cleanAudioText } from './audioTextValidator';
+import { processLessonData, logValidation } from './lessonDataProcessor';
 import { toast } from 'sonner';
 
 /**
- * Sincroniza lições do código TypeScript para o banco de dados
- * com geração automática de áudio
+ * SINCRONIZAÇÃO COM PROCESSADOR CENTRALIZADO
+ * 
+ * Agora usa processLessonData() para garantir consistência total
  */
 
 interface SyncResult {
@@ -47,23 +48,22 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       .eq('title', fundamentos02.title)
       .maybeSingle();
 
-    const lessonData = {
+    // ✅ USAR PROCESSADOR CENTRALIZADO
+    const processed = processLessonData({
+      lessonData: fundamentos02,
+      audioText: fundamentos02AudioText,
+      trailId: trail.id,
+      orderIndex: 2,
       title: fundamentos02.title,
       description: 'Como a IA aprende e se adapta',
-      trail_id: trail.id,
-      order_index: 2,
-      lesson_type: 'guided' as const,
-      passing_score: 70,
-      estimated_time: Math.round(fundamentos02.duration), // Arredonda para INTEGER
-      difficulty_level: 'beginner' as const,
-      content: {
-        contentVersion: fundamentos02.contentVersion,
-        duration: fundamentos02.duration, // Valor preciso em JSONB
-        audioText: fundamentos02AudioText, // ✅ Já vem limpo da origem
-        sections: fundamentos02.sections,
-        exercisesConfig: fundamentos02.exercisesConfig
-      } as any
-    };
+      passingScore: 70,
+      difficultyLevel: 'beginner'
+    });
+
+    // Log de validação
+    logValidation(processed, 'Fundamentos 02');
+
+    const lessonData = processed.databaseData;
 
     let lessonId: string;
     let action: 'created' | 'updated';
@@ -110,7 +110,7 @@ export async function syncFundamentos02(): Promise<SyncResult> {
 
       const audioSuccess = await autoGenerateAudioWithToast(
         lessonId,
-        fundamentos02AudioText,
+        processed.audioData.cleanAudioText, // ✅ Usa texto limpo
         lessonData.content
       );
 
@@ -168,23 +168,22 @@ export async function syncFundamentos03(): Promise<SyncResult> {
       .eq('title', fundamentos03.title)
       .maybeSingle();
 
-    const lessonData = {
+    // ✅ USAR PROCESSADOR CENTRALIZADO
+    const processed = processLessonData({
+      lessonData: fundamentos03,
+      audioText: fundamentos03AudioText,
+      trailId: trail.id,
+      orderIndex: 3,
       title: fundamentos03.title,
       description: 'Entenda como a IA aprende e melhora com o tempo',
-      trail_id: trail.id,
-      order_index: 3,
-      lesson_type: 'guided' as const,
-      passing_score: 70,
-      estimated_time: Math.round(fundamentos03.duration), // Arredonda para INTEGER (234s)
-      difficulty_level: 'beginner' as const,
-      content: {
-        contentVersion: fundamentos03.contentVersion,
-        duration: fundamentos03.duration, // 233.767s (valor preciso no JSONB)
-        audioText: fundamentos03AudioText, // ✅ Já vem limpo da origem
-        sections: fundamentos03.sections,
-        exercisesConfig: fundamentos03.exercisesConfig
-      } as any
-    };
+      passingScore: 70,
+      difficultyLevel: 'beginner'
+    });
+
+    // Log de validação
+    logValidation(processed, 'Fundamentos 03');
+
+    const lessonData = processed.databaseData;
 
     let lessonId: string;
     let action: 'created' | 'updated';
@@ -230,7 +229,7 @@ export async function syncFundamentos03(): Promise<SyncResult> {
 
       const audioSuccess = await autoGenerateAudioWithToast(
         lessonId,
-        fundamentos03AudioText,
+        processed.audioData.cleanAudioText, // ✅ Usa texto limpo
         lessonData.content
       );
 
