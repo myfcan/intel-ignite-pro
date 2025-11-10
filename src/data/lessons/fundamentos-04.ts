@@ -20,7 +20,7 @@ export const fundamentos04: GuidedLessonData = {
       timestamp: 0,
       type: 'text',
       speechBubbleText: 'Olá! Vamos descobrir a IA no seu celular? 📱',
-      visualContent: `## 🎯 IA Está Mais Perto do Que Você Imagina
+      visualContent: `## 🎯 VOCÊ JÁ USA IA TODOS OS DIAS E NEM PERCEBE!
 
 Você sabia que já usa Inteligência Artificial várias vezes por dia, sem nem perceber?
 
