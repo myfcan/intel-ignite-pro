@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
+import { fundamentos03 } from '@/data/lessons/fundamentos-03';
 import { WordTimestamp } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -159,8 +160,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       let localContent = null;
       if (lesson.title.includes('que é a IA')) {
         localContent = fundamentos01;
-      } else if (lesson.title.includes('Como a IA Aprende')) {
+      } else if (lesson.title.includes('com Você')) {
         localContent = fundamentos02;
+      } else if (lesson.title.includes('Cérebro Digital')) {
+        localContent = fundamentos03;
       }
       
       // Comparar versões e usar a mais recente
