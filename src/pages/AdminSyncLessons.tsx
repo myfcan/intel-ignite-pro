@@ -5,11 +5,11 @@ import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock
 import { useNavigate } from 'react-router-dom';
 import { 
   syncFundamentos01,
-  syncFundamentos02, 
+  syncFundamentos02,
   syncFundamentos03,
-  syncAllLessons,
-  regenerateAudio 
-} from '@/lib/syncLessonToDatabase';
+  syncAllLessonsV2
+} from '@/lib/syncLessonV2';
+import { regenerateAudio } from '@/lib/syncLessonToDatabase';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -84,7 +84,7 @@ export default function AdminSyncLessons() {
 
   const handleSyncAll = async () => {
     setStatus(prev => ({ ...prev, all: 'syncing' }));
-    const result = await syncAllLessons();
+    const result = await syncAllLessonsV2();
     setStatus(prev => ({ 
       ...prev, 
       all: result.successful === result.total ? 'success' : 'error' 
@@ -276,7 +276,7 @@ export default function AdminSyncLessons() {
               {getStatusIcon(status.all)}
             </CardTitle>
             <CardDescription>
-              Sincroniza todas as 3 lições de uma vez
+              Sincroniza todas as 3 lições V2 com áudios separados por seção
             </CardDescription>
           </CardHeader>
           <CardContent>

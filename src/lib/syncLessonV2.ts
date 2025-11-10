@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
+import { fundamentos02 } from '@/data/lessons/fundamentos-02';
+import { fundamentos03 } from '@/data/lessons/fundamentos-03';
 import { toast } from '@/hooks/use-toast';
 
 // Helper: Converter base64 para Blob
@@ -167,7 +169,7 @@ export async function syncFundamentos01(): Promise<{ success: boolean; message: 
         .insert({
           title: fundamentos01.title,
           trail_id: trailId,
-          order_index: 1, // Aula 01
+          order_index: 1,
           lesson_type: 'guided',
           content: lessonContent as any,
           is_active: true,
@@ -198,4 +200,344 @@ export async function syncFundamentos01(): Promise<{ success: boolean; message: 
       message: (error as Error).message,
     };
   }
+}
+
+export async function syncFundamentos02(): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('🚀 [SYNC V2] Iniciando sincronização Fundamentos 02...');
+    
+    const { data: trails } = await supabase
+      .from('trails')
+      .select('id')
+      .eq('title', 'Fundamentos de IA')
+      .single();
+
+    if (!trails) throw new Error('Trail "Fundamentos de IA" não encontrada');
+
+    const trailId = trails.id;
+    console.log(`✅ [SYNC V2] Trail encontrada: ${trailId}`);
+
+    const audioTexts = fundamentos02.sections.map((section) => ({
+      sectionId: section.id,
+      text: extractNarrationText(section.visualContent || ''),
+    }));
+
+    console.log(`📝 [SYNC V2] Preparando ${audioTexts.length} áudios...`);
+
+    toast({
+      title: '🎵 Gerando áudios...',
+      description: `Criando ${audioTexts.length} áudios separados`,
+    });
+
+    const { data: audioData, error: audioError } = await supabase.functions.invoke(
+      'generate-multiple-audios',
+      {
+        body: { audios: audioTexts },
+      }
+    );
+
+    if (audioError) throw new Error(`Erro ao gerar áudios: ${audioError.message}`);
+    if (!audioData?.results || audioData.results.length === 0) {
+      throw new Error('Nenhum áudio foi gerado');
+    }
+
+    console.log(`✅ [SYNC V2] ${audioData.results.length} áudios gerados com sucesso!`);
+
+    toast({
+      title: '📤 Fazendo upload...',
+      description: 'Salvando áudios no storage',
+    });
+
+    const updatedSections = [];
+    let cumulativeTime = 0;
+
+    for (let i = 0; i < audioData.results.length; i++) {
+      const result = audioData.results[i];
+      const section = fundamentos02.sections[i];
+      const audioBlob = base64ToBlob(result.audio_base64);
+      const fileName = `aula-02/sessao-${i + 1}.mp3`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-audios')
+        .upload(fileName, audioBlob, {
+          upsert: true,
+          contentType: 'audio/mpeg',
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(fileName);
+
+      console.log(`✅ [SYNC V2] Sessão ${i + 1}: ${result.duration.toFixed(2)}s`);
+
+      updatedSections.push({
+        ...section,
+        audio_url: urlData.publicUrl,
+        timestamp: cumulativeTime,
+      });
+
+      cumulativeTime += result.duration;
+    }
+
+    const totalDuration = cumulativeTime;
+    console.log(`📊 [SYNC V2] Duração total: ${totalDuration.toFixed(2)}s`);
+
+    const { data: existingLesson } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('title', fundamentos02.title)
+      .eq('trail_id', trailId)
+      .single();
+
+    toast({
+      title: '💾 Salvando no banco...',
+      description: 'Atualizando lição',
+    });
+
+    const lessonContent = {
+      ...fundamentos02,
+      duration: totalDuration,
+      sections: updatedSections,
+    };
+
+    if (existingLesson) {
+      await supabase
+        .from('lessons')
+        .update({
+          content: lessonContent as any,
+          lesson_type: 'guided',
+        })
+        .eq('id', existingLesson.id);
+    } else {
+      await supabase
+        .from('lessons')
+        .insert({
+          title: fundamentos02.title,
+          trail_id: trailId,
+          order_index: 2,
+          lesson_type: 'guided',
+          content: lessonContent as any,
+          is_active: true,
+        });
+    }
+
+    toast({
+      title: '🎉 Sincronização completa!',
+      description: `Aula 02 sincronizada com ${updatedSections.length} áudios`,
+    });
+
+    return {
+      success: true,
+      message: `Aula 02 sincronizada com sucesso!`,
+    };
+  } catch (error) {
+    console.error('❌ [SYNC V2] Erro:', error);
+    toast({
+      title: '❌ Erro na sincronização',
+      description: (error as Error).message,
+      variant: 'destructive',
+    });
+    return {
+      success: false,
+      message: (error as Error).message,
+    };
+  }
+}
+
+export async function syncFundamentos03(): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('🚀 [SYNC V2] Iniciando sincronização Fundamentos 03...');
+    
+    const { data: trails } = await supabase
+      .from('trails')
+      .select('id')
+      .eq('title', 'Fundamentos de IA')
+      .single();
+
+    if (!trails) throw new Error('Trail "Fundamentos de IA" não encontrada');
+
+    const trailId = trails.id;
+    console.log(`✅ [SYNC V2] Trail encontrada: ${trailId}`);
+
+    const audioTexts = fundamentos03.sections.map((section) => ({
+      sectionId: section.id,
+      text: extractNarrationText(section.visualContent || ''),
+    }));
+
+    console.log(`📝 [SYNC V2] Preparando ${audioTexts.length} áudios...`);
+
+    toast({
+      title: '🎵 Gerando áudios...',
+      description: `Criando ${audioTexts.length} áudios separados`,
+    });
+
+    const { data: audioData, error: audioError } = await supabase.functions.invoke(
+      'generate-multiple-audios',
+      {
+        body: { audios: audioTexts },
+      }
+    );
+
+    if (audioError) throw new Error(`Erro ao gerar áudios: ${audioError.message}`);
+    if (!audioData?.results || audioData.results.length === 0) {
+      throw new Error('Nenhum áudio foi gerado');
+    }
+
+    console.log(`✅ [SYNC V2] ${audioData.results.length} áudios gerados com sucesso!`);
+
+    toast({
+      title: '📤 Fazendo upload...',
+      description: 'Salvando áudios no storage',
+    });
+
+    const updatedSections = [];
+    let cumulativeTime = 0;
+
+    for (let i = 0; i < audioData.results.length; i++) {
+      const result = audioData.results[i];
+      const section = fundamentos03.sections[i];
+      const audioBlob = base64ToBlob(result.audio_base64);
+      const fileName = `aula-03/sessao-${i + 1}.mp3`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-audios')
+        .upload(fileName, audioBlob, {
+          upsert: true,
+          contentType: 'audio/mpeg',
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(fileName);
+
+      console.log(`✅ [SYNC V2] Sessão ${i + 1}: ${result.duration.toFixed(2)}s`);
+
+      updatedSections.push({
+        ...section,
+        audio_url: urlData.publicUrl,
+        timestamp: cumulativeTime,
+      });
+
+      cumulativeTime += result.duration;
+    }
+
+    const totalDuration = cumulativeTime;
+    console.log(`📊 [SYNC V2] Duração total: ${totalDuration.toFixed(2)}s`);
+
+    const { data: existingLesson } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('title', fundamentos03.title)
+      .eq('trail_id', trailId)
+      .single();
+
+    toast({
+      title: '💾 Salvando no banco...',
+      description: 'Atualizando lição',
+    });
+
+    const lessonContent = {
+      ...fundamentos03,
+      duration: totalDuration,
+      sections: updatedSections,
+    };
+
+    if (existingLesson) {
+      await supabase
+        .from('lessons')
+        .update({
+          content: lessonContent as any,
+          lesson_type: 'guided',
+        })
+        .eq('id', existingLesson.id);
+    } else {
+      await supabase
+        .from('lessons')
+        .insert({
+          title: fundamentos03.title,
+          trail_id: trailId,
+          order_index: 3,
+          lesson_type: 'guided',
+          content: lessonContent as any,
+          is_active: true,
+        });
+    }
+
+    toast({
+      title: '🎉 Sincronização completa!',
+      description: `Aula 03 sincronizada com ${updatedSections.length} áudios`,
+    });
+
+    return {
+      success: true,
+      message: `Aula 03 sincronizada com sucesso!`,
+    };
+  } catch (error) {
+    console.error('❌ [SYNC V2] Erro:', error);
+    toast({
+      title: '❌ Erro na sincronização',
+      description: (error as Error).message,
+      variant: 'destructive',
+    });
+    return {
+      success: false,
+      message: (error as Error).message,
+    };
+  }
+}
+
+export async function syncAllLessonsV2(): Promise<{ 
+  success: boolean; 
+  total: number; 
+  successful: number; 
+  failed: number; 
+}> {
+  const results = {
+    total: 3,
+    successful: 0,
+    failed: 0
+  };
+
+  toast({
+    title: '🚀 Sincronização em lote',
+    description: 'Iniciando sincronização de todas as lições V2...',
+  });
+
+  const result01 = await syncFundamentos01();
+  if (result01.success) results.successful++;
+  else results.failed++;
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const result02 = await syncFundamentos02();
+  if (result02.success) results.successful++;
+  else results.failed++;
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const result03 = await syncFundamentos03();
+  if (result03.success) results.successful++;
+  else results.failed++;
+
+  if (results.successful === results.total) {
+    toast({
+      title: '🎉 Todas as lições sincronizadas!',
+      description: `${results.total} lições V2 sincronizadas com sucesso`,
+    });
+  } else {
+    toast({
+      title: '⚠️ Sincronização parcial',
+      description: `${results.successful}/${results.total} lições sincronizadas`,
+      variant: 'destructive',
+    });
+  }
+
+  return {
+    success: results.successful === results.total,
+    ...results
+  };
 }
