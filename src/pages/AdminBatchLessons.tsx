@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { batchSyncLessons, createBatchLesson } from '@/lib/batchSyncLessons';
 import { LESSONS_ARRAY } from '@/data/lessons';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminBatchLessons() {
   const navigate = useNavigate();
   const [selectedLessons, setSelectedLessons] = useState<string[]>([]);
+  const [orderIndexes, setOrderIndexes] = useState<Record<string, number>>({});
+  const [nextAvailableIndex, setNextAvailableIndex] = useState<number>(1);
+  const [isLoadingIndexes, setIsLoadingIndexes] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [results, setResults] = useState<Array<{
@@ -31,12 +36,76 @@ export default function AdminBatchLessons() {
     emoji: meta.emoji
   }));
 
+  // Buscar próximo order_index disponível ao carregar
+  useEffect(() => {
+    fetchNextAvailableIndex();
+  }, []);
+
+  const fetchNextAvailableIndex = async () => {
+    setIsLoadingIndexes(true);
+    try {
+      // Buscar a trilha "Fundamentos de IA"
+      const { data: trail } = await supabase
+        .from('trails')
+        .select('id')
+        .eq('title', 'Fundamentos de IA')
+        .single();
+
+      if (trail) {
+        // Buscar maior order_index da trilha
+        const { data: lessons } = await supabase
+          .from('lessons')
+          .select('order_index')
+          .eq('trail_id', trail.id)
+          .order('order_index', { ascending: false })
+          .limit(1);
+
+        const maxIndex = lessons?.[0]?.order_index || 0;
+        setNextAvailableIndex(maxIndex + 1);
+        
+        // Inicializar order_indexes com valores sequenciais
+        const initialIndexes: Record<string, number> = {};
+        availableLessons.forEach((lesson, idx) => {
+          initialIndexes[lesson.id] = maxIndex + 1 + idx;
+        });
+        setOrderIndexes(initialIndexes);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar índices:', error);
+      toast.error('Erro ao buscar índices disponíveis');
+    } finally {
+      setIsLoadingIndexes(false);
+    }
+  };
+
   const handleToggle = (lessonId: string) => {
     setSelectedLessons(prev =>
       prev.includes(lessonId)
         ? prev.filter(id => id !== lessonId)
         : [...prev, lessonId]
     );
+  };
+
+  const handleOrderIndexChange = (lessonId: string, value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue > 0) {
+      setOrderIndexes(prev => ({
+        ...prev,
+        [lessonId]: numValue
+      }));
+    }
+  };
+
+  const validateOrderIndexes = (): boolean => {
+    const selectedIndexes = selectedLessons.map(id => orderIndexes[id]);
+    const uniqueIndexes = new Set(selectedIndexes);
+    
+    if (uniqueIndexes.size !== selectedIndexes.length) {
+      toast.error('⚠️ Existem order_index duplicados nas aulas selecionadas!');
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSelectAll = () => {
@@ -57,6 +126,11 @@ export default function AdminBatchLessons() {
       return;
     }
 
+    // Validar order_indexes
+    if (!validateOrderIndexes()) {
+      return;
+    }
+
     setIsProcessing(true);
     setCurrentIndex(0);
     setResults([]);
@@ -67,7 +141,7 @@ export default function AdminBatchLessons() {
 
     try {
       // Preparar batch com as lições selecionadas
-      const batchLessons = selected.map((lesson, index) => {
+      const batchLessons = selected.map((lesson) => {
         // Gerar audioText limpo (extrair narração das seções)
         const audioText = lesson.lessonData.sections
           .map(section => section.visualContent || section.content || '')
@@ -79,7 +153,7 @@ export default function AdminBatchLessons() {
           {
             trailTitle: lesson.trackName,
             folderName: lesson.id.replace('fundamentos-', 'aula-'),
-            orderIndex: index + 1
+            orderIndex: orderIndexes[lesson.id] // Usar o order_index configurado
           }
         );
       });
@@ -146,7 +220,7 @@ export default function AdminBatchLessons() {
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAll}
-                disabled={isProcessing}
+                disabled={isProcessing || isLoadingIndexes}
               >
                 Selecionar Todas
               </Button>
@@ -161,32 +235,64 @@ export default function AdminBatchLessons() {
             </div>
           </div>
 
-          <div className="space-y-3 mb-6">
-            {availableLessons.map(lesson => (
-              <div
-                key={lesson.id}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <Checkbox
-                  id={lesson.id}
-                  checked={selectedLessons.includes(lesson.id)}
-                  onCheckedChange={() => handleToggle(lesson.id)}
-                  disabled={isProcessing}
-                />
-                <label
-                  htmlFor={lesson.id}
-                  className="flex-1 cursor-pointer"
-                >
-                  <div className="font-medium">
-                    {lesson.emoji} {lesson.title}
+          {isLoadingIndexes ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span>Carregando índices disponíveis...</span>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-600 mb-1">
+                    Próximo índice disponível: {nextAvailableIndex}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {lesson.sectionsCount} seções • {lesson.exercisesCount} exercícios
+                  <div className="text-muted-foreground">
+                    Os order_index são calculados automaticamente, mas você pode editá-los manualmente.
                   </div>
-                </label>
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div className="space-y-3 mb-6">
+                {availableLessons.map(lesson => (
+                  <div
+                    key={lesson.id}
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <Checkbox
+                      id={lesson.id}
+                      checked={selectedLessons.includes(lesson.id)}
+                      onCheckedChange={() => handleToggle(lesson.id)}
+                      disabled={isProcessing}
+                    />
+                    <label
+                      htmlFor={lesson.id}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="font-medium">
+                        {lesson.emoji} {lesson.title}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {lesson.sectionsCount} seções • {lesson.exercisesCount} exercícios
+                      </div>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">order_index:</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={orderIndexes[lesson.id] || ''}
+                        onChange={(e) => handleOrderIndexChange(lesson.id, e.target.value)}
+                        disabled={isProcessing}
+                        className="w-20 h-8"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           <Button
             onClick={handleBatchSync}
