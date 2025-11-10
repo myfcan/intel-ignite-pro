@@ -350,4 +350,4 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
 // Texto concatenado para geração de áudio (usando visualContent de cada seção)
 export const fundamentos03AudioText = fundamentos03.sections
   .map(section => section.visualContent)
-  .join('\n\n---\n\n');
+  .join('\n\n');
