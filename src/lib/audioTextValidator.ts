@@ -56,8 +56,6 @@ function removeInvalidCharacters(text: string): string {
   return text
     // Remove separadores markdown (---)
     .replace(/^---+$/gm, '')
-    // Remove múltiplas quebras de linha (mais de 2)
-    .replace(/\n{3,}/g, '\n\n')
     // Remove espaços em excesso
     .replace(/[ \t]+/g, ' ')
     // Remove espaços no início e fim de linhas
@@ -67,6 +65,42 @@ function removeInvalidCharacters(text: string): string {
     .replace(/['']/g, "'")
     // Remove caracteres de controle
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
+/**
+ * 🎯 Processa títulos para garantir pontuação adequada
+ * Títulos sem pontuação seguidos de quebra de linha ganham um ponto final
+ */
+function processTitles(text: string): string {
+  return text
+    // Títulos markdown (## Título) sem pontuação final -> adiciona ponto
+    .replace(/^(#{1,6}\s+[^\n.!?]+)(\n)/gm, '$1.$2')
+    // Linhas isoladas (não títulos) sem pontuação -> adiciona ponto
+    .replace(/^([^#\n.!?,;:\-\*\d][^\n.!?]{10,})(\n)/gm, (match, content, linebreak) => {
+      // Não adicionar ponto se já termina com pontuação ou se é muito curto
+      if (/[.!?;:]$/.test(content.trim())) return match;
+      return content + '.' + linebreak;
+    });
+}
+
+/**
+ * 🎯 Normaliza quebras de linha para evitar pausas indesejadas no TTS
+ * - Quebras duplas (\n\n) viram ". " se texto anterior não tem pontuação
+ * - Quebras duplas viram " " se texto já tem pontuação
+ * - Remove múltiplas quebras (3+)
+ */
+function normalizeLineBreaks(text: string): string {
+  return text
+    // Remove múltiplas quebras de linha (3 ou mais) -> máximo 2
+    .replace(/\n{3,}/g, '\n\n')
+    // Quebra dupla após texto SEM pontuação -> adiciona ponto + espaço
+    .replace(/([^\n.!?;:,])\n\n/g, '$1. ')
+    // Quebra dupla após texto COM pontuação -> apenas espaço
+    .replace(/([.!?;:,])\n\n/g, '$1 ')
+    // Quebra simples -> espaço
+    .replace(/\n/g, ' ')
+    // Remove múltiplos espaços
+    .replace(/\s{2,}/g, ' ');
 }
 
 /**
@@ -127,16 +161,22 @@ export function validateAndCleanAudioText(
   // Passo 1: Remove emojis
   let cleanText = removeEmojis(text);
 
-  // Passo 2: Remove formatação markdown
+  // Passo 2: 🆕 Processa títulos (antes de remover markdown)
+  cleanText = processTitles(cleanText);
+
+  // Passo 3: Remove formatação markdown
   cleanText = removeMarkdownFormatting(cleanText);
 
-  // Passo 3: Remove caracteres inválidos
+  // Passo 4: 🆕 Normaliza quebras de linha (CRÍTICO para evitar pausas indesejadas)
+  cleanText = normalizeLineBreaks(cleanText);
+
+  // Passo 5: Remove caracteres inválidos
   cleanText = removeInvalidCharacters(cleanText);
 
-  // Passo 4: Trim final
+  // Passo 6: Trim final
   cleanText = cleanText.trim();
 
-  // Passo 5: Detecta problemas
+  // Passo 7: Detecta problemas
   const { warnings, errors } = detectIssues(text, cleanText);
 
   // Determina se é válido
