@@ -1,6 +1,7 @@
 import { fundamentos01 } from './fundamentos-01';
 import { fundamentos02 } from './fundamentos-02';
 import { fundamentos03 } from './fundamentos-03';
+import { fundamentos04 } from './fundamentos-04';
 import { GuidedLessonData } from '@/types/guidedLesson';
 
 /**
@@ -18,6 +19,7 @@ export const ALL_LESSONS = {
   'fundamentos-01': fundamentos01,
   'fundamentos-02': fundamentos02,
   'fundamentos-03': fundamentos03,
+  'fundamentos-04': fundamentos04,
 } as const;
 
 export type LessonKey = keyof typeof ALL_LESSONS;
@@ -55,6 +57,7 @@ function getEmojiForLesson(key: string): string {
     'fundamentos-01': '🎯',
     'fundamentos-02': '📚',
     'fundamentos-03': '🧠',
+    'fundamentos-04': '📱',
   };
   return emojiMap[key] || '📖';
 }
@@ -67,6 +70,7 @@ function getLessonDescription(key: string): string {
     'fundamentos-01': 'O que é a IA e por que nós precisamos dela - Áudios separados + Timestamps reais',
     'fundamentos-02': 'Como a IA Aprende com Você',
     'fundamentos-03': 'Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes',
+    'fundamentos-04': 'IA no Seu Bolso: Como Usar no Dia a Dia',
   };
   return descMap[key] || 'Descrição não disponível';
 }
