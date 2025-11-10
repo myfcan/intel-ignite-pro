@@ -512,7 +512,16 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     if (!isV2 || !audioRef.current) return;
     
     // 🛡️ Não trocar áudio na primeira montagem (seção 0 já foi carregada)
-    if (currentSection === 0) return;
+    if (currentSection === 0 && prevSectionRef.current === -1) {
+      prevSectionRef.current = 0;
+      return;
+    }
+    
+    // 🛡️ Não trocar se já trocamos manualmente via jumpToSection
+    if (prevSectionRef.current === currentSection) {
+      console.log(`🛡️ [V2] Seção ${currentSection} já carregada, pulando troca`);
+      return;
+    }
     
     const section = lessonData.sections[currentSection];
     if (!section?.audio_url) return;
@@ -522,12 +531,15 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     
     console.log(`🔄 [V2] Mudando para áudio da seção ${currentSection}: ${section.audio_url}`);
     
+    // Atualizar ref
+    prevSectionRef.current = currentSection;
+    
     // 🎯 IMPORTANTE: Pausar antes de trocar para evitar race conditions
     audio.pause();
     
     // Trocar fonte do áudio
     audio.src = section.audio_url;
-    audio.currentTime = 0; // Resetar para início
+    audio.currentTime = 0;
     audio.load();
     
     // Se estava tocando, continuar tocando após carregar
@@ -736,14 +748,102 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     audio.currentTime = percent * (audio.duration || 0);
   };
   
+  /**
+   * 🎯 REGRA UNIVERSAL: Navegação entre Seções
+   * 
+   * Toda navegação manual entre seções (sidebar, botões, etc) deve:
+   * 1. Verificar se é V1 (áudio único) ou V2 (áudios separados)
+   * 2. V1: Mudar audio.currentTime para section.timestamp
+   * 3. V2: Trocar audio.src para section.audio_url + resetar time
+   * 4. Atualizar currentSection state
+   * 5. Preservar estado de play/pause
+   * 6. Fazer scroll para seção
+   * 7. Prevenir race conditions com useEffects automáticos
+   */
   const jumpToSection = (index: number) => {
     const audio = audioRef.current;
     if (!audio) return;
+    
     const section = lessonData.sections[index];
-    if (section && section.timestamp !== undefined) {
-      audio.currentTime = section.timestamp;
-      hasScrolledRef.current[index] = false;
+    if (!section) return;
+    
+    console.log(`🎯 [JUMP] Saltando para seção ${index}`);
+    console.log(`  - Seção atual: ${currentSection}`);
+    console.log(`  - Seção destino: ${index}`);
+    console.log(`  - Modelo V2? ${isV2}`);
+    console.log(`  - Áudio atual: ${audio.src}`);
+    
+    // Pausar áudio atual
+    const wasPlaying = !audio.paused;
+    audio.pause();
+    setIsPlaying(false);
+    
+    if (isV2) {
+      // 🆕 V2: Trocar arquivo de áudio
+      if (section.audio_url) {
+        console.log(`🔄 [V2-JUMP] Trocando para áudio: ${section.audio_url}`);
+        
+        // Atualizar currentSection ANTES de trocar o áudio
+        // e atualizar prevSectionRef para que o useEffect não conflite
+        prevSectionRef.current = index;
+        setCurrentSection(index);
+        
+        // Trocar fonte do áudio
+        audio.src = section.audio_url;
+        audio.currentTime = 0;
+        audio.load();
+        
+        // Se estava tocando, continuar tocando após carregar
+        if (wasPlaying) {
+          audio.play().then(() => {
+            console.log(`✅ [V2-JUMP] Áudio da seção ${index} reproduzindo`);
+            setIsPlaying(true);
+          }).catch((err) => {
+            console.warn('⚠️ [V2-JUMP] Erro ao reproduzir:', err);
+            
+            // Toast para usuário clicar em play
+            toast({
+              title: "▶️ Clique em Play",
+              description: "O navegador bloqueou o autoplay",
+              duration: 3000,
+            });
+          });
+        }
+      }
+    } else {
+      // V1: Comportamento original (pular para timestamp)
+      if (section.timestamp !== undefined) {
+        audio.currentTime = section.timestamp;
+        setCurrentSection(index);
+        
+        // Se estava tocando, retomar
+        if (wasPlaying) {
+          audio.play();
+          setIsPlaying(true);
+        }
+      }
     }
+    
+    // Resetar flag de scroll para garantir que a seção seja exibida
+    hasScrolledRef.current[index] = false;
+    
+    // Scroll suave para a seção
+    setTimeout(() => {
+      const sectionElement = document.getElementById(`section-${index}`);
+      if (sectionElement) {
+        const headerHeight = 120;
+        const elementTop = sectionElement.getBoundingClientRect().top;
+        const offsetTop = elementTop + window.pageYOffset;
+        const targetPosition = offsetTop - headerHeight;
+        
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+        
+        console.log(`📜 [JUMP] Scroll para seção ${index} completo`);
+      }
+    }, 100);
   };
   
   const toggleAudio = () => {
