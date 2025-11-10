@@ -79,7 +79,7 @@ Nesta aula, vamos descobrir:
 - Remove fundos de fotos
 - Gera textos criativos
 
-**Todas disponíveis no seu celular agora!** 📲`
+**Todas disponíveis no seu celular!** 📲`
     },
     {
       id: 'casos-praticos',
