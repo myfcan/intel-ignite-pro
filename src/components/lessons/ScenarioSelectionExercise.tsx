@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -48,6 +48,13 @@ export function ScenarioSelectionExercise({
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
+  
+  // Reset estado quando o exercício muda
+  useEffect(() => {
+    setSelectedAnswer('');
+    setShowExplanation(false);
+    setHasAnswered(false);
+  }, [title, instruction]);
   
   if (scenarioList.length === 0) {
     return (
