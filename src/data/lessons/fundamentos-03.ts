@@ -347,7 +347,11 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
   ]
 };
 
-// Texto concatenado para geração de áudio (usando visualContent de cada seção)
-export const fundamentos03AudioText = fundamentos03.sections
-  .map(section => section.visualContent)
-  .join('\n\n');
+// Texto concatenado para geração de áudio (limpo, sem emojis/markdown)
+import { cleanAudioText } from '@/lib/audioTextValidator';
+
+export const fundamentos03AudioText = cleanAudioText(
+  fundamentos03.sections
+    .map(section => section.visualContent)
+    .join('\n\n')
+);

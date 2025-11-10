@@ -59,7 +59,7 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       content: {
         contentVersion: fundamentos02.contentVersion,
         duration: fundamentos02.duration, // Valor preciso em JSONB
-        audioText: cleanAudioText(fundamentos02AudioText),
+        audioText: fundamentos02AudioText, // ✅ Já vem limpo da origem
         sections: fundamentos02.sections,
         exercisesConfig: fundamentos02.exercisesConfig
       } as any
@@ -180,7 +180,7 @@ export async function syncFundamentos03(): Promise<SyncResult> {
       content: {
         contentVersion: fundamentos03.contentVersion,
         duration: fundamentos03.duration, // 233.767s (valor preciso no JSONB)
-        audioText: cleanAudioText(fundamentos03AudioText),
+        audioText: fundamentos03AudioText, // ✅ Já vem limpo da origem
         sections: fundamentos03.sections,
         exercisesConfig: fundamentos03.exercisesConfig
       } as any
