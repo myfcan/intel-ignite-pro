@@ -20,13 +20,13 @@ export const fundamentos04: GuidedLessonData = {
       timestamp: 0,
       type: 'text',
       speechBubbleText: 'Olá! Vamos descobrir a IA no seu celular? 📱',
-      visualContent: `## 🎯 VOCÊ JÁ USA IA TODOS OS DIAS E NEM PERCEBE!
+      visualContent: `## 🎯 Você Já Usa IA Todos os Dias e Nem Percebe!
 
 Você sabia que já usa Inteligência Artificial várias vezes por dia, sem nem perceber?
 
 Nesta aula, vamos descobrir:
 - Como a IA está presente no seu smartphone
-- Ferramentas práticas que você pode usar HOJE
+- Ferramentas práticas que você pode usar hoje
 - Exemplos reais do dia a dia
 
 **Prepare-se para ver seu celular com outros olhos!** 👀`
@@ -57,7 +57,7 @@ Nesta aula, vamos descobrir:
       timestamp: 0,
       type: 'text',
       speechBubbleText: 'Agora as ferramentas que vão mudar sua vida!',
-      visualContent: `## 🚀 Ferramentas de IA para Usar HOJE
+      visualContent: `## 🚀 Ferramentas de IA para Usar Hoje
 
 ### ChatGPT (Conversação)
 - Responde perguntas complexas
@@ -79,7 +79,7 @@ Nesta aula, vamos descobrir:
 - Remove fundos de fotos
 - Gera textos criativos
 
-**Todas disponíveis no seu celular AGORA!** 📲`
+**Todas disponíveis no seu celular agora!** 📲`
     },
     {
       id: 'casos-praticos',
@@ -117,7 +117,7 @@ Você aprendeu que:
 - ✅ Existem ferramentas gratuitas e poderosas disponíveis
 - ✅ Você pode usar IA para trabalho, estudos e vida pessoal
 
-**Próximo passo**: Escolha UMA ferramenta da aula e teste HOJE mesmo!
+**Próximo passo**: Escolha uma ferramenta da aula e teste hoje mesmo!
 
 Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
     }
