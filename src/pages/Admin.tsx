@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -81,6 +81,29 @@ export default function Admin() {
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Abrir Sincronização
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-primary" />
+              🎓 Criação em Lote (Modelo V2)
+            </CardTitle>
+            <CardDescription>
+              Sistema automatizado completo: validação + áudios + sincronização para múltiplas aulas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/batch-lessons')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <Layers className="w-4 h-4 mr-2" />
+              Abrir Criação em Lote
             </Button>
           </CardContent>
         </Card>

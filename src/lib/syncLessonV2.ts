@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { fundamentos03 } from '@/data/lessons/fundamentos-03';
+import { syncLessonV2Generic } from './syncLessonV2Generic';
 import { toast } from '@/hooks/use-toast';
 
 // Helper: Converter base64 para Blob
@@ -16,7 +17,7 @@ function base64ToBlob(base64: string, mimeType = 'audio/mpeg'): Blob {
 }
 
 // Helper: Extrair texto de narração da visualContent
-function extractNarrationText(visualContent: string): string {
+export function extractNarrationText(visualContent: string): string {
   // Remove markdown headers e formatação, mantém apenas o texto narrativo
   return visualContent
     .replace(/#{1,6}\s+/g, '') // Remove headers

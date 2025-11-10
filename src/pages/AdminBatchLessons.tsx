@@ -1,0 +1,285 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
+import { ArrowLeft, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { batchSyncLessons, createBatchLesson } from '@/lib/batchSyncLessons';
+import { LESSONS_ARRAY } from '@/data/lessons';
+
+export default function AdminBatchLessons() {
+  const navigate = useNavigate();
+  const [selectedLessons, setSelectedLessons] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [results, setResults] = useState<Array<{
+    title: string;
+    success: boolean;
+    message: string;
+  }>>([]);
+
+  // Configuração das aulas disponíveis (auto-descoberta)
+  const availableLessons = LESSONS_ARRAY.map(meta => ({
+    id: meta.key,
+    title: meta.title,
+    lessonData: meta.lesson,
+    sectionsCount: meta.lesson.sections.length,
+    exercisesCount: meta.lesson.exercisesConfig?.length || 0,
+    trackName: meta.trackName,
+    emoji: meta.emoji
+  }));
+
+  const handleToggle = (lessonId: string) => {
+    setSelectedLessons(prev =>
+      prev.includes(lessonId)
+        ? prev.filter(id => id !== lessonId)
+        : [...prev, lessonId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedLessons(availableLessons.map(l => l.id));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedLessons([]);
+  };
+
+  const handleBatchSync = async () => {
+    const selected = availableLessons.filter(l => 
+      selectedLessons.includes(l.id)
+    );
+    
+    if (selected.length === 0) {
+      toast.error('Selecione ao menos uma aula');
+      return;
+    }
+
+    setIsProcessing(true);
+    setCurrentIndex(0);
+    setResults([]);
+
+    toast.info(`🚀 Iniciando sincronização de ${selected.length} aula(s)...`, {
+      duration: 3000
+    });
+
+    try {
+      // Preparar batch com as lições selecionadas
+      const batchLessons = selected.map((lesson, index) => {
+        // Gerar audioText limpo (extrair narração das seções)
+        const audioText = lesson.lessonData.sections
+          .map(section => section.visualContent || section.content || '')
+          .join('\n\n');
+
+        return createBatchLesson(
+          lesson.lessonData,
+          audioText,
+          {
+            trailTitle: lesson.trackName,
+            folderName: lesson.id.replace('fundamentos-', 'aula-'),
+            orderIndex: index + 1
+          }
+        );
+      });
+
+      // Executar batch
+      const result = await batchSyncLessons(batchLessons, 2000);
+
+      setResults(result.results);
+
+      if (result.failed === 0) {
+        toast.success(`✅ ${result.successful}/${result.total} aula(s) sincronizada(s) com sucesso!`, {
+          duration: 5000
+        });
+      } else {
+        toast.warning(`⚠️ ${result.successful}/${result.total} sucesso, ${result.failed} falha(s)`, {
+          duration: 5000
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Erro no batch:', error);
+      toast.error(`Erro ao processar batch: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+      setCurrentIndex(0);
+    }
+  };
+
+  const selectedCount = selectedLessons.length;
+  const totalCount = availableLessons.length;
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin')}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">🎓 Criação em Lote (Modelo V2)</h1>
+              <p className="text-sm text-muted-foreground">
+                Sistema automatizado de sincronização de aulas
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Card de Seleção */}
+        <Card className="p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">
+              Selecione as Aulas ({selectedCount}/{totalCount})
+            </h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+                disabled={isProcessing}
+              >
+                Selecionar Todas
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearSelection}
+                disabled={isProcessing}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-6">
+            {availableLessons.map(lesson => (
+              <div
+                key={lesson.id}
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <Checkbox
+                  id={lesson.id}
+                  checked={selectedLessons.includes(lesson.id)}
+                  onCheckedChange={() => handleToggle(lesson.id)}
+                  disabled={isProcessing}
+                />
+                <label
+                  htmlFor={lesson.id}
+                  className="flex-1 cursor-pointer"
+                >
+                  <div className="font-medium">
+                    {lesson.emoji} {lesson.title}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {lesson.sectionsCount} seções • {lesson.exercisesCount} exercícios
+                  </div>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            onClick={handleBatchSync}
+            disabled={isProcessing || selectedCount === 0}
+            size="lg"
+            className="w-full"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              <>
+                🚀 Sincronizar {selectedCount} Aula(s)
+              </>
+            )}
+          </Button>
+        </Card>
+
+        {/* Progress */}
+        {isProcessing && (
+          <Card className="p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-3">Progresso</h3>
+            <Progress value={(currentIndex / selectedCount) * 100} className="mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Processando aula {currentIndex} de {selectedCount}...
+            </p>
+          </Card>
+        )}
+
+        {/* Resultados */}
+        {results.length > 0 && (
+          <Card className="p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Resultados</h3>
+            <div className="space-y-2">
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-accent/30"
+                >
+                  {result.success ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <div className="font-medium">{result.title}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {result.message}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Informações */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">ℹ️ Como Funciona</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-start gap-2">
+              <span className="text-green-600">✅</span>
+              <span>Valida dados automaticamente (remove emojis/markdown do áudio)</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-600">✅</span>
+              <span>Gera áudios separados por seção via API ElevenLabs</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-600">✅</span>
+              <span>Calcula timestamps acumulados automaticamente</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-600">✅</span>
+              <span>Faz upload para Storage com URLs públicas</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-green-600">✅</span>
+              <span>Salva no banco de dados com todos os dados corretos</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-blue-600">⏱️</span>
+              <span>Delay de 2s entre aulas (evitar rate limit)</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-purple-600">📊</span>
+              <span>Relatório completo ao final com sucesso/falhas</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
