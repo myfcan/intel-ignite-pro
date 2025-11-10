@@ -39,6 +39,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [showRetry, setShowRetry] = useState(false);
   const [attempts, setAttempts] = useState<Record<number, number>>({});
+  const [passedExercises, setPassedExercises] = useState<boolean[]>(new Array(exercises.length).fill(false));
 
   useEffect(() => {
     const newProgress = (scores.length / exercises.length) * 100;
@@ -70,6 +71,11 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
         duration: 2000,
       });
       
+      // Marcar exercício como passou
+      const newPassedExercises = [...passedExercises];
+      newPassedExercises[currentExerciseIndex] = true;
+      setPassedExercises(newPassedExercises);
+      
       // Salvar e avançar
       const newScores = [...scores, score];
       setScores(newScores);
@@ -87,10 +93,25 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           setCurrentExerciseIndex(prev => prev + 1);
         }, 1500);
       } else {
-        console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
+        // Último exercício - verificar se TODOS passaram
+        const allPassed = newPassedExercises.every(p => p === true);
+        console.log('✅ [EXERCISES] Último exercício. Todos passaram?', allPassed);
+        
+        if (allPassed) {
+          console.log('✅ [EXERCISES] Todos os exercícios completos com sucesso, chamando onComplete');
+          setTimeout(() => {
+            onComplete();
+          }, 2000);
+        } else {
+          // Algum exercício não foi aprovado - isso não deveria acontecer
+          console.error('❌ [EXERCISES] ERRO: Chegou ao final mas nem todos passaram!');
+          toast({
+            title: "⚠️ Erro de validação",
+            description: "Algo deu errado. Por favor, tente novamente.",
+            variant: "destructive",
+            duration: 4000,
+          });
+        }
       }
     } else {
       // ❌ FALHA: Feedback de erro + opção de retry
@@ -112,7 +133,8 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
   const handleRetry = () => {
     console.log('🔄 [RETRY] Usuário vai tentar novamente');
     setShowRetry(false);
-    // O componente de exercício se resetará sozinho ao renderizar novamente
+    // Forçar re-render do exercício com key diferente
+    setCurrentExerciseIndex(currentExerciseIndex);
   };
 
   const handleBackClick = () => {
