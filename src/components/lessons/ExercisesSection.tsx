@@ -196,7 +196,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
           <ScenarioSelectionExercise
             title={currentExercise.title}
             instruction={currentExercise.instruction}
-            scenarios={currentExercise.data.scenarios}
+            data={currentExercise.data}
             onComplete={handleExerciseComplete}
           />
         )}
