@@ -48,6 +48,36 @@ export async function batchSyncLessons(
   console.log(`📚 [BATCH SYNC] Iniciando lote de ${lessons.length} aula(s)`);
   console.log('='.repeat(70) + '\n');
   
+  // 🔍 VALIDAÇÃO: Detectar duplicatas de order_index DENTRO do batch
+  console.log('🔍 Validando order_index no batch...');
+  const orderIndexMap = new Map<number, string>();
+  const duplicates: string[] = [];
+  
+  lessons.forEach((lesson, index) => {
+    if (lesson.orderIndex !== undefined) {
+      const existing = orderIndexMap.get(lesson.orderIndex);
+      if (existing) {
+        duplicates.push(
+          `  [${index + 1}] order_index ${lesson.orderIndex}: "${existing}" ↔️ "${lesson.lessonData.title}"`
+        );
+      } else {
+        orderIndexMap.set(lesson.orderIndex, lesson.lessonData.title);
+      }
+    }
+  });
+  
+  if (duplicates.length > 0) {
+    console.error('\n❌ ERRO: Batch contém order_index duplicados:');
+    duplicates.forEach(d => console.error(d));
+    console.error('\n💡 Corrija os índices duplicados antes de continuar.\n');
+    
+    throw new Error(
+      `❌ Batch contém ${duplicates.length} order_index duplicado(s):\n${duplicates.join('\n')}`
+    );
+  }
+  
+  console.log('✅ Nenhuma duplicata detectada no batch\n');
+  
   const results: BatchResult['results'] = [];
   let successful = 0;
   let failed = 0;

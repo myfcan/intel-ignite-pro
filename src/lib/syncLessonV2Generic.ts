@@ -31,6 +31,24 @@ function base64ToBlob(base64: string, mimeType: string = 'audio/mpeg'): Blob {
 }
 
 /**
+ * Busca o próximo order_index disponível para uma trilha
+ * @param trailId - ID da trilha
+ * @returns Próximo índice disponível (máximo atual + 1)
+ */
+async function getNextAvailableOrderIndex(trailId: string): Promise<number> {
+  const { data } = await supabase
+    .from('lessons')
+    .select('order_index')
+    .eq('trail_id', trailId)
+    .order('order_index', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  
+  const maxIndex = data?.order_index ?? -1;
+  return maxIndex + 1;
+}
+
+/**
  * Sincroniza uma lição V2 genérica no banco de dados
  * 
  * @param lessonData - Dados estruturados da lição
@@ -65,13 +83,17 @@ export async function syncLessonV2Generic(
     
     console.log('✅ Trail encontrada:', trail.id);
     
-    // 2. Validar e processar dados
+    // 2. Calcular order_index final (especificado ou auto-calculado)
+    const finalOrderIndex = orderIndex ?? await getNextAvailableOrderIndex(trail.id);
+    console.log(`📍 Order Index: ${finalOrderIndex} ${orderIndex === undefined ? '(auto-calculado)' : '(especificado)'}`);
+    
+    // 3. Validar e processar dados
     console.log('🔍 Validando dados da lição...');
     const processed = processLessonData({
       lessonData,
       audioText,
       trailId: trail.id,
-      orderIndex: orderIndex || 0,
+      orderIndex: finalOrderIndex,
       title: lessonData.title,
       description: `Aula sobre ${lessonData.title}`
     });
@@ -165,7 +187,16 @@ export async function syncLessonV2Generic(
     const totalDuration = cumulativeTime;
     console.log(`\n⏱️ Duração total: ${totalDuration.toFixed(2)}s`);
     
-    // 6. Salvar/atualizar no banco
+    // 6. Validar order_index antes de inserir
+    console.log('\n🔍 Verificando conflitos de order_index...');
+    const { data: conflictCheck } = await supabase
+      .from('lessons')
+      .select('id, title, order_index')
+      .eq('trail_id', trail.id)
+      .eq('order_index', finalOrderIndex)
+      .maybeSingle();
+    
+    // 7. Salvar/atualizar no banco
     console.log('\n💾 Salvando no banco de dados...');
     
     const lessonContent = {
@@ -174,7 +205,7 @@ export async function syncLessonV2Generic(
       sections: updatedSections,
     } as any; // Cast para Json do Supabase
     
-    // Verificar se já existe
+    // Verificar se já existe pelo título
     const { data: existing } = await supabase
       .from('lessons')
       .select('id')
@@ -185,7 +216,7 @@ export async function syncLessonV2Generic(
     let lessonId: string;
     
     if (existing) {
-      // UPDATE
+      // UPDATE - Lição já existe, atualizar conteúdo
       console.log('🔄 Atualizando lição existente:', existing.id);
       
       const { error: updateError } = await supabase
@@ -193,6 +224,7 @@ export async function syncLessonV2Generic(
         .update({
           content: lessonContent,
           estimated_time: Math.round(totalDuration),
+          order_index: finalOrderIndex, // Atualizar order_index também
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id);
@@ -203,7 +235,18 @@ export async function syncLessonV2Generic(
       console.log('✅ Lição atualizada com sucesso');
       
     } else {
-      // INSERT
+      // INSERT - Nova lição
+      
+      // Verificar conflito de order_index antes de inserir
+      if (conflictCheck && conflictCheck.id !== existing?.id) {
+        throw new Error(
+          `❌ Conflito de order_index!\n` +
+          `Já existe uma lição com order_index ${finalOrderIndex}:\n` +
+          `"${conflictCheck.title}" (ID: ${conflictCheck.id})\n` +
+          `Use outro índice ou atualize a lição existente.`
+        );
+      }
+      
       console.log('➕ Criando nova lição...');
       
       const { data: newLesson, error: insertError } = await supabase
@@ -211,7 +254,7 @@ export async function syncLessonV2Generic(
         .insert([{
           title: lessonData.title,
           trail_id: trail.id,
-          order_index: orderIndex || 0,
+          order_index: finalOrderIndex,
           lesson_type: 'guided',
           passing_score: 70,
           estimated_time: Math.round(totalDuration),
