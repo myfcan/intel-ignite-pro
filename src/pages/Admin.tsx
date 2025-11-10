@@ -204,6 +204,32 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        <Card className="border-2 border-blue-500/20 bg-blue-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TestTube className="w-5 h-5 text-blue-600" />
+              🧪 Sistema de Validação
+            </CardTitle>
+            <CardDescription>
+              Dashboard completo com testes automatizados das 4 garantias do sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              ✅ TypeScript detecta erros • ✅ Bloqueia sync incorreto • ✅ Validação defensiva • ✅ Alerta de versão
+            </div>
+            <Button
+              onClick={() => navigate('/admin/validation-system')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <TestTube className="w-4 h-4 mr-2" />
+              Abrir Sistema de Validação
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-center">
           <Button
             variant="outline"

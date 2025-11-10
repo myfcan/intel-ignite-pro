@@ -23,6 +23,7 @@ import AdminDebugTimestamps from "./pages/AdminDebugTimestamps";
 import AdminLessonTester from "./pages/AdminLessonTester";
 import AdminBatchLessons from "./pages/AdminBatchLessons";
 import AdminIntonationTest from "./pages/AdminIntonationTest";
+import AdminValidationSystem from "./pages/AdminValidationSystem";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/admin/lesson-tester" element={<AdminLessonTester />} />
           <Route path="/admin/batch-lessons" element={<AdminBatchLessons />} />
           <Route path="/admin/intonation-test" element={<AdminIntonationTest />} />
+          <Route path="/admin/validation-system" element={<AdminValidationSystem />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
