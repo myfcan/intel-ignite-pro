@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertCircle, Volume2 } from 'lucide-react';
 import { batchSyncLessons, createBatchLesson } from '@/lib/batchSyncLessons';
 import { LESSONS_ARRAY } from '@/data/lessons';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,7 @@ export default function AdminBatchLessons() {
     title: string;
     success: boolean;
     message: string;
+    intonationAnalysis?: any;
   }>>([]);
 
   // Configuração das aulas disponíveis (auto-descoberta)
@@ -328,23 +329,117 @@ export default function AdminBatchLessons() {
         {results.length > 0 && (
           <Card className="p-6 mb-6">
             <h3 className="text-lg font-semibold mb-4">Resultados</h3>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {results.map((result, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-accent/30"
-                >
-                  {result.success ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <div className="font-medium">{result.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {result.message}
+                <div key={index} className="space-y-2">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-accent/30">
+                    {result.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <div className="font-medium">{result.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {result.message}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Análise de Entonação TTS */}
+                  {result.intonationAnalysis && result.intonationAnalysis.hasIssues && (
+                    <div className={`ml-8 p-4 rounded-lg border-l-4 ${
+                      result.intonationAnalysis.score < 50 
+                        ? 'bg-red-500/10 border-red-500' 
+                        : result.intonationAnalysis.score < 80 
+                        ? 'bg-yellow-500/10 border-yellow-500' 
+                        : 'bg-blue-500/10 border-blue-500'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Volume2 className="w-4 h-4" />
+                        <span className="font-semibold text-sm">
+                          Análise de Entonação TTS - Score: {result.intonationAnalysis.score}/100
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-3 text-sm">
+                        {/* Problemas Críticos */}
+                        {result.intonationAnalysis.issues.filter((i: any) => i.severity === 'high').length > 0 && (
+                          <div>
+                            <div className="font-medium text-red-600 mb-1">🔴 CRÍTICO (podem causar "gritos"):</div>
+                            {result.intonationAnalysis.issues
+                              .filter((i: any) => i.severity === 'high')
+                              .map((issue: any, idx: number) => (
+                                <div key={idx} className="ml-4 mb-2">
+                                  <div className="text-muted-foreground">
+                                    • {issue.message} [{issue.location}]
+                                  </div>
+                                  <div className="text-xs text-blue-600 ml-4">
+                                    💡 {issue.suggestion}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Problemas Médios */}
+                        {result.intonationAnalysis.issues.filter((i: any) => i.severity === 'medium').length > 0 && (
+                          <div>
+                            <div className="font-medium text-yellow-600 mb-1">🟡 MÉDIO (entonação exagerada):</div>
+                            {result.intonationAnalysis.issues
+                              .filter((i: any) => i.severity === 'medium')
+                              .map((issue: any, idx: number) => (
+                                <div key={idx} className="ml-4 mb-2">
+                                  <div className="text-muted-foreground">
+                                    • {issue.message} [{issue.location}]
+                                  </div>
+                                  <div className="text-xs text-blue-600 ml-4">
+                                    💡 {issue.suggestion}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Problemas Baixos */}
+                        {result.intonationAnalysis.issues.filter((i: any) => i.severity === 'low').length > 0 && (
+                          <div>
+                            <div className="font-medium text-blue-600 mb-1">🟢 BAIXO (melhorias recomendadas):</div>
+                            {result.intonationAnalysis.issues
+                              .filter((i: any) => i.severity === 'low')
+                              .slice(0, 3) // Limitar a 3 para não poluir
+                              .map((issue: any, idx: number) => (
+                                <div key={idx} className="ml-4 mb-2">
+                                  <div className="text-muted-foreground">
+                                    • {issue.message} [{issue.location}]
+                                  </div>
+                                  <div className="text-xs text-blue-600 ml-4">
+                                    💡 {issue.suggestion}
+                                  </div>
+                                </div>
+                              ))}
+                            {result.intonationAnalysis.issues.filter((i: any) => i.severity === 'low').length > 3 && (
+                              <div className="ml-4 text-xs text-muted-foreground">
+                                ... e mais {result.intonationAnalysis.issues.filter((i: any) => i.severity === 'low').length - 3} problema(s) de baixa severidade
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sem problemas de entonação */}
+                  {result.intonationAnalysis && !result.intonationAnalysis.hasIssues && (
+                    <div className="ml-8 p-3 rounded-lg bg-green-500/10 border-l-4 border-green-500">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Volume2 className="w-4 h-4 text-green-600" />
+                        <span className="text-green-600 font-medium">
+                          ✅ Nenhum problema de entonação detectado! Texto pronto para TTS.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

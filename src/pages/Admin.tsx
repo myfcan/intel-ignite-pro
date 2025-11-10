@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Layers } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Layers, Volume2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -104,6 +104,33 @@ export default function Admin() {
             >
               <Layers className="w-4 h-4 mr-2" />
               Abrir Criação em Lote
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-500/20 bg-green-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Volume2 className="w-5 h-5 text-green-600" />
+              🎙️ Análise de Entonação TTS
+            </CardTitle>
+            <CardDescription>
+              Sistema automático que detecta problemas de entonação antes de gerar áudio
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Detecta palavras em CAIXA ALTA, múltiplas exclamações, ênfase excessiva e mais.
+              Integrado na sincronização em lote!
+            </div>
+            <Button
+              onClick={() => navigate('/admin/intonation-test')}
+              size="lg"
+              className="w-full"
+              variant="default"
+            >
+              <Volume2 className="w-4 h-4 mr-2" />
+              Testar Análise de Entonação
             </Button>
           </CardContent>
         </Card>

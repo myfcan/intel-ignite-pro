@@ -1,5 +1,6 @@
 import { GuidedLessonData } from '@/types/guidedLesson';
 import { syncLessonV2Generic } from './syncLessonV2Generic';
+import { analyzeLessonIntonation, formatIntonationReport, IntonationAnalysisResult } from './ttsIntonationAnalyzer';
 
 /**
  * 🎯 SISTEMA DE CRIAÇÃO EM LOTE (BATCH PROCESSING)
@@ -30,6 +31,7 @@ interface BatchResult {
     success: boolean;
     message: string;
     lessonId?: string;
+    intonationAnalysis?: IntonationAnalysisResult;
   }>;
 }
 
@@ -89,6 +91,15 @@ export async function batchSyncLessons(
     console.log(`\n🔄 [${currentNumber}/${lessons.length}] Iniciando: ${lesson.lessonData.title}`);
     console.log('-'.repeat(70));
     
+    // 🎙️ ANÁLISE DE ENTONAÇÃO TTS (antes de sincronizar)
+    console.log('\n🎙️ Analisando entonação TTS...');
+    const intonationAnalysis = analyzeLessonIntonation(lesson.lessonData.sections);
+    console.log(formatIntonationReport(intonationAnalysis));
+    
+    if (intonationAnalysis.hasIssues) {
+      console.log('\n⚠️ Problemas de entonação detectados! Prosseguindo com sincronização...\n');
+    }
+    
     try {
       const result = await syncLessonV2Generic(
         lesson.lessonData,
@@ -102,7 +113,8 @@ export async function batchSyncLessons(
         title: lesson.lessonData.title,
         success: result.success,
         message: result.message,
-        lessonId: result.lessonId
+        lessonId: result.lessonId,
+        intonationAnalysis // Incluir análise nos resultados
       });
       
       if (result.success) {
@@ -126,7 +138,8 @@ export async function batchSyncLessons(
       results.push({
         title: lesson.lessonData.title,
         success: false,
-        message: errorMessage
+        message: errorMessage,
+        intonationAnalysis // Incluir análise mesmo em caso de erro
       });
     }
     
