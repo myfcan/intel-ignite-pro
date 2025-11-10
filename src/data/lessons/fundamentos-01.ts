@@ -228,3 +228,28 @@ E você acabou de começar.`
     }
   ]
 };
+
+// ============= TEXTO PARA GERAÇÃO DE ÁUDIO =============
+// CRITICAL: Este texto é usado para gerar o áudio com ElevenLabs
+// NÃO inclua emojis, markdown ou caracteres especiais - apenas texto limpo!
+export const fundamentos01AudioText = `
+Olá! Eu sou a Maia, e hoje vou te mostrar algo que vai mudar completamente a forma como você vê a tecnologia.
+
+Você sabia que a Inteligência Artificial já está em tudo? No seu celular quando você desbloqueia com o rosto. No Google quando faz uma busca. No Instagram quando aparece um post que você adorou sem nem ter procurado.
+
+A IA não é mais ficção científica. Ela está aqui, agora, e está moldando o mundo ao nosso redor. Desde como fazemos compras até como trabalhamos.
+
+E aqui está a parte mais incrível: você NÃO precisa ser programador ou ter qualquer formação técnica para usar IA a seu favor.
+
+Pense nisso: há 20 anos, saber usar um computador era um diferencial enorme no mercado. Hoje, é o básico.
+
+Nos próximos anos, saber trabalhar com IA vai ser o novo "saber usar computador". E você está começando no momento perfeito!
+
+A revolução da IA é como a chegada da internet nos anos 90. Quem aprendeu cedo teve uma vantagem gigante. Quem esperou demais ficou para trás.
+
+Você está no momento certo de pegar essa onda! E a boa notícia? É mais fácil do que você imagina.
+
+Ao final desta trilha, você vai saber exatamente como a IA funciona e, mais importante, como usar ela no seu dia a dia para economizar tempo, ganhar dinheiro e até criar coisas incríveis.
+
+Vamos começar essa jornada juntos?
+`;

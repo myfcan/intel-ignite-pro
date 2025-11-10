@@ -21,6 +21,7 @@ import AdminSyncTester from "./pages/AdminSyncTester";
 import AdminSyncLessons from "./pages/AdminSyncLessons";
 import AdminDebugTimestamps from "./pages/AdminDebugTimestamps";
 import AdminLessonTester from "./pages/AdminLessonTester";
+import AdminBatchCreateLessons from "./pages/AdminBatchCreateLessons";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/admin/update-timestamps" element={<AdminUpdateTimestamps />} />
           <Route path="/admin/debug-timestamps" element={<AdminDebugTimestamps />} />
           <Route path="/admin/lesson-tester" element={<AdminLessonTester />} />
+          <Route path="/admin/batch-create-lessons" element={<AdminBatchCreateLessons />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
