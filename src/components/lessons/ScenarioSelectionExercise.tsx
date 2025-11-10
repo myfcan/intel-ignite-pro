@@ -85,7 +85,18 @@ export function ScenarioSelectionExercise({
           {scenarioList.map((scenario) => (
             <button
               key={scenario.id}
-              onClick={() => !hasAnswered && setSelectedAnswer(scenario.id)}
+              onClick={() => {
+                if (!hasAnswered) {
+                  setSelectedAnswer(scenario.id);
+                  // Submit automaticamente após selecionar
+                  setTimeout(() => {
+                    setShowExplanation(true);
+                    setHasAnswered(true);
+                    const score = scenario.isCorrect ? 100 : 0;
+                    setTimeout(() => onComplete(score), 2000);
+                  }, 100);
+                }
+              }}
               disabled={hasAnswered}
               className={`p-6 rounded-xl border-2 transition-all text-left ${
                 selectedAnswer === scenario.id
