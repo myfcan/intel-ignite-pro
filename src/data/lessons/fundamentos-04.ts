@@ -125,16 +125,6 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
   
   exercisesConfig: [
     {
-      id: 'ex-1',
-      type: 'data-collection',
-      title: 'Sua Primeira IA',
-      instruction: 'Qual ferramenta de IA desta aula você mais quer testar? Por que?',
-      data: {
-        placeholder: 'Ex: Quero testar o ChatGPT porque preciso melhorar meus emails profissionais...',
-        maxLength: 500
-      }
-    },
-    {
       id: 'ex-2',
       type: 'fill-in-blanks',
       title: 'Complete: Apps com IA',
