@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 import { fundamentos03, fundamentos03AudioText } from '@/data/lessons/fundamentos-03';
 import { autoGenerateAudioWithToast } from './autoGenerateAudio';
+import { cleanAudioText } from './audioTextValidator';
 import { toast } from 'sonner';
 
 /**
@@ -57,7 +58,7 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       difficulty_level: 'beginner' as const,
       content: {
         contentVersion: fundamentos02.contentVersion,
-        audioText: fundamentos02AudioText,
+        audioText: cleanAudioText(fundamentos02AudioText),
         sections: fundamentos02.sections,
         exercisesConfig: fundamentos02.exercisesConfig
       } as any
@@ -177,7 +178,7 @@ export async function syncFundamentos03(): Promise<SyncResult> {
       difficulty_level: 'beginner' as const,
       content: {
         contentVersion: fundamentos03.contentVersion,
-        audioText: fundamentos03AudioText,
+        audioText: cleanAudioText(fundamentos03AudioText),
         sections: fundamentos03.sections,
         exercisesConfig: fundamentos03.exercisesConfig
       } as any
