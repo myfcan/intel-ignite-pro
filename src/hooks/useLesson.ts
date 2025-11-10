@@ -95,12 +95,20 @@ export const useLesson = (lessonId: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      console.log('🎯 [SUBMIT] Enviando respostas para aula:', lesson.title);
+      console.log('🎯 [SUBMIT] Lesson ID:', lesson.id);
+      console.log('🎯 [SUBMIT] Tempo gasto:', timeSpent, 'segundos');
+
       // Calculate score based on lesson type
       const score = calculateScore(lesson.lesson_type, lesson.content, answers);
       const passed = score >= lesson.passing_score;
 
+      console.log('🎯 [SUBMIT] Score calculado:', score, '/', lesson.passing_score);
+      console.log('🎯 [SUBMIT] Passou?', passed);
+
       // Call user-progress edge function to handle completion and points
       if (passed) {
+        console.log('✅ [SUBMIT] Chamando edge function user-progress...');
         const { data: progressResult, error: progressError } = await supabase.functions.invoke('user-progress', {
           body: {
             action: 'complete',
@@ -110,13 +118,15 @@ export const useLesson = (lessonId: string) => {
         });
 
         if (progressError) {
-          console.error('Error calling user-progress function:', progressError);
+          console.error('❌ [SUBMIT] Erro ao chamar edge function:', progressError);
         } else {
-          console.log('Points awarded:', progressResult?.points_earned);
+          console.log('✅ [SUBMIT] Edge function executada com sucesso!');
+          console.log('🎁 [SUBMIT] Pontos ganhos:', progressResult?.points_earned);
         }
       }
 
       // Upsert progress
+      console.log('💾 [SUBMIT] Salvando progresso no banco...');
       const { error: upsertError } = await supabase
         .from('user_progress')
         .upsert({
@@ -131,7 +141,12 @@ export const useLesson = (lessonId: string) => {
           onConflict: 'user_id,lesson_id',
         });
 
-      if (upsertError) throw upsertError;
+      if (upsertError) {
+        console.error('❌ [SUBMIT] Erro ao salvar no banco:', upsertError);
+        throw upsertError;
+      }
+
+      console.log('✅ [SUBMIT] Progresso salvo com sucesso! Status:', passed ? 'completed' : 'in_progress');
 
       return {
         score,
@@ -139,7 +154,7 @@ export const useLesson = (lessonId: string) => {
         feedback: generateFeedback(score),
       };
     } catch (error: any) {
-      console.error('Failed to submit answers:', error);
+      console.error('❌ [SUBMIT] Erro geral:', error);
       toast({
         title: "Erro ao enviar respostas",
         description: error.message,
