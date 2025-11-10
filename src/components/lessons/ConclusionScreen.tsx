@@ -11,9 +11,10 @@ interface ConclusionScreenProps {
   lessonTitle: string;
   nextLessonId?: string;
   nextLessonType?: string;
+  exerciseMetadata?: Array<{ title: string; type: string }>;
 }
 
-export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId, nextLessonType }: ConclusionScreenProps) {
+export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId, nextLessonType, exerciseMetadata }: ConclusionScreenProps) {
   const navigate = useNavigate();
   
   // Calcular média dos scores
@@ -179,7 +180,7 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId,
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Exercícios</p>
-                  <p className="font-semibold text-blue-600">{scores.length}/3 ✓</p>
+                  <p className="font-semibold text-blue-600">{scores.length}/{exerciseMetadata?.length || scores.length} ✓</p>
                 </div>
               </div>
             </Card>
@@ -220,20 +221,35 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId,
           >
             <h3 className="text-sm font-semibold text-muted-foreground mb-3">Desempenho nos Exercícios</h3>
             <div className="space-y-2">
-              {scores.map((score, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <span className="text-2xl">
-                    {index === 0 ? '🎯' : index === 1 ? '✏️' : '✔️'}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">
-                        {index === 0 ? 'Drag & Drop' : index === 1 ? 'Complete as Frases' : 'Verdadeiro ou Falso'}
-                      </span>
-                      <span className="text-sm font-semibold text-primary">
-                        {Math.round(score)}%
-                      </span>
-                    </div>
+              {scores.map((score, index) => {
+                const metadata = exerciseMetadata?.[index];
+                const getEmojiByType = (type?: string) => {
+                  switch(type) {
+                    case 'drag-drop': return '🎯';
+                    case 'complete-sentence': return '✏️';
+                    case 'true-false': return '✔️';
+                    case 'fill-in-blanks': return '📝';
+                    case 'scenario-selection': return '🎭';
+                    case 'platform-match': return '🔗';
+                    case 'data-collection': return '📊';
+                    default: return '📝';
+                  }
+                };
+                
+                return (
+                  <div key={index} className="flex items-center gap-3">
+                    <span className="text-2xl">
+                      {getEmojiByType(metadata?.type)}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">
+                          {metadata?.title || `Exercício ${index + 1}`}
+                        </span>
+                        <span className="text-sm font-semibold text-primary">
+                          {Math.round(score)}%
+                        </span>
+                      </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
@@ -241,10 +257,11 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId,
                         transition={{ delay: 0.8 + (index * 0.2), duration: 0.8 }}
                         className="h-full bg-primary"
                       />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
 

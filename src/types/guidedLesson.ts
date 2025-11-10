@@ -96,6 +96,8 @@ export interface ExerciseConfig {
   title: string;
   instruction: string;
   data: any;
+  passingScore?: number; // Nota mínima para passar (default: 70)
+  maxAttempts?: number; // Máximo de tentativas permitidas (default: ilimitado)
 }
 
 export interface FinalPlaygroundStep {

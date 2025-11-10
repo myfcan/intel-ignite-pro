@@ -9,8 +9,10 @@ import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
 import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
+import { motion } from 'framer-motion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,58 +28,91 @@ interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
   onComplete: () => void;
   onScoreUpdate?: (scores: number[]) => void;
-  onBack?: () => void; // Callback para voltar à aula
+  onBack?: () => void;
+  exerciseMetadata?: Array<{ title: string; type: string }>;
 }
 
-export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack }: ExercisesSectionProps) {
+export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack, exerciseMetadata }: ExercisesSectionProps) {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [showRetry, setShowRetry] = useState(false);
+  const [attempts, setAttempts] = useState<Record<number, number>>({});
 
-  // Calcular progresso e animar barra
   useEffect(() => {
     const newProgress = (scores.length / exercises.length) * 100;
     setProgressPercentage(newProgress);
   }, [scores.length, exercises.length]);
 
   const handleExerciseComplete = (score: number) => {
-    const newScores = [...scores, score];
-    setScores(newScores);
+    const currentExercise = exercises[currentExerciseIndex];
+    const PASSING_SCORE = currentExercise.passingScore || 70;
+    const passed = score >= PASSING_SCORE;
     
-    // Atualizar scores no componente pai
-    if (onScoreUpdate) {
-      onScoreUpdate(newScores);
-    }
+    console.log('🎯 [EXERCISE] Score:', score);
+    console.log('🎯 [EXERCISE] Passou?', passed);
+    console.log('🎯 [EXERCISE] Passing score:', PASSING_SCORE);
+    console.log('🎯 [EXERCISE] Tentativa:', (attempts[currentExerciseIndex] || 0) + 1);
+    
+    if (passed) {
+      // ✅ SUCESSO: Confete + feedback positivo
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#3b82f6', '#8b5cf6']
+      });
+      
+      toast({
+        title: "🎉 Exercício completo!",
+        description: `Score: ${Math.round(score)}% - ${scores.length + 1}/${exercises.length}`,
+        duration: 2000,
+      });
+      
+      // Salvar e avançar
+      const newScores = [...scores, score];
+      setScores(newScores);
+      
+      if (onScoreUpdate) {
+        onScoreUpdate(newScores);
+      }
+      
+      // Reset retry state
+      setShowRetry(false);
 
-    console.log(`✅ [EXERCISE ${currentExerciseIndex + 1}] Completo com score: ${score}`);
-
-    // 🎉 Feedback visual: confetti + toast
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#10b981', '#3b82f6', '#8b5cf6']
-    });
-
-    toast({
-      title: "Exercício completo!",
-      description: `${scores.length + 1} de ${exercises.length} concluídos`,
-      duration: 2000,
-    });
-
-    if (currentExerciseIndex < exercises.length - 1) {
-      console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
-      setTimeout(() => {
-        setCurrentExerciseIndex(prev => prev + 1);
-      }, 1500);
+      if (currentExerciseIndex < exercises.length - 1) {
+        console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
+        setTimeout(() => {
+          setCurrentExerciseIndex(prev => prev + 1);
+        }, 1500);
+      } else {
+        console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      }
     } else {
-      // Último exercício
-      console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
-      setTimeout(() => {
-        onComplete();
-      }, 2000);
+      // ❌ FALHA: Feedback de erro + opção de retry
+      toast({
+        title: "📚 Quase lá!",
+        description: `Você precisa de ${PASSING_SCORE}% para passar. Score atual: ${Math.round(score)}%`,
+        variant: "destructive",
+        duration: 4000,
+      });
+      
+      // Incrementar tentativas
+      setAttempts(prev => ({ ...prev, [currentExerciseIndex]: (prev[currentExerciseIndex] || 0) + 1 }));
+      
+      // Mostrar botão de retry
+      setShowRetry(true);
     }
+  };
+
+  const handleRetry = () => {
+    console.log('🔄 [RETRY] Usuário vai tentar novamente');
+    setShowRetry(false);
+    // O componente de exercício se resetará sozinho ao renderizar novamente
   };
 
   const handleBackClick = () => {
@@ -238,6 +273,30 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack 
             platforms={currentExercise.data.platforms}
             onComplete={handleExerciseComplete}
           />
+        )}
+        
+        {/* Retry Card */}
+        {showRetry && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
+          >
+            <Card className="p-6 bg-amber-50 dark:bg-amber-950/30 border-amber-500 shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="text-4xl">💪</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">Continue tentando!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Você está no caminho certo. Tente novamente!
+                  </p>
+                </div>
+                <Button onClick={handleRetry} size="lg">
+                  🔄 Tentar Novamente
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
         )}
       </div>
     </div>

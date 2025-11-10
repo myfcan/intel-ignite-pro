@@ -1113,40 +1113,49 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
     const timeSpent = Date.now() - lessonStartTime;
+    
+    // Coletar metadata dos exercícios
+    const exerciseMetadata = lessonData.exercisesConfig?.map(ex => ({
+      title: ex.title,
+      type: ex.type,
+    })) || [];
+    
     return (
       <ConclusionScreen
-        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]} // Scores padrão se vazio
+        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]}
         timeSpent={timeSpent}
         lessonTitle={lessonData.title}
         nextLessonId={nextLessonId}
         nextLessonType={nextLessonType}
+        exerciseMetadata={exerciseMetadata}
       />
     );
   }
 
   // Renderizar fase de exercícios
   if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
+    // Coletar metadata dos exercícios
+    const exerciseMetadata = lessonData.exercisesConfig.map(ex => ({
+      title: ex.title,
+      type: ex.type,
+    }));
+    
     return (
       <ExercisesSection
-        key="exercises-phase" // Força remount ao entrar na fase
+        key="exercises-phase"
         exercises={lessonData.exercisesConfig}
         onComplete={handleExercisesComplete}
         onScoreUpdate={(scores) => setExerciseScores(scores)}
+        exerciseMetadata={exerciseMetadata}
         onBack={() => {
           console.log('⬅️ [EXERCISES] Voltando para aula');
           
-          // Determinar para qual seção voltar
           const targetSection = jumpedToExercises 
-            ? 0  // Pulou → voltar para início
-            : Math.max(0, lessonData.sections.filter(s => !s.type || s.type === 'text').length - 1); // Completou → voltar para última seção
+            ? 0
+            : Math.max(0, lessonData.sections.filter(s => !s.type || s.type === 'text').length - 1);
           
-          // Resetar tudo
           resetLessonToBeginning(targetSection);
-          
-          // Resetar flag de "pulou"
           setJumpedToExercises(false);
-          
-          // Voltar para fase de áudio
           setCurrentPhase('audio');
         }}
       />
