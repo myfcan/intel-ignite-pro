@@ -718,16 +718,95 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     setIsPlaying(!isPlaying);
   };
   
+  /**
+   * 🎯 REGRA UNIVERSAL: Navegação com Botões do Player (|< e >|)
+   * 
+   * V1 (áudio único):
+   * - skipBackward: retrocede 10s no audio.currentTime
+   * - skipForward: avança 10s no audio.currentTime
+   * - O useEffect que monitora currentTime atualiza a seção automaticamente
+   * 
+   * V2 (áudios separados):
+   * - skipBackward: 
+   *   - Se currentTime < 3s: volta para seção anterior (jumpToSection)
+   *   - Caso contrário: retrocede 10s na seção atual
+   * - skipForward:
+   *   - Se faltam < 3s para acabar: avança para próxima seção (jumpToSection)
+   *   - Caso contrário: avança 10s na seção atual
+   * 
+   * Usa jumpToSection() para garantir troca correta de áudio em V2
+   */
   const skipBackward = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.currentTime = Math.max(0, audio.currentTime - 10);
+    
+    console.log(`⏪ [SKIP-BACK] currentTime=${audio.currentTime.toFixed(1)}s, currentSection=${currentSection}`);
+    
+    if (isV2) {
+      // 🆕 V2: Lógica de navegação entre seções
+      
+      // Se está nos primeiros 3 segundos da seção atual, voltar para seção anterior
+      if (audio.currentTime < 3 && currentSection > 0) {
+        const previousSection = currentSection - 1;
+        console.log(`⏪ [V2-SKIP-BACK] Voltando para seção ${previousSection}`);
+        
+        // Usar jumpToSection para trocar seção e áudio
+        jumpToSection(previousSection);
+        
+        // Após trocar, posicionar próximo ao final da seção anterior
+        setTimeout(() => {
+          const prevAudio = audioRef.current;
+          if (prevAudio && prevAudio.duration > 10) {
+            prevAudio.currentTime = prevAudio.duration - 5; // 5 segundos antes do fim
+            console.log(`⏪ [V2-SKIP-BACK] Posicionado em ${prevAudio.currentTime.toFixed(1)}s`);
+          }
+        }, 300); // Aguardar áudio carregar
+        
+      } else {
+        // Retroceder 10s dentro da mesma seção
+        audio.currentTime = Math.max(0, audio.currentTime - 10);
+        console.log(`⏪ [V2-SKIP-BACK] Retrocedeu 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+      }
+      
+    } else {
+      // V1: Comportamento original (retroceder no áudio único)
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+      console.log(`⏪ [V1-SKIP-BACK] Retrocedeu 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+    }
   };
   
   const skipForward = () => {
     const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+    if (!audio || !audio.duration) return;
+    
+    console.log(`⏩ [SKIP-FWD] currentTime=${audio.currentTime.toFixed(1)}s, duration=${audio.duration.toFixed(1)}s, currentSection=${currentSection}`);
+    
+    if (isV2) {
+      // 🆕 V2: Lógica de navegação entre seções
+      
+      // Se está nos últimos 3 segundos da seção, avançar para próxima seção
+      const timeRemaining = audio.duration - audio.currentTime;
+      
+      if (timeRemaining < 3 && currentSection < lessonData.sections.length - 1) {
+        const nextSection = currentSection + 1;
+        console.log(`⏩ [V2-SKIP-FWD] Avançando para seção ${nextSection}`);
+        
+        // Usar jumpToSection para trocar seção e áudio
+        jumpToSection(nextSection);
+        
+        // Começar do início da próxima seção (já é o comportamento padrão do jumpToSection)
+        
+      } else {
+        // Avançar 10s dentro da mesma seção
+        audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+        console.log(`⏩ [V2-SKIP-FWD] Avançou 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+      }
+      
+    } else {
+      // V1: Comportamento original (avançar no áudio único)
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+      console.log(`⏩ [V1-SKIP-FWD] Avançou 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+    }
   };
   
   const cycleSpeed = () => {
