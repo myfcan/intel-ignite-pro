@@ -27,12 +27,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [showMaia, setShowMaia] = useState(false);
   const [isLastLesson, setIsLastLesson] = useState(false);
   const [wordTimestamps, setWordTimestamps] = useState<WordTimestamp[]>([]);
+  const [nextLessonData, setNextLessonData] = useState<{ id: string; lesson_type: string } | null>(null);
   const navigate = useNavigate();
 
-  // Buscar word_timestamps do banco para aulas guiadas
+  // Buscar word_timestamps e próxima aula do banco para aulas guiadas
   useEffect(() => {
-    const fetchWordTimestamps = async () => {
+    const fetchLessonData = async () => {
       if (lesson?.lesson_type === 'guided') {
+        // Buscar timestamps
         const { data } = await supabase
           .from('lessons')
           .select('word_timestamps')
@@ -42,11 +44,28 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         if (data?.word_timestamps) {
           setWordTimestamps(data.word_timestamps as unknown as WordTimestamp[]);
         }
+
+        // Buscar próxima lição
+        const { data: nextLesson } = await supabase
+          .from('lessons')
+          .select('id, lesson_type')
+          .eq('trail_id', lesson.trail_id)
+          .eq('is_active', true)
+          .gt('order_index', lesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (nextLesson) {
+          setNextLessonData({ id: nextLesson.id, lesson_type: nextLesson.lesson_type });
+        } else {
+          setNextLessonData(null);
+        }
       }
     };
     
-    fetchWordTimestamps();
-  }, [lessonId, lesson?.lesson_type]);
+    fetchLessonData();
+  }, [lessonId, lesson?.lesson_type, lesson?.trail_id, lesson?.order_index]);
 
   if (loading) {
     return (
@@ -208,6 +227,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             onComplete={handleGuidedComplete}
             audioUrl={audioUrl}
             wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
+            nextLessonId={nextLessonData?.id}
+            nextLessonType={nextLessonData?.lesson_type}
           />
         </>
       );

@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 
-export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps }: GuidedLessonProps) {
+export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType }: GuidedLessonProps) {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1118,7 +1118,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps 
         scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]} // Scores padrão se vazio
         timeSpent={timeSpent}
         lessonTitle={lessonData.title}
-        nextLessonId="fundamentos-03"
+        nextLessonId={nextLessonId}
+        nextLessonType={nextLessonType}
       />
     );
   }

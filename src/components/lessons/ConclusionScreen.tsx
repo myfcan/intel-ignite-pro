@@ -10,9 +10,10 @@ interface ConclusionScreenProps {
   timeSpent: number;
   lessonTitle: string;
   nextLessonId?: string;
+  nextLessonType?: string;
 }
 
-export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId }: ConclusionScreenProps) {
+export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId, nextLessonType }: ConclusionScreenProps) {
   const navigate = useNavigate();
   
   // Calcular média dos scores
@@ -68,7 +69,10 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId 
 
   const handleGoToNextLesson = () => {
     if (nextLessonId) {
-      navigate(`/aula/${nextLessonId}`);
+      const route = nextLessonType === 'guided' 
+        ? `/lessons-interactive/${nextLessonId}`
+        : `/lessons/${nextLessonId}`;
+      navigate(route);
     }
   };
 

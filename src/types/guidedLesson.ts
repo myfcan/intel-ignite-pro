@@ -154,4 +154,6 @@ export interface GuidedLessonProps {
   onComplete: () => void;
   audioUrl?: string; // URL do áudio gerado (opcional, pode ser gerado dinamicamente)
   wordTimestamps?: WordTimestamp[]; // timestamps de palavras para sincronização precisa
+  nextLessonId?: string; // ID da próxima lição (opcional)
+  nextLessonType?: string; // Tipo da próxima lição (opcional)
 }
