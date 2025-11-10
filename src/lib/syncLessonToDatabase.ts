@@ -54,10 +54,11 @@ export async function syncFundamentos02(): Promise<SyncResult> {
       order_index: 2,
       lesson_type: 'guided' as const,
       passing_score: 70,
-      estimated_time: fundamentos02.duration,
+      estimated_time: Math.round(fundamentos02.duration), // Arredonda para INTEGER
       difficulty_level: 'beginner' as const,
       content: {
         contentVersion: fundamentos02.contentVersion,
+        duration: fundamentos02.duration, // Valor preciso em JSONB
         audioText: cleanAudioText(fundamentos02AudioText),
         sections: fundamentos02.sections,
         exercisesConfig: fundamentos02.exercisesConfig
@@ -174,10 +175,11 @@ export async function syncFundamentos03(): Promise<SyncResult> {
       order_index: 3,
       lesson_type: 'guided' as const,
       passing_score: 70,
-      estimated_time: fundamentos03.duration,
+      estimated_time: Math.round(fundamentos03.duration), // Arredonda para INTEGER (234s)
       difficulty_level: 'beginner' as const,
       content: {
         contentVersion: fundamentos03.contentVersion,
+        duration: fundamentos03.duration, // 233.767s (valor preciso no JSONB)
         audioText: cleanAudioText(fundamentos03AudioText),
         sections: fundamentos03.sections,
         exercisesConfig: fundamentos03.exercisesConfig
