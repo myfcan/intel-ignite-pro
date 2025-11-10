@@ -474,4 +474,4 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
 // Texto concatenado para geração de áudio (usando visualContent de cada seção)
 export const fundamentos02AudioText = fundamentos02.sections
   .map(section => section.visualContent)
-  .join('\n\n---\n\n');
+  .join('\n\n');

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateAndCleanAudioText } from './audioTextValidator';
 
 interface SectionMarker {
   phrase: string;
@@ -59,6 +60,32 @@ export async function autoGenerateAudio(
       };
     }
 
+    // 🔍 VALIDAÇÃO E LIMPEZA DO TEXTO PARA ÁUDIO
+    console.log('🧹 Validando e limpando texto para geração de áudio...');
+    const validation = validateAndCleanAudioText(audioText);
+    
+    // Logar warnings se houver
+    if (validation.warnings.length > 0) {
+      console.warn('⚠️ Avisos na limpeza do texto:', validation.warnings);
+    }
+    
+    // Logar errors se houver
+    if (validation.errors.length > 0) {
+      console.error('❌ Erros na validação do texto:', validation.errors);
+      return {
+        success: false,
+        error: `Texto inválido: ${validation.errors.join(', ')}`
+      };
+    }
+    
+    // Usar texto limpo daqui em diante
+    const cleanAudioText = validation.cleanText;
+    console.log(`✅ Texto limpo: ${cleanAudioText.length} caracteres (original: ${audioText.length})`);
+    
+    if (validation.warnings.length > 0) {
+      console.log(`📝 Mudanças aplicadas: ${validation.warnings.join('; ')}`);
+    }
+
     // Helper para extrair primeiras N palavras completas
     const getFirstWords = (text: string, wordCount: number = 6): string => {
       return text.split(/\s+/).slice(0, wordCount).join(' ');
@@ -108,7 +135,7 @@ export async function autoGenerateAudio(
       };
     }
 
-    console.log(`📝 Texto: ${audioText.length} caracteres`);
+    console.log(`📝 Texto: ${cleanAudioText.length} caracteres`);
     console.log(`📌 Marcadores: ${sectionMarkers.length} seções`);
 
     // Chamar edge function para gerar áudio com timestamps
@@ -116,7 +143,7 @@ export async function autoGenerateAudio(
       'generate-audio-with-timestamps',
       {
         body: {
-          text: audioText,
+          text: cleanAudioText, // ✅ Usando texto limpo sem emojis/formatação
           voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice voice
           model_id: 'eleven_multilingual_v2',
           section_markers: sectionMarkers
