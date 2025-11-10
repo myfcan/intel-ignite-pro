@@ -6,7 +6,7 @@ export const fundamentos02: GuidedLessonData = {
   id: 'fundamentos-02',
   title: 'Como a IA Aprende com Você',
   trackId: 'trilha-1-fundamentos',
-  trackName: 'Fundamentos da IA',
+  trackName: 'Fundamentos de IA',
   duration: 198, // 3min 18s
   contentVersion: 3, // Versão atual do conteúdo (incrementar quando alterar exercícios)
 

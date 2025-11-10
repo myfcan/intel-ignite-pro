@@ -8,7 +8,7 @@ export const fundamentos01: GuidedLessonData = {
   id: 'fundamentos-01',
   title: 'O que é a IA e por que nós precisamos dela',
   trackId: 'trilha-1-fundamentos',
-  trackName: 'Fundamentos da IA',
+  trackName: 'Fundamentos de IA',
   duration: 240, // será atualizado após geração
   contentVersion: 3, // V3: exercícios atualizados
   

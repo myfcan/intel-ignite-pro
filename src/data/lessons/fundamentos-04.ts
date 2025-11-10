@@ -10,7 +10,7 @@ export const fundamentos04: GuidedLessonData = {
   id: 'fundamentos-04',
   title: 'IA no Seu Bolso: Como Usar no Dia a Dia',
   trackId: 'trilha-1-fundamentos',
-  trackName: 'Fundamentos da IA',
+  trackName: 'Fundamentos de IA',
   duration: 0, // Será calculado automaticamente após gerar áudios
   contentVersion: 2, // V2 = áudios separados por seção
   
