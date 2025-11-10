@@ -187,27 +187,31 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
       id: 'ex-final-2-aula-3-trilha-1',
       type: 'platform-match',
       title: 'Relacione a IA com seu uso',
-      instruction: 'Arraste cada exemplo para a função correspondente da IA:',
+      instruction: 'Clique no exemplo que corresponde a cada plataforma:',
       data: {
-        platforms: ['Netflix', 'Waze', 'ChatGPT'],
+        platforms: [
+          { id: 'netflix', name: 'Netflix', icon: '🎬', color: '#E50914' },
+          { id: 'waze', name: 'Waze', icon: '🗺️', color: '#33CCFF' },
+          { id: 'chatgpt', name: 'ChatGPT', icon: '💬', color: '#10A37F' }
+        ],
         scenarios: [
           {
             id: 'scenario-1',
-            question: 'Sugere filmes e séries baseados no seu histórico',
-            correctPlatform: 'Netflix',
-            feedback: 'Você acertou! A IA está presente em tudo — da rota que você faz até o filme que escolhe.'
+            text: 'Sugere filmes e séries baseados no seu histórico',
+            correctPlatform: 'netflix',
+            emoji: '🎬'
           },
           {
             id: 'scenario-2',
-            question: 'Calcula a melhor rota evitando trânsito em tempo real',
-            correctPlatform: 'Waze',
-            feedback: 'Exato! O Waze usa IA para analisar dados de trânsito e encontrar o caminho mais rápido.'
+            text: 'Calcula a melhor rota evitando trânsito em tempo real',
+            correctPlatform: 'waze',
+            emoji: '🗺️'
           },
           {
             id: 'scenario-3',
-            question: 'Gera textos, responde perguntas e cria conteúdo',
-            correctPlatform: 'ChatGPT',
-            feedback: 'Perfeito! O ChatGPT aprende com bilhões de textos para conversar e criar conteúdo.'
+            text: 'Gera textos, responde perguntas e cria conteúdo',
+            correctPlatform: 'chatgpt',
+            emoji: '💬'
           }
         ]
       }
@@ -296,33 +300,39 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
       id: 'ex-final-5-aula-3-trilha-1',
       type: 'data-collection',
       title: 'Como a IA aprende com o tempo',
-      instruction: 'Marque o que mostra como a IA aprende com o tempo:',
+      instruction: 'Marque TODAS as formas como a IA aprende continuamente:',
       data: {
         scenarios: [
           {
             id: 'scenario-1',
-            title: 'Aprendizado Contínuo',
-            description: 'A IA continua aprendendo mesmo depois de treinada',
+            emoji: '🧠',
+            platform: 'Aprendizado Contínuo',
+            situation: 'A IA continua aprendendo mesmo depois de treinada, observando comportamentos e ajustando suas respostas constantemente',
+            context: 'Como a IA evolui sem reprogramação',
             dataPoints: [
               {
                 id: 'data-1',
-                name: 'Corrige seus erros automaticamente',
-                isCorrect: true
+                label: 'Corrige seus erros automaticamente',
+                isCorrect: true,
+                explanation: 'A IA identifica padrões incorretos e se ajusta sem intervenção humana'
               },
               {
                 id: 'data-2',
-                name: 'Melhora com o uso',
-                isCorrect: true
+                label: 'Melhora com o uso',
+                isCorrect: true,
+                explanation: 'Cada interação fornece novos dados para aprimorar suas respostas'
               },
               {
                 id: 'data-3',
-                name: 'Precisa ser reprogramada toda vez',
-                isCorrect: false
+                label: 'Precisa ser reprogramada toda vez',
+                isCorrect: false,
+                explanation: 'Falso! A IA aprende sozinha através de aprendizado contínuo'
               },
               {
                 id: 'data-4',
-                name: 'Aprende com o comportamento humano',
-                isCorrect: true
+                label: 'Aprende com o comportamento humano',
+                isCorrect: true,
+                explanation: 'A IA observa como você interage e adapta suas sugestões ao seu perfil'
               }
             ]
           }

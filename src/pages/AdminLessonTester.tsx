@@ -16,6 +16,7 @@ import { FillInBlanksExercise } from '@/components/lessons/FillInBlanksExercise'
 import { TrueFalseExercise } from '@/components/lessons/TrueFalseExercise';
 import { ScenarioSelectionExercise } from '@/components/lessons/ScenarioSelectionExercise';
 import { DataCollectionExercise } from '@/components/lessons/DataCollectionExercise';
+import { PlatformMatchExercise } from '@/components/lessons/PlatformMatchExercise';
 
 type ExerciseStatus = 'pending' | 'approved' | 'needs-review';
 
@@ -314,6 +315,16 @@ export default function AdminLessonTester() {
                         title={exercise.title}
                         instruction={exercise.instruction}
                         scenarios={exercise.data.scenarios || []}
+                        onComplete={() => handleExerciseComplete(exercise.id)}
+                      />
+                    )}
+
+                    {exercise.type === 'platform-match' && exercise.data && (
+                      <PlatformMatchExercise
+                        title={exercise.title}
+                        instruction={exercise.instruction}
+                        scenarios={exercise.data.scenarios || []}
+                        platforms={exercise.data.platforms || []}
                         onComplete={() => handleExerciseComplete(exercise.id)}
                       />
                     )}
