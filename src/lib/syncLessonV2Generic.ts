@@ -224,8 +224,7 @@ export async function syncLessonV2Generic(
         .update({
           content: lessonContent,
           estimated_time: Math.round(totalDuration),
-          order_index: finalOrderIndex, // Atualizar order_index também
-          updated_at: new Date().toISOString()
+          order_index: finalOrderIndex
         })
         .eq('id', existing.id);
       
