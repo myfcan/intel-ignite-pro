@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 interface Scenario {
   id: string;
@@ -36,6 +37,26 @@ export function PlatformMatchExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+
+  // Validação defensiva
+  if (!scenarios || scenarios.length === 0) {
+    return (
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Cenários"
+        message="Este exercício não possui cenários configurados."
+        details="Campo 'scenarios' está ausente ou vazio."
+      />
+    );
+  }
+  if (!platforms || platforms.length === 0) {
+    return (
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Plataformas"
+        message="Este exercício não possui plataformas configuradas."
+        details="Campo 'platforms' está ausente ou vazio."
+      />
+    );
+  }
 
   const currentScenario = scenarios[currentScenarioIndex];
   const isLastScenario = currentScenarioIndex === scenarios.length - 1;

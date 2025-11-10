@@ -149,6 +149,7 @@ export interface GuidedLessonData {
   exercisesConfig?: ExerciseConfig[];
   finalPlaygroundConfig?: FinalPlaygroundConfig;
   contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
+  schemaVersion?: number; // 🆕 Para FASE 4 - controlar versão da estrutura
 }
 
 export interface GuidedLessonProps {

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 interface Statement {
   id: string;
@@ -33,6 +34,17 @@ export function TrueFalseExercise({
   const [answers, setAnswers] = useState<Record<string, boolean | null>>({});
   const [revealedStatements, setRevealedStatements] = useState<Set<string>>(new Set());
   const [allRevealed, setAllRevealed] = useState(false);
+
+  // Validação defensiva
+  if (!statements || statements.length === 0) {
+    return (
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Afirmações"
+        message="Este exercício não possui afirmações configuradas."
+        details="Campo 'statements' está ausente ou vazio."
+      />
+    );
+  }
 
   const handleAnswer = (statementId: string, answer: boolean) => {
     if (revealedStatements.has(statementId)) return;

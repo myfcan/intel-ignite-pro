@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 interface Sentence {
   id: string;
@@ -25,6 +26,17 @@ export function CompleteSentenceExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
+
+  // Validação defensiva
+  if (!sentences || sentences.length === 0) {
+    return (
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Sentenças"
+        message="Este exercício não possui sentenças configuradas."
+        details="Campo 'sentences' está ausente ou vazio."
+      />
+    );
+  }
 
   const handleSubmit = () => {
     const newResults: Record<string, boolean> = {};

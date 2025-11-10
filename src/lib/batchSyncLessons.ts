@@ -1,6 +1,7 @@
 import { GuidedLessonData } from '@/types/guidedLesson';
 import { syncLessonV2Generic } from './syncLessonV2Generic';
 import { analyzeLessonIntonation, formatIntonationReport, IntonationAnalysisResult } from './ttsIntonationAnalyzer';
+import { validateAllExercises, formatValidationReport, ValidationResult } from './exerciseValidator';
 
 /**
  * 🎯 SISTEMA DE CRIAÇÃO EM LOTE (BATCH PROCESSING)
@@ -32,6 +33,7 @@ interface BatchResult {
     message: string;
     lessonId?: string;
     intonationAnalysis?: IntonationAnalysisResult;
+    exerciseValidation?: ValidationResult[]; // 🆕 NOVO
   }>;
 }
 
@@ -91,6 +93,28 @@ export async function batchSyncLessons(
     console.log(`\n🔄 [${currentNumber}/${lessons.length}] Iniciando: ${lesson.lessonData.title}`);
     console.log('-'.repeat(70));
     
+    // 🔍 Validar exercícios ANTES de sincronizar
+    let exerciseValidation: ValidationResult[] = [];
+    if (lesson.lessonData.exercisesConfig && lesson.lessonData.exercisesConfig.length > 0) {
+      exerciseValidation = validateAllExercises(lesson.lessonData.exercisesConfig);
+      
+      console.log(`\n📋 Validação de Exercícios: ${lesson.lessonData.title}`);
+      console.log(formatValidationReport(exerciseValidation));
+      
+      // Bloquear se houver erros críticos
+      const hasErrors = exerciseValidation.some(v => !v.isValid);
+      if (hasErrors) {
+        results.push({
+          title: lesson.lessonData.title,
+          success: false,
+          message: '❌ Exercícios com erros estruturais',
+          exerciseValidation
+        });
+        failed++;
+        continue; // Pular para próxima lição
+      }
+    }
+    
     // 🎙️ ANÁLISE DE ENTONAÇÃO TTS (antes de sincronizar)
     console.log('\n🎙️ Analisando entonação TTS...');
     const intonationAnalysis = analyzeLessonIntonation(lesson.lessonData.sections);
@@ -114,7 +138,8 @@ export async function batchSyncLessons(
         success: result.success,
         message: result.message,
         lessonId: result.lessonId,
-        intonationAnalysis // Incluir análise nos resultados
+        intonationAnalysis, // Incluir análise nos resultados
+        exerciseValidation // 🆕 INCLUIR NO RESULTADO
       });
       
       if (result.success) {
@@ -139,7 +164,8 @@ export async function batchSyncLessons(
         title: lesson.lessonData.title,
         success: false,
         message: errorMessage,
-        intonationAnalysis // Incluir análise mesmo em caso de erro
+        intonationAnalysis, // Incluir análise mesmo em caso de erro
+        exerciseValidation // 🆕 INCLUIR NO RESULTADO
       });
     }
     

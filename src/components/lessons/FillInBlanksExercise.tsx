@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Check, X, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 interface Sentence {
   id: string;
@@ -37,6 +38,17 @@ export function FillInBlanksExercise({
   const [results, setResults] = useState<Record<string, boolean>>({});
   const [showHints, setShowHints] = useState<Record<string, boolean>>({});
   const [hintsUsed, setHintsUsed] = useState<Set<string>>(new Set());
+
+  // Validação defensiva
+  if (!sentences || sentences.length === 0) {
+    return (
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Sentenças"
+        message="Este exercício não possui sentenças configuradas."
+        details="Campo 'sentences' está ausente ou vazio."
+      />
+    );
+  }
 
   const handleAnswerChange = (sentenceId: string, value: string) => {
     setAnswers({ ...answers, [sentenceId]: value });

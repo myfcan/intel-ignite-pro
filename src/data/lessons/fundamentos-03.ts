@@ -11,6 +11,7 @@ export const fundamentos03: GuidedLessonData = {
   trackName: 'Fundamentos de IA',
   duration: 233.767, // Duração real do áudio gerado
   contentVersion: 1, // V2
+  schemaVersion: 1, // 🆕 Para FASE 4
   
   sections: [
     {

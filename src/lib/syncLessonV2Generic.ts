@@ -101,8 +101,29 @@ export async function syncLessonV2Generic(
     // Log de validação
     logValidation(processed, lessonData.title);
     
+    // 🔒 BLOQUEAR SYNC SE HOUVER ERROS CRÍTICOS
+    const hasExerciseErrors = processed.validation.checks
+      .filter(check => check.name.includes('Exercício'))
+      .some(check => !check.passed);
+    
+    if (hasExerciseErrors) {
+      const failedExercises = processed.validation.checks
+        .filter(check => check.name.includes('Exercício') && !check.passed)
+        .map(check => `   ❌ ${check.name}: ${check.details}`)
+        .join('\n');
+      
+      throw new Error(
+        `\n${'='.repeat(60)}\n` +
+        `❌ SINCRONIZAÇÃO BLOQUEADA!\n\n` +
+        `A lição "${lessonData.title}" contém exercícios com erros estruturais:\n\n` +
+        failedExercises + '\n\n' +
+        `Por favor, corrija os erros nos arquivos de aula antes de sincronizar.\n` +
+        `${'='.repeat(60)}`
+      );
+    }
+    
     if (!processed.validation.allPassed) {
-      console.warn('⚠️ Lição tem problemas mas continuando...');
+      console.warn('⚠️ Lição tem avisos mas continuando...');
       processed.validation.warnings.forEach(w => console.warn(`  - ${w}`));
     }
     

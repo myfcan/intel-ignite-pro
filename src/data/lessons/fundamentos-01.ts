@@ -11,6 +11,7 @@ export const fundamentos01: GuidedLessonData = {
   trackName: 'Fundamentos de IA',
   duration: 240, // será atualizado após geração
   contentVersion: 3, // V3: exercícios atualizados
+  schemaVersion: 1, // 🆕 Para FASE 4
   
   sections: [
     {

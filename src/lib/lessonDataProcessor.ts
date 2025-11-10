@@ -1,5 +1,6 @@
 import { cleanAudioText, validateAndCleanAudioText } from './audioTextValidator';
 import type { GuidedLessonData } from '@/types/guidedLesson';
+import { validateAllExercises, formatValidationReport } from './exerciseValidator';
 
 /**
  * PROCESSADOR CENTRALIZADO DE DADOS DE LIÇÃO
@@ -136,6 +137,28 @@ export function processLessonData(input: LessonDataInput): ProcessedLessonData {
       details: trailId
     }
   ];
+
+  // 🆕 VALIDAÇÃO DE EXERCÍCIOS
+  let exerciseValidations: any[] = [];
+  if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+    exerciseValidations = validateAllExercises(lessonData.exercisesConfig);
+    
+    // Log relatório de validação
+    console.log(formatValidationReport(exerciseValidations));
+    
+    // Adicionar checks para cada exercício
+    exerciseValidations.forEach((validation, index) => {
+      checks.push({
+        name: `Exercício ${index + 1} (${validation.exerciseId})`,
+        passed: validation.isValid,
+        details: validation.errors.length > 0 
+          ? `ERROS: ${validation.errors.join('; ')}` 
+          : validation.warnings.length > 0
+          ? `AVISOS: ${validation.warnings.join('; ')}`
+          : 'Estrutura válida'
+      });
+    });
+  }
 
   const allPassed = checks.every(check => check.passed);
   const warnings = [...audioValidation.warnings];

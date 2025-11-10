@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface DataPoint {
@@ -41,17 +42,11 @@ export function DataCollectionExercise({
   // Validação defensiva: verificar se scenarios existe e tem elementos
   if (!scenarios || scenarios.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card className="p-8 text-center bg-orange-50 dark:bg-orange-950/30 border-orange-500 border-2">
-          <p className="text-2xl font-bold mb-4">⚠️ Configuração Inválida</p>
-          <p className="text-muted-foreground mb-4">
-            Este exercício não está configurado corretamente. 
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Por favor, re-sincronize esta aula em <code className="bg-muted px-2 py-1 rounded">/admin/batch-lessons</code>
-          </p>
-        </Card>
-      </div>
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Cenários"
+        message="Este exercício de coleta de dados não possui cenários configurados."
+        details="Campo obrigatório 'scenarios' está ausente ou vazio."
+      />
     );
   }
 

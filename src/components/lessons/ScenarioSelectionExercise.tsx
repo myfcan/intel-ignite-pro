@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 // Suporta dois formatos: multi-option e simple-choice
 interface Scenario {
@@ -41,7 +43,6 @@ export function ScenarioSelectionExercise({
   data,
   onComplete 
 }: ScenarioSelectionExerciseProps) {
-  // Suporta ambos os formatos
   const scenarioList = scenarios || data?.scenarios || [];
   const isSimpleChoice = scenarioList.length > 0 && 'isCorrect' in scenarioList[0];
   
@@ -49,18 +50,13 @@ export function ScenarioSelectionExercise({
   const [showExplanation, setShowExplanation] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
   
-  // Reset estado quando o exercício muda
-  useEffect(() => {
-    setSelectedAnswer('');
-    setShowExplanation(false);
-    setHasAnswered(false);
-  }, [title, instruction]);
-  
   if (scenarioList.length === 0) {
     return (
-      <Card className="p-8 max-w-4xl mx-auto">
-        <p className="text-destructive">❌ Nenhum cenário disponível</p>
-      </Card>
+      <ExerciseErrorCard 
+        title="⚠️ Exercício Sem Cenários"
+        message="Este exercício de seleção de cenários não possui opções configuradas."
+        details="Campo 'scenarios' ou 'data.scenarios' está vazio."
+      />
     );
   }
 
