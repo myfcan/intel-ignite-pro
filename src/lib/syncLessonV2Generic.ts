@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { GuidedLessonData } from '@/types/guidedLesson';
 import { processLessonData, logValidation } from './lessonDataProcessor';
-import { extractNarrationText } from './syncLessonV2';
+import { cleanAudioText } from '@/lib/audioTextValidator';
 
 /**
  * 🎯 SINCRONIZAÇÃO V2 GENÉRICA
@@ -110,7 +110,7 @@ export async function syncLessonV2Generic(
     console.log(`🎵 Preparando ${lessonData.sections.length} seções para geração de áudio...`);
     
     const audioTexts = lessonData.sections.map((section, index) => {
-      const narrationText = extractNarrationText(section.visualContent || section.content || '');
+      const narrationText = cleanAudioText(section.visualContent || section.content || '');
       console.log(`   Seção ${index + 1}: ${narrationText.substring(0, 50)}...`);
       return {
         sectionId: section.id,
