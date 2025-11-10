@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  syncFundamentos01,
   syncFundamentos02, 
   syncFundamentos03,
   syncAllLessons,
   regenerateAudio 
 } from '@/lib/syncLessonToDatabase';
-import { syncFundamentos01 } from '@/lib/syncLessonV2';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -41,6 +41,7 @@ const SYNC_FUNCTIONS: Record<string, () => Promise<any>> = {
 
 // Mapeia títulos das lições para regeneração de áudio
 const LESSON_TITLES: Record<string, string> = {
+  'fundamentos-01': 'O que é a IA e por que nós precisamos dela',
   'fundamentos-02': 'Como a IA Aprende com Você',
   'fundamentos-03': 'Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes',
 };
@@ -275,7 +276,7 @@ export default function AdminSyncLessons() {
               {getStatusIcon(status.all)}
             </CardTitle>
             <CardDescription>
-              Sincroniza todas as lições de uma vez (exceto Fundamentos 01)
+              Sincroniza todas as 3 lições de uma vez
             </CardDescription>
           </CardHeader>
           <CardContent>

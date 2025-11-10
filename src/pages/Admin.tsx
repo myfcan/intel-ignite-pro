@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Layers } from 'lucide-react';
+import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -58,29 +58,6 @@ export default function Admin() {
             >
               <Zap className="w-4 h-4 mr-2" />
               Abrir Gerador em Lote
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5" />
-              Criação em Lote
-            </CardTitle>
-            <CardDescription>
-              Crie múltiplas lições de uma vez usando o processador centralizado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/batch-create-lessons')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Layers className="w-4 h-4 mr-2" />
-              Criar Lições em Lote
             </Button>
           </CardContent>
         </Card>

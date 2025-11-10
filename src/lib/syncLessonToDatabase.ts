@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fundamentos01, fundamentos01AudioText } from '@/data/lessons/fundamentos-01';
 import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 import { fundamentos03, fundamentos03AudioText } from '@/data/lessons/fundamentos-03';
 import { autoGenerateAudioWithToast } from './autoGenerateAudio';
@@ -20,6 +21,125 @@ interface SyncResult {
   action?: 'created' | 'updated' | 'skipped';
 }
 
+
+/**
+ * Sincroniza fundamentos-01 para o banco
+ */
+export async function syncFundamentos01(): Promise<SyncResult> {
+  try {
+    console.log('🔄 Sincronizando Fundamentos 01...');
+
+    const { data: trail, error: trailError } = await supabase
+      .from('trails')
+      .select('id')
+      .eq('title', 'Fundamentos de IA')
+      .maybeSingle();
+
+    if (trailError) {
+      throw new Error(`Erro ao buscar trilha: ${trailError.message}`);
+    }
+
+    if (!trail) {
+      throw new Error('Trilha "Fundamentos de IA" não encontrada');
+    }
+
+    const { data: existingLesson } = await supabase
+      .from('lessons')
+      .select('id, audio_url, content')
+      .eq('title', fundamentos01.title)
+      .maybeSingle();
+
+    // ✅ USAR PROCESSADOR CENTRALIZADO
+    const processed = processLessonData({
+      lessonData: fundamentos01,
+      audioText: fundamentos01AudioText,
+      trailId: trail.id,
+      orderIndex: 1,
+      title: fundamentos01.title,
+      description: 'O que é a IA e por que nós precisamos dela',
+      passingScore: 70,
+      difficultyLevel: 'beginner'
+    });
+
+    // Log de validação
+    logValidation(processed, 'Fundamentos 01');
+
+    const lessonData = processed.databaseData;
+
+    let lessonId: string;
+    let action: 'created' | 'updated';
+
+    if (existingLesson) {
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update(lessonData)
+        .eq('id', existingLesson.id);
+
+      if (updateError) throw updateError;
+
+      lessonId = existingLesson.id;
+      action = 'updated';
+      toast.success('📝 Lição 01 atualizada');
+    } else {
+      const { data: newLesson, error: insertError } = await supabase
+        .from('lessons')
+        .insert(lessonData)
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      lessonId = newLesson.id;
+      action = 'created';
+      toast.success('✨ Lição 01 criada');
+    }
+
+    // Verificar timestamps no NOVO conteúdo que acabamos de salvar
+    const newContent = lessonData.content as any;
+    const needsTimestamps = !newContent?.sections?.every((s: any) => s.timestamp && s.timestamp > 0);
+    const needsAudio = !existingLesson?.audio_url;
+
+    if (needsAudio || needsTimestamps) {
+      if (needsAudio) {
+        console.log('🎙️ Gerando áudio completo para lição 01...');
+        toast.info('🎙️ Gerando áudio com timestamps...');
+      } else {
+        console.log('⏱️ Regenerando apenas timestamps para lição 01...');
+        toast.info('⏱️ Adicionando timestamps ao áudio...');
+      }
+
+      const audioSuccess = await autoGenerateAudioWithToast(
+        lessonId,
+        processed.audioData.cleanAudioText,
+        lessonData.content
+      );
+
+      return {
+        success: true,
+        lessonId,
+        audioGenerated: audioSuccess,
+        action,
+        timestampsGenerated: needsTimestamps
+      };
+    } else {
+      toast.info('✅ Lição 01 já tem áudio e timestamps');
+      return {
+        success: true,
+        lessonId,
+        audioGenerated: false,
+        action
+      };
+    }
+
+  } catch (error: any) {
+    console.error('❌ Erro ao sincronizar lição 01:', error);
+    toast.error(`❌ Erro: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
 
 /**
  * Sincroniza fundamentos-02 para o banco
@@ -273,9 +393,19 @@ export async function syncAllLessons(): Promise<{
   
   const results: SyncResult[] = [];
   
+  // Sincronizar Fundamentos 01
+  const result01 = await syncFundamentos01();
+  results.push(result01);
+  
+  // Pequeno delay entre lições
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
   // Sincronizar Fundamentos 02
   const result02 = await syncFundamentos02();
   results.push(result02);
+  
+  // Pequeno delay entre lições
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
   // Sincronizar Fundamentos 03
   const result03 = await syncFundamentos03();
@@ -284,17 +414,17 @@ export async function syncAllLessons(): Promise<{
   const successful = results.filter(r => r.success).length;
   const withAudio = results.filter(r => r.audioGenerated).length;
   
-  console.log(`✅ ${successful}/2 lições sincronizadas`);
-  console.log(`🎙️ ${withAudio}/2 áudios gerados`);
+  console.log(`✅ ${successful}/3 lições sincronizadas`);
+  console.log(`🎙️ ${withAudio}/3 áudios gerados`);
   
-  if (successful === 2) {
+  if (successful === 3) {
     toast.success(`🎉 ${successful} lições sincronizadas com sucesso!`);
   } else {
-    toast.warning(`⚠️ ${successful}/2 lições sincronizadas`);
+    toast.warning(`⚠️ ${successful}/3 lições sincronizadas`);
   }
   
   return {
-    total: 2,
+    total: 3,
     successful,
     withAudio,
     results
@@ -319,7 +449,9 @@ export async function regenerateAudio(lessonTitle: string): Promise<boolean> {
 
     // Determinar qual audioText usar
     let audioText = '';
-    if (lessonTitle.includes('Como a IA Aprende com Você')) {
+    if (lessonTitle.includes('O que é a IA e por que nós precisamos dela')) {
+      audioText = fundamentos01AudioText;
+    } else if (lessonTitle.includes('Como a IA Aprende com Você')) {
       audioText = fundamentos02AudioText;
     } else if (lessonTitle.includes('Como a IA Aprende: O Cérebro Digital')) {
       audioText = fundamentos03AudioText;
