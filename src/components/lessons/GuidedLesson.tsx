@@ -1162,35 +1162,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       return;
     }
     
-    // ✅ VALIDAÇÃO CRÍTICA: Verificar se todos os exercícios foram aprovados
-    const allExercisesPassed = exerciseScores.every((score, index) => {
-      const exercise = lessonData.exercisesConfig?.[index];
-      const passingScore = exercise?.passingScore || 70;
-      return score >= passingScore;
-    });
-    
-    const hasAllScores = exerciseScores.length === lessonData.exercisesConfig?.length;
-    
-    if (!hasAllScores || !allExercisesPassed) {
-      console.error('❌ [EXERCISES] VALIDAÇÃO FALHOU!');
-      console.error('Scores:', exerciseScores);
-      console.error('Todos os scores?', hasAllScores);
-      console.error('Todos passaram?', allExercisesPassed);
-      
-      toast({
-        title: "⚠️ Exercícios incompletos",
-        description: "Você precisa passar em todos os exercícios para completar a aula.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      
-      // Voltar para exercícios
-      setCurrentPhase('exercises');
-      return;
-    }
-    
     setExercisesCompleted(true);
-    console.log('✅ [EXERCISES] Completados com sucesso e validados');
+    console.log('✅ [EXERCISES] Completados');
     console.log('📊 [EXERCISES] Scores finais:', exerciseScores);
     
     // 🎮 Gamification logic
