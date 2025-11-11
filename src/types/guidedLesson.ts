@@ -160,4 +160,5 @@ export interface GuidedLessonProps {
   wordTimestamps?: WordTimestamp[]; // timestamps de palavras para sincronização precisa
   nextLessonId?: string; // ID da próxima lição (opcional)
   nextLessonType?: string; // Tipo da próxima lição (opcional)
+  trailId?: string; // ID da trilha (para navegação correta do botão voltar)
 }

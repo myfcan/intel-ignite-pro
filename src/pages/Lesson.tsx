@@ -222,8 +222,9 @@ const Lesson = () => {
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard')}
               className="gap-2"
+              aria-label="Voltar ao dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
               Voltar
@@ -348,9 +349,9 @@ const Lesson = () => {
           {/* Navigation */}
           {showPlayground && (
             <div className="flex justify-between items-center pt-4">
-              <Button variant="outline" onClick={() => navigate(-1)}>
+              <Button variant="outline" onClick={() => navigate('/dashboard')}>
                 <ArrowLeft className="mr-2 w-4 h-4" />
-                Voltar à Trilha
+                Voltar ao Dashboard
               </Button>
             </div>
           )}

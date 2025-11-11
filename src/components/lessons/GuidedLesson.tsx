@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 
-export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType }: GuidedLessonProps) {
+export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1467,7 +1467,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0">
+            <button 
+              onClick={() => navigate(`/trails/${trailId || lessonData.trackId}`)} 
+              className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+              aria-label="Voltar para trilha"
+            >
               <ChevronLeft className="w-5 h-5 text-slate-700" />
             </button>
             <div className="flex-1 min-w-0">
