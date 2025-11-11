@@ -1,6 +1,6 @@
 import { fundamentos01 } from './fundamentos-01';
 import { fundamentos02, fundamentos02AudioText } from './fundamentos-02';
-import { fundamentos03 } from './fundamentos-03';
+import { fundamentos03, fundamentos03AudioText } from './fundamentos-03';
 import { fundamentos04, fundamentos04AudioText } from './fundamentos-04';
 import { GuidedLessonData } from '@/types/guidedLesson';
 
@@ -29,7 +29,7 @@ export const ALL_LESSONS = {
 export const LESSON_AUDIO_TEXTS: Record<LessonKey, string> = {
   'fundamentos-01': '', // Aula 01 usa sistema antigo com áudios separados
   'fundamentos-02': fundamentos02AudioText,
-  'fundamentos-03': '', // Aula 03 precisa exportar audioText
+  'fundamentos-03': fundamentos03AudioText,
   'fundamentos-04': fundamentos04AudioText,
 };
 
