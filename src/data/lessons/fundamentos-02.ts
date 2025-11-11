@@ -8,7 +8,7 @@ export const fundamentos02: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
   duration: 198, // 3min 18s
-  contentVersion: 5, // Versão atual do conteúdo (incrementar quando alterar exercícios)
+  contentVersion: 6, // Versão atual do conteúdo (incrementar quando alterar exercícios)
   schemaVersion: 1, // 🆕 Para FASE 4
 
   sections: [
@@ -100,6 +100,7 @@ Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! �
         type: 'interactive-simulation',
         triggerAfterSection: 3,
         triggerKeyword: 'playground',
+        playgroundDelay: 0.5, // Atrasa 0.5s para não cortar "vamos lá"
         simulationConfig: {
           type: 'interactive-simulation',
           title: 'Como o Netflix Aprendeu o Que Você Gosta',

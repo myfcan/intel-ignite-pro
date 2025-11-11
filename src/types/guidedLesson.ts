@@ -84,6 +84,7 @@ export interface PlaygroundConfig {
   type: PlaygroundType;
   triggerKeyword?: string;
   triggerAfterSection?: number;
+  playgroundDelay?: number; // Delay adicional em segundos antes de mostrar o playground (útil para dar tempo da frase completar)
   options?: string[];
   feedback?: Record<string, string>;
   realConfig?: RealPlaygroundConfig;

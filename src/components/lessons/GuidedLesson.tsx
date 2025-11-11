@@ -681,7 +681,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
         if (nextSection) {
-          const triggerTime = nextSection.timestamp - 0.5;
+          const playgroundSection = lessonData.sections[playgroundSectionIndex];
+          const playgroundDelay = playgroundSection.playgroundConfig?.playgroundDelay ?? 0;
+          const triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
           
           // 🔍 DEBUG: Log contínuo na janela crítica (125s-129s)
           if (time >= 125 && time <= 129) {
