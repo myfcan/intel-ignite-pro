@@ -126,24 +126,57 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
   
   exercisesConfig: [
     {
-      id: 'ex-2',
+      id: 'ex-1',
       type: 'fill-in-blanks',
-      title: 'Complete: Apps com IA',
-      instruction: 'Preencha as lacunas sobre apps que usam IA:',
+      title: 'IA nos Apps do Dia a Dia',
+      instruction: 'Complete as frases sobre IA em apps que você já usa:',
       data: {
-        text: 'O Instagram usa IA para _____ conteúdo personalizado, enquanto o Google Maps usa IA para calcular a melhor _____ em tempo real.',
-        blanks: [
+        sentences: [
           {
-            id: 'blank-1',
-            correctAnswer: 'recomendar',
-            alternatives: ['sugerir', 'mostrar', 'exibir']
+            id: 'sent-1',
+            text: 'O _______ usa IA para recomendar posts que você vai gostar no seu feed.',
+            correctAnswers: ['Instagram', 'instagram'],
+            hint: 'App de fotos e vídeos muito popular'
           },
           {
-            id: 'blank-2',
-            correctAnswer: 'rota',
-            alternatives: ['caminho', 'trajetória']
+            id: 'sent-2',
+            text: 'O Google _______ usa IA para calcular a rota mais rápida considerando o trânsito.',
+            correctAnswers: ['Maps', 'maps'],
+            hint: 'App de navegação e mapas do Google'
           }
-        ]
+        ],
+        feedback: {
+          allCorrect: '🎉 Perfeito! Você já identifica IA nos apps do dia a dia!',
+          someCorrect: '👍 Você acertou {count}! Continue assim!',
+          needsReview: '💪 Revise o conteúdo sobre apps com IA e tente novamente!'
+        }
+      }
+    },
+    {
+      id: 'ex-2',
+      type: 'fill-in-blanks',
+      title: 'Ferramentas de IA',
+      instruction: 'Complete sobre ferramentas práticas de IA:',
+      data: {
+        sentences: [
+          {
+            id: 'sent-1',
+            text: 'O _______ é uma IA que ajuda a escrever textos, emails e responder perguntas.',
+            correctAnswers: ['ChatGPT', 'chatgpt', 'Chat GPT'],
+            hint: 'Começa com Chat...'
+          },
+          {
+            id: 'sent-2',
+            text: 'O app _______ usa IA para melhorar qualidade e restaurar fotos antigas.',
+            correctAnswers: ['Remini', 'remini'],
+            hint: 'App especializado em restauração de fotos'
+          }
+        ],
+        feedback: {
+          allCorrect: '🎉 Excelente! Você conhece as principais ferramentas de IA!',
+          someCorrect: '👍 Acertou {count}! Revise as ferramentas e tente de novo!',
+          needsReview: '💪 Volte na aula e veja as ferramentas práticas de IA!'
+        }
       }
     },
     {
