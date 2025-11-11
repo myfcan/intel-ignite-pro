@@ -41,14 +41,14 @@ export function ExerciseErrorCard({
           <>
             <p className="text-sm text-muted-foreground mb-4">
               Por favor, re-sincronize esta aula em{' '}
-              <code className="bg-muted px-2 py-1 rounded">/admin/batch-lessons</code>
+              <code className="bg-muted px-2 py-1 rounded">/admin/sync-lessons</code>
             </p>
             <Button 
-              onClick={() => navigate('/admin/batch-lessons')}
+              onClick={() => navigate('/admin/sync-lessons')}
               variant="outline"
               className="border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/50"
             >
-              Ir para Admin
+              Ir para Sincronizar Aulas
             </Button>
           </>
         )}

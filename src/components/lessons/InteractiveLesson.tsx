@@ -13,6 +13,7 @@ import { MiniMaia } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { fundamentos03 } from '@/data/lessons/fundamentos-03';
+import { fundamentos04 } from '@/data/lessons/fundamentos-04';
 import { WordTimestamp } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -183,6 +184,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         localContent = fundamentos02;
       } else if (lesson.title.includes('Cérebro Digital')) {
         localContent = fundamentos03;
+      } else if (lesson.title.includes('Seu Bolso')) {
+        localContent = fundamentos04;
       }
       
       // Comparar versões e usar a mais recente
