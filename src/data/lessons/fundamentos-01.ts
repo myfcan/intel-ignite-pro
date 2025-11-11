@@ -10,7 +10,7 @@ export const fundamentos01: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
   duration: 240, // será atualizado após geração
-  contentVersion: 3, // V3: exercícios atualizados
+  contentVersion: 4, // V4: múltipla escolha em todas as questões
   schemaVersion: 1, // 🆕 Para FASE 4
   
   sections: [
@@ -137,14 +137,16 @@ E você acabou de começar.`
           {
             id: 'sent-2',
             text: 'A pasta de _______ do meu e-mail usa IA para filtrar mensagens indesejadas automaticamente.',
-            correctAnswers: ['spam', 'Spam', 'lixo eletrônico', 'lixo', 'lixeira'],
+            correctAnswers: ['spam', 'Spam'],
+            options: ['spam', 'lixo', 'caixa de entrada'],
             hint: 'Onde vão aquelas mensagens chatas que você não pediu!',
             explanation: 'Perfeito! Os filtros de spam usam IA para identificar e-mails suspeitos antes de chegarem até você.'
           },
           {
             id: 'sent-3',
             text: 'O _______ mostra primeiro as publicações de pessoas que eu mais interajo, graças à IA.',
-            correctAnswers: ['instagram', 'Instagram', 'facebook', 'Facebook', 'feed', 'Feed'],
+            correctAnswers: ['Instagram', 'instagram'],
+            options: ['Instagram', 'WhatsApp', 'YouTube'],
             hint: 'A rede social onde você vê fotos e vídeos dos amigos!',
             explanation: 'Exato! As redes sociais usam IA para organizar seu feed e mostrar o que mais te interessa.'
           }
