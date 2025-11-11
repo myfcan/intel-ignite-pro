@@ -19,6 +19,7 @@ export const fundamentos01: GuidedLessonData = {
       id: 'sessao-1',
       timestamp: 0,
       type: 'text',
+      audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-1.mp3',
       speechBubbleText: 'Olá! Eu sou a MAIA',
       visualContent: `## 🎯 Introdução e Boas-vindas
 
@@ -36,8 +37,9 @@ E nas próximas aulas, você vai ver como isso pode economizar tempo, gerar opor
     },
     {
       id: 'sessao-2',
-      timestamp: 48, // será atualizado com duração real
+      timestamp: 43.39556884765625,
       type: 'text',
+      audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-2.mp3',
       speechBubbleText: 'O que é Inteligência Artificial de verdade',
       visualContent: `## 🧠 O que é Inteligência Artificial de verdade
 
@@ -55,8 +57,9 @@ Você não precisa entender a matemática por trás, só precisa saber como usar
     },
     {
       id: 'sessao-3',
-      timestamp: 96, // será atualizado com duração real
+      timestamp: 87.65850830078125,
       type: 'text',
+      audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-3.mp3',
       speechBubbleText: 'Onde você já usa IA sem perceber',
       visualContent: `## 📱 Onde você já usa IA sem perceber
 
@@ -76,8 +79,9 @@ E agora, pela primeira vez, você pode conversar diretamente com essas IAs — p
     },
     {
       id: 'sessao-4',
-      timestamp: 144, // será atualizado com duração real
+      timestamp: 134.14080810546875,
       type: 'text',
+      audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-4.mp3',
       speechBubbleText: 'Por que aprender IA agora',
       visualContent: `## ⚡ Por que aprender IA agora
 
@@ -97,8 +101,9 @@ Dominar IA é dominar o próximo passo do mercado.`
     },
     {
       id: 'sessao-5',
-      timestamp: 192, // será atualizado com duração real
+      timestamp: 176.72003173828125,
       type: 'end-audio',
+      audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-5.mp3',
       speechBubbleText: 'O próximo passo',
       visualContent: `## 🚀 O próximo passo
 
