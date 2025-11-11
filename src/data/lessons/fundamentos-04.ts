@@ -187,10 +187,21 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
       id: 'ex-3',
       type: 'true-false',
       title: 'Verdadeiro ou Falso',
-      instruction: 'IA só funciona em computadores potentes, não em celulares',
+      instruction: 'Indique se cada afirmação é verdadeira ou falsa:',
       data: {
-        correctAnswer: false,
-        explanation: '**Falso!** A IA moderna funciona perfeitamente em smartphones. Apps como ChatGPT, Google Tradutor e Canva rodam direto no seu celular, tornando a IA acessível para todos.'
+        statements: [
+          {
+            id: 'stmt-1',
+            text: 'IA só funciona em computadores potentes, não em celulares',
+            correct: false,
+            explanation: 'A IA moderna funciona perfeitamente em smartphones. Apps como ChatGPT, Google Tradutor e Canva rodam direto no seu celular, tornando a IA acessível para todos.'
+          }
+        ],
+        feedback: {
+          perfect: '🎉 Perfeito! Você entendeu como a IA funciona no celular!',
+          good: '👍 Muito bem! Continue aprendendo!',
+          needsReview: '💪 Revise o conteúdo sobre IA em dispositivos móveis!'
+        }
       }
     },
     {
