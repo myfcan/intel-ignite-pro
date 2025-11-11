@@ -303,14 +303,13 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
       title: 'Como a IA aprende com o tempo',
       instruction: 'Marque TODAS as formas como a IA aprende continuamente:',
       data: {
-        scenarios: [
-          {
-            id: 'scenario-1',
-            emoji: '🧠',
-            platform: 'Aprendizado Contínuo',
-            situation: 'A IA continua aprendendo mesmo depois de treinada, observando comportamentos e ajustando suas respostas constantemente',
-            context: 'Como a IA evolui sem reprogramação',
-            dataPoints: [
+        scenario: {
+          id: 'scenario-1',
+          emoji: '🧠',
+          platform: 'Aprendizado Contínuo',
+          situation: 'A IA continua aprendendo mesmo depois de treinada, observando comportamentos e ajustando suas respostas constantemente',
+          context: 'Como a IA evolui sem reprogramação',
+          dataPoints: [
               {
                 id: 'data-1',
                 label: 'Corrige seus erros automaticamente',
@@ -336,8 +335,7 @@ Precisa apenas aprender a conversar com a IA — e é exatamente isso que vai te
                 explanation: 'A IA observa como você interage e adapta suas sugestões ao seu perfil'
               }
             ]
-          }
-        ],
+        },
         feedback: {
           allCorrect: 'Excelente! A IA aprende sozinha com base nos padrões do nosso comportamento — como nós, quando repetimos algo até dominar.',
           someCorrect: 'Muito bem! Você entendeu parte do processo. A IA aprende continuamente, sem precisar de reprogramação manual.',

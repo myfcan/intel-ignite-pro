@@ -8,7 +8,7 @@ export const fundamentos02: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
   duration: 198, // 3min 18s
-  contentVersion: 3, // Versão atual do conteúdo (incrementar quando alterar exercícios)
+  contentVersion: 4, // Versão atual do conteúdo (incrementar quando alterar exercícios)
   schemaVersion: 1, // 🆕 Para FASE 4
 
   sections: [
@@ -34,7 +34,9 @@ O segredo está em como a Inteligência Artificial **aprende**. Ela observa tudo
       speechBubbleText: 'A IA registra cada detalhe do que você assiste',
       visualContent: `## 🎬 Netflix - A escola da IA
 
-Vamos usar o Netflix como exemplo. Toda vez que você assiste algo, a IA registra:
+Vamos usar o Netflix como exemplo. 
+
+Toda vez que você assiste algo, a IA registra:
 
 - 📊 Qual gênero
 - 👥 Quais atores
@@ -42,12 +44,17 @@ Vamos usar o Netflix como exemplo. Toda vez que você assiste algo, a IA registr
 - ⏭️ Se você pulou a introdução
 - ✅ Se assistiu até o final
 
-Com milhões de pessoas fazendo isso, a IA começa a identificar padrões:
+Com milhões de pessoas fazendo isso, a IA começa a identificar padrões.
 
-> "Quem assistiu A também gostou de B"  
+Por exemplo:
+
+> "Quem assistiu A também gostou de B"
+
 > "Quem para de assistir no episódio três geralmente não gosta desse tipo de série"
 
-**Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!** 📈`
+**Quanto mais você usa, mais dados a IA tem.** 
+
+**E mais dados significa sugestões cada vez melhores!** 📈`
     },
     {
       id: 'secao-3',
@@ -56,12 +63,16 @@ Com milhões de pessoas fazendo isso, a IA começa a identificar padrões:
       speechBubbleText: 'O Spotify conhece seus humores melhor que ninguém',
       visualContent: `## 🎵 Spotify e a mágica da música
 
-O Spotify funciona parecido, mas vai além. Ele não só vê o que você ouve, mas **QUANDO** você ouve.
+O Spotify funciona parecido, mas vai além. 
+
+Ele não só vê o que você ouve, mas **quando** você ouve.
 
 🌅 Segunda de manhã → você gosta de um estilo  
 🌃 Sexta à noite → outro completamente diferente
 
-A IA aprende seus **humores**, suas **rotinas**, até prevê o que você vai querer ouvir dependendo da hora do dia.
+A IA aprende seus **humores**, suas **rotinas**.
+
+Ela até prevê o que você vai querer ouvir dependendo da hora do dia.
 
 Por isso aquela playlist **"Descobertas da Semana"** parece mágica! ✨
 
@@ -225,7 +236,9 @@ O Facebook observa:
 
 E usa tudo isso pra montar seu **feed personalizado**. 🎯
 
-Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. **Cada feed é único**, moldado pela IA que aprendeu com você! ✨`
+Por isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes. 
+
+**Cada feed é único**, moldado pela IA que aprendeu com você! ✨`
     },
     {
       id: 'secao-6',

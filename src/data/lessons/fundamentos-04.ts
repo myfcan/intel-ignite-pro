@@ -12,7 +12,7 @@ export const fundamentos04: GuidedLessonData = {
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
   duration: 0, // Será calculado automaticamente após gerar áudios
-  contentVersion: 3, // V2 padronizado
+  contentVersion: 4, // V2 padronizado
   schemaVersion: 1, // 🆕 Para FASE 4
   
   sections: [
@@ -23,7 +23,9 @@ export const fundamentos04: GuidedLessonData = {
       speechBubbleText: 'Olá! Vamos descobrir a IA no seu celular? 📱',
       visualContent: `## 🎯 Você Já Usa IA Todos os Dias e Nem Percebe!
 
-Você sabia que já usa Inteligência Artificial várias vezes por dia, sem nem perceber?
+Você sabia que já usa Inteligência Artificial várias vezes por dia?
+
+E muitas vezes nem percebe!
 
 Nesta aula, vamos descobrir:
 - Como a IA está presente no seu smartphone
@@ -41,7 +43,8 @@ Nesta aula, vamos descobrir:
 
 ### Assistentes Virtuais
 - **Siri, Google Assistant, Alexa**: Reconhecem sua voz e entendem comandos
-- Usam IA para interpretar o que você diz e responder de forma natural
+- Usam IA para interpretar o que você diz
+- Respondem de forma natural
 
 ### Redes Sociais
 - **Instagram, TikTok, Facebook**: Recomendam conteúdo personalizado
@@ -62,13 +65,13 @@ Nesta aula, vamos descobrir:
 
 ### ChatGPT (Conversação)
 - Responde perguntas complexas
-- Ajuda a escrever textos, emails, posts
+- Ajuda a escrever textos, emails e posts
 - Explica conceitos de forma simples
 
 ### Google Tradutor (Idiomas)
 - Traduz textos instantaneamente
 - Reconhece fala e transcreve
-- Traduz até imagens com câmera
+- Traduz até imagens com a câmera
 
 ### Remini (Fotos)
 - Melhora qualidade de fotos antigas
@@ -77,7 +80,7 @@ Nesta aula, vamos descobrir:
 
 ### Canva Magic (Design)
 - Cria designs profissionais com IA
-- Remove fundos de fotos
+- Remove fundos de fotos automaticamente
 - Gera textos criativos
 
 **Todas disponíveis no seu celular!** 📲`
@@ -90,7 +93,7 @@ Nesta aula, vamos descobrir:
       visualContent: `## 💼 Casos Práticos do Dia a Dia
 
 ### Para Trabalho
-- **Escrever emails profissionais**: ChatGPT ajuda com tom correto
+- **Escrever emails profissionais**: ChatGPT ajuda com o tom correto
 - **Fazer apresentações**: Canva cria slides bonitos rapidamente
 - **Organizar agenda**: Assistentes virtuais marcam compromissos
 
@@ -101,10 +104,12 @@ Nesta aula, vamos descobrir:
 
 ### Para Vida Pessoal
 - **Planejar viagens**: IA sugere roteiros personalizados
-- **Receitas**: Encontra receitas baseadas no que você tem em casa
+- **Receitas**: Encontra receitas com o que você tem em casa
 - **Editar fotos**: IA melhora suas selfies automaticamente
 
-> 🎯 **O segredo**: Experimente! Quanto mais você usa, melhor a IA te entende.`
+> 🎯 **O segredo**: Experimente! 
+
+> Quanto mais você usa, melhor a IA te entende.`
     },
     {
       id: 'conclusao',
