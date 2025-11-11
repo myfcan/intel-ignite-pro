@@ -87,31 +87,18 @@ export function FillInBlanksExercise({
     if (isPerfect) {
       console.log('🏆 [PERFECT] Acertou tudo de primeira!');
       
-      const duration = 4000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 45, spread: 360, ticks: 80, zIndex: 9999 };
-      
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-        
-        const particleCount = 60 * (timeLeft / duration);
-        
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: Math.random() * 0.4 + 0.3, y: Math.random() * 0.5 + 0.1 },
-          colors: ['#FFD700', '#FFA500', '#FF6347', '#FFFF00', '#FFD700']
-        });
-      }, 200);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FF6347', '#FFFF00', '#FFD700']
+      });
     }
     
+    // Chamar onComplete imediatamente para o ExercisesSection controlar o avanço
     setTimeout(() => {
       onComplete(score);
-    }, 1500);
+    }, 800);
   };
 
   const correctCount = Object.values(results).filter(Boolean).length;

@@ -91,7 +91,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
         console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
         setTimeout(() => {
           setCurrentExerciseIndex(prev => prev + 1);
-        }, 1500);
+        }, 1200);
       } else {
         // Último exercício - verificar se TODOS passaram
         const allPassed = newPassedExercises.every(p => p === true);
