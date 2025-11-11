@@ -266,28 +266,49 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // 🎮 Helper: Ativar playground
   const activatePlayground = () => {
+    console.log(`🔍 [activatePlayground] ========== CHAMADA ==========`);
+    console.log(`🔍 [activatePlayground] Estados:`, {
+      hasPlaygroundSupport,
+      contentVersion: lessonData.contentVersion,
+      isV2,
+      playgroundTriggered,
+      hasAudio: !!audioRef.current,
+      currentSection,
+      currentPhase
+    });
+    
     // 🛡️ V2 não tem playground - retornar imediatamente
     if (!hasPlaygroundSupport) {
-      console.log('🚫 [activatePlayground] V2 não suporta playground');
+      console.log('🚫 [activatePlayground] BLOCKED: V2 não suporta playground');
       return;
     }
     
     const audio = audioRef.current;
-    console.log(`🔍 [activatePlayground] chamada | audio=${!!audio} | triggered=${playgroundTriggered}`);
     
     // 🛡️ Verificar se realmente existe uma seção com playground configurado
-    const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
+    const sectionsWithPlayground = lessonData.sections
+      .map((s, i) => ({ i, showPlaygroundCall: s.showPlaygroundCall, hasConfig: !!s.playgroundConfig, configType: s.playgroundConfig?.type }))
+      .filter(s => s.showPlaygroundCall || s.hasConfig);
+    
+    console.log(`🔍 [activatePlayground] Seções com playground:`, sectionsWithPlayground);
+    
+    const hasPlaygroundSection = sectionsWithPlayground.length > 0;
     if (!hasPlaygroundSection) {
-      console.log('🚫 [activatePlayground] Nenhum playground configurado nesta aula');
+      console.log('🚫 [activatePlayground] BLOCKED: Nenhum playground configurado nesta aula');
       return;
     }
     
-    if (!audio || playgroundTriggered) {
-      console.log(`🚫 [activatePlayground] BLOQUEADA | motivo=${!audio ? 'no-audio' : 'already-triggered'}`);
+    if (!audio) {
+      console.log(`🚫 [activatePlayground] BLOCKED: Áudio não disponível`);
       return;
     }
     
-    console.log('🎮 [PLAYGROUND] Ativando...');
+    if (playgroundTriggered) {
+      console.log(`🚫 [activatePlayground] BLOCKED: Playground já foi triggered`);
+      return;
+    }
+    
+    console.log('🎮 [PLAYGROUND] ✅ ATIVANDO...');
     
     // Pausar áudio
     audio.pause();
@@ -295,11 +316,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     
     // Marcar como triggered
     setPlaygroundTriggered(true);
+    console.log('🎮 [PLAYGROUND] playgroundTriggered = true');
     
     // Mostrar card após 500ms
     setTimeout(() => {
       setShowPlaygroundCall(true);
-      console.log('🎮 [PLAYGROUND] Card exibido');
+      console.log('🎮 [PLAYGROUND] showPlaygroundCall = true (Card exibido)');
     }, 500);
   };
   
@@ -613,7 +635,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
     
+    // 🔍 DEBUG: Log de inicialização do trigger
+    console.log('🎮 [TRIGGER-1-INIT] Trigger iniciado:', {
+      hasAudio: !!audio,
+      hasAudioUrl: !!audioUrl,
+      hasPlaygroundSupport,
+      contentVersion: lessonData.contentVersion,
+      isV2,
+      playgroundTriggered
+    });
+    
     let rafId: number;
+    let lastLoggedSecond = -1;
     
     const checkPlaygroundTrigger = () => {
       if (playgroundTriggered) {
@@ -628,15 +661,31 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
         ? lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig)
         : -1;
       
+      // 🔍 DEBUG: Log de configuração (apenas uma vez por segundo)
+      const currentSecond = Math.floor(time);
+      if (currentSecond !== lastLoggedSecond && currentSecond >= 95 && currentSecond <= 130) {
+        console.log(`🔍 [TRIGGER-1-CHECK] t=${time.toFixed(2)}s:`, {
+          playgroundSectionIndex,
+          hasPlaygroundSupport,
+          playgroundTriggered,
+          isPlaying,
+          currentSection,
+          sectionsWithPlayground: lessonData.sections
+            .map((s, i) => ({ i, showPlaygroundCall: s.showPlaygroundCall, hasConfig: !!s.playgroundConfig }))
+            .filter(s => s.showPlaygroundCall || s.hasConfig)
+        });
+        lastLoggedSecond = currentSecond;
+      }
+      
       if (playgroundSectionIndex !== -1) {
         const nextSection = lessonData.sections[playgroundSectionIndex + 1];
         
         if (nextSection) {
           const triggerTime = nextSection.timestamp - 0.5;
           
-          // 🔍 DEBUG: Log contínuo para debug (125s-129s)
+          // 🔍 DEBUG: Log contínuo na janela crítica (125s-129s)
           if (time >= 125 && time <= 129) {
-            console.log(`🔍 [DEBUG] t=${time.toFixed(2)}s | trigger=${triggerTime.toFixed(2)}s | playing=${isPlaying} | triggered=${playgroundTriggered}`);
+            console.log(`🔍 [TRIGGER-1-CRITICAL] t=${time.toFixed(2)}s | trigger=${triggerTime.toFixed(2)}s | playing=${isPlaying} | inWindow=${time >= triggerTime && time < nextSection.timestamp}`);
           }
           
           if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
@@ -646,6 +695,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
             cancelAnimationFrame(rafId);
             return;
           }
+        } else {
+          // 🔍 DEBUG: Próxima seção não encontrada
+          if (time >= 125 && time <= 129 && currentSecond !== lastLoggedSecond) {
+            console.log(`⚠️ [TRIGGER-1-ERROR] Seção ${playgroundSectionIndex} encontrada mas nextSection é undefined`);
+            lastLoggedSecond = currentSecond;
+          }
+        }
+      } else {
+        // 🔍 DEBUG: Nenhuma seção com playground encontrada
+        if (time >= 125 && time <= 129 && currentSecond !== lastLoggedSecond) {
+          console.log(`⚠️ [TRIGGER-1-NO-PG] Nenhuma seção com playground encontrada | hasPlaygroundSupport=${hasPlaygroundSupport}`);
+          lastLoggedSecond = currentSecond;
         }
       }
       
@@ -661,17 +722,38 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   
   // 🎮 TRIGGER 2 (FALLBACK): Section-based (26.5s após entrar na seção 4 = ~127.5s)
   useEffect(() => {
+    console.log(`🔍 [TRIGGER-2-CHECK] currentSection=${currentSection} | playgroundTriggered=${playgroundTriggered} | willActivate=${currentSection === 3 && !playgroundTriggered}`);
+    
     if (currentSection === 3 && !playgroundTriggered) {
+      console.log('🎮 [TRIGGER-2-ARMED] Timer de fallback iniciado (26.5s)');
+      
       const fallbackTimer = setTimeout(() => {
         const audio = audioRef.current;
-        if (audio && audio.currentTime >= 101 && audio.currentTime < 128) {
-          console.log('🎮 [TRIGGER-2] Fallback ativado aos ~127.5s');
+        const currentTime = audio?.currentTime || 0;
+        const inTimeWindow = currentTime >= 101 && currentTime < 128;
+        
+        console.log(`🔍 [TRIGGER-2-FIRE] Tentando ativar:`, {
+          hasAudio: !!audio,
+          currentTime: currentTime.toFixed(2),
+          inTimeWindow,
+          playgroundTriggered
+        });
+        
+        if (audio && inTimeWindow) {
+          console.log('🎮 [TRIGGER-2] ✅ Fallback ATIVANDO aos ~127.5s');
           logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'section-fallback' });
           activatePlayground();
+        } else {
+          console.log(`⚠️ [TRIGGER-2-BLOCKED] Não ativou:`, {
+            reason: !audio ? 'no-audio' : !inTimeWindow ? 'out-of-window' : 'unknown'
+          });
         }
       }, 26500); // 26.5 segundos após entrar na Seção 4
       
-      return () => clearTimeout(fallbackTimer);
+      return () => {
+        console.log('🎮 [TRIGGER-2-CLEANUP] Timer cancelado');
+        clearTimeout(fallbackTimer);
+      };
     }
   }, [currentSection, playgroundTriggered]);
   
@@ -679,11 +761,31 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   useEffect(() => {
     const prevSection = prevSectionRef.current;
     
+    console.log(`🔍 [TRIGGER-3-CHECK] Transition ${prevSection}→${currentSection}:`, {
+      hasPlaygroundSupport,
+      isRightTransition: currentSection === 4 && prevSection === 3,
+      playgroundTriggered,
+      willActivate: hasPlaygroundSupport && currentSection === 4 && prevSection === 3 && !playgroundTriggered
+    });
+    
     // 🛡️ Safety net apenas para V1 com playground
     if (hasPlaygroundSupport && currentSection === 4 && prevSection === 3 && !playgroundTriggered) {
       const hasPlaygroundSection = lessonData.sections.some(s => s.showPlaygroundCall && s.playgroundConfig);
-      if (!hasPlaygroundSection) return;
-      console.log('🎮 [TRIGGER-3] Safety net - usuário pulou seção 4');
+      
+      console.log(`🔍 [TRIGGER-3-ARMED] Safety net check:`, {
+        hasPlaygroundSection,
+        sectionsWithPlayground: lessonData.sections
+          .map((s, i) => ({ i, showPlaygroundCall: s.showPlaygroundCall, hasConfig: !!s.playgroundConfig }))
+          .filter(s => s.showPlaygroundCall || s.hasConfig)
+      });
+      
+      if (!hasPlaygroundSection) {
+        console.log('⚠️ [TRIGGER-3-BLOCKED] Nenhuma seção com playground encontrada');
+        prevSectionRef.current = currentSection;
+        return;
+      }
+      
+      console.log('🎮 [TRIGGER-3] ✅ Safety net ATIVANDO - usuário pulou seção 4');
       logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'safety-net' });
       
       setTimeout(() => {
