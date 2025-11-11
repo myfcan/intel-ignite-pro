@@ -708,6 +708,45 @@ export type Database = {
         }
         Relationships: []
       }
+      validation_alerts: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          guarantee_name: string
+          id: string
+          message: string
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          test_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          guarantee_name: string
+          id?: string
+          message: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          test_name: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          guarantee_name?: string
+          id?: string
+          message?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          test_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       exercises_public: {

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ValidationDashboard } from '@/components/admin/ValidationDashboard';
+import { ValidationAlerts } from '@/components/admin/ValidationAlerts';
 import { 
   runHealthCheck, 
   formatHealthCheckReport,
@@ -15,6 +16,7 @@ import {
   type HealthCheckReport,
   type GuaranteeReport
 } from '@/lib/validationSystem';
+import { getAlertStats } from '@/lib/validationAlerts';
 import { 
   PlayCircle, 
   Download, 
@@ -25,7 +27,8 @@ import {
   ShieldCheck,
   Shield,
   GitBranch,
-  ArrowLeft
+  ArrowLeft,
+  Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -35,6 +38,16 @@ export default function AdminValidationSystem() {
   const [report, setReport] = useState<HealthCheckReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [selectedGuarantee, setSelectedGuarantee] = useState<GuaranteeReport | null>(null);
+  const [alertStats, setAlertStats] = useState({ total: 0, unresolved: 0, critical: 0, warning: 0, info: 0 });
+
+  // Carregar estatísticas de alertas
+  useEffect(() => {
+    const loadStats = async () => {
+      const stats = await getAlertStats();
+      setAlertStats(stats);
+    };
+    loadStats();
+  }, [report]);
 
   const runFullHealthCheck = async () => {
     setIsRunning(true);
@@ -151,12 +164,34 @@ export default function AdminValidationSystem() {
             <p className="text-muted-foreground">
               Dashboard completo de testes e validações do sistema
             </p>
+            {/* Estatísticas de alertas */}
+            {alertStats.unresolved > 0 && (
+              <div className="mt-2 flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-orange-500" />
+                  <span className="font-medium">{alertStats.unresolved} alertas pendentes</span>
+                </div>
+                {alertStats.critical > 0 && (
+                  <span className="text-destructive">
+                    {alertStats.critical} críticos
+                  </span>
+                )}
+                {alertStats.warning > 0 && (
+                  <span className="text-orange-500">
+                    {alertStats.warning} avisos
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <Button variant="outline" onClick={() => navigate('/admin')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
         </div>
+
+        {/* Alertas Automáticos */}
+        <ValidationAlerts />
 
         {/* Controles Principais */}
         <Card>

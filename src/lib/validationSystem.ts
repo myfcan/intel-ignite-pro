@@ -12,6 +12,7 @@ import { validateExercise, validateAllExercises, formatValidationReport } from '
 import { processLessonData } from './lessonDataProcessor';
 import type { ExerciseConfigTyped } from '@/types/exerciseSchemas';
 import type { GuidedLessonData } from '@/types/guidedLesson';
+import { createAlertsFromReport } from './validationAlerts';
 
 // ============================================================
 // TIPOS
@@ -446,6 +447,16 @@ export async function runHealthCheck(): Promise<HealthCheckReport> {
   }
 
   const totalDuration = performance.now() - startTime;
+
+  // 🚨 CRIAR ALERTAS PARA TESTES QUE FALHARAM
+  const allGuarantees = [typescript, syncBlocking, defensive, versioning];
+  try {
+    await Promise.all(
+      allGuarantees.map(guarantee => createAlertsFromReport(guarantee))
+    );
+  } catch (error) {
+    console.error('❌ Erro ao criar alertas automáticos:', error);
+  }
 
   return {
     timestamp: new Date().toISOString(),
