@@ -12,6 +12,7 @@ interface Sentence {
   text: string;
   correctAnswers: string[];
   hint: string;
+  options?: string[];
 }
 
 interface FillInBlanksExerciseProps {
@@ -242,6 +243,26 @@ export function FillInBlanksExercise({
                       </AnimatePresence>
                     </div>
                   </div>
+                  
+                  {/* Opções de múltipla escolha */}
+                  {!submitted && sentence.options && sentence.options.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {sentence.options.map((option, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleAnswerChange(sentence.id, option)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                            answers[sentence.id] === option
+                              ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                              : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <AnimatePresence>
                     {submitted && !isCorrect && (
