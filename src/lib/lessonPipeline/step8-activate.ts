@@ -7,15 +7,15 @@ import { supabase } from '@/integrations/supabase/client';
  * - Marca como is_active: true
  */
 export async function step8Activate(input: Step7Output): Promise<PipelineResult> {
-  console.log('🚀 [STEP 8] Ativando lição...');
+  console.log('[STEP 8] Ativando lição...');
 
-  // 🆕 FASE 5: Separar exercises do content
+  // FASE 5: Separar exercises do content
   const { exercises, ...contentWithoutExercises } = input.structuredContent;
   
   const updateData: any = {
-    content: contentWithoutExercises, // 🆕 Content SEM exercises
-    exercises: exercises || [], // 🆕 Exercises separados
-    exercises_version: input.exercisesVersion || 1, // 🆕 Versão independente
+    content: contentWithoutExercises, // Content SEM exercises
+    exercises: exercises || [], // Exercises separados
+    exercises_version: input.exercisesVersion || 1, // Versão independente
     estimated_time: Math.ceil(input.totalDuration / 60),
     is_active: true,
   };
@@ -32,15 +32,15 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
     .eq('id', input.lessonId);
 
   if (error) {
-    console.error('❌ [STEP 8] Erro ao ativar lição:', error);
+    console.error('[STEP 8] Erro ao ativar lição:', error);
     throw new Error(`Falha ao ativar lição: ${error.message}`);
   }
 
-  console.log(`✅ [STEP 8] Lição ativada com sucesso!`);
-  console.log(`   📋 ID: ${input.lessonId}`);
-  console.log(`   ⏱️ Duração: ${input.totalDuration.toFixed(1)}s`);
-  console.log(`   🎯 Status: active`);
-  console.log(`   🎯 Exercises: ${updateData.exercises.length} (v${updateData.exercises_version})`);
+  console.log(`[STEP 8] Lição ativada com sucesso!`);
+  console.log(`   ID: ${input.lessonId}`);
+  console.log(`   Duração: ${input.totalDuration.toFixed(1)}s`);
+  console.log(`   Status: active`);
+  console.log(`   Exercises: ${updateData.exercises.length} (v${updateData.exercises_version})`);
 
   return {
     success: true,

@@ -74,7 +74,7 @@ export interface Step6Output extends Step4Output {
 export interface Step7Output extends Step6Output {
   structuredContent: any;
   totalDuration: number;
-  exercisesVersion?: number; // 🆕 FASE 5: Versão independente dos exercises
+  exercisesVersion?: number; // FASE 5: Versão independente dos exercises
 }
 
 export interface PipelineResult {
