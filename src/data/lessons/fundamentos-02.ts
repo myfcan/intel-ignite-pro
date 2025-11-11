@@ -338,6 +338,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
             id: 'sent-1',
             text: 'Quanto mais você usa um app, mais _______ a IA tem para aprender.',
             correctAnswers: ['dados', 'informações', 'informação', 'data'],
+            options: ['dados', 'amigos', 'tempo'],
             hint: 'O que a IA coleta de você?',
             explanation: 'A IA precisa de DADOS (informações) para aprender. Quanto mais você usa, mais dados ela coleta!'
           },
@@ -345,6 +346,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
             id: 'sent-2',
             text: 'O Spotify não só aprende o que você ouve, mas também _______ você ouve.',
             correctAnswers: ['quando', 'a hora que', 'o horário que', 'em que momento', 'que horas'],
+            options: ['quando', 'onde', 'porque'],
             hint: 'Pense no TEMPO...',
             explanation: 'O Spotify aprende QUANDO você ouve cada estilo de música (manhã, tarde, noite) para sugerir no momento certo!'
           },
@@ -352,6 +354,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
             id: 'sent-3',
             text: 'Você está ensinando IA toda vez que _______ um app normalmente.',
             correctAnswers: ['usa', 'utiliza', 'mexe', 'acessa', 'abre', 'interage'],
+            options: ['usa', 'compra', 'vende'],
             hint: 'O que você FAZ com apps?',
             explanation: 'Só de USAR o app normalmente, você já está ensinando a IA! Cada clique, cada scroll, cada like é uma aula.'
           },
@@ -359,6 +362,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
             id: 'sent-4',
             text: 'Duas pessoas vendo o Instagram ao mesmo tempo veem feeds _______, moldados pela IA.',
             correctAnswers: ['diferentes', 'distintos', 'únicos', 'personalizados', 'variados'],
+            options: ['diferentes', 'iguais', 'parecidos'],
             hint: 'O que é o oposto de iguais?',
             explanation: 'Cada feed é DIFERENTE porque a IA personalizou baseado no que VOCÊ gosta, não no que todo mundo gosta!'
           }
