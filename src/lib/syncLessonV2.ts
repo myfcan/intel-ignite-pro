@@ -310,6 +310,7 @@ export async function syncFundamentos02(): Promise<{ success: boolean; message: 
         .update({
           content: lessonContent as any,
           lesson_type: 'guided',
+          order_index: 2,
         })
         .eq('id', existingLesson.id);
     } else {
@@ -454,6 +455,7 @@ export async function syncFundamentos03(): Promise<{ success: boolean; message: 
         .update({
           content: lessonContent as any,
           lesson_type: 'guided',
+          order_index: 3,
         })
         .eq('id', existingLesson.id);
     } else {
@@ -617,6 +619,7 @@ export async function syncFundamentos04(): Promise<{ success: boolean; message: 
         .update({
           content: lessonContent as any,
           lesson_type: 'guided',
+          order_index: 4,
         })
         .eq('id', existingLesson.id);
 

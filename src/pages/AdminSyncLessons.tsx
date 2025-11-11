@@ -5,11 +5,9 @@ import { ArrowLeft, RefreshCw, CheckCircle, XCircle, Loader2, AlertCircle, Clock
 import { useNavigate } from 'react-router-dom';
 import { 
   syncFundamentos01,
-  syncFundamentos02,
-  syncFundamentos03,
-  syncFundamentos04,
   syncAllLessonsV2
 } from '@/lib/syncLessonV2';
+import { syncLessonV2Generic } from '@/lib/syncLessonV2Generic';
 import { regenerateAudio } from '@/lib/syncLessonToDatabase';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -24,7 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExercisePreview } from '@/components/admin/ExercisePreview';
 
 // ✨ Sistema de auto-descoberta de aulas
-import { LESSONS_ARRAY } from '@/data/lessons';
+import { LESSONS_ARRAY, ALL_LESSONS, LESSON_AUDIO_TEXTS, type LessonKey } from '@/data/lessons';
 
 // ✨ Status dinâmico baseado nas aulas descobertas
 type SyncStatusState = 'idle' | 'syncing' | 'success' | 'error';
@@ -36,9 +34,6 @@ interface SyncStatus {
 // Mapeia as funções de sync por chave de aula
 const SYNC_FUNCTIONS: Record<string, () => Promise<any>> = {
   'fundamentos-01': syncFundamentos01,
-  'fundamentos-02': syncFundamentos02,
-  'fundamentos-03': syncFundamentos03,
-  'fundamentos-04': syncFundamentos04,
 };
 
 // Mapeia títulos das lições para regeneração de áudio
@@ -60,17 +55,44 @@ export default function AdminSyncLessons() {
   
   const [status, setStatus] = useState<SyncStatus>(initialStatus);
 
-  // ✨ Handlers dinâmicos
+  // ✨ Handlers dinâmicos com sistema unificado
   const handleSyncLesson = async (lessonKey: string) => {
-    const syncFn = SYNC_FUNCTIONS[lessonKey];
-    if (!syncFn) return;
-    
     setStatus(prev => ({ ...prev, [lessonKey]: 'syncing' }));
-    const result = await syncFn();
-    setStatus(prev => ({ 
-      ...prev, 
-      [lessonKey]: result.success ? 'success' : 'error' 
-    }));
+    
+    try {
+      let result;
+      
+      // Aula 01 usa sistema antigo
+      if (lessonKey === 'fundamentos-01') {
+        const syncFn = SYNC_FUNCTIONS[lessonKey];
+        if (!syncFn) return;
+        result = await syncFn();
+      } 
+      // Aulas 02, 03, 04 usam sistema genérico unificado
+      else {
+        const metadata = LESSONS_ARRAY.find(l => l.key === lessonKey);
+        if (!metadata) return;
+        
+        const lessonData = ALL_LESSONS[lessonKey as LessonKey];
+        const audioText = LESSON_AUDIO_TEXTS[lessonKey as LessonKey];
+        
+        result = await syncLessonV2Generic(
+          lessonData,
+          audioText,
+          'Fundamentos de IA',
+          `aula-${metadata.orderIndex.toString().padStart(2, '0')}`,
+          metadata.orderIndex
+        );
+      }
+      
+      setStatus(prev => ({ 
+        ...prev, 
+        [lessonKey]: result.success ? 'success' : 'error' 
+      }));
+    } catch (error) {
+      console.error(`Erro ao sincronizar ${lessonKey}:`, error);
+      setStatus(prev => ({ ...prev, [lessonKey]: 'error' }));
+    }
   };
 
   const handleRegenerateAudio = async (lessonKey: string) => {
