@@ -584,13 +584,11 @@ export async function syncFundamentos04(): Promise<{ success: boolean; message: 
 
       updatedSections.push({
         ...section,
-        audioUrl: publicUrl,
-        startTime,
-        endTime,
-        duration: result.duration,
+        audio_url: publicUrl,
+        timestamp: cumulativeTime,
       });
 
-      console.log(`✅ [SYNC V2] Seção ${i + 1} uploaded: ${startTime}s → ${endTime}s (${result.duration}s)`);
+      console.log(`✅ [SYNC V2] Seção ${i + 1} uploaded: ${result.duration.toFixed(2)}s - ${publicUrl}`);
     }
 
     // 5. Inserir/atualizar no banco
@@ -599,23 +597,45 @@ export async function syncFundamentos04(): Promise<{ success: boolean; message: 
       description: 'Atualizando lição no banco de dados',
     });
 
-    const lessonData = {
-      id: fundamentos04.id,
-      title: fundamentos04.title,
-      trail_id: trailId,
-      lesson_type: 'guided' as const,
-      sections: updatedSections,
+    // 6. Verificar se aula já existe
+    const { data: existingLesson } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('title', fundamentos04.title)
+      .eq('trail_id', trailId)
+      .single();
+
+    const lessonContent = {
+      ...fundamentos04,
       duration: cumulativeTime,
-      order_index: 4,
+      sections: updatedSections,
     };
 
-    const { error: upsertError } = await supabase
-      .from('lessons')
-      .upsert(lessonData, { onConflict: 'id' });
+    if (existingLesson) {
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({
+          content: lessonContent as any,
+          lesson_type: 'guided',
+        })
+        .eq('id', existingLesson.id);
 
-    if (upsertError) {
-      console.error('❌ [SYNC V2] Erro ao salvar no banco:', upsertError);
-      throw new Error(`Erro ao salvar no banco: ${upsertError.message}`);
+      if (updateError) throw updateError;
+      console.log(`✅ [SYNC V2] Aula atualizada: ${existingLesson.id}`);
+    } else {
+      const { error: insertError } = await supabase
+        .from('lessons')
+        .insert({
+          title: fundamentos04.title,
+          trail_id: trailId,
+          order_index: 4,
+          lesson_type: 'guided',
+          content: lessonContent as any,
+          is_active: true,
+        });
+
+      if (insertError) throw insertError;
+      console.log('✅ [SYNC V2] Nova aula criada!');
     }
 
     console.log('✅ [SYNC V2] Fundamentos 04 sincronizada com sucesso!');

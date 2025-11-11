@@ -129,10 +129,16 @@ Mesmos tipos disponíveis do V1:
 
 #### 4. **Tecnologias**
 - Tipo de aula: `lesson_type: 'guided'`
-- Identificador de versão: `contentVersion: 2`
+- Identificador de versão: `contentVersion: 3`
 - Arquivo de dados: TypeScript (`*.ts`)
 - Interface: `GuidedLessonData` (em `src/types/guidedLesson.ts`)
 - Componente: `GuidedLesson.tsx` (com suporte a V2)
+
+#### 5. **Estrutura Padrão de Sections**
+- **CRÍTICO**: Usar `audio_url` (não `audioUrl`)
+- **CRÍTICO**: Usar `timestamp` (não `startTime`, `endTime`)
+- Salvamento no banco: `content: { ...lessonData, sections }`
+- Cada seção tem seu próprio áudio e timestamp acumulativo
 
 ### Estrutura de Arquivo Típica:
 
@@ -143,7 +149,7 @@ export const minhaAulaV2: GuidedLessonData = {
   trackId: "trail-id",
   trackName: "Nome da Trilha",
   duration: 300, // segundos totais estimados
-  contentVersion: 2, // IMPORTANTE: identifica V2
+  contentVersion: 3, // IMPORTANTE: identifica V2 padronizado
   
   sections: [
     {
@@ -151,8 +157,7 @@ export const minhaAulaV2: GuidedLessonData = {
       title: "Seção 1",
       timestamp: 0,
       type: 'text',
-      audioUrl: "/audio/secao-1.mp3", // Áudio específico desta seção
-      wordTimestamps: [ /* timestamps reais */ ],
+      audio_url: "/audio/secao-1.mp3", // ✅ PADRÃO: audio_url
       speechBubbleText: "Texto curto para balão",
       visualContent: "## Conteúdo visual com markdown"
       // SEM spokenContent - visualContent é usado
@@ -212,8 +217,34 @@ export const minhaAulaV2: GuidedLessonData = {
 ### Identificação no Sistema:
 
 - Cada aula tem `lesson_type` no banco de dados
-- V1 usa `lesson_type: 'guided'`
-- V2 e V3 terão seus próprios `lesson_type` quando forem definidos
+- V1 usa `lesson_type: 'guided'` com `contentVersion: 1`
+- V2 usa `lesson_type: 'guided'` com `contentVersion: 3` (padronizado)
+- V3 terá sua própria estrutura quando for definido
+
+### Estrutura Padrão V2 (CRÍTICO):
+
+```typescript
+// ✅ CORRETO - Estrutura padrão V2
+sections: [
+  {
+    id: 'sessao-1',
+    timestamp: 0,              // Timestamp acumulativo
+    audio_url: 'https://...',  // URL pública do áudio
+    speechBubbleText: '...',
+    visualContent: '...'
+  }
+]
+
+// ❌ ERRADO - Não usar
+sections: [
+  {
+    audioUrl: '...',    // ❌ Usar audio_url
+    startTime: 0,       // ❌ Usar timestamp
+    endTime: 48,        // ❌ Não usar
+    duration: 48        // ❌ Não usar
+  }
+]
+```
 
 ---
 
