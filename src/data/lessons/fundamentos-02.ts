@@ -310,7 +310,12 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
               { id: 'location', label: 'Sua localização atual', isCorrect: false, explanation: '❌ Localização não foi relevante nesta ação.' }
             ]
           }
-        ]
+        ],
+        feedback: {
+          allCorrect: '🎯 Perfeito! Você identificou TODOS os dados que a IA coleta!',
+          someCorrect: '👍 Muito bem! Você acertou {count}! Continue observando os padrões!',
+          needsReview: '💡 Revise o conteúdo sobre coleta de dados e tente novamente!'
+        }
       }
     },
     {

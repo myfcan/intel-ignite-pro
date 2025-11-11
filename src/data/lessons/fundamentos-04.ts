@@ -198,8 +198,8 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
           }
         ],
         feedback: {
-          perfect: '🎉 Perfeito! Você entendeu como a IA funciona no celular!',
-          good: '👍 Muito bem! Continue aprendendo!',
+          allCorrect: '🎉 Perfeito! Você entendeu como a IA funciona no celular!',
+          someCorrect: '👍 Muito bem! Continue aprendendo!',
           needsReview: '💪 Revise o conteúdo sobre IA em dispositivos móveis!'
         }
       }
@@ -232,7 +232,10 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             isCorrect: false,
             feedback: '❌ Google Tradutor é focado em idiomas e tradução. Embora tenha alguns recursos de imagem, não é feito para melhorar qualidade de fotos.'
           }
-        ]
+        ],
+        correctExplanation: 'Remini é especializado em melhorar fotos usando IA. Ele aumenta resolução, restaura detalhes e melhora qualidade automaticamente!',
+        followUpQuestion: 'Em qual outra situação você usaria Remini?',
+        followUpAnswer: 'Você pode usar Remini para melhorar fotos antigas da família, aumentar qualidade de fotos borradas, ou melhorar selfies com baixa resolução!'
       }
     }
   ]
