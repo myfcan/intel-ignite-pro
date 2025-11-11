@@ -237,6 +237,75 @@ export type Database = {
           },
         ]
       }
+      pipeline_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          current_step: number | null
+          error_message: string | null
+          id: string
+          input_data: Json
+          lesson_id: string | null
+          lesson_title: string
+          logs: Json | null
+          model: string
+          order_index: number | null
+          output_data: Json | null
+          started_at: string | null
+          status: string
+          step_progress: Json | null
+          total_steps: number | null
+          track_id: string | null
+          track_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_step?: number | null
+          error_message?: string | null
+          id?: string
+          input_data: Json
+          lesson_id?: string | null
+          lesson_title: string
+          logs?: Json | null
+          model: string
+          order_index?: number | null
+          output_data?: Json | null
+          started_at?: string | null
+          status?: string
+          step_progress?: Json | null
+          total_steps?: number | null
+          track_id?: string | null
+          track_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_step?: number | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json
+          lesson_id?: string | null
+          lesson_title?: string
+          logs?: Json | null
+          model?: string
+          order_index?: number | null
+          output_data?: Json | null
+          started_at?: string | null
+          status?: string
+          step_progress?: Json | null
+          total_steps?: number | null
+          track_id?: string | null
+          track_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       points_history: {
         Row: {
           created_at: string

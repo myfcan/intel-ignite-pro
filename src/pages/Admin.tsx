@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, Layers, Volume2, Rocket } from 'lucide-react';
+import { Rocket, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
@@ -12,251 +12,76 @@ export default function Admin() {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Painel Administrativo</h1>
           <p className="text-muted-foreground">
-            Gerencie a geração de áudios do sistema
+            Escolha o modo de gestão das lições
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Gerador de Áudio Manual
-            </CardTitle>
-            <CardDescription>
-              Gere áudios com timestamps precisos para uma aula específica usando ElevenLabs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/audio-generator')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              Abrir Gerador Manual
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="border-2 border-purple-500/20 bg-purple-500/5 hover:border-purple-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Rocket className="w-8 h-8 text-purple-600" />
+                Pipeline Automático
+              </CardTitle>
+              <CardDescription className="text-base">
+                Sistema em 8 etapas lineares para criar lições do zero
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm space-y-2">
+                <p>✅ Validação automática em cada etapa</p>
+                <p>✅ Suporte para modelos V1 e V2</p>
+                <p>✅ Monitor em tempo real</p>
+                <p>✅ Criação individual ou em lote</p>
+              </div>
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/pipeline');
+                }}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Acessar Pipeline
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Gerador de Áudio em Lote
-            </CardTitle>
-            <CardDescription>
-              Sistema automatizado para gerar múltiplos áudios de uma vez, com revisão e aprovação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/audio-batch')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Abrir Gerador em Lote
-            </Button>
-          </CardContent>
-        </Card>
+          <Card className="border-2 border-primary/20 bg-primary/5 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/manual')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Wrench className="w-8 h-8" />
+                Gestão Manual
+              </CardTitle>
+              <CardDescription className="text-base">
+                Ferramentas manuais para gerenciar lições existentes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm space-y-2">
+                <p>🔧 Geração manual de áudio</p>
+                <p>🔧 Sincronização de lições existentes</p>
+                <p>🔧 Debug e validação</p>
+                <p>🔧 Testes e análises</p>
+              </div>
+              <Button
+                size="lg"
+                className="w-full"
+                variant="default"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/manual');
+                }}
+              >
+                <Wrench className="w-4 h-4 mr-2" />
+                Acessar Ferramentas
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="w-5 h-5" />
-              Sincronizar Lições
-            </CardTitle>
-            <CardDescription>
-              Sincroniza lições do código TypeScript para o banco e gera áudios automaticamente
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/sync-lessons')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Abrir Sincronização
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-purple-500/20 bg-purple-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Rocket className="w-5 h-5 text-purple-600" />
-              🚀 Pipeline de Criação (NOVO)
-            </CardTitle>
-            <CardDescription>
-              Sistema em 8 etapas lineares: validação → exercícios → texto limpo → draft → áudio → timestamps → ativação
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              ✅ Separação de responsabilidades • ✅ Validação em cada etapa • ✅ Suporte V1 e V2 • ✅ Logs detalhados
-            </div>
-            <Button
-              onClick={() => navigate('/admin/pipeline-test')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Rocket className="w-4 h-4 mr-2" />
-              Testar Pipeline
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-primary" />
-              🎓 Criação em Lote (Modelo V2)
-            </CardTitle>
-            <CardDescription>
-              Sistema automatizado completo: validação + áudios + sincronização para múltiplas aulas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/batch-lessons')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Layers className="w-4 h-4 mr-2" />
-              Abrir Criação em Lote
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-green-500/20 bg-green-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Volume2 className="w-5 h-5 text-green-600" />
-              🎙️ Análise de Entonação TTS
-            </CardTitle>
-            <CardDescription>
-              Sistema automático que detecta problemas de entonação antes de gerar áudio
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              Detecta palavras em CAIXA ALTA, múltiplas exclamações, ênfase excessiva e mais.
-              Integrado na sincronização em lote!
-            </div>
-            <Button
-              onClick={() => navigate('/admin/intonation-test')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Volume2 className="w-4 h-4 mr-2" />
-              Testar Análise de Entonação
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="w-5 h-5" />
-              Testar Sincronização
-            </CardTitle>
-            <CardDescription>
-              Teste a sincronização entre áudio e texto das aulas com interface interativa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/sync-tester')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <TestTube className="w-4 h-4 mr-2" />
-              Abrir Testador de Sincronização
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bug className="w-5 h-5" />
-              Debug de Timestamps
-            </CardTitle>
-            <CardDescription>
-              Visualize os timestamps salvos de cada seção e valide a sincronização
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/debug-timestamps')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Bug className="w-4 h-4 mr-2" />
-              Abrir Debug de Timestamps
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FlaskConical className="w-5 h-5" />
-              Testador de Aulas
-            </CardTitle>
-            <CardDescription>
-              Validação automatizada completa do fluxo: áudio → playground → exercícios
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/lesson-tester')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <FlaskConical className="w-4 h-4 mr-2" />
-              Abrir Testador de Aulas
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-blue-500/20 bg-blue-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="w-5 h-5 text-blue-600" />
-              🧪 Sistema de Validação
-            </CardTitle>
-            <CardDescription>
-              Dashboard completo com testes automatizados das 4 garantias do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              ✅ TypeScript detecta erros • ✅ Bloqueia sync incorreto • ✅ Validação defensiva • ✅ Alerta de versão
-            </div>
-            <Button
-              onClick={() => navigate('/admin/validation-system')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <TestTube className="w-4 h-4 mr-2" />
-              Abrir Sistema de Validação
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-4">
           <Button
             variant="outline"
             onClick={() => navigate('/dashboard')}

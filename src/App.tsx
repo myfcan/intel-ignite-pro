@@ -25,6 +25,11 @@ import AdminBatchLessons from "./pages/AdminBatchLessons";
 import AdminIntonationTest from "./pages/AdminIntonationTest";
 import AdminValidationSystem from "./pages/AdminValidationSystem";
 import AdminPipelineTest from "./pages/AdminPipelineTest";
+import AdminPipelineHub from "./pages/AdminPipelineHub";
+import AdminManualHub from "./pages/AdminManualHub";
+import AdminPipelineCreateSingle from "./pages/AdminPipelineCreateSingle";
+import AdminPipelineCreateBatch from "./pages/AdminPipelineCreateBatch";
+import AdminPipelineMonitor from "./pages/AdminPipelineMonitor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +52,11 @@ const App = () => (
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/pipeline" element={<AdminPipelineHub />} />
+          <Route path="/admin/pipeline/create-single" element={<AdminPipelineCreateSingle />} />
+          <Route path="/admin/pipeline/create-batch" element={<AdminPipelineCreateBatch />} />
+          <Route path="/admin/pipeline/monitor/:executionId?" element={<AdminPipelineMonitor />} />
+          <Route path="/admin/manual" element={<AdminManualHub />} />
           <Route path="/admin/audio-generator" element={<AdminAudioGenerator />} />
           <Route path="/admin/audio-batch" element={<AdminAudioBatch />} />
           <Route path="/admin/sync-tester" element={<AdminSyncTester />} />
