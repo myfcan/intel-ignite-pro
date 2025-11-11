@@ -217,6 +217,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'drag-drop' && (
           <DragDropLesson
+            key={currentExerciseIndex}
             data-testid={`exercise-drag-drop-${currentExerciseIndex}`}
             content={{
               items: currentExercise.data.items.map((item: any) => item.text),
@@ -242,6 +243,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'complete-sentence' && (
           <CompleteSentenceExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             sentences={currentExercise.data.sentences}
@@ -251,6 +253,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'scenario-selection' && (
           <ScenarioSelectionExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             data={currentExercise.data}
@@ -260,6 +263,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'fill-in-blanks' && (
           <FillInBlanksExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             sentences={currentExercise.data.sentences}
@@ -270,6 +274,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'true-false' && (
           <TrueFalseExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             statements={currentExercise.data.statements}
@@ -280,6 +285,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'data-collection' && (
           <DataCollectionExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
@@ -289,6 +295,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'platform-match' && (
           <PlatformMatchExercise
+            key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
