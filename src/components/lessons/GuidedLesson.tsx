@@ -28,6 +28,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(lessonData.duration || 0);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const [maxAudioProgress, setMaxAudioProgress] = useState(0);
   
   // 🆕 V2: Detectar se é aula modelo V2 (áudios separados por seção)
   const isV2 = lessonData.sections[0]?.audio_url !== undefined;
@@ -110,7 +111,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     
     if (!hasExercises) {
       console.log('⚠️ [SKIP] Aula não tem exercícios, chamando onComplete');
-      onComplete();
+      onComplete({ audioProgress: maxAudioProgress });
       return;
     }
     
@@ -475,6 +476,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     const syncLoop = () => {
       const currentTime = audio.currentTime;
       setCurrentTime(currentTime);
+      
+      // 🎯 Atualizar progresso máximo do áudio
+      if (duration > 0) {
+        const progress = Math.round((currentTime / duration) * 100);
+        setMaxAudioProgress(prev => Math.max(prev, progress));
+      }
       
       // V2: NÃO avançar seção aqui, deixar o evento 'ended' cuidar disso
       if (isV2) {
@@ -1245,7 +1252,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     } else if (lessonData.finalPlaygroundConfig) {
       setCurrentPhase('playground-final');
     } else {
-      onComplete();
+      onComplete({ audioProgress: maxAudioProgress });
     }
   };
 
@@ -1261,7 +1268,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     reason: string;
   }>({ show: false, points: 0, reason: '' });
 
-  const handleExercisesComplete = async () => {
+  const handleExercisesComplete = async (data?: { allExercisesCompleted?: boolean }) => {
     if (exercisesCompleted) {
       console.warn('⚠️ [EXERCISES] Já foi completado, ignorando chamada duplicada');
       return;
@@ -1270,6 +1277,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     setExercisesCompleted(true);
     console.log('✅ [EXERCISES] Completados');
     console.log('📊 [EXERCISES] Scores finais:', exerciseScores);
+    console.log('📊 [EXERCISES] All exercises completed:', data?.allExercisesCompleted);
     
     // 🎮 Gamification logic
     try {
@@ -1349,8 +1357,12 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       console.error('❌ [GAMIFICATION] Erro:', error);
     }
     
-    // Ir para tela de conclusão
+    // Ir para tela de conclusão e chamar onComplete com dados completos
     setCurrentPhase('completed');
+    onComplete({ 
+      audioProgress: maxAudioProgress,
+      allExercisesCompleted: data?.allExercisesCompleted || false 
+    });
   };
   
   // Resetar estado ao entrar na fase de exercícios
@@ -1363,7 +1375,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   const handleFinalPlaygroundComplete = () => {
     setCurrentPhase('completed');
-    onComplete();
+    onComplete({ audioProgress: maxAudioProgress });
   };
   
   // 📊 Calcular progresso correto (V1 vs V2)
@@ -1372,6 +1384,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       ((currentSection / Math.max(1, lessonData.sections.length - 1)) * 100)
     : // V1: Progresso baseado no tempo do áudio único
       (duration > 0 ? (currentTime / duration) * 100 : 0);
+  
+  // 🔘 Handler para botão "Continuar"
+  const handleContinueClick = () => {
+    onComplete({ audioProgress: maxAudioProgress });
+  };
   
   // Renderizar fase de transição
     if (currentPhase === 'transition') {
@@ -1791,7 +1808,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
               <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-white font-bold text-xs transition-all min-w-[55px] flex-shrink-0">
                 {playbackSpeed}x
               </button>
-              <button onClick={onComplete} className="px-5 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all whitespace-nowrap hover:scale-105 flex-shrink-0">
+              <button onClick={handleContinueClick} className="px-5 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all whitespace-nowrap hover:scale-105 flex-shrink-0">
                 Continuar
               </button>
             </div>
@@ -1843,7 +1860,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
                     {playbackSpeed}x
                   </button>
                 </div>
-                <button onClick={onComplete} className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm">
+                <button onClick={handleContinueClick} className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm">
                   Continuar
                 </button>
               </div>

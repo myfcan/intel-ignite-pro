@@ -26,7 +26,7 @@ import {
 
 interface ExercisesSectionProps {
   exercises: ExerciseConfig[];
-  onComplete: () => void;
+  onComplete: (data?: { allExercisesCompleted?: boolean }) => void;
   onScoreUpdate?: (scores: number[]) => void;
   onBack?: () => void;
   exerciseMetadata?: Array<{ title: string; type: string }>;
@@ -84,10 +84,10 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
         setCurrentExerciseIndex(prev => prev + 1);
       }, 1200);
     } else {
-      // Último exercício - sempre completar
+      // Último exercício - reportar conclusão de todos os exercícios
       console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
       setTimeout(() => {
-        onComplete();
+        onComplete({ allExercisesCompleted: true });
       }, 2000);
     }
   };

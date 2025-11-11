@@ -142,10 +142,13 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   switch (lesson.lesson_type) {
     case 'guided':
       // Aulas guiadas com MAIA narradora
-      const handleGuidedComplete = async () => {
+      const handleGuidedComplete = async (data?: { audioProgress?: number; allExercisesCompleted?: boolean }) => {
         // Marca a aula como completa
         const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-        await submitAnswers({}, timeSpent);
+        await submitAnswers({ 
+          audioProgress: data?.audioProgress || 0,
+          allExercisesCompleted: data?.allExercisesCompleted || false 
+        }, timeSpent);
         
         // Buscar próxima aula
         const { data: nextLesson } = await supabase

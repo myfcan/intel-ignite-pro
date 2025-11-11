@@ -155,7 +155,7 @@ export interface GuidedLessonData {
 
 export interface GuidedLessonProps {
   lessonData: GuidedLessonData;
-  onComplete: () => void;
+  onComplete: (data?: { audioProgress?: number; allExercisesCompleted?: boolean }) => void;
   audioUrl?: string; // URL do áudio gerado (opcional, pode ser gerado dinamicamente)
   wordTimestamps?: WordTimestamp[]; // timestamps de palavras para sincronização precisa
   nextLessonId?: string; // ID da próxima lição (opcional)

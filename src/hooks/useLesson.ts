@@ -125,8 +125,21 @@ export const useLesson = (lessonId: string) => {
         }
       }
 
+      // Buscar progresso atual para preservar audio_progress_percentage
+      const { data: currentProgress } = await supabase
+        .from('user_progress')
+        .select('audio_progress_percentage')
+        .eq('user_id', session.user.id)
+        .eq('lesson_id', lesson.id)
+        .maybeSingle();
+      
+      const audioProgress = answers.audioProgress || 0;
+      const maxAudioProgress = Math.max(audioProgress, currentProgress?.audio_progress_percentage || 0);
+      
       // Upsert progress
       console.log('💾 [SUBMIT] Salvando progresso no banco...');
+      console.log('🎵 [SUBMIT] Audio progress:', audioProgress, '→ max:', maxAudioProgress);
+      
       const { error: upsertError } = await supabase
         .from('user_progress')
         .upsert({
@@ -134,6 +147,7 @@ export const useLesson = (lessonId: string) => {
           lesson_id: lesson.id,
           answers: answers,
           score: score,
+          audio_progress_percentage: maxAudioProgress,
           time_spent_seconds: timeSpent,
           status: passed ? 'completed' : 'in_progress',
           completed_at: passed ? new Date().toISOString() : null,
@@ -194,8 +208,20 @@ export const useLesson = (lessonId: string) => {
 function calculateScore(lessonType: string, content: any, answers: any): number {
   switch (lessonType) {
     case 'guided': {
-      // Aulas guiadas sempre dão 100% ao concluir
-      return 100;
+      // 🎯 Nova lógica: 100% só se assistiu 100% do áudio E completou todos exercícios (se existirem)
+      const audioProgress = answers.audioProgress || 0;
+      const hasExercises = content.exercisesConfig || content.finalPlaygroundConfig;
+      
+      if (hasExercises) {
+        // Tem exercícios: precisa 100% áudio + todos exercícios completados
+        const allExercisesCompleted = answers.allExercisesCompleted || false;
+        console.log('📊 [SCORE-GUIDED] Audio:', audioProgress, '% | Exercises done:', allExercisesCompleted);
+        return (audioProgress >= 100 && allExercisesCompleted) ? 100 : audioProgress;
+      } else {
+        // Sem exercícios: precisa apenas 100% do áudio
+        console.log('📊 [SCORE-GUIDED] Audio only:', audioProgress, '%');
+        return audioProgress;
+      }
     }
     case 'fill-blanks': {
       if (!content.sentences || !Array.isArray(content.sentences)) return 0;

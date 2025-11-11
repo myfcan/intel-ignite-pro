@@ -646,6 +646,7 @@ export type Database = {
         Row: {
           answers: Json | null
           attempts: number | null
+          audio_progress_percentage: number | null
           completed_at: string | null
           exercises_completed: number | null
           exercises_total: number | null
@@ -662,6 +663,7 @@ export type Database = {
         Insert: {
           answers?: Json | null
           attempts?: number | null
+          audio_progress_percentage?: number | null
           completed_at?: string | null
           exercises_completed?: number | null
           exercises_total?: number | null
@@ -678,6 +680,7 @@ export type Database = {
         Update: {
           answers?: Json | null
           attempts?: number | null
+          audio_progress_percentage?: number | null
           completed_at?: string | null
           exercises_completed?: number | null
           exercises_total?: number | null
