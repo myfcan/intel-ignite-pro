@@ -159,18 +159,28 @@ function validatePlatformMatch(data: any, result: ValidationResult): void {
 }
 
 function validateDataCollection(data: any, result: ValidationResult): void {
-  // ⚠️ VALIDAÇÃO CRÍTICA que teria evitado o bug!
-  if (!data.scenarios || !Array.isArray(data.scenarios)) {
-    result.errors.push('❌ CRÍTICO: data-collection PRECISA de "scenarios" (array)');
-  } else {
-    if (data.scenarios.length === 0) {
-      result.errors.push('data-collection tem 0 scenarios');
-    }
-    data.scenarios.forEach((scenario: any, index: number) => {
-      if (!scenario.dataPoints || !Array.isArray(scenario.dataPoints)) {
-        result.errors.push(`Scenario ${index + 1} precisa ter "dataPoints" (array)`);
-      }
-    });
+  if (!data.scenario) {
+    result.errors.push('❌ CRÍTICO: data-collection PRECISA de "scenario" (objeto)');
+    return;
+  }
+  
+  // Validar estrutura do scenario
+  if (!data.scenario.id) {
+    result.errors.push('scenario precisa ter "id"');
+  }
+  if (!data.scenario.emoji) {
+    result.warnings.push('scenario não tem "emoji"');
+  }
+  if (!data.scenario.platform) {
+    result.errors.push('scenario precisa ter "platform"');
+  }
+  if (!data.scenario.situation) {
+    result.errors.push('scenario precisa ter "situation"');
+  }
+  if (!data.scenario.dataPoints || !Array.isArray(data.scenario.dataPoints)) {
+    result.errors.push('scenario precisa ter "dataPoints" (array)');
+  } else if (data.scenario.dataPoints.length === 0) {
+    result.errors.push('scenario tem 0 dataPoints');
   }
 }
 
