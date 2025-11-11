@@ -12,6 +12,7 @@ interface Sentence {
   text: string;
   correctAnswers: string[];
   hint: string;
+  explanation?: string;
   options?: string[];
 }
 
@@ -253,15 +254,29 @@ export function FillInBlanksExercise({
 
                   <AnimatePresence>
                     {submitted && !isCorrect && (
-                      <motion.div 
-                        className="text-sm text-muted-foreground"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        ✓ Respostas corretas: {sentence.correctAnswers.join(', ')}
-                      </motion.div>
+                      <>
+                        <motion.div 
+                          className="text-sm text-muted-foreground"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          ✓ Respostas corretas: {sentence.correctAnswers.join(', ')}
+                        </motion.div>
+                        {sentence.explanation && (
+                          <motion.div 
+                            className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm"
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ delay: 0.3 }}
+                          >
+                            <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">📚 Entenda:</p>
+                            <p className="text-blue-800 dark:text-blue-200">{sentence.explanation}</p>
+                          </motion.div>
+                        )}
+                      </>
                     )}
                   </AnimatePresence>
                 </div>
