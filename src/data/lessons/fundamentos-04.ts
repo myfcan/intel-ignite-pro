@@ -216,21 +216,21 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             title: 'Remini',
             description: 'App que usa IA para melhorar qualidade e aumentar resolução de fotos',
             isCorrect: true,
-            explanation: '✅ **Perfeito!** Remini foi feito exatamente para isso: restaurar fotos antigas, melhorar qualidade e aumentar resolução usando IA. É a ferramenta ideal para esse caso!'
+            feedback: '✅ **Perfeito!** Remini foi feito exatamente para isso: restaurar fotos antigas, melhorar qualidade e aumentar resolução usando IA. É a ferramenta ideal para esse caso!'
           },
           {
             id: 'scenario-2',
             title: 'ChatGPT',
             description: 'Assistente de conversação para responder perguntas e escrever textos',
             isCorrect: false,
-            explanation: '❌ ChatGPT é excelente para texto e conversação, mas não processa imagens. Para melhorar fotos, você precisa de uma ferramenta especializada como Remini.'
+            feedback: '❌ ChatGPT é excelente para texto e conversação, mas não processa imagens. Para melhorar fotos, você precisa de uma ferramenta especializada como Remini.'
           },
           {
             id: 'scenario-3',
             title: 'Google Tradutor',
             description: 'App para traduzir textos entre diferentes idiomas',
             isCorrect: false,
-            explanation: '❌ Google Tradutor é focado em idiomas e tradução. Embora tenha alguns recursos de imagem, não é feito para melhorar qualidade de fotos.'
+            feedback: '❌ Google Tradutor é focado em idiomas e tradução. Embora tenha alguns recursos de imagem, não é feito para melhorar qualidade de fotos.'
           }
         ]
       }
