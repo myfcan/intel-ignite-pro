@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Rocket, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Admin Hub - Sistema de gestão dual
 export default function Admin() {
   const navigate = useNavigate();
 
