@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 
 interface Sentence {
   id: string;
   text: string;
   correctAnswers: string[];
+  options?: string[]; // 🆕 Se existe, renderiza RadioGroup; se não, renderiza Input livre
 }
 
 interface CompleteSentenceExerciseProps {
@@ -37,6 +40,24 @@ export function CompleteSentenceExercise({
       />
     );
   }
+
+  // Validação de options (quando presente)
+  sentences.forEach(sentence => {
+    if (sentence.options) {
+      if (sentence.options.length === 0) {
+        console.warn(`⚠️ Sentença "${sentence.id}" tem options vazio. Remova o campo para usar texto livre.`);
+      }
+      const allCorrectInOptions = sentence.correctAnswers.every(
+        correct => sentence.options!.includes(correct)
+      );
+      if (!allCorrectInOptions) {
+        console.error(`❌ Sentença "${sentence.id}": correctAnswers deve estar em options!`, {
+          correctAnswers: sentence.correctAnswers,
+          options: sentence.options
+        });
+      }
+    }
+  });
 
   const handleSubmit = () => {
     const newResults: Record<string, boolean> = {};
@@ -68,32 +89,88 @@ export function CompleteSentenceExercise({
       <div className="space-y-6">
         {sentences.map(sentence => {
           const parts = sentence.text.split('___________');
+          const hasOptions = sentence.options && sentence.options.length > 0;
+          
           return (
-            <div key={sentence.id} className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-foreground">{parts[0]}</span>
-                <Input
+            <div key={sentence.id} className="space-y-4">
+              {/* Texto da frase */}
+              <p className="text-lg text-foreground font-medium">
+                {parts[0]}<span className="text-primary font-bold">_______</span>{parts[1]}
+              </p>
+
+              {/* Input: Múltipla Escolha ou Texto Livre */}
+              {hasOptions ? (
+                // MÚLTIPLA ESCOLHA (RadioGroup)
+                <RadioGroup
                   value={answers[sentence.id] || ''}
-                  onChange={(e) => setAnswers(prev => ({ ...prev, [sentence.id]: e.target.value }))}
+                  onValueChange={(value) => setAnswers(prev => ({ ...prev, [sentence.id]: value }))}
                   disabled={submitted}
-                  className={`max-w-xs ${
-                    submitted 
-                      ? results[sentence.id] 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-950/30' 
-                        : 'border-red-500 bg-red-50 dark:bg-red-950/30'
-                      : ''
-                  }`}
-                  placeholder="Digite aqui..."
-                />
-                <span className="text-foreground">{parts[1]}</span>
-              </div>
+                  className="space-y-3"
+                >
+                  {sentence.options!.map(option => {
+                    const optionId = `${sentence.id}-${option}`;
+                    const isSelected = answers[sentence.id] === option;
+                    const isCorrect = sentence.correctAnswers.includes(option);
+                    
+                    return (
+                      <div
+                        key={optionId}
+                        className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                          submitted
+                            ? isSelected && isCorrect
+                              ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
+                              : isSelected && !isCorrect
+                              ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                              : 'border-border bg-background'
+                            : isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-background hover:border-primary/50 hover:bg-accent/50 cursor-pointer'
+                        }`}
+                      >
+                        <RadioGroupItem value={option} id={optionId} />
+                        <Label 
+                          htmlFor={optionId} 
+                          className="flex-1 cursor-pointer text-base font-medium"
+                        >
+                          {option}
+                        </Label>
+                        {submitted && isSelected && isCorrect && (
+                          <span className="text-green-600 dark:text-green-400 font-bold">✅</span>
+                        )}
+                        {submitted && isSelected && !isCorrect && (
+                          <span className="text-red-600 dark:text-red-400 font-bold">❌</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              ) : (
+                // TEXTO LIVRE (Input)
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={answers[sentence.id] || ''}
+                    onChange={(e) => setAnswers(prev => ({ ...prev, [sentence.id]: e.target.value }))}
+                    disabled={submitted}
+                    className={`max-w-xs ${
+                      submitted 
+                        ? results[sentence.id] 
+                          ? 'border-green-500 bg-green-50 dark:bg-green-950/30' 
+                          : 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                        : ''
+                    }`}
+                    placeholder="Digite aqui..."
+                  />
+                </div>
+              )}
+
+              {/* Feedback */}
               {submitted && !results[sentence.id] && (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
                   ❌ Resposta esperada: {sentence.correctAnswers[0]}
                 </p>
               )}
               {submitted && results[sentence.id] && (
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                   ✅ Correto!
                 </p>
               )}

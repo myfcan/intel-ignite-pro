@@ -129,7 +129,8 @@ E você acabou de começar.`
           {
             id: 'sent-1',
             text: 'Quando o _______ me sugere um filme perfeito para assistir, é a IA analisando meu histórico.',
-            correctAnswers: ['netflix', 'Netflix', 'Prime Video', 'prime video', 'Disney+', 'disney', 'streaming'],
+            correctAnswers: ['Netflix'],
+            options: ['Netflix', 'GPT', 'Disney+'], // 🆕 Múltipla escolha
             hint: 'Pense no serviço de filmes e séries que você assiste!',
             explanation: 'Isso mesmo! A Netflix usa IA para entender seu gosto e recomendar conteúdos que você vai adorar.'
           },

@@ -156,10 +156,20 @@ export interface DataCollectionExerciseData {
 // ============================================================
 // COMPLETE-SENTENCE EXERCISE
 // ============================================================
+/**
+ * 🎯 REGRA PADRÃO COMPLETE-SENTENCE:
+ * 
+ * - Se `options` existe → Exercício de MÚLTIPLA ESCOLHA (RadioGroup)
+ * - Se `options` NÃO existe → Exercício de TEXTO LIVRE (Input)
+ * 
+ * ✅ RECOMENDADO: Sempre usar `options` para melhor UX
+ */
 export interface CompleteSentenceSentence {
   id: string;
-  text: string; // Texto com blank
-  correctAnswers: string[];
+  text: string; // Deve conter _______ onde o usuário preenche
+  correctAnswers: string[]; // Respostas aceitas (deve estar em options se options existir)
+  options?: string[]; // 🆕 Se presente, exibe como múltipla escolha (RadioGroup)
+                       //     Se ausente, exibe como texto livre (Input)
 }
 
 export interface CompleteSentenceExerciseData {
