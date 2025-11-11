@@ -43,6 +43,11 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
     setProgressPercentage(newProgress);
   }, [scores.length, exercises.length]);
 
+  // Scroll para o topo quando o exercício muda
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentExerciseIndex]);
+
   const handleExerciseComplete = (score: number) => {
     console.log('🎯 [EXERCISE] Score:', score);
     console.log('🎯 [EXERCISE] Exercício', currentExerciseIndex + 1, 'de', exercises.length);
