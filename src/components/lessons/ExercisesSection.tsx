@@ -37,6 +37,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
   const [scores, setScores] = useState<number[]>([]);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [showRetryCard, setShowRetryCard] = useState(false);
+  const [lastScore, setLastScore] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const newProgress = (scores.length / exercises.length) * 100;
@@ -47,8 +50,12 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
     console.log('🎯 [EXERCISE] Score:', score);
     console.log('🎯 [EXERCISE] Exercício', currentExerciseIndex + 1, 'de', exercises.length);
     
-    // Confete se pontuação for alta (opcional, mas mantém gamificação)
-    if (score >= 70) {
+    const currentExercise = exercises[currentExerciseIndex];
+    const passingScore = currentExercise.passingScore || 70;
+    const passed = score >= passingScore;
+    
+    // Confete se passou
+    if (passed) {
       confetti({
         particleCount: 50,
         spread: 60,
@@ -57,12 +64,21 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
       });
     }
     
-    // Toast de feedback sempre positivo
-    toast({
-      title: "✅ Exercício completo!",
-      description: `Score: ${Math.round(score)}% - ${scores.length + 1}/${exercises.length}`,
-      duration: 2000,
-    });
+    // Toast de feedback diferenciado
+    if (passed) {
+      toast({
+        title: "✅ Exercício completo!",
+        description: `Score: ${Math.round(score)}% - ${scores.length + 1}/${exercises.length}`,
+        duration: 2000,
+      });
+    } else {
+      toast({
+        title: "⚠️ Quase lá!",
+        description: `Score: ${Math.round(score)}% - Você precisa de pelo menos ${passingScore}%`,
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
     
     // Salvar score
     const newScores = [...scores, score];
@@ -72,24 +88,35 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
       onScoreUpdate(newScores);
     }
 
-    // Sempre avançar, independente do score
-    if (currentExerciseIndex < exercises.length - 1) {
-      console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
-      setTimeout(() => {
-        setCurrentExerciseIndex(prev => prev + 1);
-      }, 1200);
+    // Só avançar se passou
+    if (passed) {
+      setShowRetryCard(false);
+      if (currentExerciseIndex < exercises.length - 1) {
+        console.log(`➡️ [EXERCISES] Passou! Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
+        setTimeout(() => {
+          setCurrentExerciseIndex(prev => prev + 1);
+        }, 1200);
+      } else {
+        // Último exercício - completar
+        console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      }
     } else {
-      // Último exercício - sempre completar
-      console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
+      // Não passou - mostrar retry card
+      console.log('❌ [EXERCISES] Não passou. Score necessário:', passingScore);
+      setLastScore(score);
       setTimeout(() => {
-        onComplete();
-      }, 2000);
+        setShowRetryCard(true);
+      }, 1500);
     }
   };
 
   const handleRetry = () => {
-    // Função mantida para compatibilidade mas não é mais usada
-    console.log('🔄 [RETRY] Função de retry não é mais necessária');
+    console.log('🔄 [RETRY] Tentando exercício novamente');
+    setShowRetryCard(false);
+    setRetryCount(prev => prev + 1);
   };
 
   const handleBackClick = () => {
@@ -170,9 +197,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-        {currentExercise.type === 'drag-drop' && (
+        {!showRetryCard && currentExercise.type === 'drag-drop' && (
           <DragDropLesson
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             data-testid={`exercise-drag-drop-${currentExerciseIndex}`}
             content={{
               items: currentExercise.data.items.map((item: any) => item.text),
@@ -196,9 +223,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'complete-sentence' && (
+        {!showRetryCard && currentExercise.type === 'complete-sentence' && (
           <CompleteSentenceExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             sentences={currentExercise.data.sentences}
@@ -206,9 +233,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'scenario-selection' && (
+        {!showRetryCard && currentExercise.type === 'scenario-selection' && (
           <ScenarioSelectionExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             data={currentExercise.data}
@@ -216,9 +243,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'fill-in-blanks' && (
+        {!showRetryCard && currentExercise.type === 'fill-in-blanks' && (
           <FillInBlanksExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             sentences={currentExercise.data.sentences}
@@ -227,9 +254,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'true-false' && (
+        {!showRetryCard && currentExercise.type === 'true-false' && (
           <TrueFalseExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             statements={currentExercise.data.statements}
@@ -238,9 +265,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'data-collection' && (
+        {!showRetryCard && currentExercise.type === 'data-collection' && (
           <DataCollectionExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
@@ -248,9 +275,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
 
-        {currentExercise.type === 'platform-match' && (
+        {!showRetryCard && currentExercise.type === 'platform-match' && (
           <PlatformMatchExercise
-            key={currentExerciseIndex}
+            key={`exercise-${currentExerciseIndex}-retry-${retryCount}`}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
             scenarios={currentExercise.data.scenarios}
@@ -259,7 +286,36 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
         
-        {/* Retry Card removido - usuário sempre avança */}
+        {/* Retry Card - quando não passar no exercício */}
+        {showRetryCard && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <Card className="p-8 text-center border-amber-200 dark:border-amber-900 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
+              <div className="text-6xl mb-4">💪</div>
+              <h3 className="text-2xl font-bold mb-2 text-slate-900 dark:text-slate-100">
+                Quase lá!
+              </h3>
+              <p className="text-lg text-slate-700 dark:text-slate-300 mb-2">
+                Score: <span className="font-bold text-amber-600 dark:text-amber-400">{Math.round(lastScore)}%</span>
+              </p>
+              <p className="text-muted-foreground mb-6">
+                Você precisa de pelo menos {currentExercise.passingScore || 70}% para avançar. Revise o conteúdo e tente novamente!
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={handleRetry}
+                  size="lg"
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                >
+                  🔄 Tentar Novamente
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </div>
     </>
