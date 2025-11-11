@@ -312,8 +312,8 @@ export function testDefensiveValidation(): GuaranteeReport {
   const result3 = validateExercise(emptyArrayTest);
   tests.push({
     name: 'Validador detecta arrays vazios',
-    passed: result3.warnings.length > 0,
-    details: result3.warnings.length > 0 ? '✅ Warning emitido' : 'FALHOU',
+    passed: !result3.isValid && result3.errors.length > 0,
+    details: !result3.isValid && result3.errors.length > 0 ? '✅ Erro detectado corretamente' : 'FALHOU',
     duration: performance.now() - testStart3
   });
 
