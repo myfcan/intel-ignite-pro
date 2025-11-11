@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, CheckCircle2, XCircle, AlertCircle, Volume2 } from 'lucide-react';
 import { batchSyncLessons, createBatchLesson } from '@/lib/batchSyncLessons';
-import { LESSONS_ARRAY } from '@/data/lessons';
+import { LESSONS_ARRAY, LESSON_AUDIO_TEXTS, LessonKey } from '@/data/lessons';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminBatchLessons() {
@@ -143,10 +143,11 @@ export default function AdminBatchLessons() {
     try {
       // Preparar batch com as lições selecionadas
       const batchLessons = selected.map((lesson) => {
-        // Gerar audioText limpo (extrair narração das seções)
-        const audioText = lesson.lessonData.sections
-          .map(section => section.visualContent || section.content || '')
-          .join('\n\n');
+        // ✅ Usar audioText PRÉ-PROCESSADO (já limpo com cleanAudioText)
+        const audioText = LESSON_AUDIO_TEXTS[lesson.id as LessonKey] || 
+          lesson.lessonData.sections
+            .map(section => section.visualContent || section.content || '')
+            .join('\n\n');
 
         return createBatchLesson(
           lesson.lessonData,

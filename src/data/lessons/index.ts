@@ -1,7 +1,7 @@
 import { fundamentos01 } from './fundamentos-01';
-import { fundamentos02 } from './fundamentos-02';
+import { fundamentos02, fundamentos02AudioText } from './fundamentos-02';
 import { fundamentos03 } from './fundamentos-03';
-import { fundamentos04 } from './fundamentos-04';
+import { fundamentos04, fundamentos04AudioText } from './fundamentos-04';
 import { GuidedLessonData } from '@/types/guidedLesson';
 
 /**
@@ -21,6 +21,17 @@ export const ALL_LESSONS = {
   'fundamentos-03': fundamentos03,
   'fundamentos-04': fundamentos04,
 } as const;
+
+/**
+ * Mapa de audioTexts limpos para cada aula
+ * ⚠️ IMPORTANTE: Usar estes audioTexts na sincronização, não regenerar!
+ */
+export const LESSON_AUDIO_TEXTS: Record<LessonKey, string> = {
+  'fundamentos-01': '', // Aula 01 usa sistema antigo com áudios separados
+  'fundamentos-02': fundamentos02AudioText,
+  'fundamentos-03': '', // Aula 03 precisa exportar audioText
+  'fundamentos-04': fundamentos04AudioText,
+};
 
 export type LessonKey = keyof typeof ALL_LESSONS;
 
