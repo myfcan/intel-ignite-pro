@@ -136,6 +136,7 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             id: 'sent-1',
             text: 'O _______ usa IA para recomendar posts que você vai gostar no seu feed.',
             correctAnswers: ['Instagram', 'instagram'],
+            options: ['Instagram', 'Facebook', 'WhatsApp'],
             hint: 'App de fotos e vídeos muito popular',
             explanation: 'O Instagram usa IA para analisar seu comportamento e mostrar conteúdo personalizado no seu feed!'
           },
@@ -143,6 +144,7 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             id: 'sent-2',
             text: 'O Google _______ usa IA para calcular a rota mais rápida considerando o trânsito.',
             correctAnswers: ['Maps', 'maps'],
+            options: ['Maps', 'Chrome', 'Drive'],
             hint: 'App de navegação e mapas do Google',
             explanation: 'O Google Maps usa IA para prever o trânsito em tempo real e calcular a melhor rota para você!'
           }
@@ -165,6 +167,7 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             id: 'sent-1',
             text: 'O _______ é uma IA que ajuda a escrever textos, emails e responder perguntas.',
             correctAnswers: ['ChatGPT', 'chatgpt', 'Chat GPT'],
+            options: ['ChatGPT', 'Google', 'Alexa'],
             hint: 'Começa com Chat...',
             explanation: 'ChatGPT é uma ferramenta de conversação que ajuda a criar textos e responder perguntas complexas!'
           },
@@ -172,6 +175,7 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
             id: 'sent-2',
             text: 'O app _______ usa IA para melhorar qualidade e restaurar fotos antigas.',
             correctAnswers: ['Remini', 'remini'],
+            options: ['Remini', 'Instagram', 'Canva'],
             hint: 'App especializado em restauração de fotos',
             explanation: 'Remini usa IA para restaurar fotos antigas, aumentar resolução e melhorar qualidade automaticamente!'
           }
