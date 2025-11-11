@@ -7,6 +7,7 @@ import {
   syncFundamentos01,
   syncFundamentos02,
   syncFundamentos03,
+  syncFundamentos04,
   syncAllLessonsV2
 } from '@/lib/syncLessonV2';
 import { regenerateAudio } from '@/lib/syncLessonToDatabase';
@@ -37,6 +38,7 @@ const SYNC_FUNCTIONS: Record<string, () => Promise<any>> = {
   'fundamentos-01': syncFundamentos01,
   'fundamentos-02': syncFundamentos02,
   'fundamentos-03': syncFundamentos03,
+  'fundamentos-04': syncFundamentos04,
 };
 
 // Mapeia títulos das lições para regeneração de áudio
@@ -44,6 +46,7 @@ const LESSON_TITLES: Record<string, string> = {
   'fundamentos-01': 'O que é a IA e por que nós precisamos dela',
   'fundamentos-02': 'Como a IA Aprende com Você',
   'fundamentos-03': 'Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes',
+  'fundamentos-04': 'IA no Seu Bolso: Como Usar no Dia a Dia',
 };
 
 export default function AdminSyncLessons() {
@@ -271,13 +274,13 @@ export default function AdminSyncLessons() {
         {/* Sync All */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>🚀 Sincronizar Todas as Lições</span>
-              {getStatusIcon(status.all)}
-            </CardTitle>
-            <CardDescription>
-              Sincroniza todas as 3 lições V2 com áudios separados por seção
-            </CardDescription>
+          <CardTitle className="flex items-center justify-between">
+            <span>🚀 Sincronizar Todas as Lições</span>
+            {getStatusIcon(status.all)}
+          </CardTitle>
+          <CardDescription>
+            Sincroniza todas as 4 lições V2 com áudios separados por seção
+          </CardDescription>
           </CardHeader>
           <CardContent>
             <Button

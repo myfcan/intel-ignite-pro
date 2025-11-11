@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { fundamentos03 } from '@/data/lessons/fundamentos-03';
+import { fundamentos04 } from '@/data/lessons/fundamentos-04';
 import { syncLessonV2Generic } from './syncLessonV2Generic';
 import { toast } from '@/hooks/use-toast';
 
@@ -491,6 +492,160 @@ export async function syncFundamentos03(): Promise<{ success: boolean; message: 
   }
 }
 
+export async function syncFundamentos04(): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('🚀 [SYNC V2] Iniciando sincronização Fundamentos 04...');
+    
+    // 1. Buscar trail
+    const { data: trails } = await supabase
+      .from('trails')
+      .select('id')
+      .eq('title', 'Fundamentos de IA')
+      .single();
+
+    if (!trails) {
+      throw new Error('Trail "Fundamentos de IA" não encontrada');
+    }
+
+    const trailId = trails.id;
+    console.log(`✅ [SYNC V2] Trail encontrada: ${trailId}`);
+
+    // 2. Preparar textos para áudio
+    const audioTexts = fundamentos04.sections.map((section, index) => ({
+      sectionId: section.id,
+      text: extractNarrationText(section.visualContent || ''),
+    }));
+
+    console.log(`📝 [SYNC V2] Preparando ${audioTexts.length} áudios...`);
+
+    // 3. Gerar áudios via edge function
+    toast({
+      title: '🎵 Gerando áudios...',
+      description: `Criando ${audioTexts.length} áudios separados (pode levar ~1 minuto)`,
+    });
+
+    const { data: audioData, error: audioError } = await supabase.functions.invoke(
+      'generate-multiple-audios',
+      {
+        body: { audios: audioTexts },
+      }
+    );
+
+    if (audioError) {
+      console.error('❌ [SYNC V2] Erro ao gerar áudios:', audioError);
+      throw new Error(`Erro ao gerar áudios: ${audioError.message}`);
+    }
+
+    if (!audioData?.results || audioData.results.length === 0) {
+      throw new Error('Nenhum áudio foi gerado');
+    }
+
+    console.log(`✅ [SYNC V2] ${audioData.results.length} áudios gerados com sucesso!`);
+
+    // 4. Upload para Storage e atualizar sections
+    toast({
+      title: '📤 Fazendo upload...',
+      description: 'Salvando áudios no storage',
+    });
+
+    const updatedSections = [];
+    let cumulativeTime = 0;
+
+    for (let i = 0; i < audioData.results.length; i++) {
+      const result = audioData.results[i];
+      const section = fundamentos04.sections[i];
+
+      // Converter base64 para Blob
+      const audioBlob = base64ToBlob(result.audio_base64);
+
+      // Upload para Storage
+      const fileName = `aula-04/sessao-${i + 1}.mp3`;
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-audios')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error(`❌ [SYNC V2] Erro ao fazer upload da seção ${i + 1}:`, uploadError);
+        throw new Error(`Erro ao fazer upload: ${uploadError.message}`);
+      }
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(fileName);
+
+      // Calcular timestamps acumulados
+      const startTime = cumulativeTime;
+      const endTime = cumulativeTime + result.duration;
+      cumulativeTime = endTime;
+
+      updatedSections.push({
+        ...section,
+        audioUrl: publicUrl,
+        startTime,
+        endTime,
+        duration: result.duration,
+      });
+
+      console.log(`✅ [SYNC V2] Seção ${i + 1} uploaded: ${startTime}s → ${endTime}s (${result.duration}s)`);
+    }
+
+    // 5. Inserir/atualizar no banco
+    toast({
+      title: '💾 Salvando no banco...',
+      description: 'Atualizando lição no banco de dados',
+    });
+
+    const lessonData = {
+      id: fundamentos04.id,
+      title: fundamentos04.title,
+      trail_id: trailId,
+      lesson_type: 'guided' as const,
+      sections: updatedSections,
+      duration: cumulativeTime,
+      order_index: 4,
+    };
+
+    const { error: upsertError } = await supabase
+      .from('lessons')
+      .upsert(lessonData, { onConflict: 'id' });
+
+    if (upsertError) {
+      console.error('❌ [SYNC V2] Erro ao salvar no banco:', upsertError);
+      throw new Error(`Erro ao salvar no banco: ${upsertError.message}`);
+    }
+
+    console.log('✅ [SYNC V2] Fundamentos 04 sincronizada com sucesso!');
+    
+    toast({
+      title: '✅ Sincronização concluída!',
+      description: `Fundamentos 04 sincronizada com ${updatedSections.length} áudios (${Math.round(cumulativeTime)}s total)`,
+    });
+
+    return {
+      success: true,
+      message: `Fundamentos 04 sincronizada com ${updatedSections.length} áudios (${Math.round(cumulativeTime)}s)`
+    };
+
+  } catch (error) {
+    console.error('❌ [SYNC V2] Erro na sincronização:', error);
+    
+    toast({
+      title: '❌ Erro na sincronização',
+      description: error instanceof Error ? error.message : 'Erro desconhecido',
+      variant: 'destructive',
+    });
+
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
 export async function syncAllLessonsV2(): Promise<{ 
   success: boolean; 
   total: number; 
@@ -498,7 +653,7 @@ export async function syncAllLessonsV2(): Promise<{
   failed: number; 
 }> {
   const results = {
-    total: 3,
+    total: 4,
     successful: 0,
     failed: 0
   };
@@ -522,6 +677,12 @@ export async function syncAllLessonsV2(): Promise<{
 
   const result03 = await syncFundamentos03();
   if (result03.success) results.successful++;
+  else results.failed++;
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const result04 = await syncFundamentos04();
+  if (result04.success) results.successful++;
   else results.failed++;
 
   if (results.successful === results.total) {
