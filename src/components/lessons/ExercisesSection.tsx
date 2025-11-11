@@ -37,9 +37,6 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
   const [scores, setScores] = useState<number[]>([]);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(0);
-  const [showRetry, setShowRetry] = useState(false);
-  const [attempts, setAttempts] = useState<Record<number, number>>({});
-  const [passedExercises, setPassedExercises] = useState<boolean[]>(new Array(exercises.length).fill(false));
 
   useEffect(() => {
     const newProgress = (scores.length / exercises.length) * 100;
@@ -47,94 +44,52 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
   }, [scores.length, exercises.length]);
 
   const handleExerciseComplete = (score: number) => {
-    const currentExercise = exercises[currentExerciseIndex];
-    const PASSING_SCORE = currentExercise.passingScore || 70;
-    const passed = score >= PASSING_SCORE;
-    
     console.log('🎯 [EXERCISE] Score:', score);
-    console.log('🎯 [EXERCISE] Passou?', passed);
-    console.log('🎯 [EXERCISE] Passing score:', PASSING_SCORE);
-    console.log('🎯 [EXERCISE] Tentativa:', (attempts[currentExerciseIndex] || 0) + 1);
+    console.log('🎯 [EXERCISE] Exercício', currentExerciseIndex + 1, 'de', exercises.length);
     
-    if (passed) {
-      // ✅ SUCESSO: Confete + feedback positivo
+    // Confete se pontuação for alta (opcional, mas mantém gamificação)
+    if (score >= 70) {
       confetti({
         particleCount: 50,
         spread: 60,
         origin: { y: 0.6 },
         colors: ['#10b981', '#3b82f6', '#8b5cf6']
       });
-      
-      toast({
-        title: "🎉 Exercício completo!",
-        description: `Score: ${Math.round(score)}% - ${scores.length + 1}/${exercises.length}`,
-        duration: 2000,
-      });
-      
-      // Marcar exercício como passou
-      const newPassedExercises = [...passedExercises];
-      newPassedExercises[currentExerciseIndex] = true;
-      setPassedExercises(newPassedExercises);
-      
-      // Salvar e avançar
-      const newScores = [...scores, score];
-      setScores(newScores);
-      
-      if (onScoreUpdate) {
-        onScoreUpdate(newScores);
-      }
-      
-      // Reset retry state
-      setShowRetry(false);
+    }
+    
+    // Toast de feedback sempre positivo
+    toast({
+      title: "✅ Exercício completo!",
+      description: `Score: ${Math.round(score)}% - ${scores.length + 1}/${exercises.length}`,
+      duration: 2000,
+    });
+    
+    // Salvar score
+    const newScores = [...scores, score];
+    setScores(newScores);
+    
+    if (onScoreUpdate) {
+      onScoreUpdate(newScores);
+    }
 
-      if (currentExerciseIndex < exercises.length - 1) {
-        console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
-        setTimeout(() => {
-          setCurrentExerciseIndex(prev => prev + 1);
-        }, 1200);
-      } else {
-        // Último exercício - verificar se TODOS passaram
-        const allPassed = newPassedExercises.every(p => p === true);
-        console.log('✅ [EXERCISES] Último exercício. Todos passaram?', allPassed);
-        
-        if (allPassed) {
-          console.log('✅ [EXERCISES] Todos os exercícios completos com sucesso, chamando onComplete');
-          setTimeout(() => {
-            onComplete();
-          }, 2000);
-        } else {
-          // Algum exercício não foi aprovado - isso não deveria acontecer
-          console.error('❌ [EXERCISES] ERRO: Chegou ao final mas nem todos passaram!');
-          toast({
-            title: "⚠️ Erro de validação",
-            description: "Algo deu errado. Por favor, tente novamente.",
-            variant: "destructive",
-            duration: 4000,
-          });
-        }
-      }
+    // Sempre avançar, independente do score
+    if (currentExerciseIndex < exercises.length - 1) {
+      console.log(`➡️ [EXERCISES] Avançando para exercício ${currentExerciseIndex + 2} de ${exercises.length}`);
+      setTimeout(() => {
+        setCurrentExerciseIndex(prev => prev + 1);
+      }, 1200);
     } else {
-      // ❌ FALHA: Feedback de erro + opção de retry
-      toast({
-        title: "📚 Quase lá!",
-        description: `Você precisa de ${PASSING_SCORE}% para passar. Score atual: ${Math.round(score)}%`,
-        variant: "destructive",
-        duration: 4000,
-      });
-      
-      // Incrementar tentativas
-      setAttempts(prev => ({ ...prev, [currentExerciseIndex]: (prev[currentExerciseIndex] || 0) + 1 }));
-      
-      // Mostrar botão de retry
-      setShowRetry(true);
+      // Último exercício - sempre completar
+      console.log('✅ [EXERCISES] Todos os exercícios completos, chamando onComplete');
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
     }
   };
 
   const handleRetry = () => {
-    console.log('🔄 [RETRY] Usuário vai tentar novamente');
-    setShowRetry(false);
-    // Forçar re-render do exercício com key diferente
-    setCurrentExerciseIndex(currentExerciseIndex);
+    // Função mantida para compatibilidade mas não é mais usada
+    console.log('🔄 [RETRY] Função de retry não é mais necessária');
   };
 
   const handleBackClick = () => {
@@ -304,29 +259,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           />
         )}
         
-        {/* Retry Card */}
-        {showRetry && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
-          >
-            <Card className="p-6 bg-amber-50 dark:bg-amber-950/30 border-amber-500 shadow-2xl">
-              <div className="flex items-center gap-4">
-                <div className="text-4xl">💪</div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg">Continue tentando!</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Você está no caminho certo. Tente novamente!
-                  </p>
-                </div>
-                <Button onClick={handleRetry} size="lg">
-                  🔄 Tentar Novamente
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
+        {/* Retry Card removido - usuário sempre avança */}
       </div>
     </div>
     </>
