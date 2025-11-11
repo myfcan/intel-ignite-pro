@@ -684,13 +684,14 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
           const playgroundSection = lessonData.sections[playgroundSectionIndex];
           const playgroundDelay = playgroundSection.playgroundConfig?.playgroundDelay ?? 0;
           const triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+          const windowEnd = nextSection.timestamp + playgroundDelay;
           
           // 🔍 DEBUG: Log contínuo na janela crítica (125s-129s)
           if (time >= 125 && time <= 129) {
-            console.log(`🔍 [TRIGGER-1-CRITICAL] t=${time.toFixed(2)}s | trigger=${triggerTime.toFixed(2)}s | playing=${isPlaying} | inWindow=${time >= triggerTime && time < nextSection.timestamp}`);
+            console.log(`🔍 [TRIGGER-1-CRITICAL] t=${time.toFixed(2)}s | trigger=${triggerTime.toFixed(2)}s | windowEnd=${windowEnd.toFixed(2)}s | playing=${isPlaying} | inWindow=${time >= triggerTime && time < windowEnd}`);
           }
           
-          if (time >= triggerTime && time < nextSection.timestamp && isPlaying) {
+          if (time >= triggerTime && time < windowEnd && isPlaying) {
             console.log(`🎮 [TRIGGER-1] ✅ ATIVANDO aos ${time.toFixed(1)}s`);
             logTelemetry('PLAYGROUND_TRIGGER', { trigger: 'timestamp', time });
             activatePlayground();
