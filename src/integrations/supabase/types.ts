@@ -182,6 +182,8 @@ export type Database = {
             | Database["public"]["Enums"]["difficulty_level"]
             | null
           estimated_time: number | null
+          exercises: Json | null
+          exercises_version: number | null
           id: string
           is_active: boolean | null
           lesson_type: string | null
@@ -200,6 +202,8 @@ export type Database = {
             | Database["public"]["Enums"]["difficulty_level"]
             | null
           estimated_time?: number | null
+          exercises?: Json | null
+          exercises_version?: number | null
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
@@ -218,6 +222,8 @@ export type Database = {
             | Database["public"]["Enums"]["difficulty_level"]
             | null
           estimated_time?: number | null
+          exercises?: Json | null
+          exercises_version?: number | null
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null

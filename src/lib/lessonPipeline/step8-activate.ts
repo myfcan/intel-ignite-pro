@@ -9,9 +9,14 @@ import { supabase } from '@/integrations/supabase/client';
 export async function step8Activate(input: Step7Output): Promise<PipelineResult> {
   console.log('🚀 [STEP 8] Ativando lição...');
 
+  // 🆕 FASE 5: Separar exercises do content
+  const { exercises, ...contentWithoutExercises } = input.structuredContent;
+  
   const updateData: any = {
-    content: input.structuredContent,
-    estimated_time: Math.ceil(input.totalDuration / 60), // Converter segundos para minutos
+    content: contentWithoutExercises, // 🆕 Content SEM exercises
+    exercises: exercises || [], // 🆕 Exercises separados
+    exercises_version: input.exercisesVersion || 1, // 🆕 Versão independente
+    estimated_time: Math.ceil(input.totalDuration / 60),
     is_active: true,
   };
 
@@ -35,6 +40,7 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   console.log(`   📋 ID: ${input.lessonId}`);
   console.log(`   ⏱️ Duração: ${input.totalDuration.toFixed(1)}s`);
   console.log(`   🎯 Status: active`);
+  console.log(`   🎯 Exercises: ${updateData.exercises.length} (v${updateData.exercises_version})`);
 
   return {
     success: true,

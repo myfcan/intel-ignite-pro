@@ -4,14 +4,16 @@ import { GuidedLessonData } from '@/types/guidedLesson';
 // ⏱️ Duração: ~4 minutos (240s) - 5 sessões de ~48s cada
 // 🎵 Áudios: 5 arquivos separados (lesson-audios/aula-01/sessao-{1-5}.mp3)
 // 📍 Timestamps: Reais acumulados (não fixos)
-export const fundamentos01: GuidedLessonData = {
+
+// 🆕 FASE 2: Content separado (apenas sections/áudio)
+export const fundamentos01Content = {
   id: 'fundamentos-01',
   title: 'O que é a IA e por que nós precisamos dela',
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
-  duration: 240, // será atualizado após geração
-  contentVersion: 4, // V4: múltipla escolha em todas as questões
-  schemaVersion: 1, // 🆕 Para FASE 4
+  duration: 240,
+  contentVersion: 3, // ⚠️ Apenas sections/áudio - NÃO muda com exercises
+  schemaVersion: 1,
   
   sections: [
     {
@@ -231,6 +233,36 @@ E você acabou de começar.`
       }
     }
   ]
+} as const;
+
+// 🆕 FASE 2: Exercises separados com versionamento independente
+export const fundamentos01Exercises = {
+  lessonId: 'fundamentos-01',
+  exercisesVersion: 2, // V2: múltipla escolha em todas as questões
+  exercises: fundamentos01Content.sections
+    .filter(s => s.exercises)
+    .flatMap(s => s.exercises || [])
+} as const;
+
+// 🔄 Export legado para retrocompatibilidade
+export const fundamentos01: GuidedLessonData = {
+  ...fundamentos01Content,
+  sections: fundamentos01Content.sections
+};
+
+// 🆕 FASE 2: Exercises separados com versionamento independente
+export const fundamentos01Exercises = {
+  lessonId: 'fundamentos-01',
+  exercisesVersion: 2, // V2: múltipla escolha em todas as questões
+  exercises: fundamentos01Content.sections
+    .filter(s => s.exercises)
+    .flatMap(s => s.exercises || [])
+} as const;
+
+// 🔄 Export legado para retrocompatibilidade
+export const fundamentos01: GuidedLessonData = {
+  ...fundamentos01Content,
+  sections: fundamentos01Content.sections
 };
 
 // ============= TEXTO PARA GERAÇÃO DE ÁUDIO =============

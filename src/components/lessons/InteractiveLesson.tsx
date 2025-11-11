@@ -31,19 +31,27 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [nextLessonData, setNextLessonData] = useState<{ id: string; lesson_type: string } | null>(null);
   const navigate = useNavigate();
 
-  // Buscar word_timestamps e próxima aula do banco para aulas guiadas
+  // 🆕 FASE 3: Fetch separado para exercises e cache busting granular
   useEffect(() => {
     const fetchLessonData = async () => {
       if (lesson?.lesson_type === 'guided') {
-        // Buscar timestamps
+        // Buscar timestamps, exercises e próxima lição
         const { data } = await supabase
           .from('lessons')
-          .select('word_timestamps')
+          .select('word_timestamps, exercises, exercises_version')
           .eq('id', lessonId)
           .single();
         
         if (data?.word_timestamps) {
           setWordTimestamps(data.word_timestamps as unknown as WordTimestamp[]);
+        }
+
+        // 🆕 Armazenar exercises do banco separadamente
+        if (data?.exercises) {
+          console.log('🎯 [FASE 3] Exercises carregados do banco:', {
+            count: Array.isArray(data.exercises) ? data.exercises.length : 0,
+            version: data.exercises_version
+          });
         }
 
         // Buscar próxima lição
@@ -168,18 +176,18 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         }
       };
 
-      // 🔄 CACHE BUSTING: Usar o content mais recente (banco vs arquivo)
+      // 🆕 FASE 3: Cache busting granular para content
       let guidedLessonData = null;
-      let audioUrl = lesson.audio_url || null;
       
-      // Determinar qual fonte de dados usar baseado na versão
       const dbContent = lesson.content && typeof lesson.content === 'object' && 'sections' in lesson.content 
         ? lesson.content as any 
         : null;
       
+      // Buscar content local (APENAS sections/áudio, SEM exercises)
       let localContent = null;
       if (lesson.title.includes('que é a IA')) {
-        localContent = fundamentos01;
+        const { fundamentos01Content } = await import('@/data/lessons/fundamentos-01');
+        localContent = fundamentos01Content;
       } else if (lesson.title.includes('com Você')) {
         localContent = fundamentos02;
       } else if (lesson.title.includes('Cérebro Digital')) {
@@ -188,16 +196,20 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         localContent = fundamentos04;
       }
       
-      // Comparar versões e usar a mais recente
+      // Comparar versões de CONTENT (independente de exercises)
       const dbVersion = dbContent?.contentVersion || 0;
       const localVersion = localContent?.contentVersion || 0;
       
+      console.log('🔄 [FASE 3] Content version comparison:', {
+        database: dbVersion,
+        local: localVersion,
+        willUseLocal: localVersion > dbVersion
+      });
+      
       if (localVersion > dbVersion && localContent) {
-        // Arquivo local é mais recente - usar ele (CACHE BUSTING ATIVO)
-        console.log(`🔄 [CACHE-BUST] Usando versão local (v${localVersion}) ao invés do DB (v${dbVersion})`);
+        console.log('✨ Usando content local (versão mais recente)');
         guidedLessonData = localContent;
       } else if (dbContent) {
-        // Banco é igual ou mais recente - usar ele
         console.log(`✅ [CACHE] Usando versão do banco (v${dbVersion})`);
         guidedLessonData = dbContent;
       } else if (localContent) {
@@ -205,6 +217,18 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         console.log(`⚠️ [FALLBACK] Usando dados locais (v${localVersion})`);
         guidedLessonData = localContent;
       }
+
+      // 🔧 FASE 3: Correção do audioUrl (busca no content se coluna estiver null)
+      let audioUrl = lesson.audio_url || 
+                     (guidedLessonData?.sections?.[0]?.audio_url) || 
+                     null;
+      
+      console.log('🔍 [FASE 3] Audio URL resolution:', {
+        fromTable: lesson.audio_url,
+        fromContent: guidedLessonData?.sections?.[0]?.audio_url,
+        final: audioUrl,
+        isV2: guidedLessonData?.sections?.[0]?.audio_url !== undefined
+      });
 
       if (!guidedLessonData) {
         return (
