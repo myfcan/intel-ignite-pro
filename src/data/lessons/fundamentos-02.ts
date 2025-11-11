@@ -204,7 +204,7 @@ Vamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! �
     },
     {
       id: 'secao-5',
-      timestamp: 130,
+      timestamp: 128,
       type: 'text',
       speechBubbleText: 'As redes sociais são ainda mais sofisticadas',
       visualContent: `## 📱 Instagram e Facebook - IA social

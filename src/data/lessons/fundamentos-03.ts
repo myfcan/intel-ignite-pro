@@ -9,8 +9,8 @@ export const fundamentos03: GuidedLessonData = {
   title: 'Como a IA Aprende: O Cérebro Digital por Trás das Máquinas Inteligentes',
   trackId: 'trilha-1-fundamentos',
   trackName: 'Fundamentos de IA',
-  duration: 233.767, // Duração real do áudio gerado
-  contentVersion: 3, // V2 padronizado
+  duration: 240, // ~4 minutos (arredondado para completar todas as seções)
+  contentVersion: 4, // Incrementado para forçar re-sync
   schemaVersion: 1, // 🆕 Para FASE 4
   
   sections: [
