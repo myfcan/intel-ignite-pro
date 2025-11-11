@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { syncLessonV2Generic } from './syncLessonV2Generic';
-import { ALL_LESSONS, LESSON_AUDIO_TEXTS } from '@/data/lessons';
+import { ALL_LESSONS, LESSON_AUDIO_TEXTS, LESSONS_ARRAY } from '@/data/lessons';
 import { toast } from '@/hooks/use-toast';
 
 // Helper: Converter base64 para Blob
@@ -207,72 +207,74 @@ export async function syncAllLessonsV2(): Promise<{
   successful: number; 
   failed: number; 
 }> {
+  // 1. Auto-descobrir todas as aulas disponíveis
+  const lessonsToSync = LESSONS_ARRAY;
+  
   const results = {
-    total: 4,
+    total: lessonsToSync.length,
     successful: 0,
     failed: 0
   };
 
   toast({
     title: '🚀 Sincronização em lote',
-    description: 'Iniciando sincronização de todas as lições V2...',
+    description: `Sincronizando ${results.total} lições...`,
   });
 
-  // Aula 01: Sistema antigo (áudios separados)
-  const result01 = await syncFundamentos01();
-  if (result01.success) results.successful++;
-  else results.failed++;
+  console.log(`🔄 Iniciando sincronização de ${results.total} lições...`);
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // 2. Iterar dinamicamente sobre TODAS as aulas
+  for (const lessonMeta of lessonsToSync) {
+    const { key, orderIndex, trackName } = lessonMeta;
+    
+    let result;
 
-  // Aula 02: Sistema genérico unificado
-  const result02 = await syncLessonV2Generic(
-    ALL_LESSONS['fundamentos-02'],
-    LESSON_AUDIO_TEXTS['fundamentos-02'],
-    'Fundamentos de IA',
-    'aula-02',
-    2
-  );
-  if (result02.success) results.successful++;
-  else results.failed++;
+    console.log(`📝 Sincronizando ${key} (ordem ${orderIndex})...`);
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
+    // 3. Tratar caso especial: fundamentos-01 (sistema antigo)
+    if (key === 'fundamentos-01') {
+      result = await syncFundamentos01();
+    } 
+    // 4. Todas as outras aulas: sistema genérico V2
+    else {
+      const folderName = `aula-${orderIndex.toString().padStart(2, '0')}`;
+      
+      result = await syncLessonV2Generic(
+        ALL_LESSONS[key],
+        LESSON_AUDIO_TEXTS[key],
+        trackName,
+        folderName,
+        orderIndex
+      );
+    }
 
-  // Aula 03: Sistema genérico unificado
-  const result03 = await syncLessonV2Generic(
-    ALL_LESSONS['fundamentos-03'],
-    LESSON_AUDIO_TEXTS['fundamentos-03'],
-    'Fundamentos de IA',
-    'aula-03',
-    3
-  );
-  if (result03.success) results.successful++;
-  else results.failed++;
+    // Contabilizar resultado
+    if (result.success) {
+      results.successful++;
+      console.log(`✅ ${key} sincronizada com sucesso`);
+    } else {
+      results.failed++;
+      console.log(`❌ Falha ao sincronizar ${key}`);
+    }
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
+    // Delay entre sincronizações
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
 
-  // Aula 04: Sistema genérico unificado
-  const result04 = await syncLessonV2Generic(
-    ALL_LESSONS['fundamentos-04'],
-    LESSON_AUDIO_TEXTS['fundamentos-04'],
-    'Fundamentos de IA',
-    'aula-04',
-    4
-  );
-  if (result04.success) results.successful++;
-  else results.failed++;
-
+  // Toast final
   if (results.successful === results.total) {
     toast({
       title: '🎉 Todas as lições sincronizadas!',
-      description: `${results.total} lições V2 sincronizadas com sucesso`,
+      description: `${results.total} lições sincronizadas com sucesso`,
     });
+    console.log('✅ Sincronização concluída com sucesso!');
   } else {
     toast({
       title: '⚠️ Sincronização parcial',
       description: `${results.successful}/${results.total} lições sincronizadas`,
       variant: 'destructive',
     });
+    console.log(`⚠️ Sincronização parcial: ${results.successful}/${results.total}`);
   }
 
   return {
