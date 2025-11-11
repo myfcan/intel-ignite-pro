@@ -110,7 +110,7 @@ export function FillInBlanksExercise({
     
     setTimeout(() => {
       onComplete(score);
-    }, 3000);
+    }, 1500);
   };
 
   const correctCount = Object.values(results).filter(Boolean).length;
@@ -242,20 +242,6 @@ export function FillInBlanksExercise({
                       </AnimatePresence>
                     </div>
                   </div>
-                  
-                  {/* Opções visuais de referência */}
-                  {!submitted && sentence.correctAnswers && sentence.correctAnswers.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {sentence.correctAnswers.slice(0, 3).map((option, idx) => (
-                        <div 
-                          key={idx}
-                          className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-full text-sm text-purple-700 dark:text-purple-300 font-medium"
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   <AnimatePresence>
                     {submitted && !isCorrect && (
