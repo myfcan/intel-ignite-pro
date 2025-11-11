@@ -96,10 +96,8 @@ export function FillInBlanksExercise({
       });
     }
     
-    // Chamar onComplete imediatamente para o ExercisesSection controlar o avanço
-    setTimeout(() => {
-      onComplete(score);
-    }, 800);
+    // Chamar onComplete IMEDIATAMENTE
+    onComplete(score);
   };
 
   const correctCount = Object.values(results).filter(Boolean).length;

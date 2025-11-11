@@ -256,14 +256,13 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
 
   exercisesConfig: [
     {
-      id: 'ex-final-1-aula-2-trilha-1',
+      id: 'ex-final-1-netflix',
       type: 'data-collection',
-      title: 'O que a IA Está Aprendendo?',
-      instruction: 'Veja cada situação e identifique TODOS os dados que a IA está coletando ao mesmo tempo:',
+      title: 'Netflix - O que a IA Está Aprendendo?',
+      instruction: 'Veja a situação e identifique TODOS os dados que a IA está coletando:',
       data: {
-        scenarios: [
-          {
-            id: 'scenario-netflix',
+        scenario: {
+          id: 'scenario-netflix',
             emoji: '🎬',
             platform: 'Netflix',
             context: 'Sexta-feira, 22h',
@@ -274,12 +273,20 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
               { id: 'skip-intro', label: 'Que você sempre pula a introdução', isCorrect: true, explanation: '✅ Exato! A IA aprende suas preferências de navegação.' },
               { id: 'timing', label: 'Horário que você costuma assistir (noite)', isCorrect: true, explanation: '✅ Sim! Horários ajudam a personalizar notificações.' },
               { id: 'engagement', label: 'Seu nível de engajamento (like)', isCorrect: true, explanation: '✅ Perfeito! Likes são sinais fortes de preferência.' },
-              { id: 'device', label: 'Qual dispositivo você está usando', isCorrect: false, explanation: '❌ Não mencionado neste cenário específico.' },
-              { id: 'volume', label: 'Volume que você prefere assistir', isCorrect: false, explanation: '❌ Volume não é coletado neste contexto.' }
-            ]
-          },
-          {
-            id: 'scenario-spotify',
+            { id: 'device', label: 'Qual dispositivo você está usando', isCorrect: false, explanation: '❌ Não mencionado neste cenário específico.' },
+            { id: 'volume', label: 'Volume que você prefere assistir', isCorrect: false, explanation: '❌ Volume não é coletado neste contexto.' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'ex-final-2-spotify',
+      type: 'data-collection',
+      title: 'Spotify - O que a IA Está Aprendendo?',
+      instruction: 'Veja a situação e identifique TODOS os dados que a IA está coletando:',
+      data: {
+        scenario: {
+          id: 'scenario-spotify',
             emoji: '🎵',
             platform: 'Spotify',
             context: 'Segunda-feira, 7h da manhã',
@@ -290,12 +297,20 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
               { id: 'skips', label: 'Quais tipos de música você rejeita (lentas)', isCorrect: true, explanation: '✅ Exato! Pulos ensinam o que você NÃO quer.' },
               { id: 'favorites', label: 'Músicas que você realmente ama (favoritos)', isCorrect: true, explanation: '✅ Perfeito! Favoritos são sinais muito fortes.' },
               { id: 'genre-rock', label: 'Seu gênero favorito (rock)', isCorrect: true, explanation: '✅ Sim! Gênero é fundamental para curadoria.' },
-              { id: 'lyrics', label: 'Se você prefere músicas com ou sem letra', isCorrect: false, explanation: '❌ Não foi mencionado no cenário.' },
-              { id: 'volume-pref', label: 'Preferência de volume (alto)', isCorrect: false, explanation: '❌ Volume é configuração pessoal, não padrão de gosto musical.' }
-            ]
-          },
-          {
-            id: 'scenario-instagram',
+            { id: 'lyrics', label: 'Se você prefere músicas com ou sem letra', isCorrect: false, explanation: '❌ Não foi mencionado no cenário.' },
+            { id: 'volume-pref', label: 'Preferência de volume (alto)', isCorrect: false, explanation: '❌ Volume é configuração pessoal, não padrão de gosto musical.' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'ex-final-3-instagram',
+      type: 'data-collection',
+      title: 'Instagram - O que a IA Está Aprendendo?',
+      instruction: 'Veja a situação e identifique TODOS os dados que a IA está coletando:',
+      data: {
+        scenario: {
+          id: 'scenario-instagram',
             emoji: '📸',
             platform: 'Instagram',
             context: 'Domingo à tarde',
@@ -306,20 +321,14 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
               { id: 'engagement-like', label: 'Conteúdo que você considera bom (like)', isCorrect: true, explanation: '✅ Exato! Likes indicam aprovação.' },
               { id: 'save-intent', label: 'Intenção de rever depois (salvar)', isCorrect: true, explanation: '✅ Perfeito! Salvos mostram alto interesse.' },
               { id: 'explore-more', label: 'Curiosidade para explorar mais do mesmo tema', isCorrect: true, explanation: '✅ Sim! Clicar no perfil mostra interesse profundo.' },
-              { id: 'friends', label: 'Quais amigos você mais interage', isCorrect: false, explanation: '❌ Não houve interação com amigos neste cenário.' },
-              { id: 'location', label: 'Sua localização atual', isCorrect: false, explanation: '❌ Localização não foi relevante nesta ação.' }
-            ]
-          }
-        ],
-        feedback: {
-          allCorrect: '🎯 Perfeito! Você identificou TODOS os dados que a IA coleta!',
-          someCorrect: '👍 Muito bem! Você acertou {count}! Continue observando os padrões!',
-          needsReview: '💡 Revise o conteúdo sobre coleta de dados e tente novamente!'
+            { id: 'friends', label: 'Quais amigos você mais interage', isCorrect: false, explanation: '❌ Não houve interação com amigos neste cenário.' },
+            { id: 'location', label: 'Sua localização atual', isCorrect: false, explanation: '❌ Localização não foi relevante nesta ação.' }
+          ]
         }
       }
     },
     {
-      id: 'ex-final-2-aula-2-trilha-1',
+      id: 'ex-final-4-fill-blanks',
       type: 'fill-in-blanks',
       title: 'Complete o que Você Aprendeu',
       instruction: 'Preencha as lacunas com as palavras corretas:',
@@ -362,7 +371,7 @@ E nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor
       }
     },
     {
-      id: 'ex-final-3-aula-2-trilha-1',
+      id: 'ex-final-5-true-false',
       type: 'true-false',
       title: 'Verdadeiro ou Falso?',
       instruction: 'Marque V para verdadeiro ou F para falso em cada afirmação:',

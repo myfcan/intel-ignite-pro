@@ -145,7 +145,7 @@ export interface DataCollectionScenario {
 }
 
 export interface DataCollectionExerciseData {
-  scenarios: DataCollectionScenario[];
+  scenario: DataCollectionScenario;
   feedback?: {
     allCorrect: string;
     someCorrect: string;
@@ -220,7 +220,7 @@ export type ExerciseConfigTyped =
       type: 'data-collection';
       title: string;
       instruction: string;
-      data: DataCollectionExerciseData; // ⚠️ OBRIGATÓRIO ter scenarios!
+      data: DataCollectionExerciseData; // ⚠️ OBRIGATÓRIO ter scenario (singular)!
       passingScore?: number;
       maxAttempts?: number;
     }

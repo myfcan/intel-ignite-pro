@@ -239,7 +239,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
             key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
-            scenarios={currentExercise.data.scenarios}
+            scenario={currentExercise.data.scenario}
             onComplete={handleExerciseComplete}
           />
         )}

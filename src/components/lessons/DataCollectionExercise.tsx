@@ -24,34 +24,29 @@ interface Scenario {
 interface DataCollectionExerciseProps {
   title: string;
   instruction: string;
-  scenarios: Scenario[];
+  scenario: Scenario; // Agora recebe apenas UM cenário
   onComplete: (score: number) => void;
 }
 
 export function DataCollectionExercise({
   title,
   instruction,
-  scenarios,
+  scenario,
   onComplete
 }: DataCollectionExerciseProps) {
-  const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [selectedData, setSelectedData] = useState<Set<string>>(new Set());
   const [showFeedback, setShowFeedback] = useState(false);
-  const [scenarioResults, setScenarioResults] = useState<boolean[]>([]);
 
-  // Validação defensiva: verificar se scenarios existe e tem elementos
-  if (!scenarios || scenarios.length === 0) {
+  // Validação defensiva
+  if (!scenario) {
     return (
       <ExerciseErrorCard 
-        title="⚠️ Exercício Sem Cenários"
-        message="Este exercício de coleta de dados não possui cenários configurados."
-        details="Campo obrigatório 'scenarios' está ausente ou vazio."
+        title="⚠️ Exercício Sem Cenário"
+        message="Este exercício de coleta de dados não possui cenário configurado."
+        details="Campo obrigatório 'scenario' está ausente."
       />
     );
   }
-
-  const currentScenario = scenarios[currentScenarioIndex];
-  const isLastScenario = currentScenarioIndex === scenarios.length - 1;
 
   const handleDataToggle = (dataId: string) => {
     if (showFeedback) return;
@@ -68,47 +63,34 @@ export function DataCollectionExercise({
   };
 
   const handleSubmit = () => {
-    const correctIds = currentScenario.dataPoints
+    const correctIds = scenario.dataPoints
       .filter(d => d.isCorrect)
       .map(d => d.id);
     
-    const incorrectIds = currentScenario.dataPoints
+    const incorrectIds = scenario.dataPoints
       .filter(d => !d.isCorrect)
       .map(d => d.id);
 
-    // Calcular precisão: acertos - erros
+    // Calcular score: % de acertos
     const correctSelected = correctIds.filter(id => selectedData.has(id)).length;
     const incorrectSelected = incorrectIds.filter(id => selectedData.has(id)).length;
-    const missed = correctIds.length - correctSelected;
-    
-    // Score: 100% se tudo certo, penaliza erros e omissões
     const maxScore = correctIds.length;
-    const actualScore = Math.max(0, correctSelected - incorrectSelected);
     const isPerfect = correctSelected === maxScore && incorrectSelected === 0;
     
-    setScenarioResults(prev => [...prev, isPerfect]);
+    // Score baseado na proporção de acertos
+    const score = isPerfect ? 100 : Math.round((correctSelected / maxScore) * 100);
+    
     setShowFeedback(true);
-
-    setTimeout(() => {
-      if (!isLastScenario) {
-        // Próximo cenário
-        setCurrentScenarioIndex(prev => prev + 1);
-        setSelectedData(new Set());
-        setShowFeedback(false);
-      } else {
-        // Calcular score final
-        const perfectCount = [...scenarioResults, isPerfect].filter(Boolean).length;
-        const finalScore = (perfectCount / scenarios.length) * 100;
-        setTimeout(() => onComplete(finalScore), 1500);
-      }
-    }, 3000);
+    
+    // Chama onComplete IMEDIATAMENTE sem delay
+    onComplete(score);
   };
 
-  const correctCount = currentScenario.dataPoints.filter(d => d.isCorrect).length;
-  const allCorrectSelected = currentScenario.dataPoints
+  const correctCount = scenario.dataPoints.filter(d => d.isCorrect).length;
+  const allCorrectSelected = scenario.dataPoints
     .filter(d => d.isCorrect)
     .every(d => selectedData.has(d.id));
-  const noIncorrectSelected = currentScenario.dataPoints
+  const noIncorrectSelected = scenario.dataPoints
     .filter(d => !d.isCorrect)
     .every(d => !selectedData.has(d.id));
   const canSubmit = selectedData.size > 0;
@@ -125,56 +107,31 @@ export function DataCollectionExercise({
         <p className="text-sm text-amber-600 dark:text-amber-400">
           💡 Dica: A IA aprende múltiplas coisas ao mesmo tempo!
         </p>
-        
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {scenarios.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-2 w-8 rounded-full transition-all ${
-                idx < currentScenarioIndex
-                  ? scenarioResults[idx]
-                    ? 'bg-green-500'
-                    : 'bg-orange-500'
-                  : idx === currentScenarioIndex
-                  ? 'bg-primary'
-                  : 'bg-muted'
-              }`}
-            />
-          ))}
-        </div>
       </motion.div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentScenario.id}
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        >
-          <Card className="p-8 mb-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <span className="text-6xl">{currentScenario.emoji}</span>
-                <div className="text-left">
-                  <p className="text-2xl font-bold text-foreground">
-                    {currentScenario.platform}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{currentScenario.context}</p>
-                </div>
-              </div>
-              <p className="text-lg font-medium text-foreground px-6 py-4 bg-white/50 dark:bg-slate-900/50 rounded-xl">
-                {currentScenario.situation}
+      <Card className="p-8 mb-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2">
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="text-6xl">{scenario.emoji}</span>
+            <div className="text-left">
+              <p className="text-2xl font-bold text-foreground">
+                {scenario.platform}
               </p>
+              <p className="text-sm text-muted-foreground">{scenario.context}</p>
             </div>
+          </div>
+          <p className="text-lg font-medium text-foreground px-6 py-4 bg-white/50 dark:bg-slate-900/50 rounded-xl">
+            {scenario.situation}
+          </p>
+        </div>
 
-            <div className="mb-6">
-              <p className="text-sm font-semibold text-muted-foreground mb-4 text-center">
-                Selecione TODOS os dados que a IA está coletando nessa situação:
-              </p>
-              
-              <div className="grid gap-3">
-                {currentScenario.dataPoints.map((dataPoint) => {
+        <div className="mb-6">
+          <p className="text-sm font-semibold text-muted-foreground mb-4 text-center">
+            Selecione TODOS os dados que a IA está coletando nessa situação:
+          </p>
+          
+          <div className="grid gap-3">
+            {scenario.dataPoints.map((dataPoint) => {
                   const isSelected = selectedData.has(dataPoint.id);
                   const showResult = showFeedback && isSelected;
                   const isCorrectChoice = dataPoint.isCorrect;
@@ -235,63 +192,61 @@ export function DataCollectionExercise({
                       )}
                     </motion.div>
                   );
-                })}
-              </div>
+              })}
             </div>
+          </div>
 
-            {!showFeedback && (
-              <Button
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-                className="w-full"
-                size="lg"
-              >
-                {canSubmit 
-                  ? `✅ Verificar Resposta${selectedData.size > 1 ? 's' : ''} (${selectedData.size} selecionada${selectedData.size > 1 ? 's' : ''})`
-                  : '⏳ Selecione os dados que a IA coleta'
-                }
-              </Button>
-            )}
-          </Card>
+          {!showFeedback && (
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="w-full"
+              size="lg"
+            >
+              {canSubmit 
+                ? `✅ Verificar Resposta${selectedData.size > 1 ? 's' : ''} (${selectedData.size} selecionada${selectedData.size > 1 ? 's' : ''})`
+                : '⏳ Selecione os dados que a IA coleta'
+              }
+            </Button>
+          )}
+        </Card>
 
-          <AnimatePresence>
-            {showFeedback && (
+        <AnimatePresence>
+          {showFeedback && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`p-6 rounded-xl border-2 text-center ${
+                allCorrectSelected && noIncorrectSelected
+                  ? 'bg-green-50 dark:bg-green-950/30 border-green-500'
+                  : 'bg-orange-50 dark:bg-orange-950/30 border-orange-500'
+              }`}
+            >
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={`p-6 rounded-xl border-2 text-center ${
-                  allCorrectSelected && noIncorrectSelected
-                    ? 'bg-green-50 dark:bg-green-950/30 border-green-500'
-                    : 'bg-orange-50 dark:bg-orange-950/30 border-orange-500'
-                }`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 15 }}
               >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                >
-                  {allCorrectSelected && noIncorrectSelected ? (
-                    <>
-                      <p className="text-2xl font-bold mb-2">🎉 Perfeito!</p>
-                      <p className="text-muted-foreground">
-                        Você identificou todos os {correctCount} dados corretamente!
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold mb-2">📚 Quase lá!</p>
-                      <p className="text-muted-foreground">
-                        A IA estava coletando {correctCount} tipos de dados. Continue observando!
-                      </p>
-                    </>
-                  )}
-                </motion.div>
+                {allCorrectSelected && noIncorrectSelected ? (
+                  <>
+                    <p className="text-2xl font-bold mb-2">🎉 Perfeito!</p>
+                    <p className="text-muted-foreground">
+                      Você identificou todos os {correctCount} dados corretamente!
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold mb-2">📚 Quase lá!</p>
+                    <p className="text-muted-foreground">
+                      A IA estava coletando {correctCount} tipos de dados. Continue observando!
+                    </p>
+                  </>
+                )}
               </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </div>
   );
 }

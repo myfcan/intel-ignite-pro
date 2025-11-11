@@ -314,7 +314,7 @@ export default function AdminLessonTester() {
                       <DataCollectionExercise
                         title={exercise.title}
                         instruction={exercise.instruction}
-                        scenarios={exercise.data.scenarios || []}
+                        scenario={exercise.data.scenario}
                         onComplete={() => handleExerciseComplete(exercise.id)}
                       />
                     )}
