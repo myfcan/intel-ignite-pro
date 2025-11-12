@@ -22,6 +22,32 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
   console.log(`   Token expira em: ${new Date(sessionData.session.expires_at! * 1000).toLocaleString()}`);
   console.log(`   Access token (primeiros 20 chars): ${sessionData.session.access_token.substring(0, 20)}...`);
 
+  // VERIFICAÇÃO EXPLÍCITA DE ADMIN ANTES DO INSERT
+  console.log('🔐 [STEP 4] Verificando se usuário é admin...');
+  
+  const { data: userRoles, error: roleError } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', sessionData.user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (roleError) {
+    console.error('❌ [STEP 4] Erro ao verificar role:', roleError);
+    throw new Error(`Erro ao verificar permissões: ${roleError.message}`);
+  }
+
+  if (!userRoles) {
+    console.error('❌ [STEP 4] Usuário não é admin:', sessionData.user.email);
+    throw new Error('Você precisa ser admin para criar lições. Faça logout e login novamente para atualizar suas permissões.');
+  }
+
+  console.log('✅ [STEP 4] Usuário confirmado como admin');
+
+  // Aguardar pequeno delay para garantir propagação do token
+  console.log('⏱️ [STEP 4] Aguardando propagação do token...');
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   // Criar estrutura content baseada no modelo
   let content: any;
 
