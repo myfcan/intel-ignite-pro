@@ -150,13 +150,17 @@ function calculateTimestampsV3(input: Step6Output): Step7Output {
     throw new Error('wordTimestamps não disponível para modelo V3');
   }
 
-  // V3: Dividir o áudio total pelos N slides (~7)
+  if (!input.v3Data || !input.v3Data.slides) {
+    throw new Error('v3Data.slides não disponível para modelo V3');
+  }
+
+  // V3: Dividir o áudio único igualmente entre os slides
   const totalWords = input.wordTimestamps.length;
-  const slidesCount = input.sections.length;
+  const slidesCount = input.v3Data.slides.length;
   const wordsPerSlide = Math.floor(totalWords / slidesCount);
 
-  const sections = input.sections.map((section, idx) => {
-    // Calcular timestamp baseado na posição do slide
+  const slidesWithTimestamps = input.v3Data.slides.map((slide, idx) => {
+    // Pegar o timestamp da primeira palavra deste slide
     const wordIndex = idx * wordsPerSlide;
     const timestamp = idx < slidesCount - 1 
       ? input.wordTimestamps![wordIndex]?.start || 0
@@ -165,26 +169,24 @@ function calculateTimestampsV3(input: Step6Output): Step7Output {
     console.log(`   Slide ${idx + 1}: timestamp ${timestamp.toFixed(2)}s`);
 
     return {
-      id: section.id,
-      title: section.title || `Slide ${idx + 1}`,
+      id: slide.id,
+      slideNumber: slide.slideNumber,
+      contentIdea: slide.contentIdea,
+      imageUrl: slide.imageUrl,
       timestamp,
-      type: 'text' as const,
-      speechBubbleText: section.speechBubbleText || section.visualContent.substring(0, 100),
-      visualContent: section.visualContent,
-      imageUrl: (section as any).imageUrl, // Imagem do slide (se existir)
-      slideNumber: idx + 1,
     };
   });
 
-  // Calcular duração total
   const lastWordTimestamp = input.wordTimestamps[input.wordTimestamps.length - 1];
   const totalDuration = lastWordTimestamp ? lastWordTimestamp.end : 0;
 
   const structuredContent = {
-    contentVersion: 4, // V3 usa contentVersion 4
+    contentVersion: 4,
     schemaVersion: 3,
     duration: totalDuration,
-    sections,
+    audioUrl: input.audioUrl,
+    slides: slidesWithTimestamps,
+    finalPlaygroundConfig: input.v3Data.finalPlaygroundConfig,
     exercisesConfig: input.exercisesConfig,
   };
 

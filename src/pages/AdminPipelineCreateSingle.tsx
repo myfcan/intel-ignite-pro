@@ -25,6 +25,10 @@ export default function AdminPipelineCreateSingle() {
     trackName: '',
     orderIndex: 0,
     sections: [{ id: 'section-1', visualContent: '', speechBubbleText: '' }],
+    v3Data: {
+      audioText: '',
+      slides: [],
+    },
     exercises: [],
     estimatedTimeMinutes: 15,
   });
@@ -112,6 +116,55 @@ export default function AdminPipelineCreateSingle() {
     });
   };
 
+  // V3 Slide Functions
+  const addSlideV3 = () => {
+    if (!formData.v3Data) return;
+    
+    setFormData({
+      ...formData,
+      v3Data: {
+        ...formData.v3Data,
+        slides: [
+          ...formData.v3Data.slides,
+          {
+            id: `slide-${Date.now()}`,
+            slideNumber: formData.v3Data.slides.length + 1,
+            contentIdea: '',
+          }
+        ]
+      }
+    });
+  };
+
+  const removeSlideV3 = (index: number) => {
+    if (!formData.v3Data) return;
+    
+    setFormData({
+      ...formData,
+      v3Data: {
+        ...formData.v3Data,
+        slides: formData.v3Data.slides.filter((_, i) => i !== index).map((slide, idx) => ({
+          ...slide,
+          slideNumber: idx + 1
+        }))
+      }
+    });
+  };
+
+  const updateSlideV3 = (index: number, field: string, value: any) => {
+    if (!formData.v3Data) return;
+    
+    const newSlides = [...formData.v3Data.slides];
+    newSlides[index] = { ...newSlides[index], [field]: value };
+    setFormData({
+      ...formData,
+      v3Data: {
+        ...formData.v3Data,
+        slides: newSlides
+      }
+    });
+  };
+
   const startPipeline = async (executionId: string, inputData: PipelineInput) => {
     try {
       // Verificar se usuário está autenticado (força validação server-side)
@@ -182,13 +235,25 @@ export default function AdminPipelineCreateSingle() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.trackId || formData.sections.length === 0) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha título, trail e pelo menos uma seção",
-        variant: "destructive"
-      });
-      return;
+    // Validação por modelo
+    if (formData.model === 'v3') {
+      if (!formData.title || !formData.trackId || !formData.v3Data?.audioText || formData.v3Data.slides.length === 0) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Preencha título, trail, áudio e pelo menos um slide para V3",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      if (!formData.title || !formData.trackId || !formData.sections || formData.sections.length === 0) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Preencha título, trail e pelo menos uma seção",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -383,146 +448,317 @@ export default function AdminPipelineCreateSingle() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Seções {formData.model === 'v3' && '(Recomendado: ~7 slides)'}</span>
-              <Button onClick={addSection} size="sm" disabled={formData.model === 'v3' && formData.sections.length >= 7}>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Seção
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {formData.sections.map((section, index) => (
-              <Card key={section.id}>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    Seção {index + 1}
-                    {formData.sections.length > 1 && (
-                      <Button variant="destructive" size="sm" onClick={() => removeSection(index)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Conteúdo Visual (Markdown)</Label>
-                    <Textarea
-                      value={section.visualContent}
-                      onChange={(e) => updateSection(index, 'visualContent', e.target.value)}
-                      placeholder="Conteúdo em Markdown..."
-                      rows={5}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Texto para Áudio (Speech Bubble)</Label>
-                    <Textarea
-                      value={section.speechBubbleText || ''}
-                      onChange={(e) => updateSection(index, 'speechBubbleText', e.target.value)}
-                      placeholder="Texto que será falado pela Maia..."
-                      rows={3}
-                    />
-                  </div>
+        {formData.model === 'v3' ? (
+          // FORMULÁRIO V3 ESPECÍFICO
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Áudio Único</CardTitle>
+                <CardDescription>
+                  V3 usa um áudio único para toda a aula. Descreva o que a MAIA deve falar durante os slides.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Texto do Áudio (Speech da MAIA)</Label>
+                  <Textarea
+                    value={formData.v3Data?.audioText || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      v3Data: {
+                        ...formData.v3Data!,
+                        audioText: e.target.value,
+                      }
+                    })}
+                    placeholder="Olá! Hoje vamos aprender sobre IA. Primeiro, vamos entender o que é IA..."
+                    rows={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Este texto será convertido em um único áudio que acompanha todos os slides
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-                  {/* Playground Mid-Lesson (apenas V1) */}
-                  {formData.model === 'v1' && (
-                    <div className="space-y-4 p-4 bg-accent/10 rounded-lg border">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`playground-${section.id}`}
-                          checked={!!section.playgroundConfig}
-                          onCheckedChange={(checked) => {
-                            const newSections = [...formData.sections];
-                            newSections[index].playgroundConfig = checked ? {
-                              type: 'real-playground',
-                              config: ''
-                            } : undefined;
-                            setFormData({ ...formData, sections: newSections });
-                          }}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Slides Visuais (Máx. 7)</span>
+                  <Button 
+                    onClick={addSlideV3} 
+                    size="sm" 
+                    disabled={(formData.v3Data?.slides?.length || 0) >= 7}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Slide
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Descreva a ideia de cada slide. A IA vai gerar a imagem automaticamente.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(formData.v3Data?.slides || []).map((slide, index) => (
+                  <Card key={slide.id}>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        Slide {index + 1}
+                        <Button variant="destructive" size="sm" onClick={() => removeSlideV3(index)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Ideia/Conteúdo do Slide</Label>
+                        <Textarea
+                          value={slide.contentIdea}
+                          onChange={(e) => updateSlideV3(index, 'contentIdea', e.target.value)}
+                          placeholder="Descreva o que deve aparecer neste slide. Ex: 'Uma pessoa sorrindo enquanto trabalha com IA no computador, ambiente de escritório moderno'"
+                          rows={4}
                         />
-                        <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
-                          🎮 Adicionar Playground Mid-Lesson (apenas V1)
-                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          🎨 A IA vai gerar uma imagem baseada nesta descrição durante o pipeline
+                        </p>
                       </div>
-                    
-                    {section.playgroundConfig && (
-                      <div className="space-y-4 pl-6 border-l-2 border-primary/20">
-                        <div className="space-y-2">
-                          <Label className="text-sm">Tipo de Playground</Label>
-                          <Select 
-                            value={section.playgroundConfig.type}
-                            onValueChange={(value: 'real-playground' | 'interactive-simulation') => {
-                              const newSections = [...formData.sections];
-                              newSections[index].playgroundConfig!.type = value;
-                              setFormData({ ...formData, sections: newSections });
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="real-playground">Real Playground</SelectItem>
-                              <SelectItem value="interactive-simulation">Simulação Interativa</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label className="text-sm">Configuração (JSON ou Texto)</Label>
-                          <Textarea
-                            value={typeof section.playgroundConfig.config === 'string' 
-                              ? section.playgroundConfig.config 
-                              : JSON.stringify(section.playgroundConfig.config, null, 2)}
-                            onChange={(e) => {
-                              const newSections = [...formData.sections];
-                              const value = e.target.value;
-                              
-                              try {
-                                newSections[index].playgroundConfig!.config = JSON.parse(value);
-                              } catch {
-                                newSections[index].playgroundConfig!.config = value;
-                              }
-                              
-                              setFormData({ ...formData, sections: newSections });
-                            }}
-                            placeholder='{"prompt": "Complete o prompt...", "minLength": 20}'
-                            rows={8}
-                            className="font-mono text-sm"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            💡 Cole JSON direto ou digite texto simples. O sistema detecta automaticamente.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  )}
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {(formData.v3Data?.slides?.length || 0) === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum slide adicionado. Clique em "Adicionar Slide" acima.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-                  {/* Campo de imagem para V3 */}
-                  {formData.model === 'v3' && (
+            {/* PLAYGROUND FINAL */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <span>🎮 Playground Final-Lesson</span>
+                </CardTitle>
+                <CardDescription>
+                  Adicione uma atividade prática no final da aula (opcional)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="v3-final-playground"
+                    checked={!!formData.v3Data?.finalPlaygroundConfig}
+                    onCheckedChange={(checked) => {
+                      setFormData({
+                        ...formData,
+                        v3Data: {
+                          ...formData.v3Data!,
+                          finalPlaygroundConfig: checked ? {
+                            type: 'real-playground',
+                            config: ''
+                          } : undefined
+                        }
+                      });
+                    }}
+                  />
+                  <Label htmlFor="v3-final-playground" className="font-semibold cursor-pointer">
+                    Adicionar Playground Final
+                  </Label>
+                </div>
+
+                {formData.v3Data?.finalPlaygroundConfig && (
+                  <div className="space-y-4 pl-6 border-l-2 border-primary/20">
                     <div className="space-y-2">
-                      <Label>URL da Imagem do Slide (Opcional)</Label>
-                      <Input
-                        value={(section as any).imageUrl || ''}
-                        onChange={(e) => {
-                          const newSections = [...formData.sections];
-                          (newSections[index] as any).imageUrl = e.target.value;
-                          setFormData({ ...formData, sections: newSections });
+                      <Label className="text-sm">Tipo de Playground</Label>
+                      <Select 
+                        value={formData.v3Data.finalPlaygroundConfig.type}
+                        onValueChange={(value: 'real-playground' | 'interactive-simulation') => {
+                          setFormData({
+                            ...formData,
+                            v3Data: {
+                              ...formData.v3Data!,
+                              finalPlaygroundConfig: {
+                                ...formData.v3Data!.finalPlaygroundConfig!,
+                                type: value
+                              }
+                            }
+                          });
                         }}
-                        placeholder="https://exemplo.com/imagem.jpg"
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="real-playground">Real Playground</SelectItem>
+                          <SelectItem value="interactive-simulation">Simulação Interativa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm">Configuração (JSON ou Texto)</Label>
+                      <Textarea
+                        value={typeof formData.v3Data.finalPlaygroundConfig.config === 'string' 
+                          ? formData.v3Data.finalPlaygroundConfig.config 
+                          : JSON.stringify(formData.v3Data.finalPlaygroundConfig.config, null, 2)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          let parsedConfig;
+                          
+                          try {
+                            parsedConfig = JSON.parse(value);
+                          } catch {
+                            parsedConfig = value;
+                          }
+                          
+                          setFormData({
+                            ...formData,
+                            v3Data: {
+                              ...formData.v3Data!,
+                              finalPlaygroundConfig: {
+                                ...formData.v3Data!.finalPlaygroundConfig!,
+                                config: parsedConfig
+                              }
+                            }
+                          });
+                        }}
+                        placeholder='{"prompt": "Complete o prompt...", "minLength": 20}'
+                        rows={8}
+                        className="font-mono text-sm"
                       />
                       <p className="text-xs text-muted-foreground">
-                        💡 V3 suporta ~7 slides visuais. Deixe em branco para usar avatar da MAIA.
+                        💡 Cole JSON direto ou digite texto simples. O sistema detecta automaticamente.
                       </p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </CardContent>
-        </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          // FORMULÁRIO V1/V2 (ATUAL)
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Seções</span>
+                <Button onClick={addSection} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Seção
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.sections?.map((section, index) => (
+                <Card key={section.id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      Seção {index + 1}
+                      {formData.sections!.length > 1 && (
+                        <Button variant="destructive" size="sm" onClick={() => removeSection(index)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Conteúdo Visual (Markdown)</Label>
+                      <Textarea
+                        value={section.visualContent}
+                        onChange={(e) => updateSection(index, 'visualContent', e.target.value)}
+                        placeholder="Conteúdo em Markdown..."
+                        rows={5}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Texto para Áudio (Speech Bubble)</Label>
+                      <Textarea
+                        value={section.speechBubbleText || ''}
+                        onChange={(e) => updateSection(index, 'speechBubbleText', e.target.value)}
+                        placeholder="Texto que será falado pela Maia..."
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* Playground Mid-Lesson (apenas V1) */}
+                    {formData.model === 'v1' && (
+                      <div className="space-y-4 p-4 bg-accent/10 rounded-lg border">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`playground-${section.id}`}
+                            checked={!!section.playgroundConfig}
+                            onCheckedChange={(checked) => {
+                              const newSections = [...formData.sections!];
+                              newSections[index].playgroundConfig = checked ? {
+                                type: 'real-playground',
+                                config: ''
+                              } : undefined;
+                              setFormData({ ...formData, sections: newSections });
+                            }}
+                          />
+                          <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
+                            🎮 Adicionar Playground Mid-Lesson (apenas V1)
+                          </Label>
+                        </div>
+                      
+                      {section.playgroundConfig && (
+                        <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Tipo de Playground</Label>
+                            <Select 
+                              value={section.playgroundConfig.type}
+                              onValueChange={(value: 'real-playground' | 'interactive-simulation') => {
+                                const newSections = [...formData.sections!];
+                                newSections[index].playgroundConfig!.type = value;
+                                setFormData({ ...formData, sections: newSections });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="real-playground">Real Playground</SelectItem>
+                                <SelectItem value="interactive-simulation">Simulação Interativa</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm">Configuração (JSON ou Texto)</Label>
+                            <Textarea
+                              value={typeof section.playgroundConfig.config === 'string' 
+                                ? section.playgroundConfig.config 
+                                : JSON.stringify(section.playgroundConfig.config, null, 2)}
+                              onChange={(e) => {
+                                const newSections = [...formData.sections!];
+                                const value = e.target.value;
+                                
+                                try {
+                                  newSections[index].playgroundConfig!.config = JSON.parse(value);
+                                } catch {
+                                  newSections[index].playgroundConfig!.config = value;
+                                }
+                                
+                                setFormData({ ...formData, sections: newSections });
+                              }}
+                              placeholder='{"prompt": "Complete o prompt...", "minLength": 20}'
+                              rows={8}
+                              className="font-mono text-sm"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              💡 Cole JSON direto ou digite texto simples. O sistema detecta automaticamente.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
