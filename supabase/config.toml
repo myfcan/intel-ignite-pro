@@ -12,5 +12,8 @@ verify_jwt = false
 [functions.generate-multiple-audios]
 verify_jwt = false
 
+[functions.generate-slide-images]
+verify_jwt = false
+
 [functions.pipeline-executor]
 verify_jwt = false

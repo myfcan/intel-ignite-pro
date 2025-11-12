@@ -15,9 +15,22 @@ export interface LessonSection {
   };
 }
 
-export interface V3SlideSection extends LessonSection {
-  imageUrl?: string; // URL da imagem do slide
-  slideNumber?: number; // Número do slide (1-7)
+export interface V3Slide {
+  id: string;
+  slideNumber: number;
+  contentIdea: string; // Texto livre: "Mostrar uma pessoa trabalhando com IA"
+  imagePrompt?: string; // Gerado pela IA a partir de contentIdea
+  imageUrl?: string; // URL gerada após criar a imagem
+  timestamp?: number; // Timestamp calculado no step 7
+}
+
+export interface V3Data {
+  audioText: string; // Texto único para o áudio
+  slides: V3Slide[]; // Até 7 slides
+  finalPlaygroundConfig?: {
+    type: 'real-playground' | 'interactive-simulation';
+    config: any;
+  };
 }
 
 export interface ExerciseInput {
@@ -34,7 +47,13 @@ export interface PipelineInput {
   trackId: string;
   trackName: string;
   orderIndex: number;
-  sections: LessonSection[];
+  
+  // V1 e V2: múltiplas seções
+  sections?: LessonSection[];
+  
+  // V3: 1 seção com múltiplos slides
+  v3Data?: V3Data;
+  
   exercises: ExerciseInput[];
   estimatedTimeMinutes?: number;
 }
@@ -56,7 +75,8 @@ export interface Step1Output {
   trackId: string;
   trackName: string;
   orderIndex: number;
-  sections: LessonSection[];
+  sections?: LessonSection[];
+  v3Data?: V3Data;
   exercises: ExerciseInput[];
   estimatedTimeMinutes: number;
 }
@@ -79,6 +99,7 @@ export interface Step6Output extends Step4Output {
   audioUrls?: string[];
   wordTimestamps?: any[];
   durations?: number[];
+  v3Data?: V3Data; // Slides com imageUrl após geração
 }
 
 export interface Step7Output extends Step6Output {
