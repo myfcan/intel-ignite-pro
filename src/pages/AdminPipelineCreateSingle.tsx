@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash2, Rocket } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Plus, Trash2, Rocket, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,49 @@ export default function AdminPipelineCreateSingle() {
     exercises: [],
     estimatedTimeMinutes: 15,
   });
+
+  // Auto-preencher Trail Info
+  useEffect(() => {
+    const fetchTrailInfo = async () => {
+      const { data: trail } = await supabase
+        .from('trails')
+        .select('id, title')
+        .eq('title', 'Fundamentos de IA')
+        .eq('is_active', true)
+        .single();
+      
+      if (trail) {
+        setFormData(prev => ({
+          ...prev,
+          trackId: trail.id,
+          trackName: trail.title,
+        }));
+      }
+    };
+    fetchTrailInfo();
+  }, []);
+
+  // Calcular próximo Order Index
+  useEffect(() => {
+    const fetchNextOrderIndex = async () => {
+      if (!formData.trackId) return;
+      
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('order_index')
+        .eq('trail_id', formData.trackId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+      
+      const nextIndex = lessons && lessons.length > 0 
+        ? lessons[0].order_index + 1 
+        : 1;
+      
+      setFormData(prev => ({ ...prev, orderIndex: nextIndex }));
+    };
+    
+    fetchNextOrderIndex();
+  }, [formData.trackId]);
 
   const addSection = () => {
     setFormData({
@@ -163,32 +207,54 @@ export default function AdminPipelineCreateSingle() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border-2 border-dashed">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">🤖 Auto-preenchido</Label>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, trackId: '' }));
+                    setTimeout(() => window.location.reload(), 100);
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Recalcular
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Trail ID</Label>
+                  <Input
+                    value={formData.trackId}
+                    disabled
+                    className="bg-background/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Nome da Trail</Label>
+                  <Input
+                    value={formData.trackName}
+                    disabled
+                    className="bg-background/50"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label>Trail ID (UUID)</Label>
+                <Label className="text-xs text-muted-foreground">Order Index (Próximo disponível)</Label>
                 <Input
-                  value={formData.trackId}
-                  onChange={(e) => setFormData({ ...formData, trackId: e.target.value })}
-                  placeholder="UUID da trilha"
+                  type="number"
+                  value={formData.orderIndex}
+                  disabled
+                  className="bg-background/50"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Nome da Trail</Label>
-                <Input
-                  value={formData.trackName}
-                  onChange={(e) => setFormData({ ...formData, trackName: e.target.value })}
-                  placeholder="Ex: Fundamentos"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Order Index</Label>
-              <Input
-                type="number"
-                value={formData.orderIndex}
-                onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
-              />
+              
+              <p className="text-xs text-muted-foreground">
+                💡 Estes campos são preenchidos automaticamente. Use "Recalcular" se necessário.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -234,6 +300,78 @@ export default function AdminPipelineCreateSingle() {
                       placeholder="Texto que será falado pela Maia..."
                       rows={3}
                     />
+                  </div>
+
+                  {/* Playground Mid-Lesson */}
+                  <div className="space-y-4 p-4 bg-accent/10 rounded-lg border">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`playground-${section.id}`}
+                        checked={!!section.playgroundConfig}
+                        onCheckedChange={(checked) => {
+                          const newSections = [...formData.sections];
+                          newSections[index].playgroundConfig = checked ? {
+                            type: 'real-playground',
+                            config: ''
+                          } : undefined;
+                          setFormData({ ...formData, sections: newSections });
+                        }}
+                      />
+                      <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
+                        🎮 Adicionar Playground Mid-Lesson (apenas V1)
+                      </Label>
+                    </div>
+                    
+                    {section.playgroundConfig && (
+                      <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Tipo de Playground</Label>
+                          <Select 
+                            value={section.playgroundConfig.type}
+                            onValueChange={(value: 'real-playground' | 'interactive-simulation') => {
+                              const newSections = [...formData.sections];
+                              newSections[index].playgroundConfig!.type = value;
+                              setFormData({ ...formData, sections: newSections });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="real-playground">Real Playground</SelectItem>
+                              <SelectItem value="interactive-simulation">Simulação Interativa</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm">Configuração (JSON ou Texto)</Label>
+                          <Textarea
+                            value={typeof section.playgroundConfig.config === 'string' 
+                              ? section.playgroundConfig.config 
+                              : JSON.stringify(section.playgroundConfig.config, null, 2)}
+                            onChange={(e) => {
+                              const newSections = [...formData.sections];
+                              const value = e.target.value;
+                              
+                              try {
+                                newSections[index].playgroundConfig!.config = JSON.parse(value);
+                              } catch {
+                                newSections[index].playgroundConfig!.config = value;
+                              }
+                              
+                              setFormData({ ...formData, sections: newSections });
+                            }}
+                            placeholder='{"prompt": "Complete o prompt...", "minLength": 20}'
+                            rows={8}
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            💡 Cole JSON direto ou digite texto simples. O sistema detecta automaticamente.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

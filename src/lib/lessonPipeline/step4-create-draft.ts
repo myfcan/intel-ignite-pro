@@ -15,28 +15,57 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
   if (input.model === 'v1') {
     console.log('   📋 Montando estrutura Modelo V1...');
     
-    // V1: Seções + 1 playground mid-lesson + exercícios finais
-    const sections = input.sections.map((section, idx) => ({
-      id: section.id,
-      title: section.title,
-      timestamp: 0, // Será calculado depois
-      type: 'text' as const,
-      speechBubbleText: section.speechBubbleText || section.visualContent.substring(0, 100),
-      visualContent: section.visualContent,
-    }));
+    // V1: Seções + playground mid-lesson (se configurado) + exercícios finais
+    const sections = input.sections.map((section, idx) => {
+      const baseSection = {
+        id: section.id,
+        title: section.title,
+        timestamp: 0, // Será calculado depois
+        type: 'text' as const,
+        speechBubbleText: section.speechBubbleText || section.visualContent.substring(0, 100),
+        visualContent: section.visualContent,
+      };
 
-    // Adicionar placeholder para playground mid-lesson
-    // (será posicionado corretamente na step 7)
-    const playgroundSectionIndex = Math.floor(sections.length * 0.6); // ~60% da aula
-    sections[playgroundSectionIndex] = {
-      ...sections[playgroundSectionIndex],
-      showPlaygroundCall: true,
-      playgroundConfig: {
-        instruction: 'Complete o desafio prático',
-        type: 'real-playground' as const,
-        triggerAfterSection: playgroundSectionIndex,
-      },
-    } as any;
+      // Se a seção tem playgroundConfig, adicionar
+      if (section.playgroundConfig) {
+        const config = section.playgroundConfig.config;
+        const parsedConfig = typeof config === 'string' 
+          ? (config.trim().startsWith('{') ? JSON.parse(config) : { prompt: config })
+          : config;
+
+        return {
+          ...baseSection,
+          showPlaygroundCall: true,
+          playgroundConfig: {
+            type: section.playgroundConfig.type,
+            triggerAfterSection: idx,
+            ...(section.playgroundConfig.type === 'real-playground' && {
+              realConfig: parsedConfig
+            }),
+            ...(section.playgroundConfig.type === 'interactive-simulation' && {
+              simulationConfig: parsedConfig
+            }),
+          },
+        } as any;
+      }
+
+      return baseSection;
+    });
+
+    // Se nenhuma seção tem playground, adicionar placeholder padrão (comportamento atual)
+    const hasPlayground = sections.some((s: any) => s.showPlaygroundCall);
+    if (!hasPlayground) {
+      const playgroundSectionIndex = Math.floor(sections.length * 0.6);
+      sections[playgroundSectionIndex] = {
+        ...sections[playgroundSectionIndex],
+        showPlaygroundCall: true,
+        playgroundConfig: {
+          instruction: 'Complete o desafio prático',
+          type: 'real-playground' as const,
+          triggerAfterSection: playgroundSectionIndex,
+        },
+      } as any;
+    }
 
     content = {
       contentVersion: 1,
