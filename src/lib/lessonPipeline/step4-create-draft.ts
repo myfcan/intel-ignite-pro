@@ -88,7 +88,7 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
       exercisesConfig: input.exercisesConfig,
     };
 
-  } else {
+  } else if (input.model === 'v2') {
     console.log('   📋 Montando estrutura Modelo V2...');
     
     // V2: Seções com audio_url separado + exercícios finais
@@ -109,6 +109,30 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
       sections,
       exercisesConfig: input.exercisesConfig,
     };
+  } else if (input.model === 'v3') {
+    console.log('   📋 Montando estrutura Modelo V3...');
+    
+    // V3: Slides com imageUrl + áudio único
+    const sections = input.sections.map((section, idx) => ({
+      id: section.id,
+      title: section.title || `Slide ${idx + 1}`,
+      timestamp: 0, // Será calculado depois
+      type: 'text' as const,
+      speechBubbleText: section.speechBubbleText || section.visualContent.substring(0, 100),
+      visualContent: section.visualContent,
+      imageUrl: (section as any).imageUrl, // URL da imagem do slide
+      slideNumber: idx + 1,
+    }));
+
+    content = {
+      contentVersion: 4, // V3 usa contentVersion 4
+      schemaVersion: 3,
+      duration: 0, // Será preenchido depois
+      sections,
+      exercisesConfig: input.exercisesConfig,
+    };
+  } else {
+    throw new Error(`Modelo desconhecido: ${input.model}`);
   }
 
   // Debug: Testar RLS antes do insert

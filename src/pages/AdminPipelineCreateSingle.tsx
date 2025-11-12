@@ -296,15 +296,21 @@ export default function AdminPipelineCreateSingle() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Modelo</Label>
-                <Select value={formData.model} onValueChange={(value: 'v1' | 'v2') => setFormData({ ...formData, model: value })}>
+                <Select value={formData.model} onValueChange={(value: 'v1' | 'v2' | 'v3') => setFormData({ ...formData, model: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="v1">V1 (Áudio único)</SelectItem>
-                    <SelectItem value="v2">V2 (Áudio por seção)</SelectItem>
+                    <SelectItem value="v1">V1 (Áudio por seção + Playgrounds)</SelectItem>
+                    <SelectItem value="v2">V2 (Áudio por seção - Sem playgrounds)</SelectItem>
+                    <SelectItem value="v3">V3 (Áudio único + ~7 Slides + Playground final)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {formData.model === 'v1' && '📚 V1: Áudio por seção, com playgrounds interativos durante e no final'}
+                  {formData.model === 'v2' && '📖 V2: Áudio por seção, focado em consumo linear de conteúdo'}
+                  {formData.model === 'v3' && '🎬 V3: Um único áudio, ~7 slides visuais, playground no final'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Tempo Estimado (min)</Label>
@@ -380,8 +386,8 @@ export default function AdminPipelineCreateSingle() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Seções</span>
-              <Button onClick={addSection} size="sm">
+              <span>Seções {formData.model === 'v3' && '(Recomendado: ~7 slides)'}</span>
+              <Button onClick={addSection} size="sm" disabled={formData.model === 'v3' && formData.sections.length >= 7}>
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Seção
               </Button>
@@ -420,25 +426,26 @@ export default function AdminPipelineCreateSingle() {
                     />
                   </div>
 
-                  {/* Playground Mid-Lesson */}
-                  <div className="space-y-4 p-4 bg-accent/10 rounded-lg border">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`playground-${section.id}`}
-                        checked={!!section.playgroundConfig}
-                        onCheckedChange={(checked) => {
-                          const newSections = [...formData.sections];
-                          newSections[index].playgroundConfig = checked ? {
-                            type: 'real-playground',
-                            config: ''
-                          } : undefined;
-                          setFormData({ ...formData, sections: newSections });
-                        }}
-                      />
-                      <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
-                        🎮 Adicionar Playground Mid-Lesson (apenas V1)
-                      </Label>
-                    </div>
+                  {/* Playground Mid-Lesson (apenas V1) */}
+                  {formData.model === 'v1' && (
+                    <div className="space-y-4 p-4 bg-accent/10 rounded-lg border">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`playground-${section.id}`}
+                          checked={!!section.playgroundConfig}
+                          onCheckedChange={(checked) => {
+                            const newSections = [...formData.sections];
+                            newSections[index].playgroundConfig = checked ? {
+                              type: 'real-playground',
+                              config: ''
+                            } : undefined;
+                            setFormData({ ...formData, sections: newSections });
+                          }}
+                        />
+                        <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
+                          🎮 Adicionar Playground Mid-Lesson (apenas V1)
+                        </Label>
+                      </div>
                     
                     {section.playgroundConfig && (
                       <div className="space-y-4 pl-6 border-l-2 border-primary/20">
@@ -491,6 +498,26 @@ export default function AdminPipelineCreateSingle() {
                       </div>
                     )}
                   </div>
+                  )}
+
+                  {/* Campo de imagem para V3 */}
+                  {formData.model === 'v3' && (
+                    <div className="space-y-2">
+                      <Label>URL da Imagem do Slide (Opcional)</Label>
+                      <Input
+                        value={(section as any).imageUrl || ''}
+                        onChange={(e) => {
+                          const newSections = [...formData.sections];
+                          (newSections[index] as any).imageUrl = e.target.value;
+                          setFormData({ ...formData, sections: newSections });
+                        }}
+                        placeholder="https://exemplo.com/imagem.jpg"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        💡 V3 suporta ~7 slides visuais. Deixe em branco para usar avatar da MAIA.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

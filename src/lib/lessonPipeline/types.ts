@@ -1,6 +1,6 @@
 // Types for the lesson creation pipeline
 
-export type LessonModel = 'v1' | 'v2';
+export type LessonModel = 'v1' | 'v2' | 'v3';
 
 export type PipelineStatus = 'idle' | 'intake' | 'exercises' | 'clean-text' | 'draft' | 'generating-audio' | 'calculating-timestamps' | 'activating' | 'completed' | 'failed';
 
@@ -13,6 +13,11 @@ export interface LessonSection {
     type: 'real-playground' | 'interactive-simulation';
     config: any; // Aceita JSON ou string
   };
+}
+
+export interface V3SlideSection extends LessonSection {
+  imageUrl?: string; // URL da imagem do slide
+  slideNumber?: number; // Número do slide (1-7)
 }
 
 export interface ExerciseInput {

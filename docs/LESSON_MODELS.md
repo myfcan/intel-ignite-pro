@@ -194,14 +194,111 @@ export const minhaAulaV2: GuidedLessonData = {
 
 ---
 
-## 🔜 Modelo V3
+## ✅ Modelo V3 - Aula com Áudio Único e Slides Visuais
 
-**Status:** 🚧 A ser implementado
+**Status:** ✅ Implementado
 
-**Descrição:** _A ser definido quando criarmos a primeira aula V3_
+**Exemplo de Referência:** _A ser definido_
 
-### Características Planejadas:
-- _A ser especificado_
+### Características:
+
+#### 1. **Estrutura de Conteúdo**
+- **Áudio único** para toda a aula (um arquivo de áudio para todos os slides)
+- **~7 slides visuais** com imagens (opcional)
+- Timestamps calculados dividindo o áudio pelos slides
+- Balão de fala da MAIA (`speechBubbleText`)
+- Conteúdo visual rico com markdown (`visualContent`)
+- Cada seção representa um slide
+
+#### 2. **Diferenças dos Outros Modelos**
+- **ÁUDIO ÚNICO**: Diferente de V1 e V2, V3 tem 1 arquivo de áudio para toda a aula
+- **SEM Playgrounds Mid-Lesson**: Foco em apresentação visual linear
+- **COM Playground Final**: Atividade prática após consumir os slides
+- **Slides Visuais**: Cada seção pode ter uma imagem associada
+- **Estrutura Simples**: Ideal para conteúdo visual/apresentações
+
+#### 3. **Exercícios Finais** (`exercisesConfig`)
+Mesmos tipos disponíveis de V1 e V2:
+- `data-collection`
+- `fill-in-blanks`
+- `true-false`
+- `scenario-selection`
+- E outros tipos suportados
+
+#### 4. **Playground Final** (`finalPlaygroundConfig`)
+- Construtor de prompts guiado (`guided-prompt-builder`)
+- Atividade prática após os slides
+
+#### 5. **Tecnologias**
+- Tipo de aula: `lesson_type: 'guided'`
+- Identificador de versão: `contentVersion: 4`
+- Schema: `schemaVersion: 3`
+- Arquivo de dados: TypeScript (`*.ts`)
+- Interface: `GuidedLessonData` (em `src/types/guidedLesson.ts`)
+- Componente: `GuidedLesson.tsx` (com suporte a V3)
+
+### Estrutura de Arquivo Típica:
+
+```typescript
+export const minhaAulaV3: GuidedLessonData = {
+  id: "unique-id",
+  title: "Título da Aula",
+  trackId: "trail-id",
+  trackName: "Nome da Trilha",
+  duration: 300, // segundos totais (áudio único)
+  contentVersion: 4, // IMPORTANTE: identifica V3
+  schemaVersion: 3,
+  
+  sections: [
+    {
+      id: "slide-1",
+      title: "Slide 1",
+      timestamp: 0,
+      type: 'text',
+      slideNumber: 1,
+      imageUrl: "https://exemplo.com/slide1.jpg", // Opcional
+      speechBubbleText: "Texto curto para balão",
+      visualContent: "## Conteúdo visual do slide 1"
+    },
+    // ... mais 6 slides (~7 total recomendado)
+  ],
+  
+  exercisesConfig: [
+    {
+      id: "ex-1",
+      type: "scenario-selection",
+      title: "Título",
+      instruction: "Instrução",
+      data: { /* config específica */ }
+    },
+  ],
+  
+  finalPlaygroundConfig: {
+    id: "final-playground",
+    type: "guided-prompt-builder",
+    title: "Título",
+    maiaIntro: "Introdução da MAIA",
+    steps: [ /* etapas */ ]
+  }
+};
+```
+
+### Fluxo de Experiência V3:
+1. **Áudio inicia** → Toca continuamente
+2. **Slide 1** → Aparece no timestamp 0s
+3. **Slide 2** → Aparece quando timestamp atinge T2
+4. **Slide 3** → Aparece quando timestamp atinge T3
+5. ... (até ~7 slides)
+6. **Áudio termina** → Transição para exercícios
+7. **Exercícios Finais** → Atividade prática
+8. **Playground Final** → Aplicação do conhecimento
+9. **Conclusão**
+
+**Vantagens do V3:**
+- ✅ Narrativa contínua (áudio não é interrompido)
+- ✅ Experiência cinematográfica/apresentação
+- ✅ Ideal para storytelling
+- ✅ Simples de produzir (1 áudio + imagens)
 
 ---
 
@@ -219,7 +316,20 @@ export const minhaAulaV2: GuidedLessonData = {
 - Cada aula tem `lesson_type` no banco de dados
 - V1 usa `lesson_type: 'guided'` com `contentVersion: 1`
 - V2 usa `lesson_type: 'guided'` com `contentVersion: 3` (padronizado)
-- V3 terá sua própria estrutura quando for definido
+- V3 usa `lesson_type: 'guided'` com `contentVersion: 4` (áudio único + slides)
+
+## 📊 Comparação entre Modelos
+
+| Característica | V1 | V2 | V3 |
+|----------------|----|----|---- |
+| **Áudio** | Por seção | Por seção | **Único** |
+| **Playgrounds Mid** | ✅ Sim | ❌ Não | ❌ Não |
+| **Playground Final** | ✅ Sim | ❌ Não | ✅ Sim |
+| **Slides Visuais** | ❌ Não | ❌ Não | ✅ ~7 slides |
+| **ContentVersion** | 1 | 3 | 4 |
+| **SchemaVersion** | 1 | 2 | 3 |
+| **Experiência** | Interativa | Linear | Cinematográfica |
+| **Melhor para** | Aprendizado ativo | Consumo rápido | Apresentações |
 
 ### Estrutura Padrão V2 (CRÍTICO):
 

@@ -11,8 +11,12 @@ export async function step7CalculateTimestamps(input: Step6Output): Promise<Step
 
   if (input.model === 'v1') {
     return calculateTimestampsV1(input);
-  } else {
+  } else if (input.model === 'v2') {
     return calculateTimestampsV2(input);
+  } else if (input.model === 'v3') {
+    return calculateTimestampsV3(input);
+  } else {
+    throw new Error(`Modelo desconhecido: ${input.model}`);
   }
 }
 
@@ -131,6 +135,60 @@ function calculateTimestampsV2(input: Step6Output): Step7Output {
   };
 
   console.log(`✅ [STEP 7] V2 timestamps calculados - Duração total: ${totalDuration.toFixed(1)}s`);
+
+  return {
+    ...input,
+    structuredContent,
+    totalDuration,
+  };
+}
+
+function calculateTimestampsV3(input: Step6Output): Step7Output {
+  console.log('   📊 Calculando timestamps V3 (slides com áudio único)...');
+
+  if (!input.wordTimestamps || input.wordTimestamps.length === 0) {
+    throw new Error('wordTimestamps não disponível para modelo V3');
+  }
+
+  // V3: Dividir o áudio total pelos N slides (~7)
+  const totalWords = input.wordTimestamps.length;
+  const slidesCount = input.sections.length;
+  const wordsPerSlide = Math.floor(totalWords / slidesCount);
+
+  const sections = input.sections.map((section, idx) => {
+    // Calcular timestamp baseado na posição do slide
+    const wordIndex = idx * wordsPerSlide;
+    const timestamp = idx < slidesCount - 1 
+      ? input.wordTimestamps![wordIndex]?.start || 0
+      : input.wordTimestamps![input.wordTimestamps!.length - 1]?.start || 0;
+
+    console.log(`   Slide ${idx + 1}: timestamp ${timestamp.toFixed(2)}s`);
+
+    return {
+      id: section.id,
+      title: section.title || `Slide ${idx + 1}`,
+      timestamp,
+      type: 'text' as const,
+      speechBubbleText: section.speechBubbleText || section.visualContent.substring(0, 100),
+      visualContent: section.visualContent,
+      imageUrl: (section as any).imageUrl, // Imagem do slide (se existir)
+      slideNumber: idx + 1,
+    };
+  });
+
+  // Calcular duração total
+  const lastWordTimestamp = input.wordTimestamps[input.wordTimestamps.length - 1];
+  const totalDuration = lastWordTimestamp ? lastWordTimestamp.end : 0;
+
+  const structuredContent = {
+    contentVersion: 4, // V3 usa contentVersion 4
+    schemaVersion: 3,
+    duration: totalDuration,
+    sections,
+    exercisesConfig: input.exercisesConfig,
+  };
+
+  console.log(`✅ [STEP 7] V3 timestamps calculados - ${slidesCount} slides em ${totalDuration.toFixed(1)}s`);
 
   return {
     ...input,
