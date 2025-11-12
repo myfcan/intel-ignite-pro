@@ -184,61 +184,22 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
   console.log(`   Token type: ${currentSession.data.session?.token_type}`);
   console.log(`   Expires at: ${currentSession.data.session?.expires_at ? new Date(currentSession.data.session.expires_at * 1000).toLocaleString() : 'N/A'}`);
 
-  // FASE 4: Inserir no banco com retry automático
-  let insertAttempts = 0;
-  let data, error;
-
-  while (insertAttempts < 3) {
-    insertAttempts++;
-    console.log(`🔄 [STEP 4] Tentativa de INSERT ${insertAttempts}/3...`);
-
-    const insertResult = await supabase
-      .from('lessons')
-      .insert({
-        title: input.title,
-        lesson_type: 'guided',
-        trail_id: input.trackId,
-        order_index: input.orderIndex,
-        difficulty_level: 'beginner',
-        estimated_time: input.estimatedTimeMinutes,
-        is_active: false,
-        audio_url: null,
-        content,
-        word_timestamps: null,
-      })
-      .select('id')
-      .single();
-
-    data = insertResult.data;
-    error = insertResult.error;
-
-    if (!error) {
-      console.log(`✅ [STEP 4] INSERT bem-sucedido na tentativa ${insertAttempts}`);
-      break;
-    }
-
-    console.error(`❌ [STEP 4] INSERT falhou na tentativa ${insertAttempts}:`, error);
-
-    if (error.message.includes('row-level security')) {
-      console.log(`🔄 [STEP 4] Erro RLS detectado, tentando refresh do token...`);
-      const { error: retryRefreshError } = await supabase.auth.refreshSession();
-      if (retryRefreshError) {
-        console.error('❌ [STEP 4] Falha ao refresh para retry:', retryRefreshError);
-        break;
-      }
-      console.log('✅ [STEP 4] Token refreshed, tentando novamente...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } else {
-      break;
-    }
-  }
+  // FASE 4: Usar função SECURITY DEFINER para criar draft (bypassa RLS)
+  console.log('💾 [STEP 4] Chamando create_lesson_draft() SECURITY DEFINER...');
+  
+  const { data: lessonId, error } = await supabase
+    .rpc('create_lesson_draft', {
+      p_title: input.title,
+      p_trail_id: input.trackId,
+      p_order_index: input.orderIndex,
+      p_estimated_time: input.estimatedTimeMinutes,
+      p_content: content,
+    });
 
   if (error) {
-    console.error('❌ [STEP 4] Erro final ao criar draft após todas as tentativas:', error);
+    console.error('❌ [STEP 4] Erro ao criar draft:', error);
     throw new Error(`Falha ao criar draft no banco: ${error.message}`);
   }
-
-  const lessonId = data.id;
   console.log(`✅ [STEP 4] Draft criado com sucesso: ${lessonId}`);
   console.log(`   Status: draft (aguardando áudio)`);
 
