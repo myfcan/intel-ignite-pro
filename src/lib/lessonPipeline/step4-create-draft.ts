@@ -9,15 +9,18 @@ import { supabase } from '@/integrations/supabase/client';
 export async function step4CreateDraft(input: Step3Output): Promise<Step4Output> {
   console.log('💾 [STEP 4] Criando draft no banco de dados...');
 
-  // Verificar autenticação antes de inserir (força validação server-side)
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    console.error('❌ [STEP 4] Token JWT inválido ou expirado!');
-    throw new Error('Autenticação inválida. Faça login novamente.');
+  // FASE 1: Forçar refresh do token antes de qualquer operação
+  console.log('🔄 [STEP 4] Forçando refresh do token JWT...');
+  const { data: sessionData, error: refreshError } = await supabase.auth.refreshSession();
+
+  if (refreshError || !sessionData.session) {
+    console.error('❌ [STEP 4] Falha ao refresh do token:', refreshError);
+    throw new Error('Sessão expirada. Faça login novamente.');
   }
 
-  console.log(`🔐 [STEP 4] Token validado para: ${user.email}`);
+  console.log(`🔐 [STEP 4] Token refreshed para: ${sessionData.user?.email}`);
+  console.log(`   Token expira em: ${new Date(sessionData.session.expires_at! * 1000).toLocaleString()}`);
+  console.log(`   Access token (primeiros 20 chars): ${sessionData.session.access_token.substring(0, 20)}...`);
 
   // Criar estrutura content baseada no modelo
   let content: any;
@@ -122,26 +125,66 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
 
   console.log('✅ [STEP 4] RLS test passou - token JWT válido');
 
-  // Inserir no banco
-  const { data, error } = await supabase
-    .from('lessons')
-    .insert({
-      title: input.title,
-      lesson_type: 'guided',
-      trail_id: input.trackId,
-      order_index: input.orderIndex,
-      difficulty_level: 'beginner',
-      estimated_time: input.estimatedTimeMinutes,
-      is_active: false, // Inativo até completar pipeline
-      audio_url: null, // V1: será preenchido depois, V2: não usado
-      content,
-      word_timestamps: null, // V1: será preenchido depois, V2: não usado
-    })
-    .select('id')
-    .single();
+  // FASE 2: Debug do token atual antes do INSERT
+  const currentSession = await supabase.auth.getSession();
+  console.log('🐛 [STEP 4] Token no momento do INSERT:');
+  console.log(`   Session exists: ${!!currentSession.data.session}`);
+  console.log(`   User ID: ${currentSession.data.session?.user?.id}`);
+  console.log(`   User email: ${currentSession.data.session?.user?.email}`);
+  console.log(`   Token type: ${currentSession.data.session?.token_type}`);
+  console.log(`   Expires at: ${currentSession.data.session?.expires_at ? new Date(currentSession.data.session.expires_at * 1000).toLocaleString() : 'N/A'}`);
+
+  // FASE 4: Inserir no banco com retry automático
+  let insertAttempts = 0;
+  let data, error;
+
+  while (insertAttempts < 3) {
+    insertAttempts++;
+    console.log(`🔄 [STEP 4] Tentativa de INSERT ${insertAttempts}/3...`);
+
+    const insertResult = await supabase
+      .from('lessons')
+      .insert({
+        title: input.title,
+        lesson_type: 'guided',
+        trail_id: input.trackId,
+        order_index: input.orderIndex,
+        difficulty_level: 'beginner',
+        estimated_time: input.estimatedTimeMinutes,
+        is_active: false,
+        audio_url: null,
+        content,
+        word_timestamps: null,
+      })
+      .select('id')
+      .single();
+
+    data = insertResult.data;
+    error = insertResult.error;
+
+    if (!error) {
+      console.log(`✅ [STEP 4] INSERT bem-sucedido na tentativa ${insertAttempts}`);
+      break;
+    }
+
+    console.error(`❌ [STEP 4] INSERT falhou na tentativa ${insertAttempts}:`, error);
+
+    if (error.message.includes('row-level security')) {
+      console.log(`🔄 [STEP 4] Erro RLS detectado, tentando refresh do token...`);
+      const { error: retryRefreshError } = await supabase.auth.refreshSession();
+      if (retryRefreshError) {
+        console.error('❌ [STEP 4] Falha ao refresh para retry:', retryRefreshError);
+        break;
+      }
+      console.log('✅ [STEP 4] Token refreshed, tentando novamente...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } else {
+      break;
+    }
+  }
 
   if (error) {
-    console.error('❌ [STEP 4] Erro ao criar draft:', error);
+    console.error('❌ [STEP 4] Erro final ao criar draft após todas as tentativas:', error);
     throw new Error(`Falha ao criar draft no banco: ${error.message}`);
   }
 

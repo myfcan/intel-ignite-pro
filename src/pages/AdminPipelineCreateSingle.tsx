@@ -224,25 +224,40 @@ export default function AdminPipelineCreateSingle() {
           description: "Redirecionando para o monitor..."
         });
     } catch (startError) {
-      console.error('Erro ao iniciar pipeline:', startError);
+      console.error('❌ Pipeline falhou:', startError);
       
-      // Detectar erro de RLS e dar mensagem específica
+      // FASE 5: Debug detalhado do estado de autenticação no momento do erro
+      const { data: { session: errorSession } } = await supabase.auth.getSession();
+      console.log('🐛 Estado da autenticação no momento do erro:');
+      console.log('   Session exists:', !!errorSession);
+      console.log('   User:', errorSession?.user?.email);
+      console.log('   Expires at:', errorSession?.expires_at ? new Date(errorSession.expires_at * 1000).toLocaleString() : 'N/A');
+      
+      // Verificar se é erro RLS
       const errorMessage = startError instanceof Error ? startError.message : 'Erro desconhecido';
-      const isAuthError = errorMessage.includes('row-level security') || 
-                          errorMessage.includes('não autenticado') ||
-                          errorMessage.includes('autenticação');
+      const isRLSError = errorMessage.includes('row-level security');
       
       toast({
-        title: isAuthError ? "Erro de Autenticação" : "Pipeline criado, mas não iniciado",
-        description: isAuthError 
-          ? "Sua sessão expirou. Faça login novamente em /auth"
+        title: isRLSError ? "❌ Erro de Autenticação (RLS)" : "Pipeline criado, mas não iniciado",
+        description: isRLSError 
+          ? `ERRO PERSISTENTE: ${errorMessage}\n\nVerifique o console para diagnóstico detalhado.`
           : "Você pode iniciá-lo manualmente no monitor",
-        variant: "destructive"
+        variant: "destructive",
       });
       
-      if (isAuthError) {
-        // Redirecionar para login após 3 segundos
-        setTimeout(() => navigate('/auth'), 3000);
+      if (isRLSError) {
+        console.error('🚨 ERRO RLS PERSISTENTE - Logs enviados para análise');
+        console.error('   Session:', errorSession);
+        console.error('   Error:', errorMessage);
+        
+        // Redirecionar para login após 5 segundos
+        setTimeout(() => {
+          toast({
+            title: "Redirecionando para login...",
+            description: "Sua sessão pode ter expirado",
+          });
+          navigate('/auth');
+        }, 5000);
       }
     }
 
