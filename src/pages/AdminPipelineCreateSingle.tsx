@@ -100,7 +100,7 @@ export default function AdminPipelineCreateSingle() {
       ...formData,
       exercises: [
         ...formData.exercises,
-        { type: 'multiple-choice', question: '', data: {} }
+        { type: 'prompt', prompt: '', question: '' }
       ]
     });
   };
@@ -488,62 +488,55 @@ export default function AdminPipelineCreateSingle() {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <Label>Exercício Completo (JSON ou Texto)</Label>
+                    <Label>Descrição do Exercício (Texto Livre)</Label>
                     <Textarea
-                      value={typeof exercise.data === 'string' 
-                        ? exercise.data 
-                        : JSON.stringify(exercise, null, 2)}
+                      value={exercise.prompt || exercise.question || ''}
                       onChange={(e) => {
                         const newExercises = [...formData.exercises];
-                        const value = e.target.value;
-                        
-                        try {
-                          // Tenta fazer parse de JSON
-                          const parsed = JSON.parse(value);
-                          newExercises[index] = {
-                            type: parsed.type || 'multiple-choice',
-                            question: parsed.question || parsed.instruction || '',
-                            instruction: parsed.instruction || parsed.question || '',
-                            data: parsed.data || parsed
-                          };
-                        } catch {
-                          // Se não for JSON válido, mantém como objeto simples
-                          newExercises[index] = {
-                            type: 'multiple-choice',
-                            question: value,
-                            data: { rawText: value }
-                          };
-                        }
-                        
+                        // Guardar apenas como prompt de texto
+                        newExercises[index] = {
+                          type: 'prompt', // Indica que precisa ser processado pela AI
+                          prompt: e.target.value,
+                          question: e.target.value, // Compatibilidade
+                        };
                         setFormData({ ...formData, exercises: newExercises });
                       }}
-                      placeholder='Cole o JSON completo do exercício, ex:
-{
-  "type": "drag-drop",
-  "instruction": "Classifique os dados...",
-  "data": {
-    "items": [...],
-    "categories": [...]
-  }
-}'
+                      placeholder='Descreva o exercício em texto livre. Exemplo:
+
+Crie um exercício de múltipla escolha sobre os benefícios da IA.
+Pergunta: "Qual é o principal benefício da IA para negócios?"
+Opções:
+- Redução de custos
+- Automação de tarefas repetitivas (CORRETO)
+- Substituição completa de funcionários
+- Aumento de burocracia
+
+---
+
+Ou especifique o tipo:
+
+Tipo: drag-drop
+Instrução: Classifique as tarefas em "Humano" ou "IA"
+Items: Criar estratégia, Analisar dados, Negociar contratos, Gerar relatórios
+Categorias: Humano, IA'
                       rows={12}
                       className="font-mono text-sm"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      💡 <strong>Cole JSON direto</strong> com type, instruction e data. O pipeline detecta automaticamente.
-                    </p>
                     <details className="text-xs text-muted-foreground">
                       <summary className="cursor-pointer font-semibold">📚 Tipos suportados (8 modelos)</summary>
                       <ul className="mt-2 space-y-1 pl-4">
-                        <li>• <code>multiple-choice</code> - Múltipla escolha</li>
-                        <li>• <code>true-false</code> - Verdadeiro/Falso</li>
-                        <li>• <code>fill-blanks</code> - Preencher lacunas</li>
+                        <li>• <code>multiple-choice</code> - Múltipla escolha com opções</li>
+                        <li>• <code>true-false</code> - Verdadeiro ou Falso</li>
+                        <li>• <code>fill-blanks</code> - Preencher lacunas em texto</li>
                         <li>• <code>complete-sentence</code> - Completar frase</li>
-                        <li>• <code>drag-drop</code> - Arrastar e soltar</li>
-                        <li>• <code>scenario-selection</code> - Seleção de cenário</li>
-                        <li>• <code>platform-match</code> - Combinar plataformas</li>
-                        <li>• <code>data-collection</code> - Coleta de dados</li>
+                        <li>• <code>drag-drop</code> - Arrastar itens para categorias</li>
+                        <li>• <code>scenario-selection</code> - Escolher melhor cenário</li>
+                        <li>• <code>platform-match</code> - Combinar plataformas com features</li>
+                        <li>• <code>data-collection</code> - Categorizar exemplos de dados</li>
                       </ul>
+                      <p className="mt-2 text-muted-foreground">
+                        💡 <strong>O pipeline vai processar seu texto automaticamente!</strong> Você pode especificar o tipo explicitamente ou deixar a AI escolher o melhor formato.
+                      </p>
                     </details>
                   </div>
                 </CardContent>

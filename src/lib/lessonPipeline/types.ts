@@ -16,10 +16,11 @@ export interface LessonSection {
 }
 
 export interface ExerciseInput {
-  type: 'multiple-choice' | 'true-false' | 'fill-blanks' | 'complete-sentence' | 'data-collection' | 'scenario-selection' | 'platform-match' | 'drag-drop';
-  question?: string;
-  instruction?: string;
-  data: any;
+  type: string; // Pode ser 'prompt' ou um dos 8 tipos específicos
+  prompt?: string; // Campo de texto livre
+  question?: string; // Compatibilidade
+  instruction?: string; // Compatibilidade
+  data?: any; // Estrutura específica do tipo (opcional se type='prompt')
 }
 
 export interface PipelineInput {
