@@ -114,14 +114,14 @@ export default function AdminPipelineCreateSingle() {
 
   const startPipeline = async (executionId: string, inputData: PipelineInput) => {
     try {
-      // Verificar se usuário está autenticado
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Verificar se usuário está autenticado (força validação server-side)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (sessionError || !session) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
+      if (userError || !user) {
+        throw new Error('Token JWT inválido ou expirado. Faça login novamente.');
       }
 
-      console.log('🔐 Usuário autenticado:', session.user.email);
+      console.log('🔐 Token validado para:', user.email);
 
       // 1. Marcar como "running"
       await supabase

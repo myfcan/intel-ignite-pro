@@ -9,15 +9,15 @@ import { supabase } from '@/integrations/supabase/client';
 export async function step4CreateDraft(input: Step3Output): Promise<Step4Output> {
   console.log('💾 [STEP 4] Criando draft no banco de dados...');
 
-  // Verificar autenticação antes de inserir
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  // Verificar autenticação antes de inserir (força validação server-side)
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  if (sessionError || !session) {
-    console.error('❌ [STEP 4] Usuário não autenticado!');
-    throw new Error('Pipeline precisa de usuário autenticado para criar lição');
+  if (userError || !user) {
+    console.error('❌ [STEP 4] Token JWT inválido ou expirado!');
+    throw new Error('Autenticação inválida. Faça login novamente.');
   }
 
-  console.log(`🔐 [STEP 4] Autenticado como: ${session.user.email}`);
+  console.log(`🔐 [STEP 4] Token validado para: ${user.email}`);
 
   // Criar estrutura content baseada no modelo
   let content: any;
@@ -107,6 +107,20 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
       exercisesConfig: input.exercisesConfig,
     };
   }
+
+  // Debug: Testar RLS antes do insert
+  console.log('🐛 [STEP 4] Testando RLS com token atual...');
+  const { error: rcsTestError } = await supabase
+    .from('lessons')
+    .select('id')
+    .limit(1);
+
+  if (rcsTestError) {
+    console.error('❌ [STEP 4] Erro ao testar RLS:', rcsTestError);
+    throw new Error(`RLS test falhou: ${rcsTestError.message}`);
+  }
+
+  console.log('✅ [STEP 4] RLS test passou - token JWT válido');
 
   // Inserir no banco
   const { data, error } = await supabase
