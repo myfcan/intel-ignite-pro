@@ -25,6 +25,7 @@ export async function runLessonPipeline(
   input: PipelineInput,
   onProgress?: (state: PipelineState) => void
 ): Promise<PipelineResult> {
+  const pipelineStartTime = Date.now();
   const logs: string[] = [];
   const totalSteps = 8;
 
@@ -44,6 +45,10 @@ export async function runLessonPipeline(
   try {
     console.log('\n🎬 ======================================');
     console.log('🎬 INICIANDO PIPELINE DE CRIAÇÃO DE LIÇÃO');
+    console.log('🎬 ======================================');
+    console.log(`🎬 Timestamp: ${new Date().toISOString()}`);
+    console.log(`🎬 Modelo: ${input.model.toUpperCase()}`);
+    console.log(`🎬 Título: "${input.title}"`);
     console.log('🎬 ======================================\n');
 
     // STEP 1: Intake & Validação
@@ -66,13 +71,20 @@ export async function runLessonPipeline(
     const step4Result = await step4CreateDraft(step3Result);
     updateProgress('draft', 4, `✅ Step 4 completo: Draft criado (ID: ${step4Result.lessonId})`);
 
+    const pipelineElapsedTime = Date.now() - pipelineStartTime;
+    
     console.log('\n📋 ======================================');
     console.log('📋 DRAFT CRIADO - AGUARDANDO GERAÇÃO DE ÁUDIO');
+    console.log('📋 ======================================');
+    console.log(`📊 Tempo total do pipeline (Steps 1-4): ${pipelineElapsedTime}ms (${(pipelineElapsedTime / 1000).toFixed(2)}s)`);
+    console.log(`📊 Lesson ID: ${step4Result.lessonId}`);
+    console.log(`📊 Modelo: ${step4Result.model.toUpperCase()}`);
+    console.log(`📊 Status: draft (aguardando áudio)`);
+    console.log(`📊 Exercícios: ${step4Result.exercisesConfig.length}`);
+    console.log(`📊 Texto limpo: ${step4Result.audioText.length} caracteres`);
+    console.log('📋 ======================================');
+    console.log('💡 Próximo passo: Ir ao Admin e clicar em "Gerar Áudio"');
     console.log('📋 ======================================\n');
-    console.log(`Lesson ID: ${step4Result.lessonId}`);
-    console.log(`Modelo: ${step4Result.model.toUpperCase()}`);
-    console.log(`Status: draft (aguardando áudio)`);
-    console.log('\n💡 Próximo passo: Ir ao Admin e clicar em "Gerar Áudio"\n');
 
     // Retornar resultado parcial (draft criado, aguardando áudio)
     return {
@@ -83,13 +95,17 @@ export async function runLessonPipeline(
     };
 
   } catch (error: any) {
+    const pipelineElapsedTime = Date.now() - pipelineStartTime;
     const errorLog = `❌ Pipeline falhou: ${error.message}`;
     updateProgress('failed', 0, errorLog);
     
     console.error('\n💥 ======================================');
     console.error('💥 PIPELINE FALHOU');
+    console.error('💥 ======================================');
+    console.error(`💥 Tempo até falha: ${pipelineElapsedTime}ms`);
+    console.error(`💥 Erro: ${error.message}`);
+    console.error(`💥 Stack trace:`, error.stack);
     console.error('💥 ======================================\n');
-    console.error(error);
 
     return {
       success: false,

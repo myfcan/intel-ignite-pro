@@ -7,7 +7,10 @@ import { PipelineInput, Step1Output } from './types';
  * - Conta número de seções e exercícios
  */
 export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
+  const startTime = Date.now();
   console.log('📥 [STEP 1] Iniciando intake e validação...');
+  console.log(`🐛 [STEP 1] Input recebido: modelo=${input.model}, título="${input.title}"`);
+  console.log(`🐛 [STEP 1] Dados do input: trackId=${input.trackId}, orderIndex=${input.orderIndex}`);
   
   // Validar modelo
   if (!['v1', 'v2', 'v3'].includes(input.model)) {
@@ -88,7 +91,9 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     }
   }
 
-  console.log('✅ [STEP 1] Validação completa - dados prontos para próxima etapa');
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 1] Validação completa em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 1] Resumo: ${input.model === 'v3' ? input.v3Data!.slides.length + ' slides' : input.sections!.length + ' seções'}, ${input.exercises.length} exercícios, tempo estimado: ${estimatedTimeMinutes}min`);
 
   return {
     model: input.model,

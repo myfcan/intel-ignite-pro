@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
  * Processa um prompt de texto e gera estrutura de exercício via AI
  */
 async function processExercisePrompt(prompt: string, index: number): Promise<ExerciseInput> {
+  const startTime = Date.now();
   console.log(`   📝 Processando prompt do exercício ${index + 1} via AI...`);
+  console.log(`   🐛 Prompt: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
   
   // Chamar edge function para processar o prompt
   const { data, error } = await supabase.functions.invoke('claude-interact', {
@@ -65,21 +67,26 @@ IMPORTANTE:
   });
 
   if (error) {
+    console.error(`   ❌ Erro na edge function para exercício ${index + 1}:`, error);
     throw new Error(`Erro ao processar exercício ${index + 1}: ${error.message}`);
   }
 
   // Extrair JSON da resposta (a AI pode retornar texto + JSON)
   let responseText = data?.response || data?.message || JSON.stringify(data);
+  console.log(`   🐛 Resposta AI (primeiros 150 chars): ${responseText.substring(0, 150)}...`);
   
   // Tentar extrair JSON se vier com texto extra
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     responseText = jsonMatch[0];
+    console.log(`   🐛 JSON extraído com sucesso`);
   }
 
   try {
     const parsed = JSON.parse(responseText);
-    console.log(`   ✅ Exercício ${index + 1} processado: ${parsed.type}`);
+    const elapsedTime = Date.now() - startTime;
+    console.log(`   ✅ Exercício ${index + 1} processado: ${parsed.type} (${elapsedTime}ms)`);
+    console.log(`   📊 Exercício ${index + 1}: instruction="${parsed.instruction?.substring(0, 50)}..."`);
     return parsed;
   } catch (parseError) {
     console.error('   ❌ Resposta da AI não é JSON válido:', responseText);
@@ -94,7 +101,9 @@ IMPORTANTE:
  * - Garante IDs únicos
  */
 export async function step2GenerateExercises(input: Step1Output): Promise<Step2Output> {
+  const startTime = Date.now();
   console.log('🎯 [STEP 2] Gerando exercícios estruturados...');
+  console.log(`📊 [STEP 2] Total de exercícios a processar: ${input.exercises.length}`);
 
   const exercisesConfig: ExerciseConfigTyped[] = [];
 
@@ -185,9 +194,12 @@ export async function step2GenerateExercises(input: Step1Output): Promise<Step2O
 
     exercisesConfig.push(baseExercise as any);
     console.log(`   ✅ Exercício ${i + 1} validado: ${exercise.type}`);
+    console.log(`   📊 Exercício ${i + 1}: id="${baseExercise.id}", título="${baseExercise.title}"`);
   }
 
-  console.log(`✅ [STEP 2] ${exercisesConfig.length} exercícios gerados e validados`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 2] ${exercisesConfig.length} exercícios gerados e validados em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 2] Tipos de exercícios: ${exercisesConfig.map(e => e.type).join(', ')}`);
 
   return {
     ...input,

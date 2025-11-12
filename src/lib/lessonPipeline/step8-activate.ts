@@ -7,7 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
  * - Marca como is_active: true
  */
 export async function step8Activate(input: Step7Output): Promise<PipelineResult> {
-  console.log('[STEP 8] Ativando lição...');
+  const startTime = Date.now();
+  console.log('🚀 [STEP 8] Ativando lição...');
+  console.log(`🐛 [STEP 8] lessonId: ${input.lessonId}, modelo: ${input.model}`);
+  console.log(`🐛 [STEP 8] Duração total: ${input.totalDuration.toFixed(1)}s`);
 
   // FASE 5: Separar exercises do content
   const { exercises, ...contentWithoutExercises } = input.structuredContent;
@@ -22,25 +25,34 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
 
   // Para V1, adicionar audio_url e word_timestamps na raiz
   if (input.model === 'v1') {
+    console.log('🐛 [STEP 8] Modelo V1: adicionando audio_url e word_timestamps');
     updateData.audio_url = input.audioUrl;
     updateData.word_timestamps = input.wordTimestamps;
   }
 
+  console.log('🔵 [STEP 8] Atualizando registro no banco...');
+  console.log(`📊 [STEP 8] Dados a atualizar: content (${JSON.stringify(contentWithoutExercises).length} chars), ${exercises.length} exercises`);
+  
   const { error } = await supabase
     .from('lessons')
     .update(updateData)
     .eq('id', input.lessonId);
 
   if (error) {
-    console.error('[STEP 8] Erro ao ativar lição:', error);
+    console.error('❌ [STEP 8] Erro ao ativar lição:', error);
     throw new Error(`Falha ao ativar lição: ${error.message}`);
   }
 
-  console.log(`[STEP 8] Lição ativada com sucesso!`);
-  console.log(`   ID: ${input.lessonId}`);
-  console.log(`   Duração: ${input.totalDuration.toFixed(1)}s`);
-  console.log(`   Status: active`);
-  console.log(`   Exercises: ${updateData.exercises.length} (v${updateData.exercises_version})`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 8] Lição ativada com sucesso em ${elapsedTime}ms!`);
+  console.log(`📊 [STEP 8] Resumo da ativação:`);
+  console.log(`   - ID: ${input.lessonId}`);
+  console.log(`   - Modelo: ${input.model.toUpperCase()}`);
+  console.log(`   - Duração: ${input.totalDuration.toFixed(1)}s (${Math.floor(input.totalDuration / 60)}min ${Math.floor(input.totalDuration % 60)}s)`);
+  console.log(`   - Tempo estimado: ${updateData.estimated_time}min`);
+  console.log(`   - Status: active (publicada)`);
+  console.log(`   - Exercises: ${updateData.exercises.length} (versão ${updateData.exercises_version})`);
+  console.log(`   - Content version: ${contentWithoutExercises.contentVersion}`);
 
   return {
     success: true,

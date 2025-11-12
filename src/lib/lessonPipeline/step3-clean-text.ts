@@ -8,7 +8,9 @@ import { Step2Output, Step3Output } from './types';
  * - Gera audioText único (concatenar todas as seções)
  */
 export async function step3CleanText(input: Step2Output): Promise<Step3Output> {
+  const startTime = Date.now();
   console.log('🧹 [STEP 3] Limpando texto para geração de áudio...');
+  console.log(`🐛 [STEP 3] Modelo: ${input.model}`);
 
   // Para V3, o audioText já vem pronto no v3Data
   if (input.model === 'v3' && input.v3Data) {
@@ -81,7 +83,10 @@ export async function step3CleanText(input: Step2Output): Promise<Step3Output> {
   // Concatenar todas as seções
   const audioText = sectionTexts.join('\n\n');
 
-  console.log(`✅ [STEP 3] Texto limpo gerado: ${audioText.length} caracteres totais`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 3] Texto limpo gerado: ${audioText.length} caracteres totais em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 3] Resumo: ${sectionTexts.length} seções, média de ${Math.round(audioText.length / sectionTexts.length)} chars/seção`);
+  console.log(`🐛 [STEP 3] Primeiros 100 chars do audioText: "${audioText.substring(0, 100)}..."`);
 
   return {
     ...input,

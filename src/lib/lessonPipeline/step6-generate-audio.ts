@@ -10,7 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
  * Esta função é chamada manualmente pelo Admin UI
  */
 export async function step6GenerateAudio(input: Step4Output): Promise<Step6Output> {
+  const startTime = Date.now();
   console.log('🎙️ [STEP 6] Gerando áudio...');
+  console.log(`🐛 [STEP 6] Modelo: ${input.model}, lessonId: ${input.lessonId}`);
 
   if (input.model === 'v1') {
     return generateAudioV1(input);
@@ -24,10 +26,13 @@ export async function step6GenerateAudio(input: Step4Output): Promise<Step6Outpu
 }
 
 async function generateAudioV1(input: Step4Output): Promise<Step6Output> {
+  const startTime = Date.now();
   console.log('   📻 Gerando áudio único (Modelo V1)...');
+  console.log(`   🐛 audioText: ${input.audioText.length} caracteres`);
 
   try {
     // Chamar edge function para gerar áudio com timestamps
+    console.log('   🔵 Invocando edge function generate-audio-with-timestamps...');
     const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.audioText,
@@ -40,11 +45,15 @@ async function generateAudioV1(input: Step4Output): Promise<Step6Output> {
     }
 
     if (!data || !data.audioUrl) {
+      console.error('   ❌ Edge function não retornou audioUrl válida');
       throw new Error('Edge function não retornou audioUrl');
     }
 
-    console.log(`   ✅ Áudio gerado: ${data.audioUrl}`);
-    console.log(`   ✅ ${data.wordTimestamps?.length || 0} word timestamps recebidos`);
+    const elapsedTime = Date.now() - startTime;
+    console.log(`   ✅ Áudio gerado com sucesso em ${elapsedTime}ms`);
+    console.log(`   📊 audioUrl: ${data.audioUrl}`);
+    console.log(`   📊 ${data.wordTimestamps?.length || 0} word timestamps recebidos`);
+    console.log(`   🐛 Duração estimada: ${data.wordTimestamps?.[data.wordTimestamps.length - 1]?.end || 0}s`);
 
     return {
       ...input,
@@ -59,10 +68,12 @@ async function generateAudioV1(input: Step4Output): Promise<Step6Output> {
 }
 
 async function generateAudioV2(input: Step4Output): Promise<Step6Output> {
+  const startTime = Date.now();
   console.log(`   📻 Gerando ${input.sectionTexts.length} áudios separados (Modelo V2)...`);
 
   try {
     // Preparar requests para múltiplos áudios
+    console.log('   🔵 Preparando requests para edge function...');
     const audioRequests = input.sectionTexts.map((text, idx) => ({
       text,
       sectionId: input.sections[idx].id,
@@ -87,9 +98,12 @@ async function generateAudioV2(input: Step4Output): Promise<Step6Output> {
     const audioUrls = data.results.map((r: any) => r.audioUrl);
     const durations = data.results.map((r: any) => r.duration);
 
-    console.log(`   ✅ ${audioUrls.length} áudios gerados`);
+    const elapsedTime = Date.now() - startTime;
+    const totalDuration = durations.reduce((acc: number, d: number) => acc + d, 0);
+    console.log(`   ✅ ${audioUrls.length} áudios gerados com sucesso em ${elapsedTime}ms`);
+    console.log(`   📊 Duração total do áudio: ${totalDuration.toFixed(1)}s`);
     durations.forEach((duration: number, idx: number) => {
-      console.log(`      Seção ${idx + 1}: ${duration.toFixed(1)}s`);
+      console.log(`      Seção ${idx + 1}: ${duration.toFixed(1)}s - ${audioUrls[idx]}`);
     });
 
     return {
@@ -105,7 +119,9 @@ async function generateAudioV2(input: Step4Output): Promise<Step6Output> {
 }
 
 async function generateAudioV3(input: Step4Output): Promise<Step6Output> {
+  const startTime = Date.now();
   console.log('   📻 Gerando áudio único + imagens dos slides (Modelo V3)...');
+  console.log(`   🐛 V3 com ${input.v3Data?.slides.length || 0} slides`);
 
   try {
     if (!input.v3Data) {
@@ -114,6 +130,7 @@ async function generateAudioV3(input: Step4Output): Promise<Step6Output> {
 
     // 1. Gerar áudio único
     console.log('   🎙️ Etapa 1/2: Gerando áudio...');
+    console.log(`   🐛 audioText: ${input.v3Data.audioText.length} caracteres`);
     const { data: audioData, error: audioError } = await supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.v3Data.audioText,
@@ -148,7 +165,10 @@ async function generateAudioV3(input: Step4Output): Promise<Step6Output> {
       throw new Error('Edge function não retornou slides com imagens');
     }
 
+    const elapsedTime = Date.now() - startTime;
     console.log(`   ✅ ${imageData.slides.length} imagens geradas com sucesso`);
+    console.log(`   📊 V3 completo em ${elapsedTime}ms: 1 áudio + ${imageData.slides.length} imagens`);
+    console.log(`   🐛 audioUrl: ${audioData.audioUrl}`);
 
     return {
       ...input,

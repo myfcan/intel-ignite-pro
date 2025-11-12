@@ -7,7 +7,9 @@ import { Step6Output, Step7Output } from './types';
  * V2: Calcular timestamps acumulados
  */
 export async function step7CalculateTimestamps(input: Step6Output): Promise<Step7Output> {
+  const startTime = Date.now();
   console.log('⏱️ [STEP 7] Calculando timestamps...');
+  console.log(`🐛 [STEP 7] Modelo: ${input.model}, lessonId: ${input.lessonId}`);
 
   if (input.model === 'v1') {
     return calculateTimestampsV1(input);
@@ -21,7 +23,10 @@ export async function step7CalculateTimestamps(input: Step6Output): Promise<Step
 }
 
 function calculateTimestampsV1(input: Step6Output): Step7Output {
+  const startTime = Date.now();
   console.log('   📊 Calculando timestamps V1 (baseado em word_timestamps)...');
+  console.log(`   🐛 ${input.wordTimestamps?.length || 0} word timestamps disponíveis`);
+  console.log(`   🐛 ${input.sections.length} seções para processar`);
 
   if (!input.wordTimestamps || input.wordTimestamps.length === 0) {
     throw new Error('wordTimestamps não disponível para modelo V1');
@@ -89,7 +94,10 @@ function calculateTimestampsV1(input: Step6Output): Step7Output {
     exercisesConfig: input.exercisesConfig,
   };
 
-  console.log(`✅ [STEP 7] V1 timestamps calculados - Duração total: ${totalDuration.toFixed(1)}s`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 7] V1 timestamps calculados em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 7] Duração total: ${totalDuration.toFixed(1)}s (${Math.floor(totalDuration / 60)}min ${Math.floor(totalDuration % 60)}s)`);
+  console.log(`📊 [STEP 7] ${sections.length} seções processadas, ${input.exercisesConfig.length} exercícios`);
 
   return {
     ...input,
@@ -99,7 +107,9 @@ function calculateTimestampsV1(input: Step6Output): Step7Output {
 }
 
 function calculateTimestampsV2(input: Step6Output): Step7Output {
+  const startTime = Date.now();
   console.log('   📊 Calculando timestamps V2 (acumulativo)...');
+  console.log(`   🐛 ${input.audioUrls?.length || 0} áudios, ${input.durations?.length || 0} durações`);
 
   if (!input.audioUrls || !input.durations) {
     throw new Error('audioUrls ou durations não disponível para modelo V2');
@@ -134,7 +144,10 @@ function calculateTimestampsV2(input: Step6Output): Step7Output {
     exercisesConfig: input.exercisesConfig,
   };
 
-  console.log(`✅ [STEP 7] V2 timestamps calculados - Duração total: ${totalDuration.toFixed(1)}s`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [STEP 7] V2 timestamps calculados em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 7] Duração total: ${totalDuration.toFixed(1)}s (${Math.floor(totalDuration / 60)}min ${Math.floor(totalDuration % 60)}s)`);
+  console.log(`📊 [STEP 7] ${sections.length} seções com áudios individuais`);
 
   return {
     ...input,
@@ -144,7 +157,9 @@ function calculateTimestampsV2(input: Step6Output): Step7Output {
 }
 
 function calculateTimestampsV3(input: Step6Output): Step7Output {
+  const startTime = Date.now();
   console.log('   📊 Calculando timestamps V3 (slides com áudio único)...');
+  console.log(`   🐛 ${input.wordTimestamps?.length || 0} word timestamps disponíveis`);
 
   if (!input.wordTimestamps || input.wordTimestamps.length === 0) {
     throw new Error('wordTimestamps não disponível para modelo V3');
@@ -190,7 +205,11 @@ function calculateTimestampsV3(input: Step6Output): Step7Output {
     exercisesConfig: input.exercisesConfig,
   };
 
-  console.log(`✅ [STEP 7] V3 timestamps calculados - ${slidesCount} slides em ${totalDuration.toFixed(1)}s`);
+  const elapsedTime = Date.now() - startTime;
+  const avgTimePerSlide = totalDuration / slidesCount;
+  console.log(`✅ [STEP 7] V3 timestamps calculados em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 7] ${slidesCount} slides em ${totalDuration.toFixed(1)}s (média: ${avgTimePerSlide.toFixed(1)}s/slide)`);
+  console.log(`📊 [STEP 7] audioUrl: ${input.audioUrl}`);
 
   return {
     ...input,
