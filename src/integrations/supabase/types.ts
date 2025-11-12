@@ -711,6 +711,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           age: number | null
@@ -867,6 +888,16 @@ export type Database = {
       }
     }
     Functions: {
+      create_lesson_draft: {
+        Args: {
+          p_content: Json
+          p_estimated_time: number
+          p_order_index: number
+          p_title: string
+          p_trail_id: string
+        }
+        Returns: string
+      }
       debug_auth_context: {
         Args: never
         Returns: {
@@ -875,8 +906,16 @@ export type Database = {
           user_role: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       daily_time_type: "15min" | "30min" | "1h+"
       difficulty_level: "beginner" | "intermediate" | "advanced"
       exercise_type:
@@ -1015,6 +1054,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       daily_time_type: ["15min", "30min", "1h+"],
       difficulty_level: ["beginner", "intermediate", "advanced"],
       exercise_type: [

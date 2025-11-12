@@ -25,19 +25,18 @@ export async function step4CreateDraft(input: Step3Output): Promise<Step4Output>
   // VERIFICAÇÃO EXPLÍCITA DE ADMIN ANTES DO INSERT
   console.log('🔐 [STEP 4] Verificando se usuário é admin...');
   
-  const { data: userRoles, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', sessionData.user.id)
-    .eq('role', 'admin')
-    .maybeSingle();
+  const { data: isAdmin, error: roleError } = await supabase
+    .rpc('has_role', { 
+      _user_id: sessionData.user.id, 
+      _role: 'admin' 
+    });
 
   if (roleError) {
     console.error('❌ [STEP 4] Erro ao verificar role:', roleError);
     throw new Error(`Erro ao verificar permissões: ${roleError.message}`);
   }
 
-  if (!userRoles) {
+  if (!isAdmin) {
     console.error('❌ [STEP 4] Usuário não é admin:', sessionData.user.email);
     throw new Error('Você precisa ser admin para criar lições. Faça logout e login novamente para atualizar suas permissões.');
   }
