@@ -146,7 +146,7 @@ export async function continuePipelineWithAudio(
 
   try {
     console.log('\n🎙️ ======================================');
-    console.log('🎙️ CONTINUANDO PIPELINE: GERAÇÃO DE ÁUDIO');
+    console.log('🎙️ CONTINUANDO PIPELINE: FASE 2 (STEPS 6-8)');
     console.log('🎙️ ======================================\n');
 
     // Buscar dados do draft
@@ -161,30 +161,56 @@ export async function continuePipelineWithAudio(
       throw new Error('Lição não encontrada');
     }
 
-    // Reconstruir input para steps 6-8
-    // (Aqui você precisaria extrair os dados do lesson.content e reconstruir o Step4Output)
-    // Por simplicidade, vou assumir que temos os dados necessários
+    // Buscar dados da execução
+    const { data: execution } = await supabase
+      .from('pipeline_executions')
+      .select('*')
+      .eq('lesson_id', lessonId)
+      .single();
+
+    if (!execution) {
+      throw new Error('Execução do pipeline não encontrada');
+    }
+
+    const inputData = execution.input_data as any;
+    const outputData = execution.output_data as any;
+
+    // Reconstruir Step4Output a partir dos dados salvos
+    const step4Output = {
+      ...inputData,
+      lessonId: lesson.id,
+      ...outputData,
+    };
+
+    console.log(`📊 Lição encontrada: "${lesson.title}" (Modelo: ${step4Output.model})`);
     
-    updateProgress('generating-audio', 6, '🎙️ Gerando áudio...');
-    // const step6Result = await step6GenerateAudio(step4Result);
-    // updateProgress('generating-audio', 6, '✅ Step 6 completo: Áudio gerado');
+    // STEP 6: Gerar Áudio
+    updateProgress('generating-audio', 6, '🎙️ Step 6: Gerando áudio...');
+    const step6Result = await step6GenerateAudio(step4Output);
+    updateProgress('generating-audio', 6, '✅ Step 6 completo: Áudio gerado com sucesso');
 
-    // updateProgress('calculating-timestamps', 7, '⏱️ Calculando timestamps...');
-    // const step7Result = await step7CalculateTimestamps(step6Result);
-    // updateProgress('calculating-timestamps', 7, '✅ Step 7 completo: Timestamps calculados');
+    // STEP 7: Calcular Timestamps
+    updateProgress('calculating-timestamps', 7, '⏱️ Step 7: Calculando timestamps...');
+    const step7Result = await step7CalculateTimestamps(step6Result);
+    updateProgress('calculating-timestamps', 7, `✅ Step 7 completo: Timestamps calculados (${step7Result.totalDuration.toFixed(1)}s)`);
 
-    // updateProgress('activating', 8, '🚀 Ativando lição...');
-    // const step8Result = await step8Activate(step7Result);
-    // updateProgress('completed', 8, '✅ Step 8 completo: Lição ativada!');
+    // STEP 8: Ativar Lição
+    updateProgress('activating', 8, '🚀 Step 8: Ativando lição...');
+    const step8Result = await step8Activate(step7Result);
+    updateProgress('completed', 8, '✅ Step 8 completo: Lição ativada e publicada!');
 
     console.log('\n🎉 ======================================');
-    console.log('🎉 PIPELINE COMPLETO!');
+    console.log('🎉 PIPELINE COMPLETO - FASE 2 FINALIZADA!');
+    console.log('🎉 ======================================');
+    console.log(`📊 Lição ID: ${lessonId}`);
+    console.log(`📊 Status: ATIVA`);
+    console.log(`📊 Duração total: ${step7Result.totalDuration.toFixed(1)}s`);
     console.log('🎉 ======================================\n');
 
     return {
       success: true,
       lessonId,
-      status: 'active',
+      status: 'active', // Pipeline completo, lição está ativa
       logs,
     };
 

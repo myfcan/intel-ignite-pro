@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, Pause, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { continuePipelineWithAudio } from '@/lib/lessonPipeline';
 
 interface PipelineExecution {
   id: string;
@@ -31,6 +32,7 @@ export default function AdminPipelineMonitor() {
   const [executions, setExecutions] = useState<PipelineExecution[]>([]);
   const [selectedExecution, setSelectedExecution] = useState<PipelineExecution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRunningPhase2, setIsRunningPhase2] = useState(false);
 
   useEffect(() => {
     loadExecutions();
@@ -256,15 +258,95 @@ export default function AdminPipelineMonitor() {
                       <Button 
                         size="sm" 
                         variant="default"
-                        onClick={() => {
-                          toast({
-                            title: "⚠️ Fase 2 em desenvolvimento",
-                            description: "Steps 6-8 (Gerar Áudio → Timestamps → Ativar) serão implementados em breve",
-                          });
+                        disabled={isRunningPhase2 || !selectedExecution.lesson_id}
+                        onClick={async () => {
+                          if (!selectedExecution.lesson_id) {
+                            toast({
+                              title: "Erro",
+                              description: "ID da lição não encontrado",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+
+                          setIsRunningPhase2(true);
+                          
+                          try {
+                            // Atualizar status no banco para 'running'
+                            await supabase
+                              .from('pipeline_executions')
+                              .update({ status: 'running', current_step: 6 })
+                              .eq('id', selectedExecution.id);
+
+                            toast({
+                              title: "🎙️ Iniciando Fase 2",
+                              description: "Gerando áudio, calculando timestamps e ativando lição...",
+                            });
+
+                            // Executar Fase 2
+                            const result = await continuePipelineWithAudio(
+                              selectedExecution.lesson_id,
+                              (state) => {
+                                // Atualizar progresso no banco
+                                supabase
+                                  .from('pipeline_executions')
+                                  .update({
+                                    current_step: state.currentStep,
+                                    logs: state.logs,
+                                    status: state.status === 'completed' ? 'completed' : 'running'
+                                  })
+                                  .eq('id', selectedExecution.id)
+                                  .then(() => {});
+                              }
+                            );
+
+                            if (result.success) {
+                              // Atualizar status final
+                              await supabase
+                                .from('pipeline_executions')
+                                .update({
+                                  status: 'completed',
+                                  current_step: 8,
+                                  completed_at: new Date().toISOString(),
+                                  logs: result.logs
+                                })
+                                .eq('id', selectedExecution.id);
+
+                              toast({
+                                title: "✅ Pipeline Completo!",
+                                description: "Lição ativada com sucesso. Fase 2 concluída!",
+                              });
+
+                              loadExecutions();
+                            } else {
+                              throw new Error(result.error || 'Erro desconhecido');
+                            }
+                          } catch (error: any) {
+                            console.error('Erro na Fase 2:', error);
+                            
+                            // Atualizar status para failed
+                            await supabase
+                              .from('pipeline_executions')
+                              .update({
+                                status: 'failed',
+                                error_message: error.message
+                              })
+                              .eq('id', selectedExecution.id);
+
+                            toast({
+                              title: "❌ Erro na Fase 2",
+                              description: error.message,
+                              variant: "destructive"
+                            });
+
+                            loadExecutions();
+                          } finally {
+                            setIsRunningPhase2(false);
+                          }
                         }}
                       >
                         <Play className="w-4 h-4 mr-2" />
-                        Continuar - Fase 2 (6-8)
+                        {isRunningPhase2 ? 'Processando...' : 'Continuar - Fase 2 (6-8)'}
                       </Button>
                     )}
                     {selectedExecution.status === 'failed' && (
