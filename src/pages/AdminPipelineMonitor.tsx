@@ -88,8 +88,9 @@ export default function AdminPipelineMonitor() {
     switch (status) {
       case 'completed': return 'bg-green-500';
       case 'failed': return 'bg-red-500';
-      case 'running': return 'bg-blue-500';
+      case 'running': return 'bg-blue-500 animate-pulse';
       case 'paused': return 'bg-yellow-500';
+      case 'pending': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };
@@ -211,6 +212,12 @@ export default function AdminPipelineMonitor() {
                       <span className="ml-2">{selectedExecution.status}</span>
                     </Badge>
                   </div>
+
+                  {selectedExecution.status === 'pending' && (
+                    <div className="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-md text-sm">
+                      ⏳ <strong>Aguardando:</strong> Esta execução foi criada mas ainda não foi iniciada.
+                    </div>
+                  )}
 
                   {selectedExecution.error_message && (
                     <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">

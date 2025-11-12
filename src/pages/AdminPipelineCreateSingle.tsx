@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { PipelineInput } from '@/lib/lessonPipeline/types';
+import { runLessonPipeline } from '@/lib/lessonPipeline';
 
 export default function AdminPipelineCreateSingle() {
   const navigate = useNavigate();
@@ -111,6 +112,66 @@ export default function AdminPipelineCreateSingle() {
     });
   };
 
+  const startPipeline = async (executionId: string, inputData: PipelineInput) => {
+    try {
+      // 1. Marcar como "running"
+      await supabase
+        .from('pipeline_executions')
+        .update({ 
+          status: 'running', 
+          started_at: new Date().toISOString() 
+        })
+        .eq('id', executionId);
+
+      // 2. Executar pipeline localmente
+      const result = await runLessonPipeline(inputData, (progress) => {
+        // Atualizar progresso no banco
+        supabase
+          .from('pipeline_executions')
+          .update({ 
+            current_step: progress.currentStep,
+            logs: progress.logs 
+          })
+          .eq('id', executionId)
+          .then(() => console.log('Progresso atualizado:', progress));
+      });
+
+      // 3. Marcar como concluído ou falho
+      if (result.success) {
+        await supabase
+          .from('pipeline_executions')
+          .update({ 
+            status: 'completed', 
+            completed_at: new Date().toISOString(),
+            lesson_id: result.lessonId,
+            output_data: result as any
+          })
+          .eq('id', executionId);
+      } else {
+        await supabase
+          .from('pipeline_executions')
+          .update({ 
+            status: 'failed', 
+            error_message: result.error || 'Erro desconhecido'
+          })
+          .eq('id', executionId);
+      }
+
+      return result;
+    } catch (error) {
+      // Marcar como falho em caso de exceção
+      await supabase
+        .from('pipeline_executions')
+        .update({ 
+          status: 'failed', 
+          error_message: error instanceof Error ? error.message : 'Erro desconhecido'
+        })
+        .eq('id', executionId);
+      
+      throw error;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.title || !formData.trackId || formData.sections.length === 0) {
       toast({
@@ -123,6 +184,7 @@ export default function AdminPipelineCreateSingle() {
 
     setIsSubmitting(true);
     try {
+      // 1. Criar registro de execução
       const { data, error } = await supabase
         .from('pipeline_executions')
         .insert({
@@ -141,9 +203,27 @@ export default function AdminPipelineCreateSingle() {
 
       toast({
         title: "Pipeline criado!",
-        description: "Redirecionando para o monitor..."
+        description: "Iniciando execução..."
       });
 
+      // 2. Iniciar execução automaticamente
+      try {
+        await startPipeline(data.id, formData);
+        
+        toast({
+          title: "Pipeline iniciado!",
+          description: "Redirecionando para o monitor..."
+        });
+      } catch (startError) {
+        console.error('Erro ao iniciar pipeline:', startError);
+        toast({
+          title: "Pipeline criado, mas não iniciado",
+          description: "Você pode iniciá-lo manualmente no monitor",
+          variant: "destructive"
+        });
+      }
+
+      // 3. Redirecionar para monitor
       navigate(`/admin/pipeline/monitor/${data.id}`);
     } catch (error) {
       console.error('Erro ao criar pipeline:', error);
