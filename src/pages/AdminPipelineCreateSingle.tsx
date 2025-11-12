@@ -114,6 +114,15 @@ export default function AdminPipelineCreateSingle() {
 
   const startPipeline = async (executionId: string, inputData: PipelineInput) => {
     try {
+      // Verificar se usuário está autenticado
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
+      console.log('🔐 Usuário autenticado:', session.user.email);
+
       // 1. Marcar como "running"
       await supabase
         .from('pipeline_executions')
@@ -214,14 +223,28 @@ export default function AdminPipelineCreateSingle() {
           title: "Pipeline iniciado!",
           description: "Redirecionando para o monitor..."
         });
-      } catch (startError) {
-        console.error('Erro ao iniciar pipeline:', startError);
-        toast({
-          title: "Pipeline criado, mas não iniciado",
-          description: "Você pode iniciá-lo manualmente no monitor",
-          variant: "destructive"
-        });
+    } catch (startError) {
+      console.error('Erro ao iniciar pipeline:', startError);
+      
+      // Detectar erro de RLS e dar mensagem específica
+      const errorMessage = startError instanceof Error ? startError.message : 'Erro desconhecido';
+      const isAuthError = errorMessage.includes('row-level security') || 
+                          errorMessage.includes('não autenticado') ||
+                          errorMessage.includes('autenticação');
+      
+      toast({
+        title: isAuthError ? "Erro de Autenticação" : "Pipeline criado, mas não iniciado",
+        description: isAuthError 
+          ? "Sua sessão expirou. Faça login novamente em /auth"
+          : "Você pode iniciá-lo manualmente no monitor",
+        variant: "destructive"
+      });
+      
+      if (isAuthError) {
+        // Redirecionar para login após 3 segundos
+        setTimeout(() => navigate('/auth'), 3000);
       }
+    }
 
       // 3. Redirecionar para monitor
       navigate(`/admin/pipeline/monitor/${data.id}`);

@@ -31,6 +31,7 @@ import AdminPipelineCreateSingle from "./pages/AdminPipelineCreateSingle";
 import AdminPipelineCreateBatch from "./pages/AdminPipelineCreateBatch";
 import AdminPipelineMonitor from "./pages/AdminPipelineMonitor";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -51,23 +52,23 @@ const App = () => (
           <Route path="/trails/:id" element={<TrailDetail />} />
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/pipeline" element={<AdminPipelineHub />} />
-          <Route path="/admin/pipeline/create-single" element={<AdminPipelineCreateSingle />} />
-          <Route path="/admin/pipeline/create-batch" element={<AdminPipelineCreateBatch />} />
-          <Route path="/admin/pipeline/monitor/:executionId?" element={<AdminPipelineMonitor />} />
-          <Route path="/admin/manual" element={<AdminManualHub />} />
-          <Route path="/admin/audio-generator" element={<AdminAudioGenerator />} />
-          <Route path="/admin/audio-batch" element={<AdminAudioBatch />} />
-          <Route path="/admin/sync-tester" element={<AdminSyncTester />} />
-          <Route path="/admin/sync-lessons" element={<AdminSyncLessons />} />
-          <Route path="/admin/update-timestamps" element={<AdminUpdateTimestamps />} />
-          <Route path="/admin/debug-timestamps" element={<AdminDebugTimestamps />} />
-          <Route path="/admin/lesson-tester" element={<AdminLessonTester />} />
-          <Route path="/admin/batch-lessons" element={<AdminBatchLessons />} />
-          <Route path="/admin/intonation-test" element={<AdminIntonationTest />} />
-          <Route path="/admin/validation-system" element={<AdminValidationSystem />} />
-          <Route path="/admin/pipeline-test" element={<AdminPipelineTest />} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="/admin/pipeline" element={<ProtectedRoute><AdminPipelineHub /></ProtectedRoute>} />
+          <Route path="/admin/pipeline/create-single" element={<ProtectedRoute><AdminPipelineCreateSingle /></ProtectedRoute>} />
+          <Route path="/admin/pipeline/create-batch" element={<ProtectedRoute><AdminPipelineCreateBatch /></ProtectedRoute>} />
+          <Route path="/admin/pipeline/monitor/:executionId?" element={<ProtectedRoute><AdminPipelineMonitor /></ProtectedRoute>} />
+          <Route path="/admin/manual" element={<ProtectedRoute><AdminManualHub /></ProtectedRoute>} />
+          <Route path="/admin/audio-generator" element={<ProtectedRoute><AdminAudioGenerator /></ProtectedRoute>} />
+          <Route path="/admin/audio-batch" element={<ProtectedRoute><AdminAudioBatch /></ProtectedRoute>} />
+          <Route path="/admin/sync-tester" element={<ProtectedRoute><AdminSyncTester /></ProtectedRoute>} />
+          <Route path="/admin/sync-lessons" element={<ProtectedRoute><AdminSyncLessons /></ProtectedRoute>} />
+          <Route path="/admin/update-timestamps" element={<ProtectedRoute><AdminUpdateTimestamps /></ProtectedRoute>} />
+          <Route path="/admin/debug-timestamps" element={<ProtectedRoute><AdminDebugTimestamps /></ProtectedRoute>} />
+          <Route path="/admin/lesson-tester" element={<ProtectedRoute><AdminLessonTester /></ProtectedRoute>} />
+          <Route path="/admin/batch-lessons" element={<ProtectedRoute><AdminBatchLessons /></ProtectedRoute>} />
+          <Route path="/admin/intonation-test" element={<ProtectedRoute><AdminIntonationTest /></ProtectedRoute>} />
+          <Route path="/admin/validation-system" element={<ProtectedRoute><AdminValidationSystem /></ProtectedRoute>} />
+          <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

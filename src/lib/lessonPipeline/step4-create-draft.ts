@@ -9,6 +9,16 @@ import { supabase } from '@/integrations/supabase/client';
 export async function step4CreateDraft(input: Step3Output): Promise<Step4Output> {
   console.log('💾 [STEP 4] Criando draft no banco de dados...');
 
+  // Verificar autenticação antes de inserir
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !session) {
+    console.error('❌ [STEP 4] Usuário não autenticado!');
+    throw new Error('Pipeline precisa de usuário autenticado para criar lição');
+  }
+
+  console.log(`🔐 [STEP 4] Autenticado como: ${session.user.email}`);
+
   // Criar estrutura content baseada no modelo
   let content: any;
 
