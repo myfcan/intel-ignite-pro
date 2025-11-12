@@ -867,7 +867,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      debug_auth_context: {
+        Args: never
+        Returns: {
+          current_user_id: string
+          is_authenticated: boolean
+          user_role: string
+        }[]
+      }
     }
     Enums: {
       daily_time_type: "15min" | "30min" | "1h+"
