@@ -488,36 +488,63 @@ export default function AdminPipelineCreateSingle() {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <Label>Tipo</Label>
-                    <Select
-                      value={exercise.type}
-                      onValueChange={(value) => {
-                        const newExercises = [...formData.exercises];
-                        newExercises[index] = { ...newExercises[index], type: value as any };
-                        setFormData({ ...formData, exercises: newExercises });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="multiple-choice">Múltipla Escolha</SelectItem>
-                        <SelectItem value="true-false">Verdadeiro/Falso</SelectItem>
-                        <SelectItem value="fill-blanks">Preencher Lacunas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Pergunta</Label>
-                    <Input
-                      value={exercise.question || ''}
+                    <Label>Exercício Completo (JSON ou Texto)</Label>
+                    <Textarea
+                      value={typeof exercise.data === 'string' 
+                        ? exercise.data 
+                        : JSON.stringify(exercise, null, 2)}
                       onChange={(e) => {
                         const newExercises = [...formData.exercises];
-                        newExercises[index] = { ...newExercises[index], question: e.target.value };
+                        const value = e.target.value;
+                        
+                        try {
+                          // Tenta fazer parse de JSON
+                          const parsed = JSON.parse(value);
+                          newExercises[index] = {
+                            type: parsed.type || 'multiple-choice',
+                            question: parsed.question || parsed.instruction || '',
+                            instruction: parsed.instruction || parsed.question || '',
+                            data: parsed.data || parsed
+                          };
+                        } catch {
+                          // Se não for JSON válido, mantém como objeto simples
+                          newExercises[index] = {
+                            type: 'multiple-choice',
+                            question: value,
+                            data: { rawText: value }
+                          };
+                        }
+                        
                         setFormData({ ...formData, exercises: newExercises });
                       }}
-                      placeholder="Digite a pergunta..."
+                      placeholder='Cole o JSON completo do exercício, ex:
+{
+  "type": "drag-drop",
+  "instruction": "Classifique os dados...",
+  "data": {
+    "items": [...],
+    "categories": [...]
+  }
+}'
+                      rows={12}
+                      className="font-mono text-sm"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      💡 <strong>Cole JSON direto</strong> com type, instruction e data. O pipeline detecta automaticamente.
+                    </p>
+                    <details className="text-xs text-muted-foreground">
+                      <summary className="cursor-pointer font-semibold">📚 Tipos suportados (8 modelos)</summary>
+                      <ul className="mt-2 space-y-1 pl-4">
+                        <li>• <code>multiple-choice</code> - Múltipla escolha</li>
+                        <li>• <code>true-false</code> - Verdadeiro/Falso</li>
+                        <li>• <code>fill-blanks</code> - Preencher lacunas</li>
+                        <li>• <code>complete-sentence</code> - Completar frase</li>
+                        <li>• <code>drag-drop</code> - Arrastar e soltar</li>
+                        <li>• <code>scenario-selection</code> - Seleção de cenário</li>
+                        <li>• <code>platform-match</code> - Combinar plataformas</li>
+                        <li>• <code>data-collection</code> - Coleta de dados</li>
+                      </ul>
+                    </details>
                   </div>
                 </CardContent>
               </Card>
