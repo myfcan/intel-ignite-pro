@@ -12,11 +12,12 @@ interface PipelineExecution {
   id: string;
   lesson_title: string;
   model: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
+  status: 'pending' | 'running' | 'draft' | 'completed' | 'failed' | 'paused';
   current_step: number;
   total_steps: number;
   logs: any[];
   error_message?: string;
+  lesson_id?: string;
   created_at: string;
   started_at?: string;
   completed_at?: string;
@@ -89,6 +90,7 @@ export default function AdminPipelineMonitor() {
       case 'completed': return 'bg-green-500';
       case 'failed': return 'bg-red-500';
       case 'running': return 'bg-blue-500 animate-pulse';
+      case 'draft': return 'bg-purple-500'; // Fase 1 completa
       case 'paused': return 'bg-yellow-500';
       case 'pending': return 'bg-orange-500';
       default: return 'bg-gray-500';
@@ -100,6 +102,7 @@ export default function AdminPipelineMonitor() {
       case 'completed': return <CheckCircle className="w-4 h-4" />;
       case 'failed': return <XCircle className="w-4 h-4" />;
       case 'running': return <Clock className="w-4 h-4 animate-spin" />;
+      case 'draft': return <Pause className="w-4 h-4" />; // Pausado após Fase 1
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -219,6 +222,16 @@ export default function AdminPipelineMonitor() {
                     </div>
                   )}
 
+                  {selectedExecution.status === 'draft' && (
+                    <div className="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-md text-sm">
+                      ✅ <strong>Fase 1 Completa (4/8):</strong> Draft criado com sucesso! 
+                      Próximo passo: Gerar áudio e ativar (Fase 2: steps 6-8).
+                      {selectedExecution.lesson_id && (
+                        <p className="mt-1 text-xs opacity-80">ID da lição: {selectedExecution.lesson_id}</p>
+                      )}
+                    </div>
+                  )}
+
                   {selectedExecution.error_message && (
                     <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
                       <strong>Erro:</strong> {selectedExecution.error_message}
@@ -239,18 +252,33 @@ export default function AdminPipelineMonitor() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" disabled>
-                      <Play className="w-4 h-4 mr-2" />
-                      Iniciar (em breve)
-                    </Button>
-                    <Button size="sm" variant="outline" disabled>
-                      <Pause className="w-4 h-4 mr-2" />
-                      Pausar (em breve)
-                    </Button>
-                    <Button size="sm" variant="outline" disabled>
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Repetir (em breve)
-                    </Button>
+                    {selectedExecution.status === 'draft' && (
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => {
+                          toast({
+                            title: "⚠️ Fase 2 em desenvolvimento",
+                            description: "Steps 6-8 (Gerar Áudio → Timestamps → Ativar) serão implementados em breve",
+                          });
+                        }}
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Continuar - Fase 2 (6-8)
+                      </Button>
+                    )}
+                    {selectedExecution.status === 'failed' && (
+                      <Button size="sm" variant="outline" disabled>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Tentar Novamente (em breve)
+                      </Button>
+                    )}
+                    {selectedExecution.status === 'pending' && (
+                      <Button size="sm" variant="outline" disabled>
+                        <Play className="w-4 h-4 mr-2" />
+                        Iniciar (em breve)
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (

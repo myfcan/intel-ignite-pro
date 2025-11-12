@@ -86,11 +86,14 @@ export async function runLessonPipeline(
     console.log('💡 Próximo passo: Ir ao Admin e clicar em "Gerar Áudio"');
     console.log('📋 ======================================\n');
 
-    // Retornar resultado parcial (draft criado, aguardando áudio)
+    // PIPELINE FASE 1 COMPLETO (Steps 1-4)
+    // Status: 'draft' - Aguardando geração de áudio (Fase 2)
+    updateProgress('draft', 4, '⏸️ Fase 1 completa. Aguardando Fase 2: Gerar Áudio + Ativar');
+    
     return {
       success: true,
       lessonId: step4Result.lessonId,
-      status: 'draft',
+      status: 'draft', // Importante: NÃO é 'completed' ainda!
       logs,
     };
 

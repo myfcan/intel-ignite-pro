@@ -198,14 +198,15 @@ export default function AdminPipelineCreateSingle() {
           .then(() => console.log('Progresso atualizado:', progress));
       });
 
-      // 3. Marcar como concluído ou falho
+      // 3. Atualizar status baseado no resultado
       if (result.success) {
+        // Fase 1 completa (Steps 1-4): Draft criado
         await supabase
           .from('pipeline_executions')
           .update({ 
-            status: 'completed', 
-            completed_at: new Date().toISOString(),
+            status: result.status, // 'draft' - não é 'completed' ainda!
             lesson_id: result.lessonId,
+            current_step: 4, // Completou 4 de 8 steps
             output_data: result as any
           })
           .eq('id', executionId);
@@ -285,8 +286,8 @@ export default function AdminPipelineCreateSingle() {
         await startPipeline(data.id, formData);
         
         toast({
-          title: "Pipeline iniciado!",
-          description: "Redirecionando para o monitor..."
+          title: "✅ Fase 1 Completa (4/8 steps)",
+          description: "Draft criado! Continue no monitor para gerar áudio."
         });
     } catch (startError) {
       console.error('❌ Pipeline falhou:', startError);
