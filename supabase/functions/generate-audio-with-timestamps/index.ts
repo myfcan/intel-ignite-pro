@@ -5,31 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface SectionMarker {
-  phrase: string;
-  sectionId: string;
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text, voice_id, model_id, section_markers } = await req.json();
+    const { text, voice_id } = await req.json();
     
-    // Validações
     if (!text) {
       return new Response(
         JSON.stringify({ error: 'Texto é obrigatório' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!section_markers || !Array.isArray(section_markers)) {
-      return new Response(
-        JSON.stringify({ error: 'section_markers é obrigatório e deve ser um array' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -42,19 +28,14 @@ serve(async (req) => {
       );
     }
     
-    // Voice ID padrão: Alice (Xb7hH8MSUJpSbSDYk0k2)
-    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
-    
-    // Model ID padrão: eleven_multilingual_v2 (melhor para português)
-    const modelId = model_id || 'eleven_multilingual_v2';
+    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice
+    const modelId = 'eleven_multilingual_v2';
 
-    console.log('Gerando áudio com timestamps...');
-    console.log('Voice ID:', voiceId);
-    console.log('Model ID:', modelId);
-    console.log('Text length:', text.length);
-    console.log('Section markers:', section_markers);
+    console.log('🎙️ Gerando áudio com timestamps...');
+    console.log(`   Voice: ${voiceId}`);
+    console.log(`   Model: ${modelId}`);
+    console.log(`   Text length: ${text.length} chars`);
     
-    // Chamar API do ElevenLabs com timestamps
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
       {
@@ -80,10 +61,10 @@ serve(async (req) => {
     
     if (!response.ok) {
       const error = await response.text();
-      console.error('ElevenLabs API error:', response.status, error);
+      console.error('❌ ElevenLabs API error:', response.status, error);
       return new Response(
         JSON.stringify({ 
-          error: 'Falha ao gerar áudio com timestamps',
+          error: 'Falha ao gerar áudio',
           details: error,
           status: response.status
         }),
@@ -92,143 +73,57 @@ serve(async (req) => {
     }
     
     const result = await response.json();
-    
-    console.log('Áudio e timestamps gerados com sucesso');
-    
-    // Processar os timestamps para encontrar as seções
     const { alignment, audio_base64 } = result;
-    const { characters, character_start_times_seconds } = alignment;
+    const { characters, character_start_times_seconds, character_end_times_seconds } = alignment;
     
-    const fullText = characters.join('');
-    console.log(`📝 Texto completo tem ${fullText.length} caracteres`);
+    console.log(`✅ Áudio gerado: ${characters.length} caracteres`);
     
-    // Encontrar timestamps de cada seção
-    const sectionTimestamps: Record<string, number> = {};
+    // Converter character timestamps para word timestamps
+    const word_timestamps: Array<{ word: string; start_time: number; end_time: number }> = [];
     
-    for (const marker of section_markers as SectionMarker[]) {
-      // Buscar a frase no texto original (case insensitive)
-      const phraseRegex = new RegExp(
-        marker.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), // escape special chars
-        'i'
-      );
-      
-      const match = fullText.match(phraseRegex);
-      
-      if (!match || match.index === undefined) {
-        console.warn(`⚠️ Frase completa não encontrada: "${marker.phrase}"`);
-        
-        // Fallback progressivo: tentar 3 palavras, 2 palavras, depois 1 palavra
-        const words = marker.phrase.split(/\s+/);
-        let foundMatch = false;
-        
-        for (let wordCount = Math.min(3, words.length); wordCount >= 1 && !foundMatch; wordCount--) {
-          const partialPhrase = words.slice(0, wordCount).join(' ');
-          const partialRegex = new RegExp(
-            partialPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-            'i'
-          );
-          
-          const partialMatch = fullText.match(partialRegex);
-          
-          if (partialMatch && partialMatch.index !== undefined) {
-            const charIndex = partialMatch.index;
-            if (charIndex < character_start_times_seconds.length) {
-              const timestamp = character_start_times_seconds[charIndex];
-              sectionTimestamps[marker.sectionId] = Math.round(timestamp);
-              console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (fallback ${wordCount} palavras: "${partialPhrase}")`);
-              foundMatch = true;
-            }
-          }
-        }
-        
-        if (!foundMatch) {
-          console.error(`❌ Nenhuma correspondência encontrada para "${marker.sectionId}"`);
-          console.log(`Primeiros 300 chars: "${fullText.substring(0, 300)}"`);
-        }
-        continue;
-      }
-      
-      const charIndex = match.index;
-      
-      if (charIndex < character_start_times_seconds.length) {
-        const timestamp = character_start_times_seconds[charIndex];
-        sectionTimestamps[marker.sectionId] = Math.round(timestamp);
-        console.log(`✅ Seção "${marker.sectionId}": ${Math.round(timestamp)}s (índice: ${charIndex})`);
-      } else {
-        console.warn(`⚠️ Índice ${charIndex} fora do range de timestamps`);
-      }
-    }
-    
-    // Gerar word timestamps
-    interface WordTimestamp {
-      word: string;
-      start: number;
-      end: number;
-    }
-    
-    const wordTimestamps: WordTimestamp[] = [];
     let currentWord = '';
-    let wordStartIndex = 0;
+    let wordStartTime = 0;
     
     for (let i = 0; i < characters.length; i++) {
       const char = characters[i];
+      const isSpace = char === ' ' || char === '\n' || char === '\t';
       
-      if (char === ' ' || char === '\n' || i === characters.length - 1) {
-        // Se é o último caractere e não é espaço, adiciona ao word atual
-        if (i === characters.length - 1 && char !== ' ' && char !== '\n') {
-          currentWord += char;
-        }
-        
-        if (currentWord.trim().length > 0) {
-          const cleanWord = currentWord.trim();
-          const startTime = character_start_times_seconds[wordStartIndex];
-          const endTime = i < characters.length - 1 
-            ? character_start_times_seconds[i]
-            : character_start_times_seconds[character_start_times_seconds.length - 1];
-          
-          wordTimestamps.push({
-            word: cleanWord,
-            start: startTime,
-            end: endTime
-          });
-        }
-        
+      if (isSpace && currentWord.length > 0) {
+        word_timestamps.push({
+          word: currentWord,
+          start_time: wordStartTime,
+          end_time: character_end_times_seconds[i - 1]
+        });
         currentWord = '';
-        wordStartIndex = i + 1;
-      } else {
+      } else if (!isSpace) {
+        if (currentWord.length === 0) {
+          wordStartTime = character_start_times_seconds[i];
+        }
         currentWord += char;
       }
     }
     
-    console.log(`✅ Gerados ${wordTimestamps.length} word timestamps`);
+    // Adicionar última palavra
+    if (currentWord.length > 0) {
+      word_timestamps.push({
+        word: currentWord,
+        start_time: wordStartTime,
+        end_time: character_end_times_seconds[character_end_times_seconds.length - 1]
+      });
+    }
     
+    console.log(`📊 ${word_timestamps.length} palavras extraídas`);
+    console.log(`⏱️ Duração: ${word_timestamps[word_timestamps.length - 1]?.end_time.toFixed(2)}s`);
+
     return new Response(
-      JSON.stringify({
-        audio_base64,
-        section_timestamps: sectionTimestamps,
-        word_timestamps: wordTimestamps,
-        alignment_data: {
-          total_characters: characters.length,
-          total_duration: character_start_times_seconds[character_start_times_seconds.length - 1],
-          total_words: wordTimestamps.length
-        }
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
+      JSON.stringify({ audio_base64, word_timestamps }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
-    console.error('Erro ao processar requisição:', error);
+    console.error('❌ Erro:', error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Erro interno do servidor',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -272,74 +272,21 @@ export default function AdminPipelineMonitor() {
                           setIsRunningPhase2(true);
                           
                           try {
-                            // Atualizar status no banco para 'running'
-                            await supabase
-                              .from('pipeline_executions')
-                              .update({ status: 'running', current_step: 6 })
-                              .eq('id', selectedExecution.id);
-
                             toast({
-                              title: "🎙️ Iniciando Fase 2",
-                              description: "Gerando áudio, calculando timestamps e ativando lição...",
+                              title: "🚀 Pipeline Automático",
+                              description: "O pipeline agora roda automaticamente em todas as 8 fases!",
                             });
 
-                            // Executar Fase 2
-                            const result = await continuePipelineWithAudio(
-                              selectedExecution.lesson_id,
-                              (state) => {
-                                // Atualizar progresso no banco
-                                supabase
-                                  .from('pipeline_executions')
-                                  .update({
-                                    current_step: state.currentStep,
-                                    logs: state.logs,
-                                    status: state.status === 'completed' ? 'completed' : 'running'
-                                  })
-                                  .eq('id', selectedExecution.id)
-                                  .then(() => {});
-                              }
-                            );
-
-                            if (result.success) {
-                              // Atualizar status final
-                              await supabase
-                                .from('pipeline_executions')
-                                .update({
-                                  status: 'completed',
-                                  current_step: 8,
-                                  completed_at: new Date().toISOString(),
-                                  logs: result.logs
-                                })
-                                .eq('id', selectedExecution.id);
-
-                              toast({
-                                title: "✅ Pipeline Completo!",
-                                description: "Lição ativada com sucesso. Fase 2 concluída!",
-                              });
-
-                              loadExecutions();
-                            } else {
-                              throw new Error(result.error || 'Erro desconhecido');
-                            }
+                            // O pipeline agora é totalmente automático
+                            // Não há mais "Fase 2" manual - tudo é executado de uma vez
+                            await loadExecutions();
                           } catch (error: any) {
-                            console.error('Erro na Fase 2:', error);
-                            
-                            // Atualizar status para failed
-                            await supabase
-                              .from('pipeline_executions')
-                              .update({
-                                status: 'failed',
-                                error_message: error.message
-                              })
-                              .eq('id', selectedExecution.id);
-
+                            console.error('Erro ao carregar execuções:', error);
                             toast({
-                              title: "❌ Erro na Fase 2",
+                              title: "❌ Erro",
                               description: error.message,
                               variant: "destructive"
                             });
-
-                            loadExecutions();
                           } finally {
                             setIsRunningPhase2(false);
                           }

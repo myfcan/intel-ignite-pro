@@ -5,43 +5,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface AudioRequest {
-  sectionId: string;
-  text: string;
-}
-
-interface AudioResult {
-  sectionId: string;
-  audio_base64: string;
-  duration: number;
-}
-
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { audios, voiceId = 'Xb7hH8MSUJpSbSDYk0k2' } = await req.json() as {
-      audios: AudioRequest[];
-      voiceId?: string;
-    };
+    const { texts, voice_id } = await req.json();
+
+    if (!texts || !Array.isArray(texts)) {
+      return new Response(
+        JSON.stringify({ error: 'texts deve ser um array de strings' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ELEVENLABS_API_KEY não configurada');
     }
 
-    console.log(`🎵 [GENERATE-MULTIPLE] Gerando ${audios.length} áudios...`);
+    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2';
+    console.log(`🎵 Gerando ${texts.length} áudios...`);
 
-    const results: AudioResult[] = [];
+    const results = [];
 
-    for (let i = 0; i < audios.length; i++) {
-      const audioReq = audios[i];
-      console.log(`🎤 [AUDIO ${i + 1}/${audios.length}] Gerando ${audioReq.sectionId}...`);
+    for (let i = 0; i < texts.length; i++) {
+      const text = texts[i];
+      console.log(`🎤 [${i + 1}/${texts.length}] Gerando...`);
 
-      // Gerar áudio via ElevenLabs
       const response = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
         {
@@ -51,7 +43,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            text: audioReq.text,
+            text: text,
             model_id: 'eleven_multilingual_v2',
             voice_settings: {
               stability: 0.5,
@@ -65,49 +57,41 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`❌ [ELEVENLABS] Erro na API: ${response.status}`, errorText);
+        console.error(`❌ Erro: ${response.status}`, errorText);
         throw new Error(`ElevenLabs API error: ${response.status}`);
       }
 
       const audioBlob = await response.arrayBuffer();
       const audio_base64 = arrayBufferToBase64(audioBlob);
+      const duration = estimateAudioDuration(text);
 
-      // Calcular duração do áudio
-      const duration = await getAudioDuration(audioBlob);
-
-      console.log(`✅ [AUDIO ${i + 1}/${audios.length}] ${audioReq.sectionId} - ${duration.toFixed(2)}s`);
+      console.log(`✅ [${i + 1}/${texts.length}] ~${duration.toFixed(1)}s`);
 
       results.push({
-        sectionId: audioReq.sectionId,
+        sectionId: `section-${i}`,
         audio_base64,
         duration,
       });
     }
 
-    console.log(`🎉 [GENERATE-MULTIPLE] Todos os ${results.length} áudios gerados com sucesso!`);
+    console.log(`🎉 ${results.length} áudios prontos!`);
 
     return new Response(
       JSON.stringify({ results }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('❌ [GENERATE-MULTIPLE] Erro:', error);
+    console.error('❌ Erro:', error);
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-// Helper: Converter ArrayBuffer para Base64 sem estouro de pilha
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000; // 32KB chunks
+  const chunkSize = 0x8000;
   let binary = '';
   
   for (let i = 0; i < bytes.length; i += chunkSize) {
@@ -118,32 +102,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-// Helper: Calcular duração do áudio usando Web Audio API
-async function getAudioDuration(audioBuffer: ArrayBuffer): Promise<number> {
-  try {
-    // Criar um contexto de áudio offline para decodificar
-    const AudioContext = (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
-    
-    if (!AudioContext) {
-      // Fallback: estimar baseado no tamanho (aproximado)
-      // MP3: ~128kbps = 16KB/s
-      const estimatedDuration = audioBuffer.byteLength / (16 * 1024);
-      console.warn(`⚠️ [DURATION] AudioContext não disponível, estimando: ${estimatedDuration.toFixed(2)}s`);
-      return estimatedDuration;
-    }
-
-    const audioContext = new AudioContext();
-    const audioBufferDecoded = await audioContext.decodeAudioData(audioBuffer.slice(0));
-    const duration = audioBufferDecoded.duration;
-    
-    await audioContext.close();
-    
-    return duration;
-  } catch (error) {
-    console.error('❌ [DURATION] Erro ao calcular duração:', error);
-    // Fallback: estimar baseado no tamanho
-    const estimatedDuration = audioBuffer.byteLength / (16 * 1024);
-    console.warn(`⚠️ [DURATION] Usando estimativa: ${estimatedDuration.toFixed(2)}s`);
-    return estimatedDuration;
-  }
+function estimateAudioDuration(text: string): number {
+  const words = text.split(/\s+/).length;
+  const minutes = words / 150; // 150 palavras/min
+  return minutes * 60;
 }
