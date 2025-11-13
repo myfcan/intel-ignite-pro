@@ -27,6 +27,14 @@ export default function AdminPipelineCreateBatch() {
     errors: Array<{ title: string; error: string }>;
   }>({ success: 0, failed: 0, errors: [] });
 
+  const convertToLessonSection = (section: any): any => {
+    return {
+      id: `section-${section.index}`,
+      visualContent: section.markdown,
+      speechBubbleText: section.speechBubble,
+    };
+  };
+
   const validateJSON = (text: string) => {
     try {
       const parsed = JSON.parse(text);
@@ -35,7 +43,9 @@ export default function AdminPipelineCreateBatch() {
         return null;
       }
 
-      // Validação completa de cada lição
+      // Validação e conversão de cada lição
+      const convertedLessons: PipelineInput[] = [];
+      
       for (let i = 0; i < parsed.length; i++) {
         const lesson = parsed[i];
         const missingFields = [];
@@ -59,10 +69,33 @@ export default function AdminPipelineCreateBatch() {
           setValidationError(`Lição ${i + 1}: Campos obrigatórios ausentes: ${missingFields.join(', ')}`);
           return null;
         }
+
+        // Converter estrutura simplificada para PipelineInput
+        const convertedLesson: PipelineInput = {
+          model: lesson.model.toLowerCase() as 'v1' | 'v2' | 'v3',
+          title: lesson.title,
+          trackId: lesson.trackId,
+          trackName: lesson.trackName,
+          orderIndex: lesson.orderIndex,
+          estimatedTimeMinutes: lesson.estimatedTimeMinutes,
+          sections: lesson.sections.map(convertToLessonSection),
+          exercises: lesson.exercises
+        };
+
+        // Se houver playgroundMidLesson, adicionar na última seção
+        if (lesson.playgroundMidLesson && convertedLesson.sections) {
+          const lastSection = convertedLesson.sections[convertedLesson.sections.length - 1];
+          lastSection.playgroundConfig = {
+            type: 'interactive-simulation',
+            config: lesson.playgroundMidLesson
+          };
+        }
+
+        convertedLessons.push(convertedLesson);
       }
 
       setValidationError('');
-      return parsed as PipelineInput[];
+      return convertedLessons;
     } catch (error) {
       setValidationError('JSON inválido: ' + (error as Error).message);
       return null;
