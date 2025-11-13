@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, Pause, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { runLessonPipeline } from '@/lib/lessonPipeline';
+import { runLessonPipeline, PipelineInput } from '@/lib/lessonPipeline';
 
 interface PipelineExecution {
   id: string;
@@ -84,6 +84,49 @@ export default function AdminPipelineMonitor() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStartPipeline = async (executionId: string) => {
+    setIsRunningPhase2(true);
+    
+    try {
+      // Buscar input_data da execução
+      const { data: execution, error } = await supabase
+        .from('pipeline_executions')
+        .select('input_data')
+        .eq('id', executionId)
+        .single();
+
+      if (error) throw error;
+      if (!execution?.input_data) {
+        throw new Error('Input data não encontrado');
+      }
+
+      toast({
+        title: "🚀 Iniciando Pipeline",
+        description: "Executando todas as 8 fases automaticamente...",
+      });
+
+      // Executar o pipeline
+      await runLessonPipeline(execution.input_data as unknown as PipelineInput, executionId);
+
+      toast({
+        title: "✅ Pipeline Concluído",
+        description: "Lição criada com sucesso!",
+      });
+
+      // Recarregar execuções para ver o status atualizado
+      await loadExecutions();
+    } catch (error) {
+      console.error('Erro ao iniciar pipeline:', error);
+      toast({
+        title: "Erro ao iniciar pipeline",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRunningPhase2(false);
     }
   };
 
@@ -219,9 +262,21 @@ export default function AdminPipelineMonitor() {
                   </div>
 
                   {selectedExecution.status === 'pending' && (
-                    <div className="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-md text-sm">
-                      ⏳ <strong>Aguardando:</strong> Esta execução foi criada mas ainda não foi iniciada.
-                    </div>
+                    <>
+                      <div className="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-md text-sm">
+                        ⏳ <strong>Aguardando:</strong> Esta execução foi criada mas ainda não foi iniciada.
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        disabled={isRunningPhase2}
+                        onClick={() => handleStartPipeline(selectedExecution.id)}
+                        className="w-full"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        {isRunningPhase2 ? "Executando..." : "▶️ Iniciar Pipeline"}
+                      </Button>
+                    </>
                   )}
 
                   {selectedExecution.status === 'draft' && (
