@@ -109,19 +109,31 @@ export default function AdminPipelineMonitor() {
       });
 
       // Executar o pipeline
-      await runLessonPipeline(execution.input_data as unknown as PipelineInput, executionId);
+      const result = await runLessonPipeline(
+        execution.input_data as unknown as PipelineInput, 
+        executionId
+      );
 
-      toast({
-        title: "✅ Pipeline Concluído",
-        description: "Lição criada com sucesso!",
-      });
+      // Verificar se teve sucesso
+      if (result.success) {
+        toast({
+          title: "✅ Pipeline Concluído",
+          description: "Lição criada com sucesso!",
+        });
+      } else {
+        toast({
+          title: "❌ Pipeline Falhou",
+          description: result.error || "Erro desconhecido",
+          variant: "destructive"
+        });
+      }
 
       // Recarregar execuções para ver o status atualizado
       await loadExecutions();
     } catch (error) {
-      console.error('Erro ao iniciar pipeline:', error);
+      console.error('Erro crítico ao iniciar pipeline:', error);
       toast({
-        title: "Erro ao iniciar pipeline",
+        title: "❌ Erro Crítico",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive"
       });
