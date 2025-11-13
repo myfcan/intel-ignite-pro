@@ -67,7 +67,7 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
     .from('lesson-audios')
     .getPublicUrl(fileName);
 
-  const elapsedTime = Date.now() - Date.now();
+  const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V1] Áudio gerado e salvo em ${elapsedTime}ms`);
   console.log(`   📍 URL: ${publicUrl}`);
   console.log(`   ⏱️ ${data.word_timestamps.length} timestamps`);

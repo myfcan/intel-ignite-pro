@@ -12,16 +12,20 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   console.log(`🐛 [STEP 8] lessonId: ${input.lessonId}, modelo: ${input.model}`);
   console.log(`🐛 [STEP 8] Duração total: ${input.totalDuration.toFixed(1)}s`);
 
-  // FASE 5: Separar exercises do content
+  // CORREÇÃO 1: Separar exercises do content e salvar TUDO no UPDATE
   const { exercises, ...contentWithoutExercises } = input.structuredContent;
   
   const updateData: any = {
-    is_active: true
+    is_active: true,
+    content: contentWithoutExercises,           // ✅ Salvar content
+    exercises: exercises || [],                 // ✅ Salvar exercises
+    exercises_version: 1,                       // ✅ Salvar versão
+    estimated_time: Math.ceil(input.totalDuration / 60)  // ✅ Salvar tempo estimado
   };
 
-  // Para V1, adicionar audio_url e word_timestamps na raiz
-  if (input.model === 'v1') {
-    console.log('🐛 [STEP 8] Modelo V1: adicionando audio_url e word_timestamps');
+  // Para V1 e V3, adicionar audio_url e word_timestamps na raiz
+  if (input.model === 'v1' || input.model === 'v3') {
+    console.log('🐛 [STEP 8] Modelo V1/V3: adicionando audio_url e word_timestamps');
     updateData.audio_url = input.audioUrl;
     updateData.word_timestamps = input.wordTimestamps;
   }
@@ -47,8 +51,9 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   console.log(`   - Duração: ${input.totalDuration.toFixed(1)}s (${Math.floor(input.totalDuration / 60)}min ${Math.floor(input.totalDuration % 60)}s)`);
   console.log(`   - Tempo estimado: ${updateData.estimated_time}min`);
   console.log(`   - Status: active (publicada)`);
-  console.log(`   - Exercises: ${updateData.exercises.length} (versão ${updateData.exercises_version})`);
-  console.log(`   - Content version: ${contentWithoutExercises.contentVersion}`);
+  console.log(`   - Exercises: ${(exercises || []).length} (versão ${updateData.exercises_version})`);
+  console.log(`   - Content: ${JSON.stringify(contentWithoutExercises).length} caracteres`);
+  console.log(`   - Content version: ${contentWithoutExercises.contentVersion || 'N/A'}`);
 
   return {
     success: true,

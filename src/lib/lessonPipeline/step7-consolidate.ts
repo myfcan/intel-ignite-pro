@@ -13,28 +13,14 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
   console.log(`   Título: "${input.title}"`);
   console.log(`   Modelo: ${input.model}`);
 
-  // Verificar JWT e admin role
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error('Usuário não autenticado');
-  }
-
-  // Refresh token se necessário
-  const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-  if (refreshedSession) {
-    console.log('   🔄 Token JWT refreshed');
-  }
-
-  // Verificar se é admin
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .eq('role', 'admin')
-    .single();
-
-  if (!roleData) {
-    throw new Error('Apenas admins podem criar lições');
+  // CORREÇÃO 5: Pipeline idempotente - Se já temos lessonId, não criar novo
+  if (input.lessonId) {
+    console.log(`   ♻️ Reexecução detectada: lessonId ${input.lessonId} já existe`);
+    console.log('   ⏭️ Pulando criação, indo direto para Step 8...');
+    return {
+      ...input,
+      lessonId: input.lessonId
+    };
   }
 
   // Separar exercises do content
@@ -45,29 +31,24 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
   console.log(`      Content: ${JSON.stringify(contentWithoutExercises).length} caracteres`);
   console.log(`      Exercises: ${exercises.length} exercícios`);
 
-  // Preparar dados completos para inserção
-  const lessonData: any = {
-    content: contentWithoutExercises,
-    exercises: exercises,
-    exercises_version: 1
-  };
-
-  // Para V1, adicionar audio_url e word_timestamps na raiz
-  if (input.model === 'v1') {
-    console.log('   🎙️ V1: Adicionando audio_url e word_timestamps');
-    lessonData.audio_url = input.audioUrl;
-    lessonData.word_timestamps = input.wordTimestamps;
-  }
+  // CORREÇÃO 3: Passar parâmetros separados (não misturar tudo em p_content)
+  const audioUrl = (input.model === 'v1' || input.model === 'v3') ? input.audioUrl : null;
+  const wordTimestamps = (input.model === 'v1' || input.model === 'v3') ? input.wordTimestamps : null;
 
   console.log('   💾 Inserindo no banco de dados...');
+  console.log(`      Audio URL: ${audioUrl ? 'presente' : 'null'}`);
+  console.log(`      Word Timestamps: ${wordTimestamps ? 'presente' : 'null'}`);
 
-  // Usar SECURITY DEFINER function para criar a lição
+  // Usar SECURITY DEFINER function para criar a lição (validação de admin está na função)
   const { data: lessonId, error } = await supabase.rpc('create_lesson_draft', {
     p_title: input.title,
     p_trail_id: input.trackId,
     p_order_index: input.orderIndex,
     p_estimated_time: Math.ceil(input.totalDuration / 60),
-    p_content: lessonData
+    p_content: contentWithoutExercises,  // ✅ Apenas content, sem exercises
+    p_exercises: exercises,              // ✅ Exercises separado
+    p_audio_url: audioUrl,               // ✅ Audio URL separado (V1/V3)
+    p_word_timestamps: wordTimestamps    // ✅ Timestamps separados (V1/V3)
   });
 
   if (error) {
