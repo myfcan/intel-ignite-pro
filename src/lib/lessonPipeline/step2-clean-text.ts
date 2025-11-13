@@ -1,20 +1,20 @@
-import { Step2Output, Step3Output } from './types';
+import { Step1Output, Step2Output } from './types';
 
 /**
- * STEP 3: CRIAÇÃO DO TEXTO LIMPO (PARA ÁUDIO)
+ * STEP 2: CRIAÇÃO DO TEXTO LIMPO (PARA ÁUDIO)
  * - Remove emojis, markdown, imagens
  * - Remove CAIXA ALTA
  * - Limpa múltiplos espaços
  * - Gera audioText único (concatenar todas as seções)
  */
-export async function step3CleanText(input: Step2Output): Promise<Step3Output> {
+export async function step2CleanText(input: Step1Output): Promise<Step2Output> {
   const startTime = Date.now();
-  console.log('🧹 [STEP 3] Limpando texto para geração de áudio...');
-  console.log(`🐛 [STEP 3] Modelo: ${input.model}`);
+  console.log('🧹 [STEP 2] Limpando texto para geração de áudio...');
+  console.log(`🐛 [STEP 2] Modelo: ${input.model}`);
 
   // Para V3, o audioText já vem pronto no v3Data
   if (input.model === 'v3' && input.v3Data) {
-    console.log('✅ [STEP 3] V3 detectado - usando audioText do v3Data');
+    console.log('✅ [STEP 2] V3 detectado - usando audioText do v3Data');
     console.log(`   audioText: ${input.v3Data.audioText.length} caracteres`);
     
     return {
@@ -84,9 +84,9 @@ export async function step3CleanText(input: Step2Output): Promise<Step3Output> {
   const audioText = sectionTexts.join('\n\n');
 
   const elapsedTime = Date.now() - startTime;
-  console.log(`✅ [STEP 3] Texto limpo gerado: ${audioText.length} caracteres totais em ${elapsedTime}ms`);
-  console.log(`📊 [STEP 3] Resumo: ${sectionTexts.length} seções, média de ${Math.round(audioText.length / sectionTexts.length)} chars/seção`);
-  console.log(`🐛 [STEP 3] Primeiros 100 chars do audioText: "${audioText.substring(0, 100)}..."`);
+  console.log(`✅ [STEP 2] Texto limpo gerado: ${audioText.length} caracteres totais em ${elapsedTime}ms`);
+  console.log(`📊 [STEP 2] Resumo: ${sectionTexts.length} seções, média de ${Math.round(audioText.length / sectionTexts.length)} chars/seção`);
+  console.log(`🐛 [STEP 2] Primeiros 100 chars do audioText: "${audioText.substring(0, 100)}..."`);
 
   return {
     ...input,

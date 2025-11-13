@@ -186,17 +186,7 @@ export default function AdminPipelineCreateSingle() {
         .eq('id', executionId);
 
       // 2. Executar pipeline localmente
-      const result = await runLessonPipeline(inputData, (progress) => {
-        // Atualizar progresso no banco
-        supabase
-          .from('pipeline_executions')
-          .update({ 
-            current_step: progress.currentStep,
-            logs: progress.logs 
-          })
-          .eq('id', executionId)
-          .then(() => console.log('Progresso atualizado:', progress));
-      });
+      const result = await runLessonPipeline(inputData, executionId);
 
       // 3. Atualizar status baseado no resultado
       if (result.success) {

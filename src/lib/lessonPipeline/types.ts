@@ -2,7 +2,7 @@
 
 export type LessonModel = 'v1' | 'v2' | 'v3';
 
-export type PipelineStatus = 'idle' | 'intake' | 'exercises' | 'clean-text' | 'draft' | 'generating-audio' | 'calculating-timestamps' | 'activating' | 'completed' | 'failed';
+export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
 
 export interface LessonSection {
   id: string;
@@ -81,20 +81,14 @@ export interface Step1Output {
   estimatedTimeMinutes: number;
 }
 
+// PHASE 2: Clean Text
 export interface Step2Output extends Step1Output {
-  exercisesConfig: any[];
-}
-
-export interface Step3Output extends Step2Output {
   audioText: string;
   sectionTexts: string[];
 }
 
-export interface Step4Output extends Step3Output {
-  lessonId: string;
-}
-
-export interface Step6Output extends Step4Output {
+// PHASE 3: Generate Audio (com upload para Storage)
+export interface Step3Output extends Step2Output {
   audioUrl?: string;
   audioUrls?: string[];
   wordTimestamps?: any[];
@@ -102,16 +96,33 @@ export interface Step6Output extends Step4Output {
   v3Data?: V3Data; // Slides com imageUrl após geração
 }
 
-export interface Step7Output extends Step6Output {
+// PHASE 4: Calculate Timestamps
+export interface Step4Output extends Step3Output {
   structuredContent: any;
   totalDuration: number;
-  exercisesVersion?: number; // FASE 5: Versão independente dos exercises
 }
 
+// PHASE 5: Generate Exercises
+export interface Step5Output extends Step4Output {
+  exercisesConfig: any[];
+}
+
+// PHASE 6: Validate All (NOVO)
+export interface Step6Output extends Step5Output {
+  validationPassed: boolean;
+  validationWarnings: string[];
+}
+
+// PHASE 7: Consolidate (salvar no banco)
+export interface Step7Output extends Step6Output {
+  lessonId: string;
+}
+
+// PHASE 8: Activate (resultado final)
 export interface PipelineResult {
   success: boolean;
   lessonId?: string;
-  status: 'draft' | 'active';
+  status: 'draft' | 'active' | 'failed';
   error?: string;
   logs: string[];
 }

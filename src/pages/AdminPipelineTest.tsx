@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { runLessonPipeline, PipelineState } from '@/lib/lessonPipeline';
+import { runLessonPipeline } from '@/lib/lessonPipeline';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
 export default function AdminPipelineTest() {
   const [model, setModel] = useState<'v1' | 'v2'>('v1');
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState<PipelineState | null>(null);
+  const [progress, setProgress] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   const handleTestPipeline = async () => {
@@ -70,10 +70,8 @@ export default function AdminPipelineTest() {
     };
 
     try {
-      const result = await runLessonPipeline(testInput, (state) => {
-        setProgress(state);
-        setLogs(state.logs);
-      });
+      const executionId = 'test-' + Date.now();
+      const result = await runLessonPipeline(testInput, executionId);
 
       if (result.success) {
         toast.success(`✅ Pipeline completo! Lesson ID: ${result.lessonId}`);

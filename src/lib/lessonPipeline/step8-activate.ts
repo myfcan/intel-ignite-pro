@@ -16,11 +16,7 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   const { exercises, ...contentWithoutExercises } = input.structuredContent;
   
   const updateData: any = {
-    content: contentWithoutExercises, // Content SEM exercises
-    exercises: exercises || [], // Exercises separados
-    exercises_version: input.exercisesVersion || 1, // Versão independente
-    estimated_time: Math.ceil(input.totalDuration / 60),
-    is_active: true,
+    is_active: true
   };
 
   // Para V1, adicionar audio_url e word_timestamps na raiz

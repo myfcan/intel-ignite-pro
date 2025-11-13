@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, Pause, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { continuePipelineWithAudio } from '@/lib/lessonPipeline';
+import { runLessonPipeline } from '@/lib/lessonPipeline';
 
 interface PipelineExecution {
   id: string;
