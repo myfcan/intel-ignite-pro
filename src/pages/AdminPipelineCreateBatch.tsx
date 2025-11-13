@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Upload, Rocket } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Upload, Rocket, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { PipelineInput } from '@/lib/lessonPipeline/types';
+import { runLessonPipeline } from '@/lib/lessonPipeline';
 
 export default function AdminPipelineCreateBatch() {
   const navigate = useNavigate();
@@ -14,6 +16,16 @@ export default function AdminPipelineCreateBatch() {
   const [jsonInput, setJsonInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [batchProgress, setBatchProgress] = useState({
+    current: 0,
+    total: 0,
+    currentLesson: ''
+  });
+  const [results, setResults] = useState<{
+    success: number;
+    failed: number;
+    errors: Array<{ title: string; error: string }>;
+  }>({ success: 0, failed: 0, errors: [] });
 
   const validateJSON = (text: string) => {
     try {
@@ -22,13 +34,33 @@ export default function AdminPipelineCreateBatch() {
         setValidationError('JSON deve ser um array de lições');
         return null;
       }
-      // Validação básica
-      for (const lesson of parsed) {
-        if (!lesson.model || !lesson.title || !lesson.sections) {
-          setValidationError('Cada lição deve ter: model, title, sections');
+
+      // Validação completa de cada lição
+      for (let i = 0; i < parsed.length; i++) {
+        const lesson = parsed[i];
+        const missingFields = [];
+
+        if (!lesson.model) missingFields.push('model');
+        if (!lesson.title) missingFields.push('title');
+        if (!lesson.trackId) missingFields.push('trackId');
+        if (!lesson.trackName) missingFields.push('trackName');
+        if (lesson.orderIndex === undefined) missingFields.push('orderIndex');
+        if (!lesson.sections || lesson.sections.length === 0) missingFields.push('sections');
+        if (!lesson.exercises) missingFields.push('exercises');
+
+        // Validar UUID do trackId
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (lesson.trackId && !uuidRegex.test(lesson.trackId)) {
+          setValidationError(`Lição ${i + 1}: trackId inválido (deve ser UUID)`);
+          return null;
+        }
+
+        if (missingFields.length > 0) {
+          setValidationError(`Lição ${i + 1}: Campos obrigatórios ausentes: ${missingFields.join(', ')}`);
           return null;
         }
       }
+
       setValidationError('');
       return parsed as PipelineInput[];
     } catch (error) {
@@ -37,12 +69,32 @@ export default function AdminPipelineCreateBatch() {
     }
   };
 
+  const startPipeline = async (executionId: string, input: PipelineInput) => {
+    try {
+      const result = await runLessonPipeline(input, executionId);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Pipeline falhou');
+      }
+      
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const handleSubmit = async () => {
     const lessons = validateJSON(jsonInput);
     if (!lessons) return;
 
     setIsSubmitting(true);
+    const batchResults = { success: 0, failed: 0, errors: [] as Array<{ title: string; error: string }> };
+    
+    setBatchProgress({ current: 0, total: lessons.length, currentLesson: '' });
+    setResults({ success: 0, failed: 0, errors: [] });
+
     try {
+      // Inserir todas as execuções
       const executions = lessons.map(lesson => ({
         lesson_title: lesson.title,
         model: lesson.model,
@@ -61,20 +113,63 @@ export default function AdminPipelineCreateBatch() {
       if (error) throw error;
 
       toast({
-        title: `${lessons.length} lições criadas!`,
-        description: "Redirecionando para o monitor..."
+        title: "Iniciando processamento em lote",
+        description: `${lessons.length} lições serão processadas sequencialmente`
       });
 
-      // Redirecionar para o monitor geral
-      navigate('/admin/pipeline/monitor');
-    } catch (error) {
-      console.error('Erro ao criar lições em lote:', error);
+      // Executar pipelines sequencialmente
+      for (let i = 0; i < data.length; i++) {
+        const execution = data[i];
+        const lesson = lessons[i];
+
+        setBatchProgress({
+          current: i + 1,
+          total: data.length,
+          currentLesson: lesson.title
+        });
+
+        toast({
+          title: `Processando lição ${i + 1}/${data.length}`,
+          description: lesson.title
+        });
+
+        try {
+          await startPipeline(execution.id, lesson);
+          batchResults.success++;
+        } catch (err) {
+          batchResults.failed++;
+          batchResults.errors.push({
+            title: lesson.title,
+            error: err instanceof Error ? err.message : 'Erro desconhecido'
+          });
+        }
+
+        setResults({ ...batchResults });
+
+        // Delay entre lições para não sobrecarregar
+        if (i < data.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      // Toast final com resumo
       toast({
-        title: "Erro ao criar lições",
+        title: `✅ Processamento Completo!`,
+        description: `${batchResults.success} sucesso | ${batchResults.failed} falhas`,
+        variant: batchResults.failed > 0 ? "destructive" : "default"
+      });
+
+      // Aguardar 3 segundos antes de redirecionar para ver o resumo
+      setTimeout(() => {
+        navigate('/admin/pipeline/monitor');
+      }, 3000);
+    } catch (error) {
+      console.error('Erro no batch:', error);
+      toast({
+        title: "Erro no processamento",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive"
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -83,8 +178,8 @@ export default function AdminPipelineCreateBatch() {
     {
       model: "v2",
       title: "Exemplo de Lição 1",
-      trackId: "uuid-da-trilha",
-      trackName: "Fundamentos",
+      trackId: "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+      trackName: "Fundamentos de IA",
       orderIndex: 1,
       sections: [
         {
@@ -97,7 +192,9 @@ export default function AdminPipelineCreateBatch() {
         {
           type: "multiple-choice",
           question: "Qual é a resposta correta?",
-          data: {}
+          options: ["Opção A", "Opção B", "Opção C"],
+          correctAnswer: 1,
+          explanation: "Feedback da resposta"
         }
       ],
       estimatedTimeMinutes: 15
@@ -131,22 +228,77 @@ export default function AdminPipelineCreateBatch() {
               placeholder="Cole seu JSON aqui..."
               rows={15}
               className="font-mono text-sm"
+              disabled={isSubmitting}
             />
             {validationError && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                {validationError}
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{validationError}</span>
               </div>
             )}
             <Button
               onClick={() => validateJSON(jsonInput)}
               variant="outline"
               className="w-full"
+              disabled={isSubmitting}
             >
               <Upload className="w-4 h-4 mr-2" />
               Validar JSON
             </Button>
           </CardContent>
         </Card>
+
+        {isSubmitting && (
+          <Card className="border-primary">
+            <CardHeader>
+              <CardTitle>Processando Lições em Lote</CardTitle>
+              <CardDescription>
+                Aguarde enquanto as lições são criadas sequencialmente...
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium truncate max-w-[70%]">{batchProgress.currentLesson}</span>
+                  <span className="text-muted-foreground">{batchProgress.current}/{batchProgress.total}</span>
+                </div>
+                <Progress value={(batchProgress.current / batchProgress.total) * 100} />
+              </div>
+              <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span>Sucesso: {results.success}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-destructive" />
+                  <span>Falhas: {results.failed}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {results.errors.length > 0 && (
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                Erros Encontrados
+              </CardTitle>
+              <CardDescription>
+                {results.errors.length} lição(ões) falharam durante o processamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {results.errors.map((err, idx) => (
+                <div key={idx} className="text-sm bg-destructive/10 p-3 rounded-md">
+                  <div className="font-semibold mb-1">{err.title}</div>
+                  <div className="text-muted-foreground">{err.error}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
