@@ -1,0 +1,266 @@
+[
+  {
+    "model": "V1",
+    "title": "Como a IA Aprende com Você",
+    "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+    "trackName": "Fundamentos de IA",
+    "orderIndex": 2,
+    "estimatedTimeMinutes": 15,
+
+    "sections": [
+      {
+        "index": 1,
+        "markdown": "## 🎯 O segredo por trás das sugestões perfeitas\n\nVocê já parou pra pensar como o **Netflix** sempre sabe o que você quer assistir?\n\nOu como o **Spotify** cria aquela playlist que parece que foi feita especialmente pra você? 🎵\n\nO segredo está em como a Inteligência Artificial **aprende**. Ela observa tudo que você faz, identifica padrões e usa essas informações pra melhorar cada vez mais.\n\nÉ como ter um amigo que presta muita atenção no que você gosta e sempre tem a sugestão perfeita na hora certa! 💡",
+        "speechBubble": "Já reparou como o Netflix sempre sabe o que você quer ver?"
+      },
+      {
+        "index": 2,
+        "markdown": "## 🎬 Netflix - A escola da IA\n\nVamos usar o Netflix como exemplo.\n\nToda vez que você assiste algo, a IA registra:\n\n- 📊 Qual gênero\n- 👥 Quais atores\n- ⏱️ Quanto tempo você assistiu\n- ⏭️ Se você pulou a introdução\n- ✅ Se assistiu até o final\n\nCom milhões de pessoas fazendo isso, a IA começa a identificar padrões.\n\nPor exemplo:\n\n> \"Quem assistiu A também gostou de B\"\n\n> \"Quem para de assistir no episódio três geralmente não gosta desse tipo de série\"\n\n**Quanto mais você usa, mais dados a IA tem.**\n\n**E mais dados significa sugestões cada vez melhores!** 📈",
+        "speechBubble": "A IA registra cada detalhe do que você assiste"
+      },
+      {
+        "index": 3,
+        "markdown": "## 🎵 Spotify e a mágica da música\n\nO Spotify funciona parecido, mas vai além.\n\nEle não só vê o que você ouve, mas **quando** você ouve.\n\n🌅 Segunda de manhã → você gosta de um estilo\n🌃 Sexta à noite → outro completamente diferente\n\nA IA aprende seus **humores**, suas **rotinas**.\n\nEla até prevê o que você vai querer ouvir dependendo da hora do dia.\n\nPor isso aquela playlist **\"Descobertas da Semana\"** parece mágica! ✨\n\nEla está literalmente aprendendo com você **24 horas por dia, 7 dias por semana**. 🔄",
+        "speechBubble": "O Spotify conhece seus humores melhor que ninguém"
+      },
+      {
+        "index": 4,
+        "markdown": "## 🎮 Hora de descobrir na prática\n\nIncrível, né? A IA não é programada com gostos específicos. **Ela aprende observando o que VOCÊ faz!**\n\nAgora que você entendeu o conceito, que tal descobrir na prática como isso funciona?\n\nVamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! 🚀\n\nÉ super rápido e você vai ter aquele momento **\"aha!\"** quando entender de verdade.\n\n**Vamos lá?** 👇",
+        "speechBubble": "Vamos ver a IA aprendendo em tempo real!"
+      },
+      {
+        "index": 5,
+        "markdown": "## 📱 Instagram e Facebook - IA social\n\nAs redes sociais usam o mesmo princípio, mas de um jeito ainda mais sofisticado.\n\n### Instagram 📸\nO Instagram analisa:\n- Em quais fotos você **para pra ver**\n- Quais você dá **like**\n- Quais você só **passa direto**\n\n### Facebook 👥\nO Facebook observa:\n- Quais posts você **lê até o final**\n- Quais você **compartilha**\n- Com quem você **mais interage**\n\nE usa tudo isso pra montar seu **feed personalizado**. 🎯\n\nPor isso duas pessoas vendo o Instagram ao mesmo tempo veem coisas completamente diferentes.\n\n**Cada feed é único**, moldado pela IA que aprendeu com você! ✨",
+        "speechBubble": "As redes sociais são ainda mais sofisticadas"
+      },
+      {
+        "index": 6,
+        "markdown": "## 🎓 Você está ensinando IA o tempo todo\n\nAqui está o mais interessante: **você não precisa fazer nada especial**.\n\nSó de usar esses apps normalmente, você está ensinando a IA! 🎯\n\n- Cada **curtida** 👍\n- Cada **busca** 🔍\n- Cada **clique** 🖱️\n\n...é uma aula pra IA. E ela é uma aluna excelente - **nunca esquece nada** e está **sempre melhorando**. 📚\n\n---\n\n### 🚀 Agora você sabe o segredo!\n\nE nas próximas aulas, você vai aprender a usar esse conhecimento **a seu favor**, criando seus próprios comandos para IA.\n\n**Vai ser incrível!** ✨",
+        "speechBubble": "Você ensina IA sem perceber, a cada clique!"
+      }
+    ],
+
+    "playgroundMidLesson": {
+      "type": "interactive-simulation",
+      "title": "Como o Netflix Aprendeu o Que Você Gosta",
+      "intro": {
+        "icon": "🎬",
+        "title": "Simulação: Seu Primeiro Mês no Netflix",
+        "description": "Vamos simular como a IA aprende com você. Cada escolha sua ensina algo novo para a inteligência artificial!",
+        "visual": "Linha do tempo: Semana 1 → Semana 2 → Semana 3 → Resultado"
+      },
+      "scenario": {
+        "icon": "🎬",
+        "text": "Você acabou de criar uma conta no Netflix. A IA ainda não sabe NADA sobre você!"
+      },
+      "steps": [
+        {
+          "step": 1,
+          "week": "Semana 1 - Primeira Escolha",
+          "context": "Você acabou de criar sua conta. O Netflix ainda não sabe NADA sobre você.",
+          "iaKnowledge": "🤷 IA sabe: Nada ainda",
+          "prompt": "Escolha seu primeiro filme para assistir hoje à noite:",
+          "options": [
+            {
+              "id": "acao",
+              "title": "Velozes e Furiosos 7",
+              "genre": "Ação",
+              "emoji": "🚗",
+              "description": "Carros, explosões, adrenalina"
+            },
+            {
+              "id": "romance",
+              "title": "Diário de uma Paixão",
+              "genre": "Romance",
+              "emoji": "💕",
+              "description": "História de amor emocionante"
+            },
+            {
+              "id": "comedia",
+              "title": "Se Beber Não Case",
+              "genre": "Comédia",
+              "emoji": "😂",
+              "description": "Risadas garantidas"
+            }
+          ],
+          "feedback": {
+            "title": "O que a IA Aprendeu:",
+            "learning": [
+              "✓ Você gostou de {genre}",
+              "✓ Assistiu em horário noturno",
+              "✓ Primeira impressão registrada"
+            ],
+            "visual": "Barra de aprendizado: 33% completa",
+            "confidence": "Confiança da IA: 25%"
+          }
+        },
+        {
+          "step": 2,
+          "week": "Semana 2 - IA Fazendo Sugestões",
+          "context": "Uma semana depois. A IA já começou a aprender!",
+          "iaKnowledge": "🧠 IA sabe: Você gostou de {previousGenre}",
+          "prompt": "O Netflix montou sugestões pra você. Escolha um filme:",
+          "options": "dynamic",
+          "logic": "2 filmes do mesmo gênero escolhido + 1 diferente",
+          "feedback": {
+            "title": "A IA Está Ficando Mais Esperta:",
+            "learning": [
+              "✓✓ CONFIRMOU: Você realmente gosta de {genre}",
+              "✓ IA aumentou confiança nessa preferência",
+              "✓ Próximas sugestões serão ainda mais precisas"
+            ],
+            "confidence": "Confiança da IA: 60%",
+            "visual": "Barra de aprendizado: 66% completa"
+          }
+        },
+        {
+          "step": 3,
+          "week": "Semana 3 - IA Experiente",
+          "context": "Três semanas depois. A IA já te conhece bem!",
+          "iaKnowledge": "🎯 IA sabe: Suas preferências + padrões + horários",
+          "prompt": "Sexta-feira, 21h. Veja as sugestões personalizadas:",
+          "options": "dynamic",
+          "logic": "3 filmes altamente personalizados baseados no perfil",
+          "feedback": {
+            "title": "IA Totalmente Treinada! 🎯",
+            "learning": [
+              "✓✓✓ IA dominou suas preferências",
+              "✓ Conhece seus gêneros favoritos",
+              "✓ Sabe seus horários típicos",
+              "✓ Prevê o que você vai gostar"
+            ],
+            "confidence": "Confiança da IA: 95%",
+            "visual": "Barra de aprendizado: 100% completa! 🎉"
+          }
+        }
+      ],
+      "completion": {
+        "visual": "Gráfico de progressão mostrando evolução",
+        "chart": {
+          "type": "line",
+          "data": "Confiança da IA: 25% → 60% → 95%"
+        },
+        "summary": {
+          "title": "Na vida real:",
+          "points": [
+            "O Netflix analisa CENTENAS de escolhas suas",
+            "Aprende com MILHÕES de usuários ao mesmo tempo",
+            "Por isso as sugestões ficam TÃO boas!",
+            "Você ensina IA só de usar o app normalmente"
+          ]
+        },
+        "message": "Viu como funciona? A IA aprendeu seu gosto em apenas 3 escolhas! Imagina com centenas de filmes...",
+        "badge": {
+          "id": "badge-entendeu-aprendizado-ia",
+          "title": "Mestre do Aprendizado de IA!",
+          "icon": "🧠"
+        }
+      }
+    },
+
+    "exercises": [
+      {
+        "index": 1,
+        "type": "data-collection",
+        "question": "Veja a situação e identifique TODOS os dados que a IA está coletando: Sexta-feira, 22h - Você começou uma série de comédia, assistiu 3 episódios seguidos sem pausar, pulou a intro de todos, e deu like no último episódio.",
+        "options": [
+          "Qual gênero você prefere (comédia)",
+          "Que você assiste vários episódios seguidos",
+          "Que você sempre pula a introdução",
+          "Horário que você costuma assistir (noite)",
+          "Seu nível de engajamento (like)",
+          "Qual dispositivo você está usando"
+        ],
+        "correctOptions": [0, 1, 2, 3, 4],
+        "feedback": "Netflix registra: gênero, padrão de binge, preferências de navegação, horários e engajamento. Dispositivo não foi mencionado neste cenário."
+      },
+      {
+        "index": 2,
+        "type": "data-collection",
+        "question": "Identifique o que o Spotify aprende: Segunda, 7h da manhã - Você acorda e coloca uma playlist de música calma enquanto toma café. Sexta, 23h - Você está numa festa e coloca músicas animadas de funk.",
+        "options": [
+          "Seus gêneros favoritos (calma e funk)",
+          "Seus horários e rotinas (manhã vs noite)",
+          "Seus diferentes humores (relaxado vs festa)",
+          "Seu estilo de roupas",
+          "Contexto de uso (casa vs festa)"
+        ],
+        "correctOptions": [0, 1, 2, 4],
+        "feedback": "Spotify aprende gêneros, horários, humores e contextos. Roupas não são rastreadas pelo app de música!"
+      },
+      {
+        "index": 3,
+        "type": "data-collection",
+        "question": "O que o Instagram está aprendendo: Você para 15 segundos numa foto de viagem, dá like, salva nos favoritos e ainda comenta 'lindo!'. Na próxima foto de comida, você só passa direto em 1 segundo.",
+        "options": [
+          "Você ama conteúdo de viagens",
+          "Você não gosta de fotos de comida",
+          "Quanto tempo você olha cada tipo de conteúdo",
+          "Suas interações (like, salvar, comentar)",
+          "Seu saldo bancário"
+        ],
+        "correctOptions": [0, 1, 2, 3],
+        "feedback": "Instagram analisa seus interesses, tempo de visualização e engajamento. Saldo bancário não é rastreado pela rede social!"
+      },
+      {
+        "index": 4,
+        "type": "multiple-choice",
+        "question": "Por que o Netflix sugere filmes que você provavelmente vai gostar?",
+        "options": [
+          "Porque alguém programa manualmente cada sugestão",
+          "Porque a IA aprendeu seus padrões observando o que você assiste",
+          "Porque todos veem as mesmas sugestões",
+          "Porque o Netflix adivinha aleatoriamente"
+        ],
+        "correctOptionIndex": 1,
+        "feedback": "Correto! A IA aprende com SEUS dados e cria sugestões personalizadas. Ninguém programa manualmente e cada pessoa vê sugestões únicas!"
+      },
+      {
+        "index": 5,
+        "type": "complete-sentence",
+        "question": "Complete as frases sobre como a IA aprende:",
+        "sentences": [
+          "A IA do Netflix aprende observando o que você ___________.",
+          "Quanto __________ dados a IA tem, melhores ficam as sugestões.",
+          "O Spotify sabe seus __________ porque analisa QUANDO você ouve cada estilo.",
+          "Duas pessoas vendo o Instagram ao mesmo tempo veem feeds completamente ___________."
+        ],
+        "correctAnswers": [
+          ["assiste", "vê", "escolhe", "faz"],
+          ["mais", "maiores"],
+          ["humores", "gostos", "padrões", "horários"],
+          ["diferentes", "distintos", "únicos", "personalizados"]
+        ],
+        "feedback": "Perfeito! A IA aprende com SEU comportamento e personaliza tudo para VOCÊ!"
+      },
+      {
+        "index": 6,
+        "type": "true-false",
+        "statement": "A IA precisa que você ensine manualmente o que você gosta",
+        "answer": false,
+        "feedback": "FALSO! A IA aprende sozinha só observando o que você faz. Você não precisa ensinar nada manualmente!"
+      },
+      {
+        "index": 7,
+        "type": "true-false",
+        "statement": "Quanto mais você usa um app, melhor a IA fica",
+        "answer": true,
+        "feedback": "VERDADEIRO! Mais uso = mais dados = IA mais inteligente e precisa nas sugestões!"
+      },
+      {
+        "index": 8,
+        "type": "true-false",
+        "statement": "O Spotify só aprende quais músicas você ouve",
+        "answer": false,
+        "feedback": "FALSO! O Spotify vai ALÉM: aprende QUANDO você ouve cada estilo (manhã, tarde, noite) e sugere no momento certo!"
+      },
+      {
+        "index": 9,
+        "type": "true-false",
+        "statement": "Você ensina IA toda vez que usa um app normalmente",
+        "answer": true,
+        "feedback": "VERDADEIRO! Cada clique, scroll, like é uma 'aula' para a IA. Você é professor sem perceber!"
+      }
+    ]
+  }
+]
