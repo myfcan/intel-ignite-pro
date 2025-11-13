@@ -111,6 +111,7 @@ export interface Step5Output extends Step4Output {
 export interface Step6Output extends Step5Output {
   validationPassed: boolean;
   validationWarnings: string[];
+  lessonId?: string; // Para idempotência (permite reexecução)
 }
 
 // PHASE 7: Consolidate (salvar no banco)

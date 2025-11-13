@@ -28,6 +28,7 @@ export async function step3GenerateAudio(input: Step2Output): Promise<Step3Outpu
  * V1: Áudio único com word timestamps
  */
 async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
+  const startTime = Date.now();
   console.log('🎙️ [V1] Gerando áudio único com timestamps...');
   
   const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
@@ -83,6 +84,7 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
  * V2: Múltiplos áudios (um por seção)
  */
 async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
+  const startTime = Date.now();
   console.log('🎙️ [V2] Gerando múltiplos áudios...');
   console.log(`   ${input.sectionTexts.length} seções`);
 
@@ -135,7 +137,8 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
   }
 
   const totalDuration = durations.reduce((sum, d) => sum + d, 0);
-  console.log(`✅ [V2] ${audioUrls.length} áudios gerados (total: ${totalDuration.toFixed(1)}s)`);
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [V2] ${audioUrls.length} áudios gerados em ${elapsedTime}ms (total: ${totalDuration.toFixed(1)}s)`);
 
   return {
     ...input,
@@ -148,6 +151,7 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
  * V3: Áudio único + imagens de slides
  */
 async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
+  const startTime = Date.now();
   console.log('🎙️ [V3] Gerando áudio + imagens de slides...');
 
   if (!input.v3Data) {
@@ -218,7 +222,9 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   });
 
   console.log(`   ✅ ${updatedSlides.length} imagens geradas`);
-  console.log(`✅ [V3] Áudio + imagens completos`);
+  
+  const elapsedTime = Date.now() - startTime;
+  console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
 
   return {
     ...input,
