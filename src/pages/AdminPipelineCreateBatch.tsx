@@ -246,7 +246,7 @@ export default function AdminPipelineCreateBatch() {
         const lesson = parsed[i];
         const missingFields = [];
 
-        if (!lesson.model) missingFields.push('model');
+        // ✅ Campo "model" agora é OPCIONAL (será preenchido pelo botão selecionado)
         if (!lesson.title) missingFields.push('title');
         if (lesson.orderIndex === undefined) missingFields.push('orderIndex');
         if (!lesson.sections || lesson.sections.length === 0) missingFields.push('sections');
@@ -262,9 +262,15 @@ export default function AdminPipelineCreateBatch() {
           transformSimplifiedExercise(ex, idx)
         );
 
+        // ✅ Validar que há modelo selecionado
+        if (!lesson.model && !selectedTemplate) {
+          setValidationError('❌ Selecione um modelo (V1, V2 ou V3) clicando nos botões acima antes de validar');
+          return null;
+        }
+
         // ✅ Sobrescrever trackId e trackName com a trail padrão
         const convertedLesson: PipelineInput = {
-          model: lesson.model.toLowerCase() as 'v1' | 'v2' | 'v3',
+          model: (lesson.model || selectedTemplate).toLowerCase() as 'v1' | 'v2' | 'v3', // ✅ Usa botão se não tiver no JSON
           title: lesson.title,
           trackId: defaultTrail.id,  // Auto-determinado
           trackName: defaultTrail.title,  // Auto-determinado
@@ -319,6 +325,16 @@ export default function AdminPipelineCreateBatch() {
   };
 
   const handleSubmit = async () => {
+    // ✅ Validar modelo selecionado antes de criar
+    if (!selectedTemplate) {
+      toast({
+        title: 'Modelo não selecionado',
+        description: 'Clique em V1, V2 ou V3 antes de criar as lições',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const lessons = validateJSON(jsonInput);
     if (!lessons) return;
 
@@ -602,32 +618,47 @@ export default function AdminPipelineCreateBatch() {
               </div>
             )}
             <div className="space-y-2">
+              <div className="mb-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Selecione o modelo</strong> que será aplicado a TODAS as lições do batch
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Não precisa especificar "model" no JSON - o botão selecionado será aplicado automaticamente
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => loadTemplate('v1')}
-                  variant={selectedTemplate === 'v1' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v1' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v1' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎵 V1 (Áudio Único)
                 </Button>
                 <Button
                   onClick={() => loadTemplate('v2')}
-                  variant={selectedTemplate === 'v2' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v2' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v2' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎙️ V2 (Multi-Áudio)
                 </Button>
                 <Button
                   onClick={() => loadTemplate('v3')}
-                  variant={selectedTemplate === 'v3' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v3' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v3' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎨 V3 (Slides)
                 </Button>
               </div>
+              {selectedTemplate && (
+                <div className="mt-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-primary font-medium text-center">
+                    ✓ Modelo {selectedTemplate.toUpperCase()} selecionado
+                  </p>
+                </div>
+              )}
               <Button
                 onClick={handleValidate}
                 variant="outline"
