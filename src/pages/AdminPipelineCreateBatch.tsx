@@ -380,13 +380,48 @@ export default function AdminPipelineCreateBatch() {
     basic: [
       {
         "model": "v2",
-        "title": "Introdução à IA",
+        "title": "✨ [TESTE] Introdução à IA - Validação Pipeline",
         "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
-        "trackName": "Fundamentos",
-        "orderIndex": 1,
-        "estimatedTimeMinutes": 15,
-        "sections": [{ "index": 0, "markdown": "# 🤖 O que é IA?\n\nIA aprende padrões.", "speechBubble": "Vamos aprender!" }],
-        "exercises": [{ "type": "multiple-choice", "question": "O que é IA?", "options": ["Robô", "Tecnologia que aprende", "Software"], "correctOptionIndex": 1, "feedback": "Correto!" }]
+        "trackName": "Fundamentos de IA",
+        "orderIndex": 99,
+        "estimatedTimeMinutes": 10,
+        "sections": [
+          {
+            "index": 0,
+            "markdown": "# 🤖 O que é IA?\n\nInteligência Artificial é tecnologia que aprende padrões com exemplos.",
+            "speechBubble": "Olá! Vou te ensinar o que é IA de forma simples."
+          },
+          {
+            "index": 1,
+            "markdown": "# 📊 Como funciona?\n\nA IA analisa milhares de exemplos para aprender.",
+            "speechBubble": "Pense como você aprende: vendo exemplos e praticando!"
+          }
+        ],
+        "exercises": [
+          {
+            "type": "multiple-choice",
+            "question": "O que é Inteligência Artificial?",
+            "options": [
+              "Um robô consciente",
+              "Tecnologia que aprende padrões",
+              "Software com regras fixas"
+            ],
+            "correctOptionIndex": 1,
+            "feedback": "Correto! IA aprende padrões com dados."
+          },
+          {
+            "type": "true-false",
+            "statement": "Você já usa IA no GPS e redes sociais",
+            "answer": true,
+            "feedback": "Sim! IA está em muitas ferramentas do dia a dia."
+          },
+          {
+            "type": "complete-sentence",
+            "sentence": "A IA aprende analisando muitos exemplos.",
+            "correctAnswer": "exemplos",
+            "feedback": "Perfeito! Quanto mais exemplos, melhor a IA aprende."
+          }
+        ]
       }
     ]
   };
@@ -394,6 +429,11 @@ export default function AdminPipelineCreateBatch() {
   const loadTemplate = (templateKey: 'basic') => {
     setJsonInput(JSON.stringify(templates[templateKey], null, 2));
     setSelectedTemplate(templateKey);
+    setValidationError('');
+    toast({
+      title: "✅ Template carregado",
+      description: "Template de teste V2 pronto para validação",
+    });
   };
 
   const exampleJSON = JSON.stringify([
@@ -458,15 +498,24 @@ export default function AdminPipelineCreateBatch() {
                 <span>{validationError}</span>
               </div>
             )}
-            <Button
-              onClick={() => validateJSON(jsonInput)}
-              variant="outline"
-              className="w-full"
-              disabled={isSubmitting}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Validar JSON
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => loadTemplate('basic')}
+                variant="secondary"
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                📝 Template Básico (V2)
+              </Button>
+              <Button
+                onClick={() => validateJSON(jsonInput)}
+                variant="outline"
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                ✅ Validar JSON
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
