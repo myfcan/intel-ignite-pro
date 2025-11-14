@@ -7,6 +7,7 @@ import { ArrowLeft, Upload, Rocket, AlertCircle, Check, Loader2, ChevronDown } f
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import type { PipelineInput } from '@/lib/lessonPipeline/types';
 import { runLessonPipeline } from '@/lib/lessonPipeline';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -318,7 +319,7 @@ export default function AdminPipelineCreateBatch() {
         track_id: lesson.trackId,
         track_name: lesson.trackName,
         order_index: lesson.orderIndex,
-        input_data: lesson,
+        input_data: lesson as unknown as Json,
         current_step: 0,
         total_steps: 8,
         logs: [],
