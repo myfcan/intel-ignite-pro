@@ -175,60 +175,75 @@ export type Database = {
       lessons: {
         Row: {
           audio_url: string | null
+          audio_urls: string[] | null
           content: Json
           created_at: string | null
           description: string | null
           difficulty_level:
             | Database["public"]["Enums"]["difficulty_level"]
             | null
+          erro_criacao: string | null
           estimated_time: number | null
           exercises: Json | null
           exercises_version: number | null
+          fase_criacao: string | null
           id: string
           is_active: boolean | null
           lesson_type: string | null
           order_index: number
           passing_score: number | null
+          progresso_criacao: number | null
+          status: string | null
           title: string
           trail_id: string | null
           word_timestamps: Json | null
         }
         Insert: {
           audio_url?: string | null
+          audio_urls?: string[] | null
           content?: Json
           created_at?: string | null
           description?: string | null
           difficulty_level?:
             | Database["public"]["Enums"]["difficulty_level"]
             | null
+          erro_criacao?: string | null
           estimated_time?: number | null
           exercises?: Json | null
           exercises_version?: number | null
+          fase_criacao?: string | null
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
           order_index: number
           passing_score?: number | null
+          progresso_criacao?: number | null
+          status?: string | null
           title: string
           trail_id?: string | null
           word_timestamps?: Json | null
         }
         Update: {
           audio_url?: string | null
+          audio_urls?: string[] | null
           content?: Json
           created_at?: string | null
           description?: string | null
           difficulty_level?:
             | Database["public"]["Enums"]["difficulty_level"]
             | null
+          erro_criacao?: string | null
           estimated_time?: number | null
           exercises?: Json | null
           exercises_version?: number | null
+          fase_criacao?: string | null
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
           order_index?: number
           passing_score?: number | null
+          progresso_criacao?: number | null
+          status?: string | null
           title?: string
           trail_id?: string | null
           word_timestamps?: Json | null
@@ -239,6 +254,44 @@ export type Database = {
             columns: ["trail_id"]
             isOneToOne: false
             referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missoes_diarias: {
+        Row: {
+          bonus_resgatado: boolean | null
+          created_at: string | null
+          data: string
+          id: string
+          missoes: Json
+          todas_completas: boolean | null
+          user_id: string
+        }
+        Insert: {
+          bonus_resgatado?: boolean | null
+          created_at?: string | null
+          data: string
+          id?: string
+          missoes?: Json
+          todas_completas?: boolean | null
+          user_id: string
+        }
+        Update: {
+          bonus_resgatado?: boolean | null
+          created_at?: string | null
+          data?: string
+          id?: string
+          missoes?: Json
+          todas_completas?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missoes_diarias_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -425,6 +478,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_logs: {
+        Row: {
+          contexto: string
+          created_at: string | null
+          detalhes: Json | null
+          id: string
+          mensagem: string
+          tipo: string
+        }
+        Insert: {
+          contexto: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          mensagem: string
+          tipo: string
+        }
+        Update: {
+          contexto?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          mensagem?: string
+          tipo?: string
+        }
+        Relationships: []
       }
       trails: {
         Row: {
@@ -888,16 +968,30 @@ export type Database = {
       }
     }
     Functions: {
-      create_lesson_draft: {
-        Args: {
-          p_content: Json
-          p_estimated_time: number
-          p_order_index: number
-          p_title: string
-          p_trail_id: string
-        }
-        Returns: string
-      }
+      create_lesson_draft:
+        | {
+            Args: {
+              p_audio_url?: string
+              p_content: Json
+              p_estimated_time: number
+              p_exercises?: Json
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+              p_word_timestamps?: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_content: Json
+              p_estimated_time: number
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+            }
+            Returns: string
+          }
       debug_auth_context: {
         Args: never
         Returns: {
