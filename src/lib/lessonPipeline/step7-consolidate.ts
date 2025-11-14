@@ -39,11 +39,30 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
   console.log(`      Audio URL: ${audioUrl ? 'presente' : 'null'}`);
   console.log(`      Word Timestamps: ${wordTimestamps ? 'presente' : 'null'}`);
 
+  // Buscar próximo order_index disponível para evitar conflitos
+  let orderIndex = input.orderIndex;
+
+  const { data: maxOrderData } = await supabase
+    .from('lessons')
+    .select('order_index')
+    .eq('trail_id', input.trackId)
+    .order('order_index', { ascending: false })
+    .limit(1);
+
+  if (maxOrderData && maxOrderData.length > 0) {
+    const maxOrder = maxOrderData[0].order_index;
+    // Se o orderIndex solicitado já existe ou é menor que o máximo, usar próximo disponível
+    if (orderIndex <= maxOrder) {
+      orderIndex = maxOrder + 1;
+      console.log(`   ⚠️ orderIndex ${input.orderIndex} já existe. Usando próximo disponível: ${orderIndex}`);
+    }
+  }
+
   // Usar SECURITY DEFINER function para criar a lição (validação de admin está na função)
   const { data: lessonId, error } = await supabase.rpc('create_lesson_draft', {
     p_title: input.title,
     p_trail_id: input.trackId,
-    p_order_index: input.orderIndex,
+    p_order_index: orderIndex,
     p_estimated_time: Math.ceil(input.totalDuration / 60),
     p_content: contentWithoutExercises,  // ✅ Apenas content, sem exercises
     p_exercises: exercises,              // ✅ Exercises separado
