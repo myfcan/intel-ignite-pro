@@ -46,6 +46,9 @@ export function validateExercise(exercise: any): ValidationResult {
 
   // Validações específicas por tipo
   switch (exercise.type) {
+    case 'multiple-choice':
+      validateMultipleChoice(exercise.data, result);
+      break;
     case 'drag-drop':
       validateDragDrop(exercise.data, result);
       break;
@@ -189,6 +192,33 @@ function validateCompleteSentence(data: any, result: ValidationResult): void {
     result.errors.push('complete-sentence precisa de "sentences" (array)');
   } else if (data.sentences.length === 0) {
     result.warnings.push('complete-sentence tem 0 sentences');
+  }
+}
+
+function validateMultipleChoice(data: any, result: ValidationResult): void {
+  if (!data.question || typeof data.question !== 'string') {
+    result.errors.push('multiple-choice precisa de "question" (string)');
+  }
+
+  if (!data.options || !Array.isArray(data.options)) {
+    result.errors.push('multiple-choice precisa de "options" (array)');
+  } else {
+    if (data.options.length < 2) {
+      result.errors.push('multiple-choice precisa ter pelo menos 2 opções');
+    }
+
+    // Validar correctAnswer
+    if (typeof data.correctAnswer !== 'number') {
+      result.errors.push('multiple-choice precisa de "correctAnswer" (number/índice)');
+    } else {
+      if (data.correctAnswer < 0 || data.correctAnswer >= data.options.length) {
+        result.errors.push(`correctAnswer (${data.correctAnswer}) fora do range de opções (0-${data.options.length - 1})`);
+      }
+    }
+  }
+
+  if (!data.explanation) {
+    result.warnings.push('multiple-choice não tem "explanation"');
   }
 }
 
