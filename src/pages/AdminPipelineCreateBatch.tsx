@@ -15,6 +15,7 @@ export default function AdminPipelineCreateBatch() {
   const { toast } = useToast();
   const [jsonInput, setJsonInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [batchProgress, setBatchProgress] = useState({
     current: 0,
@@ -117,9 +118,29 @@ export default function AdminPipelineCreateBatch() {
   };
 
   const handleSubmit = async () => {
+    if (isCreating) return; // Previne cliques duplos
+    
     const lessons = validateJSON(jsonInput);
     if (!lessons) return;
 
+    // Verificar duplicações antes de criar
+    const titulos = lessons.map(l => l.title);
+    const { data: existing } = await supabase
+      .from('pipeline_executions')
+      .select('lesson_title')
+      .in('status', ['pending', 'running'])
+      .in('lesson_title', titulos);
+
+    if (existing && existing.length > 0) {
+      toast({
+        title: "Execuções em andamento",
+        description: `Já existem ${existing.length} aula(s) sendo processadas. Aguarde a conclusão.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreating(true); // Desabilita botão
     setIsSubmitting(true);
     const batchResults = { success: 0, failed: 0, errors: [] as Array<{ title: string; error: string }> };
     
@@ -203,7 +224,9 @@ export default function AdminPipelineCreateBatch() {
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive"
       });
+    } finally {
       setIsSubmitting(false);
+      setIsCreating(false);
     }
   };
 
@@ -350,11 +373,20 @@ export default function AdminPipelineCreateBatch() {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !jsonInput || !!validationError}
+            disabled={isCreating || isSubmitting || !jsonInput || !!validationError}
             className="flex-1"
           >
-            <Rocket className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Criando...' : 'Criar Todas as Lições'}
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Criando...
+              </>
+            ) : (
+              <>
+                <Rocket className="w-4 h-4 mr-2" />
+                Criar Todas as Lições
+              </>
+            )}
           </Button>
         </div>
       </div>
