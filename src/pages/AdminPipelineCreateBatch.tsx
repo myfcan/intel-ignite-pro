@@ -1,14 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Upload, Rocket, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Rocket, AlertCircle, Check, Loader2, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { PipelineInput } from '@/lib/lessonPipeline/types';
 import { runLessonPipeline } from '@/lib/lessonPipeline';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import type { LogEntry } from '@/lib/lessonPipeline/logger';
+
+interface StepProgress {
+  step: number;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  message: string;
+  timestamp?: string;
+  duration?: number;
+}
 
 export default function AdminPipelineCreateBatch() {
   const navigate = useNavigate();
@@ -17,16 +29,165 @@ export default function AdminPipelineCreateBatch() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [currentExecutionId, setCurrentExecutionId] = useState('');
+  const [realtimeLogs, setRealtimeLogs] = useState<LogEntry[]>([]);
   const [batchProgress, setBatchProgress] = useState({
     current: 0,
     total: 0,
     currentLesson: ''
   });
+  const [stepsProgress, setStepsProgress] = useState<StepProgress[]>([
+    { step: 1, name: 'Validação de Entrada', status: 'pending', message: '' },
+    { step: 2, name: 'Limpeza de Texto', status: 'pending', message: '' },
+    { step: 3, name: 'Geração de Áudio', status: 'pending', message: '' },
+    { step: 4, name: 'Cálculo de Timestamps', status: 'pending', message: '' },
+    { step: 5, name: 'Geração de Exercícios', status: 'pending', message: '' },
+    { step: 6, name: 'Validação Completa', status: 'pending', message: '' },
+    { step: 7, name: 'Salvar no Banco', status: 'pending', message: '' },
+    { step: 8, name: 'Ativação', status: 'pending', message: '' }
+  ]);
   const [results, setResults] = useState<{
     success: number;
     failed: number;
     errors: Array<{ title: string; error: string }>;
   }>({ success: 0, failed: 0, errors: [] });
+
+  // Polling para atualizar progresso em tempo real
+  useEffect(() => {
+    if (!isSubmitting || !currentExecutionId) return;
+
+    const pollInterval = setInterval(async () => {
+      const { data } = await supabase
+        .from('pipeline_executions')
+        .select('step_progress, logs, current_step, status')
+        .eq('id', currentExecutionId)
+        .single();
+
+      if (data) {
+        if (data.logs && Array.isArray(data.logs)) {
+          setRealtimeLogs(data.logs as unknown as LogEntry[]);
+        }
+
+        if (data.step_progress) {
+          setStepsProgress(prevSteps =>
+            prevSteps.map(step => {
+              const progress = data.step_progress[step.step];
+              if (progress) {
+                return {
+                  ...step,
+                  status: progress.status || step.status,
+                  message: progress.message || step.message,
+                  timestamp: progress.timestamp,
+                  duration: progress.duration
+                };
+              }
+              return step;
+            })
+          );
+        }
+
+        if (data.status === 'completed' || data.status === 'failed') {
+          clearInterval(pollInterval);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(pollInterval);
+  }, [isSubmitting, currentExecutionId]);
+
+  const getExerciseTitle = (type: string): string => {
+    const titles: Record<string, string> = {
+      'multiple-choice': 'Múltipla Escolha',
+      'true-false': 'Verdadeiro ou Falso',
+      'complete-sentence': 'Completar Sentença',
+      'fill-in-blanks': 'Preencher Lacunas'
+    };
+    return titles[type] || 'Exercício';
+  };
+
+  const getExerciseInstruction = (type: string): string => {
+    const instructions: Record<string, string> = {
+      'multiple-choice': 'Selecione a alternativa correta:',
+      'true-false': 'Marque se a afirmação é verdadeira ou falsa:',
+      'complete-sentence': 'Complete a sentença com a palavra correta:',
+      'fill-in-blanks': 'Preencher os espaços em branco:'
+    };
+    return instructions[type] || 'Responda o exercício:';
+  };
+
+  const transformSimplifiedExercise = (exercise: any, index: number) => {
+    const timestamp = Date.now();
+    const baseExercise = {
+      id: `exercise-${timestamp}-${index}`,
+      title: getExerciseTitle(exercise.type),
+      instruction: getExerciseInstruction(exercise.type)
+    };
+
+    switch (exercise.type) {
+      case 'multiple-choice':
+        return {
+          ...baseExercise,
+          type: 'multiple-choice',
+          data: {
+            question: exercise.question,
+            options: exercise.options,
+            correctAnswer: exercise.correctOptionIndex ?? exercise.correctAnswer,
+            explanation: exercise.feedback || exercise.explanation || 'Correto!'
+          }
+        };
+      
+      case 'true-false':
+        return {
+          ...baseExercise,
+          type: 'true-false',
+          data: {
+            statements: [{
+              id: `stmt-${index}`,
+              text: exercise.statement || exercise.question,
+              correct: exercise.answer ?? exercise.correctAnswer,
+              explanation: exercise.feedback || exercise.explanation || 'Correto!'
+            }],
+            feedback: {
+              perfect: 'Perfeito! Você acertou!',
+              good: 'Bom trabalho!',
+              needsReview: 'Revise o conteúdo da lição.'
+            }
+          }
+        };
+      
+      case 'complete-sentence':
+      case 'fill-in-blanks':
+        const correctAnswerValue = exercise.correctAnswer || exercise.answer || '';
+        const sentenceText = exercise.sentence 
+          ? exercise.sentence.replace(correctAnswerValue, '_______')
+          : exercise.text || '';
+        
+        return {
+          ...baseExercise,
+          type: 'fill-in-blanks',
+          data: {
+            sentences: [{
+              id: `sentence-${index}`,
+              text: sentenceText,
+              correctAnswers: Array.isArray(correctAnswerValue) 
+                ? correctAnswerValue 
+                : [correctAnswerValue],
+              hint: exercise.hint || 'Pense no que você aprendeu',
+              explanation: exercise.feedback || exercise.explanation || 'Excelente!'
+            }],
+            feedback: {
+              allCorrect: 'Excelente!',
+              someCorrect: 'Bom, mas revise algumas respostas.',
+              needsReview: 'Revise o conteúdo da lição.'
+            }
+          }
+        };
+      
+      default:
+        return exercise;
+    }
+  };
 
   const convertToLessonSection = (section: any): any => {
     return {
@@ -44,7 +205,6 @@ export default function AdminPipelineCreateBatch() {
         return null;
       }
 
-      // Validação e conversão de cada lição
       const convertedLessons: PipelineInput[] = [];
       
       for (let i = 0; i < parsed.length; i++) {
@@ -59,7 +219,6 @@ export default function AdminPipelineCreateBatch() {
         if (!lesson.sections || lesson.sections.length === 0) missingFields.push('sections');
         if (!lesson.exercises) missingFields.push('exercises');
 
-        // Validar UUID do trackId
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (lesson.trackId && !uuidRegex.test(lesson.trackId)) {
           setValidationError(`Lição ${i + 1}: trackId inválido (deve ser UUID)`);
@@ -71,7 +230,11 @@ export default function AdminPipelineCreateBatch() {
           return null;
         }
 
-        // Converter estrutura simplificada para PipelineInput
+        // Transformar exercícios para o formato completo
+        const transformedExercises = lesson.exercises.map((ex: any, idx: number) => 
+          transformSimplifiedExercise(ex, idx)
+        );
+
         const convertedLesson: PipelineInput = {
           model: lesson.model.toLowerCase() as 'v1' | 'v2' | 'v3',
           title: lesson.title,
@@ -80,10 +243,9 @@ export default function AdminPipelineCreateBatch() {
           orderIndex: lesson.orderIndex,
           estimatedTimeMinutes: lesson.estimatedTimeMinutes,
           sections: lesson.sections.map(convertToLessonSection),
-          exercises: lesson.exercises
+          exercises: transformedExercises
         };
 
-        // Se houver playgroundMidLesson, adicionar na última seção
         if (lesson.playgroundMidLesson && convertedLesson.sections) {
           const lastSection = convertedLesson.sections[convertedLesson.sections.length - 1];
           lastSection.playgroundConfig = {
@@ -103,131 +265,134 @@ export default function AdminPipelineCreateBatch() {
     }
   };
 
+  const handleValidate = () => {
+    const lessons = validateJSON(jsonInput);
+    if (lessons) {
+      toast({
+        title: 'JSON Válido',
+        description: `${lessons.length} lição(ões) pronta(s) para criar`,
+      });
+    }
+  };
+
   const startPipeline = async (executionId: string, input: PipelineInput) => {
     try {
       const result = await runLessonPipeline(input, executionId);
       
       if (!result.success) {
-        throw new Error(result.error || 'Pipeline falhou');
+        throw new Error(result.error || 'Erro desconhecido no pipeline');
       }
-      
-      return result;
-    } catch (error) {
-      throw error;
+
+      return { success: true, lessonId: result.lessonId };
+    } catch (error: any) {
+      console.error('Erro no pipeline:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const handleSubmit = async () => {
-    if (isCreating) return; // Previne cliques duplos
-    
     const lessons = validateJSON(jsonInput);
     if (!lessons) return;
 
-    // Verificar duplicações antes de criar
-    const titulos = lessons.map(l => l.title);
-    const { data: existing } = await supabase
-      .from('pipeline_executions')
-      .select('lesson_title')
-      .in('status', ['pending', 'running'])
-      .in('lesson_title', titulos);
-
-    if (existing && existing.length > 0) {
-      toast({
-        title: "Execuções em andamento",
-        description: `Já existem ${existing.length} aula(s) sendo processadas. Aguarde a conclusão.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsCreating(true); // Desabilita botão
     setIsSubmitting(true);
-    const batchResults = { success: 0, failed: 0, errors: [] as Array<{ title: string; error: string }> };
-    
+    setIsCreating(true);
     setBatchProgress({ current: 0, total: lessons.length, currentLesson: '' });
     setResults({ success: 0, failed: 0, errors: [] });
 
+    setStepsProgress([
+      { step: 1, name: 'Validação de Entrada', status: 'pending', message: '' },
+      { step: 2, name: 'Limpeza de Texto', status: 'pending', message: '' },
+      { step: 3, name: 'Geração de Áudio', status: 'pending', message: '' },
+      { step: 4, name: 'Cálculo de Timestamps', status: 'pending', message: '' },
+      { step: 5, name: 'Geração de Exercícios', status: 'pending', message: '' },
+      { step: 6, name: 'Validação Completa', status: 'pending', message: '' },
+      { step: 7, name: 'Salvar no Banco', status: 'pending', message: '' },
+      { step: 8, name: 'Ativação', status: 'pending', message: '' }
+    ]);
+
     try {
-      // Inserir todas as execuções
-      const executions = lessons.map(lesson => ({
+      const executionsToCreate = lessons.map(lesson => ({
+        status: 'pending',
         lesson_title: lesson.title,
         model: lesson.model,
-        status: 'pending' as const,
-        input_data: lesson as unknown as any,
         track_id: lesson.trackId,
         track_name: lesson.trackName,
         order_index: lesson.orderIndex,
+        input_data: lesson,
+        current_step: 0,
+        total_steps: 8,
+        logs: [],
+        step_progress: {}
       }));
 
-      const { data, error } = await supabase
+      const { data: insertedExecutions, error: insertError } = await supabase
         .from('pipeline_executions')
-        .insert(executions)
+        .insert(executionsToCreate)
         .select();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
-      toast({
-        title: "Iniciando processamento em lote",
-        description: `${lessons.length} lições serão processadas sequencialmente`
-      });
-
-      // Executar pipelines sequencialmente
-      for (let i = 0; i < data.length; i++) {
-        const execution = data[i];
+      for (let i = 0; i < lessons.length; i++) {
         const lesson = lessons[i];
-
+        const execution = insertedExecutions[i];
+        
         setBatchProgress({
           current: i + 1,
-          total: data.length,
+          total: lessons.length,
           currentLesson: lesson.title
         });
 
-        toast({
-          title: `Processando lição ${i + 1}/${data.length}`,
-          description: lesson.title
-        });
+        setCurrentExecutionId(execution.id);
 
-        try {
-          await startPipeline(execution.id, lesson);
-          batchResults.success++;
-        } catch (err) {
-          batchResults.failed++;
-          batchResults.errors.push({
-            title: lesson.title,
-            error: err instanceof Error ? err.message : 'Erro desconhecido'
-          });
-        }
+        const result = await startPipeline(execution.id, lesson);
 
-        setResults({ ...batchResults });
-
-        // Delay entre lições para não sobrecarregar
-        if (i < data.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        if (result.success) {
+          setResults(prev => ({ ...prev, success: prev.success + 1 }));
+        } else {
+          setResults(prev => ({
+            ...prev,
+            failed: prev.failed + 1,
+            errors: [...prev.errors, { title: lesson.title, error: result.error || 'Erro desconhecido' }]
+          }));
         }
       }
 
-      // Toast final com resumo
       toast({
-        title: `✅ Processamento Completo!`,
-        description: `${batchResults.success} sucesso | ${batchResults.failed} falhas`,
-        variant: batchResults.failed > 0 ? "destructive" : "default"
+        title: 'Lote Concluído',
+        description: `${results.success} sucesso(s), ${results.failed} falha(s)`,
       });
 
-      // Aguardar 3 segundos antes de redirecionar para ver o resumo
-      setTimeout(() => {
-        navigate('/admin/pipeline/monitor');
-      }, 3000);
-    } catch (error) {
-      console.error('Erro no batch:', error);
+    } catch (error: any) {
       toast({
-        title: "Erro no processamento",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive"
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
       setIsCreating(false);
+      setCurrentExecutionId('');
     }
+  };
+
+  const templates = {
+    basic: [
+      {
+        "model": "v2",
+        "title": "Introdução à IA",
+        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+        "trackName": "Fundamentos",
+        "orderIndex": 1,
+        "estimatedTimeMinutes": 15,
+        "sections": [{ "index": 0, "markdown": "# 🤖 O que é IA?\n\nIA aprende padrões.", "speechBubble": "Vamos aprender!" }],
+        "exercises": [{ "type": "multiple-choice", "question": "O que é IA?", "options": ["Robô", "Tecnologia que aprende", "Software"], "correctOptionIndex": 1, "feedback": "Correto!" }]
+      }
+    ]
+  };
+
+  const loadTemplate = (templateKey: 'basic') => {
+    setJsonInput(JSON.stringify(templates[templateKey], null, 2));
+    setSelectedTemplate(templateKey);
   };
 
   const exampleJSON = JSON.stringify([

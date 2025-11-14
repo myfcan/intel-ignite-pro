@@ -1,6 +1,7 @@
 import { Step4Output, Step5Output, ExerciseInput } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { validateExercise } from '@/lib/exerciseValidator';
+import { PipelineLogger } from './logger';
 
 /**
  * STEP 5: GERAÇÃO DE EXERCÍCIOS
@@ -8,23 +9,34 @@ import { validateExercise } from '@/lib/exerciseValidator';
  * - Valida estrutura de todos os exercícios
  * - Atribui IDs únicos
  */
-export async function step5GenerateExercises(input: Step4Output): Promise<Step5Output> {
+export async function step5GenerateExercises(input: Step4Output, logger?: PipelineLogger): Promise<Step5Output> {
   const startTime = Date.now();
-  console.log('🎯 [STEP 5] Gerando exercícios...');
-  console.log(`   Total de exercícios: ${input.exercises.length}`);
+  
+  if (logger) {
+    await logger.info(5, 'Generate Exercises', `📝 Processando ${input.exercises.length} exercícios...`);
+  }
 
   const exercisesConfig: any[] = [];
 
   for (let i = 0; i < input.exercises.length; i++) {
     const exercise = input.exercises[i];
-    console.log(`   Processando exercício ${i + 1}/${input.exercises.length} (tipo: ${exercise.type})`);
+    
+    if (logger) {
+      await logger.info(5, 'Generate Exercises', `[${i+1}/${input.exercises.length}] Tipo: ${exercise.type}`);
+    }
 
     let exerciseData = exercise.data;
 
     // Se é do tipo 'prompt' ou não tem data, gerar com IA
     if (exercise.type === 'prompt' || !exerciseData) {
-      console.log(`      📝 Gerando exercício via IA...`);
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `🤖 Gerando exercício via IA...`);
+      }
       exerciseData = await processExercisePrompt(exercise.prompt || '', i);
+      
+      if (logger) {
+        await logger.success(5, 'Generate Exercises', `✅ Exercício gerado: ${exerciseData.type}`);
+      }
     }
 
     // Construir exercício base
@@ -40,9 +52,18 @@ export async function step5GenerateExercises(input: Step4Output): Promise<Step5O
     let validatedExercise;
     try {
       validatedExercise = validateExercise(baseExercise);
-      console.log(`      ✅ Exercício ${i + 1} validado`);
+      
+      if (logger) {
+        await logger.success(5, 'Generate Exercises', `✅ Exercício ${i + 1} validado`);
+      }
     } catch (error) {
-      console.error(`      ❌ Erro ao validar exercício ${i + 1}:`, error);
+      if (logger) {
+        await logger.error(5, 'Generate Exercises', `❌ Validação falhou no exercício ${i + 1}`, {
+          exerciseIndex: i,
+          exerciseType: baseExercise.type,
+          error: error.message
+        });
+      }
       throw new Error(`Falha na validação do exercício ${i + 1}: ${error.message}`);
     }
 
@@ -50,7 +71,10 @@ export async function step5GenerateExercises(input: Step4Output): Promise<Step5O
   }
 
   const elapsedTime = Date.now() - startTime;
-  console.log(`✅ [STEP 5] ${exercisesConfig.length} exercícios gerados em ${elapsedTime}ms`);
+  
+  if (logger) {
+    await logger.success(5, 'Generate Exercises', `✅ ${exercisesConfig.length} exercícios prontos (${elapsedTime}ms)`);
+  }
 
   return {
     ...input,
