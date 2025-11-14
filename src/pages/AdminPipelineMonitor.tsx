@@ -312,7 +312,9 @@ export default function AdminPipelineMonitor() {
                     <div className="bg-muted p-3 rounded-md max-h-[300px] overflow-y-auto text-xs font-mono">
                       {selectedExecution.logs && selectedExecution.logs.length > 0 ? (
                         selectedExecution.logs.map((log, index) => (
-                          <div key={index}>{log}</div>
+                          <div key={index} className="py-1">
+                            {typeof log === 'string' ? log : `[Step ${log.step}] ${log.level.toUpperCase()}: ${log.message}`}
+                          </div>
                         ))
                       ) : (
                         <p className="text-muted-foreground">Nenhum log disponível</p>
