@@ -377,10 +377,10 @@ export default function AdminPipelineCreateBatch() {
   };
 
   const templates = {
-    basic: [
+    v2: [
       {
         "model": "v2",
-        "title": "✨ [TESTE] Introdução à IA - Validação Pipeline",
+        "title": "✨ [TESTE V2] Introdução à IA",
         "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
         "trackName": "Fundamentos de IA",
         "orderIndex": 99,
@@ -423,16 +423,92 @@ export default function AdminPipelineCreateBatch() {
           }
         ]
       }
+    ],
+    v1: [
+      {
+        "model": "v1",
+        "title": "✨ [TESTE V1] Prompts Eficazes",
+        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+        "trackName": "Fundamentos de IA",
+        "orderIndex": 98,
+        "estimatedTimeMinutes": 12,
+        "sections": [
+          {
+            "index": 0,
+            "markdown": "# 💬 O que é um Prompt?\n\nPrompt é como você conversa com a IA para obter respostas precisas.",
+            "speechBubble": "Vou te ensinar a criar comandos poderosos para a IA!"
+          },
+          {
+            "index": 1,
+            "markdown": "# ✨ Técnicas de Prompts\n\nSeja específico, forneça contexto e defina o formato desejado.",
+            "speechBubble": "Quanto mais claro seu pedido, melhor será a resposta da IA."
+          }
+        ],
+        "exercises": [
+          {
+            "type": "multiple-choice",
+            "question": "O que é um prompt?",
+            "options": [
+              "Um código de programação",
+              "Um comando que orienta a IA",
+              "Um banco de dados"
+            ],
+            "correctOptionIndex": 1,
+            "feedback": "Exato! Prompt é a forma de conversar com a IA."
+          },
+          {
+            "type": "true-false",
+            "statement": "Prompts específicos geram respostas mais precisas",
+            "answer": true,
+            "feedback": "Correto! Quanto mais detalhes, melhor a resposta."
+          }
+        ]
+      }
+    ],
+    v3: [
+      {
+        "model": "v3",
+        "title": "✨ [TESTE V3] IA no Cotidiano",
+        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+        "trackName": "Fundamentos de IA",
+        "orderIndex": 97,
+        "estimatedTimeMinutes": 8,
+        "sections": [
+          {
+            "index": 0,
+            "markdown": "# 📱 IA no Seu Dia a Dia\n\nDesde o GPS até assistentes de voz, a IA está presente em muitas ferramentas que você já usa.",
+            "speechBubble": "Você usa IA mais do que imagina! Vou te mostrar onde."
+          }
+        ],
+        "exercises": [
+          {
+            "type": "multiple-choice",
+            "question": "Qual ferramenta usa IA?",
+            "options": [
+              "Calculadora básica",
+              "Assistente de voz",
+              "Relógio analógico"
+            ],
+            "correctOptionIndex": 1,
+            "feedback": "Isso! Assistentes como Siri e Alexa usam IA para entender sua voz."
+          }
+        ]
+      }
     ]
   };
 
-  const loadTemplate = (templateKey: 'basic') => {
+  const loadTemplate = (templateKey: 'v1' | 'v2' | 'v3') => {
     setJsonInput(JSON.stringify(templates[templateKey], null, 2));
     setSelectedTemplate(templateKey);
     setValidationError('');
+    const descriptions = {
+      v1: 'Template V1 (Áudio Único com Timestamps)',
+      v2: 'Template V2 (Múltiplos Áudios por Seção)',
+      v3: 'Template V3 (Slides com Imagens)'
+    };
     toast({
       title: "✅ Template carregado",
-      description: "Template de teste V2 pronto para validação",
+      description: descriptions[templateKey],
     });
   };
 
@@ -498,19 +574,37 @@ export default function AdminPipelineCreateBatch() {
                 <span>{validationError}</span>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => loadTemplate('v1')}
+                  variant={selectedTemplate === 'v1' ? 'default' : 'secondary'}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  🎵 V1 (Áudio Único)
+                </Button>
+                <Button
+                  onClick={() => loadTemplate('v2')}
+                  variant={selectedTemplate === 'v2' ? 'default' : 'secondary'}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  🎙️ V2 (Multi-Áudio)
+                </Button>
+                <Button
+                  onClick={() => loadTemplate('v3')}
+                  variant={selectedTemplate === 'v3' ? 'default' : 'secondary'}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  🎨 V3 (Slides)
+                </Button>
+              </div>
               <Button
-                onClick={() => loadTemplate('basic')}
-                variant="secondary"
-                className="flex-1"
-                disabled={isSubmitting}
-              >
-                📝 Template Básico (V2)
-              </Button>
-              <Button
-                onClick={() => validateJSON(jsonInput)}
+                onClick={handleValidate}
                 variant="outline"
-                className="flex-1"
+                className="w-full"
                 disabled={isSubmitting}
               >
                 ✅ Validar JSON
@@ -520,33 +614,123 @@ export default function AdminPipelineCreateBatch() {
         </Card>
 
         {isSubmitting && (
-          <Card className="border-primary">
-            <CardHeader>
-              <CardTitle>Processando Lições em Lote</CardTitle>
-              <CardDescription>
-                Aguarde enquanto as lições são criadas sequencialmente...
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium truncate max-w-[70%]">{batchProgress.currentLesson}</span>
-                  <span className="text-muted-foreground">{batchProgress.current}/{batchProgress.total}</span>
+          <>
+            <Card className="border-primary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="w-5 h-5 animate-pulse" />
+                  Processando: {batchProgress.currentLesson}
+                </CardTitle>
+                <CardDescription>
+                  Lição {batchProgress.current} de {batchProgress.total}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Progresso geral */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Progresso Geral</span>
+                    <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
+                  </div>
+                  <Progress value={(batchProgress.current / batchProgress.total) * 100} />
                 </div>
-                <Progress value={(batchProgress.current / batchProgress.total) * 100} />
-              </div>
-              <div className="flex gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span>Sucesso: {results.success}</span>
+
+                {/* Contadores */}
+                <div className="flex gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Sucesso: {results.success}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-destructive" />
+                    <span>Falhas: {results.failed}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-destructive" />
-                  <span>Falhas: {results.failed}</span>
+
+                {/* Steps detalhados do pipeline */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Pipeline Steps:</h4>
+                  {stepsProgress.map((step) => (
+                    <div key={step.step} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                      step.status === 'completed' ? 'bg-green-50 border-green-200' :
+                      step.status === 'running' ? 'bg-blue-50 border-blue-200' :
+                      step.status === 'failed' ? 'bg-red-50 border-red-200' :
+                      'bg-gray-50 border-gray-200'
+                    }`}>
+                      {/* Ícone de status */}
+                      <div className="flex-shrink-0">
+                        {step.status === 'completed' && (
+                          <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                            <Check className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {step.status === 'running' && (
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                          </div>
+                        )}
+                        {step.status === 'failed' && (
+                          <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
+                            <AlertCircle className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {step.status === 'pending' && (
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-sm text-gray-500 font-semibold">{step.step}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Informações do step */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{step.name}</span>
+                          {step.duration && (
+                            <span className="text-xs text-muted-foreground">
+                              {(step.duration / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                        </div>
+                        {step.message && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">{step.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Logs em tempo real (collapsible) */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ChevronDown className="w-4 h-4" />
+                    Ver logs detalhados ({realtimeLogs.length})
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ScrollArea className="h-[200px] rounded-md border p-4 mt-2 bg-muted/50">
+                      <div className="space-y-1 font-mono text-xs">
+                        {realtimeLogs.length === 0 ? (
+                          <p className="text-muted-foreground italic">Aguardando logs...</p>
+                        ) : (
+                          realtimeLogs.map((log, i) => (
+                            <div key={i} className={`
+                              ${log.level === 'error' ? 'text-red-600 font-semibold' : ''}
+                              ${log.level === 'success' ? 'text-green-600' : ''}
+                              ${log.level === 'warn' ? 'text-yellow-600' : ''}
+                              ${log.level === 'info' ? 'text-blue-600' : ''}
+                            `}>
+                              <span className="text-muted-foreground">[{log.timestamp}]</span>{' '}
+                              <span className="text-muted-foreground">[Step {log.step}]</span>{' '}
+                              {log.message}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {results.errors.length > 0 && (
