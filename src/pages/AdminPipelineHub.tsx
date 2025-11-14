@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, FileText, FolderOpen, Activity, ArrowLeft } from 'lucide-react';
+import { Rocket, FileText, FolderOpen, Activity, ArrowLeft, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPipelineHub() {
@@ -24,7 +24,7 @@ export default function AdminPipelineHub() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline/create-single')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -57,6 +57,24 @@ export default function AdminPipelineHub() {
               <Button className="w-full" variant="default">
                 <FolderOpen className="w-4 h-4 mr-2" />
                 Criar em Lote
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:border-destructive transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline/manage-lessons')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-destructive" />
+                Gerenciar Lições
+              </CardTitle>
+              <CardDescription>
+                Visualizar, filtrar e deletar lições existentes com segurança
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Gerenciar
               </Button>
             </CardContent>
           </Card>
