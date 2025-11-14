@@ -49,25 +49,30 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
     };
 
     // Validação por tipo
-    let validatedExercise;
-    try {
-      validatedExercise = validateExercise(baseExercise);
-      
-      if (logger) {
-        await logger.success(5, 'Generate Exercises', `✅ Exercício ${i + 1} validado`);
-      }
-    } catch (error) {
+    const validationResult = validateExercise(baseExercise);
+
+    if (!validationResult.isValid) {
+      const errorMessage = validationResult.errors.join(', ');
       if (logger) {
         await logger.error(5, 'Generate Exercises', `❌ Validação falhou no exercício ${i + 1}`, {
           exerciseIndex: i,
           exerciseType: baseExercise.type,
-          error: error.message
+          errors: validationResult.errors,
+          warnings: validationResult.warnings
         });
       }
-      throw new Error(`Falha na validação do exercício ${i + 1}: ${error.message}`);
+      throw new Error(`Falha na validação do exercício ${i + 1}: ${errorMessage}`);
     }
 
-    exercisesConfig.push(validatedExercise);
+    if (validationResult.warnings.length > 0 && logger) {
+      await logger.warn(5, 'Generate Exercises', `⚠️ Exercício ${i + 1} com avisos: ${validationResult.warnings.join(', ')}`);
+    }
+
+    if (logger) {
+      await logger.success(5, 'Generate Exercises', `✅ Exercício ${i + 1} validado`);
+    }
+
+    exercisesConfig.push(baseExercise);
   }
 
   const elapsedTime = Date.now() - startTime;
