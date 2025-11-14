@@ -543,29 +543,10 @@ export default function AdminPipelineCreateBatch() {
   const loadTemplate = (templateKey: 'v1' | 'v2' | 'v3') => {
     setSelectedTemplate(templateKey);
     setValidationError('');
-    
-    // ✅ Modo inteligente: só carrega template se textarea estiver vazio
-    const isJsonEmpty = !jsonInput.trim();
-    
-    if (isJsonEmpty) {
-      // Carrega template de exemplo
-      setJsonInput(JSON.stringify(templates[templateKey], null, 2));
-      const descriptions = {
-        v1: 'Template V1 (Áudio Único com Timestamps)',
-        v2: 'Template V2 (Múltiplos Áudios por Seção)',
-        v3: 'Template V3 (Slides com Imagens)'
-      };
-      toast({
-        title: "📋 Template carregado",
-        description: descriptions[templateKey],
-      });
-    } else {
-      // Apenas seleciona o modelo, preserva JSON existente
-      toast({
-        title: "✓ Modelo selecionado",
-        description: `Modelo ${templateKey.toUpperCase()} selecionado (seu JSON foi preservado)`,
-      });
-    }
+    toast({
+      title: "✓ Modelo selecionado",
+      description: `Modelo ${templateKey.toUpperCase()} selecionado`,
+    });
   };
 
   const exampleJSON = JSON.stringify([
