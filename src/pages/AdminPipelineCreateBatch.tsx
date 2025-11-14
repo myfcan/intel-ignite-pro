@@ -159,7 +159,9 @@ export default function AdminPipelineCreateBatch() {
           data: {
             question: exercise.question,
             options: exercise.options,
-            correctAnswer: exercise.correctOptionIndex ?? exercise.correctAnswer,
+            correctAnswer: exercise.correctOptionIndex !== undefined 
+              ? exercise.options[exercise.correctOptionIndex]
+              : exercise.correctAnswer,
             explanation: exercise.feedback || exercise.explanation || 'Correto!'
           }
         };
