@@ -4,6 +4,21 @@ import { validateExercise } from '@/lib/exerciseValidator';
 import { PipelineLogger } from './logger';
 
 /**
+ * Helper: Obter título do exercício baseado no tipo
+ */
+function getExerciseTitle(type: string): string {
+  const titles: Record<string, string> = {
+    'multiple-choice': 'Múltipla Escolha',
+    'true-false': 'Verdadeiro ou Falso',
+    'complete-sentence': 'Completar Sentença',
+    'fill-in-blanks': 'Preencher Lacunas',
+    'drag-and-drop': 'Arrastar e Soltar',
+    'matching': 'Relacionar Colunas'
+  };
+  return titles[type] || 'Exercício';
+}
+
+/**
  * STEP 5: GERAÇÃO DE EXERCÍCIOS
  * - Processa exercícios do tipo 'prompt' usando IA
  * - Valida estrutura de todos os exercícios
@@ -40,9 +55,11 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
     }
 
     // Construir exercício base
+    const exerciseType = exercise.type === 'prompt' ? exerciseData.type : exercise.type;
     const baseExercise = {
       id: `exercise-${Date.now()}-${i}`,
-      type: exercise.type === 'prompt' ? exerciseData.type : exercise.type,
+      type: exerciseType,
+      title: getExerciseTitle(exerciseType),
       question: exercise.question || exerciseData.question,
       instruction: exercise.instruction || exerciseData.instruction,
       data: exerciseData
