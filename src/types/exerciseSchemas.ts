@@ -154,6 +154,16 @@ export interface DataCollectionExerciseData {
 }
 
 // ============================================================
+// MULTIPLE-CHOICE EXERCISE
+// ============================================================
+export interface MultipleChoiceExerciseData {
+  question: string;
+  options: string[];
+  correctAnswer: string;  // Texto completo da opção correta
+  explanation: string;
+}
+
+// ============================================================
 // COMPLETE-SENTENCE EXERCISE
 // ============================================================
 /**
@@ -240,6 +250,15 @@ export type ExerciseConfigTyped =
       title: string;
       instruction: string;
       data: CompleteSentenceExerciseData;
+      passingScore?: number;
+      maxAttempts?: number;
+    }
+  | { 
+      id: string;
+      type: 'multiple-choice';
+      title: string;
+      instruction: string;
+      data: MultipleChoiceExerciseData;
       passingScore?: number;
       maxAttempts?: number;
     };
