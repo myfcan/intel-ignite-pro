@@ -13,12 +13,14 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   console.log(`🐛 [STEP 8] Duração total: ${input.totalDuration.toFixed(1)}s`);
 
   // CORREÇÃO 1: Separar exercises do content e salvar TUDO no UPDATE
-  const { exercises, ...contentWithoutExercises } = input.structuredContent;
-  
+  // Exercises estão em exercisesConfig, não em structuredContent
+  const exercises = input.exercisesConfig || [];
+  const contentWithoutExercises = input.structuredContent;
+
   const updateData: any = {
     is_active: true,
     content: contentWithoutExercises,           // ✅ Salvar content
-    exercises: exercises || [],                 // ✅ Salvar exercises
+    exercises: exercises,                       // ✅ Salvar exercises
     exercises_version: 1,                       // ✅ Salvar versão
     estimated_time: Math.ceil(input.totalDuration / 60)  // ✅ Salvar tempo estimado
   };
@@ -31,7 +33,7 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
   }
 
   console.log('🔵 [STEP 8] Atualizando registro no banco...');
-  console.log(`📊 [STEP 8] Dados a atualizar: content (${JSON.stringify(contentWithoutExercises).length} chars), ${exercises.length} exercises`);
+  console.log(`📊 [STEP 8] Dados a atualizar: content (${JSON.stringify(contentWithoutExercises).length} chars), ${(exercises || []).length} exercises`);
   
   const { error } = await supabase
     .from('lessons')
