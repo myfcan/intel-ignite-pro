@@ -32,6 +32,7 @@ import AdminPipelineCreateBatch from "./pages/AdminPipelineCreateBatch";
 import AdminPipelineMonitor from "./pages/AdminPipelineMonitor";
 import AdminManageLessons from "./pages/AdminManageLessons";
 import AdminLessonDebug from "./pages/AdminLessonDebug";
+import AdminFixLessonExercises from "./pages/AdminFixLessonExercises";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -60,6 +61,7 @@ const App = () => (
           <Route path="/admin/pipeline/create-batch" element={<ProtectedRoute><AdminPipelineCreateBatch /></ProtectedRoute>} />
           <Route path="/admin/pipeline/manage-lessons" element={<ProtectedRoute><AdminManageLessons /></ProtectedRoute>} />
           <Route path="/admin/pipeline/lesson-debug/:id" element={<ProtectedRoute><AdminLessonDebug /></ProtectedRoute>} />
+          <Route path="/admin/pipeline/fix-exercises" element={<ProtectedRoute><AdminFixLessonExercises /></ProtectedRoute>} />
           <Route path="/admin/pipeline/monitor/:executionId?" element={<ProtectedRoute><AdminPipelineMonitor /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute><AdminManualHub /></ProtectedRoute>} />
           <Route path="/admin/audio-generator" element={<ProtectedRoute><AdminAudioGenerator /></ProtectedRoute>} />
