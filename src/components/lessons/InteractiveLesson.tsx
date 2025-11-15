@@ -203,45 +203,30 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         guidedLessonData = localContent;
       }
 
-      // ✅ MERGE exercises from database into content.exercisesConfig
-      // SEMPRE usar exercises do banco se existirem (prioridade sobre conteúdo local)
-      console.log('🔍 [DEBUG MERGE] Antes do merge:', {
-        hasGuidedData: !!guidedLessonData,
-        lessonExercises: lesson.exercises,
-        isArray: Array.isArray(lesson.exercises),
-        length: lesson.exercises?.length,
-        currentExercisesConfig: guidedLessonData?.exercisesConfig
-      });
-
-      console.log('🔍 [DEBUG] lesson.exercises RAW:', lesson.exercises);
-      console.log('🔍 [DEBUG] typeof lesson.exercises:', typeof lesson.exercises);
-      console.log('🔍 [DEBUG] Condições:', {
-        hasLessonExercises: !!lesson.exercises,
-        isArray: Array.isArray(lesson.exercises),
-        hasLength: lesson.exercises?.length > 0,
-        guidedLessonDataExists: !!guidedLessonData
-      });
-
+      // ✅ CRIAR OBJETO COMPLETO para GuidedLesson com TODOS os campos necessários
       if (guidedLessonData) {
-        if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
-          guidedLessonData = {
-            ...guidedLessonData,
-            exercisesConfig: lesson.exercises
-          };
-          console.log('✅ Merged exercises from database:', lesson.exercises.length, 'exercises');
-          console.log('🔍 First exercise:', lesson.exercises[0]);
-          console.log('🔍 [DEBUG MERGE] Depois do merge:', {
-            exercisesConfigLength: guidedLessonData.exercisesConfig?.length,
-            exercisesConfig: guidedLessonData.exercisesConfig
-          });
-        } else {
-          console.error('❌ MERGE FALHOU! Motivos possíveis:', {
-            noExercises: !lesson.exercises,
-            notArray: !Array.isArray(lesson.exercises),
-            emptyArray: lesson.exercises?.length === 0,
-            exercisesValue: lesson.exercises
-          });
-        }
+        // Construir objeto completo que atende interface GuidedLessonData
+        guidedLessonData = {
+          id: lesson.id,
+          title: lesson.title,
+          trackId: lesson.trail_id,
+          trackName: '', // Não temos esse dado aqui, mas não é usado
+          duration: lesson.estimated_time ? lesson.estimated_time * 60 : 0,
+          sections: guidedLessonData.sections || [],
+          exercisesConfig: lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0
+            ? lesson.exercises
+            : guidedLessonData.exercisesConfig,
+          finalPlaygroundConfig: guidedLessonData.finalPlaygroundConfig,
+          contentVersion: guidedLessonData.contentVersion
+        };
+
+        console.log('✅ Objeto GuidedLessonData completo criado:', {
+          hasId: !!guidedLessonData.id,
+          hasTitle: !!guidedLessonData.title,
+          hasSections: guidedLessonData.sections?.length,
+          hasExercises: !!guidedLessonData.exercisesConfig,
+          exercisesCount: guidedLessonData.exercisesConfig?.length
+        });
       } else {
         console.error('❌ guidedLessonData não existe!');
       }
