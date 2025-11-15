@@ -93,16 +93,28 @@ serve(async (req) => {
     }
 
     if (action === 'complete') {
-      // Get current progress
-      const { data: progress } = await supabase
+      // Get current progress or create if doesn't exist
+      let { data: progress } = await supabase
         .from('user_progress')
         .select('*')
         .eq('user_id', user.id)
         .eq('lesson_id', lesson_id)
         .single();
 
+      // If no progress exists, create it first
       if (!progress) {
-        throw new Error('Progress not found');
+        const { data: newProgress } = await supabase
+          .from('user_progress')
+          .insert({
+            user_id: user.id,
+            lesson_id,
+            status: 'in_progress',
+            started_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        progress = newProgress;
       }
 
       // Update progress

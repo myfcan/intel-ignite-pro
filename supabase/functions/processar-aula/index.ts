@@ -63,7 +63,7 @@ serve(async (req) => {
     
     const sessoesLimpas = sessoes.map(s => ({
       ...s,
-      texto_limpo: limparTextoParaAudio(s.texto_original || s.visualContent)
+      texto_limpo: limparTextoParaAudio(s.texto_original || '')
     }));
 
     await logarInfo(supabase, 'processar-aula', `Textos limpos: ${sessoesLimpas.length} sessões`);
@@ -99,7 +99,7 @@ serve(async (req) => {
 
     const sessoesFormatadas = sessoesLimpas.map(s => ({
       ...s,
-      texto_formatado: formatarTextoExibicao(s.texto_original || s.visualContent)
+      texto_formatado: formatarTextoExibicao(s.texto_original || '')
     }));
 
     // ============= FASE 5: CALCULAR TIMESTAMPS (85%) =============
