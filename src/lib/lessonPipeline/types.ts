@@ -105,6 +105,13 @@ export interface Step4Output extends Step3Output {
 }
 
 // PHASE 5: Generate Exercises
+// 
+// NOTA: Este tipo é usado tanto pelo Step 5 (Generate Exercises)
+// quanto pelo Step 5.5 (Process Playground - NOVO 2025-11-15).
+// 
+// O Step 5.5 expande o campo 'playgroundConfig' dentro de 'sections'
+// quando necessário, mas não muda a estrutura do tipo.
+// 
 export interface Step5Output extends Step4Output {
   exercisesConfig: any[];
 }
