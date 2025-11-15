@@ -9,9 +9,11 @@ export interface LessonSection {
   title?: string;
   visualContent: string;
   speechBubbleText?: string;
+  showPlaygroundCall?: boolean;
   playgroundConfig?: {
     type: 'real-playground' | 'interactive-simulation';
-    config: any; // Aceita JSON ou string
+    instruction?: string;
+    config?: any; // Aceita JSON ou string
   };
 }
 
