@@ -206,6 +206,33 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       // ✅ CRIAR OBJETO COMPLETO para GuidedLesson com TODOS os campos necessários
       if (guidedLessonData) {
         // Construir objeto completo que atende interface GuidedLessonData
+        // Normalizar exercícios para formato esperado
+        const normalizedExercises = lesson.exercises?.map((ex: any) => {
+          // Se já está no formato certo (sem instruction/title separados), retornar como está
+          if (ex.data && !ex.instruction && !ex.title) {
+            return ex;
+          }
+          
+          // Se tem instruction/title separados, mover para dentro de data
+          return {
+            id: ex.id,
+            type: ex.type,
+            data: {
+              ...ex.data,
+              // Preservar instruction e title se existirem
+              ...(ex.instruction && { instruction: ex.instruction }),
+              ...(ex.title && { title: ex.title })
+            }
+          };
+        });
+
+        console.log('✅ Exercícios normalizados:', {
+          fromDB: lesson.exercises?.length || 0,
+          fromContent: guidedLessonData.exercisesConfig?.length || 0,
+          normalized: normalizedExercises?.length || 0,
+          structure: normalizedExercises?.[0]
+        });
+
         guidedLessonData = {
           id: lesson.id,
           title: lesson.title,
@@ -213,8 +240,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           trackName: '', // Não temos esse dado aqui, mas não é usado
           duration: lesson.estimated_time ? lesson.estimated_time * 60 : 0,
           sections: guidedLessonData.sections || [],
-          exercisesConfig: lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0
-            ? lesson.exercises
+          exercisesConfig: normalizedExercises && normalizedExercises.length > 0
+            ? normalizedExercises
             : guidedLessonData.exercisesConfig,
           finalPlaygroundConfig: guidedLessonData.finalPlaygroundConfig,
           contentVersion: guidedLessonData.contentVersion

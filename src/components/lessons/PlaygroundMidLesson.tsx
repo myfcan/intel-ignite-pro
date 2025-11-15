@@ -6,13 +6,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { PlaygroundConfig } from '@/types/guidedLesson';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
 
 interface PlaygroundMidLessonProps {
   config: PlaygroundConfig;
   onComplete: (answer: string | null) => void;
+  lessonId: string;
 }
 
-export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonProps) {
+export function PlaygroundMidLesson({ config, onComplete, lessonId }: PlaygroundMidLessonProps) {
+  const { toast } = useToast();
+
   // Criar fallback realConfig quando não existir
   const effectiveConfig = config.type === 'real-playground' && !config.realConfig 
     ? {
@@ -48,6 +54,12 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
     isValid: boolean;
     feedback: string;
   }>({ isValid: false, feedback: '' });
+
+  // Estados para IA
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Estados para múltipla escolha (retrocompatibilidade)
   const [selectedOption, setSelectedOption] = useState<string>('');
@@ -91,6 +103,68 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
 
   const handleSkip = () => {
     onComplete(null);
+  };
+
+  // Função para gerar resposta com IA
+  const generateAIResponse = async () => {
+    if (!userInput.trim()) {
+      toast({ 
+        title: "Digite algo primeiro", 
+        description: "Escreva seu prompt antes de gerar a resposta",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const fullPrompt = `${effectiveConfig.realConfig?.prefilledText || ''} ${userInput}`.trim();
+      
+      console.log('🤖 Enviando para IA:', { lessonId, promptLength: fullPrompt.length });
+      
+      const { data, error } = await supabase.functions.invoke('lesson-playground', {
+        body: {
+          lessonId: lessonId,
+          prompt: fullPrompt
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Erro na edge function:', error);
+        throw error;
+      }
+      
+      console.log('✅ Resposta da IA recebida:', {
+        hasResponse: !!data?.aiResponse,
+        hasFeedback: !!data?.aiFeedback
+      });
+      
+      setAiResponse(data.aiResponse || 'Resposta não disponível');
+      setAiFeedback(data.aiFeedback || 'Feedback não disponível');
+      
+      toast({ 
+        title: "Resposta gerada!", 
+        description: "A IA analisou seu prompt e gerou uma resposta" 
+      });
+    } catch (error: any) {
+      console.error('❌ Erro ao gerar resposta:', error);
+      toast({ 
+        title: "Erro ao gerar resposta", 
+        description: error.message || "Tente novamente em alguns instantes",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // Função para copiar o prompt
+  const copyPrompt = () => {
+    const fullPrompt = `${effectiveConfig.realConfig?.prefilledText || ''} ${userInput}`.trim();
+    navigator.clipboard.writeText(fullPrompt);
+    setIsCopied(true);
+    toast({ title: "Prompt copiado!", description: "Você pode colar no ChatGPT agora" });
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   // Handler para playground real
@@ -203,16 +277,93 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
               </div>
             )}
             
-            {/* Botão Continuar */}
-            <Button
-              onClick={handleRealPlaygroundComplete}
-              disabled={!validationState.isValid}
-              className="w-full py-6 text-lg font-bold"
-              size="lg"
-              data-testid="playground-mid-continue"
-            >
-              {validationState.isValid ? '✅ Continuar Aula' : '⏳ Complete o prompt para continuar'}
-            </Button>
+            {/* Validação em tempo real */}
+            {validationState.feedback && !aiResponse && (
+              <div className={`text-sm p-3 rounded-lg ${
+                validationState.isValid 
+                  ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
+                  : 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/20'
+              }`}>
+                {validationState.feedback}
+              </div>
+            )}
+
+            {/* Resposta da IA */}
+            {aiResponse && (
+              <div className="space-y-4">
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                    <p className="text-sm font-semibold text-primary">Resposta da IA:</p>
+                  </div>
+                  <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                    {aiResponse}
+                  </p>
+                </div>
+
+                {aiFeedback && (
+                  <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/20">
+                    <p className="text-xs text-blue-600 font-semibold mb-2">💡 Feedback Construtivo:</p>
+                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                      {aiFeedback}
+                    </p>
+                  </div>
+                )}
+
+                {/* Botão copiar prompt */}
+                <Button
+                  onClick={copyPrompt}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  {isCopied ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Prompt Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar Prompt Completo
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Botões de ação */}
+            <div className="flex gap-3">
+              {!aiResponse ? (
+                <Button
+                  onClick={generateAIResponse}
+                  disabled={!validationState.isValid || isGeneratingAI}
+                  className="flex-1"
+                  size="lg"
+                  data-testid="playground-mid-generate"
+                >
+                  {isGeneratingAI ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      🤖 Gerar com IA
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleRealPlaygroundComplete}
+                  className="flex-1"
+                  size="lg"
+                  data-testid="playground-mid-continue"
+                >
+                  Continuar Aula →
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
