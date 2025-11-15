@@ -45,44 +45,43 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   console.log('   🔍 Validando timestamps...');
   if (!input.structuredContent) {
     errors.push('❌ structuredContent ausente');
-  } else {
-    if (input.model === 'v1' || input.model === 'v2') {
-      const sections = input.structuredContent.sections || [];
-      if (sections.length === 0) {
-        errors.push('❌ Nenhuma seção em structuredContent');
-      } else {
-        console.log(`      ✅ ${sections.length} seções`);
-      }
-
-      sections.forEach((section: any, idx: number) => {
-        if (section.timestamp === undefined) {
-          errors.push(`❌ Seção ${idx + 1} sem timestamp`);
-        }
-      });
-
-      const sectionsWithTimestamps = sections.filter((s: any) => s.timestamp !== undefined).length;
-      console.log(`      ✅ ${sectionsWithTimestamps}/${sections.length} seções com timestamps`);
-
-    } else if (input.model === 'v3') {
-      const slides = input.structuredContent.slides || [];
-      if (slides.length === 0) {
-        errors.push('❌ Nenhum slide em structuredContent');
-      } else {
-        console.log(`      ✅ ${slides.length} slides`);
-      }
-
-      slides.forEach((slide: any, idx: number) => {
-        if (slide.timestamp === undefined) {
-          errors.push(`❌ Slide ${idx + 1} sem timestamp`);
-        }
-        if (!slide.imageUrl) {
-          warnings.push(`⚠️ Slide ${idx + 1} sem imagem`);
-        }
-      });
-
-      const slidesWithTimestamps = slides.filter((s: any) => s.timestamp !== undefined).length;
-      console.log(`      ✅ ${slidesWithTimestamps}/${slides.length} slides com timestamps`);
+    console.error('      ❌ structuredContent está undefined');
+  } else if (input.model === 'v1' || input.model === 'v2') {
+    const sections = input.structuredContent.sections || [];
+    if (sections.length === 0) {
+      errors.push('❌ Nenhuma seção em structuredContent');
+    } else {
+      console.log(`      ✅ ${sections.length} seções`);
     }
+
+    sections.forEach((section: any, idx: number) => {
+      if (section.timestamp === undefined) {
+        errors.push(`❌ Seção ${idx + 1} sem timestamp`);
+      }
+    });
+
+    const sectionsWithTimestamps = sections.filter((s: any) => s.timestamp !== undefined).length;
+    console.log(`      ✅ ${sectionsWithTimestamps}/${sections.length} seções com timestamps`);
+
+  } else if (input.model === 'v3') {
+    const slides = input.structuredContent.slides || [];
+    if (slides.length === 0) {
+      errors.push('❌ Nenhum slide em structuredContent');
+    } else {
+      console.log(`      ✅ ${slides.length} slides`);
+    }
+
+    slides.forEach((slide: any, idx: number) => {
+      if (slide.timestamp === undefined) {
+        errors.push(`❌ Slide ${idx + 1} sem timestamp`);
+      }
+      if (!slide.imageUrl) {
+        warnings.push(`⚠️ Slide ${idx + 1} sem imagem`);
+      }
+    });
+
+    const slidesWithTimestamps = slides.filter((s: any) => s.timestamp !== undefined).length;
+    console.log(`      ✅ ${slidesWithTimestamps}/${slides.length} slides com timestamps`);
   }
 
   // 3. VALIDAR EXERCÍCIOS
