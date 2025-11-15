@@ -1261,7 +1261,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       showEndCard,
       currentPhase
     });
-    
+
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       console.log('🎯 [DEBUG HANDLER] Indo para fase de exercícios');
@@ -1958,8 +1958,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
               Agora vamos fixar esse conhecimento com exercícios práticos.
             </p>
             
-            <Button 
-              onClick={handleGoToExercises} 
+            <Button
+              onClick={() => {
+                console.log('🎯 [BUTTON] Botão "Ir para Exercícios" clicado!');
+                handleGoToExercises();
+              }}
               size="lg"
               className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
             >
