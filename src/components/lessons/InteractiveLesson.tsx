@@ -205,6 +205,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
 
       // ✅ MERGE exercises from database into content.exercisesConfig
       // SEMPRE usar exercises do banco se existirem (prioridade sobre conteúdo local)
+      console.log('🔍 [DEBUG MERGE] Antes do merge:', {
+        hasGuidedData: !!guidedLessonData,
+        lessonExercises: lesson.exercises,
+        isArray: Array.isArray(lesson.exercises),
+        length: lesson.exercises?.length,
+        currentExercisesConfig: guidedLessonData?.exercisesConfig
+      });
+
       if (guidedLessonData) {
         if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
           guidedLessonData = {
@@ -213,6 +221,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           };
           console.log('✅ Merged exercises from database:', lesson.exercises.length, 'exercises');
           console.log('🔍 First exercise:', lesson.exercises[0]);
+          console.log('🔍 [DEBUG MERGE] Depois do merge:', {
+            exercisesConfigLength: guidedLessonData.exercisesConfig?.length,
+            exercisesConfig: guidedLessonData.exercisesConfig
+          });
         } else {
           console.warn('⚠️ No exercises found in database for this lesson');
           console.warn('⚠️ lesson.exercises:', lesson.exercises);
