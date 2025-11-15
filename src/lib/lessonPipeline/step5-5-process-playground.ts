@@ -43,18 +43,19 @@ export async function step5_5ProcessPlayground(
   logger?: PipelineLogger
 ): Promise<Step5Output> {
 
-  logger?.log('🎮 STEP 5.5: Iniciando processamento de playground config...');
+  // Log de início do step (usando console.log pois é log interno, não de progresso)
+  console.log('🎮 [STEP 5.5] Iniciando processamento de playground config...');
 
   // Se não há structured content, retornar input sem modificações
   if (!input.structuredContent) {
-    logger?.log('⚠️ Nenhum structuredContent encontrado, pulando processamento');
+    console.log('⚠️ [STEP 5.5] Nenhum structuredContent encontrado, pulando processamento');
     return input;
   }
 
   const sections = input.structuredContent.sections || [];
 
   if (sections.length === 0) {
-    logger?.log('ℹ️ Nenhuma seção encontrada, pulando processamento');
+    console.log('ℹ️ [STEP 5.5] Nenhuma seção encontrada, pulando processamento');
     return input;
   }
 
@@ -84,7 +85,7 @@ export async function step5_5ProcessPlayground(
 
     if (config.type === 'real-playground' && !config.realConfig) {
 
-      logger?.log(`📝 Seção ${index + 1}: Gerando realConfig automático`);
+      console.log(`📝 [STEP 5.5] Seção ${index + 1}: Gerando realConfig automático`);
 
       // ========================================================================
       // GERAR realConfig PADRÃO
@@ -115,7 +116,7 @@ export async function step5_5ProcessPlayground(
 
       processedCount++;
 
-      logger?.log(`✅ Seção ${index + 1}: realConfig gerado com sucesso`);
+      console.log(`✅ [STEP 5.5] Seção ${index + 1}: realConfig gerado com sucesso`);
 
       // Retornar seção com realConfig expandido
       return {
@@ -143,7 +144,7 @@ export async function step5_5ProcessPlayground(
     sections: processedSections
   };
 
-  logger?.log(`✅ STEP 5.5 concluído: ${processedCount} playground(s) processado(s)`);
+  console.log(`✅ [STEP 5.5] Concluído: ${processedCount} playground(s) processado(s)`);
 
   return {
     ...input,
