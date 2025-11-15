@@ -14,9 +14,61 @@ import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { fundamentos03 } from '@/data/lessons/fundamentos-03';
 import { fundamentos04 } from '@/data/lessons/fundamentos-04';
-import { WordTimestamp } from '@/types/guidedLesson';
+import { WordTimestamp, ExerciseConfig } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+/**
+ * ============================================================================
+ * NORMALIZAÇÃO DE EXERCÍCIOS
+ * ============================================================================
+ * Garante que todos os exercícios vindos do banco tenham a estrutura correta
+ * de acordo com ExerciseConfig interface.
+ *
+ * Adiciona campos obrigatórios se estiverem ausentes:
+ * - id: gerado automaticamente se não existir
+ * - type: validado contra tipos permitidos
+ * - title: fornece fallback se vazio
+ * - instruction: fornece fallback se vazio
+ * - data: garante que existe (objeto vazio se não houver)
+ * ============================================================================
+ */
+function normalizeExercises(rawExercises: any[]): ExerciseConfig[] {
+  if (!Array.isArray(rawExercises)) {
+    console.warn('⚠️ normalizeExercises: rawExercises não é array', rawExercises);
+    return [];
+  }
+
+  return rawExercises.map((exercise, index) => {
+    console.log(`🔍 Normalizando exercício ${index}:`, exercise);
+
+    // Garantir que tem um ID
+    const id = exercise.id || `exercise-${index}`;
+
+    // Validar tipo
+    const validTypes = ['drag-drop', 'complete-sentence', 'scenario-selection', 'fill-in-blanks', 'true-false', 'platform-match', 'data-collection'];
+    const type = validTypes.includes(exercise.type) ? exercise.type : 'fill-in-blanks';
+
+    if (!validTypes.includes(exercise.type)) {
+      console.warn(`⚠️ Exercício ${id}: tipo inválido "${exercise.type}", usando fallback "fill-in-blanks"`);
+    }
+
+    // Garantir campos obrigatórios
+    const normalized: ExerciseConfig = {
+      id,
+      type,
+      title: exercise.title || `Exercício ${index + 1}`,
+      instruction: exercise.instruction || 'Complete este exercício',
+      data: exercise.data || {},
+      passingScore: exercise.passingScore || 70,
+      maxAttempts: exercise.maxAttempts
+    };
+
+    console.log(`✅ Exercício ${id} normalizado:`, normalized);
+
+    return normalized;
+  });
+}
 
 interface InteractiveLessonProps {
   lessonId: string;
@@ -205,6 +257,22 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
 
       // ✅ CRIAR OBJETO COMPLETO para GuidedLesson com TODOS os campos necessários
       if (guidedLessonData) {
+        // ============================================================================
+        // NORMALIZAR EXERCÍCIOS (ADICIONADO 2025-11-15)
+        // ============================================================================
+        // Usa normalizeExercises() para garantir estrutura correta
+        // Prioridade: exercises do DB → exercisesConfig do content local
+        // ============================================================================
+        let normalizedExercises: ExerciseConfig[] | undefined = undefined;
+
+        if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
+          console.log('📝 Normalizando exercícios do banco de dados...');
+          normalizedExercises = normalizeExercises(lesson.exercises);
+        } else if (guidedLessonData.exercisesConfig) {
+          console.log('📝 Usando exercícios do content (já devem estar normalizados)');
+          normalizedExercises = guidedLessonData.exercisesConfig;
+        }
+
         // Construir objeto completo que atende interface GuidedLessonData
         // Normalizar exercícios para formato esperado
         const normalizedExercises = lesson.exercises?.map((ex: any) => {
@@ -240,6 +308,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           trackName: '', // Não temos esse dado aqui, mas não é usado
           duration: lesson.estimated_time ? lesson.estimated_time * 60 : 0,
           sections: guidedLessonData.sections || [],
+          // Usar normalizedExercises se existir e tiver items, senão fallback para content
           exercisesConfig: normalizedExercises && normalizedExercises.length > 0
             ? normalizedExercises
             : guidedLessonData.exercisesConfig,

@@ -63,7 +63,7 @@ export async function runLessonPipeline(
     await logger.success(5, 'Generate Exercises', '✅ Exercícios prontos', {
       totalExercises: step5.exercisesConfig?.length || 0
     });
-    
+
     // ============================================================================
     // STEP 5.5: PROCESSAR PLAYGROUND CONFIG (NOVO - 2025-11-15)
     // ============================================================================
@@ -71,10 +71,12 @@ export async function runLessonPipeline(
     // quando tipo = 'real-playground' mas não tem realConfig completo.
     // Busque por "STEP 5.5" no GitHub para mais detalhes.
     // ============================================================================
+
+    await updateDB('running', 5.5);
     await logger.info(5.5, 'Process Playground', '🎮 Processando playground configs...');
     const step5_5 = await step5_5ProcessPlayground(step5, logger);
     await logger.success(5.5, 'Process Playground', '✅ Playground configs processados');
-    
+
     await updateDB('running', 6);
     await logger.info(6, 'Validate All', '🔍 Validação final de todos os componentes...');
     const step6 = await step6ValidateAll(step5_5);

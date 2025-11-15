@@ -8,45 +8,19 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, CheckCircle2 } from 'lucide-react';
+import { Loader2, Copy, Check } from 'lucide-react';
 
 interface PlaygroundMidLessonProps {
   config: PlaygroundConfig;
   onComplete: (answer: string | null) => void;
-  lessonId: string;
+  lessonId?: string; // Necessário para salvar sessão
 }
 
 export function PlaygroundMidLesson({ config, onComplete, lessonId }: PlaygroundMidLessonProps) {
   const { toast } = useToast();
 
-  // Criar fallback realConfig quando não existir
-  const effectiveConfig = config.type === 'real-playground' && !config.realConfig 
-    ? {
-        ...config,
-        realConfig: {
-          title: 'Hora da Prática!',
-          maiaMessage: (config as any).instruction || 'Agora é sua vez de testar o que aprendeu!',
-          scenario: {
-            title: 'Teste Prático',
-            description: (config as any).instruction || 'Coloque em prática o conceito que você acabou de aprender.'
-          },
-          prefilledText: '',
-          userPlaceholder: 'Digite sua resposta aqui...',
-          validation: {
-            minLength: 10,
-            requiredKeywords: [],
-            feedback: {
-              tooShort: 'Escreva um pouco mais (mínimo 10 caracteres)',
-              good: 'Bom trabalho! Continue assim.',
-              excellent: 'Excelente! Você entendeu bem o conceito!'
-            }
-          }
-        }
-      }
-    : config;
-
   // Verifica se é playground real ou múltipla escolha
-  const isRealPlayground = effectiveConfig.type === 'real-playground' && effectiveConfig.realConfig;
+  const isRealPlayground = config.type === 'real-playground' && config.realConfig;
 
   // Estados para playground real
   const [userInput, setUserInput] = useState('');
@@ -55,11 +29,12 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     feedback: string;
   }>({ isValid: false, feedback: '' });
 
-  // Estados para IA
+  // Estados para IA REAL
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
+  const [showAIResult, setShowAIResult] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   // Estados para múltipla escolha (retrocompatibilidade)
   const [selectedOption, setSelectedOption] = useState<string>('');
@@ -67,32 +42,32 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
 
   // Validação em tempo real para playground real
   useEffect(() => {
-    if (!isRealPlayground || !effectiveConfig.realConfig) return;
+    if (!isRealPlayground || !config.realConfig) return;
 
     const validate = () => {
       if (userInput.length === 0) {
         return { isValid: false, feedback: '' };
       }
       
-      if (userInput.length < effectiveConfig.realConfig!.validation.minLength) {
-        return { isValid: false, feedback: effectiveConfig.realConfig!.validation.feedback.tooShort };
+      if (userInput.length < config.realConfig!.validation.minLength) {
+        return { isValid: false, feedback: config.realConfig!.validation.feedback.tooShort };
       }
       
-      const hasAllKeywords = effectiveConfig.realConfig!.validation.requiredKeywords?.every(keywordGroup =>
+      const hasAllKeywords = config.realConfig!.validation.requiredKeywords?.every(keywordGroup =>
         keywordGroup.some(keyword => 
           userInput.toLowerCase().includes(keyword.toLowerCase())
         )
       ) ?? true;
       
       if (!hasAllKeywords) {
-        return { isValid: false, feedback: effectiveConfig.realConfig!.validation.feedback.good };
+        return { isValid: false, feedback: config.realConfig!.validation.feedback.good };
       }
       
-      return { isValid: true, feedback: effectiveConfig.realConfig!.validation.feedback.excellent };
+      return { isValid: true, feedback: config.realConfig!.validation.feedback.excellent };
     };
     
     setValidationState(validate());
-  }, [userInput, effectiveConfig, isRealPlayground]);
+  }, [userInput, config, isRealPlayground]);
 
   // Handlers para múltipla escolha
   const handleContinue = () => {
@@ -105,66 +80,89 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     onComplete(null);
   };
 
-  // Função para gerar resposta com IA
+  // ============================================================================
+  // HANDLERS PARA IA REAL
+  // ============================================================================
+
+  // Gerar resposta da IA usando edge function
   const generateAIResponse = async () => {
-    if (!userInput.trim()) {
-      toast({ 
-        title: "Digite algo primeiro", 
-        description: "Escreva seu prompt antes de gerar a resposta",
-        variant: "destructive" 
+    console.log('🤖 [PLAYGROUND AI] Iniciando chamada de IA...', { lessonId });
+
+    if (!lessonId) {
+      console.error('❌ [PLAYGROUND AI] lessonId não fornecido!');
+      toast({
+        title: '⚠️ Erro de configuração',
+        description: 'lessonId não fornecido para chamada de IA',
+        variant: 'destructive'
       });
       return;
     }
 
     setIsGeneratingAI(true);
+
     try {
-      const fullPrompt = `${effectiveConfig.realConfig?.prefilledText || ''} ${userInput}`.trim();
-      
-      console.log('🤖 Enviando para IA:', { lessonId, promptLength: fullPrompt.length });
-      
+      const fullPrompt = `${config.realConfig!.prefilledText} ${userInput}`;
+      console.log('📝 [PLAYGROUND AI] Prompt completo:', fullPrompt);
+
+      const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('lesson-playground', {
-        body: {
-          lessonId: lessonId,
-          prompt: fullPrompt
-        }
+        body: { lessonId, prompt: fullPrompt }
       });
-      
+      const elapsed = Date.now() - startTime;
+
       if (error) {
-        console.error('❌ Erro na edge function:', error);
-        throw error;
+        console.error('❌ [PLAYGROUND AI] Edge function error:', error);
+        toast({
+          title: '❌ Erro ao gerar resposta',
+          description: 'Não foi possível conectar com a IA. Tente novamente.',
+          variant: 'destructive'
+        });
+        return;
       }
-      
-      console.log('✅ Resposta da IA recebida:', {
-        hasResponse: !!data?.aiResponse,
-        hasFeedback: !!data?.aiFeedback
+
+      console.log('✅ [PLAYGROUND AI] Resposta recebida em', elapsed, 'ms', {
+        responseLength: data.aiResponse?.length,
+        feedbackLength: data.aiFeedback?.length
       });
-      
-      setAiResponse(data.aiResponse || 'Resposta não disponível');
-      setAiFeedback(data.aiFeedback || 'Feedback não disponível');
-      
-      toast({ 
-        title: "Resposta gerada!", 
-        description: "A IA analisou seu prompt e gerou uma resposta" 
+
+      setAiResponse(data.aiResponse);
+      setAiFeedback(data.aiFeedback);
+      setShowAIResult(true);
+
+      toast({
+        title: '✅ Resposta gerada!',
+        description: 'A IA processou seu prompt com sucesso.',
       });
-    } catch (error: any) {
-      console.error('❌ Erro ao gerar resposta:', error);
-      toast({ 
-        title: "Erro ao gerar resposta", 
-        description: error.message || "Tente novamente em alguns instantes",
-        variant: "destructive" 
+
+    } catch (err: any) {
+      console.error('❌ [PLAYGROUND AI] Erro ao chamar IA:', err);
+      toast({
+        title: '❌ Erro inesperado',
+        description: err.message || 'Algo deu errado ao gerar a resposta.',
+        variant: 'destructive'
       });
     } finally {
       setIsGeneratingAI(false);
+      console.log('🏁 [PLAYGROUND AI] Chamada finalizada');
     }
   };
 
-  // Função para copiar o prompt
-  const copyPrompt = () => {
-    const fullPrompt = `${effectiveConfig.realConfig?.prefilledText || ''} ${userInput}`.trim();
-    navigator.clipboard.writeText(fullPrompt);
-    setIsCopied(true);
-    toast({ title: "Prompt copiado!", description: "Você pode colar no ChatGPT agora" });
-    setTimeout(() => setIsCopied(false), 2000);
+  // Copiar prompt completo para clipboard
+  const handleCopyPrompt = async () => {
+    const fullPrompt = `${config.realConfig!.prefilledText} ${userInput}`;
+
+    try {
+      await navigator.clipboard.writeText(fullPrompt);
+      setCopiedPrompt(true);
+      toast({
+        title: '📋 Copiado!',
+        description: 'Prompt copiado para a área de transferência',
+      });
+
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+    }
   };
 
   // Handler para playground real
@@ -173,8 +171,8 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
   };
 
   // Renderizar playground REAL
-  if (isRealPlayground && effectiveConfig.realConfig) {
-    const fullPrompt = `${effectiveConfig.realConfig.prefilledText} ${userInput}`;
+  if (isRealPlayground && config.realConfig) {
+    const fullPrompt = `${config.realConfig.prefilledText} ${userInput}`;
 
     return (
       <div 
@@ -192,7 +190,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0" 
               />
               <div>
-                <h3 className="text-white font-bold text-xl">⏸️ {effectiveConfig.realConfig.title}</h3>
+                <h3 className="text-white font-bold text-xl">⏸️ {config.realConfig.title}</h3>
                 <p className="text-white/90 text-sm">Vamos praticar o que você aprendeu!</p>
               </div>
             </div>
@@ -203,17 +201,17 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             {/* Mensagem da MAIA */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
               <p className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                🤖 {effectiveConfig.realConfig.maiaMessage}
+                🤖 {config.realConfig.maiaMessage}
               </p>
             </div>
             
             {/* Situação */}
             <div className="mb-6">
               <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                📋 {effectiveConfig.realConfig.scenario.title}
+                📋 {config.realConfig.scenario.title}
               </h4>
               <p className="text-muted-foreground leading-relaxed">
-                {effectiveConfig.realConfig.scenario.description}
+                {config.realConfig.scenario.description}
               </p>
             </div>
             
@@ -227,7 +225,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               <div className="mb-3">
                 <input
                   type="text"
-                  value={effectiveConfig.realConfig.prefilledText}
+                  value={config.realConfig.prefilledText}
                   disabled
                   className="w-full px-4 py-3 bg-muted border-2 border-border rounded-lg text-muted-foreground font-medium"
                 />
@@ -238,7 +236,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 <Textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={effectiveConfig.realConfig.userPlaceholder}
+                  placeholder={config.realConfig.userPlaceholder}
                   className="w-full px-4 py-3 border-2 border-cyan-400 rounded-lg font-medium min-h-[120px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
                 <p className="text-sm text-muted-foreground mt-2">
@@ -263,11 +261,22 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             )}
             
             {/* Prompt completo preview */}
-            {userInput.length >= effectiveConfig.realConfig.validation.minLength && (
+            {userInput.length >= config.realConfig.validation.minLength && !showAIResult && (
               <div className="bg-muted border-2 border-border rounded-xl p-5 mb-6">
-                <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
-                  👁️ Seu prompt completo:
-                </h5>
+                <div className="flex justify-between items-start mb-2">
+                  <h5 className="text-xs font-bold text-muted-foreground uppercase">
+                    👁️ Seu prompt completo:
+                  </h5>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyPrompt}
+                    className="h-6 px-2 text-xs"
+                  >
+                    {copiedPrompt ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                    {copiedPrompt ? 'Copiado!' : 'Copiar'}
+                  </Button>
+                </div>
                 <p className="text-foreground font-medium leading-relaxed">
                   "{fullPrompt}"
                 </p>
@@ -276,91 +285,74 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 </p>
               </div>
             )}
-            
-            {/* Validação em tempo real */}
-            {validationState.feedback && !aiResponse && (
-              <div className={`text-sm p-3 rounded-lg ${
-                validationState.isValid 
-                  ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
-                  : 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/20'
-              }`}>
-                {validationState.feedback}
+
+            {/* Resposta da IA */}
+            {showAIResult && aiResponse && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-800 rounded-xl p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                <h5 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                  🤖 Resposta da IA:
+                </h5>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                  {aiResponse}
+                </p>
               </div>
             )}
 
-            {/* Resposta da IA */}
-            {aiResponse && (
-              <div className="space-y-4">
-                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                    <p className="text-sm font-semibold text-primary">Resposta da IA:</p>
-                  </div>
-                  <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                    {aiResponse}
-                  </p>
-                </div>
-
-                {aiFeedback && (
-                  <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/20">
-                    <p className="text-xs text-blue-600 font-semibold mb-2">💡 Feedback Construtivo:</p>
-                    <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                      {aiFeedback}
-                    </p>
-                  </div>
-                )}
-
-                {/* Botão copiar prompt */}
-                <Button
-                  onClick={copyPrompt}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  {isCopied ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Prompt Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copiar Prompt Completo
-                    </>
-                  )}
-                </Button>
+            {/* Feedback da IA */}
+            {showAIResult && aiFeedback && (
+              <div className="bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-300 dark:border-purple-800 rounded-xl p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500 delay-150">
+                <h5 className="text-sm font-bold text-purple-800 dark:text-purple-300 mb-3 flex items-center gap-2">
+                  💡 Feedback sobre seu prompt:
+                </h5>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {aiFeedback}
+                </p>
               </div>
             )}
 
             {/* Botões de ação */}
-            <div className="flex gap-3">
-              {!aiResponse ? (
+            <div className="space-y-3">
+              {/* Botão Gerar IA (aparece quando prompt válido mas ainda não gerou) */}
+              {validationState.isValid && !showAIResult && (
                 <Button
                   onClick={generateAIResponse}
-                  disabled={!validationState.isValid || isGeneratingAI}
-                  className="flex-1"
+                  disabled={isGeneratingAI}
+                  className="w-full py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
                   size="lg"
-                  data-testid="playground-mid-generate"
+                  data-testid="playground-generate-ai"
                 >
                   {isGeneratingAI ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Gerando...
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Gerando resposta da IA...
                     </>
                   ) : (
-                    <>
-                      🤖 Gerar com IA
-                    </>
+                    '🚀 Testar com IA Real'
                   )}
                 </Button>
-              ) : (
+              )}
+
+              {/* Botão Continuar (aparece quando viu resultado da IA) */}
+              {showAIResult && (
                 <Button
                   onClick={handleRealPlaygroundComplete}
-                  className="flex-1"
+                  className="w-full py-6 text-lg font-bold"
                   size="lg"
                   data-testid="playground-mid-continue"
                 >
-                  Continuar Aula →
+                  ✅ Continuar Aula
+                </Button>
+              )}
+
+              {/* Botão desabilitado (quando prompt incompleto) */}
+              {!validationState.isValid && (
+                <Button
+                  disabled
+                  className="w-full py-6 text-lg font-bold"
+                  size="lg"
+                  data-testid="playground-mid-continue"
+                >
+                  ⏳ Complete o prompt para continuar
                 </Button>
               )}
             </div>
