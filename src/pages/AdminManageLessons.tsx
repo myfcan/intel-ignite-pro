@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trash2, Filter, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -317,6 +317,16 @@ export default function AdminManageLessons() {
                         <span>📅 {new Date(lesson.created_at).toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/admin/pipeline/lesson-debug/${lesson.id}`)}
+                      className="flex-shrink-0"
+                    >
+                      <Bug className="w-4 h-4 mr-2" />
+                      Debug
+                    </Button>
                   </div>
                 ))}
               </div>
