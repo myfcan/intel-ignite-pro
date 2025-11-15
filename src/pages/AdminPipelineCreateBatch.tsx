@@ -419,239 +419,17 @@ export default function AdminPipelineCreateBatch() {
     }
   };
 
-  const templates = {
-    v1: [
-      {
-        "model": "v1",
-        "title": "✨ [V1] Aula Interativa com Playground",
-        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
-        "trackName": "Fundamentos de IA",
-        "orderIndex": 98,
-        "estimatedTimeMinutes": 4,
-        "sections": [
-          {
-            "index": 0,
-            "markdown": "# 🎯 Sessão 1: Introdução\n\nBem-vindo! Vamos aprender sobre IA de forma interativa.",
-            "speechBubble": "Olá! Prepare-se para uma aula dinâmica!"
-          },
-          {
-            "index": 1,
-            "markdown": "# 📊 Sessão 2: Conceitos Fundamentais\n\nA IA aprende com exemplos, assim como você!",
-            "speechBubble": "Vou te mostrar como a IA realmente funciona."
-          },
-          {
-            "index": 2,
-            "markdown": "# 💡 Sessão 3: Aplicações Práticas\n\nIA está em todo lugar: Netflix, Spotify, GPS...",
-            "speechBubble": "Você usa IA todos os dias sem perceber!"
-          },
-          {
-            "index": 3,
-            "markdown": "# 🎮 Sessão 4: Preparando para Prática\n\nAgora que você entendeu a teoria, vamos praticar!",
-            "speechBubble": "Hora de colocar a mão na massa! Vamos ao playground...",
-            "showPlaygroundCall": true,
-            "playgroundConfig": {
-              "instruction": "Teste seu Prompt com IA Real",
-              "type": "real-playground",
-              "triggerAfterSection": 3,
-              "playgroundDelay": 0.5
-            }
-          },
-          {
-            "index": 4,
-            "markdown": "# ✨ Sessão 5: Conclusão\n\nParabéns! Você aprendeu e praticou com IA.",
-            "speechBubble": "Agora vamos consolidar o aprendizado com exercícios!"
-          }
-        ],
-        "exercises": [
-          {
-            "type": "multiple-choice",
-            "question": "Qual é o diferencial do Modelo V1?",
-            "options": [
-              "Não tem interatividade",
-              "Tem playground no meio da aula",
-              "Usa apenas texto"
-            ],
-            "correctOptionIndex": 1,
-            "feedback": "Correto! V1 tem playground ENTRE as sessões 4 e 5."
-          },
-          {
-            "type": "true-false",
-            "statement": "O Modelo V1 é projetado para maximizar engajamento com prática no meio da aula",
-            "answer": true,
-            "feedback": "Exato! V1 combina conteúdo guiado + atividade prática + exercícios finais."
-          },
-          {
-            "type": "complete-sentence",
-            "sentence": "No Modelo V1, o playground aparece entre a sessão 4 e 5.",
-            "correctAnswer": "4 e 5",
-            "feedback": "Perfeito! Esse é o momento ideal para aplicar o conhecimento."
-          }
-        ]
-      }
-    ],
-    v2: [
-      {
-        "model": "v2",
-        "title": "✨ [V2] Modelo Linear Simples",
-        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
-        "trackName": "Fundamentos de IA",
-        "orderIndex": 99,
-        "estimatedTimeMinutes": 4,
-        "sections": [
-          {
-            "index": 0,
-            "markdown": "# 🤖 Sessão 1: O que é IA?\n\nInteligência Artificial é tecnologia que aprende padrões.",
-            "speechBubble": "Vou te ensinar IA de forma direta e objetiva!"
-          },
-          {
-            "index": 1,
-            "markdown": "# 📊 Sessão 2: Como IA Aprende?\n\nA IA analisa milhares de exemplos para identificar padrões.",
-            "speechBubble": "Quanto mais dados, melhor a IA aprende!"
-          },
-          {
-            "index": 2,
-            "markdown": "# 💼 Sessão 3: IA no Trabalho\n\nAutomação, análise de dados, assistentes virtuais...",
-            "speechBubble": "IA está transformando todas as profissões."
-          },
-          {
-            "index": 3,
-            "markdown": "# 🎯 Sessão 4: IA no Cotidiano\n\nGPS, redes sociais, recomendações... IA está em todo lugar!",
-            "speechBubble": "Você interage com IA várias vezes por dia."
-          },
-          {
-            "index": 4,
-            "markdown": "# ✅ Sessão 5: Recapitulação\n\nVimos conceitos, aplicações e exemplos práticos de IA.",
-            "speechBubble": "Agora vamos testar seu conhecimento com exercícios!"
-          }
-        ],
-        "exercises": [
-          {
-            "type": "multiple-choice",
-            "question": "O que é Inteligência Artificial?",
-            "options": [
-              "Um robô consciente",
-              "Tecnologia que aprende padrões com dados",
-              "Software com regras fixas"
-            ],
-            "correctOptionIndex": 1,
-            "feedback": "Correto! IA aprende padrões analisando grandes volumes de dados."
-          },
-          {
-            "type": "true-false",
-            "statement": "O Modelo V2 NÃO tem playground durante a aula",
-            "answer": true,
-            "feedback": "Exato! V2 é linear, sem interrupções. O foco é consumo contínuo de conteúdo."
-          },
-          {
-            "type": "multiple-choice",
-            "question": "Onde você já usa IA no dia a dia?",
-            "options": [
-              "Apenas em laboratórios",
-              "GPS, Netflix, Spotify, redes sociais",
-              "Nunca usei IA"
-            ],
-            "correctOptionIndex": 1,
-            "feedback": "Isso! IA está em muitas ferramentas que você usa diariamente."
-          },
-          {
-            "type": "true-false",
-            "statement": "Quanto mais exemplos a IA recebe, melhor ela aprende",
-            "answer": true,
-            "feedback": "Correto! Dados são o combustível do aprendizado da IA."
-          },
-          {
-            "type": "complete-sentence",
-            "sentence": "O Modelo V2 tem 5 exercícios finais com dificuldade progressiva.",
-            "correctAnswer": "5 exercícios",
-            "feedback": "Perfeito! V2 reforça o aprendizado com mais exercícios no final."
-          }
-        ]
-      }
-    ],
-    v3: [
-      {
-        "model": "v3",
-        "title": "✨ [V3] Apresentação Visual com Slides",
-        "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
-        "trackName": "Fundamentos de IA",
-        "orderIndex": 97,
-        "estimatedTimeMinutes": 4,
-        "v3Data": {
-          "audioText": "Bem-vindo à jornada visual sobre Inteligência Artificial. Você verá como a IA transforma nosso mundo através de slides ilustrados. Cada slide representa um aspecto diferente da IA em ação. Vamos explorar desde conceitos básicos até aplicações do dia a dia. Ao final, você terá uma visão completa e visual de como a IA funciona.",
-          "slides": [
-            {
-              "id": "slide-1",
-              "slideNumber": 1,
-              "contentIdea": "Ilustração de um cérebro digital conectado com linhas de dados brilhantes"
-            },
-            {
-              "id": "slide-2",
-              "slideNumber": 2,
-              "contentIdea": "Pessoa usando smartphone com ícones de IA flutuando (GPS, música, câmera)"
-            },
-            {
-              "id": "slide-3",
-              "slideNumber": 3,
-              "contentIdea": "Dashboard de análise de dados com gráficos e insights gerados por IA"
-            },
-            {
-              "id": "slide-4",
-              "slideNumber": 4,
-              "contentIdea": "Assistente virtual ajudando profissional em escritório moderno"
-            },
-            {
-              "id": "slide-5",
-              "slideNumber": 5,
-              "contentIdea": "Rede neural visual mostrando padrões sendo aprendidos e reconhecidos"
-            }
-          ]
-        },
-        "finalPlayground": {
-          "type": "real-playground",
-          "title": "Aplique o que Aprendeu",
-          "description": "Agora que você viu a apresentação, crie seu próprio prompt para IA!"
-        },
-        "exercises": [
-          {
-            "type": "multiple-choice",
-            "question": "Qual é o diferencial do Modelo V3?",
-            "options": [
-              "Apenas texto",
-              "Slides visuais com narrativa contínua",
-              "Sem áudio"
-            ],
-            "correctOptionIndex": 1,
-            "feedback": "Correto! V3 é uma experiência cinematográfica com slides visuais."
-          },
-          {
-            "type": "true-false",
-            "statement": "No Modelo V3, o playground aparece NO FINAL da aula",
-            "answer": true,
-            "feedback": "Exato! V3 tem playground após os slides, não no meio."
-          },
-          {
-            "type": "complete-sentence",
-            "sentence": "O Modelo V3 usa áudio único com transições automáticas de slides.",
-            "correctAnswer": "único",
-            "feedback": "Perfeito! V3 tem 1 áudio contínuo, diferente de V2 que tem áudio por seção."
-          }
-        ]
-      }
-    ]
-  };
-
-  const loadTemplate = (templateKey: 'v1' | 'v2' | 'v3') => {
-    setJsonInput(JSON.stringify(templates[templateKey], null, 2));
-    setSelectedTemplate(templateKey);
-    setValidationError('');
+  // Função para selecionar modelo pedagógico (sem carregar template JSON)
+  const selectModel = (model: 'v1' | 'v2' | 'v3') => {
+    setSelectedTemplate(model);
     const descriptions = {
-      v1: 'Template V1: Aula Interativa com Playground no Meio (5 sessões + playground entre 4-5 + 3 exercícios)',
-      v2: 'Template V2: Modelo Linear Simples (5 sessões + SEM playground + 5 exercícios)',
-      v3: 'Template V3: Apresentação Visual com Slides (5 slides + playground final + 3 exercícios)'
+      v1: '🎮 Modelo V1 selecionado: Aula Interativa com Playground no Meio',
+      v2: '📚 Modelo V2 selecionado: Modelo Linear Simples (sem playground)',
+      v3: '🎨 Modelo V3 selecionado: Apresentação Visual com Slides + Playground Final'
     };
     toast({
-      title: "✅ Template carregado",
-      description: descriptions[templateKey],
+      title: "✓ Modelo selecionado",
+      description: descriptions[model],
     });
   };
 
@@ -728,7 +506,7 @@ export default function AdminPipelineCreateBatch() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => loadTemplate('v1')}
+                  onClick={() => selectModel('v1')}
                   variant={selectedTemplate === 'v1' ? 'default' : 'outline'}
                   className={`flex-1 ${selectedTemplate === 'v1' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
@@ -736,7 +514,7 @@ export default function AdminPipelineCreateBatch() {
                   🎮 V1 (Playground no Meio)
                 </Button>
                 <Button
-                  onClick={() => loadTemplate('v2')}
+                  onClick={() => selectModel('v2')}
                   variant={selectedTemplate === 'v2' ? 'default' : 'outline'}
                   className={`flex-1 ${selectedTemplate === 'v2' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
@@ -744,7 +522,7 @@ export default function AdminPipelineCreateBatch() {
                   📚 V2 (Linear Simples)
                 </Button>
                 <Button
-                  onClick={() => loadTemplate('v3')}
+                  onClick={() => selectModel('v3')}
                   variant={selectedTemplate === 'v3' ? 'default' : 'outline'}
                   className={`flex-1 ${selectedTemplate === 'v3' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
