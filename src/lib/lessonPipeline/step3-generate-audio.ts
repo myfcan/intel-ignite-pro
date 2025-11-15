@@ -34,7 +34,8 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
   const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
     body: {
       text: input.audioText,
-      voice_id: 'pNInz6obpgDQGcFmaJgB' // Adam
+      voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+      speed: 1.1 // Velocidade 1.1x
     }
   });
 
@@ -163,7 +164,8 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const { data: audioData, error: audioError } = await supabase.functions.invoke('generate-audio-with-timestamps', {
     body: {
       text: input.audioText,
-      voice_id: 'pNInz6obpgDQGcFmaJgB'
+      voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+      speed: 1.1 // Velocidade 1.1x
     }
   });
 
