@@ -350,13 +350,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     }
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      // Se não há usuário autenticado, não tenta salvar logs
+      if (authError || !user) {
+        return;
+      }
+
       // Usar o ID da aula diretamente
       const lessonId = lessonData.id;
-      
+
       await supabase.from('diagnostic_logs').insert({
-        user_id: user?.id,
+        user_id: user.id,
         lesson_id: lessonId,
         event_type: eventType,
         audio_time: data.audioTime,
