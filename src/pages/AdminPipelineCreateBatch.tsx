@@ -33,6 +33,7 @@ export default function AdminPipelineCreateBatch() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [currentExecutionId, setCurrentExecutionId] = useState('');
   const [realtimeLogs, setRealtimeLogs] = useState<LogEntry[]>([]);
+  const [defaultTrail, setDefaultTrail] = useState<{ id: string; title: string } | null>(null);
   const [batchProgress, setBatchProgress] = useState({
     current: 0,
     total: 0,
@@ -53,6 +54,31 @@ export default function AdminPipelineCreateBatch() {
     failed: number;
     errors: Array<{ title: string; error: string }>;
   }>({ success: 0, failed: 0, errors: [] });
+
+  // Buscar trail padrão automaticamente
+  useEffect(() => {
+    const fetchDefaultTrail = async () => {
+      const { data: trail, error } = await supabase
+        .from('trails')
+        .select('id, title')
+        .eq('title', 'Fundamentos de IA')
+        .eq('is_active', true)
+        .single();
+      
+      if (trail && !error) {
+        setDefaultTrail(trail);
+        console.log('✅ Trail padrão carregada:', trail);
+      } else {
+        console.error('❌ Erro ao buscar trail padrão:', error);
+        toast({
+          title: 'Aviso',
+          description: 'Não foi possível carregar a trail padrão "Fundamentos de IA"',
+          variant: 'destructive'
+        });
+      }
+    };
+    fetchDefaultTrail();
+  }, [toast]);
 
   // Polling para atualizar progresso em tempo real
   useEffect(() => {
@@ -133,7 +159,9 @@ export default function AdminPipelineCreateBatch() {
           data: {
             question: exercise.question,
             options: exercise.options,
-            correctAnswer: exercise.correctOptionIndex ?? exercise.correctAnswer,
+            correctAnswer: exercise.correctOptionIndex !== undefined 
+              ? exercise.options[exercise.correctOptionIndex]
+              : exercise.correctAnswer,
             explanation: exercise.feedback || exercise.explanation || 'Correto!'
           }
         };
@@ -206,25 +234,23 @@ export default function AdminPipelineCreateBatch() {
         return null;
       }
 
+      // Verificar se a trail padrão foi carregada
+      if (!defaultTrail) {
+        setValidationError('Trail padrão não foi carregada. Aguarde um momento e tente novamente.');
+        return null;
+      }
+
       const convertedLessons: PipelineInput[] = [];
       
       for (let i = 0; i < parsed.length; i++) {
         const lesson = parsed[i];
         const missingFields = [];
 
-        if (!lesson.model) missingFields.push('model');
+        // ✅ Campo "model" agora é OPCIONAL (será preenchido pelo botão selecionado)
         if (!lesson.title) missingFields.push('title');
-        if (!lesson.trackId) missingFields.push('trackId');
-        if (!lesson.trackName) missingFields.push('trackName');
         if (lesson.orderIndex === undefined) missingFields.push('orderIndex');
         if (!lesson.sections || lesson.sections.length === 0) missingFields.push('sections');
         if (!lesson.exercises) missingFields.push('exercises');
-
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (lesson.trackId && !uuidRegex.test(lesson.trackId)) {
-          setValidationError(`Lição ${i + 1}: trackId inválido (deve ser UUID)`);
-          return null;
-        }
 
         if (missingFields.length > 0) {
           setValidationError(`Lição ${i + 1}: Campos obrigatórios ausentes: ${missingFields.join(', ')}`);
@@ -236,11 +262,18 @@ export default function AdminPipelineCreateBatch() {
           transformSimplifiedExercise(ex, idx)
         );
 
+        // ✅ Validar que há modelo selecionado
+        if (!lesson.model && !selectedTemplate) {
+          setValidationError('❌ Selecione um modelo (V1, V2 ou V3) clicando nos botões acima antes de validar');
+          return null;
+        }
+
+        // ✅ Sobrescrever trackId e trackName com a trail padrão
         const convertedLesson: PipelineInput = {
-          model: lesson.model.toLowerCase() as 'v1' | 'v2' | 'v3',
+          model: (lesson.model || selectedTemplate).toLowerCase() as 'v1' | 'v2' | 'v3', // ✅ Usa botão se não tiver no JSON
           title: lesson.title,
-          trackId: lesson.trackId,
-          trackName: lesson.trackName,
+          trackId: defaultTrail.id,  // Auto-determinado
+          trackName: defaultTrail.title,  // Auto-determinado
           orderIndex: lesson.orderIndex,
           estimatedTimeMinutes: lesson.estimatedTimeMinutes,
           sections: lesson.sections.map(convertToLessonSection),
@@ -292,6 +325,16 @@ export default function AdminPipelineCreateBatch() {
   };
 
   const handleSubmit = async () => {
+    // ✅ Validar modelo selecionado antes de criar
+    if (!selectedTemplate) {
+      toast({
+        title: 'Modelo não selecionado',
+        description: 'Clique em V1, V2 ou V3 antes de criar as lições',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const lessons = validateJSON(jsonInput);
     if (!lessons) return;
 
@@ -675,32 +718,47 @@ export default function AdminPipelineCreateBatch() {
               </div>
             )}
             <div className="space-y-2">
+              <div className="mb-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Selecione o modelo</strong> que será aplicado a TODAS as lições do batch
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Não precisa especificar "model" no JSON - o botão selecionado será aplicado automaticamente
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => loadTemplate('v1')}
-                  variant={selectedTemplate === 'v1' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v1' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v1' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎮 V1 (Playground no Meio)
                 </Button>
                 <Button
                   onClick={() => loadTemplate('v2')}
-                  variant={selectedTemplate === 'v2' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v2' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v2' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   📚 V2 (Linear Simples)
                 </Button>
                 <Button
                   onClick={() => loadTemplate('v3')}
-                  variant={selectedTemplate === 'v3' ? 'default' : 'secondary'}
-                  className="flex-1"
+                  variant={selectedTemplate === 'v3' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v3' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎨 V3 (Slides + Playground Final)
                 </Button>
               </div>
+              {selectedTemplate && (
+                <div className="mt-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-primary font-medium text-center">
+                    ✓ Modelo {selectedTemplate.toUpperCase()} selecionado
+                  </p>
+                </div>
+              )}
               <Button
                 onClick={handleValidate}
                 variant="outline"

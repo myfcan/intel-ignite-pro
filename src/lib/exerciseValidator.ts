@@ -208,11 +208,11 @@ function validateMultipleChoice(data: any, result: ValidationResult): void {
     }
 
     // Validar correctAnswer
-    if (typeof data.correctAnswer !== 'number') {
-      result.errors.push('multiple-choice precisa de "correctAnswer" (number/índice)');
+    if (typeof data.correctAnswer !== 'string') {
+      result.errors.push('multiple-choice precisa de "correctAnswer" (string)');
     } else {
-      if (data.correctAnswer < 0 || data.correctAnswer >= data.options.length) {
-        result.errors.push(`correctAnswer (${data.correctAnswer}) fora do range de opções (0-${data.options.length - 1})`);
+      if (!data.options.includes(data.correctAnswer)) {
+        result.errors.push(`correctAnswer "${data.correctAnswer}" não está nas opções disponíveis`);
       }
     }
   }

@@ -77,9 +77,19 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   if (!input.trackId) {
     throw new Error('trackId é obrigatório');
   }
+  
+  // Validar formato UUID do trackId
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(input.trackId)) {
+    throw new Error(`trackId inválido: "${input.trackId}" não é um UUID válido`);
+  }
+  
   if (input.orderIndex === undefined || input.orderIndex < 0) {
     throw new Error('orderIndex é obrigatório e deve ser >= 0');
   }
+  
+  console.log(`✅ [STEP 1] trackId validado: ${input.trackId}`);
+  console.log(`✅ [STEP 1] orderIndex validado: ${input.orderIndex}`);
 
   // Estimar tempo baseado no modelo
   let estimatedTimeMinutes = input.estimatedTimeMinutes;
