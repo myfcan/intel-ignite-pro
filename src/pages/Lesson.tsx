@@ -95,7 +95,7 @@ const Lesson = () => {
       
       setExercises(transformedExercises);
 
-      // Mark lesson as started
+      // Mark lesson as started (session already verified above)
       await supabase.functions.invoke("user-progress", {
         body: {
           action: "start",
@@ -150,6 +150,18 @@ const Lesson = () => {
 
   const handleCompleteLesson = async () => {
     try {
+      // Verify authentication
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
       const { data, error } = await supabase.functions.invoke("user-progress", {
@@ -160,7 +172,18 @@ const Lesson = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          toast({
+            title: "Sessão expirada",
+            description: "Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          navigate('/auth');
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Aula concluída! 🎉",
