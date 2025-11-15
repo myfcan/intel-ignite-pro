@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug } from 'lucide-react';
+import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -211,6 +211,14 @@ export default function AdminManageLessons() {
               Visualize, filtre e delete lições existentes
             </p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/admin/pipeline/fix-exercises')}
+            className="flex items-center gap-2"
+          >
+            <Wrench className="w-4 h-4" />
+            Corrigir Exercícios
+          </Button>
           {selectedLessons.size > 0 && (
             <Button variant="destructive" onClick={openDeleteModal}>
               <Trash2 className="w-4 h-4 mr-2" />
