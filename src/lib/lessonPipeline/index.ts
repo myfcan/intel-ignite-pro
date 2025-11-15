@@ -5,6 +5,7 @@ import { step2CleanText } from './step2-clean-text';
 import { step3GenerateAudio } from './step3-generate-audio';
 import { step4CalculateTimestamps } from './step4-calculate-timestamps';
 import { step5GenerateExercises } from './step5-generate-exercises';
+import { step5_5ProcessPlayground } from './step5-5-process-playground'; // NOVO: STEP 5.5 - Process Playground Config
 import { step6ValidateAll } from './step6-validate';
 import { step7Consolidate } from './step7-consolidate';
 import { step8Activate } from './step8-activate';
@@ -63,9 +64,20 @@ export async function runLessonPipeline(
       totalExercises: step5.exercisesConfig?.length || 0
     });
     
+    // ============================================================================
+    // STEP 5.5: PROCESSAR PLAYGROUND CONFIG (NOVO - 2025-11-15)
+    // ============================================================================
+    // Este step foi adicionado para expandir automaticamente playgroundConfig
+    // quando tipo = 'real-playground' mas não tem realConfig completo.
+    // Busque por "STEP 5.5" no GitHub para mais detalhes.
+    // ============================================================================
+    await logger.info(5.5, 'Process Playground', '🎮 Processando playground configs...');
+    const step5_5 = await step5_5ProcessPlayground(step5, logger);
+    await logger.success(5.5, 'Process Playground', '✅ Playground configs processados');
+    
     await updateDB('running', 6);
     await logger.info(6, 'Validate All', '🔍 Validação final de todos os componentes...');
-    const step6 = await step6ValidateAll(step5);
+    const step6 = await step6ValidateAll(step5_5);
     await logger.success(6, 'Validate All', '✅ Validação completa bem-sucedida', {
       validationWarnings: step6.validationWarnings?.length || 0
     });
