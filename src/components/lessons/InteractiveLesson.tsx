@@ -204,12 +204,19 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       }
 
       // ✅ MERGE exercises from database into content.exercisesConfig
-      if (guidedLessonData && lesson.exercises && Array.isArray(lesson.exercises)) {
-        guidedLessonData = {
-          ...guidedLessonData,
-          exercisesConfig: lesson.exercises
-        };
-        console.log('✅ Merged exercises from database:', lesson.exercises.length, 'exercises');
+      // SEMPRE usar exercises do banco se existirem (prioridade sobre conteúdo local)
+      if (guidedLessonData) {
+        if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
+          guidedLessonData = {
+            ...guidedLessonData,
+            exercisesConfig: lesson.exercises
+          };
+          console.log('✅ Merged exercises from database:', lesson.exercises.length, 'exercises');
+          console.log('🔍 First exercise:', lesson.exercises[0]);
+        } else {
+          console.warn('⚠️ No exercises found in database for this lesson');
+          console.warn('⚠️ lesson.exercises:', lesson.exercises);
+        }
       }
 
       // FIX CRITICO: Buscar audioUrl do content se coluna estiver null

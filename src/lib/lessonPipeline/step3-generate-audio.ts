@@ -35,7 +35,7 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
     body: {
       text: input.audioText,
       voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
-      speed: 1.1 // Velocidade 1.1x
+      speed: 1.0 // Velocidade normal
     }
   });
 
@@ -165,7 +165,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     body: {
       text: input.audioText,
       voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
-      speed: 1.1 // Velocidade 1.1x
+      speed: 1.0 // Velocidade normal
     }
   });
 
