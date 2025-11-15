@@ -1182,10 +1182,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // 🎮 Handlers do Playground
   const handleOpenPlayground = () => {
-    console.log('🎮 [PLAYGROUND] Usuário clicou em "Abrir"');
+    console.log('🎮 [DEBUG HANDLER] handleOpenPlayground chamado');
+    console.log('🎮 [DEBUG HANDLER] Estado atual:', {
+      showPlaygroundCall,
+      showPlaygroundMid,
+      currentSection,
+      hasExercisesConfig: !!lessonData.exercisesConfig,
+      exercisesConfigLength: lessonData.exercisesConfig?.length
+    });
     logTelemetry('PLAYGROUND_OPEN');
     setShowPlaygroundCall(false);
     setTimeout(() => {
+      console.log('🎮 [DEBUG HANDLER] Abrindo playground mid-lesson');
       setShowPlaygroundMid(true);
     }, 300);
   };
@@ -1244,10 +1252,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
-    console.log('🎯 [TRANSITION] Indo para exercícios');
+    console.log('🎯 [DEBUG HANDLER] handleGoToExercises chamado');
+    console.log('🎯 [DEBUG HANDLER] Estado atual:', {
+      hasExercisesConfig: !!lessonData.exercisesConfig,
+      exercisesConfigLength: lessonData.exercisesConfig?.length,
+      exercisesConfig: lessonData.exercisesConfig,
+      hasFinalPlaygroundConfig: !!lessonData.finalPlaygroundConfig,
+      showEndCard,
+      currentPhase
+    });
     
     setShowEndCard(false);
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('🎯 [DEBUG HANDLER] Indo para fase de exercícios');
       setCurrentPhase('exercises');
     } else if (lessonData.finalPlaygroundConfig) {
       setCurrentPhase('playground-final');
@@ -1885,8 +1902,26 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
       {/* Overlay do Playground Mid-Lesson (apenas V1) */}
       {hasPlaygroundSupport && showPlaygroundMid && (() => {
+        console.log('🔍 [DEBUG PLAYGROUND] Procurando section com playground:', {
+          allSections: lessonData.sections.map(s => ({
+            index: s.id,
+            showPlaygroundCall: s.showPlaygroundCall,
+            hasPlaygroundConfig: !!s.playgroundConfig,
+            playgroundConfigType: s.playgroundConfig?.type
+          })),
+          currentSection
+        });
+        
         const section4 = lessonData.sections.find(s => s.showPlaygroundCall && s.playgroundConfig);
         const playgroundSection = section4 || lessonData.sections[currentSection];
+        
+        console.log('🔍 [DEBUG PLAYGROUND] Section encontrada:', {
+          hasSection4: !!section4,
+          section4Config: section4?.playgroundConfig,
+          playgroundSection: playgroundSection,
+          hasPlaygroundConfig: !!playgroundSection?.playgroundConfig
+        });
+        
         return playgroundSection?.playgroundConfig ? (
           playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
            playgroundSection.playgroundConfig.simulationConfig ? (
