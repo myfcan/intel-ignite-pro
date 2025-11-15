@@ -22,6 +22,8 @@ export interface Lesson {
   user_score?: number;
   user_answers?: any;
   attempts?: number;
+  exercises?: any[];  // 🆕 Exercícios salvos no banco
+  exercises_version?: number;  // 🆕 Versão dos exercícios
 }
 
 export const useLesson = (lessonId: string) => {

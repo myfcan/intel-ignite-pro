@@ -80,7 +80,7 @@ export interface InteractiveSimulationConfig {
 }
 
 export interface PlaygroundConfig {
-  instruction: string;
+  instruction?: string;  // 🆕 Opcional para compatibilidade com diferentes formatos
   type: PlaygroundType;
   triggerKeyword?: string;
   triggerAfterSection?: number;
