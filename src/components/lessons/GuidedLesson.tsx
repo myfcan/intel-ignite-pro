@@ -1182,11 +1182,19 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // 🎮 Handlers do Playground
   const handleOpenPlayground = () => {
-    console.log('🎮 [PLAYGROUND] Usuário clicou em "Abrir"');
+    console.log('🎮 [OPEN-PLAYGROUND] Função chamada');
+    console.log('🎮 [OPEN-PLAYGROUND] showPlaygroundCall ANTES:', showPlaygroundCall);
+    console.log('🎮 [OPEN-PLAYGROUND] showPlaygroundMid ANTES:', showPlaygroundMid);
+
     logTelemetry('PLAYGROUND_OPEN');
+
     setShowPlaygroundCall(false);
+    console.log('🎮 [OPEN-PLAYGROUND] setShowPlaygroundCall(false) executado');
+
     setTimeout(() => {
+      console.log('🎮 [OPEN-PLAYGROUND] Timeout executando (300ms depois)...');
       setShowPlaygroundMid(true);
+      console.log('🎮 [OPEN-PLAYGROUND] setShowPlaygroundMid(true) executado');
     }, 300);
   };
   
@@ -1244,14 +1252,23 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // Ir para exercícios após end-audio
   const handleGoToExercises = () => {
-    console.log('🎯 [TRANSITION] Indo para exercícios');
-    
+    console.log('🎯 [GO-TO-EXERCISES] Função chamada');
+    console.log('🎯 [GO-TO-EXERCISES] lessonData.exercisesConfig:', lessonData.exercisesConfig);
+    console.log('🎯 [GO-TO-EXERCISES] Quantidade:', lessonData.exercisesConfig?.length || 0);
+    console.log('🎯 [GO-TO-EXERCISES] lessonData.finalPlaygroundConfig:', lessonData.finalPlaygroundConfig);
+
     setShowEndCard(false);
+    console.log('🎯 [GO-TO-EXERCISES] showEndCard = false');
+
     if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('✅ [GO-TO-EXERCISES] Tem exercícios! Indo para phase="exercises"');
       setCurrentPhase('exercises');
+      console.log('🎯 [GO-TO-EXERCISES] currentPhase = "exercises"');
     } else if (lessonData.finalPlaygroundConfig) {
+      console.log('🎮 [GO-TO-EXERCISES] Sem exercícios, indo para playground-final');
       setCurrentPhase('playground-final');
     } else {
+      console.log('⚠️ [GO-TO-EXERCISES] Sem exercícios e sem playground-final, chamando onComplete');
       onComplete({ audioProgress: maxAudioProgress });
     }
   };
@@ -1923,8 +1940,11 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
               Agora vamos fixar esse conhecimento com exercícios práticos.
             </p>
             
-            <Button 
-              onClick={handleGoToExercises} 
+            <Button
+              onClick={() => {
+                console.log('🎯 [BUTTON] Botão "Ir para Exercícios" clicado!');
+                handleGoToExercises();
+              }}
               size="lg"
               className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
             >
