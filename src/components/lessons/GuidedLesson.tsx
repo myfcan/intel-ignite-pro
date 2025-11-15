@@ -338,6 +338,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   };
 
   // 📊 Função para enviar logs de diagnóstico ao Supabase
+  // DESABILITADO: RLS policies causando erros 400
   const sendDiagnosticLog = async (
     eventType: 'SYNC_STATE' | 'DETECTION' | 'STATE_UPDATE' | 'SCROLL',
     data: {
@@ -349,32 +350,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
       metadata?: any;
     }
   ) => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      // Se não há usuário autenticado, não tenta salvar logs
-      if (authError || !user) {
-        return;
-      }
-
-      // Usar o ID da aula diretamente
-      const lessonId = lessonData.id;
-
-      await supabase.from('diagnostic_logs').insert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        event_type: eventType,
-        audio_time: data.audioTime,
-        current_section: data.currentSection,
-        target_section: data.targetSection,
-        performance_timestamp: data.performanceTimestamp,
-        latency_ms: data.latencyMs,
-        metadata: data.metadata
-      });
-    } catch (error) {
-      // Silenciosamente falha para não quebrar a aula
-      console.error('[TELEMETRY-ERROR]', error);
-    }
+    // Diagnostic logs desabilitados temporariamente
+    // devido a problemas com RLS policies no Supabase
+    return;
   };
   
   // 🔧 INICIALIZAÇÃO DO ÁUDIO
