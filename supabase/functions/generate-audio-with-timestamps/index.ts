@@ -11,8 +11,8 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice_id } = await req.json();
-    
+    const { text, voice_id, speed } = await req.json();
+
     if (!text) {
       return new Response(
         JSON.stringify({ error: 'Texto é obrigatório' }),
@@ -27,13 +27,15 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice
+
+    const voiceId = voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice (Brasil)
     const modelId = 'eleven_multilingual_v2';
+    const audioSpeed = speed || 1.0; // Velocidade padrão 1.0x
 
     console.log('🎙️ Gerando áudio com timestamps...');
-    console.log(`   Voice: ${voiceId}`);
+    console.log(`   Voice: ${voiceId} (Alice - Brasil)`);
     console.log(`   Model: ${modelId}`);
+    console.log(`   Speed: ${audioSpeed}x (NOTA: ElevenLabs não suporta speed nativo)`);
     console.log(`   Text length: ${text.length} chars`);
     
     const response = await fetch(

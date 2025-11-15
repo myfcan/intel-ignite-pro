@@ -203,6 +203,15 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         guidedLessonData = localContent;
       }
 
+      // ✅ MERGE exercises from database into content.exercisesConfig
+      if (guidedLessonData && lesson.exercises && Array.isArray(lesson.exercises)) {
+        guidedLessonData = {
+          ...guidedLessonData,
+          exercisesConfig: lesson.exercises
+        };
+        console.log('✅ Merged exercises from database:', lesson.exercises.length, 'exercises');
+      }
+
       // FIX CRITICO: Buscar audioUrl do content se coluna estiver null
       let audioUrl = lesson.audio_url || 
                      (guidedLessonData?.sections?.[0]?.audio_url) || 

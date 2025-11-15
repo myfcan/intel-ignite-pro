@@ -280,12 +280,15 @@ export default function AdminPipelineCreateBatch() {
           exercises: transformedExercises
         };
 
+        // Para modelo V1: playground deve aparecer após a sessão 4 (índice 3)
         if (lesson.playgroundMidLesson && convertedLesson.sections) {
-          const lastSection = convertedLesson.sections[convertedLesson.sections.length - 1];
-          lastSection.playgroundConfig = {
-            type: 'interactive-simulation',
-            config: lesson.playgroundMidLesson
-          };
+          const playgroundSectionIndex = convertedLesson.model === 'v1' ? 3 : convertedLesson.sections.length - 1;
+          if (playgroundSectionIndex < convertedLesson.sections.length) {
+            convertedLesson.sections[playgroundSectionIndex].playgroundConfig = {
+              type: 'real-playground',
+              instruction: lesson.playgroundMidLesson.instruction
+            };
+          }
         }
 
         convertedLessons.push(convertedLesson);
