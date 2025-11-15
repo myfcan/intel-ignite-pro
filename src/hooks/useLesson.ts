@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface LessonContent {
   [key: string]: any;
@@ -22,8 +23,8 @@ export interface Lesson {
   user_score?: number;
   user_answers?: any;
   attempts?: number;
-  exercises?: any[];  // 🆕 Exercícios salvos no banco
-  exercises_version?: number;  // 🆕 Versão dos exercícios
+  exercises?: any[];  // Tipado como any[] para uso interno
+  exercises_version?: number;
 }
 
 export const useLesson = (lessonId: string) => {
@@ -61,11 +62,12 @@ export const useLesson = (lessonId: string) => {
       if (lessonError) throw lessonError;
 
       // Debug: verificar se exercises está presente
+      const exercisesArray = Array.isArray(lessonData.exercises) ? lessonData.exercises : [];
       console.log('🔍 [useLesson] Dados da lição carregados:', {
         id: lessonData.id,
         title: lessonData.title,
         hasExercises: !!lessonData.exercises,
-        exercisesCount: lessonData.exercises?.length || 0,
+        exercisesCount: exercisesArray.length,
         exercisesVersion: lessonData.exercises_version
       });
 
@@ -81,6 +83,7 @@ export const useLesson = (lessonId: string) => {
         ...lessonData,
         lesson_type: lessonData.lesson_type as any,
         content: lessonData.content as LessonContent,
+        exercises: Array.isArray(lessonData.exercises) ? lessonData.exercises : [],
         user_status: progressData?.status || 'not_started',
         user_score: progressData?.score || 0,
         user_answers: progressData?.answers,
