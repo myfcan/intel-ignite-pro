@@ -1916,6 +1916,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
             <PlaygroundMidLesson
               config={playgroundSection.playgroundConfig}
               onComplete={handlePlaygroundComplete}
+              lessonId={lessonData.id}
             />
           )
         ) : null;
