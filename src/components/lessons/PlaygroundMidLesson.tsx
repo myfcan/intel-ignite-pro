@@ -13,8 +13,34 @@ interface PlaygroundMidLessonProps {
 }
 
 export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonProps) {
+  // Criar fallback realConfig quando não existir
+  const effectiveConfig = config.type === 'real-playground' && !config.realConfig 
+    ? {
+        ...config,
+        realConfig: {
+          title: 'Hora da Prática!',
+          maiaMessage: (config as any).instruction || 'Agora é sua vez de testar o que aprendeu!',
+          scenario: {
+            title: 'Teste Prático',
+            description: (config as any).instruction || 'Coloque em prática o conceito que você acabou de aprender.'
+          },
+          prefilledText: '',
+          userPlaceholder: 'Digite sua resposta aqui...',
+          validation: {
+            minLength: 10,
+            requiredKeywords: [],
+            feedback: {
+              tooShort: 'Escreva um pouco mais (mínimo 10 caracteres)',
+              good: 'Bom trabalho! Continue assim.',
+              excellent: 'Excelente! Você entendeu bem o conceito!'
+            }
+          }
+        }
+      }
+    : config;
+
   // Verifica se é playground real ou múltipla escolha
-  const isRealPlayground = config.type === 'real-playground' && config.realConfig;
+  const isRealPlayground = effectiveConfig.type === 'real-playground' && effectiveConfig.realConfig;
 
   // Estados para playground real
   const [userInput, setUserInput] = useState('');
@@ -29,32 +55,32 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
 
   // Validação em tempo real para playground real
   useEffect(() => {
-    if (!isRealPlayground || !config.realConfig) return;
+    if (!isRealPlayground || !effectiveConfig.realConfig) return;
 
     const validate = () => {
       if (userInput.length === 0) {
         return { isValid: false, feedback: '' };
       }
       
-      if (userInput.length < config.realConfig!.validation.minLength) {
-        return { isValid: false, feedback: config.realConfig!.validation.feedback.tooShort };
+      if (userInput.length < effectiveConfig.realConfig!.validation.minLength) {
+        return { isValid: false, feedback: effectiveConfig.realConfig!.validation.feedback.tooShort };
       }
       
-      const hasAllKeywords = config.realConfig!.validation.requiredKeywords?.every(keywordGroup =>
+      const hasAllKeywords = effectiveConfig.realConfig!.validation.requiredKeywords?.every(keywordGroup =>
         keywordGroup.some(keyword => 
           userInput.toLowerCase().includes(keyword.toLowerCase())
         )
       ) ?? true;
       
       if (!hasAllKeywords) {
-        return { isValid: false, feedback: config.realConfig!.validation.feedback.good };
+        return { isValid: false, feedback: effectiveConfig.realConfig!.validation.feedback.good };
       }
       
-      return { isValid: true, feedback: config.realConfig!.validation.feedback.excellent };
+      return { isValid: true, feedback: effectiveConfig.realConfig!.validation.feedback.excellent };
     };
     
     setValidationState(validate());
-  }, [userInput, config, isRealPlayground]);
+  }, [userInput, effectiveConfig, isRealPlayground]);
 
   // Handlers para múltipla escolha
   const handleContinue = () => {
@@ -73,8 +99,8 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
   };
 
   // Renderizar playground REAL
-  if (isRealPlayground && config.realConfig) {
-    const fullPrompt = `${config.realConfig.prefilledText} ${userInput}`;
+  if (isRealPlayground && effectiveConfig.realConfig) {
+    const fullPrompt = `${effectiveConfig.realConfig.prefilledText} ${userInput}`;
 
     return (
       <div 
@@ -92,7 +118,7 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
                 className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0" 
               />
               <div>
-                <h3 className="text-white font-bold text-xl">⏸️ {config.realConfig.title}</h3>
+                <h3 className="text-white font-bold text-xl">⏸️ {effectiveConfig.realConfig.title}</h3>
                 <p className="text-white/90 text-sm">Vamos praticar o que você aprendeu!</p>
               </div>
             </div>
@@ -103,17 +129,17 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
             {/* Mensagem da MAIA */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
               <p className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                🤖 {config.realConfig.maiaMessage}
+                🤖 {effectiveConfig.realConfig.maiaMessage}
               </p>
             </div>
             
             {/* Situação */}
             <div className="mb-6">
               <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                📋 {config.realConfig.scenario.title}
+                📋 {effectiveConfig.realConfig.scenario.title}
               </h4>
               <p className="text-muted-foreground leading-relaxed">
-                {config.realConfig.scenario.description}
+                {effectiveConfig.realConfig.scenario.description}
               </p>
             </div>
             
@@ -127,7 +153,7 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
               <div className="mb-3">
                 <input
                   type="text"
-                  value={config.realConfig.prefilledText}
+                  value={effectiveConfig.realConfig.prefilledText}
                   disabled
                   className="w-full px-4 py-3 bg-muted border-2 border-border rounded-lg text-muted-foreground font-medium"
                 />
@@ -138,7 +164,7 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
                 <Textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={config.realConfig.userPlaceholder}
+                  placeholder={effectiveConfig.realConfig.userPlaceholder}
                   className="w-full px-4 py-3 border-2 border-cyan-400 rounded-lg font-medium min-h-[120px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
                 <p className="text-sm text-muted-foreground mt-2">
@@ -163,7 +189,7 @@ export function PlaygroundMidLesson({ config, onComplete }: PlaygroundMidLessonP
             )}
             
             {/* Prompt completo preview */}
-            {userInput.length >= config.realConfig.validation.minLength && (
+            {userInput.length >= effectiveConfig.realConfig.validation.minLength && (
               <div className="bg-muted border-2 border-border rounded-xl p-5 mb-6">
                 <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
                   👁️ Seu prompt completo:
