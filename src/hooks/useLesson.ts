@@ -60,6 +60,15 @@ export const useLesson = (lessonId: string) => {
 
       if (lessonError) throw lessonError;
 
+      // Debug: verificar se exercises está presente
+      console.log('🔍 [useLesson] Dados da lição carregados:', {
+        id: lessonData.id,
+        title: lessonData.title,
+        hasExercises: !!lessonData.exercises,
+        exercisesCount: lessonData.exercises?.length || 0,
+        exercisesVersion: lessonData.exercises_version
+      });
+
       // Fetch user progress
       const { data: progressData } = await supabase
         .from('user_progress')

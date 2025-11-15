@@ -284,6 +284,7 @@ export default function AdminPipelineCreateBatch() {
         if (lesson.playgroundMidLesson && convertedLesson.sections) {
           const playgroundSectionIndex = convertedLesson.model === 'v1' ? 3 : convertedLesson.sections.length - 1;
           if (playgroundSectionIndex < convertedLesson.sections.length) {
+            convertedLesson.sections[playgroundSectionIndex].showPlaygroundCall = true;
             convertedLesson.sections[playgroundSectionIndex].playgroundConfig = {
               type: 'real-playground',
               instruction: lesson.playgroundMidLesson.instruction

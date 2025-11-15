@@ -56,6 +56,7 @@ function calculateTimestampsV1(input: Step3Output): Step4Output {
       visualContent: section.visualContent,
       timestamp,
       speechBubbleText: section.speechBubbleText,
+      showPlaygroundCall: section.showPlaygroundCall,
       playgroundConfig: section.playgroundConfig
     };
   });
@@ -101,6 +102,7 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
       timestamp,
       audioUrl: input.audioUrls![idx],
       speechBubbleText: section.speechBubbleText,
+      showPlaygroundCall: section.showPlaygroundCall,
       playgroundConfig: section.playgroundConfig
     };
   });
