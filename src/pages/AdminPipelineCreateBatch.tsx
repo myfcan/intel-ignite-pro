@@ -153,15 +153,27 @@ export default function AdminPipelineCreateBatch() {
 
     switch (exercise.type) {
       case 'multiple-choice':
+        // ✅ CRÍTICO: Converter correctAnswer de índice (número) para texto da opção
+        let correctAnswerText: string;
+
+        if (exercise.correctOptionIndex !== undefined) {
+          // Prioridade 1: correctOptionIndex explícito
+          correctAnswerText = exercise.options[exercise.correctOptionIndex];
+        } else if (typeof exercise.correctAnswer === 'number') {
+          // Prioridade 2: correctAnswer como índice numérico
+          correctAnswerText = exercise.options[exercise.correctAnswer];
+        } else {
+          // Prioridade 3: correctAnswer como texto direto
+          correctAnswerText = exercise.correctAnswer;
+        }
+
         return {
           ...baseExercise,
           type: 'multiple-choice',
           data: {
             question: exercise.question,
             options: exercise.options,
-            correctAnswer: exercise.correctOptionIndex !== undefined 
-              ? exercise.options[exercise.correctOptionIndex]
-              : exercise.correctAnswer,
+            correctAnswer: correctAnswerText,
             explanation: exercise.feedback || exercise.explanation || 'Correto!'
           }
         };
@@ -187,11 +199,27 @@ export default function AdminPipelineCreateBatch() {
       
       case 'complete-sentence':
       case 'fill-in-blanks':
-        const correctAnswerValue = exercise.correctAnswer || exercise.answer || '';
-        const sentenceText = exercise.sentence 
-          ? exercise.sentence.replace(correctAnswerValue, '_______')
-          : exercise.text || '';
-        
+        // ✅ CRÍTICO: Suportar múltiplos formatos de entrada
+        let sentenceText = '';
+        let correctAnswersArray: string[] = [];
+
+        // Formato 1: question já com "______" + blanks/correctAnswers separados
+        if (exercise.question && exercise.question.includes('_')) {
+          sentenceText = exercise.question;
+          correctAnswersArray = exercise.correctAnswers || exercise.blanks || [];
+        }
+        // Formato 2: sentence que precisa de substituição
+        else if (exercise.sentence) {
+          const correctAnswerValue = exercise.correctAnswer || exercise.answer || '';
+          sentenceText = exercise.sentence.replace(correctAnswerValue, '_______');
+          correctAnswersArray = Array.isArray(correctAnswerValue) ? correctAnswerValue : [correctAnswerValue];
+        }
+        // Formato 3: text genérico
+        else {
+          sentenceText = exercise.text || exercise.question || '';
+          correctAnswersArray = exercise.correctAnswers || exercise.blanks || [];
+        }
+
         return {
           ...baseExercise,
           type: 'fill-in-blanks',
@@ -199,9 +227,7 @@ export default function AdminPipelineCreateBatch() {
             sentences: [{
               id: `sentence-${index}`,
               text: sentenceText,
-              correctAnswers: Array.isArray(correctAnswerValue) 
-                ? correctAnswerValue 
-                : [correctAnswerValue],
+              correctAnswers: correctAnswersArray,
               hint: exercise.hint || 'Pense no que você aprendeu',
               explanation: exercise.feedback || exercise.explanation || 'Excelente!'
             }],
