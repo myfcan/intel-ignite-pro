@@ -123,6 +123,19 @@ export const useLesson = (lessonId: string) => {
       // Call user-progress edge function to handle completion and points
       if (passed) {
         console.log('✅ [SUBMIT] Chamando edge function user-progress...');
+        
+        // Verify authentication before calling edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('❌ [SUBMIT] Usuário não autenticado');
+          toast({
+            title: "Erro de autenticação",
+            description: "Sua sessão expirou. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          return null;
+        }
+
         const { data: progressResult, error: progressError } = await supabase.functions.invoke('user-progress', {
           body: {
             action: 'complete',
@@ -133,6 +146,18 @@ export const useLesson = (lessonId: string) => {
 
         if (progressError) {
           console.error('❌ [SUBMIT] Erro ao chamar edge function:', progressError);
+          
+          // Handle 401 specifically
+          if (progressError.message?.includes('401') || progressError.message?.includes('Unauthorized')) {
+            toast({
+              title: "Sessão expirada",
+              description: "Por favor, faça login novamente.",
+              variant: "destructive",
+            });
+            // Redirect to auth page
+            window.location.href = '/auth';
+            return null;
+          }
         } else {
           console.log('✅ [SUBMIT] Edge function executada com sucesso!');
           console.log('🎁 [SUBMIT] Pontos ganhos:', progressResult?.points_earned);
