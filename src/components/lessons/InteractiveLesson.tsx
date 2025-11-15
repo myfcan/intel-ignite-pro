@@ -281,7 +281,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           trackName: '', // Não temos esse dado aqui, mas não é usado
           duration: lesson.estimated_time ? lesson.estimated_time * 60 : 0,
           sections: guidedLessonData.sections || [],
-          exercisesConfig: normalizedExercises,
+          // Usar normalizedExercises se existir e tiver items, senão fallback para content
+          exercisesConfig: normalizedExercises && normalizedExercises.length > 0
+            ? normalizedExercises
+            : guidedLessonData.exercisesConfig,
           finalPlaygroundConfig: guidedLessonData.finalPlaygroundConfig,
           contentVersion: guidedLessonData.contentVersion
         };
