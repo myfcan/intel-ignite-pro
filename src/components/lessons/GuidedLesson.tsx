@@ -1905,16 +1905,62 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
           hasPlaygroundConfig: !!playgroundSection?.playgroundConfig
         });
         
-        return playgroundSection?.playgroundConfig ? (
-          playgroundSection.playgroundConfig.type === 'interactive-simulation' && 
-           playgroundSection.playgroundConfig.simulationConfig ? (
+        // 🔍 DEBUG: Log do config ANTES de passar para PlaygroundMidLesson
+        console.log('🎮 [GUIDED→PLAYGROUND] Config sendo passado:', {
+          hasPlaygroundSection: !!playgroundSection,
+          hasPlaygroundConfig: !!playgroundSection?.playgroundConfig,
+          configType: playgroundSection?.playgroundConfig?.type,
+          hasRealConfig: !!playgroundSection?.playgroundConfig?.realConfig,
+          realConfigStructure: playgroundSection?.playgroundConfig?.realConfig ? {
+            hasTitle: !!playgroundSection.playgroundConfig.realConfig.title,
+            hasMaiaMessage: !!playgroundSection.playgroundConfig.realConfig.maiaMessage,
+            hasScenario: !!playgroundSection.playgroundConfig.realConfig.scenario,
+            hasPrefilledText: !!playgroundSection.playgroundConfig.realConfig.prefilledText,
+            hasUserPlaceholder: !!playgroundSection.playgroundConfig.realConfig.userPlaceholder,
+            hasValidation: !!playgroundSection.playgroundConfig.realConfig.validation,
+          } : null,
+          fullConfig: JSON.stringify(playgroundSection?.playgroundConfig, null, 2)
+        });
+
+        // 🛡️ FALLBACK: Se realConfig estiver vazio, criar um padrão
+        let safeConfig = playgroundSection?.playgroundConfig;
+        if (safeConfig?.type === 'real-playground' && !safeConfig.realConfig) {
+          console.warn('⚠️ [FALLBACK] realConfig vazio! Criando padrão...');
+          safeConfig = {
+            ...safeConfig,
+            realConfig: {
+              type: 'real-playground' as const,
+              title: "Hora da Prática! 🚀",
+              maiaMessage: "Peça para a Liv te ajudar com algo do seu dia a dia!",
+              scenario: {
+                title: "Desafio Prático",
+                description: "Peça para a Liv te ajudar com algo do seu dia a dia!"
+              },
+              prefilledText: "",
+              userPlaceholder: "Digite seu prompt aqui... 💭",
+              validation: {
+                minLength: 20,
+                requiredKeywords: [],
+                feedback: {
+                  tooShort: "⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!",
+                  good: "✅ Bom trabalho! Seu prompt está bem estruturado.",
+                  excellent: "🎉 Excelente! Você dominou a técnica de criar prompts eficazes!"
+                }
+              }
+            }
+          };
+        }
+        
+        return safeConfig ? (
+          safeConfig.type === 'interactive-simulation' && 
+           safeConfig.simulationConfig ? (
             <InteractiveSimulationPlayground
-              config={playgroundSection.playgroundConfig.simulationConfig}
+              config={safeConfig.simulationConfig}
               onComplete={() => handlePlaygroundComplete(null)}
             />
           ) : (
             <PlaygroundMidLesson
-              config={playgroundSection.playgroundConfig}
+              config={safeConfig}
               onComplete={handlePlaygroundComplete}
               lessonId={lessonData.id}
             />

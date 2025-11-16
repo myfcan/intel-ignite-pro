@@ -280,6 +280,19 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           structure: normalizedExercises?.[0]
         });
 
+        // 🔍 DEBUG: Verificar estrutura do playgroundConfig no content
+        console.log('🔍 [INTERACTIVE→GUIDED] Estrutura do content:', {
+          hasSections: !!guidedLessonData.sections,
+          numSections: guidedLessonData.sections?.length || 0,
+          firstSectionPlayground: guidedLessonData.sections?.[0]?.playgroundConfig ? {
+            type: guidedLessonData.sections[0].playgroundConfig.type,
+            hasRealConfig: !!guidedLessonData.sections[0].playgroundConfig.realConfig,
+            realConfigStructure: guidedLessonData.sections[0].playgroundConfig.realConfig ? 
+              Object.keys(guidedLessonData.sections[0].playgroundConfig.realConfig) : [],
+            fullPlaygroundConfig: JSON.stringify(guidedLessonData.sections[0].playgroundConfig, null, 2)
+          } : null
+        });
+
         guidedLessonData = {
           id: lesson.id,
           title: lesson.title,
