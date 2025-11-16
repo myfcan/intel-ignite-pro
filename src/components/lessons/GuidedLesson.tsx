@@ -3,7 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } fr
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { GuidedLessonProps } from '@/types/guidedLesson';
+import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
@@ -1466,9 +1466,18 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
 
   // Renderizar playground final
   if (currentPhase === 'playground-final' && lessonData.finalPlaygroundConfig) {
+    // Type guard: GuidedPlayground só aceita FinalPlaygroundConfig
+    const isFinalPlaygroundConfig = 'steps' in lessonData.finalPlaygroundConfig;
+    
+    if (!isFinalPlaygroundConfig) {
+      console.warn('⚠️ finalPlaygroundConfig não é FinalPlaygroundConfig, pulando playground final');
+      handleFinalPlaygroundComplete();
+      return null;
+    }
+    
     return (
       <GuidedPlayground
-        config={lessonData.finalPlaygroundConfig}
+        config={lessonData.finalPlaygroundConfig as FinalPlaygroundConfig}
         onComplete={handleFinalPlaygroundComplete}
       />
     );
