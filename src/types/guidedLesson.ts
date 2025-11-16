@@ -148,7 +148,7 @@ export interface GuidedLessonData {
   duration: number;
   sections: LessonSection[];
   exercisesConfig?: ExerciseConfig[];
-  finalPlaygroundConfig?: FinalPlaygroundConfig;
+  finalPlaygroundConfig?: FinalPlaygroundConfig | PlaygroundConfig; // V1/V2: FinalPlaygroundConfig (customizado) | V3: PlaygroundConfig (genérico)
   contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
   schemaVersion?: number; // 🆕 Para FASE 4 - controlar versão da estrutura
 }
