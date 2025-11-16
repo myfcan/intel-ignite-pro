@@ -27,10 +27,7 @@ export interface V3Slide {
 export interface V3Data {
   audioText: string; // Texto único para o áudio
   slides: V3Slide[]; // Até 7 slides
-  finalPlaygroundConfig?: {
-    type: 'real-playground' | 'interactive-simulation';
-    config: any;
-  };
+  finalPlaygroundConfig?: PlaygroundConfig; // V3 sempre usa playground genérico padrão
 }
 
 export interface ExerciseInput {
