@@ -306,14 +306,19 @@ export default function AdminPipelineCreateBatch() {
           exercises: transformedExercises
         };
 
-        // Para modelo V1: playground deve aparecer após a sessão 4 (índice 3)
+        // OPÇÃO C: Adicionar playground mid-lesson (se fornecido no JSON)
+        // - Se tiver realConfig customizado → usa o customizado (Trilha 02)
+        // - Se tiver só instruction → Step 5.5 completa com padrão
+        // - Se não tiver nada → Step 5.5 adiciona genérico em modelo V1
         if (lesson.playgroundMidLesson && convertedLesson.sections) {
           const playgroundSectionIndex = convertedLesson.model === 'v1' ? 3 : convertedLesson.sections.length - 1;
           if (playgroundSectionIndex < convertedLesson.sections.length) {
             convertedLesson.sections[playgroundSectionIndex].showPlaygroundCall = true;
             convertedLesson.sections[playgroundSectionIndex].playgroundConfig = {
-              type: 'real-playground',
-              instruction: lesson.playgroundMidLesson.instruction
+              type: lesson.playgroundMidLesson.type || 'real-playground',
+              instruction: lesson.playgroundMidLesson.instruction,
+              // ✨ NOVO: Aceita realConfig customizado (Opção C)
+              realConfig: lesson.playgroundMidLesson.realConfig || undefined
             };
           }
         }
