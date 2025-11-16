@@ -7,6 +7,7 @@ import { FillInBlanksExercise } from './FillInBlanksExercise';
 import { TrueFalseExercise } from './TrueFalseExercise';
 import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
+import { MultipleChoiceExercise } from '../lesson/MultipleChoiceExercise';
 import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -257,6 +258,20 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
             scenarios={currentExercise.data.scenarios}
             platforms={currentExercise.data.platforms}
             onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'multiple-choice' && (
+          <MultipleChoiceExercise
+            key={currentExerciseIndex}
+            question={currentExercise.data.question || currentExercise.instruction}
+            options={currentExercise.data.options || []}
+            correctAnswer={currentExercise.data.correctAnswer || ''}
+            explanation={currentExercise.data.explanation || 'Revise o conteúdo e tente novamente.'}
+            onComplete={(isCorrect) => {
+              const score = isCorrect ? 100 : 0;
+              handleExerciseComplete(score);
+            }}
           />
         )}
       </div>

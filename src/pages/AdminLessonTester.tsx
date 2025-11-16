@@ -17,6 +17,7 @@ import { TrueFalseExercise } from '@/components/lessons/TrueFalseExercise';
 import { ScenarioSelectionExercise } from '@/components/lessons/ScenarioSelectionExercise';
 import { DataCollectionExercise } from '@/components/lessons/DataCollectionExercise';
 import { PlatformMatchExercise } from '@/components/lessons/PlatformMatchExercise';
+import { MultipleChoiceExercise } from '@/components/lesson/MultipleChoiceExercise';
 
 type ExerciseStatus = 'pending' | 'approved' | 'needs-review';
 
@@ -326,6 +327,16 @@ export default function AdminLessonTester() {
                         scenarios={exercise.data.scenarios || []}
                         platforms={exercise.data.platforms || []}
                         onComplete={() => handleExerciseComplete(exercise.id)}
+                      />
+                    )}
+
+                    {exercise.type === 'multiple-choice' && exercise.data && (
+                      <MultipleChoiceExercise
+                        question={exercise.data.question || exercise.instruction}
+                        options={exercise.data.options || []}
+                        correctAnswer={exercise.data.correctAnswer || ''}
+                        explanation={exercise.data.explanation || 'Revise o conteúdo e tente novamente.'}
+                        onComplete={(isCorrect) => handleExerciseComplete(exercise.id)}
                       />
                     )}
 
