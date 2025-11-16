@@ -273,27 +273,6 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           normalizedExercises = guidedLessonData.exercisesConfig;
         }
 
-        // Construir objeto completo que atende interface GuidedLessonData
-        // Normalizar exercícios para formato esperado
-        const normalizedExercises = lesson.exercises?.map((ex: any) => {
-          // Se já está no formato certo (sem instruction/title separados), retornar como está
-          if (ex.data && !ex.instruction && !ex.title) {
-            return ex;
-          }
-          
-          // Se tem instruction/title separados, mover para dentro de data
-          return {
-            id: ex.id,
-            type: ex.type,
-            data: {
-              ...ex.data,
-              // Preservar instruction e title se existirem
-              ...(ex.instruction && { instruction: ex.instruction }),
-              ...(ex.title && { title: ex.title })
-            }
-          };
-        });
-
         console.log('✅ Exercícios normalizados:', {
           fromDB: lesson.exercises?.length || 0,
           fromContent: guidedLessonData.exercisesConfig?.length || 0,
