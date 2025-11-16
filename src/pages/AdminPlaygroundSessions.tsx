@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Activity, MessageSquare, Zap, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Activity, MessageSquare, Zap, TrendingUp, Search, Calendar, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,6 +22,12 @@ interface PlaygroundSession {
   created_at: string;
 }
 
+interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface Analytics {
   totalSessions: number;
   totalTokens: number;
@@ -32,12 +40,34 @@ export default function AdminPlaygroundSessions() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [sessions, setSessions] = useState<PlaygroundSession[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Filtros
+  const [filterUserId, setFilterUserId] = useState<string>('all');
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
   useEffect(() => {
     fetchSessionsAndAnalytics();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .order('email');
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error: any) {
+      console.error('Erro ao buscar usuários:', error);
+    }
+  };
 
   const fetchSessionsAndAnalytics = async () => {
     try {
@@ -48,7 +78,7 @@ export default function AdminPlaygroundSessions() {
         .from('user_playground_sessions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (sessionsError) throw sessionsError;
 
@@ -95,6 +125,50 @@ export default function AdminPlaygroundSessions() {
 
   const truncateText = (text: string, maxLength: number = 60) => {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
+  // Aplicar filtros
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(session => {
+      // Filtro por usuário
+      if (filterUserId !== 'all' && session.user_id !== filterUserId) {
+        return false;
+      }
+
+      // Filtro por data início
+      if (filterStartDate) {
+        const sessionDate = session.created_at.split('T')[0];
+        if (sessionDate < filterStartDate) return false;
+      }
+
+      // Filtro por data fim
+      if (filterEndDate) {
+        const sessionDate = session.created_at.split('T')[0];
+        if (sessionDate > filterEndDate) return false;
+      }
+
+      // Filtro por busca (prompt)
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        return session.user_prompt.toLowerCase().includes(searchLower);
+      }
+
+      return true;
+    });
+  }, [sessions, filterUserId, filterStartDate, filterEndDate, searchTerm]);
+
+  const clearFilters = () => {
+    setFilterUserId('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = filterUserId !== 'all' || filterStartDate || filterEndDate || searchTerm;
+
+  const getUserEmail = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    return user?.email || 'N/A';
   };
 
   if (loading) {
@@ -199,12 +273,99 @@ export default function AdminPlaygroundSessions() {
           </div>
         )}
 
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Filtros</CardTitle>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Filtro por Usuário */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Usuário</label>
+                <Select value={filterUserId} onValueChange={setFilterUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os usuários" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os usuários</SelectItem>
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.email} ({user.name})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtro Data Início */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  Data Início
+                </label>
+                <Input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Filtro Data Fim */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  Data Fim
+                </label>
+                <Input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Busca por Prompt */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  <Search className="h-4 w-4" />
+                  Buscar no Prompt
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Digite para buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Sessions Table */}
         <Card>
           <CardHeader>
             <CardTitle>Histórico de Sessões</CardTitle>
             <CardDescription>
-              Últimas 100 sessões de playground ({sessions.length} carregadas)
+              {hasActiveFilters 
+                ? `${filteredSessions.length} sessões filtradas de ${sessions.length} totais`
+                : `Últimas ${sessions.length} sessões de playground`
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -213,6 +374,7 @@ export default function AdminPlaygroundSessions() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data</TableHead>
+                    <TableHead>Usuário</TableHead>
                     <TableHead>Lesson ID</TableHead>
                     <TableHead>Prompt do Usuário</TableHead>
                     <TableHead>Tokens</TableHead>
@@ -220,17 +382,30 @@ export default function AdminPlaygroundSessions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sessions.length === 0 ? (
+                  {filteredSessions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        Nenhuma sessão encontrada
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        {hasActiveFilters 
+                          ? 'Nenhuma sessão encontrada com os filtros aplicados'
+                          : 'Nenhuma sessão encontrada'
+                        }
                       </TableCell>
                     </TableRow>
                   ) : (
-                    sessions.map((session) => (
+                    filteredSessions.map((session) => (
                       <TableRow key={session.id}>
                         <TableCell className="font-medium">
                           {formatDate(session.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">
+                              {getUserEmail(session.user_id)}
+                            </div>
+                            <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                              {session.user_id.substring(0, 8)}...
+                            </code>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <code className="text-xs bg-muted px-1 py-0.5 rounded">
