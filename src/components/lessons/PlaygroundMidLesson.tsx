@@ -19,8 +19,64 @@ interface PlaygroundMidLessonProps {
 export function PlaygroundMidLesson({ config, onComplete, lessonId }: PlaygroundMidLessonProps) {
   const { toast } = useToast();
 
+  // 🔍 DEBUG: Log detalhado do que foi recebido
+  console.log('🎯 [PLAYGROUND RECEIVED] Config recebido:', {
+    hasConfig: !!config,
+    configType: config?.type,
+    hasRealConfig: !!config?.realConfig,
+    realConfigKeys: config?.realConfig ? Object.keys(config.realConfig) : [],
+    realConfigComplete: config?.realConfig ? {
+      title: config.realConfig.title,
+      maiaMessage: config.realConfig.maiaMessage,
+      scenario: config.realConfig.scenario,
+      prefilledText: config.realConfig.prefilledText,
+      userPlaceholder: config.realConfig.userPlaceholder,
+      validation: config.realConfig.validation,
+    } : null,
+    fullConfig: JSON.stringify(config, null, 2)
+  });
+
+  // ✅ VALIDAÇÃO ROBUSTA: Type guards explícitos
+  if (!config) {
+    console.error('❌ [PLAYGROUND ERROR] config é undefined/null!');
+    toast({
+      title: '⚠️ Erro de configuração',
+      description: 'Configuração do playground não encontrada',
+      variant: 'destructive'
+    });
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <Card className="max-w-md p-6">
+          <p className="text-center text-destructive">
+            ❌ Erro: Configuração do playground não encontrada
+          </p>
+          <Button onClick={() => onComplete(null)} className="w-full mt-4">
+            Fechar
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (config.type !== 'real-playground' && config.type !== 'multiple-choice-with-feedback') {
+    console.error('❌ [PLAYGROUND ERROR] Tipo de playground inválido:', config.type);
+  }
+
+  if (config.type === 'real-playground' && !config.realConfig) {
+    console.error('❌ [PLAYGROUND ERROR] realConfig está vazio para tipo real-playground!', {
+      configKeys: Object.keys(config),
+      configType: config.type
+    });
+  }
+
   // Verifica se é playground real ou múltipla escolha
   const isRealPlayground = config.type === 'real-playground' && config.realConfig;
+
+  console.log('✅ [PLAYGROUND TYPE] Tipo determinado:', {
+    isRealPlayground,
+    configType: config.type,
+    hasRealConfig: !!config.realConfig
+  });
 
   // Estados para playground real
   const [userInput, setUserInput] = useState('');
