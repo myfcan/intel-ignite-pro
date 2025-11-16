@@ -46,7 +46,7 @@ function normalizeExercises(rawExercises: any[]): ExerciseConfig[] {
     const id = exercise.id || `exercise-${index}`;
 
     // Validar tipo
-    const validTypes = ['drag-drop', 'complete-sentence', 'scenario-selection', 'fill-in-blanks', 'true-false', 'platform-match', 'data-collection'];
+    const validTypes = ['drag-drop', 'complete-sentence', 'scenario-selection', 'fill-in-blanks', 'true-false', 'platform-match', 'data-collection', 'multiple-choice'];
     const type = validTypes.includes(exercise.type) ? exercise.type : 'fill-in-blanks';
 
     if (!validTypes.includes(exercise.type)) {
