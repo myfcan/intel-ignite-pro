@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -81,6 +81,32 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Card adicional: Playground Sessions */}
+        <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/40 transition-colors">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="w-6 h-6 text-blue-600" />
+              Playground Sessions
+            </CardTitle>
+            <CardDescription>
+              Analytics e histórico de uso do playground
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm space-y-2 mb-4">
+              <p>📊 Total de sessões e tokens usados</p>
+              <p>📊 Usuários únicos e taxa de feedback</p>
+              <p>📊 Histórico completo de interações</p>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => navigate('/admin/playground-sessions')}
+            >
+              Ver Dashboard
+            </Button>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-center pt-4">
           <Button

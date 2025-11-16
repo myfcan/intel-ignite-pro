@@ -33,6 +33,7 @@ import AdminPipelineMonitor from "./pages/AdminPipelineMonitor";
 import AdminManageLessons from "./pages/AdminManageLessons";
 import AdminLessonDebug from "./pages/AdminLessonDebug";
 import AdminFixLessonExercises from "./pages/AdminFixLessonExercises";
+import AdminPlaygroundSessions from "./pages/AdminPlaygroundSessions";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -75,6 +76,7 @@ const App = () => (
           <Route path="/admin/intonation-test" element={<ProtectedRoute><AdminIntonationTest /></ProtectedRoute>} />
           <Route path="/admin/validation-system" element={<ProtectedRoute><AdminValidationSystem /></ProtectedRoute>} />
           <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
+          <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
