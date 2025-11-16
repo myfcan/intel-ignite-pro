@@ -1,5 +1,7 @@
 // Types for the lesson creation pipeline
 
+import { PlaygroundConfig } from '@/types/guidedLesson';
+
 export type LessonModel = 'v1' | 'v2' | 'v3';
 
 export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
@@ -10,11 +12,7 @@ export interface LessonSection {
   visualContent: string;
   speechBubbleText?: string;
   showPlaygroundCall?: boolean;
-  playgroundConfig?: {
-    type: 'real-playground' | 'interactive-simulation';
-    instruction?: string;
-    config?: any; // Aceita JSON ou string
-  };
+  playgroundConfig?: PlaygroundConfig;
 }
 
 export interface V3Slide {
