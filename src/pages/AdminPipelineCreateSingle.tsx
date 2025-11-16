@@ -542,13 +542,13 @@ export default function AdminPipelineCreateSingle() {
                     onCheckedChange={(checked) => {
                       setFormData({
                         ...formData,
-                        v3Data: {
-                          ...formData.v3Data!,
-                          finalPlaygroundConfig: checked ? {
-                            type: 'real-playground',
-                            config: ''
-                          } : undefined
-                        }
+                      v3Data: {
+                        ...formData.v3Data!,
+                        finalPlaygroundConfig: checked ? {
+                          type: 'real-playground',
+                          instruction: 'Vamos praticar!'
+                        } : undefined
+                      }
                       });
                     }}
                   />
@@ -587,17 +587,17 @@ export default function AdminPipelineCreateSingle() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-sm">Configuração (JSON ou Texto)</Label>
-                      <Textarea
-                        value={typeof formData.v3Data.finalPlaygroundConfig.config === 'string' 
-                          ? formData.v3Data.finalPlaygroundConfig.config 
-                          : JSON.stringify(formData.v3Data.finalPlaygroundConfig.config, null, 2)}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          let parsedConfig;
-                          
-                          try {
-                            parsedConfig = JSON.parse(value);
+                    <Label className="text-sm">Configuração (JSON)</Label>
+                    <Textarea
+                      value={formData.v3Data.finalPlaygroundConfig.realConfig 
+                        ? JSON.stringify(formData.v3Data.finalPlaygroundConfig.realConfig, null, 2)
+                        : ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        let parsedConfig;
+                        
+                        try {
+                          parsedConfig = JSON.parse(value);
                           } catch {
                             parsedConfig = value;
                           }
@@ -608,7 +608,7 @@ export default function AdminPipelineCreateSingle() {
                               ...formData.v3Data!,
                               finalPlaygroundConfig: {
                                 ...formData.v3Data!.finalPlaygroundConfig!,
-                                config: parsedConfig
+                                realConfig: parsedConfig
                               }
                             }
                           });
@@ -677,15 +677,15 @@ export default function AdminPipelineCreateSingle() {
                         <div className="flex items-center space-x-2">
                           <Checkbox 
                             id={`playground-${section.id}`}
-                            checked={!!section.playgroundConfig}
-                            onCheckedChange={(checked) => {
-                              const newSections = [...formData.sections!];
-                              newSections[index].playgroundConfig = checked ? {
-                                type: 'real-playground',
-                                config: ''
-                              } : undefined;
-                              setFormData({ ...formData, sections: newSections });
-                            }}
+                          checked={!!section.playgroundConfig}
+                          onCheckedChange={(checked) => {
+                            const newSections = [...formData.sections!];
+                            newSections[index].playgroundConfig = checked ? {
+                              type: 'real-playground',
+                              instruction: 'Vamos praticar!'
+                            } : undefined;
+                            setFormData({ ...formData, sections: newSections });
+                          }}
                           />
                           <Label htmlFor={`playground-${section.id}`} className="font-semibold cursor-pointer">
                             🎮 Adicionar Playground Mid-Lesson (apenas V1)
@@ -714,25 +714,26 @@ export default function AdminPipelineCreateSingle() {
                             </Select>
                           </div>
                           
-                          <div className="space-y-2">
-                            <Label className="text-sm">Configuração (JSON ou Texto)</Label>
-                            <Textarea
-                              value={typeof section.playgroundConfig.config === 'string' 
-                                ? section.playgroundConfig.config 
-                                : JSON.stringify(section.playgroundConfig.config, null, 2)}
-                              onChange={(e) => {
-                                const newSections = [...formData.sections!];
-                                const value = e.target.value;
-                                
-                                try {
-                                  newSections[index].playgroundConfig!.config = JSON.parse(value);
-                                } catch {
-                                  newSections[index].playgroundConfig!.config = value;
-                                }
-                                
-                                setFormData({ ...formData, sections: newSections });
-                              }}
-                              placeholder='{"prompt": "Complete o prompt...", "minLength": 20}'
+                        <div className="space-y-2">
+                          <Label className="text-sm">Configuração (JSON)</Label>
+                          <Textarea
+                            value={section.playgroundConfig.realConfig 
+                              ? JSON.stringify(section.playgroundConfig.realConfig, null, 2)
+                              : ''}
+                            onChange={(e) => {
+                              const newSections = [...formData.sections!];
+                              const value = e.target.value;
+                              
+                              try {
+                                const parsed = JSON.parse(value);
+                                newSections[index].playgroundConfig!.realConfig = parsed;
+                              } catch {
+                                // Ignora JSON inválido
+                              }
+                              
+                              setFormData({ ...formData, sections: newSections });
+                            }}
+                            placeholder='{"title": "Título", "maiaMessage": "Mensagem..."}'
                               rows={8}
                               className="font-mono text-sm"
                             />
