@@ -37,6 +37,11 @@ export async function step2CleanText(input: Step1Output): Promise<Step2Output> {
 
     console.log(`   Limpando seção ${i + 1}/${input.sections.length}...`);
 
+    // 0. Remover título da seção (primeira linha se for markdown header)
+    // Remove apenas a primeira ocorrência de título (# Título, ## Título, etc.)
+    cleanText = cleanText.replace(/^#{1,6}\s+.+$/m, '');
+    cleanText = cleanText.trim();
+
     // 1. Remover emojis
     cleanText = cleanText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '');
     
