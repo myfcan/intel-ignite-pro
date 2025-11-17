@@ -175,11 +175,19 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     return { ...result, isLastLesson: false };
   };
 
-  const handleMaiaClose = () => {
+  const handleMaiaClose = async () => {
     setShowMaia(false);
-    if (lesson) {
-      navigate(`/trails/${lesson.trail_id}`);
+    
+    // Salvar flag de que a Maia de completion já foi mostrada para não reaparecer
+    if (lesson && isLastLesson) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const userId = session.user.id;
+        localStorage.setItem(`maia-completion-${userId}-${lesson.trail_id}`, 'true');
+      }
     }
+    
+    // Não redirecionar automaticamente - deixar o usuário usar os botões do ConclusionScreen
   };
 
   const componentProps = {
