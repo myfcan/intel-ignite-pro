@@ -46,7 +46,9 @@ export async function step2CleanText(input: Step1Output): Promise<Step2Output> {
     cleanText = cleanText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '');
     
     // 2. Remover markdown
-    cleanText = cleanText.replace(/^#{1,6}\s+/gm, '');
+    // 2.1. Remover linhas de título (headings com ##) completamente
+    cleanText = cleanText.replace(/^#{1,6}\s+.*$/gm, '');
+    // 2.2. Remover outros formatos markdown
     cleanText = cleanText.replace(/(\*\*|__)(.*?)\1/g, '$2');
     cleanText = cleanText.replace(/(\*|_)(.*?)\1/g, '$2');
     cleanText = cleanText.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
