@@ -10,7 +10,8 @@ interface Sentence {
   id: string;
   text: string;
   correctAnswers: string[];
-  options?: string[]; // 🆕 Se existe, renderiza RadioGroup; se não, renderiza Input livre
+  options?: string[];
+  hints?: string[];
 }
 
 interface CompleteSentenceExerciseProps {
@@ -97,6 +98,14 @@ export function CompleteSentenceExercise({
               <p className="text-lg text-foreground font-medium">
                 {parts[0]}<span className="text-primary font-bold">_______</span>{parts[1]}
               </p>
+
+              {/* 💡 Hints (se existirem) */}
+              {sentence.hints && sentence.hints.length > 0 && !submitted && (
+                <div className="flex items-start gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <span className="font-semibold shrink-0">💡 Dicas:</span>
+                  <span>{sentence.hints.join(' • ')}</span>
+                </div>
+              )}
 
               {/* Input: Múltipla Escolha ou Texto Livre */}
               {hasOptions ? (
