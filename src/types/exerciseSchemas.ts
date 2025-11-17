@@ -180,6 +180,7 @@ export interface CompleteSentenceSentence {
   correctAnswers: string[]; // Respostas aceitas (deve estar em options se options existir)
   options?: string[]; // 🆕 Se presente, exibe como múltipla escolha (RadioGroup)
                        //     Se ausente, exibe como texto livre (Input)
+  hints?: string[]; // 💡 Dicas opcionais exibidas antes do input
 }
 
 export interface CompleteSentenceExerciseData {
