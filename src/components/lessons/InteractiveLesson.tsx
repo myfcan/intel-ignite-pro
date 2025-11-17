@@ -156,19 +156,15 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         .maybeSingle();
 
       const isLast = !nextLesson;
-      
-      if (!isLast) {
-        // Tem próxima aula - aguarda um pouco e navega
-        const route = nextLesson.lesson_type 
-          ? `/lessons-interactive/${nextLesson.id}` 
-          : `/lessons/${nextLesson.id}`;
-        setTimeout(() => navigate(route), 2500);
-      } else {
-        // Última aula - mostra Maia e depois volta para trilha
+
+      if (isLast) {
+        // Última aula - mostra Maia de celebração
         setIsLastLesson(true);
         setTimeout(() => setShowMaia(true), 1000);
       }
-      
+
+      // NÃO redirecionar automaticamente - deixar usuário clicar nos botões
+      // Os botões estão nos componentes ExerciseResults/ConclusionScreen
       return { ...result, isLastLesson: isLast };
     }
     
