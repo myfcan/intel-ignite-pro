@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 
-export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
+export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1356,13 +1356,9 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
     } catch (error) {
       console.error('❌ [GAMIFICATION] Erro:', error);
     }
-    
-    // Ir para tela de conclusão e chamar onComplete com dados completos
+
+    // Ir para tela de conclusão (NÃO chamar onComplete aqui - será chamado quando usuário clicar no botão)
     setCurrentPhase('completed');
-    onComplete({ 
-      audioProgress: maxAudioProgress,
-      allExercisesCompleted: data?.allExercisesCompleted || false 
-    });
   };
   
   // Resetar estado ao entrar na fase de exercícios
@@ -1374,8 +1370,8 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   }, [currentPhase]);
 
   const handleFinalPlaygroundComplete = () => {
+    // Ir para tela de conclusão (NÃO chamar onComplete aqui - será chamado quando usuário clicar no botão)
     setCurrentPhase('completed');
-    onComplete({ audioProgress: maxAudioProgress });
   };
   
   // 📊 Calcular progresso correto (V1 vs V2)
@@ -1415,13 +1411,13 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
     const timeSpent = Date.now() - lessonStartTime;
-    
+
     // Coletar metadata dos exercícios
     const exerciseMetadata = lessonData.exercisesConfig?.map(ex => ({
       title: ex.title,
       type: ex.type,
     })) || [];
-    
+
     return (
       <ConclusionScreen
         scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]}
@@ -1430,6 +1426,7 @@ export function GuidedLesson({ lessonData, onComplete, audioUrl, wordTimestamps,
         nextLessonId={nextLessonId}
         nextLessonType={nextLessonType}
         exerciseMetadata={exerciseMetadata}
+        onBeforeNavigate={onMarkComplete}
       />
     );
   }

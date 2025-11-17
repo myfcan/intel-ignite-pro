@@ -194,14 +194,25 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   switch (lesson.lesson_type) {
     case 'guided':
       // Aulas guiadas com MAIA narradora
+
+      // Função para APENAS marcar aula como completa (sem navegar)
+      const markLessonComplete = async () => {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        await submitAnswers({
+          audioProgress: 100,
+          allExercisesCompleted: true
+        }, timeSpent);
+      };
+
+      // Função LEGADO para compatibilidade (não deve ser chamada do ConclusionScreen)
       const handleGuidedComplete = async (data?: { audioProgress?: number; allExercisesCompleted?: boolean }) => {
         // Marca a aula como completa
         const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-        await submitAnswers({ 
+        await submitAnswers({
           audioProgress: data?.audioProgress || 0,
-          allExercisesCompleted: data?.allExercisesCompleted || false 
+          allExercisesCompleted: data?.allExercisesCompleted || false
         }, timeSpent);
-        
+
         // Buscar próxima aula
         const { data: nextLesson } = await supabase
           .from('lessons')
@@ -214,8 +225,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           .maybeSingle();
 
         if (nextLesson) {
-          const route = nextLesson.lesson_type 
-            ? `/lessons-interactive/${nextLesson.id}` 
+          const route = nextLesson.lesson_type
+            ? `/lessons-interactive/${nextLesson.id}`
             : `/lessons/${nextLesson.id}`;
           navigate(route);
         } else {
@@ -349,9 +360,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <GuidedLesson 
+          <GuidedLesson
             lessonData={guidedLessonData}
             onComplete={handleGuidedComplete}
+            onMarkComplete={markLessonComplete}
             audioUrl={audioUrl}
             wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
             nextLessonId={nextLessonData?.id}

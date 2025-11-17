@@ -12,9 +12,18 @@ interface ConclusionScreenProps {
   nextLessonId?: string;
   nextLessonType?: string;
   exerciseMetadata?: Array<{ title: string; type: string }>;
+  onBeforeNavigate?: () => void | Promise<void>;
 }
 
-export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId, nextLessonType, exerciseMetadata }: ConclusionScreenProps) {
+export function ConclusionScreen({
+  scores,
+  timeSpent,
+  lessonTitle,
+  nextLessonId,
+  nextLessonType,
+  exerciseMetadata,
+  onBeforeNavigate
+}: ConclusionScreenProps) {
   const navigate = useNavigate();
   
   // Calcular média dos scores
@@ -64,13 +73,21 @@ export function ConclusionScreen({ scores, timeSpent, lessonTitle, nextLessonId,
     };
   }, []);
 
-  const handleGoToDashboard = () => {
+  const handleGoToDashboard = async () => {
+    // Chamar callback antes de navegar (marca aula como completa)
+    if (onBeforeNavigate) {
+      await onBeforeNavigate();
+    }
     navigate('/dashboard');
   };
 
-  const handleGoToNextLesson = () => {
+  const handleGoToNextLesson = async () => {
+    // Chamar callback antes de navegar (marca aula como completa)
+    if (onBeforeNavigate) {
+      await onBeforeNavigate();
+    }
     if (nextLessonId) {
-      const route = nextLessonType === 'guided' 
+      const route = nextLessonType === 'guided'
         ? `/lessons-interactive/${nextLessonId}`
         : `/lessons/${nextLessonId}`;
       navigate(route);
