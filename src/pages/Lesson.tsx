@@ -9,6 +9,7 @@ import { AudioPlayer } from "@/components/lesson/AudioPlayer";
 import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExercise";
 import { PlaygroundComponent } from "@/components/lesson/PlaygroundComponent";
 import { ExerciseResults } from "@/components/lesson/ExerciseResults";
+import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { 
   ArrowLeft, 
   Clock, 
@@ -115,9 +116,12 @@ const Lesson = () => {
     }
   };
 
-  const handleExerciseComplete = (isCorrect: boolean) => {
+  const handleExerciseComplete = async (isCorrect: boolean) => {
     if (isCorrect) {
       setCorrectAnswers(prev => prev + 1);
+      
+      // 📊 Atualizar missão de exercícios
+      await updateMissionProgress('exercicios', 1);
     }
 
     // Avança para próximo exercício
@@ -184,6 +188,9 @@ const Lesson = () => {
         }
         throw error;
       }
+
+      // 📊 Atualizar missão de aulas completadas
+      await updateMissionProgress('aulas', 1);
 
       toast({
         title: "Aula concluída! 🎉",
