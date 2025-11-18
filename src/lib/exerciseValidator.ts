@@ -190,9 +190,51 @@ function validateDataCollection(data: any, result: ValidationResult): void {
 function validateCompleteSentence(data: any, result: ValidationResult): void {
   if (!data.sentences || !Array.isArray(data.sentences)) {
     result.errors.push('complete-sentence precisa de "sentences" (array)');
-  } else if (data.sentences.length === 0) {
-    result.warnings.push('complete-sentence tem 0 sentences');
+    return;
   }
+  
+  if (data.sentences.length === 0) {
+    result.warnings.push('complete-sentence tem 0 sentences');
+    return;
+  }
+
+  data.sentences.forEach((sentence: any, index: number) => {
+    // Validar texto com lacuna
+    if (!sentence.text || !sentence.text.includes('_______')) {
+      result.errors.push(`Sentença ${index + 1} precisa ter "_______" no texto`);
+    }
+    
+    // Validar correctAnswers (obrigatório)
+    if (!sentence.correctAnswers || !Array.isArray(sentence.correctAnswers) || sentence.correctAnswers.length === 0) {
+      result.errors.push(`Sentença ${index + 1} precisa ter "correctAnswers" (array não-vazio)`);
+    }
+    
+    // Validar options se presente (deve ser array)
+    if (sentence.options !== undefined && !Array.isArray(sentence.options)) {
+      result.errors.push(`Sentença ${index + 1}: "options" deve ser um array`);
+    }
+    
+    // Validar hints se presente (deve ser array)
+    if (sentence.hints !== undefined) {
+      if (!Array.isArray(sentence.hints)) {
+        result.errors.push(`Sentença ${index + 1}: "hints" deve ser um array`);
+      } else if (sentence.hints.length === 0) {
+        result.warnings.push(`Sentença ${index + 1}: "hints" está vazio`);
+      }
+    }
+    
+    // Validar que correctAnswers está em options (se options existir)
+    if (Array.isArray(sentence.options) && Array.isArray(sentence.correctAnswers)) {
+      const invalidAnswers = sentence.correctAnswers.filter(
+        (answer: string) => !sentence.options.includes(answer)
+      );
+      if (invalidAnswers.length > 0) {
+        result.errors.push(
+          `Sentença ${index + 1}: resposta(s) correta(s) [${invalidAnswers.join(', ')}] não está(ão) nas options`
+        );
+      }
+    }
+  });
 }
 
 function validateMultipleChoice(data: any, result: ValidationResult): void {
