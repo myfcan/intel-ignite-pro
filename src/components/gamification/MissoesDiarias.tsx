@@ -6,7 +6,8 @@ import { CheckCircle2, Gift, Sparkles, Target, BookOpen, Trophy, Check, Coins } 
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { MissionCompletionAnimation } from "./MissionCompletionAnimation";
 
 export function MissoesDiarias() {
   const { 
@@ -18,6 +19,26 @@ export function MissoesDiarias() {
   } = useDailyMissions();
 
   const [claimingMission, setClaimingMission] = useState<string | null>(null);
+  const [completedMission, setCompletedMission] = useState<{ title: string; reward: number } | null>(null);
+  const [previousMissions, setPreviousMissions] = useState<typeof missions>([]);
+
+  // Detect newly completed missions
+  useEffect(() => {
+    if (missions.length > 0 && previousMissions.length > 0) {
+      missions.forEach((mission) => {
+        const previousMission = previousMissions.find(pm => pm.id === mission.id);
+        if (previousMission && !previousMission.completed && mission.completed) {
+          // Mission just completed!
+          const template = mission.missions_daily_templates;
+          setCompletedMission({
+            title: template.title,
+            reward: template.reward_value
+          });
+        }
+      });
+    }
+    setPreviousMissions(missions);
+  }, [missions]);
 
   const handleCollectReward = async (missionId: string) => {
     setClaimingMission(missionId);
@@ -53,7 +74,17 @@ export function MissoesDiarias() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+    <>
+      {/* Mission Completion Animation */}
+      {completedMission && (
+        <MissionCompletionAnimation
+          missionTitle={completedMission.title}
+          rewardValue={completedMission.reward}
+          onComplete={() => setCompletedMission(null)}
+        />
+      )}
+
+      <div className="w-full max-w-7xl mx-auto p-4 md:p-6 space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
@@ -284,6 +315,7 @@ export function MissoesDiarias() {
             )}
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
