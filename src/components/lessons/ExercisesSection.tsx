@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
+import { updateMissionProgress } from '@/lib/updateMissionProgress';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +50,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentExerciseIndex]);
 
-  const handleExerciseComplete = (score: number) => {
+  const handleExerciseComplete = async (score: number) => {
     console.log('🎯 [EXERCISE] Score:', score);
     console.log('🎯 [EXERCISE] Exercício', currentExerciseIndex + 1, 'de', exercises.length);
     
@@ -61,6 +62,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
         origin: { y: 0.6 },
         colors: ['#10b981', '#3b82f6', '#8b5cf6']
       });
+      
+      // 📊 Atualizar missão de exercícios (apenas se acertou)
+      await updateMissionProgress('exercicios', 1);
     }
     
     // Toast de feedback

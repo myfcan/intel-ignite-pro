@@ -19,6 +19,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
+import { updateMissionProgress } from '@/lib/updateMissionProgress';
 
 export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -1316,6 +1317,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         
         // Dar pontos
         await awardPoints(user.id, totalPoints, 'Aula completada');
+        
+        // 📊 Atualizar missão de aulas completadas
+        await updateMissionProgress('aulas', 1);
         
         // Mostrar notificação
         const bonusText = bonusReasons.length > 0 ? ` (${bonusReasons.join(', ')})` : '';
