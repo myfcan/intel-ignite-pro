@@ -75,6 +75,31 @@ serve(async (req) => {
             exercises_completed: (progress.exercises_completed || 0) + 1
           })
           .eq('id', progress.id);
+
+        // Update daily missions progress for correct exercises
+        try {
+          const missionResponse = await fetch(`${supabaseUrl}/functions/v1/update-mission-progress`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              action_type: 'exercicios',
+              increment: 1,
+            }),
+          });
+          
+          if (missionResponse.ok) {
+            console.log('✅ Progresso de missões atualizado (exercício)');
+          } else {
+            console.error('⚠️ Erro ao atualizar missões:', await missionResponse.text());
+          }
+        } catch (missionError) {
+          console.error('⚠️ Erro ao chamar update-mission-progress:', missionError);
+          // Não lançar erro - não queremos quebrar o fluxo principal
+        }
       }
     }
 
