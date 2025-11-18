@@ -258,6 +258,39 @@ export type Database = {
           },
         ]
       }
+      missions_daily_templates: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          requirement_type: string
+          requirement_value: number
+          reward_type: string
+          reward_value: number
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          requirement_type: string
+          requirement_value: number
+          reward_type: string
+          reward_value: number
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          requirement_type?: string
+          requirement_value?: number
+          reward_type?: string
+          reward_value?: number
+          title?: string
+        }
+        Relationships: []
+      }
       missoes_diarias: {
         Row: {
           bonus_resgatado: boolean | null
@@ -581,6 +614,47 @@ export type Database = {
           },
         ]
       }
+      user_daily_missions: {
+        Row: {
+          completed: boolean
+          created_at: string | null
+          date: string
+          id: string
+          mission_id: string
+          progress_value: number
+          reward_claimed: boolean
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string | null
+          date?: string
+          id?: string
+          mission_id: string
+          progress_value?: number
+          reward_claimed?: boolean
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string | null
+          date?: string
+          id?: string
+          mission_id?: string
+          progress_value?: number
+          reward_claimed?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions_daily_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_onboarding_answers: {
         Row: {
           answer_value: string
@@ -808,6 +882,33 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          best_streak: number
+          created_at: string | null
+          current_streak: number
+          last_active_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          best_streak?: number
+          created_at?: string | null
+          current_streak?: number
+          last_active_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          best_streak?: number
+          created_at?: string | null
+          current_streak?: number
+          last_active_date?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
