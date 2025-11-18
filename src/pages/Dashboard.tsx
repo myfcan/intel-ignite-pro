@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
+import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 
 interface User {
   id: string;
@@ -348,6 +349,12 @@ const Dashboard = () => {
               </div>
             </CardHeader>
           </Card>
+        </div>
+
+        {/* Daily Missions Section */}
+        <div className="mb-8">
+          <h3 className="text-2xl font-bold text-slate-900 mb-6">Missões Diárias</h3>
+          <MissoesDiarias />
         </div>
 
         {/* Trilhas */}
