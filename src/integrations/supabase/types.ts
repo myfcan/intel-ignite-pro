@@ -865,6 +865,47 @@ export type Database = {
           },
         ]
       }
+      user_rewards: {
+        Row: {
+          collected: boolean
+          collected_at: string | null
+          created_at: string | null
+          id: string
+          mission_id: string
+          reward_type: string
+          reward_value: number
+          user_id: string
+        }
+        Insert: {
+          collected?: boolean
+          collected_at?: string | null
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          reward_type: string
+          reward_value: number
+          user_id: string
+        }
+        Update: {
+          collected?: boolean
+          collected_at?: string | null
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          reward_type?: string
+          reward_value?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "user_daily_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
