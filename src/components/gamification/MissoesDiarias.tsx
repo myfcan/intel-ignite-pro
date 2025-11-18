@@ -66,11 +66,26 @@ export function MissoesDiarias() {
 
   const getMissionGradient = (index: number) => {
     const gradients = [
-      "from-orange-400 to-orange-600",
-      "from-blue-400 to-blue-600",
-      "from-pink-400 to-pink-600",
+      { from: "from-orange-500", via: "via-red-500", to: "to-pink-500" },
+      { from: "from-blue-500", via: "via-purple-500", to: "to-indigo-600" },
+      { from: "from-pink-500", via: "via-fuchsia-500", to: "to-purple-600" },
+      { from: "from-emerald-500", via: "via-teal-500", to: "to-cyan-600" },
+      { from: "from-yellow-500", via: "via-orange-500", to: "to-red-500" },
+      { from: "from-indigo-500", via: "via-purple-500", to: "to-pink-500" },
     ];
-    return gradients[index % 3];
+    return gradients[index % 6];
+  };
+
+  const getGradientShadow = (index: number) => {
+    const shadows = [
+      "shadow-orange-500/30",
+      "shadow-blue-500/30",
+      "shadow-pink-500/30",
+      "shadow-emerald-500/30",
+      "shadow-yellow-500/30",
+      "shadow-indigo-500/30",
+    ];
+    return shadows[index % 6];
   };
 
   return (
@@ -110,127 +125,199 @@ export function MissoesDiarias() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {missions.map((mission, index) => {
               const template = mission.missions_daily_templates;
-              const isComplete = mission.completed;
-              const progress = Math.min(
+              const progressPercentage = Math.min(
                 (mission.progress_value / template.requirement_value) * 100,
                 100
               );
+              const gradient = getMissionGradient(index);
+              const isCompleted = mission.completed;
 
               return (
                 <motion.div
                   key={mission.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="group relative"
                 >
-                  <Card
+                  {/* Card Container */}
+                  <div
                     className={cn(
-                      "relative overflow-hidden transition-all duration-500 border-2 h-full",
-                      isComplete
-                        ? "bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 border-primary/40 shadow-lg shadow-primary/20"
-                        : "bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30"
+                      "relative overflow-hidden rounded-2xl p-6 transition-all duration-300",
+                      "border-2",
+                      isCompleted
+                        ? `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} border-transparent shadow-lg hover:shadow-2xl`
+                        : `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} bg-opacity-10 border-gradient backdrop-blur-sm`,
+                      !isCompleted && "hover:-translate-y-1 hover:shadow-xl",
+                      getGradientShadow(index)
                     )}
+                    style={
+                      !isCompleted
+                        ? {
+                            background: `linear-gradient(135deg, 
+                              hsl(var(--background)) 0%, 
+                              hsl(var(--background)) 100%)`,
+                            borderImage: `linear-gradient(135deg, 
+                              ${gradient.from.replace("from-", "")}, 
+                              ${gradient.via.replace("via-", "")}, 
+                              ${gradient.to.replace("to-", "")}) 1`,
+                          }
+                        : undefined
+                    }
                   >
-                    {/* Background Pattern */}
+                    {/* Background Icon Decoration */}
                     <div
                       className={cn(
-                        "absolute inset-0 opacity-5 transition-opacity duration-500",
-                        isComplete && "opacity-10"
+                        "absolute -right-4 -top-4 transition-all duration-300",
+                        isCompleted ? "opacity-20" : "opacity-5 group-hover:opacity-10"
                       )}
-                      style={{
-                        background: `linear-gradient(135deg, ${getMissionGradient(index)})`,
-                      }}
-                    />
-                    
-                    {/* Trophy Badge para missão completa */}
-                    {isComplete && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/30 blur-xl animate-pulse rounded-full" />
-                          <div className="relative bg-gradient-to-br from-primary to-accent p-2 rounded-full">
-                            <Trophy className="w-6 h-6 text-primary-foreground" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <CardHeader className="relative pb-4 space-y-3">
-                      {/* Ícone */}
-                      <div
-                        className={cn(
-                          "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-                          isComplete
-                            ? "bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/30"
-                            : "bg-muted/50"
-                        )}
-                      >
-                        <div className={cn(
-                          "transition-colors duration-300",
-                          isComplete ? "text-primary-foreground" : "text-muted-foreground"
-                        )}>
+                    >
+                      {isCompleted ? (
+                        <Trophy className="w-32 h-32 text-yellow-300" />
+                      ) : (
+                        <div className={cn("w-32 h-32", `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to}`)}>
                           {getMissionIcon(template.requirement_type)}
                         </div>
-                      </div>
+                      )}
+                    </div>
 
-                      {/* Título e Descrição */}
-                      <div>
-                        <CardTitle className={cn(
-                          "text-lg font-bold mb-1.5 transition-colors duration-300",
-                          isComplete ? "text-primary" : "text-foreground"
-                        )}>
-                          {template.title}
-                        </CardTitle>
-                        <CardDescription className="text-sm leading-relaxed">
-                          {template.description}
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="relative space-y-4">
-                      {/* Progresso */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">Progresso</span>
-                          <span className={cn(
-                            "font-bold transition-colors duration-300",
-                            isComplete ? "text-primary" : "text-foreground"
-                          )}>
-                            {mission.progress_value} / {template.requirement_value}
-                          </span>
+                    {/* Content */}
+                    <div className="relative z-10 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className={cn(
+                                "p-2 rounded-lg",
+                                isCompleted
+                                  ? "bg-white/20"
+                                  : `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} text-white`
+                              )}
+                            >
+                              {getMissionIcon(template.requirement_type)}
+                            </div>
+                            {isCompleted && (
+                              <span className="px-2 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold text-white">
+                                ✓ Concluída
+                              </span>
+                            )}
+                          </div>
+                          <h3
+                            className={cn(
+                              "text-lg font-bold",
+                              isCompleted ? "text-white" : "text-foreground"
+                            )}
+                          >
+                            {template.title}
+                          </h3>
+                          <p
+                            className={cn(
+                              "text-sm mt-1",
+                              isCompleted ? "text-white/80" : "text-muted-foreground"
+                            )}
+                          >
+                            {template.description}
+                          </p>
                         </div>
-                        <Progress 
-                          value={progress} 
+                      </div>
+
+                      {/* Progress Bar */}
+                      {!isCompleted && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Progresso
+                            </span>
+                            <span className="text-sm font-bold text-foreground">
+                              {mission.progress_value}/{template.requirement_value}
+                            </span>
+                          </div>
+                          <div className="relative h-3 bg-secondary/50 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPercentage}%` }}
+                              transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
+                              className={cn(
+                                "h-full rounded-full bg-gradient-to-r",
+                                `${gradient.from} ${gradient.via} ${gradient.to}`
+                              )}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Completed State - Trophy Animation */}
+                      {isCompleted && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 200,
+                            damping: 10,
+                            delay: index * 0.1 + 0.3,
+                          }}
+                          className="flex items-center justify-center py-4"
+                        >
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          >
+                            <Trophy className="w-16 h-16 text-yellow-300 drop-shadow-lg" />
+                          </motion.div>
+                        </motion.div>
+                      )}
+
+                      {/* Reward Info */}
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 pt-2 border-t",
+                          isCompleted ? "border-white/20" : "border-border"
+                        )}
+                      >
+                        <Coins
                           className={cn(
-                            "h-2.5 transition-all duration-500",
-                            isComplete && "bg-primary/20"
-                          )} 
+                            "w-5 h-5",
+                            isCompleted ? "text-yellow-300" : "text-primary"
+                          )}
                         />
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            isCompleted ? "text-white" : "text-foreground"
+                          )}
+                        >
+                          +{template.reward_value} pontos
+                        </span>
                       </div>
+                    </div>
 
-                      {/* Badge de Conclusão */}
-                      {isComplete && !mission.reward_claimed && (
-                        <div className="p-3 bg-gradient-to-r from-primary/15 to-accent/15 rounded-xl border border-primary/30">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
-                            <p className="text-sm text-primary font-semibold">
-                              Missão completa! Recompensa disponível
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {isComplete && mission.reward_claimed && (
-                        <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground font-medium">
-                              Recompensa já resgatada
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    {/* Glow effect for completed missions */}
+                    {isCompleted && (
+                      <motion.div
+                        className="absolute inset-0 rounded-2xl"
+                        animate={{
+                          boxShadow: [
+                            "0 0 20px rgba(255, 215, 0, 0.3)",
+                            "0 0 40px rgba(255, 215, 0, 0.5)",
+                            "0 0 20px rgba(255, 215, 0, 0.3)",
+                          ],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
+                    )}
+                  </div>
                 </motion.div>
               );
             })}
