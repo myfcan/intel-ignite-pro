@@ -129,6 +129,31 @@ serve(async (req) => {
 
       if (updateError) throw updateError;
 
+      // Update daily missions progress
+      try {
+        const missionResponse = await fetch(`${supabaseUrl}/functions/v1/update-mission-progress`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            action_type: 'aulas',
+            increment: 1,
+          }),
+        });
+        
+        if (missionResponse.ok) {
+          console.log('✅ Progresso de missões atualizado');
+        } else {
+          console.error('⚠️ Erro ao atualizar missões:', await missionResponse.text());
+        }
+      } catch (missionError) {
+        console.error('⚠️ Erro ao chamar update-mission-progress:', missionError);
+        // Não lançar erro - não queremos quebrar o fluxo principal
+      }
+
       // Get user data
       const { data: userData } = await supabase
         .from('users')
