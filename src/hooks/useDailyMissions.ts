@@ -67,7 +67,31 @@ export function useDailyMissions() {
 
       if (missionsError) throw missionsError;
 
-      setMissions(missionsData || []);
+      // If no missions exist for today, generate them
+      if (!missionsData || missionsData.length === 0) {
+        console.log('No missions found for today, generating...');
+        const { error: generateError } = await supabase.functions.invoke('generate-daily-missions');
+        
+        if (generateError) {
+          console.error('Error generating missions:', generateError);
+        } else {
+          // Reload missions after generation
+          const { data: newMissionsData, error: reloadError } = await supabase
+            .from('user_daily_missions')
+            .select(`
+              *,
+              missions_daily_templates (*)
+            `)
+            .eq('user_id', session.user.id)
+            .eq('date', today);
+          
+          if (!reloadError) {
+            setMissions(newMissionsData || []);
+          }
+        }
+      } else {
+        setMissions(missionsData || []);
+      }
 
       // Load rewards
       const { data: rewardsData, error: rewardsError } = await supabase
