@@ -6,6 +6,7 @@ import { useDailyMissions } from "@/hooks/useDailyMissions";
 import { CheckCircle2, Flame, Gift, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { useState, useEffect } from "react";
 
 export function MissoesDiarias() {
   const { 
@@ -16,6 +17,27 @@ export function MissoesDiarias() {
     claiming, 
     claimReward 
   } = useDailyMissions();
+
+  const [previousStreak, setPreviousStreak] = useState<number | null>(null);
+  const [streakAnimation, setStreakAnimation] = useState<'pulse' | 'shake' | null>(null);
+
+  // Detect streak changes and trigger animations
+  useEffect(() => {
+    if (streak && previousStreak !== null) {
+      if (streak.current_streak > previousStreak) {
+        // Streak increased - pulse animation
+        setStreakAnimation('pulse');
+        setTimeout(() => setStreakAnimation(null), 1000);
+      } else if (streak.current_streak < previousStreak && previousStreak > 0) {
+        // Streak broken - shake animation
+        setStreakAnimation('shake');
+        setTimeout(() => setStreakAnimation(null), 1000);
+      }
+    }
+    if (streak) {
+      setPreviousStreak(streak.current_streak);
+    }
+  }, [streak?.current_streak]);
 
   const handleCollectReward = async (missionId: string) => {
     await claimReward(missionId);
@@ -46,25 +68,59 @@ export function MissoesDiarias() {
     <div className="space-y-4">
       {/* Streak Card */}
       {streak && (
-        <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-orange-500/20 rounded-full">
-                  <Flame className="h-6 w-6 text-orange-500" />
+        <motion.div
+          animate={streakAnimation === 'pulse' ? {
+            scale: [1, 1.05, 1],
+            boxShadow: [
+              '0 0 0px hsl(25 95% 53%)',
+              '0 0 20px hsl(25 95% 53%)',
+              '0 0 0px hsl(25 95% 53%)'
+            ]
+          } : streakAnimation === 'shake' ? {
+            x: [0, -10, 10, -10, 10, 0],
+            rotate: [0, -2, 2, -2, 2, 0]
+          } : {}}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+        >
+          <Card className={`bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 transition-all ${
+            streakAnimation === 'pulse' ? 'shadow-[0_0_20px_hsl(25_95%_53%)]' : ''
+          }`}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <motion.div 
+                    className="p-3 bg-orange-500/20 rounded-full"
+                    animate={streakAnimation === 'pulse' ? {
+                      scale: [1, 1.2, 1],
+                      filter: [
+                        'drop-shadow(0 0 0px hsl(25 95% 53%))',
+                        'drop-shadow(0 0 10px hsl(25 95% 53%))',
+                        'drop-shadow(0 0 0px hsl(25 95% 53%))'
+                      ]
+                    } : {}}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <Flame className="h-6 w-6 text-orange-500" />
+                  </motion.div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Sequência Atual</p>
+                    <motion.p 
+                      className="text-2xl font-bold"
+                      animate={streakAnimation === 'pulse' ? { scale: [1, 1.15, 1] } : {}}
+                      transition={{ duration: 0.6 }}
+                    >
+                      {streak.current_streak} dias
+                    </motion.p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Sequência Atual</p>
-                  <p className="text-2xl font-bold">{streak.current_streak} dias</p>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Recorde</p>
+                  <p className="text-xl font-semibold text-orange-500">{streak.best_streak} dias</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Recorde</p>
-                <p className="text-xl font-semibold text-orange-500">{streak.best_streak} dias</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Missions Card */}
@@ -160,7 +216,7 @@ export function MissoesDiarias() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
-            <Card className="bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/20">
+            <Card className="bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/20 shadow-[0_0_15px_hsl(var(--primary)/0.2)] animate-pulse-glow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Gift className="h-5 w-5 text-primary" />
@@ -168,7 +224,7 @@ export function MissoesDiarias() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {unclaimedRewards.map((reward) => {
+                {unclaimedRewards.map((reward, index) => {
                   const mission = missions.find(m => m.id === reward.mission_id);
                   const template = mission?.missions_daily_templates;
                   return (
@@ -176,12 +232,24 @@ export function MissoesDiarias() {
                       key={reward.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ delay: index * 0.1 }}
                       className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border/40"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/20 rounded-full">
+                        <motion.div 
+                          className="p-2 bg-primary/20 rounded-full"
+                          animate={{
+                            rotate: [0, 10, -10, 10, 0],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
                           <Gift className="h-4 w-4 text-primary" />
-                        </div>
+                        </motion.div>
                         <div>
                           <p className="font-medium">{template?.title || 'Missão'}</p>
                           <p className="text-sm text-muted-foreground">
@@ -193,6 +261,7 @@ export function MissoesDiarias() {
                         onClick={() => handleCollectReward(reward.mission_id)}
                         disabled={claiming}
                         size="sm"
+                        className="bg-gradient-primary hover:opacity-90"
                       >
                         {claiming ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
