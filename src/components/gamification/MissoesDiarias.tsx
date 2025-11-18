@@ -8,6 +8,7 @@ import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MissionCompletionAnimation } from "./MissionCompletionAnimation";
+import React from "react";
 
 export function MissoesDiarias() {
   const { 
@@ -66,26 +67,26 @@ export function MissoesDiarias() {
 
   const getMissionGradient = (index: number) => {
     const gradients = [
-      { from: "from-orange-500", via: "via-red-500", to: "to-pink-500" },
-      { from: "from-blue-500", via: "via-purple-500", to: "to-indigo-600" },
-      { from: "from-pink-500", via: "via-fuchsia-500", to: "to-purple-600" },
-      { from: "from-emerald-500", via: "via-teal-500", to: "to-cyan-600" },
-      { from: "from-yellow-500", via: "via-orange-500", to: "to-red-500" },
-      { from: "from-indigo-500", via: "via-purple-500", to: "to-pink-500" },
+      "from-orange-500 via-red-500 to-pink-500",
+      "from-blue-500 via-purple-500 to-indigo-600",
+      "from-pink-500 via-fuchsia-500 to-purple-600",
+      "from-emerald-500 via-teal-500 to-cyan-600",
+      "from-yellow-500 via-orange-500 to-red-500",
+      "from-indigo-500 via-purple-500 to-pink-500",
     ];
     return gradients[index % 6];
   };
 
-  const getGradientShadow = (index: number) => {
-    const shadows = [
-      "shadow-orange-500/30",
-      "shadow-blue-500/30",
-      "shadow-pink-500/30",
-      "shadow-emerald-500/30",
-      "shadow-yellow-500/30",
-      "shadow-indigo-500/30",
+  const getGradientColors = (index: number) => {
+    const colors = [
+      { light: "bg-orange-500/10", border: "border-orange-500/30", shadow: "shadow-orange-500/20" },
+      { light: "bg-blue-500/10", border: "border-blue-500/30", shadow: "shadow-blue-500/20" },
+      { light: "bg-pink-500/10", border: "border-pink-500/30", shadow: "shadow-pink-500/20" },
+      { light: "bg-emerald-500/10", border: "border-emerald-500/30", shadow: "shadow-emerald-500/20" },
+      { light: "bg-yellow-500/10", border: "border-yellow-500/30", shadow: "shadow-yellow-500/20" },
+      { light: "bg-indigo-500/10", border: "border-indigo-500/30", shadow: "shadow-indigo-500/20" },
     ];
-    return shadows[index % 6];
+    return colors[index % 6];
   };
 
   return (
@@ -130,6 +131,7 @@ export function MissoesDiarias() {
                 100
               );
               const gradient = getMissionGradient(index);
+              const gradientColors = getGradientColors(index);
               const isCompleted = mission.completed;
 
               return (
@@ -143,40 +145,26 @@ export function MissoesDiarias() {
                   {/* Card Container */}
                   <div
                     className={cn(
-                      "relative overflow-hidden rounded-2xl p-6 transition-all duration-300",
-                      "border-2",
+                      "relative overflow-hidden rounded-2xl p-6 transition-all duration-300 border-2",
                       isCompleted
-                        ? `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} border-transparent shadow-lg hover:shadow-2xl`
-                        : `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} bg-opacity-10 border-gradient backdrop-blur-sm`,
-                      !isCompleted && "hover:-translate-y-1 hover:shadow-xl",
-                      getGradientShadow(index)
+                        ? `bg-gradient-to-br ${gradient} border-transparent shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]`
+                        : `${gradientColors.light} ${gradientColors.border} hover:-translate-y-1 hover:shadow-xl ${gradientColors.shadow}`
                     )}
-                    style={
-                      !isCompleted
-                        ? {
-                            background: `linear-gradient(135deg, 
-                              hsl(var(--background)) 0%, 
-                              hsl(var(--background)) 100%)`,
-                            borderImage: `linear-gradient(135deg, 
-                              ${gradient.from.replace("from-", "")}, 
-                              ${gradient.via.replace("via-", "")}, 
-                              ${gradient.to.replace("to-", "")}) 1`,
-                          }
-                        : undefined
-                    }
                   >
                     {/* Background Icon Decoration */}
                     <div
                       className={cn(
-                        "absolute -right-4 -top-4 transition-all duration-300",
-                        isCompleted ? "opacity-20" : "opacity-5 group-hover:opacity-10"
+                        "absolute -right-6 -top-6 transition-all duration-300 opacity-10 group-hover:opacity-20",
+                        isCompleted && "opacity-30"
                       )}
                     >
                       {isCompleted ? (
                         <Trophy className="w-32 h-32 text-yellow-300" />
                       ) : (
-                        <div className={cn("w-32 h-32", `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to}`)}>
-                          {getMissionIcon(template.requirement_type)}
+                        <div className="text-foreground/30">
+                          {React.cloneElement(getMissionIcon(template.requirement_type) as React.ReactElement, {
+                            className: "w-32 h-32"
+                          })}
                         </div>
                       )}
                     </div>
@@ -189,10 +177,10 @@ export function MissoesDiarias() {
                           <div className="flex items-center gap-2 mb-2">
                             <div
                               className={cn(
-                                "p-2 rounded-lg",
+                                "p-2.5 rounded-xl transition-all duration-300",
                                 isCompleted
-                                  ? "bg-white/20"
-                                  : `bg-gradient-to-br ${gradient.from} ${gradient.via} ${gradient.to} text-white`
+                                  ? "bg-white/20 backdrop-blur-sm"
+                                  : `bg-gradient-to-br ${gradient} text-white shadow-lg`
                               )}
                             >
                               {getMissionIcon(template.requirement_type)}
@@ -233,14 +221,14 @@ export function MissoesDiarias() {
                               {mission.progress_value}/{template.requirement_value}
                             </span>
                           </div>
-                          <div className="relative h-3 bg-secondary/50 rounded-full overflow-hidden">
+                          <div className="relative h-3 bg-secondary/30 rounded-full overflow-hidden backdrop-blur-sm">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${progressPercentage}%` }}
                               transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
                               className={cn(
-                                "h-full rounded-full bg-gradient-to-r",
-                                `${gradient.from} ${gradient.via} ${gradient.to}`
+                                "h-full rounded-full bg-gradient-to-r shadow-lg",
+                                gradient
                               )}
                             />
                           </div>
