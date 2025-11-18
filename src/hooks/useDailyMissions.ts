@@ -23,6 +23,17 @@ interface DailyMission {
   missions_daily_templates: MissionTemplate;
 }
 
+interface UserReward {
+  id: string;
+  user_id: string;
+  mission_id: string;
+  reward_type: string;
+  reward_value: number;
+  collected: boolean;
+  collected_at: string | null;
+  created_at: string;
+}
+
 interface UserStreak {
   current_streak: number;
   best_streak: number;
@@ -32,8 +43,10 @@ interface UserStreak {
 export function useDailyMissions() {
   const { toast } = useToast();
   const [missions, setMissions] = useState<DailyMission[]>([]);
+  const [rewards, setRewards] = useState<UserReward[]>([]);
   const [streak, setStreak] = useState<UserStreak | null>(null);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
 
   const loadMissions = async () => {
     try {
@@ -55,6 +68,17 @@ export function useDailyMissions() {
       if (missionsError) throw missionsError;
 
       setMissions(missionsData || []);
+
+      // Load rewards
+      const { data: rewardsData, error: rewardsError } = await supabase
+        .from('user_rewards')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (rewardsError) throw rewardsError;
+
+      setRewards(rewardsData || []);
 
       // Load streak
       const { data: streakData, error: streakError } = await supabase
@@ -80,28 +104,37 @@ export function useDailyMissions() {
   };
 
   const claimReward = async (missionId: string) => {
+    setClaiming(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error } = await supabase
-        .from('user_daily_missions')
-        .update({ reward_claimed: true })
-        .eq('id', missionId)
-        .eq('user_id', session.user.id);
+      // Find the reward for this mission
+      const reward = rewards.find(r => r.mission_id === missionId && !r.collected);
+      
+      if (!reward) {
+        toast({
+          title: 'Erro',
+          description: 'Recompensa não encontrada',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Call edge function to collect reward
+      const { data, error } = await supabase.functions.invoke('collect-reward', {
+        body: { reward_id: reward.id },
+      });
 
       if (error) throw error;
 
-      // Find the mission to get reward info
-      const mission = missions.find(m => m.id === missionId);
-      if (mission) {
-        toast({
-          title: '🎉 Recompensa coletada!',
-          description: `+${mission.missions_daily_templates.reward_value} ${mission.missions_daily_templates.reward_type}`,
-        });
-      }
+      // Show success message
+      toast({
+        title: '🎉 Recompensa coletada!',
+        description: data.message,
+      });
 
-      // Reload missions
+      // Reload missions and rewards
       await loadMissions();
 
     } catch (error: any) {
@@ -111,13 +144,15 @@ export function useDailyMissions() {
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setClaiming(false);
     }
   };
 
   useEffect(() => {
     loadMissions();
 
-    // Subscribe to mission updates
+    // Subscribe to updates
     const channel = supabase
       .channel('daily-missions-updates')
       .on(
@@ -126,6 +161,17 @@ export function useDailyMissions() {
           event: '*',
           schema: 'public',
           table: 'user_daily_missions',
+        },
+        () => {
+          loadMissions();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_rewards',
         },
         () => {
           loadMissions();
@@ -140,8 +186,10 @@ export function useDailyMissions() {
 
   return {
     missions,
+    rewards,
     streak,
     loading,
+    claiming,
     claimReward,
     refetch: loadMissions,
   };
