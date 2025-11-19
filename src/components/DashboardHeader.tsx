@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Flame, Trophy, Target } from 'lucide-react';
+import logoAiliv from '@/assets/logo-ailiv.png';
 
 interface DashboardHeaderProps {
   user: {
@@ -34,14 +35,12 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         <div className="flex items-center justify-between h-20">
           
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
-                          rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/25">
-              <span className="text-white font-bold text-lg">IA</span>
-            </div>
-            <span className="text-xl font-bold text-slate-900 hidden sm:block">
-              Inteligência Ignite
-            </span>
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/dashboard')}>
+            <img 
+              src={logoAiliv} 
+              alt="Ailiv" 
+              className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-110"
+            />
           </div>
 
           {/* Gamificação Central */}
