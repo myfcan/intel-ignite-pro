@@ -261,16 +261,6 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               </p>
             </div>
             
-            {/* Situação */}
-            <div className="mb-6">
-              <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                📋 {config.realConfig.scenario.title}
-              </h4>
-              <p className="text-muted-foreground leading-relaxed">
-                {config.realConfig.scenario.description}
-              </p>
-            </div>
-            
             {/* Playground */}
             <div className="mb-6">
               <h4 className="font-bold text-foreground mb-3">
