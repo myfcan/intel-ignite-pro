@@ -245,10 +245,20 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 alt="MAIA" 
                 className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0" 
               />
-              <div>
+              <div className="flex-1">
                 <h3 className="text-white font-bold text-xl">⏸️ {config.realConfig.title}</h3>
                 <p className="text-white/90 text-sm">Vamos praticar o que você aprendeu!</p>
               </div>
+              <button
+                onClick={handleSkip}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                aria-label="Fechar playground"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
           </div>
           
@@ -361,11 +371,11 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               {!validationState.isValid && (
                 <Button
                   disabled
-                  className="w-full py-6 text-lg font-bold"
+                  className="w-full py-6 text-base sm:text-lg font-bold"
                   size="lg"
                   data-testid="playground-mid-continue"
                 >
-                  ⏳ Complete o prompt para continuar
+                  ⏳ Complete seu prompt
                 </Button>
               )}
             </div>
