@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { LucideIcon, Lock, ChevronRight } from "lucide-react";
+import { LucideIcon, Lock, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface TrailBandProps {
   trail: {
@@ -74,68 +75,81 @@ export const TrailBand = ({
         </>
       )}
 
-      <div className="relative flex items-center gap-5 p-6">
-        {/* Icon in white circle */}
-        <div className={cn(
-          "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300",
-          "group-hover:scale-110",
-          isLocked ? "bg-slate-300" : "bg-white/95"
-        )}>
-          {isLocked ? (
-            <Lock className="w-7 h-7 text-slate-500" />
-          ) : (
-            <Icon className={cn(
-              "w-7 h-7",
-              trail.title === 'Fundamentos de IA' && "text-teal-500",
-              trail.title === 'IA no Dia a Dia' && "text-pink-500",
-              trail.title === 'IA nos Negócios' && "text-orange-500",
-              trail.title === 'Renda Extra com IA' && "text-blue-500"
-            )} />
+      <div className="relative p-6">
+        <div className="flex items-start gap-5">
+          {/* Icon in white circle */}
+          <div className={cn(
+            "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300",
+            "group-hover:scale-110",
+            isLocked ? "bg-slate-300" : "bg-white/95"
+          )}>
+            {isLocked ? (
+              <Lock className="w-7 h-7 text-slate-500" />
+            ) : (
+              <Icon className={cn(
+                "w-7 h-7",
+                trail.title === 'Fundamentos de IA' && "text-teal-500",
+                trail.title === 'IA no Dia a Dia' && "text-pink-500",
+                trail.title === 'IA nos Negócios' && "text-orange-500",
+                trail.title === 'Renda Extra com IA' && "text-blue-500"
+              )} />
+            )}
+          </div>
+
+          {/* Content Section */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-1">
+              <h3 className={cn(
+                "font-bold text-xl",
+                isLocked ? "text-slate-600" : "text-white"
+              )}>
+                {trail.title}
+              </h3>
+              {isCompleted && (
+                <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
+                  ✓ Concluída
+                </span>
+              )}
+            </div>
+            <p className={cn(
+              "text-sm mb-3 line-clamp-1",
+              isLocked ? "text-slate-500" : "text-white/90"
+            )}>
+              {trail.description}
+            </p>
+            
+            {/* Progress Bar */}
+            {!isLocked && (
+              <div className="mb-2">
+                <Progress 
+                  value={progress} 
+                  className="h-2 bg-white/20"
+                />
+              </div>
+            )}
+            
+            <div className="flex items-center gap-3">
+              <span className={cn(
+                "text-xs font-medium",
+                isLocked ? "text-slate-500" : "text-white/80"
+              )}>
+                {completedLessons}/{totalLessons} aulas
+              </span>
+              {!isLocked && progress > 0 && (
+                <span className="text-xs font-medium text-white/80">
+                  • {Math.round(progress)}% completo
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Play button */}
+          {!isLocked && (
+            <div className="flex-shrink-0 w-14 h-14 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center group-hover:bg-white transition-all shadow-lg group-hover:shadow-xl">
+              <Play className="w-6 h-6 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
+            </div>
           )}
         </div>
-
-        {/* Content Section */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className={cn(
-              "font-bold text-xl",
-              isLocked ? "text-slate-600" : "text-white"
-            )}>
-              {trail.title}
-            </h3>
-            {isCompleted && (
-              <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
-                ✓ Concluída
-              </span>
-            )}
-          </div>
-          <p className={cn(
-            "text-sm mb-2 line-clamp-1",
-            isLocked ? "text-slate-500" : "text-white/90"
-          )}>
-            {trail.description}
-          </p>
-          <div className="flex items-center gap-3">
-            <span className={cn(
-              "text-xs font-medium",
-              isLocked ? "text-slate-500" : "text-white/80"
-            )}>
-              {completedLessons}/{totalLessons} aulas
-            </span>
-            {!isLocked && progress > 0 && progress < 100 && (
-              <span className="text-xs font-medium text-white/80">
-                • {Math.round(progress)}% completo
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Arrow button */}
-        {!isLocked && (
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
-            <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
-          </div>
-        )}
       </div>
 
       {/* Locked overlay */}
