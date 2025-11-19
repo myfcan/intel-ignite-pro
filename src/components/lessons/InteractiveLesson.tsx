@@ -64,6 +64,29 @@ function normalizeExercises(rawExercises: any[]): ExerciseConfig[] {
       maxAttempts: exercise.maxAttempts
     };
 
+    // 🔧 MIGRAÇÃO AUTOMÁTICA: Mover hints para o lugar correto se estiverem no lugar errado
+    // Se hints estiver no nível raiz do exercício, migrar para data.sentences[].hints
+    if (exercise.hints && Array.isArray(exercise.hints) && (type === 'complete-sentence' || type === 'fill-in-blanks')) {
+      console.log(`🔄 Migrando hints do nível raiz para data.sentences[].hints no exercício ${id}`);
+
+      // Garantir que data.sentences existe
+      if (!normalized.data.sentences) {
+        normalized.data.sentences = [];
+      }
+
+      // Migrar hints para cada sentence que não tenha hints
+      if (Array.isArray(normalized.data.sentences)) {
+        normalized.data.sentences = normalized.data.sentences.map((sentence: any) => {
+          if (!sentence.hints) {
+            return { ...sentence, hints: exercise.hints };
+          }
+          return sentence;
+        });
+
+        console.log(`✅ Hints migrados com sucesso para ${normalized.data.sentences.length} sentence(s)`);
+      }
+    }
+
     console.log(`✅ Exercício ${id} normalizado:`, normalized);
 
     return normalized;
