@@ -256,6 +256,9 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           <div className="p-8">
             {/* Mensagem da MAIA */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
+              <h4 className="font-bold text-foreground mb-3">
+                Complete o Desafio:
+              </h4>
               <p className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
                 🤖 {config.realConfig.maiaMessage}
               </p>
