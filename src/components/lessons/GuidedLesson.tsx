@@ -1954,7 +1954,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                 feedback: {
                   tooShort: "⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!",
                   good: "✅ Bom trabalho! Seu prompt está bem estruturado.",
-                  excellent: "🎉 Excelente! Você dominou a técnica de criar prompts eficazes!"
+                  excellent: "🎉 Ficou muito bom! Mas pode melhorar!"
                 }
               }
             }
