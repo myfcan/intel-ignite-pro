@@ -264,18 +264,8 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             {/* Playground */}
             <div className="mb-6">
               <h4 className="font-bold text-foreground mb-3">
-                ✍️ Complete o prompt:
+                ✍️ Digite seu prompt:
               </h4>
-              
-              {/* Parte pré-preenchida */}
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={config.realConfig.prefilledText}
-                  disabled
-                  className="w-full px-4 py-3 bg-muted border-2 border-border rounded-lg text-muted-foreground font-medium"
-                />
-              </div>
               
               {/* Parte editável */}
               <div>
