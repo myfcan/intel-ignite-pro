@@ -50,7 +50,7 @@ export const TrailBand = ({
 
   const handleClick = () => {
     if (!isLocked) {
-      navigate(`/trail/${trail.id}`);
+      navigate(`/trails/${trail.id}`);
     }
   };
 
