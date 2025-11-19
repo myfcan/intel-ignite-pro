@@ -229,54 +229,6 @@ const Dashboard = () => {
             Acessar Painel Admin
           </button>
         </div>
-        
-        {/* Stats Row - Mobile mostra versão simplificada no header */}
-        <div className="hidden sm:grid grid-cols-3 gap-4 mb-6">
-          {/* Sequência */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-lg">
-                  <Flame className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{user?.streak_days || 0}</p>
-                  <p className="text-xs text-slate-600">Dias de sequência</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pontos */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{user?.total_points || 0}</p>
-                  <p className="text-xs text-slate-600">Pontos totais</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Aulas */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500 flex items-center justify-center shadow-lg">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</p>
-                  <p className="text-xs text-slate-600">Aulas completas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
@@ -318,6 +270,54 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Stats Row - Logo abaixo do hero */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {/* Sequência */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-lg">
+                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.streak_days || 0}</p>
+                  <p className="text-xs text-slate-600">Dias de sequência</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pontos */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.total_points || 0}</p>
+                  <p className="text-xs text-slate-600">Pontos totais</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Aulas */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500 flex items-center justify-center shadow-lg">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</p>
+                  <p className="text-xs text-slate-600">Aulas completas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Trilhas Section */}
         <div className="mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
@@ -341,61 +341,6 @@ const Dashboard = () => {
               );
             })}
           </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          
-          {/* Sequência */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-orange-300/50 hover:shadow-xl transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-red-400
-                              flex items-center justify-center shadow-lg shadow-orange-500/25">
-                  <Flame className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-4xl font-bold text-slate-900">{user?.streak_days || 0}</span>
-              </div>
-              <CardTitle className="text-base font-medium text-slate-600">Dias de sequência</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Continue assim! 🔥</p>
-            </CardContent>
-          </Card>
-
-          {/* Pontos */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-cyan-300/50 hover:shadow-xl transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
-                              flex items-center justify-center shadow-lg shadow-cyan-500/25">
-                  <Trophy className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-4xl font-bold text-slate-900">{user?.total_points || 0}</span>
-              </div>
-              <CardTitle className="text-base font-medium text-slate-600">Pontos totais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Continue aprendendo!</p>
-            </CardContent>
-          </Card>
-
-          {/* Aulas */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50 hover:border-purple-300/50 hover:shadow-xl transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500
-                              flex items-center justify-center shadow-lg shadow-purple-500/25">
-                  <BookOpen className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-4xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</span>
-              </div>
-              <CardTitle className="text-base font-medium text-slate-600">Aulas completas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Muito bem!</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Quick Actions - Hidden on mobile, shown above stats */}
