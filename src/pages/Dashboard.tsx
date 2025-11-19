@@ -259,10 +259,10 @@ const Dashboard = () => {
                 <p className="text-white/80 text-xs sm:text-sm font-semibold mb-1 sm:mb-2 uppercase tracking-wide">
                   Bem-vindo de volta!
                 </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3 text-balance">
                   Olá, {user?.name || 'Estudante'}! 👋
                 </h2>
-                <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl">
+                <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl font-normal">
                   Comece sua jornada de aprendizado em Inteligência Artificial
                 </p>
               </div>
