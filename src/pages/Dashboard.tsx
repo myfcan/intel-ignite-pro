@@ -230,9 +230,57 @@ const Dashboard = () => {
           </button>
         </div>
         
+        {/* Stats Row - Mobile mostra versão simplificada no header */}
+        <div className="hidden sm:grid grid-cols-3 gap-4 mb-6">
+          {/* Sequência */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-lg">
+                  <Flame className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{user?.streak_days || 0}</p>
+                  <p className="text-xs text-slate-600">Dias de sequência</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pontos */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{user?.total_points || 0}</p>
+                  <p className="text-xs text-slate-600">Pontos totais</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Aulas */}
+          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500 flex items-center justify-center shadow-lg">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</p>
+                  <p className="text-xs text-slate-600">Aulas completas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
-                      rounded-3xl p-8 md:p-12 mb-8 shadow-2xl">
+                      rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 shadow-2xl">
           
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 opacity-10">
@@ -244,11 +292,11 @@ const Dashboard = () => {
           </div>
 
           <div className="relative z-10">
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-2xl flex items-center justify-center border-4 border-white/50">
-                  <span className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-cyan-500 to-purple-600 bg-clip-text text-transparent">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-2xl flex items-center justify-center border-4 border-white/50">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-br from-cyan-500 to-purple-600 bg-clip-text text-transparent">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
@@ -256,13 +304,13 @@ const Dashboard = () => {
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">
+                <p className="text-white/80 text-xs sm:text-sm font-semibold mb-1 sm:mb-2 uppercase tracking-wide">
                   Bem-vindo de volta!
                 </p>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3">
                   Olá, {user?.name || 'Estudante'}! 👋
                 </h2>
-                <p className="text-white/90 text-lg max-w-2xl">
+                <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl">
                   Comece sua jornada de aprendizado em Inteligência Artificial
                 </p>
               </div>
@@ -271,9 +319,9 @@ const Dashboard = () => {
         </div>
 
         {/* Trilhas Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6">Suas Trilhas</h2>
-          <div className="space-y-5">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
+          <div className="space-y-4 sm:space-y-5">
             {trails.map((trail) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
@@ -350,20 +398,20 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Actions - Gamification */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {/* Quick Actions - Hidden on mobile, shown above stats */}
+        <div className="hidden md:grid grid-cols-2 gap-4 mb-6">
           <Card 
             className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
             onClick={() => navigate('/leaderboard')}
           >
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Trophy className="w-9 h-9 text-white" />
+            <CardHeader className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Trophy className="w-7 h-7 text-white" />
                 </div>
                 <div className="text-white">
-                  <CardTitle className="text-xl font-bold mb-1">Ranking Global</CardTitle>
-                  <p className="text-white/90 text-sm">Compare-se com outros estudantes</p>
+                  <CardTitle className="text-lg font-bold mb-0.5">Ranking Global</CardTitle>
+                  <p className="text-white/90 text-xs">Compare-se com outros</p>
                 </div>
               </div>
             </CardHeader>
@@ -373,23 +421,23 @@ const Dashboard = () => {
             className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
             onClick={() => navigate('/gamification')}
           >
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Award className="w-9 h-9 text-white" />
+            <CardHeader className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Award className="w-7 h-7 text-white" />
                 </div>
                 <div className="text-white">
-                  <CardTitle className="text-xl font-bold mb-1">Suas Conquistas</CardTitle>
-                  <p className="text-white/90 text-sm">Desbloqueie badges e prêmios</p>
+                  <CardTitle className="text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
+                  <p className="text-white/90 text-xs">Desbloqueie badges</p>
                 </div>
               </div>
             </CardHeader>
           </Card>
         </div>
 
-        {/* Daily Missions Section */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-slate-900 mb-6">Missões Diárias</h3>
+        {/* Missões Diárias Section */}
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6 px-2 sm:px-0">Missões Diárias</h2>
           <MissoesDiarias />
         </div>
 

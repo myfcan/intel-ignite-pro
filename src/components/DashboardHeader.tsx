@@ -31,20 +31,20 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
 
   return (
     <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-24">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 md:h-24">
           
           {/* Logo */}
           <div className="flex items-center cursor-pointer group" onClick={() => navigate('/dashboard')}>
             <img 
               src={logoAiliv} 
               alt="Ailiv" 
-              className="h-[88px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-12 sm:h-16 md:h-20 lg:h-[88px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </div>
 
-          {/* Gamificação Central */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-6">
+          {/* Gamificação Central - Desktop Only */}
+          <div className="hidden lg:flex items-center gap-4 xl:gap-6">
             
             {/* Streak */}
             <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm
@@ -90,7 +90,18 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
+            {/* Mobile Stats - Compact */}
+            <div className="lg:hidden flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-orange-300/50">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span className="text-sm font-bold text-slate-900">{user.streak_days}</span>
+              </div>
+              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-cyan-300/50">
+                <Trophy className="w-4 h-4 text-cyan-500" />
+                <span className="text-sm font-bold text-slate-900">{user.total_points}</span>
+              </div>
+            </div>
             {/* Limite de interações */}
             <div className="flex items-center gap-2 text-sm">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500

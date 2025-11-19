@@ -75,39 +75,39 @@ export const TrailBand = ({
         </>
       )}
 
-      <div className="relative p-6">
-        <div className="flex items-start gap-5">
+      <div className="relative p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
           {/* Play button in white circle (replaces icon) */}
           {!isLocked ? (
             <div className={cn(
-              "flex-shrink-0 w-16 h-16 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg transition-all duration-300",
+              "flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg transition-all duration-300",
               "group-hover:bg-white group-hover:scale-110 group-hover:shadow-xl"
             )}>
-              <Play className="w-7 h-7 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
+              <Play className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
             </div>
           ) : (
-            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-slate-300 flex items-center justify-center shadow-lg">
-              <Lock className="w-7 h-7 text-slate-500" />
+            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-300 flex items-center justify-center shadow-lg">
+              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-slate-500" />
             </div>
           )}
 
           {/* Content Section */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
               <h3 className={cn(
-                "font-bold text-xl",
+                "font-bold text-lg sm:text-xl",
                 isLocked ? "text-slate-600" : "text-white"
               )}>
                 {trail.title}
               </h3>
               {isCompleted && (
-                <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
+                <span className="flex-shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
                   ✓ Concluída
                 </span>
               )}
             </div>
             <p className={cn(
-              "text-sm mb-3 line-clamp-1",
+              "text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1",
               isLocked ? "text-slate-500" : "text-white/90"
             )}>
               {trail.description}
@@ -123,7 +123,7 @@ export const TrailBand = ({
               </div>
             )}
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <span className={cn(
                 "text-xs font-medium",
                 isLocked ? "text-slate-500" : "text-white/80"
@@ -132,7 +132,7 @@ export const TrailBand = ({
               </span>
               {!isLocked && progress > 0 && (
                 <span className="text-xs font-medium text-white/80">
-                  • {Math.round(progress)}% completo
+                  • {Math.round(progress)}%
                 </span>
               )}
             </div>
