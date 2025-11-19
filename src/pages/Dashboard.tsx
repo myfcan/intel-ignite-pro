@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
+import { TrailBand } from "@/components/TrailBand";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 
 interface User {
@@ -249,13 +250,38 @@ const Dashboard = () => {
                   Bem-vindo de volta!
                 </p>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Continue sua jornada de aprendizado
+                  Comece sua jornada de aprendizado
                 </h2>
                 <p className="text-white/90 text-lg max-w-2xl">
-                  Escolha uma trilha abaixo para começar a aprender sobre Inteligência Artificial
+                  Escolha uma trilha abaixo para aprender sobre Inteligência Artificial
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Trilhas Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-6">Suas Trilhas</h2>
+          <div className="space-y-4">
+            {trails.map((trail) => {
+              const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
+              const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+              const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+
+              return (
+                <TrailBand
+                  key={trail.id}
+                  trail={trail}
+                  Icon={Icon}
+                  progress={trailProgress?.progress || 0}
+                  completedLessons={trailProgress?.completedLessons || 0}
+                  totalLessons={trailProgress?.totalLessons || 0}
+                  status={trailProgress?.status || 'locked'}
+                  gradient={gradient}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -355,32 +381,6 @@ const Dashboard = () => {
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-6">Missões Diárias</h3>
           <MissoesDiarias />
-        </div>
-
-        {/* Trilhas */}
-        <div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-6">Suas Trilhas</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trails.map((trail) => {
-              const IconComponent = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-              const gradient = TRAIL_GRADIENTS[trail.title] || 'from-gray-500 to-gray-600';
-              const trailProgress = trailsProgress.find(tp => tp.trailId === trail.id);
-              
-              return (
-                <TrailCard
-                  key={trail.id}
-                  trail={trail}
-                  Icon={IconComponent}
-                  progress={trailProgress?.progress || 0}
-                  completedLessons={trailProgress?.completedLessons || 0}
-                  totalLessons={trailProgress?.totalLessons || 0}
-                  status={trailProgress?.status || 'locked'}
-                  gradient={gradient}
-                />
-              );
-            })}
-          </div>
         </div>
 
       </main>
