@@ -91,17 +91,6 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
 
           {/* User Menu */}
           <div className="flex items-center gap-2">
-            {/* Mobile Stats - Compact */}
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-orange-300/50">
-                <Flame className="w-4 h-4 text-orange-500" />
-                <span className="text-sm font-bold text-slate-900">{user.streak_days}</span>
-              </div>
-              <div className="flex items-center gap-1 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full border border-cyan-300/50">
-                <Trophy className="w-4 h-4 text-cyan-500" />
-                <span className="text-sm font-bold text-slate-900">{user.total_points}</span>
-              </div>
-            </div>
             {/* Limite de interações */}
             <div className="flex items-center gap-2 text-sm">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
