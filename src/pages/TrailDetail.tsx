@@ -246,14 +246,14 @@ const TrailDetail = () => {
         />
       )}
       {/* Header - Card com Gradiente */}
-      <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Botão Voltar */}
         <button 
           onClick={() => navigate('/dashboard')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-xl text-slate-700 hover:text-cyan-600 hover:border-cyan-300 transition-all mb-6 shadow-sm hover:shadow-md"
+          className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-xl text-slate-700 hover:text-cyan-600 hover:border-cyan-300 transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="font-medium">Voltar</span>
+          <span className="font-medium text-sm sm:text-base">Voltar</span>
         </button>
 
         {/* Card de Header com Gradiente */}
@@ -268,52 +268,52 @@ const TrailDetail = () => {
           </div>
           
           {/* Conteúdo */}
-          <div className="relative z-10 p-8">
-            <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6">
+          <div className="relative z-10 p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6 mb-4 md:mb-6">
               {/* Lado esquerdo: Ícone e Info */}
-              <div className="flex-1">
-                <div className="flex items-start gap-4 mb-4">
+              <div className="flex-1 w-full">
+                <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                   {/* Ícone grande */}
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-4xl">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-2xl sm:text-3xl md:text-4xl">
                     {trail.icon}
                   </div>
                   
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     {/* Título */}
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">
                       {trail.title}
                     </h1>
                     {/* Descrição */}
-                    <p className="text-white/90 text-lg">
+                    <p className="text-white/90 text-sm sm:text-base md:text-lg line-clamp-2">
                       {trail.description}
                     </p>
                   </div>
                 </div>
                 
                 {/* Metadados */}
-                <div className="flex items-center gap-4 text-white/80 text-sm">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
+                <div className="flex items-center gap-2 sm:gap-4 text-white/80 text-xs sm:text-sm">
+                  <span className="flex items-center gap-1 sm:gap-1.5">
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                     {lessons.length} aulas
                   </span>
                   <span>•</span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
+                  <span className="flex items-center gap-1 sm:gap-1.5">
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                     {lessons.reduce((acc, l) => acc + (l.estimated_time || 0), 0)} minutos
                   </span>
                 </div>
               </div>
               
               {/* Lado direito: Progresso */}
-              <div className="text-right bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                <div className="text-sm text-white/80 mb-1">Seu progresso</div>
-                <div className="text-5xl font-bold text-white mb-1">{Math.round(progress)}%</div>
-                <div className="text-sm text-white/80">{completedLessons.length}/{lessons.length} completas</div>
+              <div className="w-full md:w-auto text-center md:text-right bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-5 md:p-6 border border-white/20">
+                <div className="text-xs sm:text-sm text-white/80 mb-1">Seu progresso</div>
+                <div className="text-4xl sm:text-5xl font-bold text-white mb-1">{Math.round(progress)}%</div>
+                <div className="text-xs sm:text-sm text-white/80">{completedLessons.length}/{lessons.length} completas</div>
               </div>
             </div>
             
             {/* Barra de progresso */}
-            <div className="h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden">
+            <div className="h-2 sm:h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden">
               <div 
                 className="h-full bg-white shadow-lg transition-all duration-500" 
                 style={{ width: `${Math.min(100, Math.round(progress))}%` }}
@@ -324,8 +324,8 @@ const TrailDetail = () => {
       </header>
 
       {/* Lessons List */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">Aulas</h2>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">Aulas</h2>
         
         <div className="space-y-4">
           {lessons.map((lesson, index) => {
