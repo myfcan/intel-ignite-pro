@@ -128,8 +128,8 @@ export function MissoesDiarias() {
 
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className={cn(
-                          "font-bold text-base sm:text-lg text-balance",
+                       <h3 className={cn(
+                          "font-semibold text-base sm:text-lg text-balance",
                           isCompleted ? "text-white" : "text-slate-800"
                         )}>
                           {template.title}
@@ -143,7 +143,7 @@ export function MissoesDiarias() {
                       </div>
                       
                       <p className={cn(
-                        "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed",
+                        "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed font-normal",
                         isCompleted ? "text-white/90" : "text-slate-600"
                       )}>
                         {template.description}
@@ -160,7 +160,7 @@ export function MissoesDiarias() {
 
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <span className={cn(
-                          "text-sm font-medium",
+                          "text-sm font-semibold",
                           isCompleted ? "text-white/80" : "text-slate-500"
                         )}>
                           {mission.progress_value}/{template.requirement_value} {

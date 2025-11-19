@@ -266,17 +266,17 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           <div className="p-8">
             {/* Mensagem da MAIA */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
-              <h4 className="font-bold text-foreground mb-3">
+              <h4 className="font-semibold text-foreground mb-3">
                 Complete o Desafio:
               </h4>
-              <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed text-balance">
+              <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-balance">
                 🤖 {config.realConfig.maiaMessage}
               </p>
             </div>
             
             {/* Playground */}
             <div className="mb-6">
-              <h4 className="font-bold text-foreground mb-3">
+              <h4 className="font-semibold text-foreground mb-3">
                 ✍️ Digite seu prompt:
               </h4>
               
@@ -399,8 +399,8 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
       </div>
 
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-foreground mb-2">🎮 Hora de praticar!</h3>
-        <p className="text-muted-foreground">{config.instruction}</p>
+        <h3 className="text-xl font-bold text-foreground mb-2 text-balance">🎮 Hora de praticar!</h3>
+        <p className="text-muted-foreground font-normal">{config.instruction}</p>
       </div>
 
       <div className="space-y-4 mb-6">

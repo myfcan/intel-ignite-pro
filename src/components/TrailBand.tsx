@@ -107,7 +107,7 @@ export const TrailBand = ({
               )}
             </div>
             <p className={cn(
-              "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed",
+              "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed font-normal",
               isLocked ? "text-slate-500" : "text-white/90"
             )}>
               {trail.description}
