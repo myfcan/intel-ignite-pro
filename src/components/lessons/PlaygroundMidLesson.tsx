@@ -269,7 +269,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               <h4 className="font-bold text-foreground mb-3">
                 Complete o Desafio:
               </h4>
-              <p className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+              <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed text-balance">
                 🤖 {config.realConfig.maiaMessage}
               </p>
             </div>

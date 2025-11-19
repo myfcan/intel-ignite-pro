@@ -94,8 +94,8 @@ export const TrailBand = ({
           {/* Content Section */}
           <div className="flex-1 min-w-0 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-              <h3 className={cn(
-                "font-bold text-lg sm:text-xl",
+            <h3 className={cn(
+                "font-bold text-lg sm:text-xl text-balance",
                 isLocked ? "text-slate-600" : "text-white"
               )}>
                 {trail.title}
@@ -107,7 +107,7 @@ export const TrailBand = ({
               )}
             </div>
             <p className={cn(
-              "text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1",
+              "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed",
               isLocked ? "text-slate-500" : "text-white/90"
             )}>
               {trail.description}
@@ -125,7 +125,7 @@ export const TrailBand = ({
             
             <div className="flex items-center gap-2 sm:gap-3">
               <span className={cn(
-                "text-xs font-medium",
+                "text-sm font-medium",
                 isLocked ? "text-slate-500" : "text-white/80"
               )}>
                 {completedLessons}/{totalLessons} aulas
