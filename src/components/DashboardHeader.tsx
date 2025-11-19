@@ -35,11 +35,11 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         <div className="flex items-center justify-between h-24">
           
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer group py-2" onClick={() => navigate('/dashboard')}>
+          <div className="flex items-center cursor-pointer group" onClick={() => navigate('/dashboard')}>
             <img 
               src={logoAiliv} 
               alt="Ailiv" 
-              className="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-[88px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </div>
 
