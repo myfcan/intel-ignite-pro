@@ -39,7 +39,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
             <img 
               src={logoAiliv} 
               alt="Ailiv" 
-              className="h-[48px] md:h-[56px] lg:h-[64px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-[56px] md:h-[64px] lg:h-[72px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />
           </div>
 
