@@ -85,17 +85,17 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
 
       {/* Body */}
       <div className="p-6">
-        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-cyan-600 transition-colors">
+        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-cyan-600 transition-colors text-balance">
           {trail.title}
         </h3>
-        <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+        <p className="text-slate-600 text-sm sm:text-base mb-4 line-clamp-2 leading-relaxed">
           {trail.description}
         </p>
 
         {/* Progress */}
         {!isLocked && (
           <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
+            <div className="flex justify-between text-sm sm:text-base mb-2">
               <span className="text-slate-600">{completedLessons}/{totalLessons} aulas</span>
               <span className="font-semibold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">{progress}%</span>
             </div>

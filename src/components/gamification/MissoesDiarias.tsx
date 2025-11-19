@@ -129,7 +129,7 @@ export function MissoesDiarias() {
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className={cn(
-                          "font-bold text-base sm:text-lg",
+                          "font-bold text-base sm:text-lg text-balance",
                           isCompleted ? "text-white" : "text-slate-800"
                         )}>
                           {template.title}
@@ -143,7 +143,7 @@ export function MissoesDiarias() {
                       </div>
                       
                       <p className={cn(
-                        "text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1",
+                        "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed",
                         isCompleted ? "text-white/90" : "text-slate-600"
                       )}>
                         {template.description}
@@ -160,7 +160,7 @@ export function MissoesDiarias() {
 
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <span className={cn(
-                          "text-xs font-medium",
+                          "text-sm font-medium",
                           isCompleted ? "text-white/80" : "text-slate-500"
                         )}>
                           {mission.progress_value}/{template.requirement_value} {
@@ -170,7 +170,7 @@ export function MissoesDiarias() {
                           }
                         </span>
                         {!isCompleted && progressPercentage > 0 && (
-                          <span className="text-xs font-medium text-slate-500">
+                          <span className="text-sm font-medium text-slate-500">
                             • {Math.round(progressPercentage)}%
                           </span>
                         )}
