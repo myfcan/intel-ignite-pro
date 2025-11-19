@@ -350,7 +350,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                       Gerando resposta da IA...
                     </>
                   ) : (
-                    '🚀 Testar com IA Real'
+                    'Testar com IA Real'
                   )}
                 </Button>
               )}
@@ -363,7 +363,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                   size="lg"
                   data-testid="playground-mid-continue"
                 >
-                  ✅ Continuar Aula
+                  Continuar Aula
                 </Button>
               )}
 
@@ -375,7 +375,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                   size="lg"
                   data-testid="playground-mid-continue"
                 >
-                  ⏳ Complete seu prompt
+                  Complete seu prompt
                 </Button>
               )}
             </div>
@@ -448,14 +448,14 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           onClick={handleSkip}
           className="flex-1"
         >
-          ⏭️ Pular
+          Pular
         </Button>
         <Button
           onClick={handleContinue}
           disabled={!selectedOption}
           className="flex-1"
         >
-          ✅ Continuar Aula
+          Continuar Aula
         </Button>
       </div>
 
