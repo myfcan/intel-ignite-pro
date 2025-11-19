@@ -305,32 +305,6 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 </p>
               </div>
             )}
-            
-            {/* Prompt completo preview */}
-            {userInput.length >= config.realConfig.validation.minLength && !showAIResult && (
-              <div className="bg-muted border-2 border-border rounded-xl p-5 mb-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h5 className="text-xs font-bold text-muted-foreground uppercase">
-                    👁️ Seu prompt completo:
-                  </h5>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCopyPrompt}
-                    className="h-6 px-2 text-xs"
-                  >
-                    {copiedPrompt ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                    {copiedPrompt ? 'Copiado!' : 'Copiar'}
-                  </Button>
-                </div>
-                <p className="text-foreground font-medium leading-relaxed">
-                  "{fullPrompt}"
-                </p>
-                <p className="text-xs text-muted-foreground mt-3">
-                  💾 Você pode copiar e usar esse prompt no ChatGPT de verdade depois!
-                </p>
-              </div>
-            )}
 
             {/* Resposta da IA */}
             {showAIResult && aiResponse && (
