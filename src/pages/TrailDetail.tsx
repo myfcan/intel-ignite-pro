@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
 import { MiniMaia } from '@/components/MiniMaia';
 import { getMaiaMessage, type MaiaMessageType } from '@/data/maiaMessages';
+import { motion } from 'framer-motion';
 
 interface Lesson {
   id: string;
@@ -337,8 +338,15 @@ const TrailDetail = () => {
             const statusColor = isCompleted ? 'text-emerald-600' : isLocked ? 'text-muted-foreground' : 'text-primary';
             
             return (
-              <div
+              <motion.div
                 key={lesson.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: index * 0.1,
+                  ease: "easeOut"
+                }}
                 onClick={() => handleLessonClick(lesson, status)}
                 className={`
                   group relative bg-white/80 backdrop-blur-xl rounded-2xl border shadow-lg 
@@ -415,7 +423,7 @@ const TrailDetail = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
