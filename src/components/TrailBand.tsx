@@ -77,24 +77,19 @@ export const TrailBand = ({
 
       <div className="relative p-6">
         <div className="flex items-start gap-5">
-          {/* Icon in white circle */}
-          <div className={cn(
-            "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300",
-            "group-hover:scale-110",
-            isLocked ? "bg-slate-300" : "bg-white/95"
-          )}>
-            {isLocked ? (
+          {/* Play button in white circle (replaces icon) */}
+          {!isLocked ? (
+            <div className={cn(
+              "flex-shrink-0 w-16 h-16 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg transition-all duration-300",
+              "group-hover:bg-white group-hover:scale-110 group-hover:shadow-xl"
+            )}>
+              <Play className="w-7 h-7 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
+            </div>
+          ) : (
+            <div className="flex-shrink-0 w-16 h-16 rounded-full bg-slate-300 flex items-center justify-center shadow-lg">
               <Lock className="w-7 h-7 text-slate-500" />
-            ) : (
-              <Icon className={cn(
-                "w-7 h-7",
-                trail.title === 'Fundamentos de IA' && "text-teal-500",
-                trail.title === 'IA no Dia a Dia' && "text-pink-500",
-                trail.title === 'IA nos Negócios' && "text-orange-500",
-                trail.title === 'Renda Extra com IA' && "text-blue-500"
-              )} />
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Content Section */}
           <div className="flex-1 min-w-0">
@@ -142,13 +137,6 @@ export const TrailBand = ({
               )}
             </div>
           </div>
-
-          {/* Play button */}
-          {!isLocked && (
-            <div className="flex-shrink-0 w-14 h-14 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center group-hover:bg-white transition-all shadow-lg group-hover:shadow-xl">
-              <Play className="w-6 h-6 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
-            </div>
-          )}
         </div>
       </div>
 
