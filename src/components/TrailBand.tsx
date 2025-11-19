@@ -18,6 +18,22 @@ interface TrailBandProps {
   gradient: string;
 }
 
+// Color mapping per trail
+const TRAIL_COLORS: { [key: string]: string } = {
+  'Fundamentos de IA': 'from-cyan-400 to-teal-500',
+  'IA no Dia a Dia': 'from-pink-400 to-rose-500',
+  'IA nos Negócios': 'from-orange-400 to-amber-500',
+  'Renda Extra com IA': 'from-blue-400 to-indigo-500',
+};
+
+// Solid vibrant colors for backgrounds
+const TRAIL_BG_COLORS: { [key: string]: string } = {
+  'Fundamentos de IA': 'bg-gradient-to-br from-teal-400 to-cyan-500',
+  'IA no Dia a Dia': 'bg-gradient-to-br from-pink-500 to-rose-500',
+  'IA nos Negócios': 'bg-gradient-to-br from-orange-400 to-amber-500',
+  'Renda Extra com IA': 'bg-gradient-to-br from-blue-400 to-indigo-500',
+};
+
 export const TrailBand = ({
   trail,
   Icon,
@@ -37,143 +53,95 @@ export const TrailBand = ({
     }
   };
 
-  // Circular progress calculation
-  const circumference = 2 * Math.PI * 20; // radius = 20
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const bgColor = TRAIL_BG_COLORS[trail.title] || 'bg-gradient-to-br from-slate-400 to-slate-500';
 
   return (
     <div
       onClick={handleClick}
       className={cn(
-        "group relative overflow-hidden rounded-2xl transition-all duration-300",
-        "bg-white/40 backdrop-blur-xl border border-white/60",
-        "hover:scale-[1.02] hover:shadow-xl hover:border-white/80",
-        isLocked && "opacity-60 cursor-not-allowed hover:scale-100",
-        !isLocked && "cursor-pointer"
+        "group relative overflow-hidden rounded-[32px] transition-all duration-300 min-h-[120px]",
+        "hover:scale-[1.02] hover:shadow-2xl",
+        isLocked && "opacity-50 cursor-not-allowed hover:scale-100",
+        !isLocked && "cursor-pointer",
+        isLocked ? "bg-slate-200" : bgColor
       )}
     >
-      {/* Gradient background overlay */}
-      <div className={cn(
-        "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300",
-        `bg-gradient-to-r ${gradient}`
-      )} />
+      {/* Organic blob decorations */}
+      {!isLocked && (
+        <>
+          <div className="absolute -right-12 -top-12 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+        </>
+      )}
 
-      <div className="relative flex items-center gap-6 p-5">
-        {/* Icon Section */}
+      <div className="relative flex items-center gap-5 p-6">
+        {/* Icon in white circle */}
         <div className={cn(
-          "flex-shrink-0 w-16 h-16 rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300",
+          "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300",
           "group-hover:scale-110",
-          isLocked ? "bg-slate-200" : `bg-gradient-to-br ${gradient}`
+          isLocked ? "bg-slate-300" : "bg-white/95"
         )}>
           {isLocked ? (
             <Lock className="w-7 h-7 text-slate-500" />
           ) : (
-            <Icon className="w-7 h-7 text-white" />
+            <Icon className={cn(
+              "w-7 h-7",
+              trail.title === 'Fundamentos de IA' && "text-teal-500",
+              trail.title === 'IA no Dia a Dia' && "text-pink-500",
+              trail.title === 'IA nos Negócios' && "text-orange-500",
+              trail.title === 'Renda Extra com IA' && "text-blue-500"
+            )} />
           )}
         </div>
 
         {/* Content Section */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-3 mb-1">
             <h3 className={cn(
-              "font-semibold text-lg truncate",
-              isLocked ? "text-slate-500" : "text-slate-800"
+              "font-bold text-xl",
+              isLocked ? "text-slate-600" : "text-white"
             )}>
               {trail.title}
             </h3>
             {isCompleted && (
-              <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                Concluída
+              <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
+                ✓ Concluída
               </span>
             )}
           </div>
           <p className={cn(
-            "text-sm line-clamp-1",
-            isLocked ? "text-slate-400" : "text-slate-600"
+            "text-sm mb-2 line-clamp-1",
+            isLocked ? "text-slate-500" : "text-white/90"
           )}>
             {trail.description}
           </p>
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-3">
             <span className={cn(
               "text-xs font-medium",
-              isLocked ? "text-slate-400" : "text-slate-500"
+              isLocked ? "text-slate-500" : "text-white/80"
             )}>
               {completedLessons}/{totalLessons} aulas
             </span>
-            {!isLocked && progress > 0 && (
-              <div className="flex-1 max-w-xs">
-                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full transition-all duration-500 rounded-full",
-                      `bg-gradient-to-r ${gradient}`
-                    )}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
+            {!isLocked && progress > 0 && progress < 100 && (
+              <span className="text-xs font-medium text-white/80">
+                • {Math.round(progress)}% completo
+              </span>
             )}
           </div>
         </div>
 
-        {/* Progress Circle & Action */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          {/* Circular Progress */}
-          <div className="relative w-14 h-14">
-            <svg className="transform -rotate-90 w-14 h-14">
-              {/* Background circle */}
-              <circle
-                cx="28"
-                cy="28"
-                r="20"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                className="text-slate-200"
-              />
-              {/* Progress circle */}
-              {!isLocked && (
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="20"
-                  stroke="url(#gradient-progress)"
-                  strokeWidth="4"
-                  fill="none"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-500"
-                />
-              )}
-              <defs>
-                <linearGradient id="gradient-progress" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" className="text-cyan-400" stopColor="currentColor" />
-                  <stop offset="100%" className="text-purple-500" stopColor="currentColor" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={cn(
-                "text-xs font-bold",
-                isLocked ? "text-slate-400" : "text-slate-700"
-              )}>
-                {Math.round(progress)}%
-              </span>
-            </div>
+        {/* Arrow button */}
+        {!isLocked && (
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
+            <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
           </div>
-
-          {/* Arrow */}
-          {!isLocked && (
-            <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-1 transition-all" />
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Locked overlay message */}
+      {/* Locked overlay */}
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[2px]">
-          <p className="text-sm font-medium text-slate-600">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[1px]">
+          <p className="text-sm font-semibold text-slate-700 px-4 text-center">
             Complete a trilha anterior para desbloquear
           </p>
         </div>

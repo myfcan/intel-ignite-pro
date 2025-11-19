@@ -263,7 +263,7 @@ const Dashboard = () => {
         {/* Trilhas Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-6">Suas Trilhas</h2>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {trails.map((trail) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
