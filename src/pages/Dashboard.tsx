@@ -244,16 +244,26 @@ const Dashboard = () => {
           </div>
 
           <div className="relative z-10">
-            <div className="flex items-start justify-between mb-6">
-              <div>
+            <div className="flex items-start gap-6">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-2xl flex items-center justify-center border-4 border-white/50">
+                  <span className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-cyan-500 to-purple-600 bg-clip-text text-transparent">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
                 <p className="text-white/80 text-sm font-semibold mb-2 uppercase tracking-wide">
                   Bem-vindo de volta!
                 </p>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Comece sua jornada de aprendizado
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  Olá, {user?.name || 'Estudante'}! 👋
                 </h2>
                 <p className="text-white/90 text-lg max-w-2xl">
-                  Escolha uma trilha abaixo para aprender sobre Inteligência Artificial
+                  Comece sua jornada de aprendizado em Inteligência Artificial
                 </p>
               </div>
             </div>
