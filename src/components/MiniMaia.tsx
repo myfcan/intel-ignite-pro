@@ -1,9 +1,11 @@
 // src/components/MiniMaia.tsx
-// Componente TURBINADO da MAIA com animações vivas e interativas
+// Componente da Liv com animações vivas e interativas
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles } from "lucide-react";
+import { LivAvatar } from "./LivAvatar";
+
 
 interface MiniMaiaProps {
   message: string;
@@ -92,11 +94,11 @@ export const MiniMaia = ({
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full blur-2xl opacity-40 animate-spin-slow" />
             )}
             
-            <div className={`relative w-40 h-40 md:w-48 md:h-48 ${isAnimating ? getAnimationClass() : 'animate-float'}`}>
-              <img
-                src="/maia-avatar-v3.png"
-                alt="MAIA - Assistente IA"
-                className="w-full h-full object-contain drop-shadow-2xl"
+            <div className={`relative ${isAnimating ? getAnimationClass() : 'animate-float'}`}>
+              <LivAvatar 
+                size="xl"
+                useVideo={true}
+                showHalo={variant === 'celebration'}
               />
               
               <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -114,7 +116,7 @@ export const MiniMaia = ({
               <div className="flex items-center gap-2">
                 <span className="text-2xl animate-wave">💬</span>
                 <p className="text-sm font-semibold text-gray-700">
-                  {variant === 'celebration' ? 'Oiee...' : 'Olá! Eu sou a MAIA'}
+                  {variant === 'celebration' ? 'Oiee...' : 'Olá! Sou a Liv'}
                 </p>
               </div>
               
@@ -177,17 +179,17 @@ export const MiniMaiaFloating = ({
         </button>
         
         <div className="flex gap-3 items-start">
-          <div className="w-12 h-12 flex-shrink-0 animate-float">
-            <img
-              src="/maia-avatar-v3.png"
-              alt="MAIA"
-              className="w-full h-full object-contain"
+          <div className="w-12 h-12 flex-shrink-0">
+            <LivAvatar 
+              size="small"
+              useVideo={false}
+              className="animate-float"
             />
           </div>
           
           <div className="flex-1">
             <p className="text-xs font-semibold text-gray-700 mb-1">
-              💬 MAIA diz:
+              💬 Liv diz:
             </p>
             <p className="text-xs text-gray-600">
               {message}

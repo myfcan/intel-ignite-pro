@@ -3,6 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } fr
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { LivAvatar } from '@/components/LivAvatar';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
@@ -1539,25 +1540,18 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
                     <div className="relative group cursor-pointer">
-                      {/* MAIA com animações otimizadas (sem piscamento) */}
-                      <img 
-                        src="/maia-avatar-v3.png" 
-                        alt="MAIA" 
+                      {/* Liv com animações otimizadas */}
+                      <LivAvatar
+                        size="xl"
+                        useVideo={true}
+                        isPlaying={isPlaying && isAudioEnabled}
+                        showHalo={isPlaying && isAudioEnabled}
                         className={`
-                          w-44 h-44 object-contain
                           animate-fly-in-rasante
                           transition-all duration-300 ease-in-out
                           lg:group-hover:scale-105 cursor-pointer
-                          ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
+                          ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                         `}
-                        style={{
-                          filter: !isAudioEnabled 
-                            ? 'grayscale(100%) opacity(0.5) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
-                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
-                          // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
-                          animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
-                          animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
-                        }}
                       />
                       {/* Indicadores de áudio melhorados */}
                       {isPlaying && isAudioEnabled && (
@@ -1713,22 +1707,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
-              <img 
-                src="/maia-avatar-v3.png" 
-                alt="MAIA" 
+              <LivAvatar
+                size="small"
+                useVideo={false}
+                isPlaying={isPlaying && isAudioEnabled}
                 className={`
-                  w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante
-                  ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
+                  ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
                 `}
-                style={{
-                  filter: !isAudioEnabled 
-                    ? 'grayscale(100%) opacity(0.5) drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
-                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))',
-                  // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
-                  animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
-                  animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
-                }}
               />
               {/* Indicadores de áudio para mobile */}
               {isPlaying && isAudioEnabled && (
@@ -1983,9 +1969,12 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-500">
           <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-cyan-300/50 shadow-2xl">
             <div className="flex justify-center mb-6">
-              <Avatar className="w-32 h-32 border-4 border-cyan-400/30 shadow-xl animate-float">
-                <AvatarImage src="/maia-avatar-v3.png" alt="MAIA" />
-              </Avatar>
+              <LivAvatar
+                size="large"
+                useVideo={true}
+                showHalo={true}
+                className="border-4 border-cyan-400/30 shadow-xl animate-float rounded-full overflow-hidden"
+              />
             </div>
             
             <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">

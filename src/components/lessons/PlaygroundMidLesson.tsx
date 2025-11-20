@@ -8,6 +8,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LivAvatar } from '@/components/LivAvatar';
 import { Loader2, Copy, Check, ChevronRight } from 'lucide-react';
 
 interface PlaygroundMidLessonProps {
@@ -269,10 +270,10 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           {/* Header */}
           <div className="bg-gradient-to-r from-cyan-400 to-purple-500 p-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
-              <img 
-                src="/maia-avatar-v3.png" 
-                alt="MAIA" 
-                className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex-shrink-0" 
+              <LivAvatar
+                size="medium"
+                useVideo={false}
+                className="rounded-full border-4 border-white shadow-lg flex-shrink-0"
               />
               <div className="flex-1">
                 <h3 className="text-white font-bold text-xl">⏸️ {config.realConfig.title}</h3>
