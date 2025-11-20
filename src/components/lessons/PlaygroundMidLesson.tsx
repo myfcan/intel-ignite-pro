@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -8,7 +8,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, Check } from 'lucide-react';
+import { Loader2, Copy, Check, ChevronRight } from 'lucide-react';
 
 interface PlaygroundMidLessonProps {
   config: PlaygroundConfig;
@@ -95,6 +95,10 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
   // Estados para múltipla escolha (retrocompatibilidade)
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [reasoning, setReasoning] = useState<string>('');
+  
+  // Estados para UX melhorado
+  const [highlightResponse, setHighlightResponse] = useState(false);
+  const aiResponseRef = useRef<HTMLDivElement>(null);
 
   // Validação em tempo real para playground real
   useEffect(() => {
@@ -125,16 +129,41 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     setValidationState(validate());
   }, [userInput, config, isRealPlayground]);
 
+  // Auto-scroll para resposta da IA quando ela aparecer
+  useEffect(() => {
+    if (showAIResult && aiResponse && aiResponseRef.current) {
+      setTimeout(() => {
+        aiResponseRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+      
+      // Trigger highlight animation
+      setHighlightResponse(true);
+      setTimeout(() => setHighlightResponse(false), 2000);
+    }
+  }, [showAIResult, aiResponse]);
+
   // Handlers para múltipla escolha
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (selectedOption) {
       onComplete(selectedOption);
     }
-  };
+  }, [selectedOption, onComplete]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     onComplete(null);
-  };
+  }, [onComplete]);
+
+  const handleCreateAnother = useCallback(() => {
+    setUserInput('');
+    setValidationState({ isValid: false, feedback: '' });
+    setAiResponse(null);
+    setAiFeedback(null);
+    setShowAIResult(false);
+    setHighlightResponse(false);
+  }, []);
 
   // ============================================================================
   // HANDLERS PARA IA REAL
@@ -294,42 +323,47 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               </div>
             </div>
             
-            {/* Feedback da MAIA (dinâmico) */}
-            {validationState.feedback && (
-              <div className={`p-4 rounded-xl mb-6 ${
+            {/* Feedback da MAIA (dinâmico) - mais discreto */}
+            {validationState.feedback && userInput && !showAIResult && (
+              <div className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
                 validationState.isValid 
-                  ? 'bg-green-50 dark:bg-green-950/30 border-2 border-green-300 dark:border-green-800' 
-                  : 'bg-yellow-50 dark:bg-yellow-950/30 border-2 border-yellow-300 dark:border-yellow-800'
+                  ? 'bg-success/10 text-success' 
+                  : 'bg-warning/10 text-warning'
               }`}>
-                <p className={`text-sm font-medium ${
-                  validationState.isValid ? 'text-green-800 dark:text-green-300' : 'text-yellow-800 dark:text-yellow-300'
-                }`}>
-                  {validationState.feedback}
-                </p>
+                <span>{validationState.isValid ? '✅' : '⚠️'}</span>
+                <p className="flex-1">{validationState.feedback}</p>
               </div>
             )}
 
-            {/* Resposta da IA */}
+            {/* Resposta da IA - com auto-scroll e highlight */}
             {showAIResult && aiResponse && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-800 rounded-xl p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                <h5 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                  🤖 Resposta da IA:
-                </h5>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                  {aiResponse}
-                </p>
-              </div>
-            )}
+              <div 
+                ref={aiResponseRef}
+                className={`space-y-4 transition-all duration-300 ${
+                  highlightResponse ? 'ring-2 ring-primary ring-offset-4' : ''
+                }`}
+              >
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 rounded-xl p-5 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h5 className="text-lg font-bold mb-3 flex items-center gap-2">
+                    <span className="text-2xl">🤖</span>
+                    Resposta da IA:
+                  </h5>
+                  <p className="leading-relaxed whitespace-pre-wrap text-base">
+                    {aiResponse}
+                  </p>
+                </div>
 
-            {/* Feedback da IA */}
-            {showAIResult && aiFeedback && (
-              <div className="bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-300 dark:border-purple-800 rounded-xl p-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500 delay-150">
-                <h5 className="text-sm font-bold text-purple-800 dark:text-purple-300 mb-3 flex items-center gap-2">
-                  💡 Feedback sobre seu prompt:
-                </h5>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {aiFeedback}
-                </p>
+                {aiFeedback && (
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-2 border-purple-200 rounded-xl p-5 animate-in fade-in slide-in-from-top-4 duration-500 delay-150">
+                    <h5 className="text-lg font-bold mb-3 flex items-center gap-2">
+                      <span className="text-2xl">💡</span>
+                      Feedback sobre seu prompt:
+                    </h5>
+                    <p className="leading-relaxed text-base">
+                      {aiFeedback}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -355,16 +389,28 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 </Button>
               )}
 
-              {/* Botão Continuar (aparece quando viu resultado da IA) */}
+              {/* Botões de ação final - dois botões quando tem resposta */}
               {showAIResult && (
-                <Button
-                  onClick={handleRealPlaygroundComplete}
-                  className="w-full py-6 text-lg font-bold"
-                  size="lg"
-                  data-testid="playground-mid-continue"
-                >
-                  Continuar Aula
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
+                  <Button
+                    onClick={handleCreateAnother}
+                    variant="outline"
+                    size="lg"
+                    className="flex-1"
+                  >
+                    <span className="mr-2">🔄</span>
+                    Criar outro prompt
+                  </Button>
+                  <Button
+                    onClick={() => onComplete(userInput)}
+                    size="lg"
+                    className="flex-1"
+                    data-testid="playground-mid-continue"
+                  >
+                    Continuar Aula
+                    <ChevronRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
               )}
 
               {/* Botão desabilitado (quando prompt incompleto) */}
