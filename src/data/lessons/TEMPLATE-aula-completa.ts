@@ -207,21 +207,24 @@ Clique no botão abaixo para começar!`,
         /** Tipo de playground */
         type: 'interactive-simulation',
 
-        /** Descrição do que fazer */
-        description: 'Veja como [conceito] funciona em tempo real. Teste diferentes opções e observe os resultados.',
-
-        /** Placeholder para input (se aplicável) */
-        placeholder: 'Digite algo aqui...',
-
-        /** Configurações adicionais (específicas do tipo) */
-        config: {
-          // Configurações específicas do playground
-          // Exemplo para simulação:
-          initialState: 'start',
+        /** Para simulações, use simulationConfig */
+        simulationConfig: {
+          type: 'interactive-simulation',
+          title: '[Título da Simulação]',
+          scenario: { icon: '🎯', text: '[Contexto da simulação]' },
           steps: [
-            { id: 'step1', label: 'Passo 1', description: 'Descrição do passo' },
-            { id: 'step2', label: 'Passo 2', description: 'Descrição do passo' }
-          ]
+            {
+              step: 1,
+              prompt: '[Pergunta ou desafio do passo 1]',
+              options: 'dynamic',
+              feedback: '[Feedback após o passo 1]'
+            }
+          ],
+          completion: {
+            visual: '🎉',
+            message: '[Mensagem de conclusão]',
+            badge: { id: 'badge-1', title: '[Nome do Badge]', icon: '🏆' }
+          }
         }
       }
     },
@@ -527,18 +530,24 @@ E você acabou de começar! Nos vemos na próxima aula.`
   finalPlaygroundConfig: {
     instruction: 'Agora é Sua Vez - Playground Final',
     type: 'interactive-simulation',
-    description: 'Aplique tudo que aprendeu neste playground final. Experimente livremente!',
-    placeholder: 'Digite seu teste aqui...',
 
-    config: {
-      // Configurações específicas do playground final
-      freeMode: true,
-      allowSave: true,
-      hints: [
-        'Dica 1: Tente começar simples',
-        'Dica 2: Vá incrementando aos poucos',
-        'Dica 3: Não tenha medo de errar!'
-      ]
+    simulationConfig: {
+      type: 'interactive-simulation',
+      title: 'Playground Final',
+      scenario: { icon: '🎯', text: 'Aplique tudo que aprendeu!' },
+      steps: [
+        {
+          step: 1,
+          prompt: 'Teste livremente o que aprendeu',
+          options: 'dynamic',
+          feedback: 'Excelente! Continue explorando!'
+        }
+      ],
+      completion: {
+        visual: '🎉',
+        message: 'Parabéns! Você completou o playground final!',
+        badge: { id: 'playground-master', title: 'Mestre do Playground', icon: '🏆' }
+      }
     }
   }
 };
