@@ -160,17 +160,26 @@ Experimente. É aqui que você começa a dominar de verdade.`,
 
       playgroundConfig: {
         instruction: '[Instrução do playground]',
-        type: 'chat-interface', // ou 'interactive-simulation'
-        description: '[Descrição do que fazer no playground]',
-        placeholder: 'Digite seu pedido para a Liv aqui...',
-        config: {
-          suggestions: [
-            '[Sugestão 1]',
-            '[Sugestão 2]',
-            '[Sugestão 3]'
-          ],
-          systemPrompt: 'Você é a Liv, uma mentora de I.A. amigável e clara que ajuda iniciantes.',
-          maxTokens: 300
+        type: 'real-playground', // ou 'interactive-simulation'
+        realConfig: {
+          type: 'real-playground',
+          title: 'Hora da Prática! 🚀',
+          maiaMessage: '[Mensagem da Liv]',
+          scenario: {
+            title: 'Desafio Prático',
+            description: '[Descrição do desafio]'
+          },
+          prefilledText: '',
+          userPlaceholder: 'Digite seu pedido para a Liv aqui...',
+          validation: {
+            minLength: 20,
+            requiredKeywords: [],
+            feedback: {
+              tooShort: '⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!',
+              good: '✅ Bom trabalho! Seu prompt está bem estruturado.',
+              excellent: '🎉 Excelente! Você dominou a técnica de criar prompts eficazes!'
+            }
+          }
         }
       }
     },
