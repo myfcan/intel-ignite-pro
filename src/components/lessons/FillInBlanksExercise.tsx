@@ -11,7 +11,8 @@ interface Sentence {
   id: string;
   text: string;
   correctAnswers: string[];
-  hint: string;
+  hints?: string[];  // Plural array (padrão correto)
+  hint?: string;     // Singular fallback (compatibilidade)
   explanation?: string;
   options?: string[];
 }
@@ -156,20 +157,22 @@ export function FillInBlanksExercise({
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span className="font-semibold">Questão {index + 1}</span>
-                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleHint(sentence.id)}
-                        className="ml-auto"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
+                    {(sentence.hints || sentence.hint) && (
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleHint(sentence.id)}
+                          className="ml-auto"
+                        >
+                          <HelpCircle className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
+                    )}
                   </div>
 
                   <AnimatePresence>
-                    {showHints[sentence.id] && (
+                    {showHints[sentence.id] && (sentence.hints || sentence.hint) && (
                       <motion.div 
                         className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm"
                         initial={{ opacity: 0, height: 0, y: -10 }}
@@ -177,7 +180,7 @@ export function FillInBlanksExercise({
                         exit={{ opacity: 0, height: 0, y: -10 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       >
-                        💡 Dica: {sentence.hint}
+                        💡 Dica: {sentence.hints ? sentence.hints.join(' • ') : sentence.hint}
                       </motion.div>
                     )}
                   </AnimatePresence>
