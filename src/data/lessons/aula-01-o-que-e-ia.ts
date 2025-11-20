@@ -168,17 +168,26 @@ Experimente. É aqui que você começa a dominar de verdade.`,
 
       playgroundConfig: {
         instruction: 'Experimente falar com a I.A. pela primeira vez',
-        type: 'chat-interface',
-        description: 'Use o playground abaixo para experimentar conversar com a I.A. Tente os exemplos sugeridos ou crie seus próprios pedidos.',
-        placeholder: 'Digite seu pedido para a Liv aqui...',
-        config: {
-          suggestions: [
-            'Liv, organize meu dia de amanhã em 3 prioridades claras.',
-            'Liv, escreva uma mensagem profissional pedindo uma reunião.',
-            'Liv, transforme essa frase em algo mais educado e firme: eu preciso do relatório hoje.'
-          ],
-          systemPrompt: 'Você é a Liv, uma mentora de I.A. amigável e clara que ajuda iniciantes.',
-          maxTokens: 300
+        type: 'real-playground',
+        realConfig: {
+          type: 'real-playground',
+          title: 'Hora da Prática! 🚀',
+          maiaMessage: 'Agora é sua vez! Envie um prompt real para a Liv pedindo ajuda com algo do seu dia. Exemplo: "Preciso organizar a festa de aniversário do meu filho de 5 anos e criar um convite bem legal."',
+          scenario: {
+            title: 'Desafio Prático',
+            description: 'Agora é sua vez! Envie um prompt real para a Liv pedindo ajuda com algo do seu dia. Exemplo: "Preciso organizar a festa de aniversário do meu filho de 5 anos e criar um convite bem legal."'
+          },
+          prefilledText: '',
+          userPlaceholder: 'Digite seu prompt aqui... 💭',
+          validation: {
+            minLength: 20,
+            requiredKeywords: [],
+            feedback: {
+              tooShort: '⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!',
+              good: '✅ Bom trabalho! Seu prompt está bem estruturado.',
+              excellent: '🎉 Excelente! Você dominou a técnica de criar prompts eficazes!'
+            }
+          }
         }
       }
     },
