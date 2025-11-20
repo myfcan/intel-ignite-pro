@@ -113,22 +113,22 @@ export function FillInBlanksExercise({
 
   return (
     <motion.div 
-      className="space-y-6 p-6"
+      className="space-y-8 max-w-3xl mx-auto p-6 md:p-8"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
       <motion.div 
-        className="text-center space-y-2"
+        className="text-center space-y-3"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <p className="text-muted-foreground">{instruction}</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground">{title}</h2>
+        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">{instruction}</p>
       </motion.div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {sentences.map((sentence, index) => {
           const parts = sentence.text.split('_______');
           const isCorrect = results[sentence.id];
@@ -147,25 +147,25 @@ export function FillInBlanksExercise({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className={`p-6 ${
+              <Card className={`p-6 md:p-8 transition-all duration-300 ${
                 submitted 
                   ? isCorrect 
-                    ? 'border-green-500 bg-green-500/5' 
-                    : 'border-red-500 bg-red-500/5'
-                  : ''
+                    ? 'border-green-600/50 bg-green-50 dark:bg-green-950/20 shadow-sm' 
+                    : 'border-red-600/50 bg-red-50 dark:bg-red-950/20 shadow-sm'
+                  : 'border-border hover:border-primary/30 hover:shadow-md'
               }`}>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-semibold">Questão {index + 1}</span>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold text-primary">Questão {index + 1}</span>
                     {(sentence.hints || sentence.hint) && (
                       <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleHint(sentence.id)}
-                          className="ml-auto"
+                          className="text-muted-foreground hover:text-primary"
                         >
-                          <HelpCircle className="h-4 w-4" />
+                          <HelpCircle className="h-5 w-5" />
                         </Button>
                       </motion.div>
                     )}
@@ -174,34 +174,36 @@ export function FillInBlanksExercise({
                   <AnimatePresence>
                     {showHints[sentence.id] && (sentence.hints || sentence.hint) && (
                       <motion.div 
-                        className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm"
+                        className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl"
                         initial={{ opacity: 0, height: 0, y: -10 }}
                         animate={{ opacity: 1, height: 'auto', y: 0 }}
                         exit={{ opacity: 0, height: 0, y: -10 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       >
-                        💡 Dica: {sentence.hints ? sentence.hints.join(' • ') : sentence.hint}
+                        <p className="text-sm md:text-base text-blue-900 dark:text-blue-100">
+                          💡 <span className="font-semibold">Dica:</span> {sentence.hints ? sentence.hints.join(' • ') : sentence.hint}
+                        </p>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  <div className="text-lg leading-relaxed">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {parts[0] && <span>{parts[0]}</span>}
+                  <div className="text-base md:text-lg leading-relaxed">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {parts[0] && <span className="text-foreground">{parts[0]}</span>}
                       <Input
                         value={answers[sentence.id] || ''}
                         onChange={(e) => handleAnswerChange(sentence.id, e.target.value)}
                         disabled={submitted}
-                        className={`w-48 ${
+                        className={`w-52 h-12 text-base font-medium transition-all ${
                           submitted
                             ? isCorrect
-                              ? 'border-green-500'
-                              : 'border-red-500'
-                            : ''
+                              ? 'border-2 border-green-600 bg-green-50 dark:bg-green-950/20'
+                              : 'border-2 border-red-600 bg-red-50 dark:bg-red-950/20'
+                            : 'border-2 border-primary/30 focus:border-primary'
                         }`}
-                        placeholder="..."
+                        placeholder="Digite aqui..."
                       />
-                      {parts.length > 1 && parts[1] && <span>{parts[1]}</span>}
+                      {parts.length > 1 && parts[1] && <span className="text-foreground">{parts[1]}</span>}
                       <AnimatePresence>
                         {submitted && (
                           <motion.div
@@ -218,14 +220,17 @@ export function FillInBlanksExercise({
                                 transition: { duration: 0.5 }
                               })
                             }}
-                            exit={{ scale: 0, rotate: 180 }}
-                            className="ml-2"
                             transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                            className="flex-shrink-0"
                           >
                             {isCorrect ? (
-                              <Check className="h-6 w-6 text-green-500" />
+                              <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-1.5">
+                                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              </div>
                             ) : (
-                              <X className="h-6 w-6 text-red-500" />
+                              <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-1.5">
+                                <X className="h-5 w-5 text-red-600 dark:text-red-400" />
+                              </div>
                             )}
                           </motion.div>
                         )}
@@ -257,24 +262,26 @@ export function FillInBlanksExercise({
                     {submitted && !isCorrect && (
                       <>
                         <motion.div 
-                          className="text-sm text-muted-foreground"
+                          className="p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800 rounded-xl"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ delay: 0.2 }}
                         >
-                          ✓ Respostas corretas: {sentence.correctAnswers.join(', ')}
+                          <p className="text-sm md:text-base font-semibold text-red-700 dark:text-red-400">
+                            ✓ Resposta correta: <span className="font-bold">{sentence.correctAnswers.join(', ')}</span>
+                          </p>
                         </motion.div>
                         {sentence.explanation && (
                           <motion.div 
-                            className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm"
+                            className="p-5 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ delay: 0.3 }}
                           >
-                            <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">📚 Entenda:</p>
-                            <p className="text-blue-800 dark:text-blue-200">{sentence.explanation}</p>
+                            <p className="font-bold text-blue-900 dark:text-blue-100 mb-2 text-sm md:text-base">📚 Entenda:</p>
+                            <p className="text-sm md:text-base text-blue-800 dark:text-blue-200 leading-relaxed">{sentence.explanation}</p>
                           </motion.div>
                         )}
                       </>
@@ -300,7 +307,7 @@ export function FillInBlanksExercise({
             <Button
               onClick={handleSubmit}
               disabled={!allAnswered}
-              className="w-full"
+              className="w-full h-auto py-4 text-lg font-semibold"
               size="lg"
             >
               Verificar Respostas
@@ -362,10 +369,10 @@ export function FillInBlanksExercise({
               </motion.div>
             )}
             
-            <Card className="p-6 bg-primary/5 border-primary/20">
-              <div className="text-center space-y-2">
+            <Card className="p-8 bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 shadow-lg rounded-2xl">
+              <div className="text-center space-y-3">
                 <motion.div 
-                  className="text-4xl mb-2"
+                  className="text-5xl mb-2"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ 
@@ -378,7 +385,7 @@ export function FillInBlanksExercise({
                   {correctCount === sentences.length ? '🎉' : correctCount > 0 ? '👍' : '💪'}
                 </motion.div>
                 <motion.h3 
-                  className="text-xl font-bold"
+                  className="text-2xl md:text-3xl font-bold text-foreground"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -386,7 +393,7 @@ export function FillInBlanksExercise({
                   {correctCount} de {sentences.length} corretas
                 </motion.h3>
                 <motion.p 
-                  className="text-muted-foreground"
+                  className="text-base md:text-lg text-muted-foreground max-w-md mx-auto"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
