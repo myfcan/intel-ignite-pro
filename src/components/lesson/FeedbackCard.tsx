@@ -20,7 +20,7 @@ export const FeedbackCard = ({
           <Bot className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold mb-2">🤖 Feedback da MAIA</h3>
+          <h3 className="text-lg font-semibold mb-2">🤖 Feedback da Liv</h3>
           <p className="text-base text-foreground leading-relaxed">{feedbackText}</p>
         </div>
       </div>

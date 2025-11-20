@@ -1,4 +1,4 @@
-// src/components/MiniMaia.tsx
+// src/components/MiniLiv.tsx
 // Componente da Liv com animações vivas e interativas
 
 import { useState, useEffect } from "react";
@@ -7,7 +7,7 @@ import { X, Sparkles } from "lucide-react";
 import { LivAvatar } from "./LivAvatar";
 
 
-interface MiniMaiaProps {
+interface MiniLivProps {
   message: string;
   onClose?: () => void;
   autoClose?: boolean;
@@ -16,14 +16,14 @@ interface MiniMaiaProps {
   variant?: 'default' | 'celebration' | 'encouragement';
 }
 
-export const MiniMaia = ({ 
+export const MiniLiv = ({ 
   message, 
   onClose, 
   autoClose = false,
   autoCloseDelay = 5000,
   showConfetti = false,
   variant = 'default'
-}: MiniMaiaProps) => {
+}: MiniLivProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(true);
 
@@ -64,7 +64,7 @@ export const MiniMaia = ({
   };
 
   return (
-    <div className="mini-maia-container animate-fadeIn">
+    <div className="mini-liv-container animate-fadeIn">
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="sparkle sparkle-1">✨</div>
@@ -75,7 +75,7 @@ export const MiniMaia = ({
         </div>
       )}
 
-      <div className="mini-maia-card">
+      <div className="mini-liv-card">
         {onClose && (
           <button
             onClick={handleClose}
@@ -161,7 +161,7 @@ export const MiniMaia = ({
   );
 };
 
-export const MiniMaiaFloating = ({ 
+export const MiniLivFloating = ({ 
   message, 
   onClose 
 }: { 

@@ -20,10 +20,10 @@ export const fundamentos01: GuidedLessonData = {
       timestamp: 0,
       type: 'text',
       audio_url: 'https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/aula-01/sessao-1.mp3',
-      speechBubbleText: 'Olá! Eu sou a MAIA',
+      speechBubbleText: 'Olá! Eu sou a Liv',
       visualContent: `## 🎯 Introdução e Boas-vindas
 
-Olá! Eu sou a MAIA, sua guia nesta jornada pela Inteligência Artificial.
+Olá! Eu sou a Liv, sua guia nesta jornada pela Inteligência Artificial.
 
 Antes de começarmos, pense nisso: quantas vezes você já usou IA hoje sem perceber?
 
@@ -243,7 +243,7 @@ E você acabou de começar.`
 // CRITICAL: Este texto e usado para gerar o audio com ElevenLabs
 // NAO inclua emojis, markdown ou caracteres especiais - apenas texto limpo!
 export const fundamentos01AudioText = `
-Olá! Eu sou a Maia, e hoje vou te mostrar algo que vai mudar completamente a forma como você vê a tecnologia.
+Olá! Eu sou a Liv, e hoje vou te mostrar algo que vai mudar completamente a forma como você vê a tecnologia.
 
 Você sabia que a Inteligência Artificial já está em tudo? No seu celular quando você desbloqueia com o rosto. No Google quando faz uma busca. No Instagram quando aparece um post que você adorou sem nem ter procurado.
 

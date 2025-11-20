@@ -1,5 +1,5 @@
 // src/data/maiaMessages.ts
-// Sistema completo de mensagens contextuais da MAIA
+// Sistema completo de mensagens contextuais da Liv
 
 export type MaiaMessageType = 'welcome' | 'progress' | 'completed' | 'encouragement';
 
@@ -92,7 +92,7 @@ export const milestoneMessages = {
 
 // Mensagens de boas-vindas gerais (primeira vez)
 export const firstTimeMessages = {
-  welcome: "Olá! Eu sou a MAIA, sua companheira nesta jornada! 🤖✨ Estou aqui para te guiar, apoiar e comemorar cada conquista sua. Juntos, vamos dominar a Inteligência Artificial!",
+  welcome: "Olá! Eu sou a Liv, sua companheira nesta jornada! 🤖✨ Estou aqui para te guiar, apoiar e comemorar cada conquista sua. Juntos, vamos dominar a Inteligência Artificial!",
   motivation: "Você está prestes a começar algo que vai transformar sua vida. A IA não é complicada quando você tem o guia certo. E eu estarei com você em cada passo! 💙"
 };
 

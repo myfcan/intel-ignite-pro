@@ -106,7 +106,7 @@ export const TimestampDebugger = ({ audioUrl, sections }: TimestampDebuggerProps
           <div className="space-y-3">
             <div className="p-4 bg-white rounded-lg border-2 border-purple-200">
               <div className="text-sm text-gray-600 mb-2">
-                🎯 Quando ouvir a MAIA falar EXATAMENTE esta frase:
+                🎯 Quando ouvir a Liv falar EXATAMENTE esta frase:
               </div>
               <div className="text-xl font-bold text-purple-600 leading-relaxed">
                 "{sections[currentSectionIndex]?.speechBubbleText}"
@@ -162,7 +162,7 @@ export const TimestampDebugger = ({ audioUrl, sections }: TimestampDebuggerProps
           <div className="font-semibold text-blue-900 mb-2">📖 Como usar:</div>
           <ol className="list-decimal list-inside space-y-2 ml-2">
             <li>Clique em <span className="text-purple-600">Play</span> para iniciar o áudio</li>
-            <li>Ouça atentamente o áudio da MAIA</li>
+            <li>Ouça atentamente o áudio da Liv</li>
             <li className="font-semibold">Quando ouvir a <span className="text-purple-600">frase EXATA</span> mostrada acima, clique imediatamente em <span className="text-green-600">"Marcar Seção"</span></li>
             <li>Repita para todas as 5 seções</li>
             <li>No final, clique em <span className="text-purple-600">"Copiar Todos os Timestamps"</span> e me envie</li>
