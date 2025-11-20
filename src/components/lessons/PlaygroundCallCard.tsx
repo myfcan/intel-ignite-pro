@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LivAvatar } from '@/components/LivAvatar';
 
 interface PlaygroundCallCardProps {
   title: string;
@@ -18,10 +19,10 @@ export function PlaygroundCallCard({ title, description, onOpen, onSkip }: Playg
     >
       <Card className="max-w-lg w-full p-8 animate-in zoom-in-95 duration-500 shadow-2xl">
         <div className="flex justify-center mb-6">
-          <img
-            src="/maia-avatar-v3.png"
-            alt="MAIA"
-            className="w-24 h-24 rounded-full shadow-xl ring-4 ring-primary/20 animate-in zoom-in-95 duration-700"
+          <LivAvatar 
+            size="medium"
+            useVideo={false}
+            showHalo={true}
           />
         </div>
 

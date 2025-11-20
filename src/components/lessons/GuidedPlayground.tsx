@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LivAvatar } from '@/components/LivAvatar';
 import { FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -69,10 +70,10 @@ export function GuidedPlayground({ config, onComplete }: GuidedPlaygroundProps) 
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
-          <img 
-            src="/maia-avatar-v3.png" 
-            alt="MAIA" 
-            className="w-24 h-24 mx-auto mb-4" 
+          <LivAvatar
+            size="medium"
+            useVideo={false}
+            className="mx-auto mb-4"
           />
           <h2 className="text-3xl font-bold mb-2">{config.title}</h2>
           <p className="text-muted-foreground mb-4">{config.maiaIntro}</p>
