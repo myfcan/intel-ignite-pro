@@ -91,6 +91,11 @@ export async function runLessonPipeline(
       lessonId: step7.lessonId
     });
     
+    // 🔧 CORREÇÃO: Salvar lesson_id na pipeline_executions
+    await supabase.from('pipeline_executions').update({
+      lesson_id: step7.lessonId
+    }).eq('id', executionId);
+    
     await updateDB('running', 8);
     await logger.info(8, 'Activate', '🚀 Ativando lição...');
     const step8 = await step8Activate(step7);
