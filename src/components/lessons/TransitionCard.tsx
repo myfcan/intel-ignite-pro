@@ -23,8 +23,8 @@ export function TransitionCard({
     >
       <LivAvatar 
         size="large"
-        useVideo={false}
-        className="mb-6 animate-bounce"
+        showHalo={true}
+        className="mb-6"
       />
       <h3 className="text-3xl font-bold mb-4 text-center">{title}</h3>
       <p className="text-muted-foreground text-center mb-8 max-w-md">

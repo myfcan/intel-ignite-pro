@@ -72,7 +72,7 @@ export function GuidedPlayground({ config, onComplete }: GuidedPlaygroundProps) 
         <div className="mb-8 text-center">
           <LivAvatar
             size="medium"
-            useVideo={false}
+            showHalo={true}
             className="mx-auto mb-4"
           />
           <h2 className="text-3xl font-bold mb-2">{config.title}</h2>

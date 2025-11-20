@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils';
 
 interface LivAvatarProps {
   size?: 'small' | 'medium' | 'large' | 'xl';
-  useVideo?: boolean;
   isPlaying?: boolean;
   showHalo?: boolean;
+  animate?: boolean;
   className?: string;
 }
 
@@ -24,18 +24,18 @@ const haloSizeClasses = {
 
 export function LivAvatar({ 
   size = 'medium', 
-  useVideo = true,
   isPlaying = false,
   showHalo = false,
+  animate = true,
   className 
 }: LivAvatarProps) {
   return (
-    <div className={cn("relative inline-block", className)}>
+    <div className={cn("relative inline-block", animate && "animate-float", className)}>
       {/* Halo animado */}
       {showHalo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
           <div className={cn(
-            "rounded-full bg-cyan-300/30 blur-3xl halo-pulse",
+            "rounded-full bg-primary/20 blur-3xl halo-pulse",
             haloSizeClasses[size]
           )} />
         </div>
@@ -43,28 +43,17 @@ export function LivAvatar({
 
       {/* Avatar container */}
       <div className={cn(
-        "relative rounded-full overflow-hidden border-2 border-white/40 shadow-xl",
-        "bg-gradient-to-br from-sky-400/20 to-purple-500/20",
+        "relative rounded-full overflow-hidden shadow-elegant transition-smooth",
+        "bg-gradient-to-br from-primary/10 to-accent/10",
+        "border-2 border-primary/30",
         sizeClasses[size],
-        isPlaying && "ring-4 ring-cyan-400/50 animate-pulse-glow"
+        isPlaying && "ring-4 ring-primary/40 animate-pulse-glow shadow-glow"
       )}>
-        {useVideo ? (
-          <video
-            src="/liv-avatar.mp4"
-            poster="/liv-avatar.png"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <img 
-            src="/liv-avatar.png" 
-            alt="Liv" 
-            className="w-full h-full object-cover"
-          />
-        )}
+        <img 
+          src="/liv-avatar.png" 
+          alt="Liv - Assistente de IA" 
+          className="w-full h-full object-cover"
+        />
       </div>
     </div>
   );
