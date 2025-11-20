@@ -217,7 +217,7 @@ export const FillTextLesson = ({ content, onSubmit, submitting, previousAnswers 
                   )}
                   {result.passed && result.isLastLesson && (
                     <p className="text-sm text-green-600 font-semibold mt-2">
-                      🎉 Aguarde a Maia com uma surpresa especial!
+                      🎉 Aguarde a Liv com uma surpresa especial!
                     </p>
                   )}
                 </div>

@@ -7,6 +7,9 @@ interface TransitionCardProps {
   buttonText?: string;
   onContinue: () => void;
   onBack?: () => void;
+  lessonTitle?: string;
+  lessonDescription?: string;
+  isIntroCard?: boolean;
 }
 
 export function TransitionCard({ 
@@ -14,8 +17,20 @@ export function TransitionCard({
   description = 'Agora vamos fixar o que você aprendeu com exercícios práticos.',
   buttonText = '🎯 Ir para Exercícios',
   onContinue,
-  onBack
+  onBack,
+  lessonTitle,
+  lessonDescription,
+  isIntroCard = false
 }: TransitionCardProps) {
+  // Se for card de introdução, usar resumo da aula
+  const displayDescription = isIntroCard && lessonDescription 
+    ? `Nessa aula você vai aprender sobre ${lessonDescription}`
+    : description;
+
+  const displayTitle = isIntroCard 
+    ? "Oi, aqui é a Liv!" 
+    : title;
+
   return (
     <div 
       data-testid="transition-card"
@@ -26,9 +41,9 @@ export function TransitionCard({
         showHalo={true}
         className="mb-6"
       />
-      <h3 className="text-3xl font-bold mb-4 text-center">{title}</h3>
+      <h3 className="text-3xl font-bold mb-4 text-center">{displayTitle}</h3>
       <p className="text-muted-foreground text-center mb-8 max-w-md">
-        {description}
+        {displayDescription}
       </p>
       <div className="space-y-3">
         <Button 

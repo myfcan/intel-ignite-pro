@@ -294,7 +294,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           
           {/* Conteúdo */}
           <div className="p-8">
-            {/* Mensagem da MAIA */}
+            {/* Mensagem da Liv */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
               <h4 className="font-semibold text-foreground mb-3">
                 Complete o Desafio:
@@ -324,7 +324,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               </div>
             </div>
             
-            {/* Feedback da MAIA (dinâmico) - mais discreto */}
+            {/* Feedback da Liv (dinâmico) - mais discreto */}
             {validationState.feedback && userInput && !showAIResult && (
               <div className={`flex items-start gap-2 p-3 rounded-lg text-sm ${
                 validationState.isValid 

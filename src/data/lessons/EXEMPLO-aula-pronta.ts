@@ -36,7 +36,7 @@ export const exemploProdutividade: GuidedLessonData = {
 
       visualContent: `## 🎯 Bem-vindo à Revolução da Produtividade
 
-Olá! Eu sou a MAIA, e hoje vou te mostrar algo incrível.
+Olá! Eu sou a Liv, e hoje vou te mostrar algo incrível.
 
 Você sabia que pessoas comuns estão economizando 15 horas por semana usando IA?
 

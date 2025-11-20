@@ -9,7 +9,7 @@ import { FlashcardsLesson } from './FlashcardsLesson';
 import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { GuidedLesson } from './GuidedLesson';
 import { supabase } from '@/integrations/supabase/client';
-import { MiniMaia } from '@/components/MiniMaia';
+import { MiniLiv } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
 import { fundamentos02 } from '@/data/lessons/fundamentos-02';
 import { fundamentos03 } from '@/data/lessons/fundamentos-03';
@@ -197,12 +197,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const handleMaiaClose = async () => {
     setShowMaia(false);
     
-    // Salvar flag de que a Maia de completion já foi mostrada para não reaparecer
+    // Salvar flag de que a Liv de completion já foi mostrada para não reaparecer
     if (lesson && isLastLesson) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const userId = session.user.id;
-        localStorage.setItem(`maia-completion-${userId}-${lesson.trail_id}`, 'true');
+        localStorage.setItem(`liv-completion-${userId}-${lesson.trail_id}`, 'true');
       }
     }
     
@@ -220,7 +220,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
 
   switch (lesson.lesson_type) {
     case 'guided':
-      // Aulas guiadas com MAIA narradora
+      // Aulas guiadas com Liv narradora
 
       // Função para APENAS marcar aula como completa (sem navegar)
       const markLessonComplete = async () => {
@@ -380,7 +380,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -403,7 +403,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -437,7 +437,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -471,7 +471,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -505,7 +505,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -539,7 +539,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}
@@ -573,7 +573,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       return (
         <>
           {showMaia && isLastLesson && (
-            <MiniMaia
+            <MiniLiv
               message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
               variant="celebration"
               showConfetti={true}

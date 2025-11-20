@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
-import { MiniMaia } from '@/components/MiniMaia';
+import { MiniLiv } from '@/components/MiniMaia';
 import { getMaiaMessage, type MaiaMessageType } from '@/data/maiaMessages';
 import { motion } from 'framer-motion';
 
@@ -238,7 +238,7 @@ const TrailDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {showMaia && (
-        <MiniMaia
+        <MiniLiv
           message={message}
           variant={variant}
           showConfetti={showConfetti}

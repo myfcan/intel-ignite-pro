@@ -80,7 +80,7 @@ export const templateAulaCompleta: GuidedLessonData = {
       type: 'text',
 
       /**
-       * Frase curta da MAIA (exibida no balão de fala)
+       * Frase curta da Liv (exibida no balão de fala)
        * Máximo: 50-60 caracteres
        */
       speechBubbleText: 'Olá! Vamos começar nossa jornada',
@@ -92,7 +92,7 @@ export const templateAulaCompleta: GuidedLessonData = {
        * - Títulos markdown (##) são REMOVIDOS automaticamente do áudio
        * - Emojis são REMOVIDOS automaticamente do áudio
        * - Formatação markdown (**, *, etc.) é REMOVIDA do áudio
-       * - Apenas o texto puro é narrado pela MAIA
+       * - Apenas o texto puro é narrado pela Liv
        *
        * ✅ Pode usar à vontade:
        * - ## Títulos (aparecem na tela, mas não no áudio)
@@ -102,7 +102,7 @@ export const templateAulaCompleta: GuidedLessonData = {
        */
       visualContent: `## 🎯 Introdução e Boas-vindas
 
-Olá! Eu sou a MAIA, sua guia nesta jornada.
+Olá! Eu sou a Liv, sua guia nesta jornada.
 
 Hoje vamos aprender sobre um tema super importante e você vai ver como é mais simples do que parece.
 

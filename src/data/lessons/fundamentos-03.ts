@@ -21,7 +21,7 @@ export const fundamentos03: GuidedLessonData = {
       speechBubbleText: 'A mágica por trás da IA',
       visualContent: `## 🎯 A mágica por trás da IA
 
-Olá, aqui é a MAIA novamente.
+Olá, aqui é a Liv novamente.
 
 Hoje você vai descobrir como a Inteligência Artificial realmente aprende.
 

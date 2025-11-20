@@ -1566,9 +1566,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       <div className="absolute -top-2 -right-12 hidden lg:block">
                         <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
                           <p className="text-xs font-medium text-slate-700 text-center">
-                            Olá, Eu<br />sou a MAIA!
+                            Olá, Eu<br />sou a Liv!
                           </p>
-                          {/* Rabinho do balão apontando para a MAIA */}
+                          {/* Rabinho do balão apontando para a Liv */}
                           <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
                         </div>
                       </div>
@@ -1702,7 +1702,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         </div>
       </div>
 
-      {/* MAIA Mobile - versão premium responsiva */}
+      {/* Liv Mobile - versão premium responsiva */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
           <div className="flex items-center gap-3">
