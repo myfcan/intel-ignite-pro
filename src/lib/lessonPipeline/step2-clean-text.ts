@@ -2,8 +2,10 @@ import { Step1Output, Step2Output } from './types';
 
 /**
  * STEP 2: CRIAÇÃO DO TEXTO LIMPO (PARA ÁUDIO)
- * - Remove emojis, markdown, imagens
- * - Remove CAIXA ALTA
+ * - Remove emojis e formatação markdown (**negrito**, *itálico*)
+ * - Remove marcadores de título (##) MAS MANTÉM o texto para narração
+ * - Remove imagens e separadores decorativos
+ * - Normaliza CAIXA ALTA
  * - Limpa múltiplos espaços
  * - Gera audioText único (concatenar todas as seções)
  */
@@ -37,17 +39,12 @@ export async function step2CleanText(input: Step1Output): Promise<Step2Output> {
 
     console.log(`   Limpando seção ${i + 1}/${input.sections.length}...`);
 
-    // 0. Remover título da seção (primeira linha se for markdown header)
-    // Remove apenas a primeira ocorrência de título (# Título, ## Título, etc.)
-    cleanText = cleanText.replace(/^#{1,6}\s+.+$/m, '');
-    cleanText = cleanText.trim();
-
     // 1. Remover emojis
     cleanText = cleanText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '');
-    
-    // 2. Remover markdown
-    // 2.1. Remover linhas de título (headings com ##) completamente
-    cleanText = cleanText.replace(/^#{1,6}\s+.*$/gm, '');
+
+    // 2. Remover markdown (MANTENDO títulos para narração)
+    // 2.1. Remover marcadores de título (##) mas MANTER o texto
+    cleanText = cleanText.replace(/^#{1,6}\s+/gm, '');
     // 2.2. Remover outros formatos markdown
     cleanText = cleanText.replace(/(\*\*|__)(.*?)\1/g, '$2');
     cleanText = cleanText.replace(/(\*|_)(.*?)\1/g, '$2');
