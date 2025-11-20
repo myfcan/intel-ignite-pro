@@ -148,7 +148,7 @@ export function FillInBlanksExercise({
                   </div>
 
                   {/* Hint sempre visível antes da submissão */}
-                  {!submitted && sentence.hint && (
+                  {!submitted && (sentence.hints || sentence.hint) && (
                     <motion.div
                       className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl"
                       initial={{ opacity: 0, y: -10 }}
@@ -156,7 +156,7 @@ export function FillInBlanksExercise({
                       transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     >
                       <p className="text-sm md:text-base text-blue-900 dark:text-blue-100">
-                        💡 <span className="font-semibold">Dica:</span> {sentence.hint}
+                        💡 <span className="font-semibold">Dica:</span> {sentence.hints ? sentence.hints.join(' • ') : sentence.hint}
                       </p>
                     </motion.div>
                   )}
