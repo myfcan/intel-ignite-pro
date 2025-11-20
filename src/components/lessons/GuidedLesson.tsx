@@ -1543,9 +1543,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       {/* Liv com animações otimizadas */}
                       <LivAvatar
                         size="xl"
-                        useVideo={true}
                         isPlaying={isPlaying && isAudioEnabled}
                         showHalo={isPlaying && isAudioEnabled}
+                        animate={isPlaying && isAudioEnabled}
                         className={`
                           animate-fly-in-rasante
                           transition-all duration-300 ease-in-out
@@ -1709,8 +1709,8 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             <div className="relative flex-shrink-0">
               <LivAvatar
                 size="small"
-                useVideo={false}
                 isPlaying={isPlaying && isAudioEnabled}
+                animate={false}
                 className={`
                   animate-fly-in-rasante
                   ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
@@ -1971,9 +1971,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             <div className="flex justify-center mb-6">
               <LivAvatar
                 size="large"
-                useVideo={true}
                 showHalo={true}
-                className="border-4 border-cyan-400/30 shadow-xl animate-float rounded-full overflow-hidden"
+                animate={true}
+                className="border-4 border-primary/30 shadow-xl animate-float rounded-full overflow-hidden"
               />
             </div>
             

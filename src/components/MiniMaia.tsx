@@ -97,8 +97,8 @@ export const MiniMaia = ({
             <div className={`relative ${isAnimating ? getAnimationClass() : 'animate-float'}`}>
               <LivAvatar 
                 size="xl"
-                useVideo={true}
                 showHalo={variant === 'celebration'}
+                animate={true}
               />
               
               <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -182,7 +182,7 @@ export const MiniMaiaFloating = ({
           <div className="w-12 h-12 flex-shrink-0">
             <LivAvatar 
               size="small"
-              useVideo={false}
+              animate={false}
               className="animate-float"
             />
           </div>

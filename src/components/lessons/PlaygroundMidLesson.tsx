@@ -272,7 +272,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             <div className="flex items-center gap-4">
               <LivAvatar
                 size="medium"
-                useVideo={false}
+                showHalo={true}
                 className="rounded-full border-4 border-white shadow-lg flex-shrink-0"
               />
               <div className="flex-1">

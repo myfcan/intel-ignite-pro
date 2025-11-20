@@ -21,8 +21,8 @@ export function PlaygroundCallCard({ title, description, onOpen, onSkip }: Playg
         <div className="flex justify-center mb-6">
           <LivAvatar 
             size="medium"
-            useVideo={false}
             showHalo={true}
+            animate={true}
           />
         </div>
 
