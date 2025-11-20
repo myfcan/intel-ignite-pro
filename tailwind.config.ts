@@ -77,6 +77,43 @@ export default {
           600: "hsl(330 81% 55%)",
           700: "hsl(330 79% 46%)",
         },
+        trail: {
+          fundamentos: {
+            primary: "hsl(var(--trail-fundamentos-primary))",
+            accent: "hsl(var(--trail-fundamentos-accent))",
+            glow: "hsl(var(--trail-fundamentos-glow))",
+          },
+          "dia-a-dia": {
+            primary: "hsl(var(--trail-dia-a-dia-primary))",
+            accent: "hsl(var(--trail-dia-a-dia-accent))",
+            glow: "hsl(var(--trail-dia-a-dia-glow))",
+          },
+          negocios: {
+            primary: "hsl(var(--trail-negocios-primary))",
+            accent: "hsl(var(--trail-negocios-accent))",
+            glow: "hsl(var(--trail-negocios-glow))",
+          },
+          renda: {
+            primary: "hsl(var(--trail-renda-primary))",
+            accent: "hsl(var(--trail-renda-accent))",
+            glow: "hsl(var(--trail-renda-glow))",
+          },
+          criativa: {
+            primary: "hsl(var(--trail-criativa-primary))",
+            accent: "hsl(var(--trail-criativa-accent))",
+            glow: "hsl(var(--trail-criativa-glow))",
+          },
+          etica: {
+            primary: "hsl(var(--trail-etica-primary))",
+            accent: "hsl(var(--trail-etica-accent))",
+            glow: "hsl(var(--trail-etica-glow))",
+          },
+          automacoes: {
+            primary: "hsl(var(--trail-automacoes-primary))",
+            accent: "hsl(var(--trail-automacoes-accent))",
+            glow: "hsl(var(--trail-automacoes-glow))",
+          },
+        },
       },
       backgroundImage: {
         "gradient-hero": "linear-gradient(135deg, hsl(195 65% 65%) 0%, hsl(220 50% 65%) 25%, hsl(270 45% 70%) 50%, hsl(310 50% 70%) 75%, hsl(320 50% 70%) 100%)",
