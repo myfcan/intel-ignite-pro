@@ -42,6 +42,18 @@ export function FillInBlanksExercise({
   const [showHints, setShowHints] = useState<Record<string, boolean>>({});
   const [hintsUsed, setHintsUsed] = useState<Set<string>>(new Set());
 
+  // 🐛 DEBUG: Ver dados recebidos
+  console.log('🔍 [FillInBlanksExercise] Sentences recebidas:', sentences);
+  sentences.forEach((s, i) => {
+    console.log(`🔍 [FillInBlanksExercise] Sentence ${i}:`, {
+      id: s.id,
+      hasHints: !!s.hints,
+      hintsArray: s.hints,
+      hasHint: !!s.hint,
+      hintString: s.hint
+    });
+  });
+
   // Validação defensiva
   if (!sentences || sentences.length === 0) {
     return (
