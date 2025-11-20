@@ -5,6 +5,7 @@ interface LivAvatarProps {
   isPlaying?: boolean;
   showHalo?: boolean;
   animate?: boolean;
+  enableHover?: boolean;
   className?: string;
 }
 
@@ -27,10 +28,15 @@ export function LivAvatar({
   isPlaying = false,
   showHalo = false,
   animate = true,
+  enableHover = true,
   className 
 }: LivAvatarProps) {
   return (
-    <div className={cn("relative inline-block", animate && "animate-float", className)}>
+    <div className={cn(
+      "relative inline-block avatar-hover-container group",
+      animate && "animate-float",
+      className
+    )}>
       {/* Halo animado */}
       {showHalo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
@@ -41,18 +47,97 @@ export function LivAvatar({
         </div>
       )}
 
+      {/* Ondas de ripple no hover */}
+      {enableHover && (
+        <>
+          <div className="avatar-ripple" style={{ animationDelay: '0s' }} />
+          <div className="avatar-ripple" style={{ animationDelay: '0.5s' }} />
+          <div className="avatar-ripple" style={{ animationDelay: '1s' }} />
+        </>
+      )}
+
+      {/* Partículas flutuantes */}
+      {enableHover && (
+        <>
+          <div 
+            className="avatar-particle bg-primary" 
+            style={{ 
+              top: '20%', 
+              left: '10%',
+              animationDelay: '0s',
+              '--tx': '-30px',
+              '--ty': '-40px'
+            } as React.CSSProperties} 
+          />
+          <div 
+            className="avatar-particle bg-accent" 
+            style={{ 
+              top: '30%', 
+              right: '15%',
+              animationDelay: '0.3s',
+              '--tx': '40px',
+              '--ty': '-50px'
+            } as React.CSSProperties} 
+          />
+          <div 
+            className="avatar-particle bg-primary" 
+            style={{ 
+              bottom: '25%', 
+              left: '20%',
+              animationDelay: '0.6s',
+              '--tx': '-35px',
+              '--ty': '45px'
+            } as React.CSSProperties} 
+          />
+          <div 
+            className="avatar-particle bg-accent" 
+            style={{ 
+              bottom: '30%', 
+              right: '10%',
+              animationDelay: '0.9s',
+              '--tx': '45px',
+              '--ty': '40px'
+            } as React.CSSProperties} 
+          />
+          <div 
+            className="avatar-particle bg-primary/70" 
+            style={{ 
+              top: '50%', 
+              left: '5%',
+              animationDelay: '1.2s',
+              '--tx': '-25px',
+              '--ty': '-30px'
+            } as React.CSSProperties} 
+          />
+          <div 
+            className="avatar-particle bg-accent/70" 
+            style={{ 
+              top: '50%', 
+              right: '5%',
+              animationDelay: '1.5s',
+              '--tx': '30px',
+              '--ty': '-35px'
+            } as React.CSSProperties} 
+          />
+        </>
+      )}
+
       {/* Avatar container */}
       <div className={cn(
-        "relative rounded-full overflow-hidden shadow-elegant transition-smooth",
+        "relative rounded-full overflow-hidden shadow-elegant transition-smooth avatar-glow",
         "bg-gradient-to-br from-primary/10 to-accent/10",
         "border-2 border-primary/30",
         sizeClasses[size],
-        isPlaying && "ring-4 ring-primary/40 animate-pulse-glow shadow-glow"
+        isPlaying && "ring-4 ring-primary/40 animate-pulse-glow shadow-glow",
+        enableHover && "group-hover:scale-110 group-hover:border-primary/50"
       )}>
         <img 
           src="/liv-avatar.png" 
           alt="Liv - Assistente de IA" 
-          className="w-full h-full object-cover"
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-500",
+            enableHover && "group-hover:scale-105"
+          )}
         />
       </div>
     </div>
