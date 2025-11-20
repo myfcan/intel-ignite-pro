@@ -72,6 +72,42 @@ All colors MUST be HSL.
     --gray-100: 240 5% 96%;
     --gray-50: 0 0% 98%;
 
+    /* Trail Theme Colors - Avatar variations */
+    /* Fundamentos de IA - Azul/Índigo/Roxo */
+    --trail-fundamentos-primary: 258 90% 66%;
+    --trail-fundamentos-accent: 220 85% 65%;
+    --trail-fundamentos-glow: 258 90% 76%;
+
+    /* IA no Dia a Dia - Ciano/Teal/Azul */
+    --trail-dia-a-dia-primary: 189 85% 58%;
+    --trail-dia-a-dia-accent: 174 72% 56%;
+    --trail-dia-a-dia-glow: 189 85% 68%;
+
+    /* IA nos Negócios - Verde/Esmeralda */
+    --trail-negocios-primary: 158 84% 39%;
+    --trail-negocios-accent: 142 76% 36%;
+    --trail-negocios-glow: 158 84% 49%;
+
+    /* Renda Extra com IA - Laranja/Âmbar */
+    --trail-renda-primary: 38 92% 50%;
+    --trail-renda-accent: 25 95% 53%;
+    --trail-renda-glow: 38 92% 60%;
+
+    /* IA Criativa - Rosa/Magenta/Roxo */
+    --trail-criativa-primary: 330 81% 60%;
+    --trail-criativa-accent: 280 70% 68%;
+    --trail-criativa-glow: 330 81% 70%;
+
+    /* IA Ética - Azul Escuro/Índigo */
+    --trail-etica-primary: 218 89% 61%;
+    --trail-etica-accent: 236 72% 66%;
+    --trail-etica-glow: 218 89% 71%;
+
+    /* Automações com IA - Ciano/Elétrico */
+    --trail-automacoes-primary: 195 92% 58%;
+    --trail-automacoes-accent: 210 98% 66%;
+    --trail-automacoes-glow: 195 92% 68%;
+
     /* Gradientes harmoniosos - 5 steps graduais */
     --gradient-hero: linear-gradient(135deg,
       hsl(195, 65%, 65%) 0%,
