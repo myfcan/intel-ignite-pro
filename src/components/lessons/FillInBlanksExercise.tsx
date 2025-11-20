@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Check, X, HelpCircle } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -39,8 +39,6 @@ export function FillInBlanksExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
-  const [showHints, setShowHints] = useState<Record<string, boolean>>({});
-  const [hintsUsed, setHintsUsed] = useState<Set<string>>(new Set());
 
   // Validação defensiva
   if (!sentences || sentences.length === 0) {
@@ -55,16 +53,6 @@ export function FillInBlanksExercise({
 
   const handleAnswerChange = (sentenceId: string, value: string) => {
     setAnswers({ ...answers, [sentenceId]: value });
-  };
-
-  const toggleHint = (sentenceId: string) => {
-    const newShowHints = { ...showHints, [sentenceId]: !showHints[sentenceId] };
-    setShowHints(newShowHints);
-    
-    // Marcar que o hint foi usado
-    if (newShowHints[sentenceId]) {
-      setHintsUsed(prev => new Set([...prev, sentenceId]));
-    }
   };
 
   const handleSubmit = () => {
@@ -83,12 +71,12 @@ export function FillInBlanksExercise({
 
     const correctCount = Object.values(newResults).filter(Boolean).length;
     const score = Math.round((correctCount / sentences.length) * 100);
-    const isPerfect = correctCount === sentences.length && hintsUsed.size === 0;
-    
-    // Confetti especial para pontuação perfeita sem dicas
+    const isPerfect = correctCount === sentences.length;
+
+    // Confetti especial para pontuação perfeita
     if (isPerfect) {
       console.log('🏆 [PERFECT] Acertou tudo de primeira!');
-      
+
       confetti({
         particleCount: 100,
         spread: 70,
@@ -96,14 +84,14 @@ export function FillInBlanksExercise({
         colors: ['#FFD700', '#FFA500', '#FF6347', '#FFFF00', '#FFD700']
       });
     }
-    
+
     // Chamar onComplete IMEDIATAMENTE
     onComplete(score);
   };
 
   const correctCount = Object.values(results).filter(Boolean).length;
   const allAnswered = sentences.every(s => answers[s.id]?.trim());
-  const isPerfect = submitted && correctCount === sentences.length && hintsUsed.size === 0;
+  const isPerfect = submitted && correctCount === sentences.length;
 
   const getFeedbackMessage = () => {
     if (correctCount === sentences.length) return feedback.allCorrect;
@@ -157,35 +145,21 @@ export function FillInBlanksExercise({
                 <div className="space-y-5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-base font-semibold text-primary">Questão {index + 1}</span>
-                    {(sentence.hints || sentence.hint) && (
-                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleHint(sentence.id)}
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <HelpCircle className="h-5 w-5" />
-                        </Button>
-                      </motion.div>
-                    )}
                   </div>
 
-                  <AnimatePresence>
-                    {showHints[sentence.id] && (sentence.hints || sentence.hint) && (
-                      <motion.div 
-                        className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl"
-                        initial={{ opacity: 0, height: 0, y: -10 }}
-                        animate={{ opacity: 1, height: 'auto', y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -10 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                      >
-                        <p className="text-sm md:text-base text-blue-900 dark:text-blue-100">
-                          💡 <span className="font-semibold">Dica:</span> {sentence.hints ? sentence.hints.join(' • ') : sentence.hint}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Hint sempre visível antes da submissão */}
+                  {!submitted && sentence.hint && (
+                    <motion.div
+                      className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    >
+                      <p className="text-sm md:text-base text-blue-900 dark:text-blue-100">
+                        💡 <span className="font-semibold">Dica:</span> {sentence.hint}
+                      </p>
+                    </motion.div>
+                  )}
 
                   <div className="text-base md:text-lg leading-relaxed">
                     <div className="flex flex-wrap items-center gap-3">
@@ -357,7 +331,7 @@ export function FillInBlanksExercise({
                       Perfeito!
                     </h3>
                     <p className="text-sm font-medium text-foreground/80">
-                      Você acertou tudo de primeira sem usar dicas!
+                      Você acertou todas as questões!
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-3">
                       <div className="px-4 py-1.5 bg-yellow-500/20 border border-yellow-500/40 rounded-full text-xs font-bold text-yellow-700 dark:text-yellow-300">
