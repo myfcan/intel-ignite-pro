@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
-import { useAvatarState } from '@/contexts/AvatarStateContext';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
@@ -31,11 +30,10 @@ import { updateMissionProgress } from '@/lib/updateMissionProgress';
  * + Exercícios finais com feedback rico
  * + Resumo interativo com conquistas
  *
- * FORCE REBUILD - 2025-01-21 15:42:00 UTC
+ * FORCE REBUILD - 2025-01-22 16:45 - Cache busting
  */
 export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
-  const { setState: setAvatarState } = useAvatarState();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -441,13 +439,11 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
     audio.onplay = () => {
       console.log('▶️ [AUDIO] Play iniciado');
       setIsPlaying(true);
-      setAvatarState('speaking');
     };
 
     audio.onpause = () => {
       console.log('⏸️ [AUDIO] Pausado');
       setIsPlaying(false);
-      setAvatarState('idle');
     };
     
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -1434,11 +1430,9 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
             return (
               <Card key={idx} className="p-6">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <ReactMarkdown>
-                    {sectionContent}
-                  </ReactMarkdown>
-                </div>
+                <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none">
+                  {sectionContent}
+                </ReactMarkdown>
               </Card>
             );
           })}
