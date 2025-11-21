@@ -30,6 +30,8 @@ import { updateMissionProgress } from '@/lib/updateMissionProgress';
  * + Playground interativo inline com IA real (fase 2)
  * + Exercícios finais com feedback rico
  * + Resumo interativo com conquistas
+ *
+ * FORCE REBUILD - 2025-01-21 15:30
  */
 export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
