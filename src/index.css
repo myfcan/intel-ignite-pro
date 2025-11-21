@@ -616,39 +616,3 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 
-/* Liv Blink Animation */
-@keyframes liv-blink {
-  0%, 90%, 100% { 
-    transform: scaleY(1);
-    opacity: 0;
-  }
-  93%, 96% { 
-    transform: scaleY(0.1);
-    opacity: 1;
-  }
-}
-
-.liv-blink-container::before,
-.liv-blink-container::after {
-  content: '';
-  position: absolute;
-  width: 12%;
-  height: 8px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6));
-  border-radius: 0 0 50% 50%;
-  z-index: 10;
-  opacity: 0;
-  transform-origin: top center;
-  animation: liv-blink 5s ease-in-out infinite;
-}
-
-.liv-blink-container::before {
-  top: 28%;
-  left: 35%;
-  animation-delay: 0.1s;
-}
-
-.liv-blink-container::after {
-  top: 28%;
-  right: 35%;
-}
