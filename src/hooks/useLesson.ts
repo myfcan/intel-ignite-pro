@@ -20,6 +20,7 @@ export interface Lesson {
   order_index: number;
   audio_url?: string | null;
   audio_urls?: string[] | null;
+  model?: string;
   user_status?: string;
   user_score?: number;
   user_answers?: any;
