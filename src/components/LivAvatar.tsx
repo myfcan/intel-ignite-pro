@@ -8,6 +8,7 @@ interface LivAvatarProps {
   enableHover?: boolean;
   className?: string;
   theme?: 'fundamentos' | 'dia-a-dia' | 'negocios' | 'renda' | 'criativa' | 'etica' | 'automacoes' | 'default';
+  state?: 'idle' | 'thinking' | 'speaking' | 'listening';
 }
 
 const sizeClasses = {
@@ -31,7 +32,8 @@ export function LivAvatar({
   animate = true,
   enableHover = true,
   className,
-  theme = 'default'
+  theme = 'default',
+  state = 'idle'
 }: LivAvatarProps) {
   // Define theme colors based on trail
   const getThemeColors = () => {
@@ -88,9 +90,25 @@ export function LivAvatar({
   };
 
   const themeColors = getThemeColors();
+  
+  // Animações baseadas no estado
+  const getStateAnimation = () => {
+    switch(state) {
+      case 'thinking':
+        return 'animate-[avatar-thinking_2s_ease-in-out_infinite]';
+      case 'speaking':
+        return 'animate-[avatar-speaking-glow_1.5s_ease-in-out_infinite]';
+      case 'listening':
+        return 'animate-[avatar-breathe_4s_ease-in-out_infinite]';
+      case 'idle':
+      default:
+        return 'animate-[avatar-idle-glow_3s_ease-in-out_infinite]';
+    }
+  };
+
   return (
     <div className={cn(
-      "relative inline-block avatar-hover-container group",
+      "relative inline-block avatar-hover-container group transition-all duration-500",
       animate && "animate-float",
       className
     )}>
@@ -190,15 +208,23 @@ export function LivAvatar({
       {/* Avatar container */}
       <div 
         className={cn(
-          "relative rounded-full overflow-hidden shadow-elegant transition-smooth avatar-glow",
+          "relative rounded-full overflow-hidden shadow-elegant transition-all duration-700",
           sizeClasses[size],
-          enableHover && "group-hover:scale-110"
+          getStateAnimation(),
+          enableHover && "group-hover:scale-110",
+          state === 'thinking' && "scale-[1.02]",
+          state === 'speaking' && "scale-[1.05]"
         )}
         style={{
           background: `linear-gradient(135deg, ${themeColors.primary}1A 0%, ${themeColors.accent}1A 100%)`,
           borderWidth: '2px',
           borderStyle: 'solid',
-          borderColor: `${themeColors.primary}4D`,
+          borderColor: state === 'thinking' 
+            ? `${themeColors.accent}80` 
+            : state === 'speaking'
+            ? `${themeColors.primary}CC`
+            : `${themeColors.primary}4D`,
+          transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
           ...(isPlaying && {
             boxShadow: `0 0 0 4px ${themeColors.primary}66, 0 0 40px ${themeColors.glow}66`
           })
@@ -208,8 +234,10 @@ export function LivAvatar({
           src="/liv-avatar.png" 
           alt="Liv - Assistente de IA" 
           className={cn(
-            "w-full h-full object-cover transition-transform duration-500",
-            enableHover && "group-hover:scale-105"
+            "w-full h-full object-cover transition-all duration-700",
+            enableHover && "group-hover:scale-105",
+            state === 'thinking' && "brightness-110",
+            state === 'speaking' && "brightness-105 saturate-110"
           )}
         />
       </div>
