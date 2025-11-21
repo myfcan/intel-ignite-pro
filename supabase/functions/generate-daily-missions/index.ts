@@ -169,6 +169,19 @@ Deno.serve(async (req) => {
 
     console.log('✅ Geração concluída:', result);
 
+    // 🔔 Enviar notificações push para usuários
+    try {
+      console.log('📢 Enviando notificações push...');
+      const { error: notifError } = await supabase.functions.invoke('send-daily-mission-notifications');
+      if (notifError) {
+        console.error('⚠️ Erro ao enviar notificações (não crítico):', notifError);
+      } else {
+        console.log('✅ Notificações enviadas com sucesso');
+      }
+    } catch (notifError) {
+      console.error('⚠️ Erro ao enviar notificações (não crítico):', notifError);
+    }
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

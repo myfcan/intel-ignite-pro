@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.pipeline-executor]
 verify_jwt = false
+
+[functions.send-daily-mission-notifications]
+verify_jwt = false
