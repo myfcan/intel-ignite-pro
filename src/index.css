@@ -562,6 +562,56 @@ All colors MUST be HSL.
   }
 }
 
+/* Avatar thinking animation - pulso suave */
+@keyframes avatar-thinking {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.95;
+  }
+}
+
+/* Avatar breathing - respiração natural */
+@keyframes avatar-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+/* Glow intenso quando falando */
+@keyframes avatar-speaking-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4),
+                0 0 40px hsl(var(--primary) / 0.3),
+                0 0 60px hsl(var(--primary) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.6),
+                0 0 60px hsl(var(--primary) / 0.5),
+                0 0 90px hsl(var(--primary) / 0.3);
+  }
+}
+
+/* Brilho suave idle */
+@keyframes avatar-idle-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.2),
+                0 0 30px hsl(var(--primary) / 0.15),
+                0 0 45px hsl(var(--primary) / 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3),
+                0 0 40px hsl(var(--primary) / 0.2),
+                0 0 60px hsl(var(--primary) / 0.15);
+  }
+}
+
 @keyframes ripple-wave {
   0% {
     transform: scale(1);
