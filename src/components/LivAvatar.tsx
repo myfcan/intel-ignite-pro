@@ -204,16 +204,14 @@ export function LivAvatar({
           })
         }}
       >
-        <div className="relative w-full h-full liv-blink-container">
-          <img 
-            src="/liv-avatar.png" 
-            alt="Liv - Assistente de IA" 
-            className={cn(
-              "w-full h-full object-cover transition-transform duration-500",
-              enableHover && "group-hover:scale-105"
-            )}
-          />
-        </div>
+        <img 
+          src="/liv-avatar.png" 
+          alt="Liv - Assistente de IA" 
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-500",
+            enableHover && "group-hover:scale-105"
+          )}
+        />
       </div>
     </div>
   );
