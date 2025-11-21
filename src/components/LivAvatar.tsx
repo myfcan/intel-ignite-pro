@@ -13,17 +13,17 @@ interface LivAvatarProps {
 }
 
 const sizeClasses = {
-  small: 'w-14 h-14',
-  medium: 'w-28 h-28',
-  large: 'w-32 h-32',
-  xl: 'w-44 h-44'
+  small: 'w-12 h-12',
+  medium: 'w-24 h-24',
+  large: 'w-28 h-28',
+  xl: 'w-40 h-40'
 };
 
 const haloSizeClasses = {
-  small: 'w-20 h-20',
-  medium: 'w-36 h-36',
-  large: 'w-40 h-40',
-  xl: 'w-52 h-52'
+  small: 'w-24 h-24',
+  medium: 'w-44 h-44',
+  large: 'w-52 h-52',
+  xl: 'w-64 h-64'
 };
 
 export function LivAvatar({ 
@@ -114,7 +114,7 @@ export function LivAvatar({
 
   return (
     <div className={cn(
-      "relative inline-block avatar-hover-container group transition-all duration-500",
+      "relative inline-block avatar-hover-container group transition-all duration-500 pt-2",
       animate && "animate-float",
       className
     )}>
