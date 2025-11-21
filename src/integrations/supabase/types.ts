@@ -190,6 +190,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           lesson_type: string | null
+          model: string | null
           order_index: number
           passing_score: number | null
           progresso_criacao: number | null
@@ -215,6 +216,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
+          model?: string | null
           order_index: number
           passing_score?: number | null
           progresso_criacao?: number | null
@@ -240,6 +242,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
+          model?: string | null
           order_index?: number
           passing_score?: number | null
           progresso_criacao?: number | null
