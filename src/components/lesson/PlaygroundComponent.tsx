@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, RotateCw, Save, Sparkles, Zap } from "lucide-react";
+import { useAvatarState } from "@/contexts/AvatarStateContext";
 
 interface PlaygroundComponentProps {
   lessonId: string;
@@ -33,6 +34,7 @@ export const PlaygroundComponent = ({
   ],
 }: PlaygroundComponentProps) => {
   const { toast } = useToast();
+  const { setState } = useAvatarState();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [response, setResponse] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ export const PlaygroundComponent = ({
 
   const handleGenerate = async () => {
     setLoading(true);
+    setState('thinking');
     try {
       // Build prompt from form data
       const prompt = Object.entries(formData)
@@ -67,13 +70,18 @@ export const PlaygroundComponent = ({
 
       setResponse(data.response);
       setInteractionsRemaining(data.remaining);
+      setState('speaking');
 
       toast({
         title: "Gerado com sucesso!",
         description: data.cached ? "Resposta obtida do cache" : "Nova resposta gerada",
       });
+
+      // Retornar para idle após 2 segundos
+      setTimeout(() => setState('idle'), 2000);
     } catch (error: any) {
       console.error("Error generating:", error);
+      setState('idle');
       toast({
         title: "Erro ao gerar",
         description: error.message || "Tente novamente",
