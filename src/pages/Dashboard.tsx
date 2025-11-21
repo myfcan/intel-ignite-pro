@@ -8,6 +8,7 @@ import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { TrailBand } from "@/components/TrailBand";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
+import { NotificationPrompt } from "@/components/NotificationPrompt";
 
 interface User {
   id: string;
@@ -387,6 +388,9 @@ const Dashboard = () => {
         </div>
 
       </main>
+
+      {/* Notification Prompt */}
+      <NotificationPrompt />
     </div>
   );
 };
