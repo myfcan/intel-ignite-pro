@@ -643,12 +643,12 @@ All colors MUST be HSL.
 }
 
 .liv-blink-container::before {
-  top: 38%;
-  left: 32%;
+  top: 28%;
+  left: 35%;
   animation-delay: 0.1s;
 }
 
 .liv-blink-container::after {
-  top: 38%;
-  right: 32%;
+  top: 28%;
+  right: 35%;
 }
