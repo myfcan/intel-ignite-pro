@@ -455,12 +455,13 @@ export default function AdminPipelineCreateBatch() {
   };
 
   // Função para selecionar modelo pedagógico (sem carregar template JSON)
-  const selectModel = (model: 'v1' | 'v2' | 'v3') => {
+  const selectModel = (model: 'v1' | 'v2' | 'v3' | 'v4') => {
     setSelectedTemplate(model);
     const descriptions = {
       v1: '🎮 Modelo V1 selecionado: Aula Interativa com Playground no Meio',
       v2: '📚 Modelo V2 selecionado: Modelo Linear Simples (sem playground)',
-      v3: '🎨 Modelo V3 selecionado: Apresentação Visual com Slides + Playground Final'
+      v3: '🎨 Modelo V3 selecionado: Apresentação Visual com Slides + Playground Final',
+      v4: '🚀 Modelo V4 selecionado: Playground Real Interativo com IA'
     };
     toast({
       title: "✓ Modelo selecionado",
@@ -563,6 +564,14 @@ export default function AdminPipelineCreateBatch() {
                   disabled={isSubmitting}
                 >
                   🎨 V3 (Slides + Playground Final)
+                </Button>
+                <Button
+                  onClick={() => selectModel('v4')}
+                  variant={selectedTemplate === 'v4' ? 'default' : 'outline'}
+                  className={`flex-1 ${selectedTemplate === 'v4' ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                  disabled={isSubmitting}
+                >
+                  🚀 V4 (Playground Real)
                 </Button>
               </div>
               {selectedTemplate && (

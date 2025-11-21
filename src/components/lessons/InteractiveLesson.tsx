@@ -8,6 +8,7 @@ import { QuizPlaygroundLesson } from './QuizPlaygroundLesson';
 import { FlashcardsLesson } from './FlashcardsLesson';
 import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { GuidedLesson } from './GuidedLesson';
+import { GuidedLessonV4 } from './GuidedLessonV4';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniLiv } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
@@ -387,16 +388,29 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <GuidedLesson
-            lessonData={guidedLessonData}
-            onComplete={handleGuidedComplete}
-            onMarkComplete={markLessonComplete}
-            audioUrl={audioUrl}
-            wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
-            nextLessonId={nextLessonData?.id}
-            nextLessonType={nextLessonData?.lesson_type}
-            trailId={lesson.trail_id}
-          />
+          {lesson.model === 'v4' ? (
+            <GuidedLessonV4
+              lessonData={guidedLessonData}
+              onComplete={handleGuidedComplete}
+              onMarkComplete={markLessonComplete}
+              audioUrl={audioUrl}
+              wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
+              nextLessonId={nextLessonData?.id}
+              nextLessonType={nextLessonData?.lesson_type}
+              trailId={lesson.trail_id}
+            />
+          ) : (
+            <GuidedLesson
+              lessonData={guidedLessonData}
+              onComplete={handleGuidedComplete}
+              onMarkComplete={markLessonComplete}
+              audioUrl={audioUrl}
+              wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
+              nextLessonId={nextLessonData?.id}
+              nextLessonType={nextLessonData?.lesson_type}
+              trailId={lesson.trail_id}
+            />
+          )}
         </>
       );
     case 'fill-blanks':
