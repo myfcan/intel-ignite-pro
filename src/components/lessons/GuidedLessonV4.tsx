@@ -7,6 +7,7 @@ import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
+import { PlaygroundRealChat } from './PlaygroundRealChat';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
@@ -49,7 +50,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   const [showPlaygroundCall, setShowPlaygroundCall] = useState(false);
   const [showPlaygroundMid, setShowPlaygroundMid] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<
-    'audio' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
+    'audio' | 'playground-real' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
   >('audio');
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
@@ -1127,9 +1128,10 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           description: "Você dominou o conteúdo! Agora vamos praticar!",
           duration: 4000,
         });
-        
-        setCurrentPhase('transition');
-        console.log('🎯 [AUDIO-ENDED] Indo para transição (tem exercícios)');
+
+        // 🚀 V4: Ir para playground interativo antes dos exercícios
+        setCurrentPhase('playground-real');
+        console.log('🎯 [AUDIO-ENDED] Indo para playground interativo (V4)');
       } else {
         setShowEndCard(true);
         console.log('🎯 [AUDIO-ENDED] Mostrando end card');
@@ -1397,7 +1399,50 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   const handleContinueClick = () => {
     onComplete({ audioProgress: maxAudioProgress });
   };
-  
+
+  // 🚀 Renderizar playground real interativo (V4)
+  if (currentPhase === 'playground-real') {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        {/* Renderizar conteúdo das seções (scroll livre) */}
+        <div className="max-w-4xl mx-auto space-y-6">
+          {lessonData.sections.map((section, idx) => {
+            const sectionContent = section.visualContent || section.content;
+            if (!sectionContent) return null;
+
+            return (
+              <Card key={idx} className="p-6">
+                <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none">
+                  {sectionContent}
+                </ReactMarkdown>
+              </Card>
+            );
+          })}
+
+          {/* Playground Chat Inline */}
+          <PlaygroundRealChat
+            lessonId={lessonData.id}
+            onComplete={() => {
+              console.log('✅ [PLAYGROUND-REAL] Usuário completou interação');
+              setCurrentPhase('transition');
+            }}
+          />
+
+          {/* Botão para pular playground */}
+          <div className="flex justify-center mt-8">
+            <Button
+              onClick={() => setCurrentPhase('transition')}
+              variant="outline"
+              className="min-w-[200px]"
+            >
+              Pular para Exercícios →
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar fase de transição
     if (currentPhase === 'transition') {
       return (
