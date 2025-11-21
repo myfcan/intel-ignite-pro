@@ -1432,9 +1432,11 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
             return (
               <Card key={idx} className="p-6">
-                <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none">
-                  {sectionContent}
-                </ReactMarkdown>
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <ReactMarkdown>
+                    {sectionContent}
+                  </ReactMarkdown>
+                </div>
               </Card>
             );
           })}

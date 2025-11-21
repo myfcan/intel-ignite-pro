@@ -237,14 +237,6 @@ const TrailDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {showMaia && (
-        <MiniLiv
-          message={message}
-          variant={variant}
-          showConfetti={showConfetti}
-          onClose={handleMaiaClose}
-        />
-      )}
       {/* Header - Card com Gradiente */}
       <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Botão Voltar */}
