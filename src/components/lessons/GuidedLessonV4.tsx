@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
+import { useAvatarState } from '@/contexts/AvatarStateContext';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
@@ -31,6 +32,7 @@ import { updateMissionProgress } from '@/lib/updateMissionProgress';
  */
 export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
+  const { setState: setAvatarState } = useAvatarState();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -436,11 +438,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
     audio.onplay = () => {
       console.log('▶️ [AUDIO] Play iniciado');
       setIsPlaying(true);
+      setAvatarState('speaking');
     };
 
     audio.onpause = () => {
       console.log('⏸️ [AUDIO] Pausado');
       setIsPlaying(false);
+      setAvatarState('idle');
     };
     
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { useAvatarState } from '@/contexts/AvatarStateContext';
 
 interface LivAvatarProps {
   size?: 'small' | 'medium' | 'large' | 'xl';
@@ -33,8 +34,13 @@ export function LivAvatar({
   enableHover = true,
   className,
   theme = 'default',
-  state = 'idle'
+  state
 }: LivAvatarProps) {
+  const { state: contextState } = useAvatarState();
+  
+  // Usar state do contexto se não for passado explicitamente
+  const effectiveState = state || contextState;
+
   // Define theme colors based on trail
   const getThemeColors = () => {
     switch(theme) {
@@ -93,7 +99,7 @@ export function LivAvatar({
   
   // Animações baseadas no estado
   const getStateAnimation = () => {
-    switch(state) {
+    switch(effectiveState) {
       case 'thinking':
         return 'animate-[avatar-thinking_2s_ease-in-out_infinite]';
       case 'speaking':
@@ -212,16 +218,16 @@ export function LivAvatar({
           sizeClasses[size],
           getStateAnimation(),
           enableHover && "group-hover:scale-110",
-          state === 'thinking' && "scale-[1.02]",
-          state === 'speaking' && "scale-[1.05]"
+          effectiveState === 'thinking' && "scale-[1.02]",
+          effectiveState === 'speaking' && "scale-[1.05]"
         )}
         style={{
           background: `linear-gradient(135deg, ${themeColors.primary}1A 0%, ${themeColors.accent}1A 100%)`,
           borderWidth: '2px',
           borderStyle: 'solid',
-          borderColor: state === 'thinking' 
+          borderColor: effectiveState === 'thinking' 
             ? `${themeColors.accent}80` 
-            : state === 'speaking'
+            : effectiveState === 'speaking'
             ? `${themeColors.primary}CC`
             : `${themeColors.primary}4D`,
           transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -236,8 +242,8 @@ export function LivAvatar({
           className={cn(
             "w-full h-full object-cover transition-all duration-700",
             enableHover && "group-hover:scale-105",
-            state === 'thinking' && "brightness-110",
-            state === 'speaking' && "brightness-105 saturate-110"
+            effectiveState === 'thinking' && "brightness-110",
+            effectiveState === 'speaking' && "brightness-105 saturate-110"
           )}
         />
       </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { useAvatarState } from "@/contexts/AvatarStateContext";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -11,6 +12,7 @@ interface AudioPlayerProps {
 
 export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { setState } = useAvatarState();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -24,7 +26,10 @@ export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => 
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleDurationChange = () => setDuration(audio.duration);
-    const handleEnded = () => setIsPlaying(false);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setState('idle');
+    };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("durationchange", handleDurationChange);
@@ -43,9 +48,11 @@ export const AudioPlayer = ({ audioUrl, onPlay, onPause }: AudioPlayerProps) => 
 
     if (isPlaying) {
       audio.pause();
+      setState('idle');
       onPause?.();
     } else {
       audio.play();
+      setState('speaking');
       onPlay?.();
     }
     setIsPlaying(!isPlaying);
