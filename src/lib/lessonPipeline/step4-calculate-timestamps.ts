@@ -12,7 +12,8 @@ export function step4CalculateTimestamps(input: Step3Output): Step4Output {
 
   if (input.model === 'v1') {
     return calculateTimestampsV1(input);
-  } else if (input.model === 'v2') {
+  } else if (input.model === 'v2' || input.model === 'v4') {
+    // V2 e V4 usam mesma lógica: timestamps cumulativos por seção
     return calculateTimestampsV2(input);
   } else if (input.model === 'v3') {
     return calculateTimestampsV3(input);
