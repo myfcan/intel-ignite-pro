@@ -19,6 +19,7 @@ export interface Lesson {
   difficulty_level: string;
   order_index: number;
   audio_url?: string | null;
+  audio_urls?: string[] | null;
   user_status?: string;
   user_score?: number;
   user_answers?: any;

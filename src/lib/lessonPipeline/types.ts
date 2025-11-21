@@ -2,7 +2,7 @@
 
 import { PlaygroundConfig } from '@/types/guidedLesson';
 
-export type LessonModel = 'v1' | 'v2' | 'v3';
+export type LessonModel = 'v1' | 'v2' | 'v3' | 'v4';
 
 export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
 
