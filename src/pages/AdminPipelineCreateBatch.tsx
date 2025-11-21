@@ -540,11 +540,11 @@ export default function AdminPipelineCreateBatch() {
                   Não precisa especificar "model" no JSON - o botão selecionado será aplicado automaticamente
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={() => selectModel('v1')}
                   variant={selectedTemplate === 'v1' ? 'default' : 'outline'}
-                  className={`flex-1 ${selectedTemplate === 'v1' ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                  className={`h-auto py-3 px-4 text-sm ${selectedTemplate === 'v1' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎮 V1 (Playground no Meio)
@@ -552,7 +552,7 @@ export default function AdminPipelineCreateBatch() {
                 <Button
                   onClick={() => selectModel('v2')}
                   variant={selectedTemplate === 'v2' ? 'default' : 'outline'}
-                  className={`flex-1 ${selectedTemplate === 'v2' ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                  className={`h-auto py-3 px-4 text-sm ${selectedTemplate === 'v2' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   📚 V2 (Linear Simples)
@@ -560,7 +560,7 @@ export default function AdminPipelineCreateBatch() {
                 <Button
                   onClick={() => selectModel('v3')}
                   variant={selectedTemplate === 'v3' ? 'default' : 'outline'}
-                  className={`flex-1 ${selectedTemplate === 'v3' ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                  className={`h-auto py-3 px-4 text-sm ${selectedTemplate === 'v3' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🎨 V3 (Slides + Playground Final)
@@ -568,7 +568,7 @@ export default function AdminPipelineCreateBatch() {
                 <Button
                   onClick={() => selectModel('v4')}
                   variant={selectedTemplate === 'v4' ? 'default' : 'outline'}
-                  className={`flex-1 ${selectedTemplate === 'v4' ? 'ring-2 ring-primary shadow-lg' : ''}`}
+                  className={`h-auto py-3 px-4 text-sm ${selectedTemplate === 'v4' ? 'ring-2 ring-primary shadow-lg' : ''}`}
                   disabled={isSubmitting}
                 >
                   🚀 V4 (Playground Real)
