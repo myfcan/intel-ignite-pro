@@ -378,6 +378,16 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         );
       }
 
+      // 🐛 DEBUG: Log do modelo da lição para diagnóstico
+      console.log('🔍 [INTERACTIVE] Renderizando lição guiada:', {
+        lessonId: lesson.id,
+        title: lesson.title,
+        model: lesson.model,
+        willUseV4Component: lesson.model === 'v4',
+        hasExercises: !!guidedLessonData?.exercisesConfig,
+        exercisesCount: guidedLessonData?.exercisesConfig?.length || 0
+      });
+
       return (
         <>
           {showMaia && isLastLesson && (

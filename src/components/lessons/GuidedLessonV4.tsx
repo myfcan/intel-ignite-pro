@@ -1134,8 +1134,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         });
 
         // 🚀 V4: Ir para playground interativo antes dos exercícios
+        console.log('🎯 [AUDIO-ENDED] Verificando condições:', {
+          hasExercisesConfig: !!lessonData.exercisesConfig,
+          exercisesCount: lessonData.exercisesConfig?.length || 0,
+          hasFinalPlayground: !!lessonData.finalPlaygroundConfig,
+          currentPhaseBeforeChange: currentPhase
+        });
         setCurrentPhase('playground-real');
-        console.log('🎯 [AUDIO-ENDED] Indo para playground interativo (V4)');
+        console.log('🎯 [AUDIO-ENDED] Fase alterada para: playground-real');
       } else {
         setShowEndCard(true);
         console.log('🎯 [AUDIO-ENDED] Mostrando end card');
@@ -1404,8 +1410,18 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
     onComplete({ audioProgress: maxAudioProgress });
   };
 
+  // 🐛 DEBUG: Log da fase atual antes de renderizar
+  console.log('🔍 [V4-RENDER] Fase atual:', currentPhase, {
+    hasExercises: !!lessonData.exercisesConfig,
+    exercisesCount: lessonData.exercisesConfig?.length || 0,
+    showEndCard,
+    currentSection,
+    totalSections: lessonData.sections.length
+  });
+
   // 🚀 Renderizar playground real interativo (V4)
   if (currentPhase === 'playground-real') {
+    console.log('🎮 [RENDER] Renderizando fase playground-real');
     return (
       <div className="min-h-screen bg-background p-6">
         {/* Renderizar conteúdo das seções (scroll livre) */}
@@ -1449,6 +1465,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
   // Renderizar fase de transição
     if (currentPhase === 'transition') {
+      console.log('➡️ [RENDER] Renderizando fase transition');
       return (
         <TransitionCard
           title={jumpedToExercises ? "🎯 Vamos praticar?" : "🎉 Muito bem! Aula completa!"}
@@ -1494,6 +1511,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
   // Renderizar fase de exercícios
   if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
+    console.log('📝 [RENDER] Renderizando fase exercises');
     // Coletar metadata dos exercícios
     const exerciseMetadata = lessonData.exercisesConfig.map(ex => ({
       title: ex.title,
