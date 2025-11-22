@@ -35,6 +35,11 @@ import AdminManageLessons from "./pages/AdminManageLessons";
 import AdminLessonDebug from "./pages/AdminLessonDebug";
 import AdminFixLessonExercises from "./pages/AdminFixLessonExercises";
 import AdminPlaygroundSessions from "./pages/AdminPlaygroundSessions";
+import Guides from "./pages/Guides";
+import GuideDetail from "./pages/GuideDetail";
+import AIDirectory from "./pages/AIDirectory";
+import PromptLibrary from "./pages/PromptLibrary";
+import PromptCategory from "./pages/PromptCategory";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -79,6 +84,12 @@ const App = () => (
           <Route path="/admin/validation-system" element={<ProtectedRoute><AdminValidationSystem /></ProtectedRoute>} />
           <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
           <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
+          {/* NEW FEATURES ROUTES */}
+          <Route path="/guides" element={<Guides />} />
+          <Route path="/guides/:guideId" element={<GuideDetail />} />
+          <Route path="/ai-directory" element={<AIDirectory />} />
+          <Route path="/prompt-library" element={<PromptLibrary />} />
+          <Route path="/prompt-library/:categoryId" element={<PromptCategory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
