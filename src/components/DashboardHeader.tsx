@@ -49,7 +49,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
                          active:translate-y-0"
               >
                 <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
-                <span className="hidden sm:inline group-hover:text-slate-900 transition-colors">Dashboard</span>
+                <span className="hidden sm:inline group-hover:text-slate-900 transition-colors">Painel</span>
               </button>
             )}
             <div className="flex items-center relative z-10 cursor-pointer group py-2" onClick={() => navigate('/dashboard')}>
@@ -73,7 +73,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
                        active:translate-y-0"
             >
               <span className="relative z-10 group-hover:text-cyan-600 transition-colors">
-                Guides
+                Guia de bolso
               </span>
             </button>
             <button
@@ -86,7 +86,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
                        active:translate-y-0"
             >
               <span className="relative z-10 group-hover:text-blue-600 transition-colors">
-                AI Directory
+                Diretório de IA
               </span>
             </button>
             <button
@@ -99,7 +99,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
                        active:translate-y-0"
             >
               <span className="relative z-10 group-hover:text-purple-600 transition-colors">
-                Prompt Library
+                Super Prompts
               </span>
             </button>
           </nav>
@@ -118,28 +118,28 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
                   className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
                            transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
                 >
-                  <span className="text-xl">📚</span> Guides
+                  <span className="text-xl">📚</span> Guia de bolso
                 </button>
                 <button
                   onClick={() => navigate('/ai-directory')}
                   className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
                            transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
                 >
-                  <span className="text-xl">🤖</span> AI Directory
+                  <span className="text-xl">🤖</span> Diretório de IA
                 </button>
                 <button
                   onClick={() => navigate('/prompt-library')}
                   className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
                            transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
                 >
-                  <span className="text-xl">💬</span> Prompt Library
+                  <span className="text-xl">💬</span> Super Prompts
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
                   className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
                            transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
                 >
-                  <span className="text-xl">🏠</span> Dashboard
+                  <span className="text-xl">🏠</span> Painel
                 </button>
                 
                 <Separator className="my-4" />

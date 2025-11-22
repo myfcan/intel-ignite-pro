@@ -95,7 +95,7 @@ export default function AIDirectory() {
                        hover:shadow-md hover:-translate-y-0.5"
             >
               <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
-              <span className="group-hover:text-slate-900 transition-colors">Dashboard</span>
+              <span className="group-hover:text-slate-900 transition-colors">Painel</span>
             </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-blue-600" />
