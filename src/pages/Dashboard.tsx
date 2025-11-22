@@ -344,36 +344,36 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Hidden on mobile, shown above stats */}
-        <div className="hidden md:grid grid-cols-2 gap-4 mb-6">
-          <Card 
-            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+        {/* Quick Actions - Visível em mobile e desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Card
+            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/leaderboard')}
           >
-            <CardHeader className="p-5">
+            <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Trophy className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="text-white">
-                  <CardTitle className="text-lg font-bold mb-0.5">Ranking Global</CardTitle>
+                <div className="text-white min-w-0">
+                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Ranking Global</CardTitle>
                   <p className="text-white/90 text-xs">Compare-se com outros</p>
                 </div>
               </div>
             </CardHeader>
           </Card>
 
-          <Card 
-            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+          <Card
+            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/gamification')}
           >
-            <CardHeader className="p-5">
+            <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Award className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="text-white">
-                  <CardTitle className="text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
+                <div className="text-white min-w-0">
+                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
                   <p className="text-white/90 text-xs">Desbloqueie badges</p>
                 </div>
               </div>
