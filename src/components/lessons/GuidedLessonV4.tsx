@@ -1614,10 +1614,10 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-3">
                     <div className="relative group cursor-pointer">
-                      {/* MAIA com animações otimizadas (sem piscamento) */}
+                      {/* Liv com animações otimizadas (sem piscamento) */}
                       <img 
-                        src="/maia-avatar-v3.png" 
-                        alt="MAIA" 
+                        src="/liv-avatar.png" 
+                        alt="Liv"
                         className={`
                           w-44 h-44 object-contain
                           animate-fly-in-rasante
@@ -1647,16 +1647,16 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                       <div className="absolute -top-2 -right-12 hidden lg:block">
                         <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
                           <p className="text-xs font-medium text-slate-700 text-center">
-                            Olá, Eu<br />sou a MAIA!
+                            Olá, Eu<br />sou a Liv!
                           </p>
-                          {/* Rabinho do balão apontando para a MAIA */}
+                          {/* Rabinho do balão apontando para a Liv */}
                           <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Botão Silenciar MAIA - dentro do card */}
+                  {/* Botão Silenciar Liv - dentro do card */}
                   <button
                     onClick={toggleAudio}
                     className={`w-full px-3 py-2 rounded-full font-medium text-xs text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${
@@ -1665,7 +1665,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                         : 'bg-green-500'
                     }`}
                   >
-                    {isAudioEnabled ? '🔊 Silenciar MAIA' : '🔇 Ativar Áudio'}
+                    {isAudioEnabled ? '🔊 Silenciar Liv' : '🔇 Ativar Áudio'}
                   </button>
                 </div>
                 
@@ -1783,14 +1783,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* MAIA Mobile - versão premium responsiva */}
+      {/* Liv Mobile - versão premium responsiva */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
               <img 
-                src="/maia-avatar-v3.png" 
-                alt="MAIA" 
+                src="/liv-avatar.png" 
+                alt="Liv"
                 className={`
                   w-14 h-14 sm:w-16 sm:h-16 object-contain
                   animate-fly-in-rasante
@@ -2059,7 +2059,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-cyan-300/50 shadow-2xl">
             <div className="flex justify-center mb-6">
               <Avatar className="w-32 h-32 border-4 border-cyan-400/30 shadow-xl animate-float">
-                <AvatarImage src="/maia-avatar-v3.png" alt="MAIA" />
+                <AvatarImage src="/liv-avatar.png" alt="Liv" />
               </Avatar>
             </div>
             

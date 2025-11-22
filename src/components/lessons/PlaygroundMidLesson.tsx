@@ -441,7 +441,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     >
       <div className="flex justify-center mb-6">
         <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-lg">
-          <AvatarImage src="/maia-avatar-v3.png" alt="MAIA" />
+          <AvatarImage src="/liv-avatar.png" alt="Liv" />
         </Avatar>
       </div>
 
