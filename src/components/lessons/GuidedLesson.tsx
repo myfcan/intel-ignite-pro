@@ -1579,7 +1579,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                     </div>
                   </div>
                   
-                  {/* Botão Silenciar MAIA - dentro do card */}
+                  {/* Botão Silenciar Liv - dentro do card */}
                   <button
                     onClick={toggleAudio}
                     className={`w-full px-3 py-2 rounded-full font-medium text-xs text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${
@@ -1588,7 +1588,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                         : 'bg-green-500'
                     }`}
                   >
-                    {isAudioEnabled ? '🔊 Silenciar MAIA' : '🔇 Ativar Áudio'}
+                    {isAudioEnabled ? '🔊 Silenciar Liv' : '🔇 Ativar Áudio'}
                   </button>
                 </div>
                 
