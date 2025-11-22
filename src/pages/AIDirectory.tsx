@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,8 @@ import {
   Mic,
   Code,
   Search as SearchIcon,
-  Zap
+  Zap,
+  ArrowLeft
 } from 'lucide-react';
 
 const categoryIcons = {
@@ -45,6 +47,7 @@ const categoryIcons = {
  * - Links diretos
  */
 export default function AIDirectory() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<AICategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -83,6 +86,17 @@ export default function AIDirectory() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="group flex items-center gap-2 mb-4 px-4 py-2 text-sm font-semibold text-slate-700 
+                       bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100
+                       border border-slate-200 hover:border-slate-300
+                       rounded-xl transition-all duration-300 
+                       hover:shadow-md hover:-translate-y-0.5"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
+              <span className="group-hover:text-slate-900 transition-colors">Dashboard</span>
+            </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-blue-600" />
               AI Hub
