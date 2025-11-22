@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Analysis and documentation files (auto-generated)
+LESSON_ANALYSIS_INDEX.md
+LESSON_FILES_MAP.md
+LESSON_FORMAT_QUICK_REFERENCE.md
+LESSON_JSON_FORMAT_ANALYSIS.md
+README_LESSON_ANALYSIS.md
