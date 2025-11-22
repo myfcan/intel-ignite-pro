@@ -14,7 +14,8 @@ import {
   Briefcase,
   Share2,
   Search as SearchIcon,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 
 const categoryIcons: Record<string, any> = {
@@ -51,6 +52,17 @@ export default function PromptLibrary() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="group flex items-center gap-2 mb-4 px-4 py-2 text-sm font-semibold text-slate-700 
+                       bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100
+                       border border-slate-200 hover:border-slate-300
+                       rounded-xl transition-all duration-300 
+                       hover:shadow-md hover:-translate-y-0.5"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
+              <span className="group-hover:text-slate-900 transition-colors">Dashboard</span>
+            </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-orange-600" />
               Biblioteca de Prompts
