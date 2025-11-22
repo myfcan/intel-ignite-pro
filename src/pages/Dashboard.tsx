@@ -192,10 +192,10 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando seu dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando seu dashboard...</p>
         </div>
       </div>
     );
@@ -216,7 +216,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       <DashboardHeader user={user!} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -232,8 +232,8 @@ const Dashboard = () => {
         </div>
 
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 
-                      rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 shadow-2xl">
+        <div className="relative overflow-hidden bg-gradient-to-br from-primary to-secondary 
+                      rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 shadow-lg">
           
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 opacity-10">
@@ -248,8 +248,8 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-2xl flex items-center justify-center border-4 border-white/50">
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-br from-cyan-500 to-purple-600 bg-clip-text text-transparent">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-lg flex items-center justify-center border-4 border-white/50">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
@@ -274,45 +274,45 @@ const Dashboard = () => {
         {/* Stats Row - Logo abaixo do hero */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {/* Sequência */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+          <Card className="bg-white border border-gray-200">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-lg">
-                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.streak_days || 0}</p>
-                  <p className="text-xs text-slate-600">Dias de sequência</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.streak_days || 0}</p>
+                  <p className="text-xs text-gray-600">Dias de sequência</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Pontos */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+          <Card className="bg-white border border-gray-200">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.total_points || 0}</p>
-                  <p className="text-xs text-slate-600">Pontos totais</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.total_points || 0}</p>
+                  <p className="text-xs text-gray-600">Pontos totais</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Aulas */}
-          <Card className="bg-white/80 backdrop-blur-xl border border-slate-200/50">
+          <Card className="bg-white border border-gray-200">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-400 via-pink-400 to-rose-500 flex items-center justify-center shadow-lg">
-                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{user?.total_lessons_completed || 0}</p>
-                  <p className="text-xs text-slate-600">Aulas completas</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.total_lessons_completed || 0}</p>
+                  <p className="text-xs text-gray-600">Aulas completas</p>
                 </div>
               </div>
             </CardContent>
@@ -321,7 +321,7 @@ const Dashboard = () => {
 
         {/* Trilhas Section */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
           <div className="space-y-4 sm:space-y-5">
             {trails.map((trail) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
@@ -348,29 +348,28 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* AI Playground */}
           <Card
-            className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 cursor-pointer
-                     hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300
+            className="bg-white border-2 border-primary cursor-pointer
+                     hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300
                      overflow-hidden group"
             onClick={() => navigate('/ai-playground')}
           >
-            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="p-6 relative z-10">
+            <CardHeader className="p-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm
-                              flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gray-100
+                              flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div className="text-white flex-1 min-w-0">
+                <div className="text-gray-900 flex-1 min-w-0">
                   <CardTitle className="text-xl sm:text-2xl font-bold mb-2">AI Playground</CardTitle>
-                  <p className="text-white/90 text-sm sm:text-base leading-relaxed">
+                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
                     Experimente modelos de IA em tempo real. Teste prompts, explore recursos e aprenda na prática.
                   </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/90
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary
                                 group-hover:gap-3 transition-all">
                     Começar agora
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -384,16 +383,15 @@ const Dashboard = () => {
 
           {/* Curso Exclusivo */}
           <Card
-            className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-0 cursor-pointer
-                     hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300
+            className="bg-accent border-0 cursor-pointer text-white
+                     hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300
                      overflow-hidden group"
             onClick={() => navigate('/curso-exclusivo')}
           >
-            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="p-6 relative z-10">
+            <CardHeader className="p-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm
-                              flex items-center justify-center flex-shrink-0 shadow-lg">
+                              flex items-center justify-center flex-shrink-0">
                   <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
                 <div className="text-white flex-1 min-w-0">
@@ -417,34 +415,34 @@ const Dashboard = () => {
         {/* Quick Actions - Visível em mobile e desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card
-            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
+            className="bg-gray-100 border border-gray-200 cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/leaderboard')}
           >
             <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-gray-200">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-gray-800" />
                 </div>
-                <div className="text-white min-w-0">
+                <div className="text-gray-900 min-w-0">
                   <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Ranking Global</CardTitle>
-                  <p className="text-white/90 text-xs">Compare-se com outros</p>
+                  <p className="text-gray-600 text-xs">Compare-se com outros</p>
                 </div>
               </div>
             </CardHeader>
           </Card>
 
           <Card
-            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
+            className="bg-white border-2 border-secondary cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/gamification')}
           >
             <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-secondary" />
                 </div>
-                <div className="text-white min-w-0">
+                <div className="text-gray-900 min-w-0">
                   <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
-                  <p className="text-white/90 text-xs">Desbloqueie badges</p>
+                  <p className="text-gray-600 text-xs">Desbloqueie badges</p>
                 </div>
               </div>
             </CardHeader>
@@ -453,7 +451,7 @@ const Dashboard = () => {
 
         {/* Missões Diárias Section */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6 px-2 sm:px-0">Missões Diárias</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 px-2 sm:px-0">Missões Diárias</h2>
           <MissoesDiarias />
         </div>
 
