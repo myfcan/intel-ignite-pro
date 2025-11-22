@@ -14,6 +14,7 @@ import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { ConclusionScreen } from './ConclusionScreen';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LivAvatar } from '@/components/LivAvatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -1611,49 +1612,16 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
+                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-primary/20 shadow-2xl">
                   <div className="flex justify-center mb-3">
-                    <div className="relative group cursor-pointer">
-                      {/* Liv com animações otimizadas (sem piscamento) */}
-                      <img 
-                        src="/liv-avatar.png" 
-                        alt="Liv"
-                        className={`
-                          w-44 h-44 object-contain
-                          animate-fly-in-rasante
-                          transition-all duration-300 ease-in-out
-                          lg:group-hover:scale-105 cursor-pointer
-                          ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
-                        `}
-                        style={{
-                          filter: !isAudioEnabled 
-                            ? 'grayscale(100%) opacity(0.5) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))'
-                            : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
-                          // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
-                          animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
-                          animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
-                        }}
-                      />
-                      {/* Indicadores de áudio melhorados */}
-                      {isPlaying && isAudioEnabled && (
-                        <div className="absolute -bottom-1 -right-1 flex gap-1">
-                          <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
-                        </div>
-                      )}
-                      
-                      {/* Balão fixo ao lado da cabeça */}
-                      <div className="absolute -top-2 -right-12 hidden lg:block">
-                        <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
-                          <p className="text-xs font-medium text-slate-700 text-center">
-                            Olá, Eu<br />sou a Liv!
-                          </p>
-                          {/* Rabinho do balão apontando para a Liv */}
-                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
-                        </div>
-                      </div>
-                    </div>
+                    <LivAvatar 
+                      size="xl"
+                      isPlaying={isPlaying && isAudioEnabled}
+                      showHalo={isPlaying && isAudioEnabled}
+                      state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
+                      theme="fundamentos"
+                      className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
+                    />
                   </div>
                   
                   {/* Botão Silenciar Liv - dentro do card */}
@@ -1785,34 +1753,18 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
       {/* Liv Mobile - versão premium responsiva */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
+        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-3xl p-3 sm:p-4 border-2 border-primary/30 shadow-2xl max-w-[340px] w-full">
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
-              <img 
-                src="/liv-avatar.png" 
-                alt="Liv"
-                className={`
-                  w-14 h-14 sm:w-16 sm:h-16 object-contain
-                  animate-fly-in-rasante
-                  ${isPlaying && isAudioEnabled ? 'animate-float animate-pulse-glow brightness-110' : ''}
-                `}
-                style={{
-                  filter: !isAudioEnabled 
-                    ? 'grayscale(100%) opacity(0.5) drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))'
-                    : 'drop-shadow(0 10px 15px rgb(0 0 0 / 0.15))',
-                  // 🔥 FORÇA PARAR ANIMAÇÃO quando não está tocando
-                  animation: (isPlaying && isAudioEnabled) ? undefined : 'none',
-                  animationPlayState: (isPlaying && isAudioEnabled) ? 'running' : 'paused'
-                }}
+              <LivAvatar 
+                size="medium"
+                isPlaying={isPlaying && isAudioEnabled}
+                showHalo={isPlaying && isAudioEnabled}
+                state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
+                theme="fundamentos"
+                className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
+                animate={false}
               />
-              {/* Indicadores de áudio para mobile */}
-              {isPlaying && isAudioEnabled && (
-                <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
-                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-sm shadow-cyan-400" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce shadow-sm" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-audio-bounce shadow-sm shadow-purple-400" style={{ animationDelay: '300ms' }} />
-                </div>
-              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
@@ -2056,11 +2008,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
       {/* Card de Fim da Aula (End-Audio) */}
       {showEndCard && (
         <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-500">
-          <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-cyan-300/50 shadow-2xl">
+          <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-primary/50 shadow-2xl">
             <div className="flex justify-center mb-6">
-              <Avatar className="w-32 h-32 border-4 border-cyan-400/30 shadow-xl animate-float">
-                <AvatarImage src="/liv-avatar.png" alt="Liv" />
-              </Avatar>
+              <LivAvatar 
+                size="xl"
+                showHalo={true}
+                state="idle"
+                theme="fundamentos"
+              />
             </div>
             
             <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">

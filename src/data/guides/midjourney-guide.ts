@@ -95,8 +95,8 @@ O **Midjourney** é o gerador de imagens IA mais popular para arte e criatividad
 
 ## Passo 4: Primeiro prompt
 
-1. Vá para canal `#newbies` ou `#general`
-2. Digite: \`/imagine prompt: a cat astronaut\`
+1. Vá para canal #newbies ou #general
+2. Digite /imagine prompt a cat astronaut
 3. Aguarde ~60 segundos
 4. Veja suas 4 imagens!`
     },
