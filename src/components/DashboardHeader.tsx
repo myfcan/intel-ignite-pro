@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import logoAiliv from '@/assets/logo-ailiv.png';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { Menu, User, Trophy, LogOut } from 'lucide-react';
 
 interface DashboardHeaderProps {
   user: {
@@ -64,8 +67,73 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
             </button>
           </nav>
 
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild className="lg:hidden">
+              <button className="p-2 hover:bg-slate-50 rounded-md transition-colors">
+                <Menu className="h-6 w-6 text-slate-700" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+              <nav className="flex flex-col gap-2 mt-8">
+                <button
+                  onClick={() => navigate('/guides')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <span className="text-xl">📚</span> Guides
+                </button>
+                <button
+                  onClick={() => navigate('/ai-directory')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <span className="text-xl">🤖</span> AI Directory
+                </button>
+                <button
+                  onClick={() => navigate('/prompt-library')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <span className="text-xl">💬</span> Prompt Library
+                </button>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <span className="text-xl">🏠</span> Dashboard
+                </button>
+                
+                <Separator className="my-4" />
+                
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <User className="h-5 w-5" /> Perfil
+                </button>
+                <button
+                  onClick={() => navigate('/achievements')}
+                  className="text-base font-medium text-slate-700 hover:text-cyan-600 hover:bg-slate-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <Trophy className="h-5 w-5" /> Conquistas
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 
+                           transition-all px-4 py-3 rounded-lg text-left flex items-center gap-3"
+                >
+                  <LogOut className="h-5 w-5" /> Sair
+                </button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+
           {/* User Menu */}
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             {/* Limite de interações */}
             <div className="flex items-center gap-2 text-sm">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
