@@ -8,37 +8,32 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Base colors */
+    /* Base colors - Minimalista: Indigo (Primary) + Violet (Secondary) + Verde Esmeralda (Accent) */
     --background: 0 0% 100%;
-    --foreground: 270 73% 5%;
+    --foreground: 215 25% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 270 73% 5%;
+    --card-foreground: 215 25% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 270 73% 5%;
+    --popover-foreground: 215 25% 9%;
 
-    /* Purple Vibrant (Primary) */
-    --primary: 258 90% 66%;
+    /* Indigo - Primary (cor principal do logo) */
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 263 70% 50%;
-    --primary-light: 270 100% 91%;
 
-    /* Pink Accent */
-    --accent: 330 81% 60%;
+    /* Violet - Secondary (cor secundária do logo) */
+    --secondary: 258 90% 66%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Verde Esmeralda - Accent (única cor de destaque) */
+    --accent: 158 64% 52%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 330 81% 55%;
 
-    /* Purple Dark (Blue substitute) */
-    --blue: 263 70% 50%;
-    --blue-foreground: 0 0% 100%;
-    --blue-hover: 263 70% 45%;
-
-    /* Success */
-    --success: 158 84% 39%;
+    /* Status colors - Sutis */
+    --success: 158 64% 52%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
@@ -46,111 +41,77 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Neutros */
-    --muted: 240 5% 96%;
-    --muted-foreground: 258 90% 76%;
+    /* Neutros - Base do design (grays) */
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --secondary: 258 59% 26%;
-    --secondary-foreground: 0 0% 100%;
-
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 258 90% 66%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 67%;
 
     --radius: 0.75rem;
 
-    /* Gray scale */
-    --gray-950: 240 7% 5%;
-    --gray-900: 240 6% 10%;
-    --gray-800: 240 4% 16%;
-    --gray-700: 240 5% 26%;
-    --gray-600: 240 4% 36%;
-    --gray-500: 240 4% 46%;
-    --gray-400: 240 5% 65%;
-    --gray-300: 240 5% 84%;
-    --gray-200: 240 6% 90%;
-    --gray-100: 240 5% 96%;
-    --gray-50: 0 0% 98%;
+    /* Gray scale - Tons neutros (base 80% da interface) */
+    --gray-950: 215 25% 9%;
+    --gray-900: 220 17% 11%;
+    --gray-800: 215 20% 18%;
+    --gray-700: 215 19% 29%;
+    --gray-600: 215 14% 39%;
+    --gray-500: 215 16% 47%;
+    --gray-400: 217 10% 64%;
+    --gray-300: 214 14% 82%;
+    --gray-200: 220 13% 91%;
+    --gray-100: 220 14% 96%;
+    --gray-50: 210 20% 98%;
 
-    /* Trail Theme Colors - Avatar variations */
-    /* Fundamentos de IA - Azul/Índigo/Roxo */
-    --trail-fundamentos-primary: 258 90% 66%;
-    --trail-fundamentos-accent: 220 85% 65%;
-    --trail-fundamentos-glow: 258 90% 76%;
+    /* Trail Theme Colors - Simplificados (baseados nas 3 cores principais) */
+    /* Fundamentos de IA - Indigo (Primary) */
+    --trail-fundamentos-primary: 239 84% 67%;
+    --trail-fundamentos-accent: 239 84% 67%;
+    --trail-fundamentos-glow: 239 84% 77%;
 
-    /* IA no Dia a Dia - Ciano/Teal/Azul */
-    --trail-dia-a-dia-primary: 189 85% 58%;
-    --trail-dia-a-dia-accent: 174 72% 56%;
-    --trail-dia-a-dia-glow: 189 85% 68%;
+    /* IA no Dia a Dia - Indigo (Primary) */
+    --trail-dia-a-dia-primary: 239 84% 67%;
+    --trail-dia-a-dia-accent: 239 84% 67%;
+    --trail-dia-a-dia-glow: 239 84% 77%;
 
-    /* IA nos Negócios - Verde/Esmeralda */
-    --trail-negocios-primary: 158 84% 39%;
-    --trail-negocios-accent: 142 76% 36%;
-    --trail-negocios-glow: 158 84% 49%;
+    /* IA nos Negócios - Verde Esmeralda (Accent) */
+    --trail-negocios-primary: 158 64% 52%;
+    --trail-negocios-accent: 158 64% 52%;
+    --trail-negocios-glow: 158 64% 62%;
 
-    /* Renda Extra com IA - Laranja/Âmbar */
-    --trail-renda-primary: 38 92% 50%;
-    --trail-renda-accent: 25 95% 53%;
-    --trail-renda-glow: 38 92% 60%;
+    /* Renda Extra com IA - Verde Esmeralda (Accent) */
+    --trail-renda-primary: 158 64% 52%;
+    --trail-renda-accent: 158 64% 52%;
+    --trail-renda-glow: 158 64% 62%;
 
-    /* IA Criativa - Rosa/Magenta/Roxo */
-    --trail-criativa-primary: 330 81% 60%;
-    --trail-criativa-accent: 280 70% 68%;
-    --trail-criativa-glow: 330 81% 70%;
+    /* IA Criativa - Violet (Secondary) */
+    --trail-criativa-primary: 258 90% 66%;
+    --trail-criativa-accent: 258 90% 66%;
+    --trail-criativa-glow: 258 90% 76%;
 
-    /* IA Ética - Azul Escuro/Índigo */
-    --trail-etica-primary: 218 89% 61%;
-    --trail-etica-accent: 236 72% 66%;
-    --trail-etica-glow: 218 89% 71%;
+    /* IA Ética - Verde Esmeralda (Accent) */
+    --trail-etica-primary: 158 64% 52%;
+    --trail-etica-accent: 158 64% 52%;
+    --trail-etica-glow: 158 64% 62%;
 
-    /* Automações com IA - Ciano/Elétrico */
-    --trail-automacoes-primary: 195 92% 58%;
-    --trail-automacoes-accent: 210 98% 66%;
-    --trail-automacoes-glow: 195 92% 68%;
+    /* Automações com IA - Indigo (Primary) */
+    --trail-automacoes-primary: 239 84% 67%;
+    --trail-automacoes-accent: 239 84% 67%;
+    --trail-automacoes-glow: 239 84% 77%;
 
-    /* Gradientes harmoniosos - 5 steps graduais */
-    --gradient-hero: linear-gradient(135deg,
-      hsl(195, 65%, 65%) 0%,
-      hsl(220, 50%, 65%) 25%,
-      hsl(270, 45%, 70%) 50%,
-      hsl(310, 50%, 70%) 75%,
-      hsl(320, 50%, 70%) 100%
-    );
-    --gradient-primary: linear-gradient(135deg,
-      hsl(258, 90%, 66%) 0%,
-      hsl(265, 80%, 64%) 33%,
-      hsl(280, 70%, 68%) 66%,
-      hsl(300, 75%, 70%) 100%
-    );
-    --gradient-accent: linear-gradient(135deg,
-      hsl(330, 81%, 60%) 0%,
-      hsl(335, 78%, 62%) 50%,
-      hsl(340, 75%, 65%) 100%
-    );
-    --gradient-success: linear-gradient(135deg,
-      hsl(158, 84%, 39%) 0%,
-      hsl(160, 80%, 36%) 50%,
-      hsl(162, 76%, 33%) 100%
-    );
-    --gradient-glass: linear-gradient(135deg,
-      hsla(258, 90%, 66%, 0.1) 0%,
-      hsla(280, 80%, 68%, 0.1) 50%,
-      hsla(330, 81%, 60%, 0.1) 100%
-    );
-    
-    /* Cards com cores complementares */
-    --card-sequence: linear-gradient(135deg, hsl(15, 90%, 78%) 0%, hsl(15, 80%, 70%) 100%);
-    --card-points: linear-gradient(135deg, hsl(195, 65%, 65%) 0%, hsl(195, 70%, 58%) 100%);
-    --card-lessons: linear-gradient(135deg, hsl(310, 60%, 75%) 0%, hsl(310, 70%, 68%) 100%);
+    /* Gradiente Brand - Apenas 1 gradiente principal (Indigo → Violet) */
+    --gradient-hero: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
+    --gradient-brand: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
+    --gradient-card: linear-gradient(to bottom right, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
 
-    /* Sombras com glow */
-    --shadow-cyan-glow: 0 0 20px hsla(258 90% 66% / 0.3);
-    --shadow-pink-glow: 0 0 20px hsla(330 81% 60% / 0.3);
-    --shadow-card: 0 4px 6px -1px hsla(270 73% 5% / 0.1);
-    --shadow-card-hover: 0 20px 25px -5px hsla(258 90% 66% / 0.2);
-    --shadow-soft: 0 2px 8px -2px hsla(270 73% 5% / 0.08);
-    --shadow-medium: 0 4px 16px -4px hsla(270 73% 5% / 0.12);
-    --shadow-large: 0 10px 30px -10px hsla(270 73% 5% / 0.15);
+    /* Sombras sutis - Minimalista */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-elegant: 0 10px 30px -10px rgba(99, 102, 241, 0.2);
+    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
     
     /* Transitions */
     --transition-fast: all 150ms ease-in-out;
@@ -169,62 +130,48 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 270 73% 5%;
-    --foreground: 270 100% 91%;
+    --background: 215 28% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 270 63% 11%;
-    --card-foreground: 270 100% 91%;
+    --card: 215 25% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 270 63% 11%;
-    --popover-foreground: 270 100% 91%;
+    --popover: 215 25% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 258 90% 66%;
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 258 90% 70%;
-    --primary-light: 258 90% 20%;
 
-    --accent: 330 81% 60%;
+    --secondary: 258 90% 66%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 158 64% 52%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 330 81% 65%;
 
-    --success: 158 84% 39%;
+    --success: 158 64% 52%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
 
-    --muted: 258 59% 26%;
-    --muted-foreground: 258 90% 76%;
+    --muted: 215 20% 18%;
+    --muted-foreground: 215 20% 65%;
 
-    --secondary: 258 59% 26%;
-    --secondary-foreground: 270 100% 91%;
+    --border: 215 20% 18%;
+    --input: 215 20% 18%;
+    --ring: 239 84% 67%;
 
-    --border: 258 59% 26%;
-    --input: 258 59% 26%;
-    --ring: 258 90% 66%;
-
-    --gray-950: 270 100% 91%;
-    --gray-900: 240 6% 90%;
-    --gray-800: 240 5% 84%;
-    --gray-700: 258 90% 76%;
-    --gray-600: 240 4% 46%;
-    --gray-500: 240 4% 46%;
-    --gray-400: 240 5% 36%;
-    --gray-300: 258 59% 26%;
-    --gray-200: 270 63% 11%;
-    --gray-100: 270 73% 5%;
-
-    --sidebar-background: 270 73% 5%;
-    --sidebar-foreground: 270 100% 91%;
-    --sidebar-primary: 258 90% 66%;
+    --sidebar-background: 215 28% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 239 84% 67%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 258 59% 26%;
-    --sidebar-accent-foreground: 270 100% 91%;
-    --sidebar-border: 258 59% 26%;
-    --sidebar-ring: 258 90% 66%;
+    --sidebar-accent: 215 20% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 20% 18%;
+    --sidebar-ring: 239 84% 67%;
   }
 }
 
