@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { LivAvatar } from '@/components/LivAvatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { LivAvatar } from '@/components/LivAvatar';
 import { Loader2, Copy, Check, ChevronRight } from 'lucide-react';
 
 interface PlaygroundMidLessonProps {
@@ -437,12 +436,15 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     <Card 
       data-testid="playground-mid-lesson"
       data-playground-type="multiple-choice"
-      className="max-w-xl w-full mx-4 p-8 animate-in fade-in zoom-in-95 duration-300"
+      className="max-w-xl w-full mx-4 p-8 animate-in fade-in zoom-in-95 duration-300 bg-gradient-to-br from-white/95 to-white/90"
     >
       <div className="flex justify-center mb-6">
-        <Avatar className="w-20 h-20 border-4 border-primary/20 shadow-lg">
-          <AvatarImage src="/liv-avatar.png" alt="Liv" />
-        </Avatar>
+        <LivAvatar 
+          size="large"
+          showHalo={true}
+          state="listening"
+          theme="fundamentos"
+        />
       </div>
 
       <div className="text-center mb-6">
