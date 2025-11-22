@@ -50,13 +50,13 @@ export default function Guides() {
               <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
               <span className="group-hover:text-slate-900 transition-colors">Painel</span>
               </button>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Sparkles className="w-8 h-8 text-purple-600" />
-                Guias IA Essenciais
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Domine as principais ferramentas de inteligência artificial em minutos
-              </p>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <Sparkles className="w-8 h-8 text-purple-600" />
+              Guia de Bolso IA
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Domine as principais ferramentas de inteligência artificial em minutos
+            </p>
             </div>
           </div>
         </div>

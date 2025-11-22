@@ -65,7 +65,7 @@ export default function PromptLibrary() {
             </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-orange-600" />
-              Biblioteca de Prompts
+              Super Prompts
             </h1>
             <p className="text-gray-600 mt-2">
               Templates profissionais prontos para usar em qualquer IA
@@ -161,7 +161,7 @@ export default function PromptLibrary() {
               </div>
               <h3 className="font-semibold mb-2">Escolha uma categoria</h3>
               <p className="text-orange-100 text-sm">
-                Navegue pelas 8 categorias e encontre o tipo de prompt que precisa
+                Navegue pelas categorias e encontre o tipo de prompt que precisa
               </p>
             </div>
             <div>
