@@ -97,7 +97,7 @@ export function ConclusionScreen({
   return (
     <div 
       data-testid="conclusion-screen"
-      className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-8"
+      className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4 sm:p-6 md:p-8"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -105,17 +105,17 @@ export function ConclusionScreen({
         transition={{ duration: 0.5 }}
         className="w-full max-w-2xl"
       >
-        <Card className="p-8 md:p-12 shadow-2xl border-2">
+        <Card className="p-4 sm:p-6 md:p-8 lg:p-12 shadow-2xl border-2">
           {/* Cabeçalho */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-block mb-4"
+              className="inline-block mb-3 sm:mb-4"
             >
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Trophy className="w-12 h-12 text-primary" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Trophy className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary" />
               </div>
             </motion.div>
             
@@ -123,7 +123,7 @@ export function ConclusionScreen({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-4xl font-bold mb-2"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2"
             >
               🎉 Parabéns!
             </motion.h1>
@@ -132,7 +132,7 @@ export function ConclusionScreen({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-xl text-muted-foreground"
+              className="text-sm sm:text-base md:text-xl text-muted-foreground"
             >
               Você completou a aula:
             </motion.p>
@@ -141,7 +141,7 @@ export function ConclusionScreen({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="text-2xl font-semibold text-primary mt-2"
+              className="text-base sm:text-lg md:text-2xl font-semibold text-primary mt-2 px-2 break-words"
             >
               {lessonTitle}
             </motion.p>
@@ -152,16 +152,16 @@ export function ConclusionScreen({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20 p-6">
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-5xl">🏆</div>
+            <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20 p-4 sm:p-6">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
+                <div className="text-3xl sm:text-4xl md:text-5xl">🏆</div>
                 <div>
-                  <h3 className="text-xl font-bold text-amber-700 dark:text-amber-400">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-amber-700 dark:text-amber-400">
                     Aula Dominada
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Completou todos os exercícios com sucesso
                   </p>
                 </div>
@@ -174,56 +174,56 @@ export function ConclusionScreen({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="grid grid-cols-2 gap-4 mb-8"
+            className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8"
           >
             {/* Playground Interativo */}
-            <Card className="p-4 bg-green-500/5 border-green-500/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-green-600" />
+            <Card className="p-3 sm:p-4 bg-green-500/5 border-green-500/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Playground</p>
-                  <p className="font-semibold text-green-600">✓ Completo</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Playground</p>
+                  <p className="text-sm sm:text-base font-semibold text-green-600">✓ Completo</p>
                 </div>
               </div>
             </Card>
 
             {/* Exercícios */}
-            <Card className="p-4 bg-blue-500/5 border-blue-500/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-blue-600" />
+            <Card className="p-3 sm:p-4 bg-blue-500/5 border-blue-500/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Exercícios</p>
-                  <p className="font-semibold text-blue-600">{scores.length}/{exerciseMetadata?.length || scores.length} ✓</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Exercícios</p>
+                  <p className="text-sm sm:text-base font-semibold text-blue-600">{scores.length}/{exerciseMetadata?.length || scores.length} ✓</p>
                 </div>
               </div>
             </Card>
 
             {/* Performance */}
-            <Card className="p-4 bg-purple-500/5 border-purple-500/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
+            <Card className="p-3 sm:p-4 bg-purple-500/5 border-purple-500/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Performance</p>
-                  <p className="font-semibold text-purple-600">{Math.round(averageScore)}%</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Performance</p>
+                  <p className="text-sm sm:text-base font-semibold text-purple-600">{Math.round(averageScore)}%</p>
                 </div>
               </div>
             </Card>
 
             {/* Tempo */}
-            <Card className="p-4 bg-orange-500/5 border-orange-500/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-orange-600" />
+            <Card className="p-3 sm:p-4 bg-orange-500/5 border-orange-500/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Tempo Total</p>
-                  <p className="font-semibold text-orange-600">{minutes} min</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Tempo Total</p>
+                  <p className="text-sm sm:text-base font-semibold text-orange-600">{minutes} min</p>
                 </div>
               </div>
             </Card>
@@ -234,10 +234,10 @@ export function ConclusionScreen({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Desempenho nos Exercícios</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3">Desempenho nos Exercícios</h3>
+            <div className="space-y-2 sm:space-y-3">
               {scores.map((score, index) => {
                 const metadata = exerciseMetadata?.[index];
                 const getEmojiByType = (type?: string) => {
@@ -254,16 +254,16 @@ export function ConclusionScreen({
                 };
                 
                 return (
-                  <div key={index} className="flex items-center gap-3">
-                    <span className="text-2xl">
+                  <div key={index} className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-xl sm:text-2xl shrink-0">
                       {getEmojiByType(metadata?.type)}
                     </span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs sm:text-sm font-medium truncate">
                           {metadata?.title || `Exercício ${index + 1}`}
                         </span>
-                        <span className="text-sm font-semibold text-primary">
+                        <span className="text-xs sm:text-sm font-semibold text-primary shrink-0">
                           {Math.round(score)}%
                         </span>
                       </div>
@@ -288,14 +288,14 @@ export function ConclusionScreen({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
-              className="mb-6"
+              className="mb-4 sm:mb-6"
             >
-              <Card className="p-4 bg-primary/5 border-primary/20">
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
+              <Card className="p-3 sm:p-4 bg-primary/5 border-primary/20">
+                <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   Próxima aula disponível!
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Continue sua jornada de aprendizado com a próxima aula
                 </p>
               </Card>
