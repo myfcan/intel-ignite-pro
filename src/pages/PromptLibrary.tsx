@@ -47,9 +47,9 @@ export default function PromptLibrary() {
   const premiumPrompts = totalPrompts - freePrompts;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div>
             <button
@@ -64,7 +64,7 @@ export default function PromptLibrary() {
               <span className="group-hover:text-slate-900 transition-colors">Painel</span>
             </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-orange-600" />
+              <Sparkles className="w-8 h-8 text-primary" />
               Super Prompts
             </h1>
             <p className="text-gray-600 mt-2">
@@ -78,17 +78,26 @@ export default function PromptLibrary() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-gradient-to-br from-orange-500 to-red-500 text-white">
-            <div className="text-4xl font-bold mb-2">{totalPrompts}</div>
-            <div className="text-orange-100">Prompts Disponíveis</div>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">{totalPrompts}</div>
+            <div className="text-gray-600">Prompts Disponíveis</div>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-green-500 to-emerald-500 text-white">
-            <div className="text-4xl font-bold mb-2">{freePrompts}</div>
-            <div className="text-green-100">Prompts Grátis</div>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-accent" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">{freePrompts}</div>
+            <div className="text-gray-600">Prompts Grátis</div>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-            <div className="text-4xl font-bold mb-2">{allPromptCategories.length}</div>
-            <div className="text-purple-100">Categorias</div>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-secondary" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">{allPromptCategories.length}</div>
+            <div className="text-gray-600">Categorias</div>
           </Card>
         </div>
 
@@ -102,14 +111,14 @@ export default function PromptLibrary() {
             return (
               <Card
                 key={category.id}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-white border border-gray-200 hover:border-primary"
                 onClick={() => navigate(`/prompt-library/${category.id}`)}
               >
-                {/* Color header */}
-                <div className={`h-32 ${category.color} flex items-center justify-center relative overflow-hidden`}>
-                  <Icon className="w-16 h-16 text-white opacity-90" />
+                {/* Icon header */}
+                <div className="h-32 bg-gray-100 flex items-center justify-center relative overflow-hidden">
+                  <Icon className="w-16 h-16 text-primary" />
                   {category.isPopular && (
-                    <Badge className="absolute top-3 right-3 bg-yellow-500 text-white border-0">
+                    <Badge className="absolute top-3 right-3 bg-accent text-white border-0">
                       Popular
                     </Badge>
                   )}
@@ -117,7 +126,7 @@ export default function PromptLibrary() {
 
                 <div className="p-6">
                   {/* Title */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
                     {category.name}
                   </h3>
 
@@ -141,7 +150,7 @@ export default function PromptLibrary() {
                   </div>
 
                   {/* CTA */}
-                  <Button variant="outline" className="w-full group-hover:bg-orange-600 group-hover:text-white group-hover:border-orange-600 transition-colors">
+                  <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
                     Ver Prompts
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -152,7 +161,7 @@ export default function PromptLibrary() {
         </div>
 
         {/* How to use */}
-        <Card className="mt-12 p-8 bg-gradient-to-r from-orange-600 to-pink-600 text-white">
+        <Card className="mt-12 p-8 bg-gradient-to-r from-primary to-secondary text-white">
           <h2 className="text-2xl font-bold mb-4">Como usar os prompts?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
