@@ -43,27 +43,45 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           </div>
 
           {/* Navegação Horizontal */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-3">
             <button
               onClick={() => navigate('/guides')}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
-                       hover:bg-slate-50 rounded-lg transition-all"
+              className="group relative px-5 py-2.5 text-sm font-semibold text-slate-700 
+                       bg-white/60 hover:bg-gradient-to-r hover:from-cyan-50 hover:to-blue-50
+                       border border-slate-200/80 hover:border-cyan-300/50
+                       rounded-xl transition-all duration-300 
+                       hover:shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5
+                       active:translate-y-0"
             >
-              Guides
+              <span className="relative z-10 group-hover:text-cyan-600 transition-colors">
+                Guides
+              </span>
             </button>
             <button
               onClick={() => navigate('/ai-directory')}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
-                       hover:bg-slate-50 rounded-lg transition-all"
+              className="group relative px-5 py-2.5 text-sm font-semibold text-slate-700 
+                       bg-white/60 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50
+                       border border-slate-200/80 hover:border-blue-300/50
+                       rounded-xl transition-all duration-300 
+                       hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5
+                       active:translate-y-0"
             >
-              AI Directory
+              <span className="relative z-10 group-hover:text-blue-600 transition-colors">
+                AI Directory
+              </span>
             </button>
             <button
               onClick={() => navigate('/prompt-library')}
-              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
-                       hover:bg-slate-50 rounded-lg transition-all"
+              className="group relative px-5 py-2.5 text-sm font-semibold text-slate-700 
+                       bg-white/60 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50
+                       border border-slate-200/80 hover:border-purple-300/50
+                       rounded-xl transition-all duration-300 
+                       hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5
+                       active:translate-y-0"
             >
-              Prompt Library
+              <span className="relative z-10 group-hover:text-purple-600 transition-colors">
+                Prompt Library
+              </span>
             </button>
           </nav>
 
