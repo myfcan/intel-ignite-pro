@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import logoAiliv from '@/assets/logo-ailiv.png';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Menu, User, Trophy, LogOut } from 'lucide-react';
+import { Menu, User, Trophy, LogOut, ArrowLeft } from 'lucide-react';
 
 interface DashboardHeaderProps {
   user: {
@@ -21,7 +21,10 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const interactionsRemaining = user.daily_interaction_limit - user.interactions_used_today;
+  
+  const showBackButton = ['/guides', '/ai-directory', '/prompt-library', '/ai-playground'].includes(location.pathname);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -33,13 +36,29 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-[72px] lg:h-20">
           
-          {/* Logo */}
-          <div className="flex items-center relative z-10 cursor-pointer group py-2" onClick={() => navigate('/dashboard')}>
-            <img 
-              src={logoAiliv} 
-              alt="Ailiv" 
-              className="h-[56px] md:h-[64px] lg:h-[72px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            />
+          {/* Logo e Botão Voltar */}
+          <div className="flex items-center gap-3">
+            {showBackButton && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="group flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 
+                         bg-white/60 hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100
+                         border border-slate-200/80 hover:border-slate-300/50
+                         rounded-xl transition-all duration-300 
+                         hover:shadow-lg hover:shadow-slate-500/20 hover:-translate-y-0.5
+                         active:translate-y-0"
+              >
+                <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
+                <span className="hidden sm:inline group-hover:text-slate-900 transition-colors">Dashboard</span>
+              </button>
+            )}
+            <div className="flex items-center relative z-10 cursor-pointer group py-2" onClick={() => navigate('/dashboard')}>
+              <img 
+                src={logoAiliv} 
+                alt="Ailiv" 
+                className="h-[56px] md:h-[64px] lg:h-[72px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
           </div>
 
           {/* Navegação Horizontal */}
