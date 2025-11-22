@@ -33,9 +33,9 @@ export default function Guides() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
@@ -51,7 +51,7 @@ export default function Guides() {
               <span className="group-hover:text-slate-900 transition-colors">Painel</span>
               </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-purple-600" />
+              <Sparkles className="w-8 h-8 text-primary" />
               Guia de Bolso IA
             </h1>
             <p className="text-gray-600 mt-2">
@@ -66,19 +66,28 @@ export default function Guides() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-            <div className="text-4xl font-bold mb-2">{guidesMetadata.length}</div>
-            <div className="text-purple-100">Guias Disponíveis</div>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">{guidesMetadata.length}</div>
+            <div className="text-gray-600">Guias Disponíveis</div>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
-            <div className="text-4xl font-bold mb-2">
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <BookOpen className="w-6 h-6 text-secondary" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">
               {guidesMetadata.reduce((sum, g) => sum + g.sections, 0)}
             </div>
-            <div className="text-blue-100">Seções de Conteúdo</div>
+            <div className="text-gray-600">Seções de Conteúdo</div>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-green-500 to-emerald-500 text-white">
-            <div className="text-4xl font-bold mb-2">100%</div>
-            <div className="text-green-100">Grátis</div>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+              <Sparkles className="w-6 h-6 text-accent" />
+            </div>
+            <div className="text-4xl font-bold text-gray-900 mb-2">100%</div>
+            <div className="text-gray-600">Grátis</div>
           </Card>
         </div>
 
@@ -87,11 +96,9 @@ export default function Guides() {
           {guidesMetadata.map((guide) => (
             <Card
               key={guide.id}
-              className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-white border border-gray-200 hover:border-primary"
               onClick={() => handleGuideClick(guide.id)}
             >
-              {/* Category color bar */}
-              <div className={`h-2 ${categoryColors[guide.category as keyof typeof categoryColors] || 'bg-gray-500'}`} />
 
               <div className="p-6">
                 {/* Logo + New Badge */}
@@ -108,12 +115,12 @@ export default function Guides() {
                     )}
                   </div>
                   {guide.isNew && (
-                    <Badge className="bg-green-500 text-white">Novo</Badge>
+                    <Badge className="bg-accent text-white">Novo</Badge>
                   )}
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
+                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
                   {guide.title}
                 </h3>
 
@@ -144,7 +151,7 @@ export default function Guides() {
                 </div>
 
                 {/* CTA */}
-                <Button className="w-full mt-4 bg-purple-600 hover:bg-purple-700">
+                <Button className="w-full mt-4">
                   Iniciar Guia
                 </Button>
               </div>
@@ -153,11 +160,11 @@ export default function Guides() {
         </div>
 
         {/* Bottom CTA */}
-        <Card className="mt-12 p-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center">
+        <Card className="mt-12 p-8 bg-gradient-to-r from-primary to-secondary text-white text-center">
           <h2 className="text-2xl font-bold mb-2">
             Pronto para dominar a IA?
           </h2>
-          <p className="text-purple-100 mb-6">
+          <p className="text-white/80 mb-6">
             Escolha um guia acima e comece sua jornada agora mesmo
           </p>
           <Button

@@ -82,9 +82,9 @@ export default function PromptCategory() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Button
             variant="ghost"
@@ -97,8 +97,8 @@ export default function PromptCategory() {
           </Button>
 
           <div className="flex items-start gap-4">
-            <div className={`w-16 h-16 ${category.color} rounded-xl flex items-center justify-center`}>
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900">
@@ -159,12 +159,12 @@ export default function PromptCategory() {
           {filteredPrompts.map((prompt) => (
             <Card
               key={prompt.id}
-              className="p-6 hover:shadow-lg transition-all cursor-pointer group"
+              className="p-6 hover:shadow-lg transition-all cursor-pointer group bg-white border border-gray-200 hover:border-primary"
               onClick={() => setSelectedPrompt(prompt)}
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-600 transition-colors flex-1">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors flex-1">
                   {prompt.title}
                 </h3>
                 {prompt.isPremium && (

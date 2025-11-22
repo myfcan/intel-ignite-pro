@@ -236,7 +236,7 @@ const TrailDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header - Card com Gradiente */}
       <header className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Botão Voltar */}
@@ -251,7 +251,7 @@ const TrailDetail = () => {
         {/* Card de Header com Gradiente */}
         <div className="relative overflow-hidden rounded-3xl shadow-2xl">
           {/* Background com gradiente */}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary to-secondary" />
           
           {/* Padrão decorativo */}
           <div className="absolute inset-0 opacity-10">

@@ -131,7 +131,7 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in">
+    <div className="min-h-screen bg-gray-50 animate-fade-in">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
@@ -166,7 +166,7 @@ export default function Leaderboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="p-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+            <Card className="p-6 bg-gradient-to-r from-primary to-secondary text-white border-0">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm opacity-90 mb-1">Sua Posição Atual</p>

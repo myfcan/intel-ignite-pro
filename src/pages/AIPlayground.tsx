@@ -9,7 +9,7 @@ export default function AIPlayground() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,8 +40,8 @@ export default function AIPlayground() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 rounded-2xl p-8 text-white">
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-8 text-white">
             <div className="flex items-start gap-6">
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl
@@ -96,7 +96,7 @@ export default function AIPlayground() {
         <div className="mb-8">
           <h3 className="text-xl font-bold text-slate-800 mb-4">Experimente estas ideias:</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-[1.02] transition-transform">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-[1.02] transition-transform bg-white border border-gray-200 hover:border-primary">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">✍️ Escrever Conteúdo</CardTitle>
               </CardHeader>

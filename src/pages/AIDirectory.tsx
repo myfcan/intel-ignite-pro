@@ -81,9 +81,9 @@ export default function AIDirectory() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div>
             <button
@@ -98,7 +98,7 @@ export default function AIDirectory() {
               <span className="group-hover:text-slate-900 transition-colors">Painel</span>
             </button>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-blue-600" />
+              <Sparkles className="w-8 h-8 text-primary" />
               Diretório de IA
             </h1>
             <p className="text-gray-600 mt-2">
@@ -158,7 +158,7 @@ export default function AIDirectory() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredApps.slice(0, 6).map((app) => (
-                <Card key={app.id} className="p-6 hover:shadow-xl transition-shadow">
+                <Card key={app.id} className="p-6 hover:shadow-xl transition-shadow bg-white border border-gray-200 hover:border-primary">
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                       {app.logo ? (
@@ -218,7 +218,7 @@ export default function AIDirectory() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredApps.map((app) => (
-                <Card key={app.id} className="p-6 hover:shadow-lg transition-all group">
+                <Card key={app.id} className="p-6 hover:shadow-lg transition-all group bg-white border border-gray-200 hover:border-primary">
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                       {app.logo ? (
@@ -232,7 +232,7 @@ export default function AIDirectory() {
                     )}
                   </div>
 
-                  <h3 className="text-lg font-bold mb-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
                     {app.name}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">{app.shortDescription}</p>
