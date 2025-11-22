@@ -398,7 +398,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          {lesson.audio_urls && Array.isArray(lesson.audio_urls) && lesson.audio_urls.length > 0 ? (
+          {lesson.model === 'v4' ? (
             <GuidedLessonV4
               lessonData={guidedLessonData}
               onComplete={handleGuidedComplete}
