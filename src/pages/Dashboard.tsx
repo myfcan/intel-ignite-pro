@@ -344,36 +344,106 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Hidden on mobile, shown above stats */}
-        <div className="hidden md:grid grid-cols-2 gap-4 mb-6">
-          <Card 
-            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+        {/* AI Playground + Curso Exclusivo */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* AI Playground */}
+          <Card
+            className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 cursor-pointer
+                     hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300
+                     overflow-hidden group"
+            onClick={() => navigate('/ai-playground')}
+          >
+            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="p-6 relative z-10">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm
+                              flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-white flex-1 min-w-0">
+                  <CardTitle className="text-xl sm:text-2xl font-bold mb-2">AI Playground</CardTitle>
+                  <p className="text-white/90 text-sm sm:text-base leading-relaxed">
+                    Experimente modelos de IA em tempo real. Teste prompts, explore recursos e aprenda na prática.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/90
+                                group-hover:gap-3 transition-all">
+                    Começar agora
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Curso Exclusivo */}
+          <Card
+            className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-0 cursor-pointer
+                     hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300
+                     overflow-hidden group"
+            onClick={() => navigate('/curso-exclusivo')}
+          >
+            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="p-6 relative z-10">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm
+                              flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <div className="text-white flex-1 min-w-0">
+                  <CardTitle className="text-xl sm:text-2xl font-bold mb-2">Curso Exclusivo</CardTitle>
+                  <p className="text-white/90 text-sm sm:text-base leading-relaxed">
+                    Acesse conteúdo premium e aprofunde seus conhecimentos com aulas exclusivas.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/90
+                                group-hover:gap-3 transition-all">
+                    Ver curso
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* Quick Actions - Visível em mobile e desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Card
+            className="bg-gradient-to-br from-amber-400 to-orange-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/leaderboard')}
           >
-            <CardHeader className="p-5">
+            <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Trophy className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="text-white">
-                  <CardTitle className="text-lg font-bold mb-0.5">Ranking Global</CardTitle>
+                <div className="text-white min-w-0">
+                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Ranking Global</CardTitle>
                   <p className="text-white/90 text-xs">Compare-se com outros</p>
                 </div>
               </div>
             </CardHeader>
           </Card>
 
-          <Card 
-            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300"
+          <Card
+            className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 cursor-pointer hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
             onClick={() => navigate('/gamification')}
           >
-            <CardHeader className="p-5">
+            <CardHeader className="p-4 sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Award className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
-                <div className="text-white">
-                  <CardTitle className="text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
+                <div className="text-white min-w-0">
+                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
                   <p className="text-white/90 text-xs">Desbloqueie badges</p>
                 </div>
               </div>

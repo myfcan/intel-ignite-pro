@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Flame, Trophy, Target } from 'lucide-react';
 import logoAiliv from '@/assets/logo-ailiv.png';
 
 interface DashboardHeaderProps {
@@ -19,9 +18,6 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const navigate = useNavigate();
-  const level = Math.floor(user.total_points / 100) + 1;
-  const nextLevelPoints = level * 100;
-  const progressToNextLevel = ((user.total_points % 100) / 100) * 100;
   const interactionsRemaining = user.daily_interaction_limit - user.interactions_used_today;
 
   const handleLogout = async () => {
@@ -43,51 +39,30 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
             />
           </div>
 
-          {/* Gamificação Central - Desktop Only */}
-          <div className="hidden lg:flex items-center gap-4 xl:gap-6">
-            
-            {/* Streak */}
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm
-                          px-3 lg:px-4 py-2 rounded-full border border-orange-300/50
-                          hover:scale-105 transition-transform shadow-sm">
-              <Flame className="w-5 h-5 text-orange-500" />
-              <div>
-                <p className="text-xs text-slate-600 leading-none">Sequência</p>
-                <p className="text-lg font-bold text-slate-900 leading-tight">{user.streak_days} dias</p>
-              </div>
-            </div>
-
-            {/* Pontos */}
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm
-                          px-3 lg:px-4 py-2 rounded-full border border-cyan-300/50
-                          hover:scale-105 transition-transform shadow-sm">
-              <Trophy className="w-5 h-5 text-cyan-500" />
-              <div>
-                <p className="text-xs text-slate-600 leading-none">Pontos</p>
-                <p className="text-lg font-bold text-slate-900 leading-tight">{user.total_points}</p>
-              </div>
-            </div>
-
-            {/* Nível */}
-            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm
-                          px-3 lg:px-4 py-2 rounded-full border border-purple-300/50
-                          hover:scale-105 transition-transform shadow-sm">
-              <Target className="w-5 h-5 text-purple-500" />
-              <div className="min-w-[100px]">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-slate-600 leading-none">Nível {level}</p>
-                  <p className="text-xs text-slate-500 leading-none">{level + 1}</p>
-                </div>
-                <div className="h-2 bg-slate-200/50 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-400 via-pink-400 to-rose-500
-                             transition-all duration-700 ease-out"
-                    style={{ width: `${progressToNextLevel}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Navegação Horizontal */}
+          <nav className="hidden lg:flex items-center gap-1">
+            <button
+              onClick={() => navigate('/guides')}
+              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
+                       hover:bg-slate-50 rounded-lg transition-all"
+            >
+              Guides
+            </button>
+            <button
+              onClick={() => navigate('/ai-directory')}
+              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
+                       hover:bg-slate-50 rounded-lg transition-all"
+            >
+              AI Directory
+            </button>
+            <button
+              onClick={() => navigate('/prompt-library')}
+              className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-cyan-600
+                       hover:bg-slate-50 rounded-lg transition-all"
+            >
+              Prompt Library
+            </button>
+          </nav>
 
           {/* User Menu */}
           <div className="flex items-center gap-2">
