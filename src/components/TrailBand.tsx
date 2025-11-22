@@ -60,56 +60,38 @@ export const TrailBand = ({
     <div
       onClick={handleClick}
       className={cn(
-        "group relative overflow-hidden rounded-[32px] transition-all duration-300 min-h-[120px]",
-        "hover:scale-[1.02] hover:shadow-2xl",
-        isLocked && "opacity-50 cursor-not-allowed hover:scale-100",
-        !isLocked && "cursor-pointer",
-        isLocked ? "bg-slate-200" : bgColor
+        "group relative overflow-hidden rounded-2xl transition-all duration-300 min-h-[120px] bg-white border",
+        "hover:scale-[1.02] hover:shadow-lg",
+        isLocked && "opacity-60 cursor-not-allowed hover:scale-100 border-gray-200",
+        !isLocked && "cursor-pointer border-gray-200 hover:border-primary"
       )}
     >
-      {/* Organic blob decorations */}
-      {!isLocked && (
-        <>
-          <div className="absolute -right-12 -top-12 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-        </>
-      )}
-
       <div className="relative p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
-          {/* Play button in white circle (replaces icon) */}
+          {/* Icon in colored circle */}
           {!isLocked ? (
-            <div className={cn(
-              "flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg transition-all duration-300",
-              "group-hover:bg-white group-hover:scale-110 group-hover:shadow-xl"
-            )}>
-              <Play className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800 ml-0.5 group-hover:scale-110 transition-transform" fill="currentColor" />
+            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-100 flex items-center justify-center transition-all duration-300">
+              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
             </div>
           ) : (
-            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-300 flex items-center justify-center shadow-lg">
-              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-slate-500" />
+            <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-200 flex items-center justify-center">
+              <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-gray-500" />
             </div>
           )}
 
           {/* Content Section */}
           <div className="flex-1 min-w-0 w-full">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-            <h3 className={cn(
-                "font-bold text-lg sm:text-xl text-balance",
-                isLocked ? "text-slate-600" : "text-white"
-              )}>
+            <h3 className="font-bold text-lg sm:text-xl text-balance text-gray-900">
                 {trail.title}
               </h3>
               {isCompleted && (
-                <span className="flex-shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-white/90 text-emerald-600">
+                <span className="flex-shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-accent text-white">
                   ✓ Concluída
                 </span>
               )}
             </div>
-            <p className={cn(
-              "text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed font-normal",
-              isLocked ? "text-slate-500" : "text-white/90"
-            )}>
+            <p className="text-sm sm:text-base mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 leading-relaxed font-normal text-gray-600">
               {trail.description}
             </p>
             
@@ -118,20 +100,17 @@ export const TrailBand = ({
               <div className="mb-2">
                 <Progress 
                   value={progress} 
-                  className="h-2 bg-white/20"
+                  className="h-2 bg-gray-200"
                 />
               </div>
             )}
             
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className={cn(
-                "text-sm font-medium",
-                isLocked ? "text-slate-500" : "text-white/80"
-              )}>
+              <span className="text-sm font-medium text-gray-600">
                 {completedLessons}/{totalLessons} aulas
               </span>
               {!isLocked && progress > 0 && (
-                <span className="text-xs font-medium text-white/80">
+                <span className="text-xs font-medium text-primary">
                   • {Math.round(progress)}%
                 </span>
               )}
@@ -142,8 +121,8 @@ export const TrailBand = ({
 
       {/* Locked overlay */}
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[1px]">
-          <p className="text-sm font-semibold text-slate-700 px-4 text-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 backdrop-blur-[1px]">
+          <p className="text-sm font-semibold text-gray-700 px-4 text-center">
             Complete a trilha anterior para desbloquear
           </p>
         </div>
