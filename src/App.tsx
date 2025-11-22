@@ -40,6 +40,8 @@ import GuideDetail from "./pages/GuideDetail";
 import AIDirectory from "./pages/AIDirectory";
 import PromptLibrary from "./pages/PromptLibrary";
 import PromptCategory from "./pages/PromptCategory";
+import AIPlayground from "./pages/AIPlayground";
+import CursoExclusivo from "./pages/CursoExclusivo";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -90,6 +92,8 @@ const App = () => (
           <Route path="/ai-directory" element={<AIDirectory />} />
           <Route path="/prompt-library" element={<PromptLibrary />} />
           <Route path="/prompt-library/:categoryId" element={<PromptCategory />} />
+          <Route path="/ai-playground" element={<AIPlayground />} />
+          <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
