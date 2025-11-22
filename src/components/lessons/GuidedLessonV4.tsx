@@ -30,7 +30,7 @@ import { updateMissionProgress } from '@/lib/updateMissionProgress';
  * + Exercícios finais com feedback rico
  * + Resumo interativo com conquistas
  *
- * FORCE REBUILD - 2025-01-22 16:45 - Cache busting
+ * FORCE REBUILD - 2025-01-22 17:15:00 UTC - Post-merge deploy
  */
 export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();

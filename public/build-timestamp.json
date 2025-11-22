@@ -1,9 +1,9 @@
 {
-  "buildVersion": "2025-01-22-17:00-V4-PLAYGROUND-REAL",
-  "buildTimestamp": "2025-01-22T17:00:00.000Z",
-  "commit": "a3c4fdf",
-  "pr": "#38",
-  "feature": "V4 Playground Real Interativo",
+  "buildVersion": "2025-01-22-17:15-V4-POST-MERGE",
+  "buildTimestamp": "2025-01-22T17:15:00.000Z",
+  "commit": "1f21b6a",
+  "pr": "main-merge",
+  "feature": "V4 Post-Merge Deploy",
   "expectedLogs": [
     "🎯 [AUDIO-ENDED] Verificando condições:",
     "🎯 [AUDIO-ENDED] Fase alterada para: playground-real",
