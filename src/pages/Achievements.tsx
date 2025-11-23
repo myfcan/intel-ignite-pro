@@ -130,7 +130,17 @@ export default function Achievements() {
             <PointsDisplay points={userPoints} streak={userStreak} showStreak={true} />
             
             {/* Overall Progress */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-lg">
+            <div className="rounded-2xl p-4 border shadow-lg transition-all"
+                 style={{
+                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                   backgroundImage: `
+                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                   `,
+                   backgroundSize: 'cover, 16px 16px',
+                   backgroundPosition: 'center, 0 0',
+                   borderColor: 'rgba(139, 92, 246, 0.2)',
+                 }}>
               <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-5 h-5 text-pink-500" />
                 <h3 className="font-semibold text-slate-900">Progresso Geral</h3>
@@ -174,9 +184,20 @@ export default function Achievements() {
                         whileHover={{ scale: earned ? 1.05 : 1 }}
                         className={`relative p-6 rounded-2xl border-2 transition-all ${
                           earned
-                            ? 'bg-gradient-to-br from-pink-50 to-rose-50 border-pink-300 shadow-lg'
-                            : 'bg-white/50 border-slate-200 opacity-60'
+                            ? 'border-pink-300 shadow-lg'
+                            : 'border-slate-200 opacity-60'
                         }`}
+                        style={earned ? {
+                          background: 'linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)',
+                        } : {
+                          background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                          backgroundImage: `
+                            linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                            radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                          `,
+                          backgroundSize: 'cover, 16px 16px',
+                          backgroundPosition: 'center, 0 0',
+                        }}
                       >
                         {/* Icon */}
                         <div className="text-5xl mb-3 text-center">
