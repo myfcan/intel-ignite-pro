@@ -78,27 +78,42 @@ export default function PromptLibrary() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-primary" />
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{totalPrompts}</p>
+                <p className="text-gray-600 text-sm">Prompts Disponíveis</p>
+              </div>
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">{totalPrompts}</div>
-            <div className="text-gray-600">Prompts Disponíveis</div>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-accent" />
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{freePrompts}</p>
+                <p className="text-gray-600 text-sm">Prompts Grátis</p>
+              </div>
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">{freePrompts}</div>
-            <div className="text-gray-600">Prompts Grátis</div>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-secondary" />
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)'}}>
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{allPromptCategories.length}</p>
+                <p className="text-gray-600 text-sm">Categorias</p>
+              </div>
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">{allPromptCategories.length}</div>
-            <div className="text-gray-600">Categorias</div>
-          </Card>
+          </div>
         </div>
 
         {/* Categories Grid */}
@@ -109,22 +124,24 @@ export default function PromptLibrary() {
             const premiumCount = category.prompts.length - freeCount;
 
             return (
-              <Card
+              <div
                 key={category.id}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-white border border-gray-200 hover:border-primary"
+                className="group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden"
                 onClick={() => navigate(`/prompt-library/${category.id}`)}
               >
-                {/* Icon header */}
-                <div className="h-32 bg-gray-100 flex items-center justify-center relative overflow-hidden">
-                  <Icon className="w-16 h-16 text-primary" />
+                <div className="relative mb-4">
+                  {/* Badge Popular */}
                   {category.isPopular && (
-                    <Badge className="absolute top-3 right-3 bg-accent text-white border-0">
+                    <span className="absolute -top-2 -right-2 px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded z-10">
                       Popular
-                    </Badge>
+                    </span>
                   )}
+                  <div className="w-full h-32 rounded-t-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Icon className="w-16 h-16 text-indigo-600" />
+                  </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 pt-0">
                   {/* Title */}
                   <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
                     {category.name}
@@ -136,32 +153,26 @@ export default function PromptLibrary() {
                   </p>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      {freeCount} grátis
-                    </span>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">{freeCount} grátis</span>
                     {premiumCount > 0 && (
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                        {premiumCount} premium
-                      </span>
+                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">{premiumCount} premium</span>
                     )}
                   </div>
 
                   {/* CTA */}
-                  <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
+                  <button className="w-full py-2 border-2 border-indigo-500 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2">
                     Ver Prompts
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
 
         {/* How to use */}
-        <Card className="mt-12 p-8 bg-gradient-to-r from-primary to-secondary text-white">
+        <div className="mt-12 rounded-2xl p-8 text-white shadow-xl" style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
           <h2 className="text-2xl font-bold mb-4">Como usar os prompts?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
@@ -169,7 +180,7 @@ export default function PromptLibrary() {
                 <span className="text-2xl font-bold">1</span>
               </div>
               <h3 className="font-semibold mb-2">Escolha uma categoria</h3>
-              <p className="text-orange-100 text-sm">
+              <p className="text-white/90 text-sm">
                 Navegue pelas categorias e encontre o tipo de prompt que precisa
               </p>
             </div>
@@ -178,7 +189,7 @@ export default function PromptLibrary() {
                 <span className="text-2xl font-bold">2</span>
               </div>
               <h3 className="font-semibold mb-2">Personalize as variáveis</h3>
-              <p className="text-orange-100 text-sm">
+              <p className="text-white/90 text-sm">
                 Preencha os campos específicos do seu contexto
               </p>
             </div>
@@ -187,12 +198,12 @@ export default function PromptLibrary() {
                 <span className="text-2xl font-bold">3</span>
               </div>
               <h3 className="font-semibold mb-2">Use no ChatGPT ou Claude</h3>
-              <p className="text-orange-100 text-sm">
+              <p className="text-white/90 text-sm">
                 Copie e cole em qualquer IA generativa
               </p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

@@ -157,29 +157,38 @@ export default function PromptCategory() {
         {/* Prompts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredPrompts.map((prompt) => (
-            <Card
+            <div
               key={prompt.id}
-              className="p-6 hover:shadow-lg transition-all cursor-pointer group bg-white border border-gray-200 hover:border-primary"
+              className="bg-white rounded-xl p-6 border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative"
               onClick={() => setSelectedPrompt(prompt)}
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors flex-1">
-                  {prompt.title}
-                </h3>
-                {prompt.isPremium && (
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
-                    <Lock className="w-3 h-3 mr-1" />
-                    Premium
-                  </Badge>
-                )}
-                {prompt.isFeatured && (
-                  <Badge className="bg-yellow-500 text-white ml-2">
-                    <Star className="w-3 h-3 mr-1" />
-                    Destaque
-                  </Badge>
-                )}
+              {/* Badge Premium/Featured */}
+              {(prompt.isPremium || prompt.isFeatured) && (
+                <div className="absolute -top-2 -right-2 flex gap-2">
+                  {prompt.isFeatured && (
+                    <span className="px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded flex items-center gap-1">
+                      <Star className="w-3 h-3" />
+                      Destaque
+                    </span>
+                  )}
+                  {prompt.isPremium && (
+                    <span className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      Premium
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Icon */}
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6 text-indigo-600" />
               </div>
+
+              {/* Header */}
+              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
+                {prompt.title}
+              </h3>
 
               {/* Description */}
               <p className="text-sm text-gray-600 mb-4">
@@ -188,52 +197,52 @@ export default function PromptCategory() {
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="outline" className={difficultyColors[prompt.difficulty]}>
+                <span className={`text-xs px-2 py-1 rounded ${difficultyColors[prompt.difficulty]}`}>
                   {prompt.difficulty === 'beginner' && 'Iniciante'}
                   {prompt.difficulty === 'intermediate' && 'Intermediário'}
                   {prompt.difficulty === 'advanced' && 'Avançado'}
-                </Badge>
+                </span>
                 {prompt.usageCount && prompt.usageCount > 1000 && (
-                  <Badge variant="outline" className="flex items-center gap-1">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
                     {prompt.usageCount.toLocaleString()} usos
-                  </Badge>
+                  </span>
                 )}
               </div>
 
               {/* Actions */}
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
+                <button
+                  className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedPrompt(prompt);
                   }}
                 >
                   Ver Detalhes
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCopyPrompt(prompt);
                   }}
-                  className="flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
+                  style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}
                 >
                   {copiedPrompt === prompt.id ? (
                     <>
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 inline mr-1" />
                       Copiado
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-4 h-4 inline mr-1" />
                       Copiar
                     </>
                   )}
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       </div>
