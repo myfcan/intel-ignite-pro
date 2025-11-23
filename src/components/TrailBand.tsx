@@ -63,16 +63,15 @@ export const TrailBand = ({
         "group relative overflow-hidden rounded-2xl transition-all duration-300 min-h-[120px]",
         "hover:scale-[1.02] hover:shadow-2xl",
         isLocked && "opacity-60 cursor-not-allowed hover:scale-100",
-        !isLocked && "cursor-pointer shadow-lg"
+        !isLocked && "cursor-pointer shadow-lg",
+        !isLocked && "hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] transition-shadow"
       )}
       style={{
         background: isLocked 
-          ? 'linear-gradient(135deg, hsl(220, 13%, 91%) 0%, hsl(214, 14%, 82%) 100%)'
-          : 'linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 50%, hsl(330, 81%, 60%) 100%)'
+          ? 'hsl(220, 13%, 91%)'
+          : 'hsl(330, 81%, 60%)'
       }}
     >
-      {/* Gradiente overlay para profundidade */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10" />
       
       <div className="relative p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
