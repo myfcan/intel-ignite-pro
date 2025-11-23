@@ -164,15 +164,15 @@ export default function PromptCategory() {
             >
               {/* Badge Premium/Featured */}
               {(prompt.isPremium || prompt.isFeatured) && (
-                <div className="absolute -top-2 -right-2 flex gap-2">
+                <div className="absolute top-2 right-2 flex gap-2 z-10">
                   {prompt.isFeatured && (
-                    <span className="px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded flex items-center gap-1">
+                    <span className="px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow-md">
                       <Star className="w-3 h-3" />
                       Destaque
                     </span>
                   )}
                   {prompt.isPremium && (
-                    <span className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded flex items-center gap-1">
+                    <span className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow-md">
                       <Lock className="w-3 h-3" />
                       Premium
                     </span>

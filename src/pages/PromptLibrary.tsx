@@ -126,13 +126,13 @@ export default function PromptLibrary() {
             return (
               <div
                 key={category.id}
-                className="group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden"
+                className="group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all"
                 onClick={() => navigate(`/prompt-library/${category.id}`)}
               >
                 <div className="relative mb-4">
                   {/* Badge Popular */}
                   {category.isPopular && (
-                    <span className="absolute -top-2 -right-2 px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded z-10">
+                    <span className="absolute top-2 right-2 px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded z-10 shadow-md">
                       Popular
                     </span>
                   )}
