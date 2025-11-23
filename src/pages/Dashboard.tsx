@@ -257,7 +257,7 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
-                   style={{background: 'linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)'}}>
+                   style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
                 <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
@@ -396,9 +396,9 @@ const Dashboard = () => {
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div onClick={() => navigate('/leaderboard')}
-                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-amber-500 hover:shadow-md transition-all cursor-pointer">
+                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-md transition-all cursor-pointer">
               <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
               </div>
               <p className="text-gray-600 text-xs sm:text-sm">

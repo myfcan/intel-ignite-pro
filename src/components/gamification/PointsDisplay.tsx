@@ -18,15 +18,15 @@ export function PointsDisplay({ points, streak = 0, showStreak = true, compact =
   if (compact) {
     return (
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400/20 to-yellow-300/20 px-3 py-1.5 rounded-full border border-amber-400/30">
-          <Coins className="w-4 h-4 text-amber-600" />
-          <span className="text-sm font-bold text-amber-900">{points.toLocaleString()}</span>
+        <div className="flex items-center gap-1.5 bg-gradient-to-r from-pink-400/20 to-rose-300/20 px-3 py-1.5 rounded-full border border-pink-400/30">
+          <Coins className="w-4 h-4 text-pink-600" />
+          <span className="text-sm font-bold text-pink-900">{points.toLocaleString()}</span>
         </div>
         
         {showStreak && streak > 0 && (
-          <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-400/20 to-red-400/20 px-3 py-1.5 rounded-full border border-orange-400/30">
-            <Flame className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-bold text-orange-900">{streak}</span>
+          <div className="flex items-center gap-1.5 bg-gradient-to-r from-pink-400/20 to-rose-400/20 px-3 py-1.5 rounded-full border border-pink-400/30">
+            <Flame className="w-4 h-4 text-pink-600" />
+            <span className="text-sm font-bold text-pink-900">{streak}</span>
           </div>
         )}
       </div>
@@ -37,7 +37,7 @@ export function PointsDisplay({ points, streak = 0, showStreak = true, compact =
     <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-lg">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl">
+          <div className="p-2 bg-gradient-to-br from-pink-400 to-rose-500 rounded-xl">
             <Coins className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -75,10 +75,10 @@ export function PointsDisplay({ points, streak = 0, showStreak = true, compact =
         <div className="mt-3 pt-3 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Flame className={`w-5 h-5 ${streak > 0 ? 'text-orange-500' : 'text-slate-400'}`} />
+              <Flame className={`w-5 h-5 ${streak > 0 ? 'text-pink-500' : 'text-slate-400'}`} />
               <div>
                 <div className="text-xs text-slate-600">Sequência</div>
-                <div className="text-lg font-bold text-orange-600">{streak} {streak === 1 ? 'dia' : 'dias'}</div>
+                <div className="text-lg font-bold text-pink-600">{streak} {streak === 1 ? 'dia' : 'dias'}</div>
               </div>
             </div>
             

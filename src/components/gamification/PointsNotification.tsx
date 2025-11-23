@@ -29,7 +29,7 @@ export function PointsNotification({ points, reason, show, onHide }: PointsNotif
           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           className="fixed top-20 right-4 z-[100] pointer-events-none"
         >
-          <div className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-amber-900 px-6 py-4 rounded-2xl shadow-2xl border-2 border-amber-500/50">
+          <div className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-400 text-pink-900 px-6 py-4 rounded-2xl shadow-2xl border-2 border-pink-500/50">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Coins className="w-8 h-8 animate-bounce" />
