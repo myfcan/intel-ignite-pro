@@ -8,8 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Base colors - Minimalista: Indigo (Primary) + Violet (Secondary) + Verde Esmeralda (Accent) */
-    --background: 0 0% 100%;
+    /* Base colors - NOVO DESIGN VIBRANTE */
+    --background: 210 20% 98%; /* #FAFBFC */
     --foreground: 215 25% 9%;
 
     --card: 0 0% 100%;
@@ -100,11 +100,16 @@ All colors MUST be HSL.
     --trail-automacoes-accent: 239 84% 67%;
     --trail-automacoes-glow: 239 84% 77%;
 
-    /* Gradiente Brand - Apenas 1 gradiente principal (Indigo → Violet) */
-    --gradient-hero: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
-    --gradient-brand: linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
-    --gradient-card: linear-gradient(to bottom right, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%);
+    /* Gradientes Principais - NOVO DESIGN SYSTEM */
+    --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    --gradient-primary-dark: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    --gradient-emerald: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    --gradient-amber: linear-gradient(135deg, #F59E0B 0%, #DC2626 100%);
+    --gradient-cyan: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+    --gradient-hero: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    --gradient-accent: linear-gradient(135deg, #10B981 0%, #06B6D4 100%);
+    --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    --gradient-brand: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
 
     /* Sombras sutis - Minimalista */
     --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.1);
