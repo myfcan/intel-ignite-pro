@@ -100,7 +100,26 @@ export function MissoesDiarias() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+                  className="rounded-xl transition-all relative overflow-hidden border"
+                  style={{
+                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                    backgroundImage: `
+                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                    `,
+                    backgroundSize: 'cover, 16px 16px',
+                    backgroundPosition: 'center, 0 0',
+                    borderColor: 'rgba(139, 92, 246, 0.2)',
+                    boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
+                  }}
+                  onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.1)';
+                  }}
+                  onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
+                  }}
                 >
                   {/* Barra colorida no topo */}
                   <div className="absolute top-0 left-0 right-0 h-1" style={{ background: gradient }}></div>
