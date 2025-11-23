@@ -131,7 +131,7 @@ export default function AchievementsPage() {
             </Button>
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-amber-500" />
+                <Trophy className="w-6 h-6 text-pink-500" />
                 Suas Conquistas
               </h1>
               <p className="text-sm text-slate-600">
@@ -219,7 +219,7 @@ export default function AchievementsPage() {
                     <Card
                       className={`p-6 transition-all duration-300 ${
                         unlocked
-                          ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg'
+                          ? 'bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200 shadow-lg'
                           : 'bg-white/50 border-slate-200'
                       }`}
                     >
@@ -227,7 +227,7 @@ export default function AchievementsPage() {
                         <div
                           className={`p-3 rounded-xl ${
                             unlocked
-                              ? 'bg-gradient-to-br from-amber-400 to-yellow-500'
+                              ? 'bg-gradient-to-br from-pink-400 to-rose-500'
                               : 'bg-slate-200'
                           }`}
                         >
@@ -254,8 +254,8 @@ export default function AchievementsPage() {
                           )}
 
                           <div className="flex items-center gap-2 text-sm">
-                            <Star className="w-4 h-4 text-amber-500" />
-                            <span className="font-medium text-amber-600">
+                            <Star className="w-4 h-4 text-pink-500" />
+                            <span className="font-medium text-pink-600">
                               {achievement.points} pts
                             </span>
                           </div>
@@ -286,7 +286,7 @@ export default function AchievementsPage() {
                       <Card
                         className={`p-6 transition-all duration-300 ${
                           unlocked
-                            ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg'
+                            ? 'bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200 shadow-lg'
                             : 'bg-white/50 border-slate-200'
                         }`}
                       >
@@ -294,7 +294,7 @@ export default function AchievementsPage() {
                           <div
                             className={`p-3 rounded-xl ${
                               unlocked
-                                ? 'bg-gradient-to-br from-amber-400 to-yellow-500'
+                                ? 'bg-gradient-to-br from-pink-400 to-rose-500'
                                 : 'bg-slate-200'
                             }`}
                           >
@@ -321,8 +321,8 @@ export default function AchievementsPage() {
                             )}
 
                             <div className="flex items-center gap-2 text-sm">
-                              <Star className="w-4 h-4 text-amber-500" />
-                              <span className="font-medium text-amber-600">
+                              <Star className="w-4 h-4 text-pink-500" />
+                              <span className="font-medium text-pink-600">
                                 {achievement.points} pts
                               </span>
                             </div>

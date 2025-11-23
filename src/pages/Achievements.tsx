@@ -132,7 +132,7 @@ export default function Achievements() {
             {/* Overall Progress */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-5 h-5 text-amber-500" />
+                <Trophy className="w-5 h-5 text-pink-500" />
                 <h3 className="font-semibold text-slate-900">Progresso Geral</h3>
               </div>
               <div className="space-y-2">
@@ -147,7 +147,7 @@ export default function Achievements() {
                     initial={{ width: 0 }}
                     animate={{ width: `${completionPercent}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
-                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-500"
+                    className="h-full bg-gradient-to-r from-pink-400 to-rose-500"
                   />
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function Achievements() {
                         whileHover={{ scale: earned ? 1.05 : 1 }}
                         className={`relative p-6 rounded-2xl border-2 transition-all ${
                           earned
-                            ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300 shadow-lg'
+                            ? 'bg-gradient-to-br from-pink-50 to-rose-50 border-pink-300 shadow-lg'
                             : 'bg-white/50 border-slate-200 opacity-60'
                         }`}
                       >
@@ -193,16 +193,16 @@ export default function Achievements() {
 
                         {/* Points */}
                         <div className="flex items-center justify-center gap-1 text-sm font-semibold">
-                          <Sparkles className="w-4 h-4 text-amber-500" />
-                          <span className="text-amber-600">
+                          <Sparkles className="w-4 h-4 text-pink-500" />
+                          <span className="text-pink-600">
                             {achievement.points} pts
                           </span>
                         </div>
 
                         {/* Earned date */}
                         {earned && earnedDate && (
-                          <div className="mt-3 pt-3 border-t border-amber-200 text-center">
-                            <p className="text-xs text-amber-700">
+                          <div className="mt-3 pt-3 border-t border-pink-200 text-center">
+                            <p className="text-xs text-pink-700">
                               Conquistado em {earnedDate}
                             </p>
                           </div>
