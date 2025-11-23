@@ -235,7 +235,7 @@ const Dashboard = () => {
 
         {/* Hero Section - NOVO DESIGN */}
         <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden shadow-2xl"
-             style={{background: 'linear-gradient(135deg, #8B5CF6 0%, #C084FC 100%)'}}>
+             style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}>
           {/* Textura overlay premium */}
           <div 
             className="absolute inset-0 opacity-10"
