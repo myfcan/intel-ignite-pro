@@ -78,7 +78,17 @@ export default function PromptLibrary() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="rounded-xl p-6 shadow-sm hover:shadow-md transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+               }}>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
@@ -90,7 +100,17 @@ export default function PromptLibrary() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="rounded-xl p-6 shadow-sm hover:shadow-md transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+               }}>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
@@ -102,7 +122,17 @@ export default function PromptLibrary() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="rounded-xl p-6 shadow-sm hover:shadow-md transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+               }}>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)'}}>
@@ -126,8 +156,18 @@ export default function PromptLibrary() {
             return (
               <div
                 key={category.id}
-                className="group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all"
+                className="group cursor-pointer rounded-xl border-2 hover:border-indigo-300 hover:shadow-lg transition-all"
                 onClick={() => navigate(`/prompt-library/${category.id}`)}
+                style={{
+                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                  backgroundImage: `
+                    linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                    radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                  `,
+                  backgroundSize: 'cover, 16px 16px',
+                  backgroundPosition: 'center, 0 0',
+                  borderColor: 'rgba(139, 92, 246, 0.2)',
+                }}
               >
                 <div className="relative mb-4">
                   {/* Badge Popular */}

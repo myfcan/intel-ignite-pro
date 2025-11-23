@@ -166,7 +166,10 @@ export default function Leaderboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="p-6 bg-gradient-to-r from-primary to-secondary text-white border-0">
+            <Card className="p-6 text-white border-0 relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                  }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm opacity-90 mb-1">Sua Posição Atual</p>
@@ -202,7 +205,19 @@ export default function Leaderboard() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className={`${position === 1 ? 'order-2 col-span-3 md:col-span-1' : position === 2 ? 'order-1' : 'order-3'}`}
               >
-                <Card className={`p-6 bg-gradient-to-br ${getRankColor(position)} text-white border-0 ${position === 1 ? 'transform scale-105' : ''}`}>
+                <Card className={`p-6 text-white border-0 relative overflow-hidden ${position === 1 ? 'transform scale-105' : ''}`}
+                      style={{
+                        background: position === 1 
+                          ? 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)'
+                          : position === 2
+                          ? 'linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%)'
+                          : 'linear-gradient(135deg, #FDBA74 0%, #FB923C 100%)',
+                        boxShadow: position === 1 
+                          ? '0 20px 50px -12px rgba(251, 191, 36, 0.5)'
+                          : position === 2
+                          ? '0 10px 30px -12px rgba(148, 163, 184, 0.5)'
+                          : '0 10px 30px -12px rgba(251, 146, 60, 0.5)',
+                      }}>
                   <div className="flex flex-col items-center text-center space-y-3">
                     <div className="relative">
                       {getRankIcon(position)}
@@ -249,7 +264,17 @@ export default function Leaderboard() {
           </TabsList>
 
           <TabsContent value={period}>
-            <Card className="divide-y divide-slate-200 bg-white/80 backdrop-blur-sm overflow-hidden">
+            <Card className="divide-y divide-slate-200 overflow-hidden border"
+                  style={{
+                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                    backgroundImage: `
+                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                    `,
+                    backgroundSize: 'cover, 16px 16px',
+                    backgroundPosition: 'center, 0 0',
+                    borderColor: 'rgba(139, 92, 246, 0.2)',
+                  }}>
               {users.slice(3).map((user, index) => {
                 const position = index + 4;
                 const isCurrentUser = user.id === currentUserId;

@@ -159,8 +159,18 @@ export default function PromptCategory() {
           {filteredPrompts.map((prompt) => (
             <div
               key={prompt.id}
-              className="bg-white rounded-xl p-6 border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative"
+              className="rounded-xl p-6 border-2 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative"
               onClick={() => setSelectedPrompt(prompt)}
+              style={{
+                background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                backgroundImage: `
+                  linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                  radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                `,
+                backgroundSize: 'cover, 16px 16px',
+                backgroundPosition: 'center, 0 0',
+                borderColor: 'rgba(139, 92, 246, 0.2)',
+              }}
             >
               {/* Badge Premium/Featured */}
               {(prompt.isPremium || prompt.isFeatured) && (
