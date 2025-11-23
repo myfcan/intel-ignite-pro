@@ -68,7 +68,7 @@ export const TrailBand = ({
       style={{
         background: isLocked 
           ? 'linear-gradient(135deg, hsl(220, 13%, 91%) 0%, hsl(214, 14%, 82%) 100%)'
-          : 'linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 100%)'
+          : 'linear-gradient(135deg, hsl(239, 84%, 67%) 0%, hsl(258, 90%, 66%) 50%, hsl(330, 81%, 60%) 100%)'
       }}
     >
       {/* Textura overlay - efeito de camada */}
