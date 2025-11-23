@@ -236,8 +236,8 @@ const Dashboard = () => {
         {/* Hero Section - NOVO DESIGN */}
         <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden"
              style={{
-               background: 'linear-gradient(135deg, #9333EA 0%, #DB2777 50%, #EC4899 100%)',
-               boxShadow: '0 20px 50px -12px rgba(244, 114, 182, 0.4), 0 0 0 1px rgba(244, 114, 182, 0.1)'
+               background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+               boxShadow: '0 20px 50px -12px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
              }}>
           {/* Textura overlay premium */}
           <div 
@@ -375,7 +375,7 @@ const Dashboard = () => {
                 ? 'cursor-pointer hover:shadow-2xl' 
                 : 'cursor-not-allowed opacity-60'
             }`}
-            style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
+            style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
             {/* Badge Premium ou Admin */}
             <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
               <span className="text-xs sm:text-sm font-bold">
@@ -412,12 +412,16 @@ const Dashboard = () => {
             </div>
 
             <div onClick={() => navigate('/achievements')}
-                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer">
-              <div className="flex items-center gap-3 mb-2">
-                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
+                 className="relative rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden"
+                 style={{
+                   background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)',
+                   boxShadow: '0 4px 20px rgba(236, 72, 153, 0.3)'
+                 }}>
+              <div className="relative z-10 flex items-center gap-3 mb-2">
+                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <h3 className="font-bold text-white text-sm sm:text-base">Suas Conquistas</h3>
               </div>
-              <p className="text-gray-600 text-xs sm:text-sm">
+              <p className="relative z-10 text-white/90 text-xs sm:text-sm">
                 Desbloqueie badges e recompensas
               </p>
             </div>
