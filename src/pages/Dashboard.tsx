@@ -236,12 +236,21 @@ const Dashboard = () => {
         {/* Hero Section - NOVO DESIGN */}
         <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden shadow-2xl"
              style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
-          {/* Pattern de pontos sutis */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" 
-                 style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)',
-                         backgroundSize: '20px 20px'}} />
-          </div>
+          {/* Textura overlay - efeito de camada */}
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 10px,
+                  rgba(255,255,255,.05) 10px,
+                  rgba(255,255,255,.05) 20px
+                )
+              `
+            }}
+          />
           <div className="relative z-10">
             <p className="text-white/80 text-xs sm:text-sm uppercase tracking-wider mb-2">BEM-VINDO DE VOLTA!</p>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Olá, {user?.name}! 👋</h1>
@@ -254,7 +263,7 @@ const Dashboard = () => {
         {/* Stats Cards - NOVO DESIGN */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {/* Sequência */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
@@ -272,7 +281,7 @@ const Dashboard = () => {
           </div>
 
           {/* Pontos */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
@@ -290,7 +299,7 @@ const Dashboard = () => {
           </div>
 
           {/* Aulas */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
@@ -396,7 +405,7 @@ const Dashboard = () => {
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div onClick={() => navigate('/leaderboard')}
-                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-md transition-all cursor-pointer">
+                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer">
               <div className="flex items-center gap-3 mb-2">
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
@@ -407,7 +416,7 @@ const Dashboard = () => {
             </div>
 
             <div onClick={() => navigate('/achievements')}
-                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-purple-200 hover:border-purple-400 transition-all cursor-pointer">
+                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/30 transition-all cursor-pointer">
               <div className="flex items-center gap-3 mb-2">
                 <Award className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
