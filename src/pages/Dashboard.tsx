@@ -235,20 +235,13 @@ const Dashboard = () => {
 
         {/* Hero Section - NOVO DESIGN */}
         <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden shadow-2xl"
-             style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
-          {/* Textura overlay - efeito de camada */}
+             style={{background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'}}>
+          {/* Textura overlay premium */}
           <div 
-            className="absolute inset-0 opacity-20"
+            className="absolute inset-0 opacity-10"
             style={{
-              backgroundImage: `
-                repeating-linear-gradient(
-                  45deg,
-                  transparent,
-                  transparent 10px,
-                  rgba(255,255,255,.05) 10px,
-                  rgba(255,255,255,.05) 20px
-                )
-              `
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              backgroundSize: '30px 30px'
             }}
           />
           <div className="relative z-10">

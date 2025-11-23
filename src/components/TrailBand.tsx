@@ -69,7 +69,7 @@ export const TrailBand = ({
       style={{
         background: isLocked 
           ? 'hsl(220, 13%, 91%)'
-          : 'hsl(330, 81%, 60%)'
+          : 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'
       }}
     >
       
