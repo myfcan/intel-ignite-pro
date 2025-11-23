@@ -66,44 +66,65 @@ export default function Guides() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-primary" />
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">{guidesMetadata.length}</p>
+                <p className="text-gray-600 text-sm">Guias Disponíveis</p>
+              </div>
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">{guidesMetadata.length}</div>
-            <div className="text-gray-600">Guias Disponíveis</div>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <BookOpen className="w-6 h-6 text-secondary" />
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
+                <BookOpen className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">
+                  {guidesMetadata.reduce((sum, g) => sum + g.sections, 0)}
+                </p>
+                <p className="text-gray-600 text-sm">Seções de Conteúdo</p>
+              </div>
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">
-              {guidesMetadata.reduce((sum, g) => sum + g.sections, 0)}
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)'}}>
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-gray-900">100%</p>
+                <p className="text-gray-600 text-sm">Grátis</p>
+              </div>
             </div>
-            <div className="text-gray-600">Seções de Conteúdo</div>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-              <Sparkles className="w-6 h-6 text-accent" />
-            </div>
-            <div className="text-4xl font-bold text-gray-900 mb-2">100%</div>
-            <div className="text-gray-600">Grátis</div>
-          </Card>
+          </div>
         </div>
 
         {/* Guides Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {guidesMetadata.map((guide) => (
-            <Card
+            <div
               key={guide.id}
-              className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-white border border-gray-200 hover:border-primary"
+              className="relative group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden"
               onClick={() => handleGuideClick(guide.id)}
             >
+              {/* Badge Novo */}
+              {guide.isNew && (
+                <span className="absolute -top-2 -right-2 px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded z-10">
+                  Novo
+                </span>
+              )}
 
               <div className="p-6">
-                {/* Logo + New Badge */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center overflow-hidden">
+                {/* Logo com gradiente de fundo */}
+                <div className="mb-4">
+                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden group-hover:scale-110 transition-transform">
                     {guide.logo ? (
                       <img
                         src={guide.logo}
@@ -111,12 +132,9 @@ export default function Guides() {
                         className="w-12 h-12 object-contain"
                       />
                     ) : (
-                      <BookOpen className="w-8 h-8 text-gray-400" />
+                      <BookOpen className="w-8 h-8 text-indigo-600" />
                     )}
                   </div>
-                  {guide.isNew && (
-                    <Badge className="bg-accent text-white">Novo</Badge>
-                  )}
                 </div>
 
                 {/* Title */}
@@ -131,15 +149,15 @@ export default function Guides() {
 
                 {/* Metadata */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge variant="outline" className={difficultyColors[guide.difficulty]}>
+                  <span className={`text-xs px-2 py-1 rounded ${difficultyColors[guide.difficulty]}`}>
                     {guide.difficulty === 'beginner' && 'Iniciante'}
                     {guide.difficulty === 'intermediate' && 'Intermediário'}
                     {guide.difficulty === 'advanced' && 'Avançado'}
-                  </Badge>
+                  </span>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {guide.estimatedTime}
@@ -151,30 +169,32 @@ export default function Guides() {
                 </div>
 
                 {/* CTA */}
-                <Button className="w-full mt-4">
+                <button 
+                  className="w-full py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
+                  style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}
+                >
                   Iniciar Guia
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 
         {/* Bottom CTA */}
-        <Card className="mt-12 p-8 bg-gradient-to-r from-primary to-secondary text-white text-center">
+        <div className="mt-12 rounded-2xl p-8 text-white text-center shadow-xl" style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
           <h2 className="text-2xl font-bold mb-2">
             Pronto para dominar a IA?
           </h2>
-          <p className="text-white/80 mb-6">
+          <p className="text-white/90 mb-6">
             Escolha um guia acima e comece sua jornada agora mesmo
           </p>
-          <Button
-            variant="secondary"
-            size="lg"
+          <button
+            className="px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-white/90 transition-all shadow-lg"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             Ver Todos os Guias
-          </Button>
-        </Card>
+          </button>
+        </div>
       </div>
     </div>
   );
