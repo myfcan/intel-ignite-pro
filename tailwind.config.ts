@@ -198,10 +198,10 @@ export default {
         },
         "pulse-glow": {
           "0%, 100%": {
-            filter: "drop-shadow(0 0 12px rgba(234, 179, 8, 0.6)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.4))",
+            filter: "drop-shadow(0 0 12px rgba(236, 72, 153, 0.6)) drop-shadow(0 0 20px rgba(219, 39, 119, 0.4))",
           },
           "50%": {
-            filter: "drop-shadow(0 0 20px rgba(234, 179, 8, 0.8)) drop-shadow(0 0 30px rgba(251, 191, 36, 0.6))",
+            filter: "drop-shadow(0 0 20px rgba(236, 72, 153, 0.8)) drop-shadow(0 0 30px rgba(219, 39, 119, 0.6))",
           },
         },
         "audio-bounce": {

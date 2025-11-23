@@ -34,7 +34,7 @@ All colors MUST be HSL.
     --success: 158 64% 52%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 330 81% 60%;
     --warning-foreground: 0 0% 100%;
 
     /* Error/Destructive */
@@ -104,7 +104,7 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
     --gradient-primary-dark: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
     --gradient-emerald: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    --gradient-amber: linear-gradient(135deg, #F59E0B 0%, #DC2626 100%);
+    --gradient-cherry: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
     --gradient-cyan: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
     --gradient-hero: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
     --gradient-accent: linear-gradient(135deg, #10B981 0%, #06B6D4 100%);
@@ -156,7 +156,7 @@ All colors MUST be HSL.
     --success: 158 64% 52%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 330 81% 60%;
     --warning-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;

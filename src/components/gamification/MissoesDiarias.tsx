@@ -61,7 +61,7 @@ export function MissoesDiarias() {
   };
 
   const missionGradients = [
-    'linear-gradient(90deg, #F59E0B 0%, #DC2626 100%)',
+    'linear-gradient(90deg, #EC4899 0%, #DB2777 100%)',
     'linear-gradient(90deg, #8B5CF6 0%, #6366F1 100%)',
     'linear-gradient(90deg, #10B981 0%, #06B6D4 100%)',
   ];
@@ -109,7 +109,7 @@ export function MissoesDiarias() {
                     {/* Icon */}
                     <div className="w-12 h-12 rounded-full flex items-center justify-center" 
                          style={{ background: isCompleted ? '#F3F4F6' : gradient }}>
-                      <div className={isCompleted ? 'text-amber-600' : 'text-white'}>
+                      <div className={isCompleted ? 'text-pink-600' : 'text-white'}>
                         {getMissionIcon(template.requirement_type)}
                       </div>
                     </div>
@@ -160,7 +160,8 @@ export function MissoesDiarias() {
                           )}
                         </button>
                       ) : isCompleted ? (
-                        <span className="px-3 py-1 bg-amber-500 text-white text-sm font-bold rounded-full flex items-center gap-1">
+                        <span className="px-3 py-1 text-white text-sm font-bold rounded-full flex items-center gap-1"
+                              style={{ background: 'linear-gradient(90deg, #EC4899 0%, #DB2777 100%)' }}>
                           <Coins className="w-4 h-4" />
                           +{template.reward_value} XP
                         </span>
