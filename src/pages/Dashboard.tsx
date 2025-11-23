@@ -360,17 +360,21 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Curso Exclusivo */}
-          <div onClick={() => navigate('/curso-exclusivo')}
-               className="cursor-pointer rounded-2xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all"
+          {/* Curso Renda Extra - LOCKED */}
+          <div className="relative cursor-not-allowed rounded-2xl p-4 sm:p-6 text-white shadow-xl transition-all opacity-60"
                style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
-            <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-bold mb-2">Curso Exclusivo</h3>
+            {/* Badge Premium */}
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-bold">🔒 Premium</span>
+            </div>
+            
+            <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
+            <h3 className="text-lg sm:text-xl font-bold mb-2">Curso Renda Extra</h3>
             <p className="text-white/90 text-sm sm:text-base mb-3 sm:mb-4">
-              Acesse conteúdo premium com guias completos sobre as principais ferramentas de IA.
+              Aprenda estratégias comprovadas para gerar de R$ 10 mil a R$ 50 mil por mês usando Inteligência Artificial.
             </p>
-            <button className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg font-semibold hover:bg-white/30 transition-all text-sm sm:text-base">
-              Ver curso →
+            <button className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg font-semibold cursor-not-allowed text-sm sm:text-base">
+              Em breve →
             </button>
           </div>
         </div>
