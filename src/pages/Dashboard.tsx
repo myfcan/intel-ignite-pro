@@ -259,7 +259,26 @@ const Dashboard = () => {
         {/* Stats Cards - NOVO DESIGN */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {/* Sequência */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all">
+          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
+               }}
+               onMouseEnter={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.3)';
+               }}
+               onMouseLeave={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
+               }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
@@ -277,7 +296,26 @@ const Dashboard = () => {
           </div>
 
           {/* Pontos */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all">
+          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
+               }}
+               onMouseEnter={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.1)';
+               }}
+               onMouseLeave={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
+               }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
@@ -295,7 +333,26 @@ const Dashboard = () => {
           </div>
 
           {/* Aulas */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all">
+          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border"
+               style={{
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                 backgroundImage: `
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                 `,
+                 backgroundSize: 'cover, 16px 16px',
+                 backgroundPosition: 'center, 0 0',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
+               }}
+               onMouseEnter={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+               }}
+               onMouseLeave={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
+               }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
                    style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
@@ -347,7 +404,17 @@ const Dashboard = () => {
             <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition duration-300 blur"></div>
             
             {/* Card content */}
-            <div className="relative bg-white rounded-2xl p-4 sm:p-6 border-2 border-indigo-100">
+            <div className="relative rounded-2xl p-4 sm:p-6 border-2 transition-all"
+                 style={{
+                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                   backgroundImage: `
+                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                   `,
+                   backgroundSize: 'cover, 16px 16px',
+                   backgroundPosition: 'center, 0 0',
+                   borderColor: 'rgba(99, 102, 241, 0.3)',
+                 }}>
               <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -401,7 +468,17 @@ const Dashboard = () => {
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div onClick={() => navigate('/leaderboard')}
-                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer">
+                 className="rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer border"
+                 style={{
+                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+                   backgroundImage: `
+                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+                   `,
+                   backgroundSize: 'cover, 16px 16px',
+                   backgroundPosition: 'center, 0 0',
+                   borderColor: 'rgba(236, 72, 153, 0.3)',
+                 }}>
               <div className="flex items-center gap-3 mb-2">
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
