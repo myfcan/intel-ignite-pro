@@ -209,14 +209,14 @@ const Dashboard = () => {
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
-    'Fundamentos de IA': 'from-blue-400 via-indigo-400 to-purple-500',
-    'IA no Dia a Dia': 'from-cyan-400 via-teal-400 to-blue-500',
-    'IA nos Negócios': 'from-purple-400 via-pink-400 to-rose-500',
-    'Renda Extra com IA': 'from-emerald-400 via-teal-400 to-cyan-500',
+    'Fundamentos de IA': 'from-primary to-secondary',
+    'IA no Dia a Dia': 'from-primary to-secondary',
+    'IA nos Negócios': 'from-primary to-secondary',
+    'Renda Extra com IA': 'from-primary to-secondary',
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAFBFC]">
       <DashboardHeader user={user!} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -231,92 +231,79 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-primary to-secondary 
-                      rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 shadow-lg">
-          
-          {/* Grid pattern overlay */}
+        {/* Hero Section - NOVO DESIGN */}
+        <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden shadow-2xl"
+             style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+          {/* Pattern de pontos sutis */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" 
-                 style={{
-                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-                 }}
-            />
+                 style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)',
+                         backgroundSize: '20px 20px'}} />
           </div>
-
           <div className="relative z-10">
-            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-              {/* Avatar */}
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white/95 backdrop-blur-sm shadow-lg flex items-center justify-center border-4 border-white/50">
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                </div>
-              </div>
+            <p className="text-white/80 text-xs sm:text-sm uppercase tracking-wider mb-2">BEM-VINDO DE VOLTA!</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Olá, {user?.name}! 👋</h1>
+            <p className="text-white/90 text-sm sm:text-base md:text-lg">
+              Comece sua jornada de aprendizado em Inteligência Artificial
+            </p>
+          </div>
+        </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <p className="text-white/80 text-xs sm:text-sm font-semibold mb-1 sm:mb-2 uppercase tracking-wide">
-                  Bem-vindo de volta!
+        {/* Stats Cards - NOVO DESIGN */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {/* Sequência */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)'}}>
+                <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {user?.streak_days || 0}
                 </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3 text-balance">
-                  Olá, {user?.name || 'Estudante'}! 👋
-                </h2>
-                <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl font-normal">
-                  Comece sua jornada de aprendizado em Inteligência Artificial
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Dias de sequência
                 </p>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Stats Row - Logo abaixo do hero */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {/* Sequência */}
-          <Card className="bg-white border border-gray-200">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.streak_days || 0}</p>
-                  <p className="text-xs text-gray-600">Dias de sequência</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Pontos */}
-          <Card className="bg-white border border-gray-200">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.total_points || 0}</p>
-                  <p className="text-xs text-gray-600">Pontos totais</p>
-                </div>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+                <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {user?.total_points || 0}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Pontos totais
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Aulas */}
-          <Card className="bg-white border border-gray-200">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{user?.total_lessons_completed || 0}</p>
-                  <p className="text-xs text-gray-600">Aulas completas</p>
-                </div>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+                   style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
+                <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {user?.total_lessons_completed || 0}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Aulas completas
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Trilhas Section */}
@@ -344,109 +331,76 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* AI Playground + Curso Exclusivo */}
+        {/* Feature Cards - NOVO DESIGN */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* AI Playground */}
-          <Card
-            className="bg-white border-2 border-primary cursor-pointer
-                     hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300
-                     overflow-hidden group"
-            onClick={() => navigate('/ai-playground')}
-          >
-            <CardHeader className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gray-100
-                              flex items-center justify-center flex-shrink-0">
-                  <svg className="w-7 h-7 sm:w-8 sm:h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="text-gray-900 flex-1 min-w-0">
-                  <CardTitle className="text-xl sm:text-2xl font-bold mb-2">AI Playground</CardTitle>
-                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                    Experimente modelos de IA em tempo real. Teste prompts, explore recursos e aprenda na prática.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary
-                                group-hover:gap-3 transition-all">
-                    Começar agora
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+          <div onClick={() => navigate('/ai-playground')}
+               className="cursor-pointer relative group">
+            {/* Borda gradiente no hover */}
+            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition duration-300 blur"></div>
+            
+            {/* Card content */}
+            <div className="relative bg-white rounded-2xl p-4 sm:p-6 border-2 border-indigo-100">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">AI Playground</h3>
+              <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4">
+                Experimente modelos de IA em tempo real. Teste prompts e veja os resultados instantaneamente.
+              </p>
+              <button className="text-indigo-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all text-sm sm:text-base">
+                Começar agora 
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
           {/* Curso Exclusivo */}
-          <Card
-            className="bg-accent border-0 cursor-pointer text-white
-                     hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300
-                     overflow-hidden group"
-            onClick={() => navigate('/curso-exclusivo')}
-          >
-            <CardHeader className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm
-                              flex items-center justify-center flex-shrink-0">
-                  <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                </div>
-                <div className="text-white flex-1 min-w-0">
-                  <CardTitle className="text-xl sm:text-2xl font-bold mb-2">Curso Exclusivo</CardTitle>
-                  <p className="text-white/90 text-sm sm:text-base leading-relaxed">
-                    Acesse conteúdo premium e aprofunde seus conhecimentos com aulas exclusivas.
-                  </p>
-                  <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/90
-                                group-hover:gap-3 transition-all">
-                    Ver curso
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+          <div onClick={() => navigate('/curso-exclusivo')}
+               className="cursor-pointer rounded-2xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all"
+               style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
+            <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
+            <h3 className="text-lg sm:text-xl font-bold mb-2">Curso Exclusivo</h3>
+            <p className="text-white/90 text-sm sm:text-base mb-3 sm:mb-4">
+              Acesse conteúdo premium com guias completos sobre as principais ferramentas de IA.
+            </p>
+            <button className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg font-semibold hover:bg-white/30 transition-all text-sm sm:text-base">
+              Ver curso →
+            </button>
+          </div>
         </div>
 
-        {/* Quick Actions - Visível em mobile e desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <Card
-            className="bg-gray-100 border border-gray-200 cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300"
-            onClick={() => navigate('/leaderboard')}
-          >
-            <CardHeader className="p-4 sm:p-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-gray-200">
-                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-gray-800" />
-                </div>
-                <div className="text-gray-900 min-w-0">
-                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Ranking Global</CardTitle>
-                  <p className="text-gray-600 text-xs">Compare-se com outros</p>
-                </div>
+        {/* Quick Actions - NOVO DESIGN */}
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">Ações Rápidas</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div onClick={() => navigate('/leaderboard')}
+                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-amber-500 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
               </div>
-            </CardHeader>
-          </Card>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                Compare-se com outros aprendizes
+              </p>
+            </div>
 
-          <Card
-            className="bg-white border-2 border-secondary cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300"
-            onClick={() => navigate('/gamification')}
-          >
-            <CardHeader className="p-4 sm:p-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6 sm:w-7 sm:h-7 text-secondary" />
-                </div>
-                <div className="text-gray-900 min-w-0">
-                  <CardTitle className="text-base sm:text-lg font-bold mb-0.5">Suas Conquistas</CardTitle>
-                  <p className="text-gray-600 text-xs">Desbloqueie badges</p>
-                </div>
+            <div onClick={() => navigate('/achievements')}
+                 className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-purple-200 hover:border-purple-400 transition-all cursor-pointer">
+              <div className="flex items-center gap-3 mb-2">
+                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
               </div>
-            </CardHeader>
-          </Card>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                Desbloqueie badges e recompensas
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Missões Diárias Section */}
