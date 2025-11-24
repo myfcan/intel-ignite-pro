@@ -31,18 +31,45 @@ export async function step3GenerateAudio(input: Step2Output): Promise<Step3Outpu
 async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
   const startTime = Date.now();
   console.log('🎙️ [V1] Gerando áudio único com timestamps...');
+  console.log(`📝 [V1] Texto: ${input.audioText.length} caracteres`);
   
-  const { data, error } = await supabase.functions.invoke('generate-audio-with-timestamps', {
-    body: {
-      text: input.audioText,
-      voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
-      speed: 1.0 // Velocidade normal
-    }
-  });
+  // Timeout configurável (4 minutos para áudios longos)
+  const TIMEOUT_MS = 240000; // 4 minutos
+  
+  const invokeWithTimeout = async () => {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar áudio (4min)')), TIMEOUT_MS)
+    );
+    
+    const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
+      body: {
+        text: input.audioText,
+        voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+        speed: 1.0 // Velocidade normal
+      }
+    });
+    
+    return Promise.race([invokePromise, timeoutPromise]);
+  };
+
+  let data, error;
+  try {
+    const result = await invokeWithTimeout() as any;
+    data = result.data;
+    error = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V1] Timeout ao gerar áudio:', timeoutError);
+    throw new Error(`Timeout ao gerar áudio (4min). Tente dividir o texto em seções menores.`);
+  }
 
   if (error) {
     console.error('❌ [V1] Erro ao gerar áudio:', error);
     throw new Error(`Falha ao gerar áudio: ${error.message}`);
+  }
+  
+  if (!data || !data.audio_base64) {
+    console.error('❌ [V1] Resposta inválida da edge function');
+    throw new Error('Resposta inválida: áudio não retornado pela edge function');
   }
 
   console.log('📦 [V1] Áudio recebido, fazendo upload para Storage...');
