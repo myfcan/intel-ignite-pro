@@ -200,16 +200,20 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
       await logger.info(5, 'Generate Exercises', `[${i+1}/${input.exercises.length}] Tipo: ${exercise.type}`);
     }
 
-    let exerciseData = exercise.data;
+    // 🔄 MERGE: Sempre mesclar campos do nível raiz com .data
+    // Isso garante que campos como options, correctOptionIndex não sejam perdidos
+    const rootFields: any = { ...exercise };
+    delete rootFields.type;
+    delete rootFields.index;
+    delete rootFields.data;
 
-    // 🔄 FALLBACK: Se não tem .data, usar o próprio exercício como data
-    if (!exerciseData && exercise.type !== 'prompt') {
-      if (logger) {
-        await logger.info(5, 'Generate Exercises', `🔄 Usando exercício raiz como data (fallback)`);
-      }
-      exerciseData = { ...exercise };
-      delete exerciseData.type;
-      delete exerciseData.index;
+    let exerciseData = {
+      ...rootFields,           // Campos do nível raiz (options, correctOptionIndex, etc)
+      ...(exercise.data || {}) // .data sobrescreve se existir
+    };
+
+    if (logger) {
+      await logger.info(5, 'Generate Exercises', `🔄 exerciseData após merge: ${JSON.stringify(exerciseData)}`);
     }
 
     // 🔄 NORMALIZAR COMPLETE-SENTENCE: converter formato simplificado para formato completo
