@@ -62,14 +62,21 @@
         "question": "Complete as frases abaixo:",
         "data": {
           "sentences": [
-            "Frase com ___________ para preencher.",
-            "Outra frase com ___________ aqui.",
-            "Terceira frase com ___________."
-          ],
-          "correctAnswers": [
-            ["resposta1", "alternativa1"],
-            ["resposta2"],
-            ["resposta3", "alternativa3"]
+            {
+              "id": "sentence-1",
+              "text": "Frase com ___________ para preencher.",
+              "correctAnswers": ["resposta1", "alternativa1"]
+            },
+            {
+              "id": "sentence-2",
+              "text": "Outra frase com ___________ aqui.",
+              "correctAnswers": ["resposta2"]
+            },
+            {
+              "id": "sentence-3",
+              "text": "Terceira frase com ___________.",
+              "correctAnswers": ["resposta3", "alternativa3"]
+            }
           ],
           "feedback": "Ótimo trabalho! Explicação aqui."
         }
