@@ -4,6 +4,73 @@ import { validateExercise } from '@/lib/exerciseValidator';
 import { PipelineLogger } from './logger';
 
 /**
+ * 🔄 NORMALIZAR MULTIPLE-CHOICE
+ * Converte correctOptionIndex para correctAnswer
+ */
+function normalizeMultipleChoiceData(data: any, logger?: PipelineLogger): any {
+  // Se já tem correctAnswer, não fazer nada
+  if (data.correctAnswer) {
+    return data;
+  }
+
+  // Se tem correctOptionIndex, converter
+  if (typeof data.correctOptionIndex === 'number' && Array.isArray(data.options)) {
+    if (logger) {
+      logger.info(5, 'Generate Exercises', '🔄 Convertendo correctOptionIndex para correctAnswer...');
+    }
+    
+    const correctAnswer = data.options[data.correctOptionIndex];
+    if (!correctAnswer) {
+      throw new Error(`correctOptionIndex ${data.correctOptionIndex} é inválido (options tem ${data.options.length} itens)`);
+    }
+
+    return {
+      ...data,
+      correctAnswer,
+      explanation: data.feedback || data.explanation || ''
+    };
+  }
+
+  return data;
+}
+
+/**
+ * 🔄 NORMALIZAR TRUE-FALSE
+ * Converte formato simplificado para formato com statements
+ */
+function normalizeTrueFalseData(data: any, logger?: PipelineLogger): any {
+  // Se já está no formato correto (com statements), não fazer nada
+  if (data.statements && Array.isArray(data.statements)) {
+    return data;
+  }
+
+  // Se tem answer/statement/feedback no nível raiz, converter
+  if (data.hasOwnProperty('answer') || data.statement) {
+    if (logger) {
+      logger.info(5, 'Generate Exercises', '🔄 Convertendo true-false para formato com statements...');
+    }
+
+    return {
+      statements: [
+        {
+          id: 'stmt-1',
+          text: data.statement || data.question || '',
+          correct: data.answer || false,
+          explanation: data.feedback || data.explanation || ''
+        }
+      ],
+      feedback: {
+        perfect: 'Perfeito!',
+        good: 'Muito bem!',
+        needsReview: 'Revise o conteúdo'
+      }
+    };
+  }
+
+  return data;
+}
+
+/**
  * 🔄 NORMALIZAR COMPLETE-SENTENCE
  * Converte formato simplificado (arrays separados) para formato completo (objetos)
  * 
@@ -109,9 +176,29 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
 
     let exerciseData = exercise.data;
 
+    // 🔄 FALLBACK: Se não tem .data, usar o próprio exercício como data
+    if (!exerciseData && exercise.type !== 'prompt') {
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `🔄 Usando exercício raiz como data (fallback)`);
+      }
+      exerciseData = { ...exercise };
+      delete exerciseData.type;
+      delete exerciseData.index;
+    }
+
     // 🔄 NORMALIZAR COMPLETE-SENTENCE: converter formato simplificado para formato completo
     if (exercise.type === 'complete-sentence' && exerciseData) {
       exerciseData = normalizeCompleteSentenceData(exercise, exerciseData, logger);
+    }
+
+    // 🔄 NORMALIZAR MULTIPLE-CHOICE: converter correctOptionIndex para correctAnswer
+    if (exercise.type === 'multiple-choice' && exerciseData) {
+      exerciseData = normalizeMultipleChoiceData(exerciseData, logger);
+    }
+
+    // 🔄 NORMALIZAR TRUE-FALSE: converter answer/feedback para correct/explanation
+    if (exercise.type === 'true-false' && exerciseData) {
+      exerciseData = normalizeTrueFalseData(exerciseData, logger);
     }
 
     // Se é do tipo 'prompt' ou não tem data, gerar com IA
