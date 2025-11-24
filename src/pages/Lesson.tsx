@@ -248,12 +248,7 @@ const Lesson = () => {
     <div className="min-h-screen bg-[#FAFBFC]">
       
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
-              style={{
-                background: 'rgba(15, 23, 42, 0.95)',
-                borderColor: 'rgba(139, 92, 246, 0.3)',
-                boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
-              }}>
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
@@ -265,7 +260,7 @@ const Lesson = () => {
               <ArrowLeft className="w-4 h-4" />
               Voltar
             </Button>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 <span>{lesson.estimated_time} min</span>
