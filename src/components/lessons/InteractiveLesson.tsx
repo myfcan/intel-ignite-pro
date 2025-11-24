@@ -434,8 +434,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -447,7 +451,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
@@ -468,8 +472,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -481,7 +489,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
@@ -502,8 +510,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -515,7 +527,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
@@ -536,8 +548,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -549,7 +565,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
@@ -570,8 +586,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -583,7 +603,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
@@ -604,8 +624,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                    }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -617,7 +641,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lesson?.title}</h1>
+                  <h1 className="text-sm sm:text-base font-semibold text-gray-100 truncate">{lesson?.title}</h1>
                 </div>
               </div>
             </header>
