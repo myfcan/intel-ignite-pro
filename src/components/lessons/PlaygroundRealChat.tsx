@@ -131,7 +131,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
         transition={{ duration: 0.5, delay: 0.2 }}
       >
         {/* Header do Chat - FORA do card escuro */}
-        <div className="flex items-center justify-between mb-4 px-4">
+        <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
               <Bot className="w-6 h-6 text-white" />
