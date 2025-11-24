@@ -503,32 +503,74 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Curso Renda Extra - LOCKED para não-admins */}
+          {/* Curso Renda Extra - DARK TECH DESIGN */}
           <div 
             onClick={isAdmin ? () => navigate('/curso-exclusivo') : undefined}
-            className={`relative rounded-2xl p-4 sm:p-6 text-white shadow-xl transition-all ${
+            className={`relative rounded-2xl p-4 sm:p-6 overflow-hidden shadow-xl transition-all ${
               isAdmin 
-                ? 'cursor-pointer hover:shadow-2xl' 
+                ? 'cursor-pointer hover:-translate-y-1' 
                 : 'cursor-not-allowed opacity-60'
             }`}
-            style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+            style={{
+              background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              boxShadow: `
+                0 0 40px rgba(139, 92, 246, 0.15),
+                0 0 80px rgba(139, 92, 246, 0.08),
+                inset 0 0 60px rgba(139, 92, 246, 0.05)
+              `
+            }}
+          >
+            {/* Grid Pattern */}
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: '20px 20px'
+              }}
+            />
+            
+            {/* Purple Gradient Overlay at Bottom */}
+            <div 
+              className="absolute inset-x-0 bottom-0 h-24 opacity-50"
+              style={{
+                background: 'linear-gradient(to top, rgba(139, 92, 246, 0.5) 0%, transparent 100%)'
+              }}
+            />
+            
             {/* Badge Premium ou Admin */}
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold">
+            <div className="absolute top-4 right-4 z-10 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2"
+                 style={{
+                   background: 'rgba(139, 92, 246, 0.2)',
+                   border: '1px solid rgba(139, 92, 246, 0.4)'
+                 }}>
+              <span className="text-xs sm:text-sm font-bold text-purple-300">
                 {isAdmin ? '👑 Acesso Admin' : '🔒 Premium'}
               </span>
             </div>
             
-            <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-bold mb-2">Curso Renda Extra</h3>
-            <p className="text-white/90 text-sm sm:text-base mb-3 sm:mb-4">
-              Aprenda estratégias comprovadas para gerar de R$ 10 mil a R$ 50 mil por mês usando Inteligência Artificial.
-            </p>
-            <button className={`bg-white/20 backdrop-blur px-4 py-2 rounded-lg font-semibold text-sm sm:text-base ${
-              isAdmin ? 'hover:bg-white/30' : 'cursor-not-allowed'
-            }`}>
-              {isAdmin ? 'Ver curso →' : 'Em breve →'}
-            </button>
+            <div className="relative z-10">
+              <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4 text-purple-400" />
+              <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-100">Curso Renda Extra</h3>
+              <p className="text-gray-400 text-sm sm:text-base mb-3 sm:mb-4">
+                Aprenda estratégias comprovadas para gerar de R$ 10 mil a R$ 50 mil por mês usando Inteligência Artificial.
+              </p>
+              <button 
+                className={`px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition-all ${
+                  isAdmin ? 'hover:bg-purple-500/30' : 'cursor-not-allowed'
+                }`}
+                style={{
+                  background: 'rgba(139, 92, 246, 0.2)',
+                  border: '1px solid rgba(139, 92, 246, 0.4)',
+                  color: '#A78BFA'
+                }}
+              >
+                {isAdmin ? 'Ver curso →' : 'Em breve →'}
+              </button>
+            </div>
           </div>
         </div>
 
