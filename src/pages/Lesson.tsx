@@ -245,28 +245,7 @@ const Lesson = () => {
   const percentage = exercises.length > 0 ? Math.round((correctAnswers / exercises.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-950">
-      {/* Grid Pattern Background */}
-      <div 
-        className="fixed inset-0 opacity-10"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '20px 20px',
-          pointerEvents: 'none'
-        }}
-      />
-      
-      {/* Purple Gradient at Bottom */}
-      <div 
-        className="fixed inset-x-0 bottom-0 h-64 opacity-20"
-        style={{
-          background: 'linear-gradient(to top, rgba(139, 92, 246, 0.4) 0%, transparent 100%)',
-          pointerEvents: 'none'
-        }}
-      />
+    <div className="min-h-screen bg-[#FAFBFC]">
       
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
