@@ -1494,21 +1494,48 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
       data-testid="guided-lesson"
       data-current-phase={currentPhase}
       data-current-section={currentSection}
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in"
+      className="min-h-screen bg-slate-950 animate-fade-in relative"
     >
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
+      {/* Grid Pattern Background */}
+      <div 
+        className="fixed inset-0 opacity-10 z-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '20px 20px',
+          pointerEvents: 'none'
+        }}
+      />
+      
+      {/* Purple Gradient at Bottom */}
+      <div 
+        className="fixed inset-x-0 bottom-0 h-64 opacity-20 z-0"
+        style={{
+          background: 'linear-gradient(to top, rgba(139, 92, 246, 0.4) 0%, transparent 100%)',
+          pointerEvents: 'none'
+        }}
+      />
+      
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b"
+              style={{
+                background: 'rgba(15, 23, 42, 0.95)',
+                borderColor: 'rgba(139, 92, 246, 0.3)',
+                boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
+              }}>
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
             <button 
               onClick={() => navigate(`/trails/${trailId || lessonData.trackId}`)} 
-              className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+              className="p-2 hover:bg-slate-700/50 rounded-lg transition-all flex-shrink-0"
               aria-label="Voltar para trilha"
             >
-              <ChevronLeft className="w-5 h-5 text-slate-700" />
+              <ChevronLeft className="w-5 h-5 text-gray-300" />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
-              <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
+              <h1 className="text-sm sm:text-base font-semibold text-white truncate">{lessonData.title}</h1>
+              <p className="text-xs text-gray-400 truncate">{lessonData.trackName}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-xs font-semibold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
@@ -1541,7 +1568,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
+                <div className="backdrop-blur-xl rounded-2xl p-4 border shadow-xl relative"
+                     style={{
+                       background: 'rgba(15, 23, 42, 0.8)',
+                       borderColor: 'rgba(139, 92, 246, 0.3)'
+                     }}>
                   <div className="flex justify-center mb-3">
                     <div className="relative group cursor-pointer">
                       {/* Liv com animações otimizadas */}
@@ -1592,8 +1623,12 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                   </button>
                 </div>
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
-                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
+                <div className="backdrop-blur-xl rounded-2xl p-3 border shadow-xl"
+                     style={{
+                       background: 'rgba(15, 23, 42, 0.8)',
+                       borderColor: 'rgba(139, 92, 246, 0.3)'
+                     }}>
+                  <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-2">Seções da aula</h3>
                   <div className="space-y-1.5">
               {lessonData.sections.map((section, index) => {
                 const isRenderable = !section.type || section.type === 'text';
@@ -1678,20 +1713,20 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                         )}
                       </div>
                       <div className={`prose prose-slate prose-sm max-w-none transition-all duration-500
-  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
-  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
-  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
-  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-slate-700
-  [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
+  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold [&_h1]:!text-white
+  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold [&_h2]:!text-gray-100
+  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold [&_h3]:!text-gray-200
+  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-gray-300
+  [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-gray-300
   [&_ul]:!my-3 [&_ul]:!space-y-2
   [&_ol]:!my-3 [&_ol]:!space-y-2
-  [&_strong]:!font-semibold [&_strong]:!text-cyan-600 [&_strong]:bg-cyan-50/50 [&_strong]:px-0.5 [&_strong]:rounded
-  [&_em]:!text-slate-600 [&_em]:!not-italic [&_em]:!font-medium
-  [&_code]:!text-purple-600 [&_code]:!bg-purple-100 [&_code]:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded [&_code]:!text-sm [&_code]:!font-mono
-  [&_blockquote]:!border-l-4 [&_blockquote]:!border-l-cyan-400 [&_blockquote]:!bg-gradient-to-r [&_blockquote]:!from-cyan-50/60 [&_blockquote]:!to-blue-50/40
+  [&_strong]:!font-semibold [&_strong]:!text-cyan-400 [&_strong]:bg-cyan-950/30 [&_strong]:px-0.5 [&_strong]:rounded
+  [&_em]:!text-gray-400 [&_em]:!not-italic [&_em]:!font-medium
+  [&_code]:!text-purple-400 [&_code]:!bg-purple-950/50 [&_code]:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded [&_code]:!text-sm [&_code]:!font-mono
+  [&_blockquote]:!border-l-4 [&_blockquote]:!border-l-cyan-400 [&_blockquote]:!bg-gradient-to-r [&_blockquote]:!from-cyan-950/40 [&_blockquote]:!to-blue-950/30
   [&_blockquote]:!py-3 [&_blockquote]:!px-4 [&_blockquote]:!rounded-r-lg [&_blockquote]:!my-4 [&_blockquote]:!text-base
   [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
-  [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
+  [&_a]:!text-cyan-400 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
     currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
@@ -1708,7 +1743,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
 
       {/* Liv Mobile - versão premium responsiva */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
+        <div className="backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 shadow-2xl max-w-[340px] w-full"
+             style={{
+               background: 'rgba(15, 23, 42, 0.95)',
+               borderColor: 'rgba(139, 92, 246, 0.5)'
+             }}>
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
               <LivAvatar
@@ -1730,7 +1769,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
+              <p className="text-xs sm:text-sm text-gray-200 leading-snug font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
