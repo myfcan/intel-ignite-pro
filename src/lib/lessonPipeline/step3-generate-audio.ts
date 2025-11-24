@@ -117,15 +117,41 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
   console.log('🎙️ [V2] Gerando múltiplos áudios...');
   console.log(`   ${input.sectionTexts.length} seções`);
 
-  const { data, error } = await supabase.functions.invoke('generate-multiple-audios', {
-    body: {
-      texts: input.sectionTexts
-    }
-  });
+  // Timeout configurável (5 minutos para múltiplos áudios)
+  const TIMEOUT_MS = 300000; // 5 minutos
+  
+  const invokeWithTimeout = async () => {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar áudios (5min)')), TIMEOUT_MS)
+    );
+    
+    const invokePromise = supabase.functions.invoke('generate-multiple-audios', {
+      body: {
+        texts: input.sectionTexts
+      }
+    });
+    
+    return Promise.race([invokePromise, timeoutPromise]);
+  };
+
+  let data, error;
+  try {
+    const result = await invokeWithTimeout() as any;
+    data = result.data;
+    error = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V2] Timeout ao gerar áudios:', timeoutError);
+    throw new Error(`Timeout ao gerar áudios (5min). Reduza o número de seções ou o tamanho dos textos.`);
+  }
 
   if (error) {
     console.error('❌ [V2] Erro ao gerar áudios:', error);
     throw new Error(`Falha ao gerar áudios: ${error.message}`);
+  }
+  
+  if (!data || !data.results || data.results.length === 0) {
+    console.error('❌ [V2] Resposta inválida da edge function');
+    throw new Error('Resposta inválida: nenhum áudio retornado pela edge function');
   }
 
   console.log('📦 [V2] Áudios recebidos, fazendo upload para Storage...');
@@ -187,19 +213,44 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     throw new Error('v3Data não disponível para modelo V3');
   }
 
-  // 1. Gerar áudio
+  // 1. Gerar áudio com timeout
   console.log('   🎙️ Gerando áudio...');
-  const { data: audioData, error: audioError } = await supabase.functions.invoke('generate-audio-with-timestamps', {
-    body: {
-      text: input.audioText,
-      voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
-      speed: 1.0 // Velocidade normal
-    }
-  });
+  const AUDIO_TIMEOUT_MS = 240000; // 4 minutos
+  
+  const invokeAudioWithTimeout = async () => {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar áudio (4min)')), AUDIO_TIMEOUT_MS)
+    );
+    
+    const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
+      body: {
+        text: input.audioText,
+        voice_id: 'Xb7hH8MSUJpSbSDYk0k2', // Alice (Brasil)
+        speed: 1.0 // Velocidade normal
+      }
+    });
+    
+    return Promise.race([invokePromise, timeoutPromise]);
+  };
+
+  let audioData, audioError;
+  try {
+    const result = await invokeAudioWithTimeout() as any;
+    audioData = result.data;
+    audioError = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V3] Timeout ao gerar áudio:', timeoutError);
+    throw new Error(`Timeout ao gerar áudio (4min). Tente dividir o texto em seções menores.`);
+  }
 
   if (audioError) {
     console.error('❌ [V3] Erro ao gerar áudio:', audioError);
     throw new Error(`Falha ao gerar áudio: ${audioError.message}`);
+  }
+  
+  if (!audioData || !audioData.audio_base64) {
+    console.error('❌ [V3] Resposta inválida da edge function (áudio)');
+    throw new Error('Resposta inválida: áudio não retornado pela edge function');
   }
 
   // Upload do áudio
@@ -224,21 +275,46 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides
+  // 2. Gerar imagens dos slides com timeout
   console.log('   🖼️ Gerando imagens dos slides...');
-  const { data: imagesData, error: imagesError } = await supabase.functions.invoke('generate-slide-images', {
-    body: {
-      slides: input.v3Data.slides.map(slide => ({
-        id: slide.id,
-        slideNumber: slide.slideNumber,
-        contentIdea: slide.contentIdea
-      }))
-    }
-  });
+  const IMAGES_TIMEOUT_MS = 180000; // 3 minutos
+  
+  const invokeImagesWithTimeout = async () => {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar imagens (3min)')), IMAGES_TIMEOUT_MS)
+    );
+    
+    const invokePromise = supabase.functions.invoke('generate-slide-images', {
+      body: {
+        slides: input.v3Data!.slides.map(slide => ({
+          id: slide.id,
+          slideNumber: slide.slideNumber,
+          contentIdea: slide.contentIdea
+        }))
+      }
+    });
+    
+    return Promise.race([invokePromise, timeoutPromise]);
+  };
+
+  let imagesData, imagesError;
+  try {
+    const result = await invokeImagesWithTimeout() as any;
+    imagesData = result.data;
+    imagesError = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V3] Timeout ao gerar imagens:', timeoutError);
+    throw new Error(`Timeout ao gerar imagens (3min). Reduza o número de slides.`);
+  }
 
   if (imagesError) {
     console.error('❌ [V3] Erro ao gerar imagens:', imagesError);
     throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
+  }
+  
+  if (!imagesData || !imagesData.slides) {
+    console.error('❌ [V3] Resposta inválida da edge function (imagens)');
+    throw new Error('Resposta inválida: imagens não retornadas pela edge function');
   }
 
   // Atualizar v3Data com URLs das imagens
