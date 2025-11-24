@@ -163,37 +163,12 @@ const TrailDetail = () => {
           <span className="font-medium text-sm sm:text-base text-gray-700">Voltar</span>
         </button>
 
-        {/* Card de Header Dark Tech */}
-        <div className="relative overflow-hidden rounded-3xl shadow-2xl"
+        {/* Card de Header - Versão Original com Leve Dark Tech */}
+        <div className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
              style={{
-               background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-               border: '1px solid rgba(139, 92, 246, 0.3)',
-               boxShadow: `
-                 0 0 40px rgba(139, 92, 246, 0.15),
-                 0 0 80px rgba(139, 92, 246, 0.08),
-                 inset 0 0 60px rgba(139, 92, 246, 0.05)
-               `
+               background: 'linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%)',
+               borderColor: 'rgba(139, 92, 246, 0.2)'
              }}>
-          
-          {/* Grid Pattern */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
-            }}
-          />
-          
-          {/* Purple Gradient at Bottom */}
-          <div 
-            className="absolute inset-x-0 bottom-0 h-32 opacity-40"
-            style={{
-              background: 'linear-gradient(to top, rgba(139, 92, 246, 0.4) 0%, transparent 100%)'
-            }}
-          />
           
           {/* Conteúdo */}
           <div className="relative z-10 p-4 sm:p-6 md:p-8">
@@ -269,7 +244,7 @@ const TrailDetail = () => {
 
       {/* Lessons List */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-4 sm:mb-6">Aulas</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Aulas</h2>
         
         <div className="space-y-4">
           {lessons.map((lesson, index) => {
@@ -293,24 +268,10 @@ const TrailDetail = () => {
                 }}
                 onClick={() => handleLessonClick(lesson, status)}
                 className={`
-                  group relative backdrop-blur-xl rounded-2xl border shadow-lg 
+                  group relative bg-white rounded-2xl border border-gray-200 shadow-sm 
                   overflow-hidden transition-all duration-300
-                  ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-xl hover:-translate-y-1'}
+                  ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-primary'}
                 `}
-                style={{
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  borderColor: isLocked ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLocked) {
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLocked) {
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-                  }
-                }}
               >
                 <div className="p-5">
                   <div className="flex items-center gap-4">
@@ -338,36 +299,31 @@ const TrailDetail = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-semibold mb-0.5 text-gray-100 group-hover:text-purple-400 transition-colors truncate">
-                              Aula {index + 1}: {lesson.title}
-                            </h3>
-                            {lesson.description && (
-                              <p className="text-xs text-gray-400 line-clamp-1">
+                          <h3 className="text-base font-semibold mb-0.5 text-gray-900 group-hover:text-primary transition-colors truncate">
+                            Aula {index + 1}: {lesson.title}
+                          </h3>
+                          {lesson.description && (
+                            <p className="text-xs text-gray-600 line-clamp-1">
                                 {lesson.description}
                               </p>
                             )}
                           </div>
                           
-                          <span className="text-sm font-medium text-purple-300 shrink-0">
+                          <span className="text-sm font-medium text-primary shrink-0">
                             {progressPercentage}%
                           </span>
                         </div>
                         
                         {/* Barra de progresso */}
                         <div className="mb-2">
-                          <div className="h-2 rounded-full overflow-hidden"
-                               style={{
-                                 background: 'rgba(139, 92, 246, 0.1)',
-                                 border: '1px solid rgba(139, 92, 246, 0.2)'
-                               }}>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
                             <div 
                               className="h-full transition-all duration-500"
                               style={{ 
                                 width: `${progressPercentage}%`,
                                 background: isCompleted 
                                   ? 'linear-gradient(to right, #10B981, #14B8A6)' 
-                                  : 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                                boxShadow: progressPercentage > 0 ? '0 0 10px rgba(139, 92, 246, 0.5)' : 'none'
+                                  : 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)'
                               }}
                             />
                           </div>
@@ -376,14 +332,14 @@ const TrailDetail = () => {
                         {/* Status e Tempo */}
                         <div className="flex items-center justify-between text-xs">
                           <span className={`font-medium ${
-                            isCompleted ? 'text-emerald-400' : 
-                            isLocked ? 'text-gray-500' : 
-                            'text-purple-400'
+                            isCompleted ? 'text-emerald-600' : 
+                            isLocked ? 'text-gray-400' : 
+                            'text-primary'
                           }`}>
                             {statusText}
                           </span>
                           
-                          <div className="flex items-center gap-1 text-gray-400">
+                          <div className="flex items-center gap-1 text-gray-500">
                             <Clock className="w-3 h-3" />
                             <span>{lesson.estimated_time || 10} min</span>
                           </div>
