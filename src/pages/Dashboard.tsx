@@ -10,6 +10,7 @@ import { TrailBand } from "@/components/TrailBand";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { motion } from "framer-motion";
 
 interface User {
   id: string;
@@ -233,28 +234,90 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Hero Section - NOVO DESIGN */}
-        <div className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white mb-6 sm:mb-8 overflow-hidden"
-             style={{
-               background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-               boxShadow: '0 20px 50px -12px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-             }}>
-          {/* Textura overlay premium */}
+        {/* Hero Section - DARK TECH DESIGN */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            boxShadow: `
+              0 0 40px rgba(139, 92, 246, 0.15),
+              0 0 80px rgba(139, 92, 246, 0.08),
+              inset 0 0 60px rgba(139, 92, 246, 0.05)
+            `
+          }}
+        >
+          {/* Grid Pattern */}
           <div 
-            className="absolute inset-0 opacity-10"
+            className="absolute inset-0 opacity-20"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              backgroundSize: '30px 30px'
+              backgroundImage: `
+                linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px'
             }}
           />
+          
+          {/* Purple Gradient Overlay at Bottom */}
+          <div 
+            className="absolute inset-x-0 bottom-0 h-32 opacity-40"
+            style={{
+              background: 'linear-gradient(to top, rgba(139, 92, 246, 0.4) 0%, transparent 100%)'
+            }}
+          />
+          
           <div className="relative z-10">
-            <p className="text-white/80 text-xs sm:text-sm uppercase tracking-wider mb-2">BEM-VINDO DE VOLTA!</p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Olá, {user?.name}! 👋</h1>
-            <p className="text-white/90 text-sm sm:text-base md:text-lg">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-purple-400 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
+            >
+              BEM-VINDO DE VOLTA!
+            </motion.p>
+            
+            <div className="flex items-center gap-3 mb-2">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-100"
+              >
+                Olá, {user?.name}!
+              </motion.h1>
+              
+              <motion.span
+                className="text-2xl sm:text-3xl md:text-4xl"
+                animate={{ 
+                  rotate: [0, 15, -15, 15, -15, 0],
+                }}
+                transition={{
+                  delay: 1,
+                  duration: 0.6,
+                  repeat: Infinity,
+                  repeatDelay: 3,
+                  ease: "easeInOut"
+                }}
+                style={{ display: 'inline-block', transformOrigin: 'bottom center' }}
+              >
+                👋
+              </motion.span>
+            </div>
+            
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="text-gray-400 text-sm sm:text-base md:text-lg"
+            >
               Comece sua jornada de aprendizado em Inteligência Artificial
-            </p>
+            </motion.p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Cards - NOVO DESIGN */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
