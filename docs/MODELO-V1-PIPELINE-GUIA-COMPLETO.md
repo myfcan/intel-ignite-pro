@@ -290,6 +290,8 @@ Ou versão mais complexa:
 
 ### 4. Complete Sentence (Completar Frases)
 
+**⚠️ FORMATO ATUALIZADO (2025-11-24):**
+
 ```json
 {
   "index": 3,
@@ -297,24 +299,36 @@ Ou versão mais complexa:
   "question": "Complete as frases:",
   "data": {
     "sentences": [
-      "A IA aprende com ___________.",
-      "Quanto ___________ dados, melhor.",
-      "A IA é ___________ inteligente."
-    ],
-    "correctAnswers": [
-      ["exemplos", "dados"],
-      ["mais", "maiores"],
-      ["muito", "super"]
-    ],
-    "feedback": "Perfeito! Você entendeu!"
+      {
+        "id": "sentence-1",
+        "text": "A IA aprende com ___________.",
+        "correctAnswers": ["exemplos", "dados"]
+      },
+      {
+        "id": "sentence-2",
+        "text": "Quanto ___________ dados, melhor.",
+        "correctAnswers": ["mais", "maiores"]
+      },
+      {
+        "id": "sentence-3",
+        "text": "A IA é ___________ inteligente.",
+        "correctAnswers": ["muito", "super"]
+      }
+    ]
   }
 }
 ```
 
-**Campos obrigatórios em data:**
-- `sentences` (array de strings com `___________`)
-- `correctAnswers` (array de arrays - múltiplas respostas aceitas)
-- `feedback` (string)
+**Campos obrigatórios em cada sentence:**
+- `id` (string) - Identificador único da sentença
+- `text` (string) - Texto com `___________` para preencher
+- `correctAnswers` (array de strings) - Múltiplas respostas aceitas
+
+**Campos opcionais em cada sentence:**
+- `options` (array de strings) - Se presente, exibe como múltipla escolha (RadioGroup)
+- `hints` (array de strings) - Dicas exibidas antes do input
+
+**📝 Nota:** O formato antigo (sentences como array de strings + correctAnswers separado) NÃO É MAIS SUPORTADO.
 
 ---
 
@@ -479,6 +493,39 @@ Veja: `EXEMPLO-V1-7-PROMPTS-CORRIGIDO.json`
 
 ---
 
+### Erro: "Sentença X precisa ter correctAnswers" ou "sentences deve ser array"
+
+**Causa:** Você está usando o formato antigo do `complete-sentence` que não é mais suportado.
+
+**Solução - Migre para o novo formato:**
+```json
+// ❌ FORMATO ANTIGO (NÃO FUNCIONA MAIS)
+{
+  "type": "complete-sentence",
+  "data": {
+    "sentences": ["Frase com _______"],
+    "correctAnswers": [["resposta1"]],
+    "feedback": "..."
+  }
+}
+
+// ✅ FORMATO NOVO (CORRETO)
+{
+  "type": "complete-sentence",
+  "data": {
+    "sentences": [
+      {
+        "id": "sentence-1",
+        "text": "Frase com _______",
+        "correctAnswers": ["resposta1"]
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## 💡 Dicas Finais
 
 1. **Sempre use um editor JSON** (VSCode, Sublime) para ter syntax highlighting
@@ -487,6 +534,7 @@ Veja: `EXEMPLO-V1-7-PROMPTS-CORRIGIDO.json`
 4. **Teste um exercício por vez** para identificar problemas mais rápido
 5. **Copie estruturas dos exemplos** que já funcionam
 6. **Leia os logs de erro** - eles dizem exatamente o que está errado
+7. **⚠️ IMPORTANTE:** O formato `complete-sentence` foi atualizado em Nov/2024 - use o novo formato!
 
 ---
 
