@@ -1,0 +1,103 @@
+[
+  {
+    "model": "v1",
+    "title": "Os 7 prompts mágicos que valem ouro!",
+    "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+    "trackName": "Fundamentos de IA",
+    "orderIndex": 6,
+    "estimatedTimeMinutes": 12,
+
+    "sections": [
+      {
+        "index": 1,
+        "markdown": "## Vamos elevar seu nível agora!\n\nHoje você vai aprender algo que empresas pagam **R$ 5.000 em consultorias** para descobrir.\n\nExistem 7 tipos de prompts que transformam a Inteligência Artificial numa verdadeira equipe de especialistas trabalhando para você.\n\nNão são prompts prontos — são **estruturas universais** que funcionam para qualquer situação, qualquer área, qualquer problema.\n\nPrepare-se: depois desta aula, você nunca mais vai conversar com a I.A. do mesmo jeito.",
+        "speechBubble": "Hoje você vai desbloquear o poder dos 7 prompts profissionais!"
+      },
+      {
+        "index": 2,
+        "markdown": "## O poder do Prompt Especialista!\n\nO primeiro prompt faz a Inteligência Artificial agir como **qualquer especialista** que você escolher.\n\n**Estrutura:**\n\n\"Atue como um [ESPECIALISTA] com 20 anos de experiência em [ÁREA]. Preciso que você [TAREFA]. Considere que [CONTEXTO].\"\n\n**Exemplo real:**\n\n\"Atue como um nutricionista com 20 anos de experiência em reeducação alimentar. Monte um plano alimentar para 7 dias. Considere que tenho 45 anos e quero perder 5kg.\"\n\nA Inteligência Artificial literalmente veste o \"uniforme mental\" desse profissional.",
+        "speechBubble": "Esse prompt muda completamente a qualidade das respostas!"
+      },
+      {
+        "index": 3,
+        "markdown": "## O Professor Particular da Inteligência Artificial!\n\nO segundo prompt transforma a I.A. no melhor professor que você já teve.\n\n**Estrutura:**\n\n\"Explique [ASSUNTO] como se eu fosse [NÍVEL]. Use [FORMATO]. Inclua [ELEMENTOS].\"\n\n**Exemplo prático:**\n\n\"Explique juros compostos como se eu fosse um adolescente de 15 anos. Use analogias com videogames e traga 3 exemplos reais.\"\n\nA Inteligência Artificial adapta a complexidade ao seu jeito de aprender.",
+        "speechBubble": "Com o Professor Particular, tudo fica fácil!"
+      },
+      {
+        "index": 4,
+        "markdown": "## O Criador, o Analista, o Solucionador e muito mais!\n\nAgora você vai conhecer rapidamente os outros 5 prompts mágicos:\n\n### 🔹 Prompt Criador\n\n\"Crie [CONTEÚDO] sobre [TEMA]. Tom: [X]. Público: [Y]. Objetivo: [Z].\"\n\n### 🔹 Prompt Analista\n\n\"Analise [TEXTO/SITUAÇÃO]. Identifique [ITENS]. Formato: [X].\"\n\n### 🔹 Prompt Solucionador\n\n\"Problema: [X]. Recursos: [Y]. Limitações: [Z]. Traga 3 soluções com prós e contras.\"\n\n### 🔹 Prompt Transformador\n\n\"Transforme [CONTEÚDO] em [NOVO FORMATO].\"\n\n### 🔹 Prompt Estrategista\n\n\"Objetivo: [X]. Situação atual: [Y]. Prazo: [Z]. Monte um plano completo.\"\n\nVocê acabou de conhecer o arsenal que profissionais de alto nível usam todos os dias!",
+        "speechBubble": "Vamos testar isso agora no Playground!"
+      },
+      {
+        "index": 5,
+        "markdown": "## Você acabou de desbloquear ouro puro!\n\nAgora você conhece os 7 prompts que tornam a Inteligência Artificial sua parceira estratégica.\n\nA partir de agora, qualquer tarefa — simples ou complexa — pode ser resolvida com precisão.\n\nPrepare-se: nas próximas aulas, você vai combinar esses prompts e criar resultados ainda mais avançados!",
+        "speechBubble": "Vamos reforçar tudo isso com alguns exercícios rápidos!"
+      }
+    ],
+
+    "playgroundMidLesson": {
+      "instruction": "Teste agora! Use um dos 7 prompts mágicos e peça algo que você realmente precisa hoje. Exemplo: \"Atue como um consultor financeiro e reorganize minhas despesas mensais.\""
+    },
+
+    "exercises": [
+      {
+        "index": 1,
+        "type": "multiple-choice",
+        "question": "Qual prompt transforma a IA em um especialista da área que você escolher?",
+        "options": [
+          "O Prompt Criador",
+          "O Prompt Especialista",
+          "O Prompt Transformador",
+          "O Prompt Analista"
+        ],
+        "correctOptionIndex": 1,
+        "feedback": "Correto! O Prompt Especialista permite que a IA aja como um profissional com anos de experiência."
+      },
+      {
+        "index": 2,
+        "type": "true-false",
+        "question": "O Prompt Professor Particular adapta a explicação ao seu nível de conhecimento.",
+        "statement": "O Prompt Professor Particular adapta a explicação ao seu nível de conhecimento.",
+        "answer": true,
+        "feedback": "✅ VERDADEIRO! Esse prompt ajusta a complexidade para você aprender mais rápido."
+      },
+      {
+        "index": 3,
+        "type": "true-false",
+        "question": "O Prompt Solucionador sempre traz três soluções com prós e contras.",
+        "statement": "O Prompt Solucionador sempre traz três soluções com prós e contras.",
+        "answer": true,
+        "feedback": "✅ VERDADEIRO! Esse é o coração do Prompt Solucionador - sempre traz três alternativas para você escolher."
+      },
+      {
+        "index": 4,
+        "type": "complete-sentence",
+        "question": "Complete as frases sobre os 7 prompts mágicos:",
+        "sentences": [
+          "O Prompt _______ faz a IA agir como um profissional com anos de experiência.",
+          "O Prompt Solucionador sempre traz _______ soluções com prós e contras.",
+          "O Prompt _______ adapta a explicação ao seu nível de conhecimento."
+        ],
+        "correctAnswers": [
+          ["Especialista", "especialista"],
+          ["três", "tres", "3"],
+          ["Professor", "professor", "Professor Particular"]
+        ],
+        "feedback": "Excelente! Você entendeu os prompts mais poderosos para transformar suas conversas com IA!"
+      },
+      {
+        "index": 5,
+        "type": "multiple-choice",
+        "question": "Qual é a estrutura do Prompt Especialista?",
+        "options": [
+          "Crie [CONTEÚDO] sobre [TEMA]",
+          "Atue como um [ESPECIALISTA] com experiência em [ÁREA]",
+          "Explique [ASSUNTO] como se eu fosse [NÍVEL]",
+          "Analise [TEXTO] e identifique [ITENS]"
+        ],
+        "correctOptionIndex": 1,
+        "feedback": "Perfeito! O Prompt Especialista começa com 'Atue como um...' e define o especialista que você quer que a IA seja."
+      }
+    ]
+  }
+]

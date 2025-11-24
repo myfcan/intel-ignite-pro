@@ -1,0 +1,112 @@
+[
+  {
+    "model": "v1",
+    "title": "Título da Sua Aula Aqui",
+    "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+    "trackName": "Fundamentos de IA",
+    "orderIndex": 1,
+    "estimatedTimeMinutes": 10,
+
+    "sections": [
+      {
+        "index": 1,
+        "markdown": "## Título da Seção 1\n\nConteúdo da primeira seção aqui.\n\nUse markdown normal para formatar o texto.",
+        "speechBubble": "Frase curta para o balão de fala"
+      },
+      {
+        "index": 2,
+        "markdown": "## Título da Seção 2\n\nMais conteúdo aqui...",
+        "speechBubble": "Outra frase curta"
+      },
+      {
+        "index": 3,
+        "markdown": "## Título da Seção 3\n\nContinue adicionando seções conforme necessário.",
+        "speechBubble": "Mais uma frase"
+      }
+    ],
+
+    "playgroundMidLesson": {
+      "instruction": "Instrução para o playground interativo aqui. Exemplo: 'Teste agora! Peça à IA para...'"
+    },
+
+    "exercises": [
+      {
+        "index": 1,
+        "type": "multiple-choice",
+        "question": "Qual é a pergunta da múltipla escolha?",
+        "data": {
+          "question": "Repita a pergunta aqui dentro de data",
+          "options": [
+            "Opção A",
+            "Opção B",
+            "Opção C",
+            "Opção D"
+          ],
+          "correctOptionIndex": 1,
+          "feedback": "Explicação da resposta correta aqui."
+        }
+      },
+      {
+        "index": 2,
+        "type": "true-false",
+        "question": "Afirmação verdadeira ou falsa aqui",
+        "data": {
+          "statement": "A mesma afirmação repetida",
+          "answer": true,
+          "feedback": "✅ VERDADEIRO! Explicação aqui."
+        }
+      },
+      {
+        "index": 3,
+        "type": "complete-sentence",
+        "question": "Complete as frases abaixo:",
+        "data": {
+          "sentences": [
+            "Frase com ___________ para preencher.",
+            "Outra frase com ___________ aqui.",
+            "Terceira frase com ___________."
+          ],
+          "correctAnswers": [
+            ["resposta1", "alternativa1"],
+            ["resposta2"],
+            ["resposta3", "alternativa3"]
+          ],
+          "feedback": "Ótimo trabalho! Explicação aqui."
+        }
+      },
+      {
+        "index": 4,
+        "type": "data-collection",
+        "question": "Veja a situação e identifique os dados corretos:",
+        "data": {
+          "scenario": {
+            "id": "scenario-1",
+            "emoji": "🎬",
+            "platform": "Netflix",
+            "situation": "Descrição da situação aqui...",
+            "dataPoints": [
+              {
+                "id": "dp-1",
+                "text": "Dado que a IA coleta 1",
+                "isCorrect": true,
+                "explanation": "Correto! Explicação..."
+              },
+              {
+                "id": "dp-2",
+                "text": "Dado que a IA coleta 2",
+                "isCorrect": true,
+                "explanation": "Correto! Explicação..."
+              },
+              {
+                "id": "dp-3",
+                "text": "Dado que NÃO é coletado",
+                "isCorrect": false,
+                "explanation": "Incorreto! Este dado não é coletado."
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+]
