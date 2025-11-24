@@ -4,6 +4,73 @@ import { validateExercise } from '@/lib/exerciseValidator';
 import { PipelineLogger } from './logger';
 
 /**
+ * 🔄 NORMALIZAR COMPLETE-SENTENCE
+ * Converte formato simplificado (arrays separados) para formato completo (objetos)
+ * 
+ * DE:
+ * {
+ *   sentences: ["texto1", "texto2"],
+ *   correctAnswers: [["ans1"], ["ans2"]]
+ * }
+ * 
+ * PARA:
+ * {
+ *   sentences: [
+ *     { id: "sent-1", text: "texto1", correctAnswers: ["ans1"] },
+ *     { id: "sent-2", text: "texto2", correctAnswers: ["ans2"] }
+ *   ]
+ * }
+ */
+function normalizeCompleteSentenceData(exercise: any, data: any, logger?: PipelineLogger): any {
+  // Se já está no formato correto (sentences é array de objetos), não fazer nada
+  if (data.sentences && Array.isArray(data.sentences) && data.sentences.length > 0) {
+    const firstSentence = data.sentences[0];
+    if (typeof firstSentence === 'object' && firstSentence.text && firstSentence.correctAnswers) {
+      if (logger) {
+        logger.info(5, 'Generate Exercises', '✅ Complete-sentence já está no formato correto');
+      }
+      return data;
+    }
+  }
+
+  // Converter formato simplificado
+  if (logger) {
+    logger.info(5, 'Generate Exercises', '🔄 Convertendo complete-sentence do formato simplificado para formato completo...');
+  }
+
+  // Pegar sentences e correctAnswers do exercício ou do data
+  const sentences = exercise.sentences || data.sentences || [];
+  const correctAnswers = exercise.correctAnswers || data.correctAnswers || [];
+
+  if (!Array.isArray(sentences) || sentences.length === 0) {
+    throw new Error('Complete-sentence precisa de "sentences" (array não-vazio)');
+  }
+
+  if (!Array.isArray(correctAnswers) || correctAnswers.length === 0) {
+    throw new Error('Complete-sentence precisa de "correctAnswers" (array não-vazio)');
+  }
+
+  if (sentences.length !== correctAnswers.length) {
+    throw new Error(`Complete-sentence: número de sentences (${sentences.length}) deve ser igual ao número de correctAnswers (${correctAnswers.length})`);
+  }
+
+  // Converter para formato completo
+  const normalizedSentences = sentences.map((text: any, index: number) => ({
+    id: `sent-${index + 1}`,
+    text: typeof text === 'string' ? text : (text.text || ''),
+    correctAnswers: correctAnswers[index] || []
+  }));
+
+  if (logger) {
+    logger.success(5, 'Generate Exercises', `✅ ${normalizedSentences.length} sentenças convertidas`);
+  }
+
+  return {
+    sentences: normalizedSentences
+  };
+}
+
+/**
  * Helper: Obter título do exercício baseado no tipo
  */
 function getExerciseTitle(type: string): string {
@@ -41,6 +108,11 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
     }
 
     let exerciseData = exercise.data;
+
+    // 🔄 NORMALIZAR COMPLETE-SENTENCE: converter formato simplificado para formato completo
+    if (exercise.type === 'complete-sentence' && exerciseData) {
+      exerciseData = normalizeCompleteSentenceData(exercise, exerciseData, logger);
+    }
 
     // Se é do tipo 'prompt' ou não tem data, gerar com IA
     if (exercise.type === 'prompt' || !exerciseData) {
