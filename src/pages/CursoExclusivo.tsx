@@ -37,25 +37,61 @@ export default function CursoExclusivo() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section - NOVO DESIGN */}
+        {/* Hero Section - Dark Tech */}
         <div className="mb-8">
-          <div className="rounded-2xl p-8 text-white shadow-2xl"
-               style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
-            <div className="flex items-start gap-6">
+          <div className="relative overflow-hidden rounded-3xl p-8 text-white shadow-2xl"
+               style={{
+                 background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+                 border: '1px solid rgba(139, 92, 246, 0.3)',
+                 boxShadow: `
+                   0 0 40px rgba(139, 92, 246, 0.15),
+                   0 0 80px rgba(139, 92, 246, 0.08),
+                   inset 0 0 60px rgba(139, 92, 246, 0.05)
+                 `
+               }}>
+            
+            {/* Grid Pattern */}
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `
+                  linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: '20px 20px'
+              }}
+            />
+            
+            {/* Purple Gradient at Bottom */}
+            <div 
+              className="absolute inset-x-0 bottom-0 h-32 opacity-40"
+              style={{
+                background: 'linear-gradient(to top, rgba(139, 92, 246, 0.4) 0%, transparent 100%)'
+              }}
+            />
+            
+            {/* Conteúdo */}
+            <div className="relative z-10 flex items-start gap-6">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl
-                              flex items-center justify-center shadow-xl">
-                  <GraduationCap className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl"
+                     style={{
+                       background: 'rgba(139, 92, 246, 0.2)',
+                       border: '1px solid rgba(139, 92, 246, 0.4)'
+                     }}>
+                  <GraduationCap className="w-8 h-8 text-purple-300" />
                 </div>
               </div>
               <div className="flex-1">
-                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm
-                              px-3 py-1 rounded-full text-sm font-semibold mb-4">
-                  <Star className="w-4 h-4" />
-                  Conteúdo Premium
+                <div className="inline-flex items-center gap-2 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold mb-4"
+                     style={{
+                       background: 'rgba(139, 92, 246, 0.2)',
+                       border: '1px solid rgba(139, 92, 246, 0.3)'
+                     }}>
+                  <Star className="w-4 h-4 text-purple-300" />
+                  <span className="text-gray-200">Conteúdo Premium</span>
                 </div>
-                <h2 className="text-3xl font-bold mb-3">Curso Exclusivo de IA</h2>
-                <p className="text-white/90 text-lg mb-6 max-w-2xl">
+                <h2 className="text-3xl font-bold mb-3 text-gray-100">Curso Exclusivo de IA</h2>
+                <p className="text-gray-300 text-lg mb-6 max-w-2xl">
                   Acesse conteúdo premium e aprofunde seus conhecimentos com aulas exclusivas,
                   materiais extras e certificação profissional.
                 </p>
