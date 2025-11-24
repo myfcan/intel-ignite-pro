@@ -99,17 +99,7 @@ export default function AIPlayground() {
         <div className="mb-8">
           <h3 className="text-xl font-bold text-slate-800 mb-4">Experimente estas ideias:</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">✍️ Escrever Conteúdo</CardTitle>
               </CardHeader>
@@ -120,17 +110,7 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">🧠 Brainstorming</CardTitle>
               </CardHeader>
@@ -141,17 +121,7 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">📊 Análise de Dados</CardTitle>
               </CardHeader>
@@ -162,17 +132,7 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">🎨 Conteúdo Criativo</CardTitle>
               </CardHeader>
@@ -183,17 +143,7 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">💼 Negócios</CardTitle>
               </CardHeader>
@@ -204,17 +154,7 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer border transition-all"
-                  style={{
-                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                    backgroundImage: `
-                      linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                      radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                    `,
-                    backgroundSize: 'cover, 16px 16px',
-                    backgroundPosition: 'center, 0 0',
-                    borderColor: 'rgba(139, 92, 246, 0.2)',
-                  }}>
+            <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">🔍 Pesquisa</CardTitle>
               </CardHeader>
