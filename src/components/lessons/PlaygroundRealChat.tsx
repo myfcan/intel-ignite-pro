@@ -153,7 +153,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
 
         <Card className="bg-gray-950 border-gray-800 rounded-2xl p-6 shadow-2xl">
           {/* Área de Mensagens */}
-          <div className="rounded-xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto mb-4">
+          <div className="bg-gray-900 rounded-xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto mb-4">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
