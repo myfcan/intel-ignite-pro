@@ -130,30 +130,30 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700 rounded-2xl p-6 shadow-2xl">
-          {/* Header do Chat */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-white">Assistente IA</h4>
-                <p className="text-xs text-green-400 flex items-center gap-1">
-                  <Circle className="w-2 h-2 fill-current" />
-                  Online e pronto
-                </p>
-              </div>
+        {/* Header do Chat - FORA do card escuro */}
+        <div className="flex items-center justify-between mb-4 px-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+              <Bot className="w-6 h-6 text-white" />
             </div>
-            {interactionsRemaining !== null && (
-              <div className="text-xs text-gray-400">
-                {interactionsRemaining} interações restantes
-              </div>
-            )}
+            <div>
+              <h4 className="font-semibold text-slate-900">Assistente IA</h4>
+              <p className="text-xs text-green-500 flex items-center gap-1">
+                <Circle className="w-2 h-2 fill-current" />
+                Online e pronto
+              </p>
+            </div>
           </div>
+          {interactionsRemaining !== null && (
+            <div className="text-xs text-slate-600">
+              {interactionsRemaining} interações restantes
+            </div>
+          )}
+        </div>
 
+        <Card className="bg-gray-950 border-gray-800 rounded-2xl p-6 shadow-2xl">
           {/* Área de Mensagens */}
-          <div className="bg-gray-950 rounded-xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto mb-4">
+          <div className="rounded-xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto mb-4">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
