@@ -80,7 +80,10 @@ export const TrailBand = ({
       <div className="relative z-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
         {/* Icon */}
         <div 
-          className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center backdrop-blur transition-all duration-300 group-hover:scale-110"
+          className={cn(
+            "flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center backdrop-blur transition-all duration-300 group-hover:scale-110",
+            isActive && "animate-pulse-glow"
+          )}
           style={{
             background: isLocked ? 'rgba(75, 85, 99, 0.2)' : 'rgba(139, 92, 246, 0.2)',
             border: isLocked ? '1px solid rgba(75, 85, 99, 0.4)' : '1px solid rgba(139, 92, 246, 0.4)'
