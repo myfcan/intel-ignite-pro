@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const seoPromptsCategory: PromptCategory = {
   id: 'seo',
-  name: 'SEO Optimization',
+  name: 'Otimização de SEO',
   description: 'Prompts para otimizar conteúdo e ranquear no Google',
   icon: 'TrendingUp',
   color: 'bg-yellow-500',

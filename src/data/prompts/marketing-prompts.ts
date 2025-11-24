@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const marketingPromptsCategory: PromptCategory = {
   id: 'marketing',
-  name: 'Digital Marketing',
+  name: 'Marketing Digital',
   description: 'Prompts para anúncios, landing pages, e-mail marketing e campanhas',
   icon: 'TrendingUp',
   color: 'bg-pink-500',

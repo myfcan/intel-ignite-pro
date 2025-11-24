@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const businessPromptsCategory: PromptCategory = {
   id: 'business',
-  name: 'Online Business',
+  name: 'Negócios Online',
   description: 'Prompts para validar ideias, criar MVPs e estratégias de negócio',
   icon: 'Briefcase',
   color: 'bg-indigo-500',

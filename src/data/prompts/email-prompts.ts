@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const emailPromptsCategory: PromptCategory = {
   id: 'email',
-  name: 'Writing an Email',
+  name: 'Escrita de E-mail',
   description: 'Prompts profissionais para e-mails de negócios, networking e comunicação',
   icon: 'Mail',
   color: 'bg-blue-500',

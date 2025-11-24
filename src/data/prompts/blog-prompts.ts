@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const blogPromptsCategory: PromptCategory = {
   id: 'blog',
-  name: 'Blog Writing',
+  name: 'Escrita de Blog',
   description: 'Prompts para criar artigos otimizados, títulos chamativos e conteúdo viral',
   icon: 'PenTool',
   color: 'bg-purple-500',

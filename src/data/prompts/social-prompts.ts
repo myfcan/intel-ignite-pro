@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const socialPromptsCategory: PromptCategory = {
   id: 'social',
-  name: 'Social Media',
+  name: 'Redes Sociais',
   description: 'Prompts para criar posts virais, captions e conteúdo para redes sociais',
   icon: 'Share2',
   color: 'bg-cyan-500',
