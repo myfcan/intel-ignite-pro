@@ -140,6 +140,42 @@ export interface LessonSection {
   audio_url?: string; // 🆕 V2: URL do áudio específico desta seção
 }
 
+// 🎬 V3: Slide com imagem gerada por IA
+export interface V3Slide {
+  id: string;
+  slideNumber: number;
+  contentIdea: string; // Texto livre: "Mostrar uma pessoa trabalhando com IA"
+  imagePrompt?: string; // Gerado pela IA a partir de contentIdea
+  imageUrl?: string; // URL da imagem gerada (Base64 ou URL pública)
+  timestamp?: number; // Timestamp calculado automaticamente
+}
+
+// 🎬 V3: Dados da lição no modelo de apresentação
+export interface V3LessonData {
+  id: string;
+  title: string;
+  trackId: string;
+  trackName: string;
+  duration: number;
+  audioUrl: string; // Áudio único contínuo
+  wordTimestamps?: WordTimestamp[]; // Timestamps de palavras (opcional)
+  slides: V3Slide[]; // Até 7 slides com imagens
+  exercisesConfig?: ExerciseConfig[];
+  finalPlaygroundConfig?: PlaygroundConfig; // V3 sempre usa playground genérico padrão
+  contentVersion?: number; // Para cache-busting
+  schemaVersion?: number; // Versão da estrutura
+}
+
+// 🎬 V3: Props para componente de renderização
+export interface V3LessonProps {
+  lessonData: V3LessonData;
+  onComplete: (data?: { audioProgress?: number; allExercisesCompleted?: boolean }) => void;
+  onMarkComplete?: () => void | Promise<void>;
+  nextLessonId?: string;
+  nextLessonType?: string;
+  trailId?: string;
+}
+
 export interface GuidedLessonData {
   id: string;
   title: string;
