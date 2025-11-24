@@ -220,16 +220,26 @@
         "type": "complete-sentence",
         "question": "Complete as frases sobre como a IA aprende:",
         "sentences": [
-          "A IA do Netflix aprende observando o que você ___________.",
-          "Quanto __________ dados a IA tem, melhores ficam as sugestões.",
-          "O Spotify sabe seus __________ porque analisa QUANDO você ouve cada estilo.",
-          "Duas pessoas vendo o Instagram ao mesmo tempo veem feeds completamente ___________."
-        ],
-        "correctAnswers": [
-          ["assiste", "vê", "escolhe", "faz"],
-          ["mais", "maiores"],
-          ["humores", "gostos", "padrões", "horários"],
-          ["diferentes", "distintos", "únicos", "personalizados"]
+          {
+            "id": "sentence-1",
+            "text": "A IA do Netflix aprende observando o que você ___________.",
+            "correctAnswers": ["assiste", "vê", "escolhe", "faz"]
+          },
+          {
+            "id": "sentence-2",
+            "text": "Quanto __________ dados a IA tem, melhores ficam as sugestões.",
+            "correctAnswers": ["mais", "maiores"]
+          },
+          {
+            "id": "sentence-3",
+            "text": "O Spotify sabe seus __________ porque analisa QUANDO você ouve cada estilo.",
+            "correctAnswers": ["humores", "gostos", "padrões", "horários"]
+          },
+          {
+            "id": "sentence-4",
+            "text": "Duas pessoas vendo o Instagram ao mesmo tempo veem feeds completamente ___________.",
+            "correctAnswers": ["diferentes", "distintos", "únicos", "personalizados"]
+          }
         ],
         "feedback": "Perfeito! A IA aprende com SEU comportamento e personaliza tudo para VOCÊ!"
       },

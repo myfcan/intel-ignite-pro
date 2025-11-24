@@ -82,14 +82,21 @@
         "question": "Complete as frases sobre os 7 prompts mágicos:",
         "data": {
           "sentences": [
-            "O Prompt _______ faz a IA agir como um profissional com anos de experiência.",
-            "O Prompt Solucionador sempre traz _______ soluções com prós e contras.",
-            "O Prompt _______ adapta a explicação ao seu nível de conhecimento."
-          ],
-          "correctAnswers": [
-            ["Especialista", "especialista"],
-            ["três", "tres", "3"],
-            ["Professor", "professor", "Professor Particular"]
+            {
+              "id": "sentence-1",
+              "text": "O Prompt _______ faz a IA agir como um profissional com anos de experiência.",
+              "correctAnswers": ["Especialista", "especialista"]
+            },
+            {
+              "id": "sentence-2",
+              "text": "O Prompt Solucionador sempre traz _______ soluções com prós e contras.",
+              "correctAnswers": ["três", "tres", "3"]
+            },
+            {
+              "id": "sentence-3",
+              "text": "O Prompt _______ adapta a explicação ao seu nível de conhecimento.",
+              "correctAnswers": ["Professor", "professor", "Professor Particular"]
+            }
           ],
           "feedback": "Excelente! Você entendeu os prompts mais poderosos para transformar suas conversas com IA!"
         }
