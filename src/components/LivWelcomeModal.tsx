@@ -157,7 +157,7 @@ export const LivWelcomeModal = ({ onClose }: LivWelcomeModalProps) => {
               transition={{ delay: 0.4, duration: 0.6 }}
             >
               <motion.h2 
-                className="text-3xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent"
+                className="text-3xl sm:text-4xl font-bold mb-3 text-white"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
