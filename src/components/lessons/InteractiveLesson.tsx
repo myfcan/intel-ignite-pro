@@ -295,30 +295,32 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         guidedLessonData = localContent;
       }
 
+      // ============================================================================
+      // NORMALIZAR EXERCÍCIOS (ADICIONADO 2025-11-15)
+      // ============================================================================
+      // Usa normalizeExercises() para garantir estrutura correta
+      // Prioridade: exercises do DB → exercisesConfig do content local
+      // ============================================================================
+      let normalizedExercises: ExerciseConfig[] | undefined = undefined;
+
+      if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
+        console.log('📝 Normalizando exercícios do banco de dados...');
+        normalizedExercises = normalizeExercises(lesson.exercises);
+      } else if (guidedLessonData?.exercisesConfig) {
+        console.log('📝 Usando exercícios do content (já devem estar normalizados)');
+        normalizedExercises = guidedLessonData.exercisesConfig;
+      }
+
+      console.log('✅ Exercícios normalizados:', {
+        fromDB: lesson.exercises?.length || 0,
+        fromContent: guidedLessonData?.exercisesConfig?.length || 0,
+        normalized: normalizedExercises?.length || 0,
+        structure: normalizedExercises?.[0]
+      });
+
       // ✅ CRIAR OBJETO COMPLETO para GuidedLesson com TODOS os campos necessários
       if (guidedLessonData) {
-        // ============================================================================
-        // NORMALIZAR EXERCÍCIOS (ADICIONADO 2025-11-15)
-        // ============================================================================
-        // Usa normalizeExercises() para garantir estrutura correta
-        // Prioridade: exercises do DB → exercisesConfig do content local
-        // ============================================================================
-        let normalizedExercises: ExerciseConfig[] | undefined = undefined;
 
-        if (lesson.exercises && Array.isArray(lesson.exercises) && lesson.exercises.length > 0) {
-          console.log('📝 Normalizando exercícios do banco de dados...');
-          normalizedExercises = normalizeExercises(lesson.exercises);
-        } else if (guidedLessonData.exercisesConfig) {
-          console.log('📝 Usando exercícios do content (já devem estar normalizados)');
-          normalizedExercises = guidedLessonData.exercisesConfig;
-        }
-
-        console.log('✅ Exercícios normalizados:', {
-          fromDB: lesson.exercises?.length || 0,
-          fromContent: guidedLessonData.exercisesConfig?.length || 0,
-          normalized: normalizedExercises?.length || 0,
-          structure: normalizedExercises?.[0]
-        });
 
         // 🔍 DEBUG: Verificar estrutura do playgroundConfig no content
         console.log('🔍 [INTERACTIVE→GUIDED] Estrutura do content:', {
@@ -421,7 +423,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         return (
           <>
             {showMaia && isLastLesson && (
-              <MiniMaia
+              <MiniLiv
                 message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
                 variant="celebration"
                 showConfetti={true}
