@@ -157,15 +157,10 @@ const TrailDetail = () => {
         {/* Botão Voltar */}
         <button 
           onClick={() => navigate('/dashboard')}
-          className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 backdrop-blur-xl border rounded-xl hover:border-purple-400 transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
-          style={{
-            background: 'rgba(15, 23, 42, 0.8)',
-            borderColor: 'rgba(139, 92, 246, 0.3)',
-            color: '#A78BFA'
-          }}
+          className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all mb-4 sm:mb-6 shadow-sm hover:shadow-md"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="font-medium text-sm sm:text-base">Voltar</span>
+          <ArrowLeft className="w-4 h-4 text-primary" />
+          <span className="font-medium text-sm sm:text-base text-gray-700">Voltar</span>
         </button>
 
         {/* Card de Header Dark Tech */}
