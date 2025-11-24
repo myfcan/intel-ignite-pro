@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
+import { ArrowLeft, Lock, CheckCircle, CheckCircle2, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
 import { LivWelcomeModal } from '@/components/LivWelcomeModal';
 import { motion } from 'framer-motion';
 
@@ -306,31 +306,34 @@ const TrailDetail = () => {
                       )}
                     </div>
                     
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold mb-0.5 text-gray-900 group-hover:text-primary transition-colors truncate">
+                      <div className="flex-1 min-w-0 space-y-3">
+                        {/* Título e Descrição */}
+                        <div>
+                          <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
                             Aula {index + 1}: {lesson.title}
                           </h3>
                           {lesson.description && (
                             <p className="text-xs text-gray-600 line-clamp-1">
-                                {lesson.description}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <span className="text-sm font-medium text-primary shrink-0">
-                            {progressPercentage}%
-                          </span>
+                              {lesson.description}
+                            </p>
+                          )}
                         </div>
                         
-                        {/* Barra de progresso - DARK MODE */}
-                        <div className="mb-2">
+                        {/* Progresso com Percentual e Barra */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">
+                              Progresso
+                            </span>
+                            <span className="text-sm font-bold text-primary">
+                              {progressPercentage}%
+                            </span>
+                          </div>
                           <div 
                             className="h-2 rounded-full overflow-hidden"
                             style={{
                               background: 'rgba(139, 92, 246, 0.1)',
-                              border: '1px solid rgba(139, 92, 246, 0.2)'
+                              border: '1px solid rgba(139, 92, 246, 0.15)'
                             }}
                           >
                             <div 
@@ -340,25 +343,34 @@ const TrailDetail = () => {
                                 background: isCompleted 
                                   ? 'linear-gradient(to right, #10B981, #14B8A6)' 
                                   : 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                                boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
+                                boxShadow: progressPercentage > 0 ? '0 0 8px rgba(139, 92, 246, 0.3)' : 'none'
                               }}
                             />
                           </div>
                         </div>
                         
                         {/* Status e Tempo */}
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={`font-medium ${
-                            isCompleted ? 'text-emerald-600' : 
-                            isLocked ? 'text-gray-400' : 
-                            'text-primary'
-                          }`}>
-                            {statusText}
-                          </span>
+                        <div className="flex items-center justify-between pt-1">
+                          <div className="flex items-center gap-1.5">
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            ) : isLocked ? (
+                              <Lock className="w-4 h-4 text-gray-400" />
+                            ) : (
+                              <PlayCircle className="w-4 h-4 text-primary" />
+                            )}
+                            <span className={`text-xs font-medium ${
+                              isCompleted ? 'text-emerald-600' : 
+                              isLocked ? 'text-gray-400' : 
+                              'text-primary'
+                            }`}>
+                              {statusText}
+                            </span>
+                          </div>
                           
                           <div className="flex items-center gap-1 text-gray-500">
-                            <Clock className="w-3 h-3" />
-                            <span>{lesson.estimated_time || 10} min</span>
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">{lesson.estimated_time || 10} min</span>
                           </div>
                         </div>
                       </div>
