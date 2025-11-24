@@ -200,8 +200,8 @@ function validateCompleteSentence(data: any, result: ValidationResult): void {
 
   data.sentences.forEach((sentence: any, index: number) => {
     // Validar texto com lacuna
-    if (!sentence.text || !sentence.text.includes('_______')) {
-      result.errors.push(`Sentença ${index + 1} precisa ter "_______" no texto`);
+    if (!sentence.text || !sentence.text.includes('___________')) {
+      result.errors.push(`Sentença ${index + 1} precisa ter "___________" no texto`);
     }
     
     // Validar correctAnswers (obrigatório)
