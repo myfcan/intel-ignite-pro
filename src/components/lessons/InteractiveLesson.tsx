@@ -8,6 +8,7 @@ import { QuizPlaygroundLesson } from './QuizPlaygroundLesson';
 import { FlashcardsLesson } from './FlashcardsLesson';
 import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { GuidedLesson } from './GuidedLesson';
+import { GuidedLessonV3 } from './GuidedLessonV3';
 import { GuidedLessonV4 } from './GuidedLessonV4';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniMaia } from '@/components/MiniMaia';
@@ -387,6 +388,57 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         hasExercises: !!guidedLessonData?.exercisesConfig,
         exercisesCount: guidedLessonData?.exercisesConfig?.length || 0
       });
+
+      // 🎬 V3: Transformar dados do banco para estrutura de slides
+      if (lesson.model === 'v3') {
+        const dbContent = lesson.content && typeof lesson.content === 'object' ? lesson.content as any : {};
+
+        // V3 usa estrutura diferente: slides ao invés de sections
+        const v3LessonData = {
+          id: lesson.id,
+          title: lesson.title,
+          trackId: lesson.trail_id,
+          trackName: '',
+          duration: lesson.estimated_time ? lesson.estimated_time * 60 : 0,
+          audioUrl: lesson.audio_url || dbContent.audioUrl || '',
+          wordTimestamps: wordTimestamps.length > 0 ? wordTimestamps : undefined,
+          slides: dbContent.slides || [],
+          exercisesConfig: normalizedExercises && normalizedExercises.length > 0
+            ? normalizedExercises
+            : dbContent.exercisesConfig,
+          finalPlaygroundConfig: dbContent.finalPlaygroundConfig,
+          contentVersion: dbContent.contentVersion,
+          schemaVersion: dbContent.schemaVersion
+        };
+
+        console.log('🎬 [V3] Dados da lição transformados:', {
+          hasAudioUrl: !!v3LessonData.audioUrl,
+          numSlides: v3LessonData.slides?.length || 0,
+          hasExercises: !!v3LessonData.exercisesConfig,
+          hasPlayground: !!v3LessonData.finalPlaygroundConfig
+        });
+
+        return (
+          <>
+            {showMaia && isLastLesson && (
+              <MiniMaia
+                message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+                variant="celebration"
+                showConfetti={true}
+                onClose={handleMaiaClose}
+              />
+            )}
+            <GuidedLessonV3
+              lessonData={v3LessonData}
+              onComplete={handleGuidedComplete}
+              onMarkComplete={markLessonComplete}
+              nextLessonId={nextLessonData?.id}
+              nextLessonType={nextLessonData?.lesson_type}
+              trailId={lesson.trail_id}
+            />
+          </>
+        );
+      }
 
       return (
         <>
