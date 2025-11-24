@@ -295,6 +295,49 @@ export default function AdminPipelineMonitor() {
                     </>
                   )}
 
+                  {selectedExecution.status === 'running' && (
+                    <>
+                      <div className="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-md text-sm">
+                        ⏳ <strong>Executando:</strong> Pipeline em andamento (Step {selectedExecution.current_step}/{selectedExecution.total_steps})
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from('pipeline_executions')
+                              .update({
+                                status: 'failed',
+                                error_message: 'Cancelado manualmente pelo administrador',
+                                updated_at: new Date().toISOString()
+                              })
+                              .eq('id', selectedExecution.id);
+
+                            if (error) throw error;
+
+                            toast({
+                              title: "🛑 Pipeline Cancelado",
+                              description: "A execução foi cancelada.",
+                            });
+
+                            await loadExecutions();
+                          } catch (error) {
+                            toast({
+                              title: "❌ Erro ao Cancelar",
+                              description: error instanceof Error ? error.message : "Erro desconhecido",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        🛑 Cancelar Execução
+                      </Button>
+                    </>
+                  )}
+
                   {selectedExecution.status === 'draft' && (
                     <div className="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-md text-sm">
                       ✅ <strong>Fase 1 Completa (4/8):</strong> Draft criado com sucesso! 
