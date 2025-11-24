@@ -8,14 +8,19 @@ export default function CursoExclusivo() {
 
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+      {/* Header - Dark Tech */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
+              style={{
+                background: 'rgba(15, 23, 42, 0.95)',
+                borderColor: 'rgba(139, 92, 246, 0.3)',
+                boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
+              }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Button
               variant="ghost"
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-purple-300 hover:text-purple-200"
             >
               <ChevronLeft className="w-4 h-4" />
               Voltar ao Dashboard
@@ -27,8 +32,8 @@ export default function CursoExclusivo() {
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-lg">Curso Exclusivo</h1>
-                <p className="text-xs text-gray-600">Conteúdo Premium</p>
+                <h1 className="font-bold text-lg text-gray-100">Curso Exclusivo</h1>
+                <p className="text-xs text-purple-300">Conteúdo Premium</p>
               </div>
             </div>
           </div>
