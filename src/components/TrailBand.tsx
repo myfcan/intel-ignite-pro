@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { LucideIcon, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface TrailBandProps {
   trail: {
@@ -75,6 +76,47 @@ export const TrailBand = ({
           backgroundSize: '20px 20px'
         }}
       />
+      
+      {/* Floating Particles - Only for Active Trail */}
+      {isActive && (
+        <>
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(167, 139, 250, 0.8) 0%, rgba(139, 92, 246, 0) 70%)',
+                boxShadow: '0 0 10px rgba(167, 139, 250, 0.6)',
+              }}
+              initial={{
+                x: Math.random() * 100 + '%',
+                y: Math.random() * 100 + '%',
+                opacity: 0,
+              }}
+              animate={{
+                x: [
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                ],
+                y: [
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                  Math.random() * 100 + '%',
+                ],
+                opacity: [0, 0.8, 0],
+                scale: [0, 1.5, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: i * 0.3,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </>
+      )}
       
       {/* Content */}
       <div className="relative z-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
