@@ -1,0 +1,58 @@
+{
+  "model": "v1",
+  "title": "Como a IA Aprende com Você",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 2,
+  "estimatedTimeMinutes": 15,
+
+  "sections": [
+    {
+      "id": "section-1",
+      "index": 1,
+      "markdown": "## 🎯 O segredo das sugestões perfeitas\n\nVocê já parou pra pensar como o **Netflix** sempre sabe o que você quer assistir?\n\nOu como o **Spotify** cria aquela playlist que parece que foi feita especialmente pra você? 🎵\n\nO segredo está em como a Inteligência Artificial **aprende** com você! 💡",
+      "speechBubble": "Já reparou como o Netflix sempre sabe o que você quer ver?"
+    },
+    {
+      "id": "section-2",
+      "index": 2,
+      "markdown": "## 🎬 Netflix - A escola da IA\n\nVamos usar o Netflix como exemplo.\n\nToda vez que você assiste algo, a IA registra:\n\n- 📊 Qual gênero\n- 👥 Quais atores\n- ⏱️ Quanto tempo você assistiu\n- ⏭️ Se você pulou a introdução\n- ✅ Se assistiu até o final\n\nCom milhões de pessoas fazendo isso, a IA começa a identificar padrões.\n\n**Quanto mais você usa, mais dados a IA tem. E mais dados significa sugestões cada vez melhores!** 📈",
+      "speechBubble": "A IA registra cada detalhe do que você assiste"
+    },
+    {
+      "id": "section-3",
+      "index": 3,
+      "markdown": "## 🎵 Spotify e a mágica da música\n\nO Spotify funciona parecido, mas vai além.\n\nEle não só vê o que você ouve, mas **quando** você ouve.\n\n🌅 Segunda de manhã → você gosta de um estilo\n🌃 Sexta à noite → outro completamente diferente\n\nA IA aprende seus **humores**, suas **rotinas**.\n\nPor isso aquela playlist **\"Descobertas da Semana\"** parece mágica! ✨",
+      "speechBubble": "O Spotify conhece seus humores melhor que ninguém"
+    },
+    {
+      "id": "section-4",
+      "index": 4,
+      "markdown": "## 🎮 Hora de descobrir na prática\n\nIncrível, né? A IA não é programada com gostos específicos. **Ela aprende observando o que VOCÊ faz!**\n\nAgora que você entendeu o conceito, que tal descobrir na prática como isso funciona?\n\nVamos fazer um teste rápido onde você vai ver a IA aprendendo em tempo real! 🚀\n\n**Vamos lá?** 👇",
+      "speechBubble": "Vamos ver a IA aprendendo em tempo real!"
+    }
+  ],
+
+  "exercises": [
+    {
+      "type": "prompt",
+      "prompt": "Crie um exercício de múltipla escolha:\n\nPergunta: Por que o Netflix sugere filmes que você provavelmente vai gostar?\n\nOpções:\n- Porque alguém programa manualmente cada sugestão\n- Porque a IA aprendeu seus padrões observando o que você assiste (CORRETO)\n- Porque todos veem as mesmas sugestões\n- Porque o Netflix adivinha aleatoriamente\n\nFeedback: Correto! A IA aprende com SEUS dados e cria sugestões personalizadas. Ninguém programa manualmente e cada pessoa vê sugestões únicas!",
+      "question": "Pergunta sobre Netflix e IA"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Verdadeiro ou Falso: A IA precisa que você ensine manualmente o que você gosta\n\nResposta: FALSO\n\nFeedback: FALSO! A IA aprende sozinha só observando o que você faz. Você não precisa ensinar nada manualmente!",
+      "question": "V/F sobre aprendizado de IA"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Verdadeiro ou Falso: Quanto mais você usa um app, melhor a IA fica\n\nResposta: VERDADEIRO\n\nFeedback: VERDADEIRO! Mais uso = mais dados = IA mais inteligente e precisa nas sugestões!",
+      "question": "V/F sobre melhoria da IA"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Crie exercício de completar frases:\n\nFrase 1: A IA do Netflix aprende observando o que você ___________.\nResposta: assiste / vê / escolhe / faz\n\nFrase 2: Quanto __________ dados a IA tem, melhores ficam as sugestões.\nResposta: mais / maiores\n\nFrase 3: O Spotify sabe seus __________ porque analisa QUANDO você ouve cada estilo.\nResposta: humores / gostos / padrões / horários\n\nFeedback: Perfeito! A IA aprende com SEU comportamento e personaliza tudo para VOCÊ!",
+      "question": "Completar frases sobre IA"
+    }
+  ]
+}

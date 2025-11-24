@@ -1,0 +1,64 @@
+{
+  "model": "v2",
+  "title": "IA no Dia a Dia",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 3,
+  "estimatedTimeMinutes": 12,
+
+  "sections": [
+    {
+      "id": "section-1",
+      "index": 1,
+      "markdown": "## 🏠 IA em Casa\n\nA Inteligência Artificial está mais presente na sua casa do que você imagina!\n\nDesde o momento que você acorda até a hora de dormir, a IA está trabalhando para tornar sua vida mais fácil.\n\nVamos descobrir onde ela está escondida? 👀",
+      "speechBubble": "Vamos descobrir onde a IA está na sua rotina diária"
+    },
+    {
+      "id": "section-2",
+      "index": 2,
+      "markdown": "## 📱 Assistentes Virtuais\n\n**Siri**, **Alexa**, **Google Assistant** - todos esses assistentes usam IA!\n\nEles entendem sua voz, interpretam o que você quer e respondem de forma natural.\n\n### Como funciona:\n\n1. **Você fala**: \"Alexa, qual a previsão do tempo?\"\n2. **IA processa**: Entende linguagem natural\n3. **IA responde**: Busca informação e responde\n\nÉ como conversar com uma pessoa! 🗣️",
+      "speechBubble": "Esses assistentes entendem linguagem natural como se fossem humanos"
+    },
+    {
+      "id": "section-3",
+      "index": 3,
+      "markdown": "## 🚗 Carros Inteligentes\n\n**Tesla** e outros carros modernos usam IA para direção autônoma.\n\nA IA:\n- 👁️ Reconhece pedestres e obstáculos\n- 🚦 Respeita sinais de trânsito\n- 🛣️ Mantém o carro na faixa\n- 🚙 Ajusta velocidade automaticamente\n\nO futuro está chegando! 🚀",
+      "speechBubble": "A IA está revolucionando o transporte e a mobilidade"
+    },
+    {
+      "id": "section-4",
+      "index": 4,
+      "markdown": "## 🏥 Saúde e Medicina\n\nA IA também está salvando vidas na área da saúde!\n\n### Aplicações:\n\n- 🔬 **Diagnóstico**: Detecta doenças em exames de imagem\n- 💊 **Remédios**: Ajuda a desenvolver novos medicamentos\n- 📊 **Prevenção**: Prevê riscos de saúde antes que aconteçam\n- 🤖 **Cirurgias**: Auxilia médicos em operações precisas\n\nA IA é uma aliada poderosa dos profissionais de saúde! 💪",
+      "speechBubble": "A IA está transformando a medicina e salvando vidas"
+    },
+    {
+      "id": "section-5",
+      "index": 5,
+      "markdown": "## 🎓 Educação Personalizada\n\nPlataformas de ensino usam IA para adaptar o conteúdo ao seu ritmo!\n\n**Como funciona:**\n\n1. Você faz exercícios\n2. IA identifica suas dificuldades\n3. IA ajusta o conteúdo para você\n4. Você aprende mais rápido!\n\nCada aluno tem uma experiência única de aprendizado. 📚✨",
+      "speechBubble": "A IA personaliza o ensino para cada aluno aprender melhor"
+    }
+  ],
+
+  "exercises": [
+    {
+      "type": "prompt",
+      "prompt": "Crie exercício de múltipla escolha:\n\nPergunta: Qual desses assistentes virtuais NÃO usa Inteligência Artificial?\n\nOpções:\n- Siri (Apple)\n- Alexa (Amazon)\n- Google Assistant\n- Nenhuma das anteriores - todos usam IA (CORRETO)\n\nFeedback: Correto! Todos os assistentes virtuais modernos usam IA para entender e responder suas perguntas!",
+      "question": "Sobre assistentes de voz"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Verdadeiro ou Falso: Carros autônomos como Tesla usam IA para reconhecer pedestres e obstáculos\n\nResposta: VERDADEIRO\n\nFeedback: VERDADEIRO! A IA processa imagens em tempo real para identificar tudo ao redor do carro e dirigir com segurança.",
+      "question": "V/F sobre carros autônomos"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Crie exercício de arrastar e soltar:\n\nInstrução: Classifique cada aplicação de IA na categoria correta\n\nCategoria 1: SAÚDE\n- Diagnóstico por imagem\n- Desenvolvimento de remédios\n- Prevenção de doenças\n\nCategoria 2: EDUCAÇÃO\n- Ensino personalizado\n- Exercícios adaptativos\n- Correção automática\n\nCategoria 3: TRANSPORTE\n- Direção autônoma\n- Reconhecimento de sinais\n- Ajuste de velocidade\n\nFeedback: Ótimo! A IA tem aplicações em diversas áreas da nossa vida!",
+      "question": "Classificar aplicações de IA"
+    },
+    {
+      "type": "prompt",
+      "prompt": "Crie exercício de múltipla escolha:\n\nPergunta: Como a IA personaliza o ensino para cada aluno?\n\nOpções:\n- Dando as mesmas lições para todos\n- Identificando dificuldades e ajustando o conteúdo (CORRETO)\n- Tornando tudo mais difícil\n- Removendo exercícios\n\nFeedback: Exato! A IA analisa seu desempenho e adapta o conteúdo para você aprender melhor, no seu próprio ritmo!",
+      "question": "Sobre educação personalizada"
+    }
+  ]
+}
