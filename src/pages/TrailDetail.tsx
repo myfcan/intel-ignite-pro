@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
-import { MiniLiv } from '@/components/MiniMaia';
-import { getMaiaMessage, type MaiaMessageType } from '@/data/maiaMessages';
+import { LivWelcomeModal } from '@/components/LivWelcomeModal';
 import { motion } from 'framer-motion';
 
 interface Lesson {
@@ -36,13 +35,7 @@ const TrailDetail = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-  const [userName, setUserName] = useState<string>('');
-  const [userId, setUserId] = useState<string>('');
-  
-  // Estados para controlar diferentes tipos de mensagens da MAIA
-  const [showWelcomeMaia, setShowWelcomeMaia] = useState(false);
-  const [showProgressMaia, setShowProgressMaia] = useState(false);
-  const [showCompletionMaia, setShowCompletionMaia] = useState(false);
+  const [showLivModal, setShowLivModal] = useState(true);
 
   useEffect(() => {
     fetchTrailData();
@@ -54,28 +47,6 @@ const TrailDetail = () => {
       if (!session) {
         navigate('/auth');
         return;
-      }
-
-      // Guardar o userId para usar nas chaves do localStorage
-      const currentUserId = session.user.id;
-      setUserId(currentUserId);
-
-      // Usar um nome padrão ou email do usuário
-      const name = session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'amigo';
-      setUserName(name);
-
-      // Verificar chaves do localStorage com userId
-      const welcomeMaiaKey = `maia-welcome-${currentUserId}-${id}`;
-      const progressMaiaKey = `maia-progress-${currentUserId}-${id}`;
-      const completionMaiaKey = `maia-completion-${currentUserId}-${id}`;
-      
-      const hasShownWelcome = localStorage.getItem(welcomeMaiaKey);
-      const hasShownProgress = localStorage.getItem(progressMaiaKey);
-      const hasShownCompletion = localStorage.getItem(completionMaiaKey);
-      
-      // Mostrar MAIA welcome primeiro se nunca mostrou
-      if (!hasShownWelcome) {
-        setShowWelcomeMaia(true);
       }
 
       // Fetch trail
@@ -109,19 +80,6 @@ const TrailDetail = () => {
       if (progressData) {
         const completed = progressData.map(p => p.lesson_id);
         setCompletedLessons(completed);
-        
-        // Calcular progresso e determinar se deve mostrar MAIA de progresso/celebração
-        const totalLessons = lessonsData?.length || 0;
-        if (totalLessons > 0) {
-          const progressPercent = (completed.length / totalLessons) * 100;
-          
-          // Mostrar MAIA apenas se não foi mostrada antes
-          if (progressPercent >= 100 && !hasShownCompletion) {
-            setShowCompletionMaia(true);
-          } else if (progressPercent >= 50 && progressPercent < 100 && !hasShownProgress) {
-            setShowProgressMaia(true);
-          }
-        }
       }
     } catch (error: any) {
       console.error('Error fetching trail:', error);
@@ -186,66 +144,10 @@ const TrailDetail = () => {
 
   const progress = lessons.length > 0 ? (completedLessons.length / lessons.length) * 100 : 0;
 
-  // Determinar qual MAIA mostrar (prioridade: Completion > Progress > Welcome)
-  const trailId = trail?.title.toLowerCase().replace(/\s+/g, '') || '';
-  
-  let showMaia = false;
-  let messageType: MaiaMessageType = 'welcome';
-  let variant: 'default' | 'encouragement' | 'celebration' = 'default';
-  let showConfetti = false;
-
-  if (showCompletionMaia) {
-    showMaia = true;
-    messageType = 'completed';
-    variant = 'celebration';
-    showConfetti = true;
-  } else if (showProgressMaia) {
-    showMaia = true;
-    messageType = 'progress';
-    variant = 'encouragement';
-  } else if (showWelcomeMaia) {
-    showMaia = true;
-    messageType = 'welcome';
-    variant = 'default';
-  }
-
-  const message = getMaiaMessage(trailId, messageType);
-
-  const handleMaiaClose = () => {
-    if (showWelcomeMaia) {
-      setShowWelcomeMaia(false);
-      // Salvar no localStorage que a mensagem de boas-vindas já foi mostrada
-      if (userId && id) {
-        localStorage.setItem(`maia-welcome-${userId}-${id}`, 'true');
-      }
-    }
-    if (showProgressMaia) {
-      setShowProgressMaia(false);
-      // Salvar no localStorage que a mensagem de progresso já foi mostrada
-      if (userId && id) {
-        localStorage.setItem(`maia-progress-${userId}-${id}`, 'true');
-      }
-    }
-    if (showCompletionMaia) {
-      setShowCompletionMaia(false);
-      // Salvar no localStorage que a mensagem de conclusão já foi mostrada
-      if (userId && id) {
-        localStorage.setItem(`maia-completion-${userId}-${id}`, 'true');
-      }
-    }
-  };
-
   return (
     <>
-      {/* MiniLiv - MAIA Messages */}
-      {showMaia && (
-        <MiniLiv
-          message={message}
-          variant={variant}
-          showConfetti={showConfetti}
-          onClose={handleMaiaClose}
-        />
-      )}
+      {/* Liv Welcome Modal - Aparece apenas UMA vez */}
+      {showLivModal && <LivWelcomeModal onClose={() => setShowLivModal(false)} />}
       
       <div className="min-h-screen relative overflow-hidden"
          style={{
