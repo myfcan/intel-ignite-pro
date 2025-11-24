@@ -144,6 +144,29 @@ export default function AdminPipelineCreateBatch() {
   };
 
   const transformSimplifiedExercise = (exercise: any, index: number) => {
+    // 🔥 FIX: Se o exercício JÁ TEM wrapper "data" com campos, NÃO transformar!
+    // Isso evita destruir exercícios que já estão no formato completo
+    if (exercise.data && typeof exercise.data === 'object') {
+      // Verificar se tem os campos necessários dentro de data
+      const hasRequiredFields =
+        (exercise.type === 'multiple-choice' && exercise.data.options && exercise.data.correctAnswer) ||
+        (exercise.type === 'true-false' && (exercise.data.statements || exercise.data.answer !== undefined)) ||
+        (exercise.type === 'complete-sentence' && exercise.data.sentences) ||
+        (exercise.type === 'fill-in-blanks' && exercise.data.sentences);
+
+      if (hasRequiredFields) {
+        // Exercício já está no formato completo, adicionar apenas ID se não tiver
+        return {
+          id: exercise.id || `exercise-${Date.now()}-${index}`,
+          title: exercise.title || getExerciseTitle(exercise.type),
+          instruction: exercise.instruction || getExerciseInstruction(exercise.type),
+          type: exercise.type,
+          data: exercise.data
+        };
+      }
+    }
+
+    // Formato simplificado: aplicar transformação normal
     const timestamp = Date.now();
     const baseExercise = {
       id: `exercise-${timestamp}-${index}`,
