@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
+import { splitByPlaceholder, EXERCISE_PLACEHOLDER } from '@/lib/exerciseConstants';
 
 interface Sentence {
   id: string;
@@ -118,9 +119,9 @@ export function FillInBlanksExercise({
 
       <div className="space-y-5">
         {sentences.map((sentence, index) => {
-          const parts = sentence.text.split('_______');
+          const parts = splitByPlaceholder(sentence.text);
           const isCorrect = results[sentence.id];
-          
+
           // Debug: verificar se o split está funcionando corretamente
           console.log('📝 [DEBUG] Sentence parts:', {
             full: sentence.text,

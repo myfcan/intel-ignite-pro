@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
+import { splitByPlaceholder, EXERCISE_PLACEHOLDER } from '@/lib/exerciseConstants';
 
 interface Sentence {
   id: string;
@@ -89,7 +90,7 @@ export function CompleteSentenceExercise({
 
       <div className="space-y-6">
         {sentences.map(sentence => {
-          const parts = sentence.text.split('___________');
+          const parts = splitByPlaceholder(sentence.text);
           const hasOptions = sentence.options && sentence.options.length > 0;
           
           return (
