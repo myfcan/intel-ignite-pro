@@ -130,30 +130,30 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        {/* Header do Chat - FORA do card escuro */}
-        <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
+        <Card className="bg-gray-950 border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header do Chat - DENTRO do card */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-white">Assistente IA</h4>
+                <p className="text-xs text-green-400 flex items-center gap-1">
+                  <Circle className="w-2 h-2 fill-current animate-pulse" />
+                  Online e pronto
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-semibold text-slate-900">Assistente IA</h4>
-              <p className="text-xs text-green-500 flex items-center gap-1">
-                <Circle className="w-2 h-2 fill-current animate-pulse" />
-                Online e pronto
-              </p>
-            </div>
+            {interactionsRemaining !== null && (
+              <div className="text-xs text-gray-400">
+                {interactionsRemaining} interações restantes
+              </div>
+            )}
           </div>
-          {interactionsRemaining !== null && (
-            <div className="text-xs text-slate-600">
-              {interactionsRemaining} interações restantes
-            </div>
-          )}
-        </div>
 
-        <Card className="bg-gray-950 border-gray-800 rounded-2xl p-6 shadow-2xl">
           {/* Área de Mensagens */}
-          <div className="bg-gray-900 rounded-xl p-4 min-h-[300px] max-h-[500px] overflow-y-auto mb-4">
+          <div className="bg-gray-900 p-6 min-h-[300px] max-h-[500px] overflow-y-auto">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -210,21 +210,21 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
           </div>
 
           {/* Input Area */}
-          <div className="relative">
+          <div className="relative px-6 py-4 border-t border-gray-700">
             <textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               disabled={isTyping}
-              className="w-full bg-gray-900 text-white rounded-xl px-4 py-3 pr-12 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 pr-12 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
               placeholder="Digite seu prompt aqui... Ex: 'Crie 3 ideias de posts sobre...'"
               rows={3}
             />
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isTyping}
-              className="absolute bottom-3 right-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute bottom-7 right-9 bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isTyping ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -232,27 +232,27 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
                 <Send className="w-4 h-4" />
               )}
             </button>
-          </div>
 
-          {/* Sugestões de Prompt */}
-          {messages.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-4 flex flex-wrap gap-2"
-            >
-              {promptSuggestions.map((suggestion, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setInputValue(suggestion.replace(/^[^\s]+\s/, ''))}
-                  className="text-xs px-3 py-1.5 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </motion.div>
-          )}
+            {/* Sugestões de Prompt */}
+            {messages.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-3 flex flex-wrap gap-2"
+              >
+                {promptSuggestions.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setInputValue(suggestion.replace(/^[^\s]+\s/, ''))}
+                    className="text-xs px-3 py-1.5 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors border border-gray-700"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </div>
         </Card>
       </motion.div>
     </div>
