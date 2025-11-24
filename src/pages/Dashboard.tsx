@@ -293,13 +293,12 @@ const Dashboard = () => {
               <motion.span
                 className="text-2xl sm:text-3xl md:text-4xl"
                 animate={{ 
-                  rotate: [0, 15, -15, 15, -15, 0],
+                  rotate: [0, 15, -15, 15, -15, 0, 0, 15, -15, 15, -15, 0],
                 }}
                 transition={{
                   delay: 1,
-                  duration: 0.6,
-                  repeat: Infinity,
-                  repeatDelay: 3,
+                  duration: 1.2,
+                  times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
                   ease: "easeInOut"
                 }}
                 style={{ display: 'inline-block', transformOrigin: 'bottom center' }}
@@ -311,10 +310,17 @@ const Dashboard = () => {
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="text-gray-400 text-sm sm:text-base md:text-lg"
+              transition={{ delay: 0.8, duration: 0.5 }}
+              className="text-gray-400 text-sm sm:text-base md:text-lg overflow-hidden"
             >
-              Comece sua jornada de aprendizado em Inteligência Artificial
+              <motion.span
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ delay: 1.2, duration: 2, ease: "linear" }}
+                style={{ display: "inline-block", whiteSpace: "nowrap" }}
+              >
+                Comece sua jornada de aprendizado em Inteligência Artificial
+              </motion.span>
             </motion.p>
           </div>
         </motion.div>
