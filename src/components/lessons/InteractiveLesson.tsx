@@ -434,11 +434,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
@@ -472,11 +473,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
@@ -510,11 +512,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
@@ -548,11 +551,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
@@ -586,11 +590,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
@@ -624,11 +629,12 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          <div className="min-h-screen">
-            <header className="sticky top-0 z-50 backdrop-blur-xl border-b shadow-sm"
+          <div className="min-h-screen bg-slate-950">
+            <header className="sticky top-0 z-50 backdrop-blur-xl border-b"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      borderColor: 'rgba(139, 92, 246, 0.2)'
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 4px 30px rgba(139, 92, 246, 0.1)'
                     }}>
               <div className="container mx-auto px-4 py-3 flex items-center gap-3">
                 <Button
