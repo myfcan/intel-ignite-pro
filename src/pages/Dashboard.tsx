@@ -239,19 +239,30 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden"
+          className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden transition-all duration-300"
           style={{
             background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-            backgroundImage: `
-              linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-              radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-            `,
-            backgroundSize: 'cover, 16px 16px',
-            backgroundPosition: 'center, 0 0',
             border: '1px solid rgba(139, 92, 246, 0.15)',
             boxShadow: '0 4px 20px rgba(139, 92, 246, 0.08)'
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+          }}
         >
+          {/* Textura de Pontos */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)',
+              backgroundSize: '16px 16px',
+              backgroundPosition: '0 0'
+            }}
+          />
           
           <div className="relative z-10">
             <motion.p 
