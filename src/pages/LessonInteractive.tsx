@@ -13,10 +13,7 @@ export default function LessonInteractive() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden"
-         style={{
-           background: 'linear-gradient(135deg, #0F172A 0%, #020617 100%)'
-         }}>
+    <div className="min-h-screen relative overflow-hidden bg-slate-950">
       {/* Grid Pattern Background */}
       <div 
         className="fixed inset-0 opacity-10"
