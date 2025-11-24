@@ -8,6 +8,7 @@ import { ArrowLeft, Play, Pause, RotateCcw, CheckCircle, XCircle, Clock } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { runLessonPipeline, PipelineInput } from '@/lib/lessonPipeline';
+import { usePipelineNotifications } from '@/hooks/usePipelineNotifications';
 
 interface PipelineExecution {
   id: string;
@@ -28,6 +29,9 @@ export default function AdminPipelineMonitor() {
   const { executionId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // 🔔 Ativar notificações em tempo real de conclusão/falha
+  usePipelineNotifications();
   
   const [executions, setExecutions] = useState<PipelineExecution[]>([]);
   const [selectedExecution, setSelectedExecution] = useState<PipelineExecution | null>(null);
