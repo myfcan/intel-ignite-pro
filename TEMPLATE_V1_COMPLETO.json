@@ -1,0 +1,94 @@
+{
+  "model": "v1",
+  "title": "Como Dominar os Prompts de IA",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 5,
+  "estimatedTimeMinutes": 18,
+
+  "sections": [
+    {
+      "id": "section-1",
+      "index": 1,
+      "markdown": "## 🎯 O Poder dos Prompts\n\nVocê já se perguntou por que algumas pessoas conseguem **resultados incríveis** com IA e outras não?\n\nO segredo está em como você **conversa** com a inteligência artificial! 💬✨\n\nNesta aula, você vai aprender a criar prompts que realmente funcionam.",
+      "speechBubble": "Oi! Hoje vou te ensinar o segredo dos prompts incríveis. Preparado?"
+    },
+    {
+      "id": "section-2",
+      "index": 2,
+      "markdown": "## 📝 Anatomia de um Bom Prompt\n\nUm prompt eficaz tem **3 elementos essenciais**:\n\n1. **Contexto** 🎭 - Quem é você? Qual a situação?\n2. **Tarefa** 🎯 - O que você quer que a IA faça?\n3. **Formato** 📋 - Como você quer o resultado?\n\n### Exemplo Ruim:\n> \"Me fala sobre marketing\"\n\n### Exemplo Bom:\n> \"Sou dono de uma pizzaria. Crie 5 ideias de posts para Instagram que atraiam clientes no fim de semana. Use tom descontraído e inclua emojis.\"",
+      "speechBubble": "Todo prompt poderoso tem contexto, tarefa e formato. Veja a diferença!"
+    },
+    {
+      "id": "section-3",
+      "index": 3,
+      "markdown": "## 🔍 Técnica 1: Seja Específico\n\nPrompts vagos = respostas genéricas\nPrompts específicos = respostas personalizadas 🎯\n\n### Compare:\n\n❌ **Vago**: \"Escreva um email\"\n\n✅ **Específico**: \"Escreva um email de cobrança amigável para cliente que atrasou 15 dias. Tom profissional mas empático. Máximo 150 palavras.\"\n\nQuanto mais detalhes, melhores os resultados!",
+      "speechBubble": "A especificidade é sua melhor amiga. Detalhes fazem toda a diferença!"
+    },
+    {
+      "id": "section-4",
+      "index": 4,
+      "markdown": "## 🎭 Técnica 2: Atribua um Papel\n\nFaça a IA **assumir uma personalidade** específica:\n\n### Exemplos de Papéis:\n- \"Você é um nutricionista especializado em dietas vegetarianas...\"\n- \"Atue como um consultor de vendas B2B com 20 anos de experiência...\"\n- \"Você é um professor de matemática explicando para uma criança de 10 anos...\"\n\n🎪 **Resultado**: Respostas mais alinhadas com o conhecimento e tom desejados!",
+      "speechBubble": "Agora vem a prática! Vamos testar na vida real?"
+    },
+    {
+      "id": "section-5",
+      "index": 5,
+      "markdown": "## 🚀 Próximos Passos\n\nVocê aprendeu:\n✅ Os 3 elementos de um prompt eficaz\n✅ A importância de ser específico\n✅ Como atribuir papéis à IA\n\nAgora é hora de **testar** esses conceitos nos exercícios! 💪",
+      "speechBubble": "Parabéns! Você já sabe os fundamentos. Vamos praticar?"
+    }
+  ],
+
+  "exercises": [
+    {
+      "index": 1,
+      "type": "multiple-choice",
+      "question": "Quais são os 3 elementos essenciais de um bom prompt?",
+      "options": [
+        "Contexto, Tarefa e Formato",
+        "Título, Corpo e Conclusão",
+        "Pergunta, Resposta e Feedback",
+        "Início, Meio e Fim"
+      ],
+      "correctOptionIndex": 0,
+      "feedback": "Isso mesmo! Contexto + Tarefa + Formato = Prompt Perfeito! 🎯"
+    },
+    {
+      "index": 2,
+      "type": "true-false",
+      "question": "Prompts vagos geram respostas mais personalizadas e úteis.",
+      "correctAnswer": false,
+      "feedback": "Correto! Prompts vagos geram respostas genéricas. Quanto mais específico, melhor! 💡"
+    },
+    {
+      "index": 3,
+      "type": "scenario-selection",
+      "question": "Qual destes prompts seguiria melhor as técnicas que você aprendeu?",
+      "instruction": "Escolha o prompt mais eficaz:",
+      "scenarios": [
+        {
+          "id": "scenario-1",
+          "title": "Opção A",
+          "description": "Fale sobre vendas"
+        },
+        {
+          "id": "scenario-2",
+          "title": "Opção B",
+          "description": "Você é um consultor de vendas B2B. Crie 3 estratégias para prospectar clientes no LinkedIn. Use formato de lista numerada com explicação de 2 linhas cada."
+        },
+        {
+          "id": "scenario-3",
+          "title": "Opção C",
+          "description": "Me dê dicas de vendas no LinkedIn"
+        },
+        {
+          "id": "scenario-4",
+          "title": "Opção D",
+          "description": "Como vender mais?"
+        }
+      ],
+      "correctScenarioId": "scenario-2",
+      "feedback": "Perfeito! A Opção B tem papel (consultor), tarefa clara (3 estratégias LinkedIn) e formato específico (lista numerada)! 🎯"
+    }
+  ]
+}
