@@ -197,23 +197,32 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
     const exercise = input.exercises[i];
     
     if (logger) {
-      await logger.info(5, 'Generate Exercises', `[${i+1}/${input.exercises.length}] Tipo: ${exercise.type}`);
+      await logger.info(5, 'Generate Exercises', `[${i+1}/${input.exercises.length}] 📥 exercise ORIGINAL: ${JSON.stringify(exercise)}`);
     }
 
-    // 🔄 MERGE: Sempre mesclar campos do nível raiz com .data
-    // Isso garante que campos como options, correctOptionIndex não sejam perdidos
-    const rootFields: any = { ...exercise };
-    delete rootFields.type;
-    delete rootFields.index;
-    delete rootFields.data;
-
-    let exerciseData = {
-      ...rootFields,           // Campos do nível raiz (options, correctOptionIndex, etc)
-      ...(exercise.data || {}) // .data sobrescreve se existir
-    };
+    // 🔄 PRIORIDADE: Se exercise.data existe e tem campos, usar ele
+    // Caso contrário, usar campos do nível raiz
+    let exerciseData: any;
+    
+    if (exercise.data && Object.keys(exercise.data).length > 0) {
+      // Formato novo: campos em .data
+      exerciseData = { ...exercise.data };
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `✅ Usando exercise.data (formato novo)`);
+      }
+    } else {
+      // Formato antigo: campos no nível raiz
+      exerciseData = { ...exercise };
+      delete exerciseData.type;
+      delete exerciseData.index;
+      delete exerciseData.data;
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `✅ Usando nível raiz (formato antigo)`);
+      }
+    }
 
     if (logger) {
-      await logger.info(5, 'Generate Exercises', `🔄 exerciseData após merge: ${JSON.stringify(exerciseData)}`);
+      await logger.info(5, 'Generate Exercises', `📋 exerciseData FINAL: ${JSON.stringify(exerciseData)}`);
     }
 
     // 🔄 NORMALIZAR COMPLETE-SENTENCE: converter formato simplificado para formato completo
@@ -223,13 +232,7 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
 
     // 🔄 NORMALIZAR MULTIPLE-CHOICE: converter correctOptionIndex para correctAnswer
     if (exercise.type === 'multiple-choice' && exerciseData) {
-      if (logger) {
-        await logger.info(5, 'Generate Exercises', `📋 exerciseData ANTES: ${JSON.stringify(exerciseData)}`);
-      }
       exerciseData = normalizeMultipleChoiceData(exerciseData, logger);
-      if (logger) {
-        await logger.info(5, 'Generate Exercises', `📋 exerciseData DEPOIS: ${JSON.stringify(exerciseData)}`);
-      }
     }
 
     // 🔄 NORMALIZAR TRUE-FALSE: converter answer/feedback para correct/explanation
