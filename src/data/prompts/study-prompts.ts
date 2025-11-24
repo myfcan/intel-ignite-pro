@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const studyPromptsCategory: PromptCategory = {
   id: 'study',
-  name: 'Study Buddy',
+  name: 'Assistente de Estudos',
   description: 'Prompts para aprender, revisar e fixar conteúdo com eficiência',
   icon: 'BookOpen',
   color: 'bg-green-500',

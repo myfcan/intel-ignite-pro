@@ -2,7 +2,7 @@ import { PromptCategory } from '../../types/prompt';
 
 export const contentPromptsCategory: PromptCategory = {
   id: 'content',
-  name: 'Content Creation',
+  name: 'Criação de Conteúdo',
   description: 'Prompts para criar roteiros, scripts, storytelling e conteúdo criativo',
   icon: 'Video',
   color: 'bg-red-500',
