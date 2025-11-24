@@ -64,17 +64,17 @@
           "sentences": [
             {
               "id": "sentence-1",
-              "text": "Frase com ___________ para preencher.",
+              "text": "Frase com _______ para preencher.",
               "correctAnswers": ["resposta1", "alternativa1"]
             },
             {
               "id": "sentence-2",
-              "text": "Outra frase com ___________ aqui.",
+              "text": "Outra frase com _______ aqui.",
               "correctAnswers": ["resposta2"]
             },
             {
               "id": "sentence-3",
-              "text": "Terceira frase com ___________.",
+              "text": "Terceira frase com _______.",
               "correctAnswers": ["resposta3", "alternativa3"]
             }
           ],

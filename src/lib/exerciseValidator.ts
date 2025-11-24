@@ -1,9 +1,11 @@
 /**
  * 🔍 VALIDADOR RUNTIME DE EXERCÍCIOS
- * 
+ *
  * Valida a estrutura de cada tipo de exercício em runtime.
  * Integrado no processo de sincronização para bloquear dados incorretos.
  */
+
+import { hasValidPlaceholder } from './exerciseConstants';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -103,8 +105,8 @@ function validateFillInBlanks(data: any, result: ValidationResult): void {
       result.warnings.push('fill-in-blanks tem 0 sentences');
     }
     data.sentences.forEach((sentence: any, index: number) => {
-      if (!sentence.text || !sentence.text.includes('_______')) {
-        result.errors.push(`Sentença ${index + 1} precisa ter "_______" no texto`);
+      if (!sentence.text || !hasValidPlaceholder(sentence.text)) {
+        result.errors.push(`Sentença ${index + 1} precisa ter "_______" (7 underscores) ou "___________" (11 underscores) no texto`);
       }
       if (!sentence.correctAnswers || !Array.isArray(sentence.correctAnswers) || sentence.correctAnswers.length === 0) {
         result.errors.push(`Sentença ${index + 1} precisa ter "correctAnswers" (array não-vazio)`);
@@ -199,9 +201,9 @@ function validateCompleteSentence(data: any, result: ValidationResult): void {
   }
 
   data.sentences.forEach((sentence: any, index: number) => {
-    // Validar texto com lacuna (aceita 7 ou 11 underscores)
-    if (!sentence.text || (!sentence.text.includes('_______') && !sentence.text.includes('___________'))) {
-      result.errors.push(`Sentença ${index + 1} precisa ter "_______" ou "___________" no texto`);
+    // Validar texto com lacuna (aceita 7 ou 11 underscores via hasValidPlaceholder)
+    if (!sentence.text || !hasValidPlaceholder(sentence.text)) {
+      result.errors.push(`Sentença ${index + 1} precisa ter "_______" (7 underscores) ou "___________" (11 underscores) no texto`);
     }
     
     // Validar correctAnswers (obrigatório)

@@ -34,7 +34,16 @@ export interface DragDropExerciseData {
 // ============================================================
 export interface FillInBlanksSentence {
   id: string;
-  text: string; // Deve conter "_______" onde o usuário preenche
+  /**
+   * Texto da sentença com placeholder para resposta.
+   *
+   * ✅ PADRÃO RECOMENDADO: 7 underscores (_______)
+   * ⚠️ RETROCOMPATIBILIDADE: 11 underscores (___________) também aceito
+   *
+   * @example "A IA aprende com _______."
+   * @see src/lib/exerciseConstants.ts para funções auxiliares
+   */
+  text: string;
   correctAnswers: string[];
   hint: string;
   explanation?: string;
@@ -168,15 +177,24 @@ export interface MultipleChoiceExerciseData {
 // ============================================================
 /**
  * 🎯 REGRA PADRÃO COMPLETE-SENTENCE:
- * 
+ *
  * - Se `options` existe → Exercício de MÚLTIPLA ESCOLHA (RadioGroup)
  * - Se `options` NÃO existe → Exercício de TEXTO LIVRE (Input)
- * 
+ *
  * ✅ RECOMENDADO: Sempre usar `options` para melhor UX
  */
 export interface CompleteSentenceSentence {
   id: string;
-  text: string; // Deve conter _______ onde o usuário preenche
+  /**
+   * Texto da sentença com placeholder para resposta.
+   *
+   * ✅ PADRÃO RECOMENDADO: 7 underscores (_______)
+   * ⚠️ RETROCOMPATIBILIDADE: 11 underscores (___________) também aceito
+   *
+   * @example "O Prompt _______ adapta a explicação."
+   * @see src/lib/exerciseConstants.ts para funções auxiliares
+   */
+  text: string;
   correctAnswers: string[]; // Respostas aceitas (deve estar em options se options existir)
   options?: string[]; // 🆕 Se presente, exibe como múltipla escolha (RadioGroup)
                        //     Se ausente, exibe como texto livre (Input)
