@@ -246,8 +246,8 @@ const Dashboard = () => {
             boxShadow: '0 4px 20px rgba(139, 92, 246, 0.08)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.15)';
-            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.25)';
+            e.currentTarget.style.boxShadow = '0 6px 24px rgba(139, 92, 246, 0.12)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.08)';
@@ -258,7 +258,7 @@ const Dashboard = () => {
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.18) 1px, transparent 1px)',
               backgroundSize: '16px 16px',
               backgroundPosition: '0 0'
             }}
