@@ -275,23 +275,33 @@ const TrailDetail = () => {
               >
                 <div className="p-5">
                   <div className="flex items-center gap-4">
-                    {/* Thumbnail com Play Button */}
-                    <div className={`relative flex-shrink-0 w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden shadow-md ${
-                      isCompleted ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500' :
-                      isLocked ? 'bg-slate-100' : 'bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500'
-                    }`}>
+                    {/* Thumbnail com Play Button - DARK MODE */}
+                    <div className={`relative flex-shrink-0 w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden ${
+                      isCompleted ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 shadow-md' :
+                      isLocked ? 'shadow-md' : ''
+                    }`}
+                    style={!isCompleted && !isLocked ? {
+                      background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.1)'
+                    } : isLocked ? {
+                      background: '#F1F5F9',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                    } : undefined}
+                    >
                       {isCompleted ? (
                         <Trophy className="w-8 h-8 text-yellow-50 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] animate-pulse-glow" />
                       ) : isLocked ? (
                         <Lock className="w-8 h-8 text-slate-400" />
                       ) : (
-                        <PlayCircle className="w-8 h-8 text-white" />
+                        <PlayCircle className="w-8 h-8 text-purple-300" />
                       )}
                       
                       {/* Play overlay effect */}
                       {!isLocked && !isCompleted && (
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="w-6 h-6 text-white" fill="white" />
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                             style={{ background: 'rgba(139, 92, 246, 0.2)' }}>
+                          <Play className="w-6 h-6 text-purple-300" fill="#A78BFA" />
                         </div>
                       )}
                     </div>
@@ -314,16 +324,23 @@ const TrailDetail = () => {
                           </span>
                         </div>
                         
-                        {/* Barra de progresso */}
+                        {/* Barra de progresso - DARK MODE */}
                         <div className="mb-2">
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                          <div 
+                            className="h-2 rounded-full overflow-hidden"
+                            style={{
+                              background: 'rgba(139, 92, 246, 0.1)',
+                              border: '1px solid rgba(139, 92, 246, 0.2)'
+                            }}
+                          >
                             <div 
                               className="h-full transition-all duration-500"
                               style={{ 
                                 width: `${progressPercentage}%`,
                                 background: isCompleted 
                                   ? 'linear-gradient(to right, #10B981, #14B8A6)' 
-                                  : 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)'
+                                  : 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
+                                boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
                               }}
                             />
                           </div>
