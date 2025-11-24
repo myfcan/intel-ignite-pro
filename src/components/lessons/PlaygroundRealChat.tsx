@@ -139,7 +139,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
             <div>
               <h4 className="font-semibold text-slate-900">Assistente IA</h4>
               <p className="text-xs text-green-500 flex items-center gap-1">
-                <Circle className="w-2 h-2 fill-current" />
+                <Circle className="w-2 h-2 fill-current animate-pulse" />
                 Online e pronto
               </p>
             </div>
