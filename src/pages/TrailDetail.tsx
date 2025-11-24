@@ -275,15 +275,15 @@ const TrailDetail = () => {
               >
                 <div className="p-5">
                   <div className="flex items-center gap-4">
-                    {/* Thumbnail com Play Button - DARK MODE */}
+                    {/* Thumbnail com Play Button */}
                     <div className={`relative flex-shrink-0 w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden ${
                       isCompleted ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 shadow-md' :
                       isLocked ? 'shadow-md' : ''
                     }`}
                     style={!isCompleted && !isLocked ? {
-                      background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-                      border: '1px solid rgba(139, 92, 246, 0.3)',
-                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.1)'
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 139, 250, 0.12) 100%)',
+                      border: '1px solid rgba(139, 92, 246, 0.2)',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.15)'
                     } : isLocked ? {
                       background: '#F1F5F9',
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
@@ -294,14 +294,14 @@ const TrailDetail = () => {
                       ) : isLocked ? (
                         <Lock className="w-8 h-8 text-slate-400" />
                       ) : (
-                        <PlayCircle className="w-8 h-8 text-purple-300" />
+                        <PlayCircle className="w-8 h-8 text-primary" />
                       )}
                       
                       {/* Play overlay effect */}
                       {!isLocked && !isCompleted && (
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                             style={{ background: 'rgba(139, 92, 246, 0.2)' }}>
-                          <Play className="w-6 h-6 text-purple-300" fill="#A78BFA" />
+                             style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
+                          <Play className="w-6 h-6 text-primary" fill="hsl(var(--primary))" />
                         </div>
                       )}
                     </div>

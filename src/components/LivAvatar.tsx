@@ -214,7 +214,7 @@ export function LivAvatar({
       {/* Avatar container */}
       <div 
         className={cn(
-          "relative rounded-full overflow-hidden shadow-elegant transition-all duration-700",
+          "relative rounded-full overflow-hidden transition-all duration-700",
           sizeClasses[size],
           getStateAnimation(),
           enableHover && "group-hover:scale-110",
@@ -222,17 +222,22 @@ export function LivAvatar({
           effectiveState === 'speaking' && "scale-[1.05]"
         )}
         style={{
-          background: `linear-gradient(135deg, ${themeColors.primary}1A 0%, ${themeColors.accent}1A 100%)`,
-          borderWidth: '2px',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 255, 0.95) 100%)',
+          borderWidth: '3px',
           borderStyle: 'solid',
           borderColor: effectiveState === 'thinking' 
-            ? `${themeColors.accent}80` 
+            ? 'rgba(255, 255, 255, 0.9)' 
             : effectiveState === 'speaking'
-            ? `${themeColors.primary}CC`
-            : `${themeColors.primary}4D`,
+            ? 'rgba(255, 255, 255, 0.95)'
+            : 'rgba(255, 255, 255, 0.85)',
+          boxShadow: effectiveState === 'thinking'
+            ? `0 0 40px rgba(139, 92, 246, 0.6), 0 0 80px rgba(139, 92, 246, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.5)`
+            : effectiveState === 'speaking'
+            ? `0 0 50px rgba(139, 92, 246, 0.7), 0 0 100px rgba(139, 92, 246, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.6)`
+            : `0 0 30px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2), inset 0 0 15px rgba(255, 255, 255, 0.4)`,
           transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
           ...(isPlaying && {
-            boxShadow: `0 0 0 4px ${themeColors.primary}66, 0 0 40px ${themeColors.glow}66`
+            boxShadow: `0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 60px rgba(139, 92, 246, 0.6), inset 0 0 25px rgba(255, 255, 255, 0.5)`
           })
         }}
       >
