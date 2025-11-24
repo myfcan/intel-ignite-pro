@@ -199,7 +199,7 @@ export function GuidedLessonV3({
       if (!user) return;
 
       // Atualizar progresso da trilha
-      await updateMissionProgress(user.id, lessonData.trackId, lessonData.id);
+      await updateMissionProgress('aulas', 1);
 
       // Premiar pontos
       const points = POINTS.LESSON_COMPLETE;
@@ -468,8 +468,7 @@ export function GuidedLessonV3({
 
           <ExercisesSection
             exercises={lessonData.exercisesConfig}
-            onAllCompleted={handleExercisesComplete}
-            onSkip={handleSkipExercises}
+            onComplete={handleExercisesComplete}
           />
         </div>
       </div>
@@ -496,7 +495,7 @@ export function GuidedLessonV3({
           <PlaygroundMidLesson
             config={config}
             onComplete={handlePlaygroundComplete}
-            onSkip={handleLessonComplete}
+            lessonId={lessonData.id}
           />
         </div>
       </div>
@@ -508,11 +507,12 @@ export function GuidedLessonV3({
     return (
       <>
         <ConclusionScreen
+          scores={[100]}
+          timeSpent={0}
           lessonTitle={lessonData.title}
-          trackName={lessonData.trackName}
-          audioProgress={100}
-          exercisesCompleted={allExercisesCompleted}
-          onContinue={() => {
+          nextLessonId={nextLessonId}
+          nextLessonType={nextLessonType}
+          onBeforeNavigate={() => {
             if (nextLessonId) {
               navigate(`/lesson/${nextLessonId}`);
             } else if (trailId) {
@@ -521,22 +521,20 @@ export function GuidedLessonV3({
               navigate('/trails');
             }
           }}
-          onComplete={onComplete}
-          nextLessonId={nextLessonId}
-          nextLessonType={nextLessonType}
-          trailId={trailId}
         />
 
         {showPointsNotification && (
           <PointsNotification
             points={pointsEarned}
-            onClose={() => setShowPointsNotification(false)}
+            reason="lesson_complete"
+            show={showPointsNotification}
+            onHide={() => setShowPointsNotification(false)}
           />
         )}
 
         {showAchievement && achievement && (
           <AchievementBadge
-            achievement={achievement}
+            milestone={achievement}
             onClose={() => setShowAchievement(false)}
           />
         )}
