@@ -1,0 +1,163 @@
+{
+  "model": "v2",
+  "title": "IA no Mercado de Trabalho: Prepare-se para o Futuro",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 6,
+  "estimatedTimeMinutes": 20,
+
+  "sections": [
+    {
+      "id": "section-1",
+      "index": 1,
+      "markdown": "## 🌍 A Revolução Silenciosa\n\nEnquanto você lê isso, a **Inteligência Artificial** está transformando profissões inteiras.\n\nDesigners usam IA para criar artes em segundos.\nProgramadores codificam 10x mais rápido.\nMarketers personalizam campanhas automaticamente.\n\n💼 **A pergunta não é SE a IA vai mudar seu trabalho, mas QUANDO.**",
+      "speechBubble": "A IA já está mudando o mercado. Vamos entender como?"
+    },
+    {
+      "id": "section-2",
+      "index": 2,
+      "markdown": "## 🤖 Profissões Mais Impactadas\n\n### Alto Impacto (já acontecendo):\n- **Design Gráfico** 🎨 - IA cria logos, banners e ilustrações\n- **Atendimento ao Cliente** 💬 - Chatbots inteligentes 24/7\n- **Copywriting** ✍️ - Textos publicitários automatizados\n- **Análise de Dados** 📊 - Insights instantâneos\n\n### Médio Impacto (próximos 5 anos):\n- **Contabilidade** 📚\n- **Recursos Humanos** 👥\n- **Medicina Diagnóstica** 🏥",
+      "speechBubble": "Algumas profissões já sentem o impacto forte da IA. Veja quais!"
+    },
+    {
+      "id": "section-3",
+      "index": 3,
+      "markdown": "## 💡 Oportunidade, Não Ameaça\n\nA IA não vai **substituir** profissionais.\nEla vai **substituir profissionais que NÃO usam IA**.\n\n### O Novo Perfil Profissional:\n✅ **Híbrido**: Humano + IA trabalhando juntos\n✅ **Estratégico**: IA faz o operacional, você faz o estratégico\n✅ **Criativo**: IA executa, você direciona com criatividade\n\n🚀 **Exemplo Real**: Um designer que usa Midjourney cria 50 opções em 1 hora. Outro designer tradicional cria 3 opções no mesmo tempo.",
+      "speechBubble": "A IA é sua parceira, não sua rival. Entenda a diferença!"
+    },
+    {
+      "id": "section-4",
+      "index": 4,
+      "markdown": "## 🎯 Como Se Preparar HOJE\n\n### Ações Práticas:\n\n1. **Aprenda Prompts** 📝\n   - Domine a arte de conversar com IA\n   - 80% do resultado vem da qualidade do prompt\n\n2. **Teste Ferramentas** 🛠️\n   - ChatGPT, Claude, Midjourney, Notion AI\n   - Use 30 minutos por dia experimentando\n\n3. **Integre no Trabalho** 💼\n   - Comece pequeno: um email, uma apresentação\n   - Progressivamente aumente o uso\n\n4. **Compartilhe Conhecimento** 🤝\n   - Ensine colegas\n   - Torne-se referência em IA na sua empresa",
+      "speechBubble": "Não espere! Comece hoje mesmo com essas 4 ações práticas."
+    },
+    {
+      "id": "section-5",
+      "index": 5,
+      "markdown": "## 🌟 O Futuro É Colaborativo\n\n**2024-2025**: Profissionais que usam IA têm vantagem competitiva\n**2026-2030**: Usar IA será requisito básico (como saber usar email hoje)\n**2030+**: Novas profissões surgirão focadas em gerenciar e otimizar IAs\n\n### Sua Missão:\n🎯 Não temer a mudança\n🎯 Abraçar o aprendizado contínuo\n🎯 Ser protagonista da sua evolução profissional\n\n💪 **O futuro pertence aos que se adaptam. E você está começando agora!**",
+      "speechBubble": "Você está no momento certo! Vamos consolidar o aprendizado nos exercícios?"
+    }
+  ],
+
+  "exercises": [
+    {
+      "index": 1,
+      "type": "multiple-choice",
+      "question": "Segundo a aula, qual é a principal mudança que a IA traz para o mercado de trabalho?",
+      "options": [
+        "IA vai substituir todos os profissionais",
+        "IA vai substituir profissionais que NÃO usam IA",
+        "IA não tem impacto real no trabalho",
+        "Apenas programadores precisam aprender IA"
+      ],
+      "correctOptionIndex": 1,
+      "feedback": "Exato! A IA não substitui pessoas, substitui quem não a usa. Seja parte da solução! 🚀"
+    },
+    {
+      "index": 2,
+      "type": "true-false",
+      "question": "Design Gráfico e Atendimento ao Cliente já estão sendo fortemente impactados pela IA hoje.",
+      "correctAnswer": true,
+      "feedback": "Correto! Essas profissões já sentem o impacto da IA no dia a dia. Ferramentas como Midjourney e chatbots são realidade! 🎨🤖"
+    },
+    {
+      "index": 3,
+      "type": "scenario-selection",
+      "question": "João é contador e está preocupado com IA. Qual seria a melhor abordagem?",
+      "instruction": "Escolha a melhor estratégia para João:",
+      "scenarios": [
+        {
+          "id": "scenario-1",
+          "title": "Estratégia A",
+          "description": "Ignorar a IA e continuar trabalhando do jeito tradicional"
+        },
+        {
+          "id": "scenario-2",
+          "title": "Estratégia B",
+          "description": "Aprender a usar ferramentas de IA para automatizar tarefas repetitivas e focar em consultoria estratégica"
+        },
+        {
+          "id": "scenario-3",
+          "title": "Estratégia C",
+          "description": "Mudar completamente de carreira com medo da IA"
+        },
+        {
+          "id": "scenario-4",
+          "title": "Estratégia D",
+          "description": "Esperar para ver o que acontece"
+        }
+      ],
+      "correctScenarioId": "scenario-2",
+      "feedback": "Perfeito! João deve usar IA como aliada, automatizando o operacional e se tornando consultor estratégico! 💼✨"
+    },
+    {
+      "index": 4,
+      "type": "fill-blanks",
+      "question": "Complete: A IA não vai __________ profissionais, mas vai substituir profissionais que __________ usam IA.",
+      "blanks": [
+        {
+          "id": "blank-1",
+          "correctAnswer": "substituir",
+          "acceptableAnswers": ["substituir", "eliminar", "remover"]
+        },
+        {
+          "id": "blank-2",
+          "correctAnswer": "não",
+          "acceptableAnswers": ["não", "nao"]
+        }
+      ],
+      "feedback": "Isso mesmo! Memorize essa frase - ela resume perfeitamente o futuro do trabalho! 🎯"
+    },
+    {
+      "index": 5,
+      "type": "data-collection",
+      "question": "Identifique as 4 ações práticas recomendadas para se preparar para o futuro com IA:",
+      "instruction": "Selecione as 4 ações que foram mencionadas na aula:",
+      "items": [
+        {
+          "id": "item-1",
+          "text": "Aprender Prompts",
+          "isCorrect": true
+        },
+        {
+          "id": "item-2",
+          "text": "Testar Ferramentas",
+          "isCorrect": true
+        },
+        {
+          "id": "item-3",
+          "text": "Fazer curso de programação avançada",
+          "isCorrect": false
+        },
+        {
+          "id": "item-4",
+          "text": "Integrar IA no Trabalho",
+          "isCorrect": true
+        },
+        {
+          "id": "item-5",
+          "text": "Compartilhar Conhecimento",
+          "isCorrect": true
+        },
+        {
+          "id": "item-6",
+          "text": "Mudar de profissão imediatamente",
+          "isCorrect": false
+        },
+        {
+          "id": "item-7",
+          "text": "Estudar apenas teoria sobre IA",
+          "isCorrect": false
+        },
+        {
+          "id": "item-8",
+          "text": "Esperar a empresa treinar você",
+          "isCorrect": false
+        }
+      ],
+      "minCorrect": 4,
+      "maxCorrect": 4,
+      "feedback": "Excelente! Essas 4 ações práticas são o caminho para dominar IA no seu trabalho! 🚀💪"
+    }
+  ]
+}

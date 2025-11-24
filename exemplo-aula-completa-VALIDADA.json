@@ -1,0 +1,192 @@
+{
+  "model": "v1",
+  "title": "Como a IA Aprende com Você",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 2,
+  "estimatedTimeMinutes": 15,
+
+  "sections": [
+    {
+      "id": "section-1",
+      "index": 1,
+      "markdown": "## 🎯 O Segredo das Sugestões Perfeitas\n\nVocê já parou para pensar como o **Netflix** sempre sabe o que você quer assistir?\n\nOu como o **Spotify** cria aquela playlist que parece feita especialmente para você? 🎵\n\nO segredo está em como a IA **aprende** com você! 💡",
+      "speechBubble": "Já reparou como o Netflix sempre sabe o que você quer ver?"
+    },
+    {
+      "id": "section-2",
+      "index": 2,
+      "markdown": "## 🎬 Netflix - A Escola da IA\n\nToda vez que você assiste algo, a IA registra:\n\n- 📊 Qual gênero você prefere\n- 👥 Quais atores você gosta\n- ⏱️ Quanto tempo você assistiu\n- ⏭️ Se você pulou a introdução\n- ✅ Se assistiu até o final\n\nCom milhões de pessoas fazendo isso, a IA identifica padrões.\n\n**Quanto mais você usa, mais dados a IA tem. E mais dados = sugestões melhores!** 📈",
+      "speechBubble": "A IA registra cada detalhe do que você assiste"
+    },
+    {
+      "id": "section-3",
+      "index": 3,
+      "markdown": "## 🎵 Spotify e a Mágica da Música\n\nO Spotify vai além: ele aprende **quando** você ouve cada estilo.\n\n🌅 Segunda de manhã → um estilo\n🌃 Sexta à noite → outro completamente diferente\n\nA IA aprende seus **humores** e suas **rotinas**.\n\nPor isso a playlist **\"Descobertas da Semana\"** parece mágica! ✨",
+      "speechBubble": "O Spotify conhece seus humores melhor que ninguém"
+    },
+    {
+      "id": "section-4",
+      "index": 4,
+      "markdown": "## 🎮 Hora de Praticar\n\nIncrível, né? A IA não é programada com gostos específicos.\n\n**Ela aprende observando o que VOCÊ faz!**\n\nAgora vamos testar isso na prática! 🚀",
+      "speechBubble": "Vamos ver a IA aprendendo em tempo real!"
+    }
+  ],
+
+  "exercises": [
+    {
+      "type": "multiple-choice",
+      "data": {
+        "question": "Por que o Netflix sugere filmes que você provavelmente vai gostar?",
+        "options": [
+          "Porque alguém programa manualmente cada sugestão",
+          "Porque a IA aprendeu seus padrões observando o que você assiste",
+          "Porque todos veem as mesmas sugestões",
+          "Porque o Netflix adivinha aleatoriamente"
+        ],
+        "correctAnswer": "Porque a IA aprendeu seus padrões observando o que você assiste",
+        "explanation": "✅ Correto! A IA aprende com SEUS dados e cria sugestões personalizadas para você!"
+      }
+    },
+    {
+      "type": "true-false",
+      "data": {
+        "statements": [
+          {
+            "id": "tf-1",
+            "text": "A IA precisa que você ensine manualmente o que você gosta",
+            "correct": false,
+            "explanation": "❌ FALSO! A IA aprende sozinha só observando o que você faz."
+          },
+          {
+            "id": "tf-2",
+            "text": "Quanto mais você usa um app, melhor a IA fica",
+            "correct": true,
+            "explanation": "✅ VERDADEIRO! Mais uso = mais dados = IA mais inteligente!"
+          },
+          {
+            "id": "tf-3",
+            "text": "A IA do Netflix dá as mesmas sugestões para todo mundo",
+            "correct": false,
+            "explanation": "❌ FALSO! Cada pessoa recebe sugestões únicas baseadas no seu histórico."
+          }
+        ],
+        "feedback": {
+          "perfect": "🎯 Perfeito! Você entendeu como a IA aprende!",
+          "good": "👍 Muito bem! Você está no caminho certo!",
+          "needsReview": "💡 Revise o conteúdo e tente novamente!"
+        }
+      }
+    },
+    {
+      "type": "fill-in-blanks",
+      "data": {
+        "sentences": [
+          {
+            "id": "fib-1",
+            "text": "A IA do Netflix aprende observando o que você _______.",
+            "correctAnswers": ["assiste", "vê", "escolhe", "faz"],
+            "hints": ["Pense no que você faz quando está usando o Netflix!"],
+            "explanation": "Isso! A IA aprende com seu COMPORTAMENTO."
+          },
+          {
+            "id": "fib-2",
+            "text": "Quanto _______ dados a IA tem, melhores ficam as sugestões.",
+            "correctAnswers": ["mais", "maiores"],
+            "options": ["mais", "menos", "poucos"],
+            "hints": ["Quantidade de dados é importante para a IA!"],
+            "explanation": "Exato! MAIS dados = IA mais inteligente."
+          },
+          {
+            "id": "fib-3",
+            "text": "O Spotify sabe seus _______ porque analisa QUANDO você ouve cada estilo.",
+            "correctAnswers": ["humores", "gostos", "padrões", "horários"],
+            "hints": ["Como você se sente em diferentes momentos do dia?"],
+            "explanation": "Perfeito! A IA identifica seus humores e rotinas."
+          }
+        ],
+        "feedback": {
+          "allCorrect": "🎯 Perfeito! Você dominou os conceitos!",
+          "someCorrect": "👍 Muito bem! Você acertou {count}!",
+          "needsReview": "💡 Continue praticando!"
+        }
+      }
+    },
+    {
+      "type": "scenario-selection",
+      "data": {
+        "scenarios": [
+          {
+            "id": "before",
+            "title": "❌ Abordagem Antiga",
+            "description": "Antes: Programadores criavam regras fixas manualmente para cada situação.",
+            "emoji": "❌",
+            "isCorrect": false,
+            "feedback": "Esta abordagem era limitada e não se adaptava ao usuário."
+          },
+          {
+            "id": "after",
+            "title": "✅ Com IA",
+            "description": "Agora: A IA aprende automaticamente com milhões de exemplos e se adapta a cada pessoa.",
+            "emoji": "✅",
+            "isCorrect": true,
+            "feedback": "Exato! A IA é escalável, adaptável e personalizada!"
+          }
+        ],
+        "correctExplanation": "A IA revolucionou porque APRENDE sozinha, sem precisar de regras manuais!",
+        "followUpQuestion": "O que torna a IA melhor que programação tradicional?",
+        "followUpAnswer": "A capacidade de APRENDER e SE ADAPTAR automaticamente."
+      }
+    },
+    {
+      "type": "data-collection",
+      "data": {
+        "scenario": {
+          "id": "netflix-data",
+          "emoji": "🎬",
+          "platform": "Netflix",
+          "situation": "Você está assistindo uma série no Netflix. Selecione TODOS os dados que a IA está coletando:",
+          "context": "Streaming de vídeo",
+          "dataPoints": [
+            {
+              "id": "dp-1",
+              "label": "Gênero da série (comédia, drama, ação...)",
+              "isCorrect": true,
+              "explanation": "✅ Sim! A IA registra os gêneros que você prefere."
+            },
+            {
+              "id": "dp-2",
+              "label": "Horário em que você está assistindo",
+              "isCorrect": true,
+              "explanation": "✅ Sim! A IA identifica seus padrões de horário."
+            },
+            {
+              "id": "dp-3",
+              "label": "Se você pulou a abertura",
+              "isCorrect": true,
+              "explanation": "✅ Sim! Até isso a IA registra para melhorar sua experiência."
+            },
+            {
+              "id": "dp-4",
+              "label": "Quanto tempo você assistiu",
+              "isCorrect": true,
+              "explanation": "✅ Sim! A IA sabe se você assistiu 5 minutos ou a temporada inteira."
+            },
+            {
+              "id": "dp-5",
+              "label": "Seus pensamentos sobre a série",
+              "isCorrect": false,
+              "explanation": "❌ Não! A IA não lê pensamentos, apenas comportamentos observáveis."
+            },
+            {
+              "id": "dp-6",
+              "label": "Seu saldo bancário",
+              "isCorrect": false,
+              "explanation": "❌ Não! A IA de recomendação não acessa dados financeiros."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
