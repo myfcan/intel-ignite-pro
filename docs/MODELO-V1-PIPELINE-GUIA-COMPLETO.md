@@ -301,17 +301,17 @@ Ou versão mais complexa:
     "sentences": [
       {
         "id": "sentence-1",
-        "text": "A IA aprende com ___________.",
+        "text": "A IA aprende com _______.",
         "correctAnswers": ["exemplos", "dados"]
       },
       {
         "id": "sentence-2",
-        "text": "Quanto ___________ dados, melhor.",
+        "text": "Quanto _______ dados, melhor.",
         "correctAnswers": ["mais", "maiores"]
       },
       {
         "id": "sentence-3",
-        "text": "A IA é ___________ inteligente.",
+        "text": "A IA é _______ inteligente.",
         "correctAnswers": ["muito", "super"]
       }
     ]
@@ -321,7 +321,9 @@ Ou versão mais complexa:
 
 **Campos obrigatórios em cada sentence:**
 - `id` (string) - Identificador único da sentença
-- `text` (string) - Texto com `___________` para preencher
+- `text` (string) - Texto com `_______` (7 underscores) para preencher
+  - ✅ PADRÃO: 7 underscores `_______`
+  - ⚠️ Retrocompatível: 11 underscores `___________` também funciona
 - `correctAnswers` (array de strings) - Múltiplas respostas aceitas
 
 **Campos opcionais em cada sentence:**
