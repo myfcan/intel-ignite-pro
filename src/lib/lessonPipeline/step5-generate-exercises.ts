@@ -219,6 +219,21 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
       if (logger) {
         await logger.info(5, 'Generate Exercises', `✅ Usando nível raiz (formato antigo)`);
       }
+
+      // ⚠️ WARNING: Formato DEPRECADO detectado
+      console.warn(`
+⚠️ [DEPRECATED] Exercício ${i + 1} "${exercise.type}" usa formato SEM wrapper 'data'.
+   Este formato será descontinuado em versão futura.
+
+   Formato atual (DEPRECATED):
+   { type: '${exercise.type}', ${Object.keys(exerciseData).slice(0, 2).join(', ')}, ... }
+
+   Formato recomendado:
+   { type: '${exercise.type}', data: { ${Object.keys(exerciseData).slice(0, 2).join(', ')}, ... } }
+
+   ✅ Migração automática aplicada nesta execução.
+   📖 Ver: ACOES-CORRETIVAS.md Ação #7
+      `);
     }
 
     if (logger) {
