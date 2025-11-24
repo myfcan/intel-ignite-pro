@@ -199,9 +199,9 @@ function validateCompleteSentence(data: any, result: ValidationResult): void {
   }
 
   data.sentences.forEach((sentence: any, index: number) => {
-    // Validar texto com lacuna
-    if (!sentence.text || !sentence.text.includes('___________')) {
-      result.errors.push(`Sentença ${index + 1} precisa ter "___________" no texto`);
+    // Validar texto com lacuna (aceita 7 ou 11 underscores)
+    if (!sentence.text || (!sentence.text.includes('_______') && !sentence.text.includes('___________'))) {
+      result.errors.push(`Sentença ${index + 1} precisa ter "_______" ou "___________" no texto`);
     }
     
     // Validar correctAnswers (obrigatório)
