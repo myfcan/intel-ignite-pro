@@ -8,30 +8,56 @@ import { PipelineLogger } from './logger';
  * Converte correctOptionIndex para correctAnswer
  */
 function normalizeMultipleChoiceData(data: any, logger?: PipelineLogger): any {
-  // Se já tem correctAnswer, não fazer nada
+  // Log de entrada para debug
+  if (logger) {
+    logger.info(5, 'Generate Exercises', `🔍 Normalizando multiple-choice. Tem correctAnswer: ${!!data.correctAnswer}, Tem correctOptionIndex: ${typeof data.correctOptionIndex === 'number'}, Tem options: ${Array.isArray(data.options)}`);
+  }
+
+  // Se já tem correctAnswer, verificar consistência
   if (data.correctAnswer) {
+    if (!Array.isArray(data.options)) {
+      throw new Error(`Multiple-choice com correctAnswer precisa ter "options" (array). Recebido: ${JSON.stringify(data)}`);
+    }
+    if (!data.options.includes(data.correctAnswer)) {
+      throw new Error(`correctAnswer "${data.correctAnswer}" não está nas opções disponíveis: ${JSON.stringify(data.options)}`);
+    }
+    if (logger) {
+      logger.success(5, 'Generate Exercises', '✅ Multiple-choice já tem correctAnswer válido');
+    }
     return data;
   }
 
-  // Se tem correctOptionIndex, converter
-  if (typeof data.correctOptionIndex === 'number' && Array.isArray(data.options)) {
-    if (logger) {
-      logger.info(5, 'Generate Exercises', '🔄 Convertendo correctOptionIndex para correctAnswer...');
-    }
-    
-    const correctAnswer = data.options[data.correctOptionIndex];
-    if (!correctAnswer) {
-      throw new Error(`correctOptionIndex ${data.correctOptionIndex} é inválido (options tem ${data.options.length} itens)`);
-    }
-
-    return {
-      ...data,
-      correctAnswer,
-      explanation: data.feedback || data.explanation || ''
-    };
+  // Validar campos necessários para conversão
+  if (!Array.isArray(data.options) || data.options.length === 0) {
+    throw new Error(`Multiple-choice precisa ter "options" (array não-vazio). Recebido: ${JSON.stringify(data)}`);
   }
 
-  return data;
+  if (typeof data.correctOptionIndex !== 'number') {
+    throw new Error(`Multiple-choice precisa ter "correctOptionIndex" (número) ou "correctAnswer" (string). Recebido: ${JSON.stringify(data)}`);
+  }
+
+  if (data.correctOptionIndex < 0 || data.correctOptionIndex >= data.options.length) {
+    throw new Error(`correctOptionIndex ${data.correctOptionIndex} está fora do range (options tem ${data.options.length} itens)`);
+  }
+
+  // Converter
+  const correctAnswer = data.options[data.correctOptionIndex];
+  
+  if (logger) {
+    logger.success(5, 'Generate Exercises', `✅ Convertendo correctOptionIndex ${data.correctOptionIndex} → correctAnswer "${correctAnswer}"`);
+  }
+
+  const normalized = {
+    ...data,
+    correctAnswer,
+    explanation: data.feedback || data.explanation || ''
+  };
+  
+  // Remover campos antigos
+  delete normalized.correctOptionIndex;
+  delete normalized.feedback;
+
+  return normalized;
 }
 
 /**
@@ -193,7 +219,13 @@ export async function step5GenerateExercises(input: Step4Output, logger?: Pipeli
 
     // 🔄 NORMALIZAR MULTIPLE-CHOICE: converter correctOptionIndex para correctAnswer
     if (exercise.type === 'multiple-choice' && exerciseData) {
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `📋 exerciseData ANTES: ${JSON.stringify(exerciseData)}`);
+      }
       exerciseData = normalizeMultipleChoiceData(exerciseData, logger);
+      if (logger) {
+        await logger.info(5, 'Generate Exercises', `📋 exerciseData DEPOIS: ${JSON.stringify(exerciseData)}`);
+      }
     }
 
     // 🔄 NORMALIZAR TRUE-FALSE: converter answer/feedback para correct/explanation
