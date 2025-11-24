@@ -80,13 +80,16 @@ export const TrailBand = ({
       {/* Floating Particles - Only for Active Trail */}
       {isActive && (
         <>
-          {[...Array(8)].map((_, i) => (
+          {[...Array(15)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 rounded-full"
+              className="absolute rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(167, 139, 250, 0.8) 0%, rgba(139, 92, 246, 0) 70%)',
-                boxShadow: '0 0 10px rgba(167, 139, 250, 0.6)',
+                width: Math.random() * 4 + 2 + 'px',
+                height: Math.random() * 4 + 2 + 'px',
+                background: 'radial-gradient(circle, rgba(167, 139, 250, 1) 0%, rgba(139, 92, 246, 0.3) 70%)',
+                boxShadow: '0 0 20px rgba(167, 139, 250, 1), 0 0 40px rgba(167, 139, 250, 0.5)',
+                filter: 'blur(0.5px)',
               }}
               initial={{
                 x: Math.random() * 100 + '%',
@@ -104,13 +107,13 @@ export const TrailBand = ({
                   Math.random() * 100 + '%',
                   Math.random() * 100 + '%',
                 ],
-                opacity: [0, 0.8, 0],
-                scale: [0, 1.5, 0],
+                opacity: [0, 1, 0],
+                scale: [0.5, 1.5, 0.5],
               }}
               transition={{
-                duration: 3 + Math.random() * 2,
+                duration: 4 + Math.random() * 3,
                 repeat: Infinity,
-                delay: i * 0.3,
+                delay: i * 0.2,
                 ease: "easeInOut",
               }}
             />
