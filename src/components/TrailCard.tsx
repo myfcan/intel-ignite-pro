@@ -41,41 +41,41 @@ const TrailCard = ({
     }
   };
 
-  // CARD BLOQUEADO - DARK MODE PARA UPSELL
+  // CARD BLOQUEADO - TONS CLAROS PARA INDICAR DESATIVADO
   if (isLocked) {
     return (
-      <div className="relative rounded-2xl p-5 border h-[320px] flex flex-col grayscale"
+      <div className="relative rounded-2xl p-5 border h-[320px] flex flex-col"
            style={{
-             background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-             borderColor: 'rgba(107, 114, 128, 0.3)',
-             opacity: 0.7
+             background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+             borderColor: 'rgba(209, 213, 219, 0.5)',
+             opacity: 0.85
            }}>
         {/* Ícone de Bloqueio */}
         <div className="absolute top-3 right-3">
-          <Lock className="w-6 h-6 text-gray-500" />
+          <Lock className="w-6 h-6 text-gray-400" />
         </div>
         
         {/* Ícone Central */}
         <div className="flex justify-center mb-3">
-          <div className="w-20 h-20 bg-gray-700/50 rounded-2xl flex items-center justify-center">
-            <Icon className="w-10 h-10 text-gray-600" />
+          <div className="w-20 h-20 bg-gray-200/70 rounded-2xl flex items-center justify-center border border-gray-300/50">
+            <Icon className="w-10 h-10 text-gray-400" />
           </div>
         </div>
         
         {/* Título */}
-        <h3 className="text-gray-400 font-bold text-lg text-center mb-3 leading-tight">
+        <h3 className="text-gray-500 font-bold text-lg text-center mb-3 leading-tight">
           {trail.title}
         </h3>
         
         {/* Requisito */}
         <div className="flex-grow flex items-center justify-center">
-          <p className="text-gray-500 text-sm text-center px-4">
+          <p className="text-gray-400 text-sm text-center px-4">
             Complete a trilha anterior para desbloquear
           </p>
         </div>
         
         {/* Métricas (preview) */}
-        <div className="flex justify-around mb-3 text-gray-600 text-sm">
+        <div className="flex justify-around mb-3 text-gray-400 text-sm">
           <span className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
             {totalLessons} aulas
@@ -87,7 +87,7 @@ const TrailCard = ({
         </div>
         
         {/* Botão Desabilitado */}
-        <button disabled className="w-full py-3 bg-gray-700 text-gray-500 font-semibold rounded-xl cursor-not-allowed">
+        <button disabled className="w-full py-3 bg-gray-300 text-gray-500 font-semibold rounded-xl cursor-not-allowed">
           Bloqueado
         </button>
       </div>
