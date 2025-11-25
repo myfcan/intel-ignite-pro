@@ -190,21 +190,21 @@ const TrailCard = ({
         isPulsing ? 'animate-pulse' : ''
       }`}
       style={{
-        background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+        background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
         borderColor: isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)',
         boxShadow: isPulsing 
-          ? '0 8px 30px rgba(139, 92, 246, 0.5)' 
-          : '0 4px 20px rgba(139, 92, 246, 0.3)',
+          ? '0 8px 30px rgba(131, 123, 255, 0.5)' 
+          : '0 4px 20px rgba(131, 123, 255, 0.3)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-        e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.4)';
+        e.currentTarget.style.boxShadow = '0 8px 30px rgba(131, 123, 255, 0.4)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)';
         e.currentTarget.style.boxShadow = isPulsing 
-          ? '0 8px 30px rgba(139, 92, 246, 0.5)' 
-          : '0 4px 20px rgba(139, 92, 246, 0.3)';
+          ? '0 8px 30px rgba(131, 123, 255, 0.5)' 
+          : '0 4px 20px rgba(131, 123, 255, 0.3)';
       }}
     >
       {/* Textura de Pontos */}
