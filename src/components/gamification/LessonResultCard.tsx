@@ -1,0 +1,120 @@
+import React from 'react';
+import { Trophy, Zap, Coins, TrendingUp, X } from 'lucide-react';
+
+type LessonResultCardProps = {
+  xpDelta: number;
+  coinsDelta: number;
+  newPowerScore: number;
+  newCoins: number;
+  patentName: string;
+  isNewPatent?: boolean;
+  nextPatentThreshold?: number;
+  onClose: () => void;
+};
+
+export const LessonResultCard: React.FC<LessonResultCardProps> = ({
+  xpDelta,
+  coinsDelta,
+  newPowerScore,
+  newCoins,
+  patentName,
+  isNewPatent = false,
+  nextPatentThreshold,
+  onClose,
+}) => {
+  const progressData = nextPatentThreshold ? {
+    progress: Math.min((newPowerScore / nextPatentThreshold) * 100, 100),
+    remaining: nextPatentThreshold - newPowerScore
+  } : null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="relative max-w-lg w-full rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-6 py-6 shadow-2xl animate-in fade-in zoom-in duration-300">
+          <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-slate-800 transition-colors">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+              <Trophy className="w-8 h-8 text-sky-400" />
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-center text-slate-50 mb-2">
+            {isNewPatent ? 'Nova Patente Desbloqueada!' : 'Aula Concluída'}
+          </h2>
+
+          {isNewPatent && (
+            <p className="text-center text-sky-300 text-sm mb-4 font-medium">
+              Você subiu para <span className="font-bold">{patentName}</span>. Poucos alunos chegam aqui.
+            </p>
+          )}
+
+          <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700/50">
+            <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-sky-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-sky-300">+{xpDelta}</p>
+                  <p className="text-[11px] text-slate-400 uppercase tracking-wide">Power Score</p>
+                </div>
+              </div>
+
+              <div className="w-px h-12 bg-slate-700" />
+
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                  <Coins className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-300">+{coinsDelta}</p>
+                  <p className="text-[11px] text-slate-400 uppercase tracking-wide">Créditos IA</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-400">Power Score total</span>
+              <span className="font-semibold text-sky-300">{newPowerScore}</span>
+            </div>
+
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-400">Créditos de IA</span>
+              <span className="font-semibold text-amber-300">{newCoins}</span>
+            </div>
+
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-400">Patente atual</span>
+              <span className="font-semibold text-slate-200">{patentName}</span>
+            </div>
+
+            {progressData && progressData.remaining > 0 && (
+              <div className="pt-2">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                  <span className="flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Próxima patente
+                  </span>
+                  <span>{progressData.remaining} XP restantes</span>
+                </div>
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-sky-500 to-purple-500 transition-all duration-700 ease-out" style={{ width: `${progressData.progress}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button onClick={onClose} className="w-full mt-6 px-4 py-3 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors">
+            Continuar
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
