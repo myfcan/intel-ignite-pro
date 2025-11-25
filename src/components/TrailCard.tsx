@@ -46,9 +46,8 @@ const TrailCard = ({
     return (
       <div className="relative rounded-2xl p-5 border h-[320px] flex flex-col"
            style={{
-             background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
-             borderColor: 'rgba(209, 213, 219, 0.5)',
-             opacity: 0.85
+             background: 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
+             borderColor: 'rgba(229, 231, 235, 0.8)',
            }}>
         {/* Ícone de Bloqueio */}
         <div className="absolute top-3 right-3">
