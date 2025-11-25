@@ -679,7 +679,35 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         if (nextSection) {
           const playgroundSection = lessonData.sections[playgroundSectionIndex];
           const playgroundDelay = playgroundSection.playgroundConfig?.playgroundDelay ?? 0;
-          const triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+          
+          // 🎯 NOVO: Usar end da última palavra da seção ao invés do timestamp da próxima seção
+          let triggerTime: number;
+          
+          if (wordTimestamps && wordTimestamps.length > 0) {
+            // Filtrar palavras que pertencem à seção do playground
+            const nextSectionTimestamp = nextSection?.timestamp || Infinity;
+            const palavrasDaSecao = wordTimestamps.filter(w => 
+              w.start >= playgroundSection.timestamp && 
+              w.start < nextSectionTimestamp
+            );
+            
+            const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
+            
+            if (ultimaPalavra) {
+              // Trigger DEPOIS do end da última palavra + buffer de 0.15s
+              triggerTime = ultimaPalavra.end + 0.15 + playgroundDelay;
+              console.log(`🎯 [TRIGGER-1-NEW] Usando end da última palavra "${ultimaPalavra.word}" (${ultimaPalavra.end}s) | trigger=${triggerTime.toFixed(2)}s`);
+            } else {
+              // Fallback se não encontrar palavras
+              triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+              console.log(`⚠️ [TRIGGER-1-FALLBACK] Sem palavras na seção, usando lógica antiga | trigger=${triggerTime.toFixed(2)}s`);
+            }
+          } else {
+            // Fallback se não houver wordTimestamps
+            triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+            console.log(`⚠️ [TRIGGER-1-FALLBACK] Sem wordTimestamps, usando lógica antiga | trigger=${triggerTime.toFixed(2)}s`);
+          }
+          
           const windowEnd = nextSection.timestamp + playgroundDelay;
           
           // 🔍 DEBUG: Log contínuo na janela crítica (125s-129s)
