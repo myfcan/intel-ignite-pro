@@ -98,13 +98,23 @@ export default function AIPlayground() {
           </div>
         </div>
 
+        {/* Playground Chat */}
+        <div className="mb-6 sm:mb-8">
+          <PlaygroundRealChat
+            lessonId="ai-playground-standalone"
+          />
+        </div>
+
         {/* Sugestões de Uso */}
         <div className="mb-6 sm:mb-8">
           <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-3 sm:mb-4 px-1">Experimente estas ideias:</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">✍️ Escrever Conteúdo</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Escrever Conteúdo
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -115,7 +125,10 @@ export default function AIPlayground() {
 
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">🧠 Brainstorming</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Brainstorming
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -126,7 +139,10 @@ export default function AIPlayground() {
 
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">📊 Análise de Dados</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Análise de Dados
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -137,7 +153,10 @@ export default function AIPlayground() {
 
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">🎨 Conteúdo Criativo</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Conteúdo Criativo
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -148,7 +167,10 @@ export default function AIPlayground() {
 
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">💼 Negócios</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Negócios
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -159,7 +181,10 @@ export default function AIPlayground() {
 
             <Card className="cursor-pointer hover:shadow-lg transition-all bg-white border-slate-200 overflow-hidden">
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">🔍 Pesquisa</CardTitle>
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-600" />
+                  Pesquisa
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
@@ -168,13 +193,6 @@ export default function AIPlayground() {
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* Playground Chat */}
-        <div className="mb-8">
-          <PlaygroundRealChat
-            lessonId="ai-playground-standalone"
-          />
         </div>
 
         {/* Dicas */}
