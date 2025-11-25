@@ -387,21 +387,54 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Trilhas Section - GRID MODERNO */}
+        {/* Trilhas Section - SCROLL HORIZONTAL NO MOBILE */}
         <div className="mb-4 sm:mb-6 md:mb-8">
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Suas Trilhas</h2>
-          <div className="grid grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 px-2 xs:px-1 sm:px-0">
+          
+          {/* Mobile: Scroll Horizontal com Snap */}
+          <div className="md:hidden overflow-x-auto hide-scrollbar snap-x snap-mandatory px-2">
+            <div className="flex gap-3 pb-2">
+              {trails.map((trail, index) => {
+                const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
+                const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+                
+                const previousTrail = trails[index - 1];
+                const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
+                const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+                
+                const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
+
+                return (
+                  <div key={trail.id} className="snap-center flex-shrink-0 w-[85vw] max-w-[340px]">
+                    <TrailCard
+                      trail={trail}
+                      Icon={Icon}
+                      progress={trailProgress?.progress || 0}
+                      completedLessons={trailProgress?.completedLessons || 0}
+                      totalLessons={trailProgress?.totalLessons || 0}
+                      status={trailProgress?.status || 'locked'}
+                      gradient={gradient}
+                      estimatedTime={estimatedTime}
+                      isNext={isNext}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: Grid Normal */}
+          <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5">
             {trails.map((trail, index) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
               const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
               
-              // Determinar se é a próxima trilha (primeira locked após completed/active)
               const previousTrail = trails[index - 1];
               const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
               const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
               
-              // Tempo estimado (pode ser dinâmico no futuro)
               const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
 
               return (
