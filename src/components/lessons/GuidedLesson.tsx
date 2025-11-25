@@ -683,6 +683,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
           // 🎯 NOVO: Usar end da última palavra da seção ao invés do timestamp da próxima seção
           let triggerTime: number;
           
+          console.log('🔍 [DEBUG-TRIGGER] Dados disponíveis:', {
+            hasWordTimestamps: !!wordTimestamps,
+            totalWords: wordTimestamps?.length || 0,
+            playgroundSectionTimestamp: playgroundSection.timestamp,
+            nextSectionTimestamp: nextSection?.timestamp,
+            playgroundDelay
+          });
+          
           if (wordTimestamps && wordTimestamps.length > 0) {
             // Filtrar palavras que pertencem à seção do playground
             const nextSectionTimestamp = nextSection?.timestamp || Infinity;
@@ -691,12 +699,18 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               w.start < nextSectionTimestamp
             );
             
+            console.log('🔍 [DEBUG-FILTER] Palavras filtradas:', {
+              total: palavrasDaSecao.length,
+              primeiras3: palavrasDaSecao.slice(0, 3).map(w => `${w.word} (${w.start}-${w.end})`),
+              ultimas3: palavrasDaSecao.slice(-3).map(w => `${w.word} (${w.start}-${w.end})`)
+            });
+            
             const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
             
             if (ultimaPalavra) {
               // Trigger DEPOIS do end da última palavra + buffer de 0.5s
               triggerTime = ultimaPalavra.end + 0.5 + playgroundDelay;
-              console.log(`🎯 [TRIGGER-1-NEW] Usando end da última palavra "${ultimaPalavra.word}" (${ultimaPalavra.end}s) | trigger=${triggerTime.toFixed(2)}s`);
+              console.log(`🎯 [TRIGGER-1-NEW] Usando end da última palavra "${ultimaPalavra.word}" (start:${ultimaPalavra.start}, end:${ultimaPalavra.end}s) | trigger=${triggerTime.toFixed(2)}s | playgroundDelay=${playgroundDelay}`);
             } else {
               // Fallback se não encontrar palavras
               triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
