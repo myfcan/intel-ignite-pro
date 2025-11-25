@@ -10,7 +10,8 @@ import {
   Gift,
   Home,
   Briefcase,
-  ArrowLeft
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 
 const categoryIcons: Record<string, any> = {
@@ -139,7 +140,7 @@ export default function PromptLibrary() {
 
         {/* Categories Grid - Nova Organização Profissional */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {allPromptCategories.map((category) => {
+          {mainPromptCategories.map((category) => {
             const Icon = categoryIcons[category.id] || Sparkles;
             const freeCount = category.prompts.filter(p => !p.isPremium).length;
             const premiumCount = category.prompts.length - freeCount;
