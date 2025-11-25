@@ -45,10 +45,10 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
           {/* Lado esquerdo - Título */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-              <Zap className="w-4 h-4 text-white" />
+              <Zap className="w-4 h-4 text-white drop-shadow-lg" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-xs text-purple-100 font-medium uppercase tracking-wide">Seu Progresso</p>
+              <p className="text-xs text-white font-semibold uppercase tracking-wide drop-shadow-md">Seu Progresso</p>
             </div>
           </div>
 
@@ -56,19 +56,19 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
           <div className="flex items-center gap-3 sm:gap-6">
             {/* Power Score */}
             <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-colors">
-              <Zap className="w-4 h-4 text-sky-200" />
+              <Zap className="w-4 h-4 text-white drop-shadow-lg" />
               <div className="flex flex-col items-start">
-                <span className="text-[10px] text-purple-200 uppercase tracking-wider font-medium hidden sm:block">Power</span>
-                <span className="text-lg font-bold text-white leading-none">{powerScore}</span>
+                <span className="text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Power</span>
+                <span className="text-lg font-bold text-white leading-none drop-shadow-lg">{powerScore}</span>
               </div>
             </div>
 
             {/* Coins */}
             <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-colors">
-              <Coins className="w-4 h-4 text-amber-200" />
+              <Coins className="w-4 h-4 text-white drop-shadow-lg" />
               <div className="flex flex-col items-start">
-                <span className="text-[10px] text-purple-200 uppercase tracking-wider font-medium hidden sm:block">Créditos</span>
-                <span className="text-lg font-bold text-white leading-none">{coins}</span>
+                <span className="text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Créditos</span>
+                <span className="text-lg font-bold text-white leading-none drop-shadow-lg">{coins}</span>
               </div>
             </div>
 
