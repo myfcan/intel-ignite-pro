@@ -333,39 +333,19 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Stats Cards - NOVO DESIGN */}
+        {/* Stats Cards - DESIGN LIMPO SEM TRANSFORMS */}
         <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
           {/* Sequência */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border overflow-hidden"
-               style={{
-                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                 backgroundImage: `
-                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                 `,
-                 backgroundSize: 'cover, 16px 16px',
-                 backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(139, 92, 246, 0.2)',
-                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
-               }}
-               onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.3)';
-               }}
-               onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
-               }}>
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
-                   style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-pink-500 to-rose-600">
                 <Flame className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+              <div className="flex-1 min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
                   {user?.streak_days || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
                   Dias de sequência
                 </p>
               </div>
@@ -373,36 +353,16 @@ const Dashboard = () => {
           </div>
 
           {/* Pontos */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border overflow-hidden"
-               style={{
-                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                 backgroundImage: `
-                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                 `,
-                 backgroundSize: 'cover, 16px 16px',
-                 backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(139, 92, 246, 0.2)',
-                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
-               }}
-               onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.1)';
-               }}
-               onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
-               }}>
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
-                   style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600">
                 <Trophy className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+              <div className="flex-1 min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
                   {user?.total_points || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
                   Pontos totais
                 </p>
               </div>
@@ -410,36 +370,16 @@ const Dashboard = () => {
           </div>
 
           {/* Aulas */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border overflow-hidden"
-               style={{
-                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                 backgroundImage: `
-                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                 `,
-                 backgroundSize: 'cover, 16px 16px',
-                 backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(139, 92, 246, 0.2)',
-                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
-               }}
-               onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-               }}
-               onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
-               }}>
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
-                   style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-cyan-600">
                 <BookOpen className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+              <div className="flex-1 min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
                   {user?.total_lessons_completed || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
                   Aulas completas
                 </p>
               </div>
