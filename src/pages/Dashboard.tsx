@@ -333,55 +333,55 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Stats Cards - DESIGN LIMPO SEM TRANSFORMS */}
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
+        {/* Stats Cards - LAYOUT CORRIGIDO */}
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
           {/* Sequência */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-pink-500 to-rose-600">
-                <Flame className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="rounded-lg sm:rounded-xl p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-pink-500 to-rose-600">
+                <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
                   {user?.streak_days || 0}
-                </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 whitespace-normal">
                   Dias de sequência
-                </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Pontos */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600">
-                <Trophy className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="rounded-lg sm:rounded-xl p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600">
+                <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
                   {user?.total_points || 0}
-                </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 whitespace-normal">
                   Pontos totais
-                </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Aulas */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-cyan-600">
-                <BookOpen className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
+          <div className="rounded-lg sm:rounded-xl p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-cyan-600">
+                <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-0.5">
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
                   {user?.total_lessons_completed || 0}
-                </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 whitespace-normal">
                   Aulas completas
-                </p>
+                </div>
               </div>
             </div>
           </div>
