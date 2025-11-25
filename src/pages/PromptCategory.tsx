@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { PremiumUpgradeModal } from '@/components/prompts/PremiumUpgradeModal';
 
 /**
  * PromptCategory Page: Lista prompts de uma categoria específica
@@ -39,6 +41,26 @@ export default function PromptCategory() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
+
+  // Buscar plano do usuário
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('plan')
+          .eq('id', user.id)
+          .single();
+        
+        setUserPlan(userData?.plan || 'basico');
+      }
+    };
+    
+    fetchUserPlan();
+  }, []);
 
   const category = allPromptCategories.find(cat => cat.id === categoryId);
 
@@ -64,8 +86,28 @@ export default function PromptCategory() {
     return prompt.difficulty === difficultyFilter;
   });
 
+  // Verificar se usuário pode acessar prompt
+  const canAccessPrompt = (prompt: Prompt) => {
+    if (!prompt.isPremium) return true;
+    return userPlan === 'ultra' || userPlan === 'pro';
+  };
+
+  // Abrir prompt ou modal de upgrade
+  const handlePromptClick = (prompt: Prompt) => {
+    if (canAccessPrompt(prompt)) {
+      setSelectedPrompt(prompt);
+    } else {
+      setShowUpgradeModal(true);
+    }
+  };
+
   // Copy prompt
   const handleCopyPrompt = (prompt: Prompt) => {
+    if (!canAccessPrompt(prompt)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     navigator.clipboard.writeText(prompt.template);
     setCopiedPrompt(prompt.id);
     toast({
@@ -160,7 +202,7 @@ export default function PromptCategory() {
             <div
               key={prompt.id}
               className="rounded-xl p-6 border-2 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative"
-              onClick={() => setSelectedPrompt(prompt)}
+              onClick={() => handlePromptClick(prompt)}
               style={{
                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                 backgroundImage: `
@@ -222,35 +264,51 @@ export default function PromptCategory() {
 
               {/* Actions */}
               <div className="flex gap-2">
-                <button
-                  className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPrompt(prompt);
-                  }}
-                >
-                  Ver Detalhes
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyPrompt(prompt);
-                  }}
-                  className="px-4 py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
-                  style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
-                >
-                  {copiedPrompt === prompt.id ? (
-                    <>
-                      <Check className="w-4 h-4 inline mr-1" />
-                      Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 inline mr-1" />
-                      Copiar
-                    </>
-                  )}
-                </button>
+                {prompt.isPremium && !canAccessPrompt(prompt) ? (
+                  <button
+                    className="w-full py-3 rounded-lg font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                    style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUpgradeModal(true);
+                    }}
+                  >
+                    <Lock className="w-4 h-4" />
+                    Desbloquear com Premium
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePromptClick(prompt);
+                      }}
+                    >
+                      Ver Detalhes
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyPrompt(prompt);
+                      }}
+                      className="px-4 py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
+                      style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
+                    >
+                      {copiedPrompt === prompt.id ? (
+                        <>
+                          <Check className="w-4 h-4 inline mr-1" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 inline mr-1" />
+                          Copiar
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -354,6 +412,12 @@ export default function PromptCategory() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal 
+        open={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+      />
     </div>
   );
 }
