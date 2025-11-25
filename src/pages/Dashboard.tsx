@@ -268,9 +268,9 @@ const Dashboard = () => {
         >
           {/* Textura de Pontos */}
           <div 
-            className="absolute inset-0 pointer-events-none opacity-20"
+            className="absolute inset-0 pointer-events-none opacity-35"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.5) 1px, transparent 1px)',
               backgroundSize: '20px 20px',
               backgroundPosition: '0 0'
             }}
