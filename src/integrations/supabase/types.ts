@@ -1031,6 +1031,7 @@ export type Database = {
       users: {
         Row: {
           age: number | null
+          avatar_url: string | null
           coins: number | null
           created_at: string | null
           daily_interaction_limit: number | null
@@ -1045,10 +1046,12 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          notifications_enabled: boolean | null
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
           patent_level: number | null
+          phone: string | null
           plan: Database["public"]["Enums"]["plan_type"] | null
           power_score: number | null
           profession: string | null
@@ -1059,6 +1062,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar_url?: string | null
           coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
@@ -1073,10 +1077,12 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          notifications_enabled?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
           patent_level?: number | null
+          phone?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
           power_score?: number | null
           profession?: string | null
@@ -1087,6 +1093,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar_url?: string | null
           coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
@@ -1101,10 +1108,12 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name?: string
+          notifications_enabled?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
           patent_level?: number | null
+          phone?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
           power_score?: number | null
           profession?: string | null
