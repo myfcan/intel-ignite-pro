@@ -164,7 +164,16 @@ const TrailCard = ({
         </div>
         
       {/* Botão CTA */}
-      <button className="w-full py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-all relative z-10">
+      <button className="w-full py-3 font-semibold rounded-xl transition-all relative z-10 text-white"
+              style={{
+                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #059669 0%, #0891B2 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)';
+              }}>
         Revisar
       </button>
       </div>
@@ -258,7 +267,16 @@ const TrailCard = ({
       </div>
       
       {/* Botão CTA */}
-      <button className="w-full py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-all relative z-10">
+      <button className="w-full py-3 font-semibold rounded-xl transition-all relative z-10 text-white"
+              style={{
+                background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #059669 0%, #0891B2 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)';
+              }}>
         Continuar
       </button>
     </div>
