@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, Zap, Coins, TrendingUp, X } from 'lucide-react';
+import { RewardCelebration } from './RewardCelebration';
 
 type LessonResultCardProps = {
   xpDelta: number;
@@ -22,6 +23,16 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   nextPatentThreshold,
   onClose,
 }) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    // Trigger confetti após um pequeno delay
+    const timer = setTimeout(() => {
+      setShowConfetti(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   const progressData = nextPatentThreshold ? {
     progress: Math.min((newPowerScore / nextPatentThreshold) * 100, 100),
     remaining: nextPatentThreshold - newPowerScore
@@ -29,6 +40,11 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
 
   return (
     <>
+      <RewardCelebration 
+        type={isNewPatent ? 'patent' : 'lesson'} 
+        trigger={showConfetti} 
+      />
+      
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="relative max-w-lg w-full rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-6 py-6 shadow-2xl animate-in fade-in zoom-in duration-300">
@@ -37,18 +53,18 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
           </button>
 
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-sky-500/20 border border-sky-500/40 flex items-center justify-center animate-pulse">
               <Trophy className="w-8 h-8 text-sky-400" />
             </div>
           </div>
 
           <h2 className="text-2xl font-bold text-center text-slate-50 mb-2">
-            {isNewPatent ? 'Nova Patente Desbloqueada!' : 'Aula Concluída'}
+            {isNewPatent ? '🎉 Nova Patente Desbloqueada!' : '✨ Aula Concluída'}
           </h2>
 
           {isNewPatent && (
             <p className="text-center text-sky-300 text-sm mb-4 font-medium">
-              Você subiu para <span className="font-bold">{patentName}</span>. Poucos alunos chegam aqui.
+              Você subiu para <span className="font-bold">{patentName}</span>. Poucos alunos chegam aqui!
             </p>
           )}
 

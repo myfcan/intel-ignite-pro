@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Zap, Coins, Award } from 'lucide-react';
 
 type GamificationHeaderProps = {
@@ -22,6 +22,27 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
   patentName,
 }) => {
   const patentColor = PATENT_COLORS[patentLevel] || PATENT_COLORS[0];
+  const [prevPowerScore, setPrevPowerScore] = useState(powerScore);
+  const [prevCoins, setPrevCoins] = useState(coins);
+  const [powerGlow, setPowerGlow] = useState(false);
+  const [coinsGlow, setCoinsGlow] = useState(false);
+
+  // Detectar mudanças e ativar brilho
+  useEffect(() => {
+    if (powerScore > prevPowerScore) {
+      setPowerGlow(true);
+      setTimeout(() => setPowerGlow(false), 1500);
+    }
+    setPrevPowerScore(powerScore);
+  }, [powerScore]);
+
+  useEffect(() => {
+    if (coins > prevCoins) {
+      setCoinsGlow(true);
+      setTimeout(() => setCoinsGlow(false), 1500);
+    }
+    setPrevCoins(coins);
+  }, [coins]);
 
   return (
     <div 
@@ -55,20 +76,20 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
           {/* Lado direito - Stats */}
           <div className="flex items-center gap-3 sm:gap-6">
             {/* Power Score */}
-            <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-colors">
-              <Zap className="w-4 h-4 text-white drop-shadow-lg" />
+            <div className={`flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-all ${powerGlow ? 'animate-pulse shadow-lg shadow-sky-400/50' : ''}`}>
+              <Zap className={`w-4 h-4 text-white drop-shadow-lg transition-all ${powerGlow ? 'scale-125 drop-shadow-2xl' : ''}`} />
               <div className="flex flex-col items-start">
                 <span className="text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Power</span>
-                <span className="text-lg font-bold text-white leading-none drop-shadow-lg">{powerScore}</span>
+                <span className={`text-lg font-bold text-white leading-none drop-shadow-lg transition-all ${powerGlow ? 'scale-110' : ''}`}>{powerScore}</span>
               </div>
             </div>
 
             {/* Coins */}
-            <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-colors">
-              <Coins className="w-4 h-4 text-white drop-shadow-lg" />
+            <div className={`flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/20 hover:bg-white/20 transition-all ${coinsGlow ? 'animate-pulse shadow-lg shadow-amber-400/50' : ''}`}>
+              <Coins className={`w-4 h-4 text-white drop-shadow-lg transition-all ${coinsGlow ? 'scale-125 drop-shadow-2xl' : ''}`} />
               <div className="flex flex-col items-start">
                 <span className="text-[10px] text-white/90 uppercase tracking-wider font-semibold hidden sm:block drop-shadow">Créditos</span>
-                <span className="text-lg font-bold text-white leading-none drop-shadow-lg">{coins}</span>
+                <span className={`text-lg font-bold text-white leading-none drop-shadow-lg transition-all ${coinsGlow ? 'scale-110' : ''}`}>{coins}</span>
               </div>
             </div>
 

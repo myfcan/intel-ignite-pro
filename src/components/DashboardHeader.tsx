@@ -4,6 +4,8 @@ import logoAiliv from '@/assets/ailiv-logo-new.png';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Menu, User, Trophy, LogOut, ArrowLeft } from 'lucide-react';
+import { RewardCelebration } from '@/components/gamification/RewardCelebration';
+import { useUserGamification } from '@/hooks/useUserGamification';
 
 interface DashboardHeaderProps {
   user: {
@@ -22,6 +24,7 @@ interface DashboardHeaderProps {
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showPatentCelebration } = useUserGamification();
   const interactionsRemaining = user.daily_interaction_limit - user.interactions_used_today;
   
   const showBackButton = ['/guides', '/ai-directory', '/prompt-library', '/ai-playground'].includes(location.pathname);
@@ -32,7 +35,9 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   };
 
   return (
-    <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
+    <>
+      <RewardCelebration type="patent" trigger={showPatentCelebration} />
+      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-[72px] lg:h-20">
           
@@ -232,6 +237,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 
