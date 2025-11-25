@@ -26,9 +26,9 @@ export default function AIPlayground() {
             </Button>
 
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500
                             flex items-center justify-center shadow-lg flex-shrink-0">
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div className="min-w-0">
                 <h1 className="font-bold text-sm sm:text-base md:text-lg truncate">AI Playground</h1>
