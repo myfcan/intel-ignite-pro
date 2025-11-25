@@ -433,17 +433,25 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Trilhas Section */}
+        {/* Trilhas Section - GRID MODERNO */}
         <div className="mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
-          <div className="space-y-4 sm:space-y-5">
-            {trails.map((trail) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 p-5">
+            {trails.map((trail, index) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
               const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+              
+              // Determinar se é a próxima trilha (primeira locked após completed/active)
+              const previousTrail = trails[index - 1];
+              const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
+              const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+              
+              // Tempo estimado (pode ser dinâmico no futuro)
+              const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
 
               return (
-                <TrailBand
+                <TrailCard
                   key={trail.id}
                   trail={trail}
                   Icon={Icon}
@@ -452,6 +460,8 @@ const Dashboard = () => {
                   totalLessons={trailProgress?.totalLessons || 0}
                   status={trailProgress?.status || 'locked'}
                   gradient={gradient}
+                  estimatedTime={estimatedTime}
+                  isNext={isNext}
                 />
               );
             })}
