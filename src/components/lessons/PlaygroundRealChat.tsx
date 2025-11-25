@@ -210,28 +210,30 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
           </div>
 
           {/* Input Area */}
-          <div className="relative px-6 py-4 border-t border-gray-700">
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isTyping}
-              className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 pr-12 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
-              placeholder="Digite seu prompt aqui... Ex: 'Crie 3 ideias de posts sobre...'"
-              rows={3}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isTyping}
-              className="absolute bottom-7 right-9 bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isTyping ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
+          <div className="px-6 py-4 border-t border-gray-700">
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isTyping}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 pr-14 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
+                placeholder="Digite seu prompt aqui... Ex: 'Crie 3 ideias de posts sobre...'"
+                rows={3}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isTyping}
+                className="absolute bottom-3 right-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isTyping ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
 
             {/* Sugestões de Prompt */}
             {messages.length === 0 && (
