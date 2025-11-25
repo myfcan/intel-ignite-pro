@@ -515,12 +515,12 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-2 xs:px-0">
           {/* AI Playground */}
           <div onClick={() => navigate('/ai-playground')}
-               className="cursor-pointer relative group">
+               className="cursor-pointer relative group overflow-hidden">
             {/* Borda gradiente no hover */}
-            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-40 transition duration-300 blur-sm"></div>
+            <div className="absolute -inset-0.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-40 transition duration-300 blur-sm"></div>
             
             {/* Card content */}
-            <div className="relative rounded-2xl p-4 sm:p-6 border-2 transition-all"
+            <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all overflow-hidden"
                  style={{
                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                    backgroundImage: `
@@ -531,19 +531,19 @@ const Dashboard = () => {
                    backgroundPosition: 'center, 0 0',
                    borderColor: 'rgba(99, 102, 241, 0.3)',
                  }}>
-              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">AI Playground</h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 break-words">AI Playground</h3>
+              <p className="text-gray-600 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2">
                 Experimente modelos de IA em tempo real. Teste prompts e veja os resultados instantaneamente.
               </p>
-              <button className="text-indigo-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all text-sm sm:text-base">
+              <button className="text-indigo-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all text-xs sm:text-sm md:text-base whitespace-nowrap">
                 Começar agora 
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -553,7 +553,7 @@ const Dashboard = () => {
           {/* Curso Renda Extra - DARK TECH DESIGN */}
           <div 
             onClick={isAdmin ? () => navigate('/curso-exclusivo') : undefined}
-            className={`relative rounded-2xl p-4 sm:p-6 overflow-hidden shadow-xl transition-all ${
+            className={`relative rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden shadow-xl transition-all ${
               isAdmin 
                 ? 'cursor-pointer hover:-translate-y-1' 
                 : 'cursor-not-allowed opacity-60'
@@ -570,7 +570,7 @@ const Dashboard = () => {
           >
             {/* Grid Pattern */}
             <div 
-              className="absolute inset-0 opacity-20"
+              className="absolute inset-0 opacity-20 pointer-events-none"
               style={{
                 backgroundImage: `
                   linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
@@ -582,31 +582,31 @@ const Dashboard = () => {
             
             {/* Purple Gradient Overlay at Bottom */}
             <div 
-              className="absolute inset-x-0 bottom-0 h-24 opacity-50"
+              className="absolute inset-x-0 bottom-0 h-24 opacity-50 pointer-events-none"
               style={{
                 background: 'linear-gradient(to top, rgba(139, 92, 246, 0.5) 0%, transparent 100%)'
               }}
             />
             
             {/* Badge Premium ou Admin */}
-            <div className="absolute top-4 right-4 z-10 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2"
+            <div className="absolute top-4 right-4 z-10 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full flex items-center gap-2"
                  style={{
                    background: 'rgba(139, 92, 246, 0.2)',
                    border: '1px solid rgba(139, 92, 246, 0.4)'
                  }}>
-              <span className="text-xs sm:text-sm font-bold text-purple-300">
+              <span className="text-xs sm:text-sm font-bold text-purple-300 whitespace-nowrap">
                 {isAdmin ? '👑 Acesso Admin' : '🔒 Premium'}
               </span>
             </div>
             
             <div className="relative z-10">
-              <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4 text-purple-400" />
-              <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-100">Curso Renda Extra</h3>
-              <p className="text-gray-400 text-sm sm:text-base mb-3 sm:mb-4">
+              <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4 text-purple-400 flex-shrink-0" />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-100 break-words">Curso Renda Extra</h3>
+              <p className="text-gray-400 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2">
                 Aprenda estratégias comprovadas para gerar de R$ 10 mil a R$ 50 mil por mês usando Inteligência Artificial.
               </p>
               <button 
-                className={`px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
                   isAdmin ? 'hover:bg-purple-500/30' : 'cursor-not-allowed'
                 }`}
                 style={{
@@ -626,7 +626,7 @@ const Dashboard = () => {
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 px-2 xs:px-1 sm:px-0">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div onClick={() => navigate('/leaderboard')}
-                 className="rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer border"
+                 className="rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer border overflow-hidden"
                  style={{
                    background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                    backgroundImage: `
@@ -638,25 +638,25 @@ const Dashboard = () => {
                    borderColor: 'rgba(236, 72, 153, 0.3)',
                  }}>
               <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500 flex-shrink-0" />
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base break-words">Ranking Global</h3>
               </div>
-              <p className="text-gray-600 text-xs sm:text-sm">
+              <p className="text-gray-600 text-xs sm:text-sm line-clamp-1">
                 Compare-se com outros aprendizes
               </p>
             </div>
 
             <div onClick={() => navigate('/achievements')}
-                 className="relative rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden"
+                 className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden"
                  style={{
                    background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)',
                    boxShadow: '0 4px 20px rgba(236, 72, 153, 0.3)'
                  }}>
               <div className="relative z-10 flex items-center gap-3 mb-2">
-                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                <h3 className="font-bold text-white text-sm sm:text-base">Suas Conquistas</h3>
+                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white flex-shrink-0" />
+                <h3 className="font-bold text-white text-sm sm:text-base break-words">Suas Conquistas</h3>
               </div>
-              <p className="relative z-10 text-white/90 text-xs sm:text-sm">
+              <p className="relative z-10 text-white/90 text-xs sm:text-sm line-clamp-1">
                 Desbloqueie badges e recompensas
               </p>
             </div>
