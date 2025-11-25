@@ -202,6 +202,70 @@ Estruture:
       tags: ['estudos', 'aprendizado', 'educação', 'desenvolvimento'],
       difficulty: 'beginner',
       isPremium: false
+    },
+    {
+      id: 'pet-care-routine',
+      categoryId: 'daily-life',
+      title: 'Rotina de Cuidados com Pets',
+      description: 'Organize os cuidados com seu animal de estimação',
+      template: `Crie rotina completa para {pet_type} de {pet_age}:
+
+Necessidades especiais: {special_needs}
+
+Inclua:
+1. Alimentação (horários, quantidades, tipo)
+2. Exercícios e brincadeiras
+3. Higiene e cuidados
+4. Veterinário e vacinas
+5. Checklist semanal/mensal
+6. Orçamento mensal estimado
+7. Dicas de bem-estar`,
+      variables: [
+        { name: 'pet_type', label: 'Tipo de pet', placeholder: 'Ex: Cachorro, gato', type: 'text', required: true },
+        { name: 'pet_age', label: 'Idade', placeholder: 'Ex: 2 anos, filhote', type: 'text', required: true },
+        { name: 'special_needs', label: 'Necessidades especiais', placeholder: 'Ex: Alergia, ansiedade', type: 'text', required: false }
+      ],
+      examples: [{
+        title: 'Cachorro filhote',
+        input: { pet_type: 'Cachorro', pet_age: '3 meses', special_needs: 'Nenhuma' },
+        output: 'Alimentação: 3x/dia, ração filhote\nExercício: 20min 2x/dia\nVacinas: Próxima em 15 dias'
+      }],
+      tags: ['pets', 'animais', 'cuidados', 'rotina'],
+      difficulty: 'beginner',
+      isPremium: false
+    },
+    {
+      id: 'garden-planner',
+      categoryId: 'daily-life',
+      title: 'Planejador de Horta/Jardim',
+      description: 'Planeje e mantenha sua horta ou jardim',
+      template: `Crie plano de {garden_type} para espaço de {space_size}:
+
+Clima: {climate}
+Objetivo: {goal}
+
+Forneça:
+1. Plantas ideais para o clima e espaço
+2. Calendário de plantio
+3. Cuidados necessários
+4. Lista de materiais
+5. Cronograma de manutenção
+6. Estimativa de colheita (se horta)
+7. Orçamento inicial`,
+      variables: [
+        { name: 'garden_type', label: 'Tipo', placeholder: 'Horta/Jardim/Ambos', type: 'select', options: ['Horta', 'Jardim', 'Horta e Jardim'], required: true },
+        { name: 'space_size', label: 'Tamanho', placeholder: 'Ex: 5m², varanda, quintal', type: 'text', required: true },
+        { name: 'climate', label: 'Clima', placeholder: 'Ex: Tropical, temperado', type: 'text', required: true },
+        { name: 'goal', label: 'Objetivo', placeholder: 'Ex: Temperos frescos, flores', type: 'text', required: false }
+      ],
+      examples: [{
+        title: 'Horta em apartamento',
+        input: { garden_type: 'Horta', space_size: 'Varanda 3m²', climate: 'Tropical', goal: 'Temperos e vegetais básicos' },
+        output: 'Plantas: Manjericão, tomate cereja, pimentão\nVasos: 5 médios\nColheita: 60-90 dias'
+      }],
+      tags: ['jardim', 'horta', 'plantas', 'sustentabilidade'],
+      difficulty: 'beginner',
+      isPremium: false
     }
   ]
 };
