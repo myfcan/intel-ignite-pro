@@ -116,8 +116,8 @@ export default function Guides() {
             >
               {/* Badge Novo */}
               {guide.isNew && (
-                <span className="absolute -top-2 -right-2 px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded z-10">
-                  Novo
+                <span className="absolute top-3 right-3 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-md z-10">
+                  NOVO
                 </span>
               )}
 
