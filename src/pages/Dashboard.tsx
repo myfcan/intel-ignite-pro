@@ -266,15 +266,13 @@ const Dashboard = () => {
             `;
           }}
         >
-          {/* Grid Pattern */}
+          {/* Textura de Pontos */}
           <div 
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 pointer-events-none opacity-40"
             style={{
-              backgroundImage: `
-                linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px'
+              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.3) 1px, transparent 1px)',
+              backgroundSize: '16px 16px',
+              backgroundPosition: '0 0'
             }}
           />
           
