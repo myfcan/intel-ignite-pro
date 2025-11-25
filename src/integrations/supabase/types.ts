@@ -1235,6 +1235,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_gamification_event: {
+        Args: {
+          p_event_reference_id?: string
+          p_event_type: string
+          p_payload?: Json
+        }
+        Returns: Database["public"]["CompositeTypes"]["gamification_result"]
+        SetofOptions: {
+          from: "*"
+          to: "gamification_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "user"
@@ -1251,7 +1265,15 @@ export type Database = {
       plan_type: "basico" | "ultra" | "pro"
     }
     CompositeTypes: {
-      [_ in never]: never
+      gamification_result: {
+        xp_delta: number | null
+        coins_delta: number | null
+        new_power_score: number | null
+        new_coins: number | null
+        new_patent_level: number | null
+        patent_name: string | null
+        is_new_patent: boolean | null
+      }
     }
   }
 }
