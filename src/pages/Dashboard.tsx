@@ -50,6 +50,7 @@ const Dashboard = () => {
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin(user?.id);
+  const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
 
   useEffect(() => {
     checkAuth();
@@ -219,8 +220,6 @@ const Dashboard = () => {
     'IA nos Negócios': 'from-primary to-secondary',
     'Renda Extra com IA': 'from-primary to-secondary',
   };
-
-  const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
 
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
