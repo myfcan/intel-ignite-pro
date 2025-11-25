@@ -658,6 +658,47 @@ export type Database = {
           },
         ]
       }
+      user_gamification_events: {
+        Row: {
+          coins_delta: number
+          created_at: string
+          event_reference_id: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          user_id: string
+          xp_delta: number
+        }
+        Insert: {
+          coins_delta?: number
+          created_at?: string
+          event_reference_id?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          user_id: string
+          xp_delta?: number
+        }
+        Update: {
+          coins_delta?: number
+          created_at?: string
+          event_reference_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          user_id?: string
+          xp_delta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gamification_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_guide_progress: {
         Row: {
           completed_at: string | null
