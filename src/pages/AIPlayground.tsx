@@ -4,14 +4,15 @@ import { ChevronLeft, Sparkles, Bot, Zap } from 'lucide-react';
 import { PlaygroundRealChat } from '@/components/lessons/PlaygroundRealChat';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function AIPlayground() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Button
@@ -37,8 +38,9 @@ export default function AIPlayground() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      {/* Main Content with ScrollArea */}
+      <ScrollArea className="flex-1">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* Hero Section */}
           <div className="mb-8">
             <div className="rounded-2xl p-8 text-white relative overflow-hidden"
@@ -204,6 +206,7 @@ export default function AIPlayground() {
           </CardContent>
         </Card>
       </main>
+      </ScrollArea>
     </div>
   );
 }
