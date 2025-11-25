@@ -1839,7 +1839,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                   <>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group min-w-0" onClick={handleProgressBarClick}>
-                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                      <div className="h-full transition-all relative" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }}>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
@@ -1853,7 +1853,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                       Seção {currentSection + 1} de {lessonData.sections.length}
                     </span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden group min-w-0">
-                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                      <div className="h-full transition-all relative" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }}>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
@@ -1889,7 +1889,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                   <>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
-                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                      <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }} />
                     </div>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
                   </>
@@ -1901,7 +1901,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                       {currentSection + 1}/{lessonData.sections.length}
                     </span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                      <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }} />
                     </div>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                   </>
