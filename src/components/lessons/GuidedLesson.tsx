@@ -762,7 +762,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   }, [lessonData.sections, audioUrl, isPlaying]);
   
   // 🎮 TRIGGER 2 (FALLBACK): Section-based (26.5s após entrar na seção 4 = ~127.5s)
+  // ❌ DESABILITADO TEMPORARIAMENTE - conflitando com TRIGGER-1 melhorado
   useEffect(() => {
+    console.log(`🔍 [TRIGGER-2-CHECK] DESABILITADO`);
+    return; // Early return para desabilitar
+    
     console.log(`🔍 [TRIGGER-2-CHECK] currentSection=${currentSection} | playgroundTriggered=${playgroundTriggered} | willActivate=${currentSection === 3 && !playgroundTriggered}`);
     
     if (currentSection === 3 && !playgroundTriggered) {
