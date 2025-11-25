@@ -1,33 +1,112 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, Trophy, Star, Flame, Zap, Target, Award, Lock } from 'lucide-react';
+import { ChevronLeft, Trophy, Star, Zap, Coins, Award, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PointsDisplay } from '@/components/gamification/PointsDisplay';
-import { ACHIEVEMENTS, AchievementDefinition } from '@/lib/gamification';
+import { useUserGamification } from '@/hooks/useUserGamification';
 import { motion } from 'framer-motion';
 
-interface UserAchievement {
-  achievement_name: string;
-  earned_at: string;
-  points_earned: number;
+interface GamificationEvent {
+  event_type: string;
+  xp_delta: number;
+  coins_delta: number;
+  created_at: string;
 }
 
-interface UserStats {
-  total_points: number;
-  streak_days: number;
-  level: number;
-  total_lessons_completed: number;
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  requirement: { type: string; value: number };
+  reward: { xp: number; coins: number };
 }
+
+const MOCK_ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'first_lesson',
+    name: 'Primeira Conquista',
+    description: 'Complete sua primeira aula',
+    icon: '🎯',
+    category: 'lessons',
+    requirement: { type: 'lesson_completed', value: 1 },
+    reward: { xp: 40, coins: 10 }
+  },
+  {
+    id: 'five_lessons',
+    name: 'Em Progresso',
+    description: 'Complete 5 aulas',
+    icon: '📚',
+    category: 'lessons',
+    requirement: { type: 'lesson_completed', value: 5 },
+    reward: { xp: 100, coins: 25 }
+  },
+  {
+    id: 'ten_lessons',
+    name: 'Dedicado',
+    description: 'Complete 10 aulas',
+    icon: '🎓',
+    category: 'lessons',
+    requirement: { type: 'lesson_completed', value: 10 },
+    reward: { xp: 200, coins: 50 }
+  },
+  {
+    id: 'power_100',
+    name: 'Poder Crescente',
+    description: 'Alcance 100 de Power Score',
+    icon: '⚡',
+    category: 'power',
+    requirement: { type: 'power_score', value: 100 },
+    reward: { xp: 50, coins: 15 }
+  },
+  {
+    id: 'power_500',
+    name: 'Força Interior',
+    description: 'Alcance 500 de Power Score',
+    icon: '💪',
+    category: 'power',
+    requirement: { type: 'power_score', value: 500 },
+    reward: { xp: 150, coins: 40 }
+  },
+  {
+    id: 'patent_1',
+    name: 'Operador Básico',
+    description: 'Alcance a patente de Operador Básico de I.A.',
+    icon: '🥉',
+    category: 'patent',
+    requirement: { type: 'patent_level', value: 1 },
+    reward: { xp: 100, coins: 30 }
+  },
+  {
+    id: 'patent_2',
+    name: 'Executor',
+    description: 'Alcance a patente de Executor de Sistemas',
+    icon: '🥈',
+    category: 'patent',
+    requirement: { type: 'patent_level', value: 2 },
+    reward: { xp: 200, coins: 60 }
+  },
+  {
+    id: 'patent_3',
+    name: 'Estrategista',
+    description: 'Alcance a patente de Estrategista em I.A.',
+    icon: '🥇',
+    category: 'patent',
+    requirement: { type: 'patent_level', value: 3 },
+    reward: { xp: 400, coins: 100 }
+  }
+];
 
 export default function AchievementsPage() {
   const navigate = useNavigate();
-  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [events, setEvents] = useState<GamificationEvent[]>([]);
+  const [lessonsCompleted, setLessonsCompleted] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { stats } = useUserGamification();
 
   useEffect(() => {
     loadData();
@@ -38,30 +117,17 @@ export default function AchievementsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Load user achievements
-      const { data: achievements } = await supabase
-        .from('user_achievements')
-        .select('achievement_name, earned_at, points_earned')
-        .eq('user_id', user.id);
+      // Buscar eventos de gamificação
+      const { data: eventsData } = await supabase
+        .from('user_gamification_events')
+        .select('event_type, xp_delta, coins_delta, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      // Load user stats
-      const { data: stats } = await supabase
-        .from('users')
-        .select('total_points, streak_days, total_lessons_completed')
-        .eq('id', user.id)
-        .single();
-
-      setUserAchievements(achievements || []);
-      if (stats) {
-        // Calculate level from points
-        const level = Math.floor((stats.total_points || 0) / 1000) + 1;
-        setUserStats({
-          ...stats,
-          level,
-          total_points: stats.total_points || 0,
-          streak_days: stats.streak_days || 0,
-          total_lessons_completed: stats.total_lessons_completed || 0,
-        });
+      if (eventsData) {
+        setEvents(eventsData);
+        const lessonEvents = eventsData.filter(e => e.event_type === 'lesson_completed');
+        setLessonsCompleted(lessonEvents.length);
       }
     } catch (error) {
       console.error('Error loading achievements:', error);
@@ -70,41 +136,48 @@ export default function AchievementsPage() {
     }
   };
 
-  const isAchievementUnlocked = (achievementId: string) => {
-    return userAchievements.some(ua => ua.achievement_name === achievementId);
-  };
+  const isAchievementUnlocked = (achievement: Achievement): boolean => {
+    if (!stats) return false;
 
-  const getProgress = (achievement: AchievementDefinition): number => {
-    if (!userStats) return 0;
-    
-    switch (achievement.type) {
-      case 'lessons':
-        return Math.min(100, (userStats.total_lessons_completed / achievement.requirement) * 100);
-      case 'streak':
-        return Math.min(100, (userStats.streak_days / achievement.requirement) * 100);
+    switch (achievement.requirement.type) {
+      case 'lesson_completed':
+        return lessonsCompleted >= achievement.requirement.value;
+      case 'power_score':
+        return stats.powerScore >= achievement.requirement.value;
+      case 'patent_level':
+        return stats.patentLevel >= achievement.requirement.value;
       default:
-        return 0;
+        return false;
     }
   };
 
-  const getIconComponent = (type: string) => {
-    switch (type) {
-      case 'lessons': return Trophy;
-      case 'streak': return Flame;
-      case 'perfect': return Target;
-      case 'speed': return Zap;
-      default: return Star;
+  const getProgress = (achievement: Achievement): number => {
+    if (!stats) return 0;
+
+    let current = 0;
+    switch (achievement.requirement.type) {
+      case 'lesson_completed':
+        current = lessonsCompleted;
+        break;
+      case 'power_score':
+        current = stats.powerScore;
+        break;
+      case 'patent_level':
+        current = stats.patentLevel;
+        break;
     }
+
+    return Math.min(100, (current / achievement.requirement.value) * 100);
   };
 
-  const achievementsByType = ACHIEVEMENTS.reduce((acc, achievement) => {
-    if (!acc[achievement.type]) acc[achievement.type] = [];
-    acc[achievement.type].push(achievement);
+  const achievementsByCategory = MOCK_ACHIEVEMENTS.reduce((acc, achievement) => {
+    if (!acc[achievement.category]) acc[achievement.category] = [];
+    acc[achievement.category].push(achievement);
     return acc;
-  }, {} as Record<string, AchievementDefinition[]>);
+  }, {} as Record<string, Achievement[]>);
 
-  const unlockedCount = userAchievements.length;
-  const totalAchievements = ACHIEVEMENTS.length;
+  const unlockedCount = MOCK_ACHIEVEMENTS.filter(isAchievementUnlocked).length;
+  const totalAchievements = MOCK_ACHIEVEMENTS.length;
   const completionPercentage = (unlockedCount / totalAchievements) * 100;
 
   if (loading) {
@@ -144,37 +217,47 @@ export default function AchievementsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Stats Card */}
-        {userStats && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <PointsDisplay
-                points={userStats.total_points}
-                streak={userStats.streak_days}
-                showStreak={true}
-              />
-            </div>
-            
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-              <Card className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0">
-                <div className="flex items-center gap-3">
-                  <Award className="w-8 h-8" />
-                  <div>
-                    <p className="text-sm opacity-90">Nível</p>
-                    <p className="text-3xl font-bold">{userStats.level}</p>
-                  </div>
+        {stats && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <Card className="p-4 bg-gradient-to-br from-sky-500 to-blue-500 text-white border-0">
+              <div className="flex items-center gap-3">
+                <Zap className="w-8 h-8" />
+                <div>
+                  <p className="text-sm opacity-90">Power Score</p>
+                  <p className="text-3xl font-bold">{stats.powerScore}</p>
                 </div>
-              </Card>
+              </div>
+            </Card>
 
-              <Card className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
-                <div className="flex items-center gap-3">
-                  <Trophy className="w-8 h-8" />
-                  <div>
-                    <p className="text-sm opacity-90">Aulas Completas</p>
-                    <p className="text-3xl font-bold">{userStats.total_lessons_completed}</p>
-                  </div>
+            <Card className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
+              <div className="flex items-center gap-3">
+                <Coins className="w-8 h-8" />
+                <div>
+                  <p className="text-sm opacity-90">Créditos</p>
+                  <p className="text-3xl font-bold">{stats.coins}</p>
                 </div>
-              </Card>
-            </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0">
+              <div className="flex items-center gap-3">
+                <Award className="w-8 h-8" />
+                <div>
+                  <p className="text-sm opacity-90">Patente</p>
+                  <p className="text-base font-bold">{stats.patentName}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-8 h-8" />
+                <div>
+                  <p className="text-sm opacity-90">Aulas Completas</p>
+                  <p className="text-3xl font-bold">{lessonsCompleted}</p>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
@@ -194,20 +277,18 @@ export default function AchievementsPage() {
 
         {/* Achievements by Category */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="all">Todas</TabsTrigger>
             <TabsTrigger value="lessons">Aulas</TabsTrigger>
-            <TabsTrigger value="streak">Sequência</TabsTrigger>
-            <TabsTrigger value="perfect">Perfeição</TabsTrigger>
-            <TabsTrigger value="speed">Velocidade</TabsTrigger>
+            <TabsTrigger value="power">Power</TabsTrigger>
+            <TabsTrigger value="patent">Patentes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ACHIEVEMENTS.map((achievement) => {
-                const unlocked = isAchievementUnlocked(achievement.id);
+              {MOCK_ACHIEVEMENTS.map((achievement) => {
+                const unlocked = isAchievementUnlocked(achievement);
                 const progress = getProgress(achievement);
-                const Icon = getIconComponent(achievement.type);
 
                 return (
                   <motion.div
@@ -224,24 +305,11 @@ export default function AchievementsPage() {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div
-                          className={`p-3 rounded-xl ${
-                            unlocked
-                              ? 'bg-gradient-to-br from-pink-400 to-rose-500'
-                              : 'bg-slate-200'
-                          }`}
-                        >
-                          {unlocked ? (
-                            <Icon className="w-6 h-6 text-white" />
-                          ) : (
-                            <Lock className="w-6 h-6 text-slate-400" />
-                          )}
+                        <div className="text-5xl">
+                          {unlocked ? achievement.icon : '🔒'}
                         </div>
                         <div className="flex-1 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-slate-900">{achievement.name}</h4>
-                            <span className="text-2xl">{achievement.icon}</span>
-                          </div>
+                          <h4 className="font-semibold text-slate-900">{achievement.name}</h4>
                           <p className="text-sm text-slate-600">{achievement.description}</p>
                           
                           {!unlocked && (
@@ -253,11 +321,19 @@ export default function AchievementsPage() {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 text-sm">
-                            <Star className="w-4 h-4 text-pink-500" />
-                            <span className="font-medium text-pink-600">
-                              {achievement.points} pts
-                            </span>
+                          <div className="flex items-center gap-3 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-4 h-4 text-sky-500" />
+                              <span className="font-medium text-sky-600">
+                                +{achievement.reward.xp}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Coins className="w-4 h-4 text-amber-500" />
+                              <span className="font-medium text-amber-600">
+                                +{achievement.reward.coins}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -268,13 +344,12 @@ export default function AchievementsPage() {
             </div>
           </TabsContent>
 
-          {Object.entries(achievementsByType).map(([type, achievements]) => (
-            <TabsContent key={type} value={type}>
+          {Object.entries(achievementsByCategory).map(([category, achievements]) => (
+            <TabsContent key={category} value={category}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {achievements.map((achievement) => {
-                  const unlocked = isAchievementUnlocked(achievement.id);
+                  const unlocked = isAchievementUnlocked(achievement);
                   const progress = getProgress(achievement);
-                  const Icon = getIconComponent(achievement.type);
 
                   return (
                     <motion.div
@@ -291,24 +366,11 @@ export default function AchievementsPage() {
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <div
-                            className={`p-3 rounded-xl ${
-                              unlocked
-                                ? 'bg-gradient-to-br from-pink-400 to-rose-500'
-                                : 'bg-slate-200'
-                            }`}
-                          >
-                            {unlocked ? (
-                              <Icon className="w-6 h-6 text-white" />
-                            ) : (
-                              <Lock className="w-6 h-6 text-slate-400" />
-                            )}
+                          <div className="text-5xl">
+                            {unlocked ? achievement.icon : '🔒'}
                           </div>
                           <div className="flex-1 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-slate-900">{achievement.name}</h4>
-                              <span className="text-2xl">{achievement.icon}</span>
-                            </div>
+                            <h4 className="font-semibold text-slate-900">{achievement.name}</h4>
                             <p className="text-sm text-slate-600">{achievement.description}</p>
                             
                             {!unlocked && (
@@ -320,11 +382,19 @@ export default function AchievementsPage() {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-2 text-sm">
-                              <Star className="w-4 h-4 text-pink-500" />
-                              <span className="font-medium text-pink-600">
-                                {achievement.points} pts
-                              </span>
+                            <div className="flex items-center gap-3 text-sm">
+                              <div className="flex items-center gap-1">
+                                <Zap className="w-4 h-4 text-sky-500" />
+                                <span className="font-medium text-sky-600">
+                                  +{achievement.reward.xp}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Coins className="w-4 h-4 text-amber-500" />
+                                <span className="font-medium text-amber-600">
+                                  +{achievement.reward.coins}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
