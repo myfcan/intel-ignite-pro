@@ -324,10 +324,10 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                     onClick={generateAIResponse}
                     disabled={!validationState.isValid || isGeneratingAI}
                     className={cn(
-                      "absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                      "absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all",
                       validationState.isValid && !isGeneratingAI
                         ? "bg-cyan-500 hover:bg-cyan-600 shadow-lg animate-pulse"
-                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     )}
                     aria-label="Enviar prompt"
                   >
