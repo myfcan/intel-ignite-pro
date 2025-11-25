@@ -708,8 +708,8 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
             
             if (ultimaPalavra) {
-              // Trigger DEPOIS do end da última palavra + buffer de 0.5s
-              triggerTime = ultimaPalavra.end + 0.5 + playgroundDelay;
+              // Trigger DEPOIS do end da última palavra + buffer de 0.83s
+              triggerTime = ultimaPalavra.end + 0.83 + playgroundDelay;
               console.log(`🎯 [TRIGGER-1-NEW] Usando end da última palavra "${ultimaPalavra.word}" (start:${ultimaPalavra.start}, end:${ultimaPalavra.end}s) | trigger=${triggerTime.toFixed(2)}s | playgroundDelay=${playgroundDelay}`);
             } else {
               // Fallback se não encontrar palavras
