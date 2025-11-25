@@ -475,7 +475,7 @@ const Dashboard = () => {
           <div onClick={() => navigate('/ai-playground')}
                className="cursor-pointer relative group">
             {/* Borda gradiente no hover */}
-            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition duration-300 blur"></div>
+            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-40 transition duration-300 blur-sm"></div>
             
             {/* Card content */}
             <div className="relative rounded-2xl p-4 sm:p-6 border-2 transition-all"
