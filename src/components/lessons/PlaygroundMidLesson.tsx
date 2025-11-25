@@ -311,31 +311,33 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
               </h4>
               
               {/* Parte editável */}
-              <div className="relative">
-                <Textarea
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={config.realConfig.userPlaceholder}
-                  className="w-full px-4 py-3 pr-14 border-2 border-cyan-400 rounded-lg font-medium min-h-[100px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                />
-                {/* Botão de enviar dentro do textarea */}
-                <button
-                  onClick={generateAIResponse}
-                  disabled={!validationState.isValid || isGeneratingAI}
-                  className={cn(
-                    "absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all",
-                    validationState.isValid && !isGeneratingAI
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg animate-pulse"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
-                  )}
-                  aria-label="Enviar prompt"
-                >
-                  {isGeneratingAI ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ArrowUp className="w-4 h-4" />
-                  )}
-                </button>
+              <div>
+                <div className="relative">
+                  <Textarea
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder={config.realConfig.userPlaceholder}
+                    className="w-full px-4 py-3 pr-14 border-2 border-cyan-400 rounded-lg font-medium min-h-[100px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  />
+                  {/* Botão de enviar dentro do textarea */}
+                  <button
+                    onClick={generateAIResponse}
+                    disabled={!validationState.isValid || isGeneratingAI}
+                    className={cn(
+                      "absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                      validationState.isValid && !isGeneratingAI
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg animate-pulse"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                    )}
+                    aria-label="Enviar prompt"
+                  >
+                    {isGeneratingAI ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   💡 Dica: Seja específico! Mencione para quem, sobre o quê e qual tom.
                 </p>
