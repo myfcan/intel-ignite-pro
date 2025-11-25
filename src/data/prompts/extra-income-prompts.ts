@@ -96,7 +96,7 @@ Foque em agregar valor, não apenas vender.`,
       }],
       tags: ['afiliados', 'monetização', 'conteúdo', 'vendas'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'consulting-positioning',
@@ -122,7 +122,7 @@ Foque em agregar valor, não apenas vender.`,
       }],
       tags: ['consultoria', 'posicionamento', 'vendas', 'b2b'],
       difficulty: 'advanced',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'course-outline-creator',
@@ -151,7 +151,7 @@ Preço sugerido e justificativa.`,
       }],
       tags: ['curso', 'infoproduto', 'educação', 'estrutura'],
       difficulty: 'intermediate',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -179,7 +179,7 @@ Preço sugerido e justificativa.`,
       }],
       tags: ['precificação', 'serviços', 'vendas', 'valor'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'youtube-monetization',
@@ -205,7 +205,7 @@ Preço sugerido e justificativa.`,
       }],
       tags: ['youtube', 'monetização', 'vídeo', 'ads'],
       difficulty: 'intermediate',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -233,7 +233,7 @@ Preço sugerido e justificativa.`,
       }],
       tags: ['instagram', 'vendas', 'social media', 'e-commerce'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'ebook-creator',
@@ -262,7 +262,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['ebook', 'infoproduto', 'digital', 'escrita'],
       difficulty: 'beginner',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'dropshipping-niche',
@@ -289,7 +289,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['dropshipping', 'e-commerce', 'validação', 'nicho'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'membership-model',
@@ -317,7 +317,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['membership', 'assinatura', 'recorrente', 'mrr'],
       difficulty: 'advanced',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'printables-store',
@@ -344,7 +344,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['printables', 'etsy', 'digital', 'passivo'],
       difficulty: 'beginner',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -372,7 +372,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['podcast', 'áudio', 'monetização', 'conteúdo'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'notion-templates',
@@ -399,7 +399,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['notion', 'templates', 'digital', 'produtividade'],
       difficulty: 'beginner',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'stock-photos',
@@ -426,7 +426,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['fotografia', 'stock', 'passivo', 'imagens'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'amazon-kdp',
@@ -455,7 +455,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['kdp', 'amazon', 'livros', 'publishing'],
       difficulty: 'intermediate',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -483,7 +483,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['tiktok', 'social media', 'viral', 'criador'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'coaching-package',
@@ -511,7 +511,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['coaching', 'mentoria', 'serviços', 'alto ticket'],
       difficulty: 'advanced',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'virtual-assistant',
@@ -538,7 +538,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['va', 'assistência virtual', 'serviços', 'remoto'],
       difficulty: 'beginner',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'webinar-sales',
@@ -566,7 +566,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['webinar', 'vendas', 'conversão', 'ao vivo'],
       difficulty: 'advanced',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'lead-magnet',
@@ -594,7 +594,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['lead magnet', 'funil', 'captação', 'email'],
       difficulty: 'intermediate',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -623,7 +623,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['workshop', 'evento', 'ao vivo', 'educação'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'canva-templates',
@@ -650,7 +650,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['canva', 'templates', 'design', 'passivo'],
       difficulty: 'beginner',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'newsletter-paid',
@@ -678,7 +678,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['newsletter', 'assinatura', 'conteúdo', 'mrr'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'marketplace-seller',
@@ -706,7 +706,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['marketplace', 'e-commerce', 'vendas', 'físico'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'chatbot-service',
@@ -733,7 +733,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['automação', 'chatbot', 'tech', 'serviços'],
       difficulty: 'advanced',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'audit-service',
@@ -761,7 +761,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['auditoria', 'consultoria', 'vendas', 'entrada'],
       difficulty: 'intermediate',
-      isPremium: false,
+      isPremium: true,
       isFeatured: true
     },
     {
@@ -789,7 +789,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['afiliados', 'saas', 'recorrente', 'passivo'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'group-coaching',
@@ -816,7 +816,7 @@ Foco em transformação e resultados.`,
       }],
       tags: ['coaching', 'grupo', 'educação', 'escalável'],
       difficulty: 'intermediate',
-      isPremium: false
+      isPremium: true
     },
     {
       id: 'local-seo-service',
