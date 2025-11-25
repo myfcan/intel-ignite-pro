@@ -94,62 +94,65 @@ const TrailCard = ({
     );
   }
 
-  // CARD COMPLETO - PALETA PRINCIPAL
+  // CARD COMPLETO - INVERTIDO: FUNDO PALETA PRINCIPAL, ELEMENTOS BRANCOS
   if (isCompleted) {
     return (
       <div 
         onClick={handleClick}
         className="relative rounded-2xl p-5 border transition-all hover:scale-105 hover:shadow-xl cursor-pointer h-[320px] flex flex-col"
         style={{
-          background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-          backgroundImage: `
-            linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-            radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-          `,
-          backgroundSize: 'cover, 16px 16px',
-          backgroundPosition: 'center, 0 0',
-          borderColor: 'rgba(34, 197, 94, 0.3)',
-          boxShadow: '0 2px 8px rgba(34, 197, 94, 0.1)',
+          background: 'linear-gradient(135deg, #22C55E 0%, #10B981 100%)',
+          borderColor: 'rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 4px 20px rgba(34, 197, 94, 0.3)',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.6)';
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.2)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(34, 197, 94, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.1)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(34, 197, 94, 0.3)';
         }}
       >
+        {/* Textura de Pontos */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-20"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+            backgroundPosition: '0 0'
+          }}
+        />
+
         {/* Badge de Status */}
-        <div className="absolute top-3 right-3">
-          <span className="px-3 py-1 bg-green-500/20 text-green-600 text-xs font-bold rounded-full flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-600 rounded-full" />
+        <div className="absolute top-3 right-3 z-10">
+          <span className="px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full flex items-center gap-1 backdrop-blur-sm">
+            <div className="w-2 h-2 bg-white rounded-full" />
             100%
           </span>
         </div>
         
         {/* Ícone Central */}
-        <div className="flex justify-center mb-3">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-               style={{background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)'}}>
-            <Icon className="w-10 h-10 text-green-600" />
+        <div className="flex justify-center mb-3 relative z-10">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center bg-white/20 backdrop-blur-sm border border-white/30">
+            <Icon className="w-10 h-10 text-white" />
           </div>
         </div>
         
         {/* Título */}
-        <h3 className="text-gray-800 font-bold text-lg text-center mb-3 leading-tight">
+        <h3 className="text-white font-bold text-lg text-center mb-3 leading-tight relative z-10">
           {trail.title}
         </h3>
         
         {/* Check Verde */}
-        <div className="mb-3 flex-grow flex items-center justify-center">
-          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center border-2 border-green-600">
-            <span className="text-2xl text-green-600">✓</span>
+        <div className="mb-3 flex-grow flex items-center justify-center relative z-10">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white backdrop-blur-sm">
+            <span className="text-2xl text-white">✓</span>
           </div>
         </div>
         
         {/* Métricas */}
-        <div className="flex justify-around mb-3 text-gray-600 text-sm">
+        <div className="flex justify-around mb-3 text-white/90 text-sm relative z-10">
           <span className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
             {totalLessons}/{totalLessons} aulas
@@ -161,14 +164,14 @@ const TrailCard = ({
         </div>
         
         {/* Botão CTA */}
-        <button className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all">
+        <button className="w-full py-3 bg-white text-green-600 font-semibold rounded-xl hover:bg-white/90 transition-all relative z-10">
           Revisar
         </button>
       </div>
     );
   }
 
-  // CARD ATIVO ou PRÓXIMA - PALETA PRINCIPAL
+  // CARD ATIVO ou PRÓXIMA - INVERTIDO: FUNDO PALETA PRINCIPAL, ELEMENTOS BRANCOS
   const isPulsing = isNext && !isActive;
   
   return (
@@ -178,72 +181,72 @@ const TrailCard = ({
         isPulsing ? 'animate-pulse' : ''
       }`}
       style={{
-        background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-        backgroundImage: `
-          linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-          radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-        `,
-        backgroundSize: 'cover, 16px 16px',
-        backgroundPosition: 'center, 0 0',
-        borderColor: isPulsing ? 'rgba(139, 92, 246, 0.6)' : 'rgba(139, 92, 246, 0.2)',
+        background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+        borderColor: isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)',
         boxShadow: isPulsing 
-          ? '0 4px 20px rgba(139, 92, 246, 0.3)' 
-          : '0 2px 8px rgba(139, 92, 246, 0.05)',
+          ? '0 8px 30px rgba(139, 92, 246, 0.5)' 
+          : '0 4px 20px rgba(139, 92, 246, 0.3)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(139, 92, 246, 0.2)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+        e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.4)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = isPulsing ? 'rgba(139, 92, 246, 0.6)' : 'rgba(139, 92, 246, 0.2)';
+        e.currentTarget.style.borderColor = isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)';
         e.currentTarget.style.boxShadow = isPulsing 
-          ? '0 4px 20px rgba(139, 92, 246, 0.3)' 
-          : '0 2px 8px rgba(139, 92, 246, 0.05)';
+          ? '0 8px 30px rgba(139, 92, 246, 0.5)' 
+          : '0 4px 20px rgba(139, 92, 246, 0.3)';
       }}
     >
+      {/* Textura de Pontos */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0'
+        }}
+      />
+
       {/* Badge de Status */}
-      <div className="absolute top-3 right-3">
+      <div className="absolute top-3 right-3 z-10">
         {isPulsing ? (
-          <span className="px-3 py-1 bg-purple-500/20 text-purple-600 text-xs font-bold rounded-full">
+          <span className="px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full backdrop-blur-sm">
             PRÓXIMA
           </span>
         ) : (
-          <span className="px-3 py-1 bg-green-500/20 text-green-600 text-xs font-bold rounded-full flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
+          <span className="px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full flex items-center gap-1 backdrop-blur-sm">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
             ATIVO
           </span>
         )}
       </div>
       
       {/* Ícone Central */}
-      <div className="flex justify-center mb-3">
-        <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-             style={{background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)'}}>
-          <Icon className="w-10 h-10 text-primary" />
+      <div className="flex justify-center mb-3 relative z-10">
+        <div className="w-20 h-20 rounded-2xl flex items-center justify-center bg-white/20 backdrop-blur-sm border border-white/30">
+          <Icon className="w-10 h-10 text-white" />
         </div>
       </div>
       
       {/* Título */}
-      <h3 className="text-gray-800 font-bold text-lg text-center mb-3 leading-tight">
+      <h3 className="text-white font-bold text-lg text-center mb-3 leading-tight relative z-10">
         {trail.title}
       </h3>
       
       {/* Progress Bar */}
-      <div className="mb-3 flex-grow">
-        <div className="bg-gray-300 rounded-full h-2 overflow-hidden">
+      <div className="mb-3 flex-grow relative z-10">
+        <div className="bg-white/20 backdrop-blur-sm rounded-full h-2 overflow-hidden border border-white/30">
           <div 
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)'
-            }} 
+            className="h-full rounded-full transition-all bg-white"
+            style={{width: `${progress}%`}} 
           />
         </div>
-        <p className="text-center text-primary font-bold mt-2 text-sm">{progress}% completo</p>
+        <p className="text-center text-white font-bold mt-2 text-sm">{progress}% completo</p>
       </div>
       
       {/* Métricas */}
-      <div className="flex justify-around mb-3 text-gray-600 text-sm">
+      <div className="flex justify-around mb-3 text-white/90 text-sm relative z-10">
         <span className="flex items-center gap-1">
           <BookOpen className="w-4 h-4" />
           {completedLessons}/{totalLessons} aulas
@@ -255,7 +258,7 @@ const TrailCard = ({
       </div>
       
       {/* Botão CTA */}
-      <button className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:opacity-90 transition-all">
+      <button className="w-full py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 transition-all relative z-10">
         Continuar
       </button>
     </div>
