@@ -1913,9 +1913,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                     <SkipBack size={16} />
                   </button>
                   <button 
-                    className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 ${
-                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg ${
+                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
                     }`}
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
+                      boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
+                    }}
                     onClick={() => {
                       togglePlayPause();
                       if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
