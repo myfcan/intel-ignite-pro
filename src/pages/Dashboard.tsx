@@ -234,33 +234,47 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Hero Section - CINZA TECH COM TEXTURA */}
+        {/* Hero Section - DARK MODE ELEGANTE */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden transition-all duration-300"
           style={{
-            background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-            border: '1px solid rgba(139, 92, 246, 0.15)',
-            boxShadow: '0 4px 20px rgba(139, 92, 246, 0.08)'
+            background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            boxShadow: `
+              0 0 40px rgba(139, 92, 246, 0.1),
+              0 0 80px rgba(139, 92, 246, 0.05),
+              inset 0 0 60px rgba(139, 92, 246, 0.03)
+            `
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 6px 24px rgba(139, 92, 246, 0.12)';
-            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+            e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.6)';
+            e.currentTarget.style.boxShadow = `
+              0 0 40px rgba(139, 92, 246, 0.2),
+              0 0 80px rgba(139, 92, 246, 0.1),
+              inset 0 0 60px rgba(139, 92, 246, 0.05)
+            `;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.08)';
-            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+            e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.3)';
+            e.currentTarget.style.boxShadow = `
+              0 0 40px rgba(139, 92, 246, 0.1),
+              0 0 80px rgba(139, 92, 246, 0.05),
+              inset 0 0 60px rgba(139, 92, 246, 0.03)
+            `;
           }}
         >
-          {/* Textura de Pontos */}
+          {/* Grid Pattern */}
           <div 
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 opacity-30"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.18) 1px, transparent 1px)',
-              backgroundSize: '16px 16px',
-              backgroundPosition: '0 0'
+              backgroundImage: `
+                linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px'
             }}
           />
           
@@ -269,7 +283,7 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-purple-600 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
+              className="text-purple-400 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
             >
               BEM-VINDO DE VOLTA!
             </motion.p>
@@ -279,7 +293,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900"
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-100"
               >
                 Olá, {user?.name}!
               </motion.h1>
@@ -305,7 +319,7 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-gray-600 text-sm sm:text-base md:text-lg overflow-hidden"
+              className="text-gray-400 text-sm sm:text-base md:text-lg overflow-hidden"
             >
               <motion.span
                 initial={{ width: 0 }}
