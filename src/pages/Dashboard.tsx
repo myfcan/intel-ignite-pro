@@ -234,43 +234,40 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Hero Section - DARK MODE ELEGANTE */}
+        {/* Hero Section - PALETA PRINCIPAL COM DEGRADÊ */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden transition-all duration-300"
           style={{
-            background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+            background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
             border: '1px solid rgba(139, 92, 246, 0.3)',
             boxShadow: `
-              0 0 40px rgba(139, 92, 246, 0.1),
-              0 0 80px rgba(139, 92, 246, 0.05),
-              inset 0 0 60px rgba(139, 92, 246, 0.03)
+              0 4px 20px rgba(139, 92, 246, 0.2),
+              0 0 40px rgba(139, 92, 246, 0.1)
             `
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.6)';
             e.currentTarget.style.boxShadow = `
-              0 0 40px rgba(139, 92, 246, 0.2),
-              0 0 80px rgba(139, 92, 246, 0.1),
-              inset 0 0 60px rgba(139, 92, 246, 0.05)
+              0 8px 30px rgba(139, 92, 246, 0.3),
+              0 0 60px rgba(139, 92, 246, 0.15)
             `;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.3)';
             e.currentTarget.style.boxShadow = `
-              0 0 40px rgba(139, 92, 246, 0.1),
-              0 0 80px rgba(139, 92, 246, 0.05),
-              inset 0 0 60px rgba(139, 92, 246, 0.03)
+              0 4px 20px rgba(139, 92, 246, 0.2),
+              0 0 40px rgba(139, 92, 246, 0.1)
             `;
           }}
         >
           {/* Textura de Pontos */}
           <div 
-            className="absolute inset-0 pointer-events-none opacity-50"
+            className="absolute inset-0 pointer-events-none opacity-40"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(139, 92, 246, 0.6) 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
               backgroundSize: '20px 20px',
               backgroundPosition: '0 0'
             }}
@@ -281,9 +278,9 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-purple-400 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
+              className="text-purple-200 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
             >
-              BEM-VINDO DE VOLTA!
+              BEM-VINDO DE VOLTA
             </motion.p>
             
             <div className="flex items-center gap-3 mb-2">
@@ -291,20 +288,19 @@ const Dashboard = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-100"
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-white"
               >
-                Olá, {user?.name}!
+                Olá, {user?.name}
               </motion.h1>
               
               <motion.span
                 className="text-2xl sm:text-3xl md:text-4xl"
                 animate={{ 
-                  rotate: [0, 15, -15, 15, -15, 0, 0, 15, -15, 15, -15, 0],
+                  rotate: [0, 15, -15, 15, -15, 0],
                 }}
                 transition={{
                   delay: 1,
-                  duration: 1.2,
-                  times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+                  duration: 0.8,
                   ease: "easeInOut"
                 }}
                 style={{ display: 'inline-block', transformOrigin: 'bottom center' }}
@@ -317,16 +313,9 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-gray-400 text-sm sm:text-base md:text-lg overflow-hidden"
+              className="text-purple-100 text-sm sm:text-base md:text-lg"
             >
-              <motion.span
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ delay: 1.2, duration: 2, ease: "linear" }}
-                style={{ display: "inline-block", whiteSpace: "nowrap" }}
-              >
-                Comece sua jornada de aprendizado em Inteligência Artificial
-              </motion.span>
+              Comece sua jornada de aprendizado em Inteligência Artificial
             </motion.p>
           </div>
         </motion.div>

@@ -52,7 +52,7 @@ export function TransitionCard({
           className="w-full px-8 py-6 text-lg font-bold"
           data-testid="transition-continue"
         >
-          {buttonText}
+          {buttonText.replace(/🎯|→/g, '').trim()}
         </Button>
         {onBack && (
           <Button 
@@ -62,7 +62,7 @@ export function TransitionCard({
             className="w-full"
             data-testid="transition-back"
           >
-            ⬅️ Voltar para a aula
+            Voltar para a aula
           </Button>
         )}
       </div>
