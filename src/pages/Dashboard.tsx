@@ -397,9 +397,8 @@ const Dashboard = () => {
           
           {/* Mobile: Scroll Horizontal com Snap e Indicadores */}
           <div className="md:hidden relative">
-            {/* Fade gradients nas bordas */}
-            <div className="absolute left-0 top-0 bottom-10 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-10 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+            {/* Fade gradient apenas na direita */}
+            <div className="absolute right-0 top-0 bottom-10 w-12 bg-gradient-to-l from-background via-background/80 to-transparent z-10 pointer-events-none" />
             
             {/* Container com scroll */}
             <div 

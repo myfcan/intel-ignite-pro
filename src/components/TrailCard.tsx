@@ -62,9 +62,14 @@ const TrailCard = ({
         </div>
         
         {/* Título */}
-        <h3 className="text-gray-500 font-bold text-xs xs:text-sm sm:text-lg text-center mb-2 xs:mb-3 leading-tight px-1 break-words">
+        <h3 className="text-gray-500 font-bold text-xs xs:text-sm sm:text-lg text-center mb-1 leading-tight px-1 break-words">
           {trail.title}
         </h3>
+        
+        {/* Subtítulo */}
+        <p className="text-gray-400 font-semibold text-[10px] xs:text-xs text-center mb-2 xs:mb-3 uppercase tracking-wide">
+          Em breve
+        </p>
         
         {/* Requisito */}
         <div className="flex-grow flex items-center justify-center min-h-[40px]">
@@ -139,9 +144,14 @@ const TrailCard = ({
         </div>
         
         {/* Título */}
-        <h3 className="text-white font-bold text-xs xs:text-sm sm:text-lg text-center mb-2 xs:mb-3 leading-tight relative z-10 px-1 break-words">
+        <h3 className="text-white font-bold text-xs xs:text-sm sm:text-lg text-center mb-1 leading-tight relative z-10 px-1 break-words">
           {trail.title}
         </h3>
+        
+        {/* Subtítulo */}
+        <p className="text-white/90 font-semibold text-[10px] xs:text-xs text-center mb-2 xs:mb-3 uppercase tracking-wide relative z-10">
+          Concluído ✓
+        </p>
         
         {/* Check Verde */}
         <div className="mb-2 xs:mb-3 flex-grow flex items-center justify-center relative z-10 min-h-[40px]">
@@ -238,9 +248,14 @@ const TrailCard = ({
       </div>
       
       {/* Título */}
-      <h3 className="text-white font-bold text-xs xs:text-sm sm:text-lg text-center mb-2 xs:mb-3 leading-tight relative z-10 px-1 break-words">
+      <h3 className="text-white font-bold text-xs xs:text-sm sm:text-lg text-center mb-1 leading-tight relative z-10 px-1 break-words">
         {trail.title}
       </h3>
+      
+      {/* Subtítulo */}
+      <p className="text-white/90 font-semibold text-[10px] xs:text-xs text-center mb-2 xs:mb-3 uppercase tracking-wide relative z-10">
+        {isPulsing ? 'Próxima trilha' : 'Em andamento'}
+      </p>
       
       {/* Progress Bar */}
       <div className="mb-2 xs:mb-3 flex-grow relative z-10 min-h-[40px] flex flex-col justify-center">
