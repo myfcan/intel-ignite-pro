@@ -44,9 +44,9 @@ const TrailCard = ({
   // CARD BLOQUEADO - TONS CLAROS PARA INDICAR DESATIVADO
   if (isLocked) {
     return (
-      <div className="relative rounded-2xl p-5 border h-[320px] flex flex-col"
+      <div className="relative rounded-2xl p-5 border h-[320px] flex flex-col backdrop-blur-sm"
            style={{
-             background: 'linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%)',
+             background: 'linear-gradient(135deg, rgba(250, 250, 250, 0.7) 0%, rgba(245, 245, 245, 0.7) 100%)',
              borderColor: 'rgba(229, 231, 235, 0.8)',
            }}>
         {/* Ícone de Bloqueio */}
