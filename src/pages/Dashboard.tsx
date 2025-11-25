@@ -235,7 +235,7 @@ const Dashboard = () => {
         />
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 overflow-hidden">
         
         {/* Admin Access Button */}
         <div className="flex justify-end mb-4">
@@ -252,7 +252,7 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden transition-all duration-300"
+          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden transition-all duration-300"
           style={{
             background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
             border: '1px solid rgba(131, 123, 255, 0.3)',
@@ -291,23 +291,23 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-purple-200 text-xs sm:text-sm uppercase tracking-wider mb-2 font-semibold"
+              className="text-purple-200 text-[10px] xs:text-xs sm:text-sm uppercase tracking-wider mb-1 sm:mb-2 font-semibold"
             >
               BEM-VINDO DE VOLTA
             </motion.p>
             
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 flex-wrap">
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-2xl sm:text-3xl md:text-4xl font-bold text-white"
+                className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white break-words"
               >
                 Olá, {user?.name}
               </motion.h1>
               
               <motion.span
-                className="text-2xl sm:text-3xl md:text-4xl"
+                className="text-xl xs:text-2xl sm:text-3xl md:text-4xl flex-shrink-0"
                 animate={{ 
                   rotate: [0, 15, -15, 15, -15, 0],
                 }}
@@ -326,7 +326,7 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-purple-100 text-sm sm:text-base md:text-lg"
+              className="text-purple-100 text-xs xs:text-sm sm:text-base md:text-lg leading-snug"
             >
               Comece sua jornada de aprendizado em Inteligência Artificial
             </motion.p>
@@ -334,9 +334,9 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Stats Cards - NOVO DESIGN */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
           {/* Sequência */}
-          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -356,16 +356,16 @@ const Dashboard = () => {
                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
                    style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
-                <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <Flame className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.streak_days || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
                   Dias de sequência
                 </p>
               </div>
@@ -373,7 +373,7 @@ const Dashboard = () => {
           </div>
 
           {/* Pontos */}
-          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -393,16 +393,16 @@ const Dashboard = () => {
                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
                    style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
-                <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <Trophy className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.total_points || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
                   Pontos totais
                 </p>
               </div>
@@ -410,7 +410,7 @@ const Dashboard = () => {
           </div>
 
           {/* Aulas */}
-          <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -430,16 +430,16 @@ const Dashboard = () => {
                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 rounded-lg xs:rounded-xl flex items-center justify-center flex-shrink-0"
                    style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
-                <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <BookOpen className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="min-w-0">
+                <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.total_lessons_completed || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
                   Aulas completas
                 </p>
               </div>
@@ -448,9 +448,9 @@ const Dashboard = () => {
         </div>
 
         {/* Trilhas Section - GRID MODERNO */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 px-2 sm:px-0">Suas Trilhas</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 p-5">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-1 sm:px-0">Suas Trilhas</h2>
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 p-2 xs:p-3 sm:p-5">
             {trails.map((trail, index) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
