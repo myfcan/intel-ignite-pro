@@ -27,7 +27,7 @@ export const GamificationHeader: React.FC<GamificationHeaderProps> = ({
     <div 
       className="relative overflow-hidden border-b transition-all duration-300"
       style={{
-        background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
+        background: 'linear-gradient(135deg, #6CB1FF 0%, #6CB1FF 50%, #EC4899 100%)',
         borderColor: 'rgba(139, 92, 246, 0.3)',
       }}
     >
