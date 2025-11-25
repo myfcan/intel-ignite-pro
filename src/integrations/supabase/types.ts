@@ -658,6 +658,36 @@ export type Database = {
           },
         ]
       }
+      user_guide_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          guide_id: string
+          id: string
+          started_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          guide_id: string
+          id?: string
+          started_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          guide_id?: string
+          id?: string
+          started_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding_answers: {
         Row: {
           answer_value: string
