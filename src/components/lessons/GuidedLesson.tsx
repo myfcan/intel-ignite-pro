@@ -315,9 +315,39 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
     
     console.log('🎮 [PLAYGROUND] ✅ ATIVANDO...');
     
-    // Pausar áudio
-    audio.pause();
-    setIsPlaying(false);
+    // ⏱️ DELAY: Esperar a palavra completar antes de pausar
+    // Se temos wordTimestamps, calcular quanto tempo falta para última palavra terminar
+    let pauseDelay = 0.5; // default: 0.5s
+    
+    if (wordTimestamps && wordTimestamps.length > 0) {
+      const currentTime = audio.currentTime;
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig);
+      
+      if (playgroundSectionIndex !== -1) {
+        const playgroundSection = lessonData.sections[playgroundSectionIndex];
+        const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+        const nextSectionTimestamp = nextSection?.timestamp || Infinity;
+        
+        const palavrasDaSecao = wordTimestamps.filter(w => 
+          w.start >= playgroundSection.timestamp && 
+          w.start < nextSectionTimestamp
+        );
+        
+        const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
+        
+        if (ultimaPalavra && ultimaPalavra.end > currentTime) {
+          pauseDelay = (ultimaPalavra.end - currentTime) + 0.3; // tempo até fim + 0.3s buffer
+          console.log(`⏱️ [PLAYGROUND-PAUSE-DELAY] Palavra "${ultimaPalavra.word}" termina em ${ultimaPalavra.end}s | currentTime=${currentTime.toFixed(2)}s | delay=${pauseDelay.toFixed(2)}s`);
+        }
+      }
+    }
+    
+    // Pausar áudio DEPOIS da palavra completar
+    setTimeout(() => {
+      audio.pause();
+      setIsPlaying(false);
+      console.log(`⏸️ [PLAYGROUND-PAUSED] Áudio pausado após delay de ${pauseDelay.toFixed(2)}s`);
+    }, pauseDelay * 1000);
     
     // Marcar como triggered
     setPlaygroundTriggered(true);
