@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { TrailBand } from "@/components/TrailBand";
@@ -531,12 +531,7 @@ const Dashboard = () => {
                    backgroundPosition: 'center, 0 0',
                    borderColor: 'rgba(99, 102, 241, 0.3)',
                  }}>
-              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Bot className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4 flex-shrink-0" />
               <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 break-words">AI Playground</h3>
               <p className="text-gray-600 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2">
                 Experimente modelos de IA em tempo real. Teste prompts e veja os resultados instantaneamente.
