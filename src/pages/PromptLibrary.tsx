@@ -91,7 +91,7 @@ export default function PromptLibrary() {
                }}>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl flex items-center justify-center"
-                   style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+                   style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}>
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <div>
@@ -212,7 +212,7 @@ export default function PromptLibrary() {
         </div>
 
         {/* How to use */}
-        <div className="mt-12 rounded-2xl p-8 text-white shadow-xl" style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
+        <div className="mt-12 rounded-2xl p-8 text-white shadow-xl" style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}>
           <h2 className="text-2xl font-bold mb-4">Como usar os prompts?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>

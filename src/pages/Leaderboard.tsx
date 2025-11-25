@@ -168,7 +168,7 @@ export default function Leaderboard() {
           >
             <Card className="p-6 text-white border-0 relative overflow-hidden"
                   style={{
-                    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                    background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
                   }}>
               <div className="flex items-center justify-between">
                 <div>

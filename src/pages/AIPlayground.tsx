@@ -43,7 +43,7 @@ export default function AIPlayground() {
           <div className="mb-8">
             <div className="rounded-2xl p-8 text-white relative overflow-hidden"
                  style={{
-                   background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                   background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
                  }}>
             <div className="flex items-start gap-6">
               <div className="flex-shrink-0">
