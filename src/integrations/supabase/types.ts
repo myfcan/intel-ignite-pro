@@ -990,10 +990,12 @@ export type Database = {
       users: {
         Row: {
           age: number | null
+          coins: number | null
           created_at: string | null
           daily_interaction_limit: number | null
           daily_time: Database["public"]["Enums"]["daily_time_type"] | null
           email: string
+          gamification_updated_at: string | null
           id: string
           interactions_used_today: number | null
           last_activity_date: string | null
@@ -1005,7 +1007,9 @@ export type Database = {
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
+          patent_level: number | null
           plan: Database["public"]["Enums"]["plan_type"] | null
+          power_score: number | null
           profession: string | null
           streak_days: number | null
           total_lessons_completed: number | null
@@ -1014,10 +1018,12 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           email: string
+          gamification_updated_at?: string | null
           id: string
           interactions_used_today?: number | null
           last_activity_date?: string | null
@@ -1029,7 +1035,9 @@ export type Database = {
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          patent_level?: number | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          power_score?: number | null
           profession?: string | null
           streak_days?: number | null
           total_lessons_completed?: number | null
@@ -1038,10 +1046,12 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           email?: string
+          gamification_updated_at?: string | null
           id?: string
           interactions_used_today?: number | null
           last_activity_date?: string | null
@@ -1053,7 +1063,9 @@ export type Database = {
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          patent_level?: number | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          power_score?: number | null
           profession?: string | null
           streak_days?: number | null
           total_lessons_completed?: number | null
