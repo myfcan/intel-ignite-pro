@@ -127,6 +127,102 @@ Forneça:
       difficulty: 'beginner',
       isPremium: false,
       isFeatured: true
+    },
+    {
+      id: 'email-professional',
+      categoryId: 'free',
+      title: 'Gerador de Email Profissional',
+      description: 'Escreva emails profissionais para qualquer situação',
+      template: `Escreva email profissional para {situation}:
+
+Para: {recipient}
+Tom: {tone}
+Objetivo: {goal}
+
+Forneça:
+1. Assunto persuasivo (3 opções)
+2. Corpo do email
+3. Call-to-action claro
+4. Dicas de quando enviar
+5. Follow-up sugerido se não responder`,
+      variables: [
+        { name: 'situation', label: 'Situação', placeholder: 'Ex: Proposta comercial, networking', type: 'text', required: true },
+        { name: 'recipient', label: 'Destinatário', placeholder: 'Ex: Cliente potencial, recrutador', type: 'text', required: true },
+        { name: 'tone', label: 'Tom', placeholder: 'Formal/Amigável/Persuasivo', type: 'select', options: ['Formal', 'Amigável', 'Persuasivo'], required: true },
+        { name: 'goal', label: 'Objetivo', placeholder: 'Ex: Marcar reunião, fechar venda', type: 'text', required: true }
+      ],
+      examples: [{
+        title: 'Cold email vendas',
+        input: { situation: 'Primeiro contato vendas', recipient: 'Dono de e-commerce', tone: 'Amigável', goal: 'Marcar call de 15 min' },
+        output: 'Assunto: Ideia rápida para aumentar suas vendas\n\nOlá {Nome},\n\nNotei que...'
+      }],
+      tags: ['email', 'comunicação', 'profissional', 'vendas'],
+      difficulty: 'beginner',
+      isPremium: false
+    },
+    {
+      id: 'presentation-outline',
+      categoryId: 'free',
+      title: 'Estrutura de Apresentação',
+      description: 'Crie apresentações impactantes e persuasivas',
+      template: `Crie estrutura de apresentação sobre {topic} para {audience} em {duration} minutos:
+
+Objetivo: {goal}
+
+Forneça:
+1. Abertura impactante
+2. Estrutura de slides (títulos + conteúdo)
+3. Storytelling e exemplos
+4. Call-to-action final
+5. Dicas de apresentação
+6. Perguntas esperadas (Q&A)`,
+      variables: [
+        { name: 'topic', label: 'Tema', placeholder: 'Ex: Produto novo, projeto', type: 'text', required: true },
+        { name: 'audience', label: 'Audiência', placeholder: 'Ex: Investidores, equipe', type: 'text', required: true },
+        { name: 'duration', label: 'Duração', placeholder: 'Ex: 10, 20, 30', type: 'text', required: true },
+        { name: 'goal', label: 'Objetivo', placeholder: 'Ex: Aprovar orçamento, inspirar', type: 'text', required: true }
+      ],
+      examples: [{
+        title: 'Pitch de startup',
+        input: { topic: 'Novo app de delivery', audience: 'Investidores', duration: '15', goal: 'Conseguir seed funding' },
+        output: 'Slide 1: O problema (1 min)\nSlide 2: Nossa solução (2 min)\nSlide 3: Tração (2 min)...'
+      }],
+      tags: ['apresentação', 'pitch', 'slides', 'comunicação'],
+      difficulty: 'intermediate',
+      isPremium: false
+    },
+    {
+      id: 'meeting-agenda',
+      categoryId: 'free',
+      title: 'Agenda de Reunião Produtiva',
+      description: 'Planeje reuniões eficientes que geram resultados',
+      template: `Crie agenda para reunião sobre {topic} com duração de {duration}:
+
+Participantes: {participants}
+Objetivo: {goal}
+
+Inclua:
+1. Pauta estruturada (timeline)
+2. Pontos de discussão
+3. Decisões necessárias
+4. Responsáveis por ação
+5. Próximos passos
+6. Template de ata`,
+      variables: [
+        { name: 'topic', label: 'Tema da reunião', placeholder: 'Ex: Planejamento trimestral', type: 'text', required: true },
+        { name: 'duration', label: 'Duração', placeholder: 'Ex: 30min, 1h', type: 'text', required: true },
+        { name: 'participants', label: 'Participantes', placeholder: 'Ex: Equipe, diretoria', type: 'text', required: true },
+        { name: 'goal', label: 'Objetivo', placeholder: 'Ex: Definir metas, alinhar projeto', type: 'text', required: true }
+      ],
+      examples: [{
+        title: 'Reunião de projeto',
+        input: { topic: 'Kickoff novo projeto', duration: '1h', participants: 'Equipe de 5', goal: 'Alinhar escopo e deadlines' },
+        output: '0-10min: Apresentação do projeto\n10-30min: Definição de escopo\n30-50min: Timeline e responsáveis...'
+      }],
+      tags: ['reunião', 'produtividade', 'gestão', 'planejamento'],
+      difficulty: 'beginner',
+      isPremium: false,
+      isFeatured: true
     }
   ]
 };
