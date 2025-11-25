@@ -155,7 +155,22 @@ export default function AdminPipelineCreateBatch() {
         // ✅ Campo "model" agora é OPCIONAL (será preenchido pelo botão selecionado)
         if (!lesson.title) missingFields.push('title');
         if (lesson.orderIndex === undefined) missingFields.push('orderIndex');
-        if (!lesson.sections || lesson.sections.length === 0) missingFields.push('sections');
+
+        // Validação condicional por modelo
+        const modelType = (lesson.model || selectedTemplate)?.toLowerCase();
+
+        if (modelType === 'v3') {
+          // V3 exige v3Data
+          if (!lesson.v3Data || !lesson.v3Data.audioText || !lesson.v3Data.slides || lesson.v3Data.slides.length === 0) {
+            missingFields.push('v3Data (audioText e slides obrigatórios)');
+          }
+        } else {
+          // V1, V2 exigem sections
+          if (!lesson.sections || lesson.sections.length === 0) {
+            missingFields.push('sections');
+          }
+        }
+
         if (!lesson.exercises) missingFields.push('exercises');
 
         if (missingFields.length > 0) {
@@ -176,15 +191,21 @@ export default function AdminPipelineCreateBatch() {
 
         // ✅ Sobrescrever trackId e trackName com a trail padrão
         const convertedLesson: PipelineInput = {
-          model: (lesson.model || selectedTemplate).toLowerCase() as 'v1' | 'v2' | 'v3', // ✅ Usa botão se não tiver no JSON
+          model: modelType as 'v1' | 'v2' | 'v3',
           title: lesson.title,
           trackId: defaultTrail.id,  // Auto-determinado
           trackName: defaultTrail.title,  // Auto-determinado
           orderIndex: lesson.orderIndex,
           estimatedTimeMinutes: lesson.estimatedTimeMinutes,
-          sections: lesson.sections.map(convertToLessonSection),
           exercises: transformedExercises
         };
+
+        // Adicionar sections OU v3Data dependendo do modelo
+        if (modelType === 'v3') {
+          convertedLesson.v3Data = lesson.v3Data;
+        } else {
+          convertedLesson.sections = lesson.sections.map(convertToLessonSection);
+        }
 
         // OPÇÃO C: Adicionar playground mid-lesson (se fornecido no JSON)
         // - Se tiver realConfig customizado → usa o customizado (Trilha 02)
