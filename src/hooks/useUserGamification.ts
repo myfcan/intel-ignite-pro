@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { RewardCelebration } from '@/components/gamification/RewardCelebration';
 
 export type UserGamificationStats = {
   powerScore: number;
@@ -18,6 +19,8 @@ const PATENT_NAMES: Record<number, string> = {
 export function useUserGamification() {
   const [stats, setStats] = useState<UserGamificationStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [prevPatentLevel, setPrevPatentLevel] = useState<number | null>(null);
+  const [showPatentCelebration, setShowPatentCelebration] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -31,23 +34,37 @@ export function useUserGamification() {
         .single();
 
       if (data) {
-        setStats({
+        const newStats = {
           powerScore: data.power_score || 0,
           coins: data.coins || 0,
           patentLevel: data.patent_level || 0,
           patentName: PATENT_NAMES[data.patent_level || 0],
-        });
+        };
+
+        // Detectar subida de patente
+        if (prevPatentLevel !== null && data.patent_level > prevPatentLevel) {
+          setShowPatentCelebration(true);
+          setTimeout(() => setShowPatentCelebration(false), 3500);
+        }
+        
+        setPrevPatentLevel(data.patent_level || 0);
+        setStats(newStats);
       }
     } catch (err) {
       console.error('[useUserGamification] Error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [prevPatentLevel]);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
-  return { stats, isLoading, refresh: fetchStats };
+  return { 
+    stats, 
+    isLoading, 
+    refresh: fetchStats,
+    showPatentCelebration
+  };
 }
