@@ -166,7 +166,7 @@ const TrailDetail = () => {
         {/* Card de Header - Paleta Principal com Degradê */}
         <div className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
              style={{
-               background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+               background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
                borderColor: 'rgba(255, 255, 255, 0.3)'
              }}>
           

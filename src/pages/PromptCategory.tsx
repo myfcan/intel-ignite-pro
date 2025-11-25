@@ -237,7 +237,7 @@ export default function PromptCategory() {
                     handleCopyPrompt(prompt);
                   }}
                   className="px-4 py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
-                  style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}
+                  style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
                 >
                   {copiedPrompt === prompt.id ? (
                     <>
