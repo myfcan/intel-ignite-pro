@@ -241,25 +241,25 @@ const Dashboard = () => {
           transition={{ duration: 0.6 }}
           className="relative rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 overflow-hidden transition-all duration-300"
           style={{
-            background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
+            background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+            border: '1px solid rgba(131, 123, 255, 0.3)',
             boxShadow: `
-              0 4px 20px rgba(139, 92, 246, 0.2),
-              0 0 40px rgba(139, 92, 246, 0.1)
+              0 4px 20px rgba(131, 123, 255, 0.2),
+              0 0 40px rgba(131, 123, 255, 0.1)
             `
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.6)';
+            e.currentTarget.style.border = '1px solid rgba(131, 123, 255, 0.6)';
             e.currentTarget.style.boxShadow = `
-              0 8px 30px rgba(139, 92, 246, 0.3),
-              0 0 60px rgba(139, 92, 246, 0.15)
+              0 8px 30px rgba(131, 123, 255, 0.3),
+              0 0 60px rgba(131, 123, 255, 0.15)
             `;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.3)';
+            e.currentTarget.style.border = '1px solid rgba(131, 123, 255, 0.3)';
             e.currentTarget.style.boxShadow = `
-              0 4px 20px rgba(139, 92, 246, 0.2),
-              0 0 40px rgba(139, 92, 246, 0.1)
+              0 4px 20px rgba(131, 123, 255, 0.2),
+              0 0 40px rgba(131, 123, 255, 0.1)
             `;
           }}
         >
