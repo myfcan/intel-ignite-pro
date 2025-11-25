@@ -163,10 +163,10 @@ const TrailCard = ({
           </span>
         </div>
         
-        {/* Botão CTA */}
-        <button className="w-full py-3 bg-white text-green-600 font-semibold rounded-xl hover:bg-white/90 transition-all relative z-10">
-          Revisar
-        </button>
+      {/* Botão CTA */}
+      <button className="w-full py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-all relative z-10">
+        Revisar
+      </button>
       </div>
     );
   }
@@ -258,7 +258,7 @@ const TrailCard = ({
       </div>
       
       {/* Botão CTA */}
-      <button className="w-full py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 transition-all relative z-10">
+      <button className="w-full py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-all relative z-10">
         Continuar
       </button>
     </div>
