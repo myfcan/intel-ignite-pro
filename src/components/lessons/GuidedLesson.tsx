@@ -1591,7 +1591,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                 {Math.round(progress)}%
               </span>
               <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }} />
+                <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
             <button 
@@ -1599,12 +1599,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               disabled={!lessonData.exercisesConfig && !lessonData.finalPlaygroundConfig}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0 ${
                 lessonData.exercisesConfig || lessonData.finalPlaygroundConfig
-                  ? 'cursor-pointer'
+                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 cursor-pointer'
                   : 'bg-gray-300 cursor-not-allowed opacity-50'
               }`}
-              style={lessonData.exercisesConfig || lessonData.finalPlaygroundConfig 
-                ? {backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)'}
-                : undefined}
             >
               <Sparkles className="w-3 h-3 inline mr-1" />
               <span className="hidden sm:inline">Exercícios</span>
@@ -1742,12 +1739,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
                           currentSection === originalIndex
-                            ? 'text-white'
+                            ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
                             : 'bg-slate-100 text-slate-500'
-                        } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}
-                        style={currentSection === originalIndex 
-                          ? {backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)', boxShadow: '0 10px 30px rgba(139, 92, 246, 0.6)'}
-                          : undefined}>
+                        } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl shadow-cyan-400/60 rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}>
                           {originalIndex + 1}
                         </div>
                         {currentSection === originalIndex && (
@@ -1837,19 +1831,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                 </button>
                 <button 
                   disabled={showPlaygroundMid || showEndCard}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
+                  className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
                   }`}
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                    boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.3)';
-                  }}
                   onClick={() => {
                     togglePlayPause();
                     // Remover pulse ao clicar
@@ -1874,7 +1858,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                   <>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group min-w-0" onClick={handleProgressBarClick}>
-                      <div className="h-full transition-all relative" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
@@ -1888,7 +1872,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       Seção {currentSection + 1} de {lessonData.sections.length}
                     </span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden group min-w-0">
-                      <div className="h-full transition-all relative" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
@@ -1900,20 +1884,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-white font-bold text-xs transition-all min-w-[55px] flex-shrink-0">
                 {playbackSpeed}x
               </button>
-              <button 
-                onClick={handleContinueClick} 
-                className="px-5 py-2 rounded-xl text-white font-semibold text-sm shadow-lg transition-all whitespace-nowrap hover:scale-105 flex-shrink-0"
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                  boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.3)';
-                }}
-              >
+              <button onClick={handleContinueClick} className="px-5 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all whitespace-nowrap hover:scale-105 flex-shrink-0">
                 Continuar
               </button>
             </div>
@@ -1924,7 +1895,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                   <>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
-                      <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }} />
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
                     </div>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
                   </>
@@ -1936,7 +1907,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       {currentSection + 1}/{lessonData.sections.length}
                     </span>
                     <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden">
-                      <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)' }} />
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
                     </div>
                     <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
                   </>
@@ -1948,13 +1919,9 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                     <SkipBack size={16} />
                   </button>
                   <button 
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg ${
-                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
+                    className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 ${
+                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
                     }`}
-                    style={{
-                      backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                      boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
-                    }}
                     onClick={() => {
                       togglePlayPause();
                       if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
@@ -1969,11 +1936,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                     {playbackSpeed}x
                   </button>
                 </div>
-                <button 
-                  onClick={handleContinueClick} 
-                  className="px-4 py-2 rounded-lg text-white font-semibold text-sm"
-                  style={{backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)'}}
-                >
+                <button onClick={handleContinueClick} className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm">
                   Continuar
                 </button>
               </div>
@@ -2110,8 +2073,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                 handleGoToExercises();
               }}
               size="lg"
-              className="w-full text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
-              style={{backgroundImage: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)'}}
+              className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
             >
               🎯 Ir para Exercícios
             </Button>
