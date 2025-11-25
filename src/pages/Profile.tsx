@@ -454,40 +454,67 @@ export default function Profile() {
             </Card>
 
             {/* Upsell */}
-            <Card 
-              className="p-6 border-primary/30 dark:border-primary/40"
+            <div 
+              className="rounded-2xl p-6 relative overflow-hidden transition-all"
               style={{
-                background: 'var(--card)',
-                backgroundImage: 'linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.1) 50%, hsl(var(--primary) / 0.05) 100%)',
-                borderColor: 'hsl(var(--primary) / 0.3)',
+                background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+                backgroundImage: `
+                  linear-gradient(135deg, #1F2937 0%, #111827 100%),
+                  radial-gradient(circle, rgba(139, 92, 246, 0.15) 2px, transparent 2px)
+                `,
+                backgroundSize: 'cover, 20px 20px',
+                backgroundPosition: 'center, 0 0',
+                borderColor: 'rgba(139, 92, 246, 0.3)',
+                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)',
+                border: '1px solid rgba(139, 92, 246, 0.3)'
               }}
             >
-              <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
+              <h3 className="text-xl font-bold text-gray-100 mb-2 flex items-center gap-2">
                 🚀 Potencialize seus Resultados
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-gray-400 mb-4">
                 Descubra produtos exclusivos para acelerar sua jornada com IA
               </p>
               
               <div className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start bg-background hover:bg-primary/10 hover:border-primary/50 transition-all group"
+                <button 
+                  className="w-full text-left px-4 py-3 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 group"
+                  style={{
+                    background: 'rgba(139, 92, 246, 0.2)',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    color: '#A78BFA'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                  }}
                   onClick={() => navigate('/prompts')}
                 >
                   <span className="group-hover:scale-110 transition-transform">⚡</span>
-                  <span className="ml-2">Super Prompts Premium</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start bg-background hover:bg-primary/10 hover:border-primary/50 transition-all group"
+                  <span>Super Prompts Premium</span>
+                </button>
+                <button 
+                  className="w-full text-left px-4 py-3 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 group"
+                  style={{
+                    background: 'rgba(139, 92, 246, 0.2)',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    color: '#A78BFA'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                  }}
                   onClick={() => navigate('/curso-exclusivo')}
                 >
                   <span className="group-hover:scale-110 transition-transform">💰</span>
-                  <span className="ml-2">Curso Renda Extra com IA</span>
-                </Button>
+                  <span>Curso Renda Extra com IA</span>
+                </button>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
