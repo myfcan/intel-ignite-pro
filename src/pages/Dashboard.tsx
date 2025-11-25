@@ -11,6 +11,8 @@ import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { motion } from "framer-motion";
+import { GamificationHeader } from "@/components/gamification/GamificationHeader";
+import { useUserGamification } from "@/hooks/useUserGamification";
 
 interface User {
   id: string;
@@ -218,9 +220,21 @@ const Dashboard = () => {
     'Renda Extra com IA': 'from-primary to-secondary',
   };
 
+  const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
+
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       <DashboardHeader user={user!} />
+      
+      {/* Gamification Header */}
+      {!gamificationLoading && gamificationStats && (
+        <GamificationHeader
+          powerScore={gamificationStats.powerScore}
+          coins={gamificationStats.coins}
+          patentLevel={gamificationStats.patentLevel}
+          patentName={gamificationStats.patentName}
+        />
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
