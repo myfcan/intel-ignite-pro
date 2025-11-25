@@ -252,7 +252,7 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden transition-all duration-300"
+          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden transition-all duration-300 mx-2 xs:mx-0"
           style={{
             background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
             border: '1px solid rgba(131, 123, 255, 0.3)',
@@ -334,9 +334,9 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Stats Cards - NOVO DESIGN */}
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
           {/* Sequência */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border overflow-hidden"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -361,11 +361,11 @@ const Dashboard = () => {
                    style={{background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)'}}>
                 <Flame className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.streak_days || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
                   Dias de sequência
                 </p>
               </div>
@@ -373,7 +373,7 @@ const Dashboard = () => {
           </div>
 
           {/* Pontos */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border overflow-hidden"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -398,11 +398,11 @@ const Dashboard = () => {
                    style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}>
                 <Trophy className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.total_points || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
                   Pontos totais
                 </p>
               </div>
@@ -410,7 +410,7 @@ const Dashboard = () => {
           </div>
 
           {/* Aulas */}
-          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border"
+          <div className="rounded-lg sm:rounded-xl p-3 xs:p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border overflow-hidden"
                style={{
                  background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
@@ -435,11 +435,11 @@ const Dashboard = () => {
                    style={{background: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)'}}>
                 <BookOpen className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0 overflow-hidden">
                 <p className="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   {user?.total_lessons_completed || 0}
                 </p>
-                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-tight">
+                <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 leading-snug break-words">
                   Aulas completas
                 </p>
               </div>
@@ -449,8 +449,8 @@ const Dashboard = () => {
 
         {/* Trilhas Section - GRID MODERNO */}
         <div className="mb-4 sm:mb-6 md:mb-8">
-          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-1 sm:px-0">Suas Trilhas</h2>
-          <div className="grid grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 px-1 xs:px-2 sm:px-0">
+          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Suas Trilhas</h2>
+          <div className="grid grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 px-2 xs:px-1 sm:px-0">
             {trails.map((trail, index) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
@@ -483,7 +483,7 @@ const Dashboard = () => {
         </div>
 
         {/* Feature Cards - NOVO DESIGN */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-2 xs:px-0">
           {/* AI Playground */}
           <div onClick={() => navigate('/ai-playground')}
                className="cursor-pointer relative group">
@@ -593,8 +593,8 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions - NOVO DESIGN */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">Ações Rápidas</h2>
+        <div className="mb-6 sm:mb-8 px-2 xs:px-0">
+          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 px-2 xs:px-1 sm:px-0">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div onClick={() => navigate('/leaderboard')}
                  className="rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer border"
@@ -636,7 +636,7 @@ const Dashboard = () => {
 
         {/* Missões Diárias Section */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 px-2 sm:px-0">Missões Diárias</h2>
+          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Missões Diárias</h2>
           <MissoesDiarias />
         </div>
 
