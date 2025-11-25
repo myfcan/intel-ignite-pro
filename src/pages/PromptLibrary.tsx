@@ -3,30 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { allPromptCategories } from '@/data/prompts';
+import { mainPromptCategories } from '@/data/prompts';
 import {
   Sparkles,
-  Mail,
-  PenTool,
-  TrendingUp,
-  BookOpen,
-  Video,
+  DollarSign,
+  Gift,
+  Home,
   Briefcase,
-  Share2,
-  Search as SearchIcon,
-  ArrowRight,
   ArrowLeft
 } from 'lucide-react';
 
 const categoryIcons: Record<string, any> = {
-  email: Mail,
-  blog: PenTool,
-  marketing: TrendingUp,
-  study: BookOpen,
-  content: Video,
-  business: Briefcase,
-  social: Share2,
-  seo: SearchIcon
+  'extra-income': DollarSign,
+  'free': Gift,
+  'daily-life': Home,
+  'business': Briefcase
 };
 
 /**
@@ -39,8 +30,8 @@ export default function PromptLibrary() {
   const navigate = useNavigate();
 
   // Calcular estatísticas
-  const totalPrompts = allPromptCategories.reduce((sum, cat) => sum + cat.prompts.length, 0);
-  const freePrompts = allPromptCategories.reduce(
+  const totalPrompts = mainPromptCategories.reduce((sum, cat) => sum + cat.prompts.length, 0);
+  const freePrompts = mainPromptCategories.reduce(
     (sum, cat) => sum + cat.prompts.filter(p => !p.isPremium).length,
     0
   );
@@ -139,14 +130,14 @@ export default function PromptLibrary() {
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">{allPromptCategories.length}</p>
+                <p className="text-3xl font-bold text-gray-900">{mainPromptCategories.length}</p>
                 <p className="text-gray-600 text-sm">Categorias</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Categories Grid */}
+        {/* Categories Grid - Nova Organização Profissional */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {allPromptCategories.map((category) => {
             const Icon = categoryIcons[category.id] || Sparkles;
