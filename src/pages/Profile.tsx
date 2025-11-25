@@ -454,7 +454,14 @@ export default function Profile() {
             </Card>
 
             {/* Upsell */}
-            <Card className="p-6 border-primary/30 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 dark:border-primary/40">
+            <Card 
+              className="p-6 border-primary/30 dark:border-primary/40"
+              style={{
+                background: 'var(--card)',
+                backgroundImage: 'linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.1) 50%, hsl(var(--primary) / 0.05) 100%)',
+                borderColor: 'hsl(var(--primary) / 0.3)',
+              }}
+            >
               <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
                 🚀 Potencialize seus Resultados
               </h3>
