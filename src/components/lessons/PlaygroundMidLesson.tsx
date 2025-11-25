@@ -326,15 +326,15 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                     className={cn(
                       "absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all",
                       validationState.isValid && !isGeneratingAI
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg animate-pulse"
+                        ? "bg-primary hover:bg-primary/90 shadow-lg animate-pulse"
                         : "bg-muted text-muted-foreground cursor-not-allowed"
                     )}
                     aria-label="Enviar prompt"
                   >
                     {isGeneratingAI ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
                     ) : (
-                      <ArrowUp className="w-4 h-4" />
+                      <ArrowUp className="w-4 h-4 text-white" />
                     )}
                   </button>
                 </div>
