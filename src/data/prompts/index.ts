@@ -6,16 +6,30 @@ import { contentPromptsCategory } from './content-prompts';
 import { businessPromptsCategory } from './business-prompts';
 import { socialPromptsCategory } from './social-prompts';
 import { seoPromptsCategory } from './seo-prompts';
+import { extraIncomePromptsCategory } from './extra-income-prompts';
+import { dailyLifePromptsCategory } from './daily-life-prompts';
+import { freePromptsCategory } from './free-prompts';
 import { PromptCategory, Prompt } from '../../types/prompt';
 
-// Export all prompt categories
+// NOVA ORGANIZAÇÃO PROFISSIONAL - 4 Categorias Principais
+export const mainPromptCategories: PromptCategory[] = [
+  extraIncomePromptsCategory,
+  freePromptsCategory,
+  dailyLifePromptsCategory,
+  businessPromptsCategory
+];
+
+// Export all prompt categories (legado + novos)
 export const allPromptCategories: PromptCategory[] = [
+  extraIncomePromptsCategory,
+  freePromptsCategory,
+  dailyLifePromptsCategory,
+  businessPromptsCategory,
   emailPromptsCategory,
   blogPromptsCategory,
   marketingPromptsCategory,
   studyPromptsCategory,
   contentPromptsCategory,
-  businessPromptsCategory,
   socialPromptsCategory,
   seoPromptsCategory
 ];
