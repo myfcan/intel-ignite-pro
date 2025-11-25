@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import logoAiliv from '@/assets/logo-ailiv.png';
+import logoAiliv from '@/assets/ailiv-logo-new.png';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Menu, User, Trophy, LogOut, ArrowLeft } from 'lucide-react';
@@ -56,7 +56,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
               <img 
                 src={logoAiliv} 
                 alt="Ailiv" 
-                className="h-[56px] md:h-[64px] lg:h-[72px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-8 md:h-9 lg:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
           </div>
