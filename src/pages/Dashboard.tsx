@@ -450,7 +450,7 @@ const Dashboard = () => {
         {/* Trilhas Section - GRID MODERNO */}
         <div className="mb-4 sm:mb-6 md:mb-8">
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-1 sm:px-0">Suas Trilhas</h2>
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 p-2 xs:p-3 sm:p-5">
+          <div className="grid grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 px-1 xs:px-2 sm:px-0">
             {trails.map((trail, index) => {
               const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
