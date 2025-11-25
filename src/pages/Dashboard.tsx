@@ -325,23 +325,23 @@ const Dashboard = () => {
           {/* Sequência */}
           <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-pink-500/30 transition-all border"
                style={{
-                 background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
-                   linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%),
-                   radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px)
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
                  `,
                  backgroundSize: 'cover, 16px 16px',
                  backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(255, 255, 255, 0.3)',
-                 boxShadow: '0 2px 8px rgba(131, 123, 255, 0.2)',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
                }}
                onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 123, 255, 0.3)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.3)';
                }}
                onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(131, 123, 255, 0.2)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
@@ -349,10 +349,10 @@ const Dashboard = () => {
                 <Flame className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {user?.streak_days || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-white/80">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Dias de sequência
                 </p>
               </div>
@@ -362,23 +362,23 @@ const Dashboard = () => {
           {/* Pontos */}
           <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all border"
                style={{
-                 background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
-                   linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%),
-                   radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px)
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
                  `,
                  backgroundSize: 'cover, 16px 16px',
                  backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(255, 255, 255, 0.3)',
-                 boxShadow: '0 2px 8px rgba(131, 123, 255, 0.2)',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
                }}
                onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 123, 255, 0.3)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.1)';
                }}
                onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(131, 123, 255, 0.2)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
@@ -386,10 +386,10 @@ const Dashboard = () => {
                 <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {user?.total_points || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-white/80">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Pontos totais
                 </p>
               </div>
@@ -399,23 +399,23 @@ const Dashboard = () => {
           {/* Aulas */}
           <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-lg hover:shadow-accent/30 transition-all border"
                style={{
-                 background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                  backgroundImage: `
-                   linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%),
-                   radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px)
+                   linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                   radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
                  `,
                  backgroundSize: 'cover, 16px 16px',
                  backgroundPosition: 'center, 0 0',
-                 borderColor: 'rgba(255, 255, 255, 0.3)',
-                 boxShadow: '0 2px 8px rgba(131, 123, 255, 0.2)',
+                 borderColor: 'rgba(139, 92, 246, 0.2)',
+                 boxShadow: '0 2px 8px rgba(139, 92, 246, 0.05)',
                }}
                onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 123, 255, 0.3)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
                }}
                onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(131, 123, 255, 0.2)';
+                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                }}>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center"
@@ -423,10 +423,10 @@ const Dashboard = () => {
                 <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {user?.total_lessons_completed || 0}
                 </p>
-                <p className="text-xs sm:text-sm text-white/80">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Aulas completas
                 </p>
               </div>
@@ -480,26 +480,26 @@ const Dashboard = () => {
             {/* Card content */}
             <div className="relative rounded-2xl p-4 sm:p-6 border-2 transition-all"
                  style={{
-                   background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                    backgroundImage: `
-                     linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%),
-                     radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px)
+                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
                    `,
                    backgroundSize: 'cover, 16px 16px',
                    backgroundPosition: 'center, 0 0',
-                   borderColor: 'rgba(255, 255, 255, 0.3)',
+                   borderColor: 'rgba(99, 102, 241, 0.3)',
                  }}>
-              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">AI Playground</h3>
-              <p className="text-white/80 text-sm sm:text-base mb-3 sm:mb-4">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">AI Playground</h3>
+              <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4">
                 Experimente modelos de IA em tempo real. Teste prompts e veja os resultados instantaneamente.
               </p>
-              <button className="text-white font-semibold flex items-center gap-2 hover:gap-3 transition-all text-sm sm:text-base">
+              <button className="text-indigo-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all text-sm sm:text-base">
                 Começar agora 
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
