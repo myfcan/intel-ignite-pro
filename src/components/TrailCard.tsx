@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Lock, BookOpen, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface TrailCardProps {
@@ -15,9 +15,21 @@ interface TrailCardProps {
   totalLessons?: number;
   status?: 'active' | 'completed' | 'locked';
   gradient: string;
+  estimatedTime?: number; // em minutos
+  isNext?: boolean; // Indicador de "próxima trilha"
 }
 
-const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLessons = 5, status = 'locked', gradient }: TrailCardProps) => {
+const TrailCard = ({ 
+  trail, 
+  Icon, 
+  progress = 0, 
+  completedLessons = 0, 
+  totalLessons = 5, 
+  status = 'locked', 
+  gradient,
+  estimatedTime = 45,
+  isNext = false
+}: TrailCardProps) => {
   const navigate = useNavigate();
   const isLocked = status === 'locked';
   const isActive = status === 'active';
@@ -29,133 +41,182 @@ const TrailCard = ({ trail, Icon, progress = 0, completedLessons = 0, totalLesso
     }
   };
 
-  return (
-    <div 
-      onClick={handleClick}
-      className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 ${!isLocked ? 'hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-      style={{
-        background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-        border: '1px solid rgba(139, 92, 246, 0.3)',
-        boxShadow: `
-          0 0 40px rgba(139, 92, 246, 0.1),
-          0 0 80px rgba(139, 92, 246, 0.05),
-          inset 0 0 60px rgba(139, 92, 246, 0.03)
-        `
-      }}
-      onMouseEnter={(e) => {
-        if (!isLocked) {
-          e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.6)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.3)';
-      }}
-    >
-      {/* Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '20px 20px'
-        }}
-      />
-      
-      {/* Content */}
-      <div className="relative z-10">
-        <div className="flex items-center gap-4 mb-4">
-          <div 
-            className="w-16 h-16 rounded-xl flex items-center justify-center backdrop-blur flex-shrink-0"
-            style={{
-              background: 'rgba(139, 92, 246, 0.2)',
-              border: '1px solid rgba(139, 92, 246, 0.4)'
-            }}
-          >
-            <Icon className="w-8 h-8 text-purple-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-bold text-gray-100 truncate">{trail.title}</h3>
-              {isCompleted && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">
-                  ✓ Completo
-                </span>
-              )}
-              {isActive && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex-shrink-0">
-                  ▶ Ativo
-                </span>
-              )}
-              {isLocked && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30 flex-shrink-0">
-                  🔒 Bloqueado
-                </span>
-              )}
-            </div>
-            <p className="text-gray-400 text-sm line-clamp-2">{trail.description}</p>
+  // CARD BLOQUEADO
+  if (isLocked) {
+    return (
+      <div className="relative bg-gray-800/50 rounded-2xl p-6 border border-gray-700 opacity-60 h-[280px] flex flex-col grayscale">
+        {/* Ícone de Bloqueio */}
+        <div className="absolute top-4 right-4">
+          <Lock className="w-6 h-6 text-gray-500" />
+        </div>
+        
+        {/* Ícone Central */}
+        <div className="flex justify-center mb-4">
+          <div className="w-20 h-20 bg-gray-700/50 rounded-2xl flex items-center justify-center">
+            <Icon className="w-10 h-10 text-gray-600" />
           </div>
         </div>
         
-        {!isLocked && (
-          <>
-            <div className="mb-4">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-400">Progresso</span>
-                <span className="text-purple-400 font-semibold">{completedLessons}/{totalLessons} aulas • {progress}%</span>
-              </div>
-              <div 
-                className="w-full rounded-full h-2 overflow-hidden"
-                style={{
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  border: '1px solid rgba(139, 92, 246, 0.2)'
-                }}
-              >
-                <div 
-                  className="h-full rounded-full relative transition-all duration-500"
-                  style={{
-                    width: `${progress}%`,
-                    background: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                    boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)'
-                  }}
-                />
-              </div>
-            </div>
-          </>
-        )}
+        {/* Título */}
+        <h3 className="text-gray-400 font-bold text-lg text-center mb-2 leading-tight">
+          {trail.title}
+        </h3>
         
-        {/* Botão Continue ou Ver Trilha */}
-        <button 
-          className="w-full py-3 rounded-xl font-semibold transition-all"
-          disabled={isLocked}
-          style={{
-            background: isLocked ? 'rgba(75, 85, 99, 0.1)' : 'rgba(139, 92, 246, 0.1)',
-            border: isLocked ? '1px solid rgba(75, 85, 99, 0.3)' : '1px solid rgba(139, 92, 246, 0.3)',
-            color: isLocked ? '#6B7280' : '#A78BFA'
-          }}
-          onMouseEnter={(e) => {
-            if (!isLocked) {
-              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isLocked) {
-              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
-            }
-          }}
-        >
-          {isCompleted && '📚 Revisar Trilha →'}
-          {isActive && '▶️ Continuar Aprendendo →'}
-          {isLocked && '🔒 Bloqueado'}
-        </button>
-        
-        {isLocked && trail.order_index > 1 && (
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Complete a trilha anterior primeiro
+        {/* Requisito */}
+        <div className="flex-grow flex items-center justify-center">
+          <p className="text-gray-500 text-sm text-center px-4">
+            Complete a trilha anterior para desbloquear
           </p>
+        </div>
+        
+        {/* Métricas (preview) */}
+        <div className="flex justify-around mb-4 text-gray-600 text-sm">
+          <span className="flex items-center gap-1">
+            <BookOpen className="w-4 h-4" />
+            {totalLessons} aulas
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            {estimatedTime} min
+          </span>
+        </div>
+        
+        {/* Botão Desabilitado */}
+        <button disabled className="w-full py-3 bg-gray-700 text-gray-500 font-semibold rounded-xl cursor-not-allowed">
+          🔒 Bloqueado
+        </button>
+      </div>
+    );
+  }
+
+  // CARD COMPLETO
+  if (isCompleted) {
+    return (
+      <div 
+        onClick={handleClick}
+        className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border border-green-500/30 hover:border-green-500/60 transition-all hover:scale-105 hover:shadow-xl hover:shadow-green-500/20 cursor-pointer h-[280px] flex flex-col"
+      >
+        {/* Badge de Status */}
+        <div className="absolute top-4 right-4">
+          <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-400 rounded-full" />
+            100%
+          </span>
+        </div>
+        
+        {/* Ícone Central */}
+        <div className="flex justify-center mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center backdrop-blur border border-green-500/30">
+            <Icon className="w-10 h-10 text-green-400" />
+          </div>
+        </div>
+        
+        {/* Título */}
+        <h3 className="text-white font-bold text-lg text-center mb-2 leading-tight">
+          {trail.title}
+        </h3>
+        
+        {/* Check Verde */}
+        <div className="mb-4 flex-grow flex items-center justify-center">
+          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center border-2 border-green-400">
+            <span className="text-2xl text-green-400">✓</span>
+          </div>
+        </div>
+        
+        {/* Métricas */}
+        <div className="flex justify-around mb-4 text-gray-400 text-sm">
+          <span className="flex items-center gap-1">
+            <BookOpen className="w-4 h-4" />
+            {totalLessons}/{totalLessons} aulas
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            {estimatedTime} min
+          </span>
+        </div>
+        
+        {/* Botão CTA */}
+        <button className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all">
+          Revisar →
+        </button>
+      </div>
+    );
+  }
+
+  // CARD ATIVO ou PRÓXIMA
+  const isPulsing = isNext && !isActive;
+  
+  return (
+    <div 
+      onClick={handleClick}
+      className={`relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 border hover:scale-105 hover:shadow-xl cursor-pointer h-[280px] flex flex-col ${
+        isPulsing 
+          ? 'border-2 border-purple-400 animate-pulse shadow-lg shadow-purple-500/30' 
+          : 'border-purple-500/30 hover:border-purple-500/60 hover:shadow-purple-500/20'
+      } transition-all`}
+    >
+      {/* Badge de Status */}
+      <div className="absolute top-4 right-4">
+        {isPulsing ? (
+          <span className="px-3 py-1 bg-purple-500/30 text-purple-300 text-xs font-bold rounded-full">
+            PRÓXIMA
+          </span>
+        ) : (
+          <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            ATIVO
+          </span>
         )}
       </div>
+      
+      {/* Indicador de Nova (se PRÓXIMA) */}
+      {isPulsing && (
+        <div className="absolute -top-2 -left-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce">
+            <span className="text-xs font-bold text-white">!</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Ícone Central */}
+      <div className="flex justify-center mb-4">
+        <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center backdrop-blur border border-purple-500/30">
+          <Icon className="w-10 h-10 text-purple-400" />
+        </div>
+      </div>
+      
+      {/* Título */}
+      <h3 className="text-white font-bold text-lg text-center mb-2 leading-tight">
+        {trail.title}
+      </h3>
+      
+      {/* Progress Bar */}
+      <div className="mb-4 flex-grow">
+        <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
+            style={{width: `${progress}%`}} 
+          />
+        </div>
+        <p className="text-center text-purple-400 font-bold mt-2 text-sm">{progress}% completo</p>
+      </div>
+      
+      {/* Métricas */}
+      <div className="flex justify-around mb-4 text-gray-400 text-sm">
+        <span className="flex items-center gap-1">
+          <BookOpen className="w-4 h-4" />
+          {completedLessons}/{totalLessons} aulas
+        </span>
+        <span className="flex items-center gap-1">
+          <Clock className="w-4 h-4" />
+          {estimatedTime} min
+        </span>
+      </div>
+      
+      {/* Botão CTA */}
+      <button className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+        Continuar →
+      </button>
     </div>
   );
 };
