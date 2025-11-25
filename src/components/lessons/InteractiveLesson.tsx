@@ -19,6 +19,9 @@ import { fundamentos04 } from '@/data/lessons/fundamentos-04';
 import { WordTimestamp, ExerciseConfig } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
+import { useUserGamification } from '@/hooks/useUserGamification';
 
 /**
  * ============================================================================
@@ -106,6 +109,9 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [isLastLesson, setIsLastLesson] = useState(false);
   const [wordTimestamps, setWordTimestamps] = useState<WordTimestamp[]>([]);
   const [nextLessonData, setNextLessonData] = useState<{ id: string; lesson_type: string } | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const { refresh: refreshGamification } = useUserGamification();
   const navigate = useNavigate();
 
   // Buscar word_timestamps e próxima aula do banco para aulas guiadas
@@ -169,6 +175,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     const result = await submitAnswers(answers, timeSpent);
     
     if (result?.passed && lesson) {
+      // 🎮 GAMIFICAÇÃO: Registrar evento
+      const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
+      if (gamResult) {
+        setGamificationResult(gamResult);
+        setShowResultCard(true);
+        refreshGamification();
+      }
+
       // Buscar próxima aula da trilha
       const { data: nextLesson } = await supabase
         .from('lessons')
@@ -220,8 +234,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     previousScore: lesson.user_score,
   };
 
-  switch (lesson.lesson_type) {
-    case 'guided':
+  // Renderizar conteúdo baseado no tipo de aula
+  const renderLessonContent = () => {
+    switch (lesson.lesson_type) {
+      case 'guided':
       // Aulas guiadas com Liv narradora
 
       // Função para APENAS marcar aula como completa (sem navegar)
@@ -231,6 +247,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           audioProgress: 100,
           allExercisesCompleted: true
         }, timeSpent);
+
+        // 🎮 GAMIFICAÇÃO: Registrar evento
+        const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
+        if (gamResult) {
+          setGamificationResult(gamResult);
+          setShowResultCard(true);
+          refreshGamification();
+        }
       };
 
       // Função LEGADO para compatibilidade (não deve ser chamada do ConclusionScreen)
@@ -717,5 +741,33 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           <p className="text-lg text-muted-foreground">Tipo de aula não suportado</p>
         </div>
       );
-  }
+    }
+  };
+
+  // Renderizar componente completo com card de gamificação
+  return (
+    <>
+      {renderLessonContent()}
+
+      {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
+      {showResultCard && gamificationResult && (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
+          onClose={() => setShowResultCard(false)}
+        />
+      )}
+    </>
+  );
 };
+
+// Helper para calcular próxima patente
+function getNextPatentThreshold(currentLevel: number): number | undefined {
+  const thresholds = [200, 600, 1200];
+  return thresholds[currentLevel];
+}

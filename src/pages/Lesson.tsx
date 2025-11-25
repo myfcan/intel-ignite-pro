@@ -10,6 +10,9 @@ import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExerci
 import { PlaygroundComponent } from "@/components/lesson/PlaygroundComponent";
 import { ExerciseResults } from "@/components/lesson/ExerciseResults";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
+import { registerGamificationEvent, GamificationResult } from "@/services/gamification";
+import { LessonResultCard } from "@/components/gamification/LessonResultCard";
+import { useUserGamification } from "@/hooks/useUserGamification";
 import { 
   ArrowLeft, 
   Clock, 
@@ -51,6 +54,9 @@ const Lesson = () => {
   const [showResults, setShowResults] = useState(false);
   const [showPlayground, setShowPlayground] = useState(false);
   const [startTime] = useState(Date.now());
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const { refresh: refreshGamification } = useUserGamification();
 
   useEffect(() => {
     fetchLessonData();
@@ -192,6 +198,14 @@ const Lesson = () => {
       // 📊 Atualizar missão de aulas completadas
       await updateMissionProgress('aulas', 1);
 
+      // 🎮 GAMIFICAÇÃO: Registrar evento e mostrar card de resultado
+      const result = await registerGamificationEvent('lesson_completed', id);
+      if (result) {
+        setGamificationResult(result);
+        setShowResultCard(true);
+        refreshGamification(); // Atualiza o header
+      }
+
       toast({
         title: "Aula concluída! 🎉",
         description: `Você ganhou ${data.points_earned} pontos!`,
@@ -203,11 +217,6 @@ const Lesson = () => {
           description: data.new_achievements[0].achievement_name,
         });
       }
-
-      // Redirect to dashboard after a delay
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
 
     } catch (error: any) {
       console.error("Error completing lesson:", error);
@@ -388,8 +397,34 @@ const Lesson = () => {
           )}
         </div>
       </main>
+
+      {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
+      {showResultCard && gamificationResult && (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
+          onClose={() => {
+            setShowResultCard(false);
+            // Navegar após fechar o card
+            setTimeout(() => {
+              navigate("/dashboard");
+            }, 500);
+          }}
+        />
+      )}
     </div>
   );
 };
+
+// Helper para calcular próxima patente
+function getNextPatentThreshold(currentLevel: number): number | undefined {
+  const thresholds = [200, 600, 1200];
+  return thresholds[currentLevel];
+}
 
 export default Lesson;
