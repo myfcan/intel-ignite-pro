@@ -454,7 +454,7 @@ export default function Profile() {
             </Card>
 
             {/* Upsell */}
-            <Card className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/30 dark:from-primary/20 dark:via-primary/10 dark:to-background">
+            <Card className="p-6 border-primary/30 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 dark:border-primary/40">
               <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
                 🚀 Potencialize seus Resultados
               </h3>
@@ -465,7 +465,7 @@ export default function Profile() {
               <div className="space-y-3">
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:border-primary/50 transition-all group"
+                  className="w-full justify-start bg-background hover:bg-primary/10 hover:border-primary/50 transition-all group"
                   onClick={() => navigate('/prompts')}
                 >
                   <span className="group-hover:scale-110 transition-transform">⚡</span>
@@ -473,7 +473,7 @@ export default function Profile() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:border-primary/50 transition-all group"
+                  className="w-full justify-start bg-background hover:bg-primary/10 hover:border-primary/50 transition-all group"
                   onClick={() => navigate('/curso-exclusivo')}
                 >
                   <span className="group-hover:scale-110 transition-transform">💰</span>
