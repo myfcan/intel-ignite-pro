@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +51,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin(user?.id);
   const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
+  
+  // Estados para controle do scroll horizontal
+  const [activeTrailIndex, setActiveTrailIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkAuth();
@@ -391,37 +395,90 @@ const Dashboard = () => {
         <div className="mb-4 sm:mb-6 md:mb-8">
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Suas Trilhas</h2>
           
-          {/* Mobile: Scroll Horizontal com Snap */}
-          <div className="md:hidden overflow-x-auto hide-scrollbar snap-x snap-mandatory px-2">
-            <div className="flex gap-3 pb-2">
-              {trails.map((trail, index) => {
-                const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
-                const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-                const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-                
-                const previousTrail = trails[index - 1];
-                const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
-                const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
-                
-                const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
+          {/* Mobile: Scroll Horizontal com Snap e Indicadores */}
+          <div className="md:hidden relative">
+            {/* Fade gradients nas bordas */}
+            <div className="absolute left-0 top-0 bottom-10 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-10 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+            
+            {/* Container com scroll */}
+            <div 
+              ref={scrollRef}
+              className="overflow-x-auto hide-scrollbar snap-x snap-mandatory px-2"
+              onScroll={(e) => {
+                const element = e.currentTarget;
+                const scrollLeft = element.scrollLeft;
+                const cardWidth = element.scrollWidth / trails.length;
+                const newIndex = Math.round(scrollLeft / cardWidth);
+                setActiveTrailIndex(newIndex);
+              }}
+            >
+              <div className="flex gap-3 pb-2">
+                {trails.map((trail, index) => {
+                  const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
+                  const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                  const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+                  
+                  const previousTrail = trails[index - 1];
+                  const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
+                  const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+                  
+                  const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
 
-                return (
-                  <div key={trail.id} className="snap-center flex-shrink-0 w-[85vw] max-w-[340px]">
-                    <TrailCard
-                      trail={trail}
-                      Icon={Icon}
-                      progress={trailProgress?.progress || 0}
-                      completedLessons={trailProgress?.completedLessons || 0}
-                      totalLessons={trailProgress?.totalLessons || 0}
-                      status={trailProgress?.status || 'locked'}
-                      gradient={gradient}
-                      estimatedTime={estimatedTime}
-                      isNext={isNext}
-                    />
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={trail.id} className="snap-center flex-shrink-0 w-[85vw] max-w-[340px]">
+                      <TrailCard
+                        trail={trail}
+                        Icon={Icon}
+                        progress={trailProgress?.progress || 0}
+                        completedLessons={trailProgress?.completedLessons || 0}
+                        totalLessons={trailProgress?.totalLessons || 0}
+                        status={trailProgress?.status || 'locked'}
+                        gradient={gradient}
+                        estimatedTime={estimatedTime}
+                        isNext={isNext}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+            
+            {/* Indicadores (dots) - atualizam dinamicamente */}
+            <div className="flex justify-center gap-1.5 mt-4">
+              {trails.map((trail, index) => (
+                <button
+                  key={trail.id}
+                  onClick={() => {
+                    if (scrollRef.current) {
+                      const cardWidth = scrollRef.current.scrollWidth / trails.length;
+                      scrollRef.current.scrollTo({
+                        left: cardWidth * index,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: index === activeTrailIndex ? '20px' : '6px',
+                    backgroundColor: index === activeTrailIndex ? '#837BFF' : '#E0E0E0'
+                  }}
+                  aria-label={`Ir para ${trail.title}`}
+                />
+              ))}
+            </div>
+            
+            {/* Hint inicial - aparece apenas na primeira vez */}
+            <motion.div
+              initial={{ opacity: 1, x: 0 }}
+              animate={{ opacity: 0, x: 20 }}
+              transition={{ delay: 2, duration: 1 }}
+              className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none"
+            >
+              <div className="bg-primary/90 text-white px-3 py-2 rounded-full text-xs font-medium shadow-lg flex items-center gap-1 backdrop-blur-sm">
+                Arraste →
+              </div>
+            </motion.div>
           </div>
 
           {/* Desktop: Grid Normal */}
