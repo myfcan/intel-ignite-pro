@@ -4,7 +4,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { guidesMetadata } from '@/data/guides';
-import { Clock, BookOpen, Sparkles, ArrowLeft } from 'lucide-react';
+import { Clock, BookOpen, Sparkles, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useGuideProgress } from '@/hooks/useGuideProgress';
 
 /**
  * Guides Page: Lista dos 7 guias sobre IAs populares
@@ -14,6 +16,14 @@ import { Clock, BookOpen, Sparkles, ArrowLeft } from 'lucide-react';
  */
 export default function Guides() {
   const navigate = useNavigate();
+  const [userId, setUserId] = React.useState<string | undefined>();
+  const { isGuideCompleted, loading } = useGuideProgress(userId);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id);
+    });
+  }, []);
 
   const categoryColors = {
     text: 'bg-blue-500',
@@ -108,18 +118,28 @@ export default function Guides() {
 
         {/* Guides Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {guidesMetadata.map((guide) => (
+          {guidesMetadata.map((guide) => {
+            const completed = isGuideCompleted(guide.id);
+            
+            return (
             <div
               key={guide.id}
-              className="relative group cursor-pointer bg-white rounded-xl border-2 border-gray-100 hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden"
+              className={`relative group cursor-pointer bg-white rounded-xl border-2 hover:shadow-lg transition-all overflow-hidden ${
+                completed ? 'border-green-300 hover:border-green-400' : 'border-gray-100 hover:border-indigo-300'
+              }`}
               onClick={() => handleGuideClick(guide.id)}
             >
-              {/* Badge Novo */}
-              {guide.isNew && (
+              {/* Badge Novo ou Completo */}
+              {completed ? (
+                <span className="absolute top-3 right-3 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-md z-10 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  COMPLETO
+                </span>
+              ) : guide.isNew ? (
                 <span className="absolute top-3 right-3 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow-md z-10">
                   NOVO
                 </span>
-              )}
+              ) : null}
 
               <div className="p-6">
                 {/* Logo com gradiente de fundo */}
@@ -171,13 +191,18 @@ export default function Guides() {
                 {/* CTA */}
                 <button 
                   className="w-full py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
-                  style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
+                  style={{
+                    background: completed 
+                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
+                      : 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'
+                  }}
                 >
-                  Iniciar Guia
+                  {completed ? 'Revisar Guia' : 'Iniciar Guia'}
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Bottom CTA */}

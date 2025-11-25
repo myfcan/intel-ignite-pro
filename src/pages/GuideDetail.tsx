@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GuideLessonV5 } from '@/components/lessons/GuideLessonV5';
 import { getGuideById } from '@/data/guides';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useGuideProgress } from '@/hooks/useGuideProgress';
 
 /**
  * GuideDetail Page: Exibe um guia específico com player V5
@@ -14,8 +16,31 @@ import { ArrowLeft } from 'lucide-react';
 export default function GuideDetail() {
   const { guideId } = useParams<{ guideId: string }>();
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | undefined>();
+  const { markGuideAsStarted, markGuideAsCompleted } = useGuideProgress(userId);
 
   const guideData = guideId ? getGuideById(guideId) : undefined;
+
+  // Obter ID do usuário
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id);
+    });
+  }, []);
+
+  // Marcar guia como iniciado quando a página carrega
+  useEffect(() => {
+    if (userId && guideId) {
+      markGuideAsStarted(guideId);
+    }
+  }, [userId, guideId]);
+
+  const handleComplete = async () => {
+    if (userId && guideId) {
+      await markGuideAsCompleted(guideId);
+    }
+    navigate('/guides');
+  };
 
   // Guide não encontrado
   if (!guideData) {
@@ -41,10 +66,7 @@ export default function GuideDetail() {
   return (
     <GuideLessonV5
       guideData={guideData}
-      onComplete={() => {
-        // Ao completar, voltar para lista de guias
-        navigate('/guides');
-      }}
+      onComplete={handleComplete}
     />
   );
 }
