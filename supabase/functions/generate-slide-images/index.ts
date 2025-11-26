@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // ============================================================================
-// OPENAI DALL-E 3 - FUNCIONA! (Lovable AI Gateway NÃO funciona para imagens)
+// OPENAI DALL-E 2 - MAIS RÁPIDO (~10-20s por imagem vs 40-60s do DALL-E 3)
 // ============================================================================
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { slides, batchSize = 2, batchIndex = 0 } = await req.json();
+    const { slides, batchSize = 4, batchIndex = 0 } = await req.json();
 
     if (!slides || !Array.isArray(slides)) {
       throw new Error('slides array is required');
@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     // ============================================================================
-    // BATCHING: 2 imagens por vez (cada imagem ~30-60s, total ~120s < 150s limite)
+    // BATCHING: 4 imagens por vez (DALL-E 2: ~15s/imagem, total ~60s < 150s limite)
     // ============================================================================
     const startIdx = batchIndex * batchSize;
     const endIdx = Math.min(startIdx + batchSize, slides.length);
@@ -71,7 +71,7 @@ Style: Modern, clean, professional, minimalist design.
 - Friendly and approachable visual style`;
 
         // ============================================================================
-        // CHAMAR OPENAI DALL-E 3 (API OFICIAL - FUNCIONA!)
+        // CHAMAR OPENAI DALL-E 2 (MAIS RÁPIDO: ~10-20s por imagem)
         // ============================================================================
         const response = await fetch("https://api.openai.com/v1/images/generations", {
           method: "POST",
@@ -80,11 +80,10 @@ Style: Modern, clean, professional, minimalist design.
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "dall-e-3",
+            model: "dall-e-2",
             prompt: imagePrompt,
             n: 1,
-            size: "1792x1024", // Landscape (melhor para slides)
-            quality: "standard", // standard é mais rápido e barato
+            size: "1024x1024", // DALL-E 2 só suporta 256x256, 512x512, 1024x1024
             response_format: "b64_json" // Base64 direto
           })
         });
