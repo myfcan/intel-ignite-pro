@@ -295,35 +295,35 @@ export function GuidedLessonV3({
   // 🎬 FASE: Apresentação de Slides
   if (currentPhase === 'slides') {
     return (
-      <div className="h-screen bg-black flex flex-col overflow-hidden">
+      <div className="fixed inset-0 bg-black flex flex-col">
         {/* Header - OVERLAY */}
-        <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/70 to-transparent">
-          <div className="px-4 py-3 flex items-center justify-between">
+        <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/80 to-transparent pt-safe">
+          <div className="px-4 py-2 md:py-3 flex items-center justify-between">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBack}
-              className="gap-2 text-white hover:bg-white/10"
+              className="gap-1 text-white hover:bg-white/10 h-8 px-2"
             >
               <ChevronLeft className="h-4 w-4" />
-              Voltar
+              <span className="hidden md:inline">Voltar</span>
             </Button>
 
-            <div className="text-center">
-              <h1 className="text-sm md:text-base font-semibold text-white">
+            <div className="text-center flex-1">
+              <h1 className="text-xs md:text-sm font-semibold text-white line-clamp-1">
                 {lessonData.title}
               </h1>
-              <p className="text-xs text-white/70">
-                Slide {currentSlideIndex + 1} de {lessonData.slides.length}
+              <p className="text-[10px] md:text-xs text-white/60">
+                Slide {currentSlideIndex + 1}/{lessonData.slides.length}
               </p>
             </div>
 
-            <div className="w-20" />
+            <div className="w-16 md:w-20" />
           </div>
         </div>
 
-        {/* Slide FULLSCREEN - SEM MARGENS */}
-        <div className="flex-1 relative w-full">
+        {/* Slide FULLSCREEN - Ocupa espaço entre header e player */}
+        <div className="flex-1 relative w-full bg-black flex items-center justify-center pt-14 pb-20 md:pb-24">
           {currentSlide?.imageUrl && (
             <>
               <img
@@ -333,8 +333,8 @@ export function GuidedLessonV3({
               />
 
               {/* Número do slide */}
-              <div className="absolute top-16 right-4 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full">
-                <span className="text-white text-sm font-medium">
+              <div className="absolute top-16 right-2 md:right-4 bg-black/70 backdrop-blur-sm px-2 py-0.5 md:px-3 md:py-1 rounded-full">
+                <span className="text-white text-xs md:text-sm font-medium">
                   {currentSlide.slideNumber}
                 </span>
               </div>
@@ -354,11 +354,13 @@ export function GuidedLessonV3({
         </div>
 
         {/* Player COMPACTO - FIXO NO BOTTOM */}
-        <div className="bg-black/90 backdrop-blur-sm border-t border-white/10">
-          <div className="px-4 py-2">
+        <div className="absolute bottom-0 left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-white/10 pb-safe">
+          <div className="px-3 md:px-4 py-1.5 md:py-2">
             {/* Barra de progresso + Tempo */}
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs text-white/70 w-12 text-right">{formatTime(currentTime)}</span>
+            <div className="flex items-center gap-2 md:gap-3 mb-1.5 md:mb-2">
+              <span className="text-[10px] md:text-xs text-white/70 w-10 md:w-12 text-right tabular-nums">
+                {formatTime(currentTime)}
+              </span>
               <div
                 className="flex-1 h-1 bg-white/20 rounded-full cursor-pointer"
                 onClick={(e) => {
@@ -373,41 +375,43 @@ export function GuidedLessonV3({
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-              <span className="text-xs text-white/70 w-12">{formatTime(duration)}</span>
+              <span className="text-[10px] md:text-xs text-white/70 w-10 md:w-12 tabular-nums">
+                {formatTime(duration)}
+              </span>
             </div>
 
             {/* Controles + Avatar */}
             <div className="flex items-center justify-between">
               {/* Avatar LIV */}
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 border border-white/20">
+              <div className="flex items-center gap-1.5 md:gap-2 min-w-[60px] md:min-w-[80px]">
+                <Avatar className="h-7 w-7 md:h-8 md:w-8 border border-white/20">
                   <AvatarImage src="/liv-avatar.png" />
                 </Avatar>
-                <span className="text-xs text-white/70 hidden md:inline">LIV</span>
+                <span className="text-[10px] md:text-xs text-white/70 hidden sm:inline">LIV</span>
               </div>
 
               {/* Botões de controle */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={skipToPreviousSlide}
                   disabled={currentSlideIndex === 0}
-                  className="h-9 w-9 text-white hover:bg-white/10"
+                  className="h-8 w-8 md:h-9 md:w-9 text-white hover:bg-white/10 disabled:opacity-30"
                 >
-                  <SkipBack className="h-4 w-4" />
+                  <SkipBack className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
 
                 <Button
                   size="icon"
                   onClick={togglePlayPause}
-                  className="rounded-full h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                  className="rounded-full h-9 w-9 md:h-10 md:w-10 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
                   disabled={!isAudioInitialized}
                 >
                   {isPlaying ? (
-                    <Pause className="h-4 w-4" />
+                    <Pause className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   ) : (
-                    <Play className="h-4 w-4 ml-0.5" />
+                    <Play className="h-3.5 w-3.5 md:h-4 md:w-4 ml-0.5" />
                   )}
                 </Button>
 
@@ -416,14 +420,14 @@ export function GuidedLessonV3({
                   size="icon"
                   onClick={skipToNextSlide}
                   disabled={currentSlideIndex === lessonData.slides.length - 1}
-                  className="h-9 w-9 text-white hover:bg-white/10"
+                  className="h-8 w-8 md:h-9 md:w-9 text-white hover:bg-white/10 disabled:opacity-30"
                 >
-                  <SkipForward className="h-4 w-4" />
+                  <SkipForward className="h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
               </div>
 
               {/* Spacer para equilibrar */}
-              <div className="w-16 md:w-24" />
+              <div className="min-w-[60px] md:min-w-[80px]" />
             </div>
           </div>
         </div>
