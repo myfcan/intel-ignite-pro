@@ -1608,7 +1608,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl p-4 border border-primary/20 shadow-xl">
+                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl px-4 py-[21px] border border-primary/20 shadow-xl">
                   <div className="flex justify-center mb-2.5">
                     <LivAvatar 
                       size="medium"

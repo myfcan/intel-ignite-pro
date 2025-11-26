@@ -1609,7 +1609,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl px-4 py-[21px] border border-slate-200/50 shadow-xl">
                   <div className="flex justify-center mb-2.5">
                     <div className="relative group cursor-pointer">
                       {/* Liv com animações otimizadas */}
