@@ -297,6 +297,13 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   // Processar cada batch sequencialmente
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
     const batchNumber = batchIndex + 1;
+
+    // Delay de 2s entre batches para evitar rate limiting (exceto primeiro batch)
+    if (batchIndex > 0) {
+      console.log(`   ⏳ Aguardando 2s antes do batch ${batchNumber}...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
 
     const invokeBatchWithTimeout = async () => {
@@ -358,10 +365,23 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
     if (batchError) {
       console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
-      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+
+      // Se for o ÚLTIMO batch e já temos imagens geradas nos anteriores, apenas avisar
+      const isLastBatch = batchIndex === totalBatches - 1;
+      if (isLastBatch && completedCount > 0) {
+        console.warn(`⚠️ [V3] Último batch falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
+        // Não lançar erro, permitir continuar com as imagens que temos
+      } else {
+        throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+      }
     }
 
     if (!batchData || !batchData.slides) {
+      const isLastBatch = batchIndex === totalBatches - 1;
+      if (isLastBatch && completedCount > 0) {
+        console.warn(`⚠️ [V3] Último batch sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
+        continue; // Pular para próxima iteração (não há próxima, vai sair do loop)
+      }
       console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
       throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
     }
