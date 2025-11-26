@@ -1669,7 +1669,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
                     } ${!isRenderable ? 'opacity-50' : ''}`}
                     style={currentSection === index 
-                      ? {backgroundImage: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)', boxShadow: '0 10px 30px rgba(108, 177, 255, 0.3)'}
+                      ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'}
                       : undefined}
                   >
                     <div className="flex items-center gap-2">
