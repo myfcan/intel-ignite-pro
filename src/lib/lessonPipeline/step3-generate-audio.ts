@@ -275,8 +275,10 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em BATCHES (evitar timeout)
-  console.log('   🖼️ Gerando imagens dos slides...');
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 3
+  const totalSlides = input.v3Data!.slides.length;
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
+
   const BATCH_SIZE = 4; // 4 imagens por batch (~120s, dentro do limite de 150s)
   const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch
 
@@ -287,13 +289,15 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   }));
 
   const totalBatches = Math.ceil(slidesInput.length / BATCH_SIZE);
-  console.log(`   📦 Processando ${slidesInput.length} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
+  console.log(`   📦 Processando ${totalSlides} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
 
   let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais
+  let completedCount = 0;
 
   // Processar cada batch sequencialmente
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-    console.log(`   🔄 Batch ${batchIndex + 1}/${totalBatches}...`);
+    const batchNumber = batchIndex + 1;
+    console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
 
     const invokeBatchWithTimeout = async () => {
       const timeoutPromise = new Promise((_, reject) =>
@@ -346,11 +350,18 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       }
     }
 
-    console.log(`   ✅ Batch ${batchIndex + 1}/${totalBatches}: ${batchData.stats?.success || 0} imagens geradas`);
+    // Atualizar contador de progresso
+    const batchSuccess = batchData.stats?.success || 0;
+    completedCount += batchSuccess;
+    const progressPercent = Math.round((completedCount / totalSlides) * 100);
+
+    console.log(`   ✅ Batch ${batchNumber}/${totalBatches}: ${batchSuccess} imagens geradas`);
+    console.log(`   📊 Progresso: ${completedCount}/${totalSlides} imagens concluídas (${progressPercent}%)`);
   }
 
   const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
   console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
+  console.log(`   🎉 Concluído: 100% das imagens processadas`);
   
   const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
