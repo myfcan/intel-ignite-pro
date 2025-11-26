@@ -362,7 +362,68 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
   console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
   console.log(`   🎉 Concluído: 100% das imagens processadas`);
-  
+
+  // 3. Upload das imagens para Storage (converter data URLs em URLs públicas)
+  console.log('   📤 Fazendo upload das imagens para Supabase Storage...');
+  const slidesWithStorageUrls = [];
+
+  for (const slide of finalSlidesWithImages) {
+    if (!slide.imageUrl || slide.imageUrl === '') {
+      // Slide sem imagem (falhou geração)
+      slidesWithStorageUrls.push(slide);
+      continue;
+    }
+
+    // Se já é uma URL pública (não data URL), manter
+    if (!slide.imageUrl.startsWith('data:')) {
+      slidesWithStorageUrls.push(slide);
+      continue;
+    }
+
+    try {
+      // Converter data URL para buffer
+      const base64Data = slide.imageUrl.replace(/^data:image\/\w+;base64,/, '');
+      const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+
+      // Nome único para o arquivo
+      const imageFileName = `slide-${slide.id}-${Date.now()}.png`;
+
+      // Upload para Storage
+      const { error: uploadError } = await supabase.storage
+        .from('lesson-audios') // Mesmo bucket que áudios
+        .upload(imageFileName, imageBuffer, {
+          contentType: 'image/png',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error(`   ❌ Erro ao fazer upload da imagem do slide ${slide.slideNumber}:`, uploadError);
+        // Manter data URL se upload falhar (fallback)
+        slidesWithStorageUrls.push(slide);
+        continue;
+      }
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('lesson-audios')
+        .getPublicUrl(imageFileName);
+
+      slidesWithStorageUrls.push({
+        ...slide,
+        imageUrl: publicUrl // Substituir data URL por URL pública
+      });
+
+      console.log(`   ✅ Slide ${slide.slideNumber} salvo: ${publicUrl.substring(0, 80)}...`);
+
+    } catch (uploadError) {
+      console.error(`   ❌ Erro ao processar upload do slide ${slide.slideNumber}:`, uploadError);
+      // Manter data URL se der erro (fallback)
+      slidesWithStorageUrls.push(slide);
+    }
+  }
+
+  console.log(`   ✅ ${slidesWithStorageUrls.filter(s => s.imageUrl && !s.imageUrl.startsWith('data:')).length}/${successfulImages} imagens salvas no Storage`);
+
   const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
 
@@ -372,7 +433,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     wordTimestamps: audioData.word_timestamps,
     v3Data: {
       ...input.v3Data,
-      slides: finalSlidesWithImages
+      slides: slidesWithStorageUrls
     }
   };
 }
