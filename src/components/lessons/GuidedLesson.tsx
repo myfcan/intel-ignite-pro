@@ -1498,6 +1498,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
     return (
       <LessonCompletionCard
         lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
         onContinue={() => {
           // Chamar o onMarkComplete para registrar gamificação
           if (onMarkComplete) {
