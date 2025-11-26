@@ -65,7 +65,7 @@ export function GuidedPlayground({ config, onComplete }: GuidedPlaygroundProps) 
       data-testid="guided-playground"
       data-current-step={currentStepIndex}
       data-total-steps={config.steps.length}
-      className="min-h-screen p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+      className="min-h-screen py-8 px-4 sm:px-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
     >
       <div className="max-w-4xl mx-auto">
         {/* Header */}

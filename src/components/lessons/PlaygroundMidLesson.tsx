@@ -264,9 +264,9 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
       <div 
         data-testid="playground-mid-lesson"
         data-playground-type="real"
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-4 overflow-y-auto"
       >
-        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] my-8 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-cyan-400 to-purple-500 py-4 px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -293,7 +293,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           </div>
           
           {/* Conteúdo */}
-          <div className="p-6">
+          <div className="p-6 max-h-[calc(90vh-80px)] overflow-y-auto">
             {/* Mensagem da Liv */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-4">
               <h4 className="font-semibold text-foreground mb-3">
