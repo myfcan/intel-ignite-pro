@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,22 +19,22 @@ serve(async (req) => {
       throw new Error('slides array is required');
     }
 
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     // ============================================================================
     // BATCHING: Processar apenas um subset dos slides por vez
     // ============================================================================
     // Edge Functions têm limite de 150s. Com batchSize=4:
-    // - 4 imagens × 30s = 120s (dentro do limite com margem)
+    // - 4 imagens × ~20s = 80s (dentro do limite com margem)
     // ============================================================================
 
     const startIdx = batchIndex * batchSize;
     const endIdx = Math.min(startIdx + batchSize, slides.length);
     const slidesToProcess = slides.slice(startIdx, endIdx);
 
-    console.log(`🎨 Gerando imagens para slides ${startIdx + 1}-${endIdx} de ${slides.length} usando OpenAI...`);
+    console.log(`🎨 Gerando imagens para slides ${startIdx + 1}-${endIdx} de ${slides.length} usando Lovable AI (Gemini)...`);
     console.log(`   Batch ${batchIndex + 1} de ${Math.ceil(slides.length / batchSize)}`);
 
     if (slidesToProcess.length === 0) {
@@ -81,30 +81,41 @@ Style requirements:
 
 The image should visually represent the concept in an abstract, symbolic way that supports learning.`;
 
-        // Chamar OpenAI DALL-E 3
-        const response = await fetch("https://api.openai.com/v1/images/generations", {
+        // Chamar Lovable AI com modelo de geração de imagens
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "dall-e-3",
-            prompt: imagePrompt,
-            n: 1,
-            size: "1792x1024", // Horizontal (16:9 aproximado)
-            quality: "standard", // "standard" ou "hd" (hd é 2x mais caro)
-            response_format: "b64_json" // Retorna base64
+            model: "google/gemini-2.5-flash-image",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ],
+            modalities: ["image", "text"]
           })
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`   ❌ OpenAI API error for slide ${slide.slideNumber}:`, errorText);
+          console.error(`   ❌ Lovable AI error for slide ${slide.slideNumber}:`, errorText);
+          
+          // Detectar erros específicos
+          let errorMessage = `Lovable AI error (${response.status})`;
+          if (response.status === 429) {
+            errorMessage = 'Rate limit excedido - tente novamente em alguns minutos';
+          } else if (response.status === 402) {
+            errorMessage = 'Créditos do Lovable AI esgotados';
+          }
+          
           errors.push({
             slideId: slide.id,
             slideNumber: slide.slideNumber,
-            error: `OpenAI API error (${response.status}): ${errorText}`
+            error: errorMessage
           });
 
           // Atualizar slide com erro (sem imageUrl)
@@ -112,21 +123,21 @@ The image should visually represent the concept in an abstract, symbolic way tha
             ...slide,
             imageUrl: '', // Vazio indica falha
             imagePrompt: imagePrompt,
-            error: `Failed to generate (${response.status})`
+            error: errorMessage
           };
 
           continue; // Pular para próximo slide
         }
 
         const data = await response.json();
-        const imageBase64 = data.data?.[0]?.b64_json;
+        const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-        if (!imageBase64) {
+        if (!imageUrl) {
           console.error(`   ❌ No image returned for slide ${slide.slideNumber}. Response:`, JSON.stringify(data));
           errors.push({
             slideId: slide.id,
             slideNumber: slide.slideNumber,
-            error: 'No image in OpenAI response'
+            error: 'No image in Lovable AI response'
           });
 
           generatedSlides[globalIndex] = {
@@ -139,18 +150,15 @@ The image should visually represent the concept in an abstract, symbolic way tha
           continue;
         }
 
-        // Converter base64 para data URL
-        const dataUrl = `data:image/png;base64,${imageBase64}`;
-
         const elapsedTime = Date.now() - startTime;
-        const sizeKB = Math.round(imageBase64.length / 1024);
+        const sizeEstimate = Math.round(imageUrl.length / 1024);
 
-        console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (${sizeKB}KB em ${elapsedTime}ms)`);
+        console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (~${sizeEstimate}KB em ${elapsedTime}ms)`);
 
         // Atualizar slide na posição correta do array completo
         generatedSlides[globalIndex] = {
           ...slide,
-          imageUrl: dataUrl, // Data URL PNG
+          imageUrl: imageUrl, // Data URL PNG/JPEG
           imagePrompt: imagePrompt
         };
 
