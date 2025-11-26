@@ -139,14 +139,20 @@ function calculateTimestampsV3(input: Step3Output): Step4Output {
   const totalSlides = input.v3Data.slides.length;
   const wordsPerSlide = Math.ceil(totalWords / totalSlides);
 
+  // CORREÇÃO: Limpar slides para evitar dados duplicados
   const slidesWithTimestamps = input.v3Data.slides.map((slide, idx) => {
     const wordIndex = idx * wordsPerSlide;
     const timestamp = input.wordTimestamps![wordIndex]?.start_time || 0;
 
     console.log(`   Slide ${idx + 1}: ${timestamp.toFixed(1)}s`);
 
+    // Retornar apenas campos necessários (evitar dados duplicados)
     return {
-      ...slide,
+      id: slide.id,
+      slideNumber: slide.slideNumber,
+      contentIdea: slide.contentIdea,
+      imagePrompt: slide.imagePrompt,
+      imageUrl: slide.imageUrl,
       timestamp
     };
   });
@@ -159,6 +165,17 @@ function calculateTimestampsV3(input: Step3Output): Step4Output {
     slides: slidesWithTimestamps,
     finalPlaygroundConfig: input.v3Data.finalPlaygroundConfig
   };
+
+  // DEBUG: Verificar tamanho do content
+  const contentSize = JSON.stringify(structuredContent).length;
+  console.log(`🐛 [V3] Tamanho do structuredContent: ${contentSize} caracteres (${(contentSize / 1000).toFixed(1)}KB)`);
+
+  if (contentSize > 1_000_000) {
+    console.warn(`⚠️ [V3] Content muito grande! ${(contentSize / 1_000_000).toFixed(1)}MB`);
+    console.warn(`   - ${totalSlides} slides`);
+    console.warn(`   - ${totalWords} word timestamps`);
+    console.warn(`   - Verificar se há duplicação de dados`);
+  }
 
   console.log(`✅ [V3] Timestamps calculados`);
   console.log(`   Duração total: ${totalDuration.toFixed(1)}s`);

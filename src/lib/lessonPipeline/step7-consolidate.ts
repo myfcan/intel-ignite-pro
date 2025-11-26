@@ -25,11 +25,39 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
 
   // Separar exercises do content
   const exercises = input.exercisesConfig || [];
-  const contentWithoutExercises = { ...input.structuredContent };
+  let contentWithoutExercises = { ...input.structuredContent };
+
+  // CORREÇÃO: Limpar dados duplicados ou desnecessários do content
+  // Para V3, verificar se slides estão com dados razoáveis
+  if (input.model === 'v3' && contentWithoutExercises.slides) {
+    const cleanedSlides = contentWithoutExercises.slides.map((slide: any) => ({
+      id: slide.id,
+      slideNumber: slide.slideNumber,
+      contentIdea: slide.contentIdea,
+      imagePrompt: slide.imagePrompt,
+      imageUrl: slide.imageUrl,
+      timestamp: slide.timestamp
+    }));
+
+    contentWithoutExercises = {
+      ...contentWithoutExercises,
+      slides: cleanedSlides
+    };
+
+    console.log('   🧹 Content limpo para V3: removidos campos desnecessários dos slides');
+  }
 
   console.log('   📋 Preparando dados...');
-  console.log(`      Content: ${JSON.stringify(contentWithoutExercises).length} caracteres`);
+  const contentSize = JSON.stringify(contentWithoutExercises).length;
+  console.log(`      Content: ${contentSize} caracteres`);
   console.log(`      Exercises: ${exercises.length} exercícios`);
+
+  // VALIDAÇÃO: Se content muito grande (>5MB), algo está errado
+  if (contentSize > 5_000_000) {
+    console.error(`❌ Content muito grande: ${contentSize} caracteres (${(contentSize / 1_000_000).toFixed(1)}MB)`);
+    console.error('   Possível duplicação de dados detectada!');
+    throw new Error(`Content muito grande (${(contentSize / 1_000_000).toFixed(1)}MB). Máximo: 5MB. Verifique se há duplicação de dados.`);
+  }
 
   // CORREÇÃO 3: Passar parâmetros separados (não misturar tudo em p_content)
   const audioUrl = (input.model === 'v1' || input.model === 'v3') ? input.audioUrl : null;
