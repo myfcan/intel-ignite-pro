@@ -297,6 +297,13 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   // Processar cada batch sequencialmente
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
     const batchNumber = batchIndex + 1;
+
+    // Delay de 2s entre batches para evitar rate limiting (exceto primeiro batch)
+    if (batchIndex > 0) {
+      console.log(`   ⏳ Aguardando 2s antes do batch ${batchNumber}...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
 
     const invokeBatchWithTimeout = async () => {
@@ -315,22 +322,66 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       return Promise.race([invokePromise, timeoutPromise]);
     };
 
+    // Retry logic com exponential backoff
+    const MAX_RETRIES = 3;
     let batchData, batchError;
-    try {
-      const result = await invokeBatchWithTimeout() as any;
-      batchData = result.data;
-      batchError = result.error;
-    } catch (timeoutError: any) {
-      console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
-      throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+    let lastError;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          const waitTime = Math.pow(2, attempt - 1) * 2000; // 2s, 4s, 8s
+          console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_RETRIES + 1} após ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+
+        const result = await invokeBatchWithTimeout() as any;
+        batchData = result.data;
+        batchError = result.error;
+
+        // Se deu timeout, não tentar retry
+        if (!batchError) {
+          break; // Sucesso!
+        }
+
+        // Se deu erro mas não é de network, não retry
+        if (batchError && !batchError.message?.includes('Failed to send')) {
+          break; // Erro diferente, não retry
+        }
+
+        lastError = batchError;
+        console.warn(`   ⚠️ Erro no batch ${batchIndex + 1} (tentativa ${attempt + 1}): ${batchError.message}`);
+
+        // Se foi última tentativa, vai lançar erro fora do loop
+        if (attempt === MAX_RETRIES) {
+          break;
+        }
+
+      } catch (timeoutError: any) {
+        console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
+        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+      }
     }
 
     if (batchError) {
       console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
-      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+
+      // Se for o ÚLTIMO batch e já temos imagens geradas nos anteriores, apenas avisar
+      const isLastBatch = batchIndex === totalBatches - 1;
+      if (isLastBatch && completedCount > 0) {
+        console.warn(`⚠️ [V3] Último batch falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
+        // Não lançar erro, permitir continuar com as imagens que temos
+      } else {
+        throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+      }
     }
 
     if (!batchData || !batchData.slides) {
+      const isLastBatch = batchIndex === totalBatches - 1;
+      if (isLastBatch && completedCount > 0) {
+        console.warn(`⚠️ [V3] Último batch sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
+        continue; // Pular para próxima iteração (não há próxima, vai sair do loop)
+      }
       console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
       throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
     }
