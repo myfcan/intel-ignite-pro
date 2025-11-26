@@ -37,7 +37,7 @@ const TrailCard = ({
 
   const handleClick = () => {
     if (!isLocked) {
-      navigate(`/trails/${trail.id}`);
+      navigate(`/trail/${trail.id}`);
     }
   };
 
