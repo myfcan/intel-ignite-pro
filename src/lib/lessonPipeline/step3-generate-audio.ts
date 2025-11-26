@@ -332,8 +332,8 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const totalSlides = input.v3Data!.slides.length;
   console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
 
-  const BATCH_SIZE = 3; // 3 imagens por batch (~75-90s, seguro dentro do limite de 150s)
-  const BATCH_TIMEOUT_MS = 140000; // 2min20s por batch (margem antes do hard limit de 150s)
+  const BATCH_SIZE = 2; // 2 imagens por batch (mais conservador, ~60-90s)
+  const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch (75s por imagem em média)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
