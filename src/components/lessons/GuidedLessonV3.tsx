@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { V3LessonProps, PlaygroundConfig } from '@/types/guidedLesson';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
-import { ConclusionScreen } from './ConclusionScreen';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { Card } from '@/components/ui/card';
@@ -505,40 +505,15 @@ export function GuidedLessonV3({
   // 🎊 FASE: Conclusão
   if (currentPhase === 'completed') {
     return (
-      <>
-        <ConclusionScreen
-          scores={[100]}
-          timeSpent={0}
-          lessonTitle={lessonData.title}
-          nextLessonId={nextLessonId}
-          nextLessonType={nextLessonType}
-          onBeforeNavigate={() => {
-            if (nextLessonId) {
-              navigate(`/lesson/${nextLessonId}`);
-            } else if (trailId) {
-              navigate(`/trail/${trailId}`);
-            } else {
-              navigate('/trails');
-            }
-          }}
-        />
-
-        {showPointsNotification && (
-          <PointsNotification
-            points={pointsEarned}
-            reason="lesson_complete"
-            show={showPointsNotification}
-            onHide={() => setShowPointsNotification(false)}
-          />
-        )}
-
-        {showAchievement && achievement && (
-          <AchievementBadge
-            milestone={achievement}
-            onClose={() => setShowAchievement(false)}
-          />
-        )}
-      </>
+      <LessonCompletionCard
+        lessonTitle={lessonData.title}
+        onContinue={() => {
+          // Chamar o onMarkComplete para registrar gamificação
+          if (onMarkComplete) {
+            onMarkComplete();
+          }
+        }}
+      />
     );
   }
 

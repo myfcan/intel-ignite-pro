@@ -13,6 +13,37 @@ type LessonResultCardProps = {
   onClose: () => void;
 };
 
+// Hook personalizado para animar contadores
+function useCountUp(end: number, duration: number = 1500) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime: number | null = null;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = timestamp - startTime;
+      const percentage = Math.min(progress / duration, 1);
+      
+      // Easing function para suavizar a animação
+      const easeOut = 1 - Math.pow(1 - percentage, 3);
+      setCount(Math.floor(end * easeOut));
+
+      if (percentage < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration]);
+
+  return count;
+}
+
 export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   xpDelta,
   coinsDelta,
@@ -24,6 +55,12 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   onClose,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Animar os contadores
+  const animatedXP = useCountUp(xpDelta, 1200);
+  const animatedCoins = useCountUp(coinsDelta, 1200);
+  const animatedPowerScore = useCountUp(newPowerScore, 1500);
+  const animatedTotalCoins = useCountUp(newCoins, 1500);
 
   useEffect(() => {
     // Trigger confetti após um pequeno delay
@@ -71,11 +108,11 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
           <div className="bg-slate-800/50 rounded-xl p-4 mb-4 border border-slate-700/50">
             <div className="flex items-center justify-center gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center animate-pulse">
                   <Zap className="w-5 h-5 text-sky-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-sky-300">+{xpDelta}</p>
+                  <p className="text-2xl font-bold text-sky-300 tabular-nums">+{animatedXP}</p>
                   <p className="text-[11px] text-slate-400 uppercase tracking-wide">Power Score</p>
                 </div>
               </div>
@@ -83,11 +120,11 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
               <div className="w-px h-12 bg-slate-700" />
 
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center animate-pulse">
                   <Coins className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-amber-300">+{coinsDelta}</p>
+                  <p className="text-2xl font-bold text-amber-300 tabular-nums">+{animatedCoins}</p>
                   <p className="text-[11px] text-slate-400 uppercase tracking-wide">Créditos IA</p>
                 </div>
               </div>
@@ -97,12 +134,12 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-slate-400">Power Score total</span>
-              <span className="font-semibold text-sky-300">{newPowerScore}</span>
+              <span className="font-semibold text-sky-300 tabular-nums">{animatedPowerScore}</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">
               <span className="text-slate-400">Créditos de IA</span>
-              <span className="font-semibold text-amber-300">{newCoins}</span>
+              <span className="font-semibold text-amber-300 tabular-nums">{animatedTotalCoins}</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">
