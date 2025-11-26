@@ -1,6 +1,7 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,8 +20,8 @@ serve(async (req) => {
       throw new Error('slides array is required');
     }
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not configured');
     }
 
     console.log(`🎨 Gerando ${slides.length} imagens para slides...`);
@@ -30,19 +31,16 @@ serve(async (req) => {
     for (const slide of slides) {
       console.log(`   Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
       
-      // Gerar imagem usando Lovable AI
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      // Gerar imagem usando OpenAI gpt-image-1
+      const response = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-pro-image-preview",
-          messages: [
-            {
-              role: "user",
-              content: `Create a HORIZONTAL WIDESCREEN educational slide image in 16:9 aspect ratio for: ${slide.contentIdea}
+          model: "gpt-image-1",
+          prompt: `Create a HORIZONTAL WIDESCREEN educational slide image in 16:9 aspect ratio for: ${slide.contentIdea}
 
 CRITICAL FORMAT REQUIREMENTS:
 - Image MUST be LANDSCAPE/HORIZONTAL format (wider than it is tall)
@@ -78,32 +76,38 @@ QUALITY:
 - Professional lighting and color grading
 - Polished, publication-ready quality
 
-Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`
-            }
-          ],
-          modalities: ["image", "text"]
+Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`,
+          n: 1,
+          size: "1536x1024", // Landscape 3:2 ratio (closest to 16:9)
+          quality: "high",
+          output_format: "png"
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`   ❌ Error response from AI Gateway for slide ${slide.slideNumber}:`, errorText);
-        throw new Error(`AI Gateway error (${response.status}): ${errorText}`);
+        console.error(`   ❌ Error response from OpenAI for slide ${slide.slideNumber}:`, errorText);
+        throw new Error(`OpenAI error (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
-      const imageBase64 = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      // OpenAI retorna base64 diretamente no campo b64_json quando model é gpt-image-1
+      const imageBase64 = data.data?.[0]?.b64_json;
       
       if (!imageBase64) {
         console.error(`   ❌ No image returned for slide ${slide.slideNumber}. Response:`, JSON.stringify(data));
         throw new Error(`Falha ao gerar imagem para slide ${slide.slideNumber}: No image in response`);
       }
 
+      // Converter para data URL
+      const imageDataUrl = `data:image/png;base64,${imageBase64}`;
+      
       console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (${Math.round(imageBase64.length / 1024)}KB)`);
       
       generatedSlides.push({
         ...slide,
-        imageUrl: imageBase64 // Base64 data URL
+        imageUrl: imageDataUrl
       });
     }
 
