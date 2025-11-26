@@ -275,51 +275,100 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides com timeout
-  console.log('   🖼️ Gerando imagens dos slides...');
-  const IMAGES_TIMEOUT_MS = 180000; // 3 minutos
+  // 2. Gerar imagens dos slides em lotes para evitar timeout
+  console.log('   🖼️ Gerando imagens dos slides em lotes...');
   
-  const invokeImagesWithTimeout = async () => {
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout ao gerar imagens (3min)')), IMAGES_TIMEOUT_MS)
-    );
+  const allSlides = input.v3Data!.slides.map(slide => ({
+    id: slide.id,
+    slideNumber: slide.slideNumber,
+    contentIdea: slide.contentIdea
+  }));
+  
+  const BATCH_SIZE = 2; // 2 imagens por requisição (~120s)
+  const generatedSlides = [];
+  
+  for (let i = 0; i < allSlides.length; i += BATCH_SIZE) {
+    const batch = allSlides.slice(i, i + BATCH_SIZE);
+    console.log(`   📦 Processando lote ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(allSlides.length / BATCH_SIZE)} (${batch.length} slides)...`);
     
-    const invokePromise = supabase.functions.invoke('generate-slide-images', {
-      body: {
-        slides: input.v3Data!.slides.map(slide => ({
-          id: slide.id,
-          slideNumber: slide.slideNumber,
-          contentIdea: slide.contentIdea
-        }))
-      }
+    const IMAGES_TIMEOUT_MS = 180000; // 3 minutos por lote
+    
+    const invokeImagesWithTimeout = async () => {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout ao gerar imagens (3min)')), IMAGES_TIMEOUT_MS)
+      );
+      
+      const invokePromise = supabase.functions.invoke('generate-slide-images', {
+        body: { slides: batch }
+      });
+      
+      return Promise.race([invokePromise, timeoutPromise]);
+    };
+
+    let imagesData, imagesError;
+    try {
+      const result = await invokeImagesWithTimeout() as any;
+      imagesData = result.data;
+      imagesError = result.error;
+    } catch (timeoutError: any) {
+      console.error(`❌ [V3] Timeout ao gerar lote ${Math.floor(i / BATCH_SIZE) + 1}:`, timeoutError);
+      throw new Error(`Timeout ao gerar imagens do lote ${Math.floor(i / BATCH_SIZE) + 1}. Tente novamente.`);
+    }
+
+    if (imagesError) {
+      console.error(`❌ [V3] Erro ao gerar imagens do lote ${Math.floor(i / BATCH_SIZE) + 1}:`, imagesError);
+      throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
+    }
+
+    if (!imagesData || !imagesData.slides) {
+      console.error(`❌ [V3] Resposta inválida da edge function (imagens - lote ${Math.floor(i / BATCH_SIZE) + 1})`);
+      throw new Error('Resposta inválida: imagens não retornadas pela edge function');
+    }
+
+    generatedSlides.push(...imagesData.slides);
+    console.log(`   ✅ Lote ${Math.floor(i / BATCH_SIZE) + 1} processado (${imagesData.slides.length} imagens)`);
+  }
+
+  console.log(`   ✅ Total: ${generatedSlides.length} imagens geradas`);
+
+  // 3. Upload das imagens geradas
+  console.log('   📤 Fazendo upload das imagens...');
+  const slidesWithImageUrls = [];
+
+  for (const genSlide of generatedSlides) {
+    // Converter base64 para buffer
+    const imageBase64 = genSlide.imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0));
+    const imageFileName = `slide-${genSlide.id}-${Date.now()}.png`;
+    
+    // Upload da imagem
+    const { error: uploadError } = await supabase.storage
+      .from('lesson-audios')
+      .upload(imageFileName, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error(`❌ Erro ao fazer upload da imagem ${genSlide.slideNumber}:`, uploadError);
+      throw new Error(`Falha no upload da imagem ${genSlide.slideNumber}: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl: imageUrl } } = supabase.storage
+      .from('lesson-audios')
+      .getPublicUrl(imageFileName);
+
+    slidesWithImageUrls.push({
+      ...genSlide,
+      imageUrl
     });
     
-    return Promise.race([invokePromise, timeoutPromise]);
-  };
-
-  let imagesData, imagesError;
-  try {
-    const result = await invokeImagesWithTimeout() as any;
-    imagesData = result.data;
-    imagesError = result.error;
-  } catch (timeoutError: any) {
-    console.error('❌ [V3] Timeout ao gerar imagens:', timeoutError);
-    throw new Error(`Timeout ao gerar imagens (3min). Reduza o número de slides.`);
-  }
-
-  if (imagesError) {
-    console.error('❌ [V3] Erro ao gerar imagens:', imagesError);
-    throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
-  }
-  
-  if (!imagesData || !imagesData.slides) {
-    console.error('❌ [V3] Resposta inválida da edge function (imagens)');
-    throw new Error('Resposta inválida: imagens não retornadas pela edge function');
+    console.log(`   ✅ Imagem ${genSlide.slideNumber} salva: ${imageUrl}`);
   }
 
   // Atualizar v3Data com URLs das imagens
   const updatedSlides = input.v3Data.slides.map(slide => {
-    const imageData = imagesData.slides.find((s: any) => s.id === slide.id);
+    const imageData = slidesWithImageUrls.find((s: any) => s.id === slide.id);
     return {
       ...slide,
       imageUrl: imageData?.imageUrl || '',

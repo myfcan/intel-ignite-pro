@@ -24,11 +24,16 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
-    console.log(`🎨 Gerando ${slides.length} imagens para slides...`);
+    // Processar no máximo 2 slides por requisição para evitar timeout (150s limite)
+    // Cada imagem leva ~60s, então 2 imagens = ~120s + overhead
+    const BATCH_SIZE = 2;
+    const slidesToProcess = slides.slice(0, BATCH_SIZE);
+    
+    console.log(`🎨 Gerando ${slidesToProcess.length} de ${slides.length} imagens (lote)...`);
     
     const generatedSlides = [];
     
-    for (const slide of slides) {
+    for (const slide of slidesToProcess) {
       console.log(`   Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
       
       // Gerar imagem usando OpenAI gpt-image-1
