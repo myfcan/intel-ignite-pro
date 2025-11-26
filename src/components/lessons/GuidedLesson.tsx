@@ -1610,13 +1610,13 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               <div className="sticky top-24 space-y-3">
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
-                  <div className="flex justify-center mb-3">
+                  <div className="flex justify-center mb-2">
                     <div className="relative group cursor-pointer">
                       {/* Liv com animações otimizadas */}
                       <LivAvatar
-                        size="xl"
+                        size="large"
                         isPlaying={isPlaying && isAudioEnabled}
-                        showHalo={isPlaying && isAudioEnabled}
+                        showHalo={false}
                         animate={isPlaying && isAudioEnabled}
                         className={`
                           animate-fly-in-rasante
@@ -1628,22 +1628,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       {/* Indicadores de áudio melhorados */}
                       {isPlaying && isAudioEnabled && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
-                          <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
+                          <span className="w-2 h-2 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
                         </div>
                       )}
-                      
-                      {/* Balão fixo ao lado da cabeça */}
-                      <div className="absolute -top-2 -right-12 hidden lg:block">
-                        <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
-                          <p className="text-xs font-medium text-slate-700 text-center">
-                            Olá, Eu<br />sou a Liv!
-                          </p>
-                          {/* Rabinho do balão apontando para a Liv */}
-                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                   
@@ -1774,10 +1763,10 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         </div>
       </div>
 
-      {/* Liv Mobile - versão premium responsiva */}
+      {/* Liv Mobile - versão compacta */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
-          <div className="flex items-center gap-3">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-cyan-300/60 shadow-xl max-w-[280px] w-full">
+          <div className="flex items-center gap-2.5">
             <div className="relative flex-shrink-0">
               <LivAvatar
                 size="small"
@@ -1798,7 +1787,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
+              <p className="text-[11px] text-slate-700 leading-tight font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
