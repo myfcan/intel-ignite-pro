@@ -44,19 +44,41 @@ serve(async (req) => {
               role: "user",
               content: `Create a HORIZONTAL WIDESCREEN educational slide image in 16:9 aspect ratio for: ${slide.contentIdea}
 
-CRITICAL: Image MUST be LANDSCAPE/HORIZONTAL format (wider than it is tall), optimized for widescreen displays.
-
-Style requirements:
-- Professional and modern design
-- Friendly and approachable
-- Educational and engaging
-- Vibrant but not overwhelming colors
-- Modern flat design aesthetic
-- High contrast for readability
-- Layout optimized for WIDE HORIZONTAL space (not vertical)
+CRITICAL FORMAT REQUIREMENTS:
+- Image MUST be LANDSCAPE/HORIZONTAL format (wider than it is tall)
+- Aspect ratio: 16:9 (e.g., 1920x1080 or 1600x900)
+- Optimized for widescreen displays
 - Content distributed horizontally across the image
 
-Format: Horizontal landscape 16:9 ratio (e.g., 1920x1080 or 1600x900)`
+VISUAL STYLE:
+- Professional and modern design with a tech-forward aesthetic
+- Friendly, approachable, and engaging for adult learners
+- Use gradients and modern UI elements (cards, icons, subtle shadows)
+- Color palette: Vibrant purples, blues, and teals with white/light backgrounds
+- Modern flat design with subtle depth (not completely flat)
+- High contrast for excellent readability
+- Include relevant icons or simple illustrations to support the concept
+- Avoid cluttered designs - use white space effectively
+
+CONTENT GUIDELINES:
+- Focus on visual representation of the concept
+- Minimal text (if any) - prioritize visual storytelling
+- Use metaphors and visual analogies to explain abstract concepts
+- Include subtle tech/AI themed elements when relevant
+- Professional photography style or modern vector illustrations
+
+COMPOSITION:
+- Layout optimized for WIDE HORIZONTAL space
+- Center focus with balanced left-right distribution
+- Avoid vertical-heavy layouts
+- Consider rule of thirds for visual interest
+
+QUALITY:
+- Ultra high resolution and sharp details
+- Professional lighting and color grading
+- Polished, publication-ready quality
+
+Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`
             }
           ],
           modalities: ["image", "text"]

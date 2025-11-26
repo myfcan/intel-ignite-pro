@@ -26,7 +26,7 @@ export interface V3Slide {
 
 export interface V3Data {
   audioText: string; // Texto único para o áudio
-  slides: V3Slide[]; // Até 7 slides
+  slides: V3Slide[]; // 7-15 slides
   finalPlaygroundConfig?: PlaygroundConfig; // V3 sempre usa playground genérico padrão
 }
 
