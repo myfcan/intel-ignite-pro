@@ -328,13 +328,13 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - Lovable AI (Gemini)
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 2
   const totalSlides = input.v3Data!.slides.length;
-  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (Lovable AI - Gemini Flash Image)...`);
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 2)...`);
 
-  // Edge Functions têm limite de 150s. Logs mostram 4 imagens em ~34s = seguro
-  const BATCH_SIZE = 4; // 4 imagens por batch (comprovado nos logs: 7-9s por imagem)
-  const BATCH_TIMEOUT_MS = 120000; // 120 segundos por batch (margem de segurança)
+  // DALL-E 2: ~10-20s por imagem. Com 4 imagens: ~60-80s (< 150s limite)
+  const BATCH_SIZE = 4; // 4 imagens por batch (DALL-E 2 é rápido)
+  const BATCH_TIMEOUT_MS = 120000; // 2 minutos por batch
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
