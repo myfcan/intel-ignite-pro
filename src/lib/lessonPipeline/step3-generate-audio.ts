@@ -332,8 +332,8 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const totalSlides = input.v3Data!.slides.length;
   console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
 
-  const BATCH_SIZE = 4; // 4 imagens por batch (~120s, dentro do limite de 150s)
-  const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch
+  const BATCH_SIZE = 3; // 3 imagens por batch (~75-90s, seguro dentro do limite de 150s)
+  const BATCH_TIMEOUT_MS = 140000; // 2min20s por batch (margem antes do hard limit de 150s)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
@@ -412,7 +412,14 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
       } catch (timeoutError: any) {
         console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
-        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+        
+        // Se não é o primeiro batch e já temos imagens, continuar
+        if (batchIndex > 0 && completedCount > 0) {
+          console.warn(`⚠️ [V3] Batch ${batchIndex + 1} deu timeout, mas ${completedCount} imagens já foram geradas. Continuando...`);
+          break; // Sair do loop de batches, continuar com o que temos
+        }
+        
+        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). A geração está demorando muito - isso pode indicar sobrecarga da API OpenAI. Tente novamente em alguns minutos.`);
       }
     }
 
