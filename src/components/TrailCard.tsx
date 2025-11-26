@@ -105,17 +105,17 @@ const TrailCard = ({
         onClick={handleClick}
         className="relative rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 border transition-all hover:scale-105 hover:shadow-xl cursor-pointer min-h-[260px] xs:min-h-[280px] sm:h-[320px] flex flex-col w-full overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #22C55E 0%, #10B981 100%)',
+          background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #C084FC 100%)',
           borderColor: 'rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 4px 20px rgba(34, 197, 94, 0.3)',
+          boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-          e.currentTarget.style.boxShadow = '0 8px 30px rgba(34, 197, 94, 0.4)';
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.5)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(34, 197, 94, 0.3)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.4)';
         }}
       >
         {/* Textura de Pontos */}
@@ -173,15 +173,16 @@ const TrailCard = ({
         </div>
         
       {/* Botão CTA */}
-      <button className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl transition-all relative z-10 text-white flex-shrink-0"
+      <button className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl transition-all relative z-10 flex-shrink-0"
               style={{
-                background: 'linear-gradient(135deg, #837BFF 0%, #A855F7 100%)',
+                background: '#FFFFFF',
+                color: '#8B5CF6',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #7162FF 0%, #9333EA 100%)';
+                e.currentTarget.style.background = '#F8FAFC';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #837BFF 0%, #A855F7 100%)';
+                e.currentTarget.style.background = '#FFFFFF';
               }}>
         Revisar
       </button>
