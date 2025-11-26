@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Sparkles, Loader2, Circle } from 'lucide-react';
+import { Bot, Send, Loader2, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Card } from '@/components/ui/card';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -108,32 +107,17 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
   ];
 
   return (
-    <div className="py-8 relative">
-      {/* Separador visual animado */}
-      <motion.div
-        className="flex items-center gap-4 mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent" />
-        <div className="flex items-center gap-3 px-4 py-2 bg-purple-50 dark:bg-purple-950/30 rounded-full">
-          <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 animate-pulse" />
-          <span className="font-semibold text-purple-900 dark:text-purple-100">Hora de Praticar!</span>
-        </div>
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent" />
-      </motion.div>
-
-      {/* Interface tipo ChatGPT */}
+    <>
+      {/* Interface tipo ChatGPT - FULLSCREEN */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="mx-auto max-w-5xl"
+        transition={{ duration: 0.5 }}
+        className="fixed inset-0 z-50 flex flex-col"
       >
-        <Card className="bg-gray-950 border-gray-800 rounded-2xl shadow-2xl">
+        <div className="flex flex-col h-full bg-gray-950">
           {/* Header do Chat */}
-          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 sticky top-0 z-10">
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
@@ -154,7 +138,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
           </div>
 
           {/* Área de Mensagens */}
-          <div className="bg-gray-900 p-6 h-[500px] overflow-y-auto">
+          <div className="flex-1 bg-gray-900 p-6 overflow-y-auto">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -211,7 +195,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
           </div>
 
           {/* Input Area */}
-          <div className="px-6 py-4 border-t border-gray-700">
+          <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0">
             <div className="relative">
               <textarea
                 ref={textareaRef}
@@ -219,19 +203,19 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isTyping}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 pr-14 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 pr-20 resize-none focus:ring-2 focus:ring-purple-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
                 placeholder="Digite seu prompt aqui... Ex: 'Crie 3 ideias de posts sobre...'"
                 rows={3}
               />
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isTyping}
-                className="absolute bottom-3 right-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute bottom-3 right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg disabled:shadow-none"
               >
                 {isTyping ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5" />
                 )}
               </button>
             </div>
@@ -256,8 +240,8 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
               </motion.div>
             )}
           </div>
-        </Card>
+        </div>
       </motion.div>
-    </div>
+    </>
   );
 }
