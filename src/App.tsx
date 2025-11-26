@@ -29,6 +29,7 @@ import AdminValidationSystem from "./pages/AdminValidationSystem";
 import AdminPipelineTest from "./pages/AdminPipelineTest";
 import AdminPipelineHub from "./pages/AdminPipelineHub";
 import AdminManualHub from "./pages/AdminManualHub";
+import AdminTestImageGeneration from "./pages/AdminTestImageGeneration";
 import AdminPipelineCreateSingle from "./pages/AdminPipelineCreateSingle";
 import AdminPipelineCreateBatch from "./pages/AdminPipelineCreateBatch";
 import AdminPipelineMonitor from "./pages/AdminPipelineMonitor";
@@ -87,6 +88,7 @@ const App = () => (
           <Route path="/admin/intonation-test" element={<ProtectedRoute><AdminIntonationTest /></ProtectedRoute>} />
           <Route path="/admin/validation-system" element={<ProtectedRoute><AdminValidationSystem /></ProtectedRoute>} />
           <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
+          <Route path="/admin/test-images" element={<ProtectedRoute><AdminTestImageGeneration /></ProtectedRoute>} />
           <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
           {/* NEW FEATURES ROUTES */}
           <Route path="/guides" element={<Guides />} />
