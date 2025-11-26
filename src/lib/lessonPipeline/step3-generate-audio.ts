@@ -315,14 +315,45 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       return Promise.race([invokePromise, timeoutPromise]);
     };
 
+    // Retry logic com exponential backoff
+    const MAX_RETRIES = 3;
     let batchData, batchError;
-    try {
-      const result = await invokeBatchWithTimeout() as any;
-      batchData = result.data;
-      batchError = result.error;
-    } catch (timeoutError: any) {
-      console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
-      throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+    let lastError;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          const waitTime = Math.pow(2, attempt - 1) * 2000; // 2s, 4s, 8s
+          console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_RETRIES + 1} após ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+
+        const result = await invokeBatchWithTimeout() as any;
+        batchData = result.data;
+        batchError = result.error;
+
+        // Se deu timeout, não tentar retry
+        if (!batchError) {
+          break; // Sucesso!
+        }
+
+        // Se deu erro mas não é de network, não retry
+        if (batchError && !batchError.message?.includes('Failed to send')) {
+          break; // Erro diferente, não retry
+        }
+
+        lastError = batchError;
+        console.warn(`   ⚠️ Erro no batch ${batchIndex + 1} (tentativa ${attempt + 1}): ${batchError.message}`);
+
+        // Se foi última tentativa, vai lançar erro fora do loop
+        if (attempt === MAX_RETRIES) {
+          break;
+        }
+
+      } catch (timeoutError: any) {
+        console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
+        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+      }
     }
 
     if (batchError) {
