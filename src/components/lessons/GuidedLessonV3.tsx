@@ -341,18 +341,14 @@ export function GuidedLessonV3({
           </div>
         </div>
 
-        {/* Container do Slide - COM PADDING PARA NÃO ESTOURAR */}
-        <div className="flex-1 relative w-full flex items-center justify-center px-4 md:px-8 pt-20 md:pt-24 pb-24 md:pb-28">
+        {/* Container do Slide - ESPAÇO CALCULADO */}
+        <div className="absolute inset-0 top-14 md:top-16 bottom-20 md:bottom-24 flex items-center justify-center px-4 md:px-8">
           {currentSlide?.imageUrl && (
             <div className="relative w-full h-full flex items-center justify-center">
               <img
                 src={currentSlide.imageUrl}
                 alt={currentSlide.contentIdea}
-                className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
-                style={{ 
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                }}
+                className="max-w-full max-h-full object-contain rounded-lg"
               />
 
               {/* Número do slide - ELEGANTE */}
