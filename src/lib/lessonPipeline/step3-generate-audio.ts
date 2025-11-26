@@ -73,17 +73,29 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
         break; // Sucesso!
       }
 
-      console.warn(`   ⚠️ Erro ao gerar áudio (tentativa ${attempt + 1}): ${error.message}`);
+      // Log detalhado do erro
+      console.warn(`   ⚠️ Erro ao gerar áudio (tentativa ${attempt + 1}):`);
+      console.warn(`   📝 Mensagem: ${error.message}`);
+      console.warn(`   🔍 Detalhes: ${JSON.stringify(error)}`);
 
     } catch (timeoutError: any) {
       console.error('❌ [V1] Timeout ao gerar áudio:', timeoutError);
+      console.error('   🔍 Stack:', timeoutError.stack);
       throw new Error(`Timeout ao gerar áudio (10min). O texto pode ser muito longo (${audioTextLength} caracteres).`);
     }
   }
 
   if (error) {
     console.error('❌ [V1] Erro ao gerar áudio:', error);
-    throw new Error(`Falha ao gerar áudio: ${error.message}`);
+    console.error('   📝 Tipo de erro:', error.name);
+    console.error('   🔍 Stack:', error.stack);
+    
+    // Mensagem de erro mais específica
+    const errorMsg = error.message || 'Erro desconhecido';
+    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('fetch')) {
+      throw new Error(`Falha ao conectar com o serviço de geração de áudio. Verifique se a edge function está deployada. Detalhes: ${errorMsg}`);
+    }
+    throw new Error(`Falha ao gerar áudio: ${errorMsg}`);
   }
   
   if (!data || !data.audio_base64) {
