@@ -328,12 +328,12 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 3
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - Lovable AI (Gemini)
   const totalSlides = input.v3Data!.slides.length;
-  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (Lovable AI - Gemini Flash Image)...`);
 
-  const BATCH_SIZE = 4; // 4 imagens por batch (configuração original que funcionava)
-  const BATCH_TIMEOUT_MS = 180000; // 3 minutos por batch (mais tempo para API lenta)
+  const BATCH_SIZE = 4; // 4 imagens por batch (Lovable AI é mais rápida, ~80s)
+  const BATCH_TIMEOUT_MS = 120000; // 2 minutos por batch (Lovable AI é mais rápida que OpenAI)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
@@ -419,7 +419,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
           break; // Sair do loop de batches, continuar com o que temos
         }
         
-        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). A geração está demorando muito - isso pode indicar sobrecarga da API OpenAI. Tente novamente em alguns minutos.`);
+        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). A geração está demorando muito. Tente novamente em alguns minutos.`);
       }
     }
 
