@@ -51,6 +51,13 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
   const contentSize = JSON.stringify(contentWithoutExercises).length;
   console.log(`      Content: ${contentSize} caracteres`);
   console.log(`      Exercises: ${exercises.length} exercícios`);
+  
+  // VALIDAÇÃO: Se content muito grande (>5MB), algo está errado
+  if (contentSize > 5_000_000) {
+    console.error(`❌ Content muito grande: ${contentSize} caracteres (${(contentSize / 1_000_000).toFixed(1)}MB)`);
+    console.error('   Possível duplicação de dados detectada!');
+    throw new Error(`Content muito grande (${(contentSize / 1_000_000).toFixed(1)}MB). Máximo: 5MB. Verifique se há duplicação de dados.`);
+  }
 
   // VALIDAÇÃO: Se content muito grande (>5MB), algo está errado
   if (contentSize > 5_000_000) {

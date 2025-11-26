@@ -117,7 +117,7 @@ export async function teste14Imagens() {
   }
 
   const overallElapsedTime = Date.now() - overallStartTime;
-  const successCount = allSlides.filter(s => s.imageUrl && s.imageUrl !== '').length;
+  const successCount = allSlides.filter((s: any) => s.imageUrl && s.imageUrl !== '').length;
 
   console.log('\n🎉 TESTE COMPLETO!');
   console.log(`✅ ${successCount}/${slides.length} imagens geradas com sucesso`);

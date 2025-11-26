@@ -82,31 +82,57 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Card adicional: Playground Sessions */}
-        <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/40 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-blue-600" />
-              Playground Sessions
-            </CardTitle>
-            <CardDescription>
-              Analytics e histórico de uso do playground
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-2 mb-4">
-              <p>📊 Total de sessões e tokens usados</p>
-              <p>📊 Usuários únicos e taxa de feedback</p>
-              <p>📊 Histórico completo de interações</p>
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => navigate('/admin/playground-sessions')}
-            >
-              Ver Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Cards adicionais em grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-6 h-6 text-blue-600" />
+                Playground Sessions
+              </CardTitle>
+              <CardDescription>
+                Analytics e histórico de uso do playground
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>📊 Total de sessões e tokens usados</p>
+                <p>📊 Usuários únicos e taxa de feedback</p>
+                <p>📊 Histórico completo de interações</p>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => navigate('/admin/playground-sessions')}
+              >
+                Ver Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-green-500/20 bg-green-500/5 hover:border-green-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                🖼️ Teste de Geração de Imagens
+              </CardTitle>
+              <CardDescription>
+                Testar a edge function generate-slide-images com OpenAI DALL-E 3
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>🎨 Geração de imagens com DALL-E 3</p>
+                <p>📊 Estatísticas em tempo real</p>
+                <p>🖼️ Preview visual das imagens geradas</p>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => navigate('/admin/test-images')}
+              >
+                Testar Geração de Imagens
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="flex justify-center pt-4">
           <Button
