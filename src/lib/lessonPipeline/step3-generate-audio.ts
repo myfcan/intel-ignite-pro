@@ -275,59 +275,82 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides com timeout
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout)
   console.log('   🖼️ Gerando imagens dos slides...');
-  const IMAGES_TIMEOUT_MS = 180000; // 3 minutos
-  
-  const invokeImagesWithTimeout = async () => {
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout ao gerar imagens (3min)')), IMAGES_TIMEOUT_MS)
-    );
-    
-    const invokePromise = supabase.functions.invoke('generate-slide-images', {
-      body: {
-        slides: input.v3Data!.slides.map(slide => ({
-          id: slide.id,
-          slideNumber: slide.slideNumber,
-          contentIdea: slide.contentIdea
-        }))
-      }
-    });
-    
-    return Promise.race([invokePromise, timeoutPromise]);
-  };
+  const BATCH_SIZE = 4; // 4 imagens por batch (~120s, dentro do limite de 150s)
+  const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch
 
-  let imagesData, imagesError;
-  try {
-    const result = await invokeImagesWithTimeout() as any;
-    imagesData = result.data;
-    imagesError = result.error;
-  } catch (timeoutError: any) {
-    console.error('❌ [V3] Timeout ao gerar imagens:', timeoutError);
-    throw new Error(`Timeout ao gerar imagens (3min). Reduza o número de slides.`);
-  }
+  const slidesInput = input.v3Data!.slides.map(slide => ({
+    id: slide.id,
+    slideNumber: slide.slideNumber,
+    contentIdea: slide.contentIdea
+  }));
 
-  if (imagesError) {
-    console.error('❌ [V3] Erro ao gerar imagens:', imagesError);
-    throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
-  }
-  
-  if (!imagesData || !imagesData.slides) {
-    console.error('❌ [V3] Resposta inválida da edge function (imagens)');
-    throw new Error('Resposta inválida: imagens não retornadas pela edge function');
-  }
+  const totalBatches = Math.ceil(slidesInput.length / BATCH_SIZE);
+  console.log(`   📦 Processando ${slidesInput.length} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
 
-  // Atualizar v3Data com URLs das imagens
-  const updatedSlides = input.v3Data.slides.map(slide => {
-    const imageData = imagesData.slides.find((s: any) => s.id === slide.id);
-    return {
-      ...slide,
-      imageUrl: imageData?.imageUrl || '',
-      imagePrompt: imageData?.imagePrompt || slide.contentIdea
+  let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais
+
+  // Processar cada batch sequencialmente
+  for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+    console.log(`   🔄 Batch ${batchIndex + 1}/${totalBatches}...`);
+
+    const invokeBatchWithTimeout = async () => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout no batch ${batchIndex + 1}`)), BATCH_TIMEOUT_MS)
+      );
+
+      const invokePromise = supabase.functions.invoke('generate-slide-images', {
+        body: {
+          slides: slidesInput,
+          batchSize: BATCH_SIZE,
+          batchIndex: batchIndex
+        }
+      });
+
+      return Promise.race([invokePromise, timeoutPromise]);
     };
-  });
 
-  console.log(`   ✅ ${updatedSlides.length} imagens geradas`);
+    let batchData, batchError;
+    try {
+      const result = await invokeBatchWithTimeout() as any;
+      batchData = result.data;
+      batchError = result.error;
+    } catch (timeoutError: any) {
+      console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
+      throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
+    }
+
+    if (batchError) {
+      console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
+      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+    }
+
+    if (!batchData || !batchData.slides) {
+      console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
+      throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
+    }
+
+    // Atualizar slides com as imagens geradas neste batch
+    const startIdx = batchIndex * BATCH_SIZE;
+    const endIdx = Math.min(startIdx + BATCH_SIZE, slidesInput.length);
+
+    for (let i = startIdx; i < endIdx; i++) {
+      const slideFromBatch = batchData.slides[i];
+      if (slideFromBatch && slideFromBatch.imageUrl) {
+        finalSlidesWithImages[i] = {
+          ...finalSlidesWithImages[i],
+          imageUrl: slideFromBatch.imageUrl,
+          imagePrompt: slideFromBatch.imagePrompt || slideFromBatch.contentIdea
+        };
+      }
+    }
+
+    console.log(`   ✅ Batch ${batchIndex + 1}/${totalBatches}: ${batchData.stats?.success || 0} imagens geradas`);
+  }
+
+  const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
+  console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
   
   const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
@@ -338,7 +361,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     wordTimestamps: audioData.word_timestamps,
     v3Data: {
       ...input.v3Data,
-      slides: updatedSlides
+      slides: finalSlidesWithImages
     }
   };
 }
