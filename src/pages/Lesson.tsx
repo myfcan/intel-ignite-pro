@@ -30,6 +30,8 @@ interface Lesson {
   passing_score?: number;
   estimated_time: number;
   difficulty_level: string;
+  trail_id?: string;
+  order_index: number;
 }
 
 interface Exercise {
@@ -158,16 +160,41 @@ const Lesson = () => {
     }
   };
 
-  const handleCloseGamificationCard = () => {
+  const handleContinueFromGamification = async () => {
     setShowResultCard(false);
-    // Após fechar o card de gamificação, mostra o playground
-    setShowPlayground(true);
-    setTimeout(() => {
-      document.getElementById('playground-section')?.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }, 100);
+    
+    // Buscar próxima aula da trilha
+    if (lesson?.trail_id) {
+      try {
+        const { data: nextLesson, error } = await supabase
+          .from('lessons')
+          .select('id, order_index')
+          .eq('trail_id', lesson.trail_id)
+          .gt('order_index', lesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (!error && nextLesson) {
+          navigate(`/lessons-interactive/${nextLesson.id}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar próxima aula:', error);
+      }
+    }
+    
+    // Se não houver próxima aula, vai para o dashboard
+    navigate('/dashboard');
+  };
+  
+  const handleBackToTrail = () => {
+    setShowResultCard(false);
+    if (lesson?.trail_id) {
+      navigate(`/trails/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleCompleteLesson = async () => {
@@ -413,7 +440,8 @@ const Lesson = () => {
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
           nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
-          onClose={handleCloseGamificationCard}
+          onContinue={handleContinueFromGamification}
+          onBackToTrail={handleBackToTrail}
         />
       )}
     </div>
