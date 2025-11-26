@@ -324,12 +324,12 @@ export function GuidedLessonV3({
           </div>
         </div>
 
-        {/* Área principal com slide */}
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <Card className="overflow-hidden shadow-2xl">
+        {/* Área principal com slide - FULLSCREEN */}
+        <div className="w-full h-[calc(100vh-200px)] md:h-[calc(100vh-180px)] flex items-center justify-center px-2 md:px-4">
+          <Card className="w-full h-full max-w-7xl overflow-hidden shadow-2xl">
             {/* Imagem do slide */}
             {currentSlide?.imageUrl && (
-              <div className="aspect-video bg-gray-900 relative overflow-hidden">
+              <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
                 <img
                   src={currentSlide.imageUrl}
                   alt={currentSlide.contentIdea}
@@ -337,8 +337,8 @@ export function GuidedLessonV3({
                 />
 
                 {/* Número do slide overlay */}
-                <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
-                  <span className="text-white text-sm font-medium">
+                <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/70 backdrop-blur-sm px-2 py-1 md:px-3 md:py-1 rounded-full">
+                  <span className="text-white text-xs md:text-sm font-medium">
                     {currentSlide.slideNumber}
                   </span>
                 </div>
@@ -347,107 +347,111 @@ export function GuidedLessonV3({
 
             {/* Fallback se não houver imagem */}
             {!currentSlide?.imageUrl && (
-              <div className="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <div className="text-center text-white px-8">
-                  <Sparkles className="h-16 w-16 mx-auto mb-4 opacity-80" />
-                  <p className="text-xl font-medium">
+              <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <div className="text-center text-white px-4 md:px-8">
+                  <Sparkles className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 opacity-80" />
+                  <p className="text-lg md:text-xl font-medium">
                     {currentSlide?.contentIdea || 'Carregando slide...'}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Controles de áudio */}
-            <div className="bg-white p-6 border-t">
-              {/* Barra de progresso */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
+          </Card>
+        </div>
+
+        {/* Controles de áudio - FIXO NO BOTTOM */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t shadow-lg z-20">
+          <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
+            {/* Barra de progresso */}
+            <div className="mb-3">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+              <div
+                className="h-2 bg-gray-200 rounded-full cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const percentage = x / rect.width;
+                  seekTo(percentage * duration);
+                }}
+              >
                 <div
-                  className="h-2 bg-gray-200 rounded-full cursor-pointer"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    seekTo(percentage * duration);
-                  }}
-                >
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Botões de controle */}
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={skipToPreviousSlide}
-                  disabled={currentSlideIndex === 0}
-                >
-                  <SkipBack className="h-5 w-5" />
-                </Button>
-
-                <Button
-                  size="lg"
-                  onClick={togglePlayPause}
-                  className="rounded-full h-14 w-14 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-                  disabled={!isAudioInitialized}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-6 w-6" />
-                  ) : (
-                    <Play className="h-6 w-6 ml-1" />
-                  )}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={skipToNextSlide}
-                  disabled={currentSlideIndex === lessonData.slides.length - 1}
-                >
-                  <SkipForward className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {/* Avatar da MAIA */}
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <Avatar className="h-10 w-10 border-2 border-purple-200">
-                  <AvatarImage src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MAIA-yMyV9RI70wvJK0yBXHLBqJTlL9p4zg.png" />
-                </Avatar>
-                <p className="text-sm text-gray-600 italic">
-                  Narração com MAIA
-                </p>
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all"
+                  style={{ width: `${progressPercentage}%` }}
+                />
               </div>
             </div>
-          </Card>
 
-          {/* Botão para pular para exercícios (se já ouviu o áudio) */}
-          {maxAudioProgress > duration * 0.8 && (
-            <div className="mt-6 text-center">
+            {/* Botões de controle */}
+            <div className="flex items-center justify-center gap-3 md:gap-4">
               <Button
-                onClick={() => {
-                  if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
-                    setCurrentPhase('exercises');
-                  } else if (lessonData.finalPlaygroundConfig) {
-                    setCurrentPhase('playground-final');
-                  } else {
-                    handleLessonComplete();
-                  }
-                }}
-                variant="outline"
-                className="gap-2"
+                variant="ghost"
+                size="icon"
+                onClick={skipToPreviousSlide}
+                disabled={currentSlideIndex === 0}
+                className="h-10 w-10 md:h-12 md:w-12"
               >
-                Continuar para {lessonData.exercisesConfig?.length ? 'Exercícios' : 'Playground'} →
+                <SkipBack className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+
+              <Button
+                size="lg"
+                onClick={togglePlayPause}
+                className="rounded-full h-12 w-12 md:h-14 md:w-14 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                disabled={!isAudioInitialized}
+              >
+                {isPlaying ? (
+                  <Pause className="h-5 w-5 md:h-6 md:w-6" />
+                ) : (
+                  <Play className="h-5 w-5 md:h-6 md:w-6 ml-0.5" />
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={skipToNextSlide}
+                disabled={currentSlideIndex === lessonData.slides.length - 1}
+                className="h-10 w-10 md:h-12 md:w-12"
+              >
+                <SkipForward className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
-          )}
+
+            {/* Avatar da LIV */}
+            <div className="mt-3 flex items-center justify-center gap-2 md:gap-3">
+              <Avatar className="h-8 w-8 md:h-10 md:w-10 border-2 border-purple-200">
+                <AvatarImage src="/liv-avatar.png" />
+              </Avatar>
+              <p className="text-xs md:text-sm text-gray-600 italic">
+                Narração com LIV
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Botão para pular para exercícios (se já ouviu o áudio) */}
+        {maxAudioProgress > duration * 0.8 && (
+          <div className="fixed top-20 right-4 z-10">
+            <Button
+              onClick={() => {
+                if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+                  setCurrentPhase('exercises');
+                } else if (lessonData.finalPlaygroundConfig) {
+                  setCurrentPhase('playground-final');
+                } else {
+                  handleLessonComplete();
+                }
+              }}
+              className="gap-2 shadow-lg"
+            >
+              Continuar para {lessonData.exercisesConfig?.length ? 'Exercícios' : 'Playground'} →
+            </Button>
+          </div>
+        )}
 
         {/* Elemento de áudio (hidden) */}
         <audio
