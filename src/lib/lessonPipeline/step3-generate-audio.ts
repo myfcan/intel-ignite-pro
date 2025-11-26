@@ -332,9 +332,9 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const totalSlides = input.v3Data!.slides.length;
   console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (Lovable AI - Gemini Flash Image)...`);
 
-  // Edge Functions têm limite de 150s. Com 2 imagens/batch (~16-20s), ficamos seguros
-  const BATCH_SIZE = 2; // 2 imagens por batch (mais seguro para evitar timeout)
-  const BATCH_TIMEOUT_MS = 100000; // 100 segundos por batch (bem abaixo do limite de 150s)
+  // Edge Functions têm limite de 150s. Logs mostram 4 imagens em ~34s = seguro
+  const BATCH_SIZE = 4; // 4 imagens por batch (comprovado nos logs: 7-9s por imagem)
+  const BATCH_TIMEOUT_MS = 120000; // 120 segundos por batch (margem de segurança)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
