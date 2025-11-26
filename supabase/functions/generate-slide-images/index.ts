@@ -42,18 +42,21 @@ serve(async (req) => {
           messages: [
             {
               role: "user",
-              content: `Create a professional, modern, educational slide image: ${slide.contentIdea}. 
-              
+              content: `Create a HORIZONTAL WIDESCREEN educational slide image in 16:9 aspect ratio for: ${slide.contentIdea}
+
+CRITICAL: Image MUST be LANDSCAPE/HORIZONTAL format (wider than it is tall), optimized for widescreen displays.
+
 Style requirements:
-- Clean and professional design
+- Professional and modern design
 - Friendly and approachable
 - Educational and engaging
 - Vibrant but not overwhelming colors
 - Modern flat design aesthetic
-- Suitable for learning content
 - High contrast for readability
+- Layout optimized for WIDE HORIZONTAL space (not vertical)
+- Content distributed horizontally across the image
 
-Image should be horizontal (16:9 aspect ratio) and optimized for presentation slides.`
+Format: Horizontal landscape 16:9 ratio (e.g., 1920x1080 or 1600x900)`
             }
           ],
           modalities: ["image", "text"]
