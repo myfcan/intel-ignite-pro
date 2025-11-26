@@ -1608,10 +1608,10 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl p-5 border border-primary/20 shadow-xl">
-                  <div className="flex justify-center mb-3">
+                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl p-4 border border-primary/20 shadow-xl">
+                  <div className="flex justify-center mb-2.5">
                     <LivAvatar 
-                      size="large"
+                      size="medium"
                       isPlaying={isPlaying && isAudioEnabled}
                       showHalo={false}
                       state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
@@ -1623,7 +1623,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                   {/* Botão Silenciar Liv - dentro do card */}
                   <button
                     onClick={toggleAudio}
-                    className={`w-full px-3 py-1.5 rounded-full font-medium text-xs text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                    className={`w-full px-2.5 py-1.5 rounded-full font-medium text-[10px] text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1 ${
                       isAudioEnabled 
                         ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
                         : 'bg-green-500'
@@ -1753,13 +1753,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile - versão balanceada */}
+      {/* Liv Mobile - versão elegante */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl p-3 border-2 border-primary/30 shadow-xl max-w-[300px] w-full">
-          <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-primary/30 shadow-xl max-w-[290px] w-full">
+          <div className="flex items-center gap-2">
             <div className="relative flex-shrink-0">
               <LivAvatar 
-                size="medium"
+                size="small"
                 isPlaying={isPlaying && isAudioEnabled}
                 showHalo={false}
                 state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
@@ -1769,7 +1769,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              <p className="text-[11px] text-slate-700 leading-snug font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
