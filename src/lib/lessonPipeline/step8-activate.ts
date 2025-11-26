@@ -27,7 +27,7 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
       imageUrl: slide.imageUrl,
       timestamp: slide.timestamp
     }));
-    
+
     contentWithoutExercises = {
       ...contentWithoutExercises,
       slides: cleanedSlides

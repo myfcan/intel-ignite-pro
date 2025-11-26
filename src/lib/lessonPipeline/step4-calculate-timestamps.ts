@@ -169,7 +169,7 @@ function calculateTimestampsV3(input: Step3Output): Step4Output {
   // DEBUG: Verificar tamanho do content
   const contentSize = JSON.stringify(structuredContent).length;
   console.log(`🐛 [V3] Tamanho do structuredContent: ${contentSize} caracteres (${(contentSize / 1000).toFixed(1)}KB)`);
-  
+
   if (contentSize > 1_000_000) {
     console.warn(`⚠️ [V3] Content muito grande! ${(contentSize / 1_000_000).toFixed(1)}MB`);
     console.warn(`   - ${totalSlides} slides`);
