@@ -1,0 +1,165 @@
+[
+  {
+    "model": "v3",
+    "title": "Os 10 Erros Fatais com I.A. (e Como Evitá-los)",
+    "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+    "trackName": "Fundamentos de IA",
+    "orderIndex": 8,
+    "estimatedTimeMinutes": 15,
+
+    "v3Data": {
+      "audioText": "Chegamos à última aula dos Fundamentos — e essa talvez seja a mais transformadora de todas. Existe uma diferença enorme entre pessoas que têm resultados consistentes com Inteligência Artificial e pessoas que dizem que 'a I.A. não funciona'. E essa diferença não tem nada a ver com inteligência, experiência ou formação. A diferença está nos erros que elas cometem sem perceber. Hoje você vai conhecer os dez erros mais comuns, aqueles que fazem até a melhor I.A. gerar respostas fracas, genéricas ou incompletas. E o mais curioso: a maioria das pessoas comete pelo menos cinco desses erros diariamente. Depois dessa aula, você vai entrar no grupo dos usuários que realmente sabem usar Inteligência Artificial — e a qualidade das suas respostas vai mudar completamente. Vamos começar eliminando os primeiros quatro erros, aqueles que destroem a clareza. O Erro número um é ser vago demais. Quando você diz apenas 'Me ajuda com um texto', a I.A. não sabe o que você imagina. O correto é: 'Escreva um email curto pedindo folga na sexta-feira para meu chefe. Tom profissional e educado.' A regra é simples: se um humano perguntaria 'mas como assim?', a I.A. também precisa de detalhes. O Erro número dois é ignorar o contexto. Em vez de 'Faça um post sobre academia', diga: 'Crie um post sobre academia para mulheres acima de quarenta anos que nunca treinaram e têm receio de começar.' Quanto mais contexto, mais preciso o resultado. O Erro número três é aceitar a primeira resposta. Profissionais NUNCA fazem isso. Eles sempre refinam: 'Refaça de forma mais curta', 'Deixe o tom mais casual', 'Adicione exemplos'. A I.A. tem paciência infinita. Use isso. O Erro número quatro é não usar exemplos. Em vez de apenas 'Escreva um email profissional', adicione: 'Escreva um email profissional. Exemplo do tom desejado: Prezado João, espero que esteja bem…' Exemplos são como bússolas — eles guiam a I.A. com precisão. Esses quatro erros acontecem sem você perceber! Agora vamos aos erros cinco a oito, aqueles que limitam o potencial da I.A. O Erro número cinco é fazer perguntas de 'sim ou não'. Em vez de apenas 'Está certo?', pergunte: 'Analise e diga o que está bom, o que pode melhorar e como corrigir.' Você pode pedir uma análise completa — não aceite respostas de uma palavra. O Erro número seis é esquecer que a I.A. tem memória na conversa. A maioria das pessoas reinicia o chat desnecessariamente. Você pode continuar: 'Pegue o email anterior e transforme em mensagem de WhatsApp', 'Com base na lista que criamos, gere uma tabela', 'Agora resuma tudo em cinco pontos.' A conversa pode evoluir por horas. O Erro número sete é fazer perguntas complexas demais de uma vez. Em vez de 'Crie um plano de negócios completo, com análise de mercado, projeções e estratégias', divida: primeiro 'Faça a análise de mercado', depois 'Agora crie a projeção financeira com base na análise', e por fim 'Com os dois acima, construa a estratégia.' Dividir resulta em qualidade muito superior. O Erro número oito é não definir o formato. Em vez de 'Me dê dicas de economia', especifique: 'Me dê cinco dicas de economia em lista numerada, cada item com duas linhas.' Formatos poderosos incluem: tabela comparativa, passo a passo, tópicos claros, roteiro com horários. Quando você define formato, a I.A. entrega dez vezes melhor! Agora os dois últimos erros. O Erro número nove é confiar cegamente. A I.A. pode errar em datas, números, fatos recentes, regras, leis e estatísticas. Regra: sempre confirme informação sensível. O Erro número dez é não especificar o tom. Em vez de apenas 'Escreva uma mensagem', diga: 'Escreva uma mensagem em tom profissional, mas amigável, como um colega experiente.' Tons que transformam resultados incluem: executivo, paciente como professor, inspirador, vendedor sutil, e consultivo. Parabéns! Você acaba de conhecer os dez erros fatais que impedem a maioria das pessoas de ter bons resultados com Inteligência Artificial. Agora vamos para o Playground colocar tudo isso em prática!",
+
+      "slides": [
+        {
+          "id": "slide-1",
+          "slideNumber": 1,
+          "contentIdea": "Duas pessoas lado a lado em ambiente de trabalho moderno: à esquerda, pessoa frustrada olhando para tela de computador com interface de IA mostrando respostas genéricas e ruins; à direita, pessoa sorrindo e satisfeita com tela mostrando resultados excelentes e específicos. Contraste visual forte entre fracasso e sucesso."
+        },
+        {
+          "id": "slide-2",
+          "slideNumber": 2,
+          "contentIdea": "Tela de chat em close-up mostrando ERRO #1 em destaque. Prompt vago em vermelho: 'Me ajuda com um texto' com X vermelho. Abaixo, prompt específico em verde: 'Escreva um email curto pedindo folga na sexta-feira para meu chefe. Tom profissional e educado' com check verde. Visual de comparação ERRADO vs CERTO."
+        },
+        {
+          "id": "slide-3",
+          "slideNumber": 3,
+          "contentIdea": "Ícone de lupa sobre texto vago que se transforma em texto detalhado. Efeito de zoom mostrando como detalhes aparecem quando você especifica. Elementos visuais: interrogação se transformando em exclamação, nebuloso se tornando nítido."
+        },
+        {
+          "id": "slide-4",
+          "slideNumber": 4,
+          "contentIdea": "ERRO #2 em destaque. Visual de contexto sendo adicionado: mulher de 40+ anos em academia pela primeira vez, hesitante mas determinada. Contraste com prompt genérico 'post sobre academia' transformando-se em prompt contextualizado com público-alvo específico."
+        },
+        {
+          "id": "slide-5",
+          "slideNumber": 5,
+          "contentIdea": "ERRO #3 visualizado. Pessoa refinando uma resposta da IA em múltiplas iterações, como um escultor lapidando uma estátua de mármore. Três versões lado a lado: primeira resposta (bruta), segunda melhorada (polida), terceira perfeita (obra de arte). Setas mostrando evolução."
+        },
+        {
+          "id": "slide-6",
+          "slideNumber": 6,
+          "contentIdea": "Mãos digitando no teclado com comandos de refinamento aparecendo como holograma acima: 'Refaça mais curto', 'Tom mais casual', 'Adicione exemplos'. Visual futurista mostrando iteração em tempo real. Ênfase na paciência infinita da IA."
+        },
+        {
+          "id": "slide-7",
+          "slideNumber": 7,
+          "contentIdea": "ERRO #4 em destaque. Bússola digital apontando para exemplo de email profissional. Visual de 'antes' (sem exemplo, direção incerta) e 'depois' (com exemplo, direção precisa). Bússola com agulha estabilizada ao fornecer exemplo."
+        },
+        {
+          "id": "slide-8",
+          "slideNumber": 8,
+          "contentIdea": "ERRO #5 visualizado. Pergunta 'Está certo?' com resposta minimalista 'Sim' em contraste com pergunta detalhada 'Analise e diga...' resultando em resposta rica e estruturada em três partes: o que está bom, o que melhorar, como corrigir. Visual de expansão de informação."
+        },
+        {
+          "id": "slide-9",
+          "slideNumber": 9,
+          "contentIdea": "ERRO #6 em destaque. Conversa contínua entre usuário e IA visualizada como linha do tempo conectada. Mensagens anteriores ligadas por setas luminosas, mostrando como a IA lembra do contexto. Cérebro digital com conexões ativas representando memória da conversa."
+        },
+        {
+          "id": "slide-10",
+          "slideNumber": 10,
+          "contentIdea": "ERRO #7 visualizado. Grande quebra-cabeça complexo (plano de negócios completo) sendo separado em 3 peças menores numeradas: 1. Análise de mercado, 2. Projeção financeira, 3. Estratégia. Setas mostrando sequência lógica. Visual de organização e simplificação."
+        },
+        {
+          "id": "slide-11",
+          "slideNumber": 11,
+          "contentIdea": "ERRO #8 em destaque. Quatro formatos diferentes do mesmo conteúdo lado a lado: tabela comparativa, lista numerada, passo a passo com ícones, e roteiro com horários. Todos os formatos com o mesmo tema 'dicas de economia'. Destaque para versatilidade de formatos."
+        },
+        {
+          "id": "slide-12",
+          "slideNumber": 12,
+          "contentIdea": "ERROS #9 e #10 juntos. Balança equilibrada: de um lado 'confiança cega' com ícone de alerta sobre datas/números/fatos, do outro lado 'especificação de tom' com 4 exemplos de tons diferentes (executivo, casual, inspirador, técnico) aplicados à mesma mensagem."
+        }
+      ],
+
+      "finalPlaygroundConfig": {
+        "initialPrompt": "🎯 MISSÃO FINAL - Aplique os 10 Erros Eliminados!\n\nAgora é sua vez! Escolha um problema real que você tem hoje e use o que aprendeu:\n\n1️⃣ Descreva seu problema ou tarefa\n2️⃣ Evite os 10 erros que você acabou de aprender\n3️⃣ Crie um prompt completo e específico\n4️⃣ Refine a resposta se necessário\n\n❌ EVITE OS 10 ERROS:\n1. Ser vago ❌\n2. Ignorar contexto ❌\n3. Aceitar primeira resposta ❌\n4. Não usar exemplos ❌\n5. Perguntas sim/não ❌\n6. Esquecer memória da conversa ❌\n7. Perguntas complexas sem dividir ❌\n8. Não definir formato ❌\n9. Confiar cegamente ❌\n10. Não especificar tom ❌\n\nVamos lá - conquiste resultados incríveis! 🚀"
+      }
+    },
+
+    "exercises": [
+      {
+        "type": "multiple-choice",
+        "data": {
+          "question": "Qual é o Erro número 1 mais comum que as pessoas cometem ao usar IA?",
+          "options": [
+            "Confiar cegamente nos resultados",
+            "Ser vago demais no prompt",
+            "Não especificar o tom",
+            "Fazer perguntas complexas"
+          ],
+          "correctAnswer": "Ser vago demais no prompt",
+          "explanation": "Correto! Ser vago é o erro mais básico. A IA precisa de detalhes específicos para gerar bons resultados. Se um humano perguntaria 'como assim?', a IA também precisa de mais informações."
+        }
+      },
+      {
+        "type": "true-false",
+        "data": {
+          "statements": [
+            {
+              "id": "stmt-1",
+              "text": "Profissionais sempre refinam a primeira resposta da IA ao invés de aceitá-la imediatamente.",
+              "correct": true,
+              "explanation": "Verdadeiro! Aceitar a primeira resposta é o Erro número 3. Profissionais sempre refinam pedindo ajustes: mais curto, tom diferente, adicionar exemplos, etc."
+            }
+          ],
+          "feedback": {
+            "perfect": "Exato! Refinar é essencial!",
+            "good": "Bom trabalho!",
+            "needsReview": "Revise o Erro número 3"
+          }
+        }
+      },
+      {
+        "type": "complete-sentence",
+        "data": {
+          "sentences": [
+            {
+              "id": "sent-1",
+              "text": "O Erro número 10 é não especificar o _______.",
+              "correctAnswers": ["tom", "Tom"]
+            },
+            {
+              "id": "sent-2",
+              "text": "Quando você faz uma pergunta muito complexa, deve _______ em etapas menores para obter resultados superiores.",
+              "correctAnswers": ["dividir", "separar", "quebrar"]
+            }
+          ]
+        }
+      },
+      {
+        "type": "multiple-choice",
+        "data": {
+          "question": "Por que é importante especificar o tom ao fazer um prompt para a IA?",
+          "options": [
+            "Porque a IA só funciona com tom formal",
+            "Porque o mesmo conteúdo pode ser escrito de formas completamente diferentes dependendo do tom",
+            "Porque a IA não entende contexto sem o tom",
+            "Porque é obrigatório em todos os prompts"
+          ],
+          "correctAnswer": "Porque o mesmo conteúdo pode ser escrito de formas completamente diferentes dependendo do tom",
+          "explanation": "Perfeito! O Erro número 10 mostra que especificar o tom (executivo, casual, inspirador, etc.) transforma completamente o resultado, mesmo com o mesmo conteúdo base."
+        }
+      },
+      {
+        "type": "true-false",
+        "data": {
+          "statements": [
+            {
+              "id": "stmt-1",
+              "text": "A IA tem memória dentro da mesma conversa e você pode referenciar respostas anteriores sem precisar repetir tudo.",
+              "correct": true,
+              "explanation": "Verdadeiro! O Erro número 6 é esquecer disso. Você pode dizer 'pegue o email anterior e transforme em WhatsApp' ou 'com base na lista que criamos, faça uma tabela'. A conversa pode evoluir por horas!"
+            }
+          ],
+          "feedback": {
+            "perfect": "Excelente! Use a memória da IA!",
+            "good": "Muito bem!",
+            "needsReview": "Revise o Erro número 6"
+          }
+        }
+      }
+    ]
+  }
+]
