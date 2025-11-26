@@ -15,6 +15,7 @@ import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 import { updateMissionProgress } from '@/lib/updateMissionProgress';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 
 export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -1342,6 +1344,8 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   const [exerciseScores, setExerciseScores] = useState<number[]>([]);
   const [lessonStartTime] = useState(Date.now());
   const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
   
   // 🎮 Gamification states
   const [pointsNotification, setPointsNotification] = useState<{
@@ -1495,14 +1499,55 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
+    // Se deve mostrar o card de resultado da gamificação
+    if (showResultCard && gamificationResult) {
+      return (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          onContinue={() => {
+            setShowResultCard(false);
+            // Chamar o onMarkComplete para navegação final
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }}
+          onBackToTrail={() => {
+            setShowResultCard(false);
+            if (trailId) {
+              navigate(`/trails/${trailId}`);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+        />
+      );
+    }
+
+    // Mostrar card de conclusão primeiro
     return (
       <LessonCompletionCard
         lessonTitle={lessonData.title}
         exerciseScores={exerciseScores}
-        onContinue={() => {
-          // Chamar o onMarkComplete para registrar gamificação
-          if (onMarkComplete) {
-            onMarkComplete();
+        onContinue={async () => {
+          console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+          // Registrar evento de gamificação
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [RECOMPENSAS] Falha ao obter resultado');
+            // Se falhar, continuar mesmo assim
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
           }
         }}
       />

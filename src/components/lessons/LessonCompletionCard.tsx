@@ -114,7 +114,10 @@ export const LessonCompletionCard = ({
 
         {/* Botão */}
         <Button
-          onClick={onContinue}
+          onClick={() => {
+            console.log('🎁 [BUTTON] Ver Recompensas clicado');
+            onContinue();
+          }}
           size="lg"
           className="w-full h-12"
         >
