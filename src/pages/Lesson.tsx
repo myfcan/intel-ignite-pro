@@ -191,7 +191,7 @@ const Lesson = () => {
   const handleBackToTrail = () => {
     setShowResultCard(false);
     if (lesson?.trail_id) {
-      navigate(`/trails/${lesson.trail_id}`);
+      navigate(`/trail/${lesson.trail_id}`);
     } else {
       navigate('/dashboard');
     }

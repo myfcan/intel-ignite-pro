@@ -279,12 +279,13 @@ export function GuidedLessonV3({
     handleLessonComplete();
   };
 
-  // 🔙 Voltar para trilha
+  // 🔙 Voltar - sempre tem uma rota válida
   const handleBack = () => {
     if (trailId) {
       navigate(`/trail/${trailId}`);
     } else {
-      navigate('/trails');
+      // Fallback robusto: volta para o dashboard
+      navigate('/dashboard');
     }
   };
 

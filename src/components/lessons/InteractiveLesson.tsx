@@ -213,7 +213,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const handleBackToTrail = () => {
     setShowResultCard(false);
     if (lesson?.trail_id) {
-      navigate(`/trails/${lesson.trail_id}`);
+      navigate(`/trail/${lesson.trail_id}`);
     } else {
       navigate('/dashboard');
     }
@@ -292,7 +292,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             : `/lessons/${nextLesson.id}`;
           navigate(route);
         } else {
-          navigate(`/trails/${lesson.trail_id}`);
+          navigate(`/trail/${lesson.trail_id}`);
         }
       };
 
@@ -554,7 +554,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -593,7 +593,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -632,7 +632,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -671,7 +671,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -710,7 +710,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -749,7 +749,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >

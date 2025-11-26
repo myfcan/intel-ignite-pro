@@ -1513,7 +1513,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           onBackToTrail={() => {
             setShowResultCard(false);
             if (trailId) {
-              navigate(`/trails/${trailId}`);
+              navigate(`/trail/${trailId}`);
             } else {
               navigate('/dashboard');
             }
@@ -1609,7 +1609,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
             <button 
-              onClick={() => navigate(`/trails/${trailId || lessonData.trackId}`)} 
+              onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
               className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
               aria-label="Voltar para trilha"
             >
