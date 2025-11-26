@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+// ============================================================================
+// OPENAI DALL-E 3 - FUNCIONA! (Lovable AI Gateway NÃO funciona para imagens)
+// ============================================================================
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,40 +16,31 @@ serve(async (req) => {
   }
 
   try {
-    const { slides, batchSize = 4, batchIndex = 0 } = await req.json();
+    const { slides, batchSize = 2, batchIndex = 0 } = await req.json();
 
     if (!slides || !Array.isArray(slides)) {
       throw new Error('slides array is required');
     }
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    if (!OPENAI_API_KEY) {
+      console.error('❌ OPENAI_API_KEY não configurada!');
+      throw new Error('OPENAI_API_KEY not configured. Configure no Supabase Dashboard > Edge Functions > Secrets');
     }
 
     // ============================================================================
-    // BATCHING: Processar apenas um subset dos slides por vez
+    // BATCHING: 2 imagens por vez (cada imagem ~30-60s, total ~120s < 150s limite)
     // ============================================================================
-    // Edge Functions têm limite de 150s. Com batchSize=4:
-    // - 4 imagens × ~20s = 80s (dentro do limite com margem)
-    // ============================================================================
-
     const startIdx = batchIndex * batchSize;
     const endIdx = Math.min(startIdx + batchSize, slides.length);
     const slidesToProcess = slides.slice(startIdx, endIdx);
 
-    console.log(`🎨 Gerando imagens para slides ${startIdx + 1}-${endIdx} de ${slides.length} usando Lovable AI (Gemini)...`);
-    console.log(`   Batch ${batchIndex + 1} de ${Math.ceil(slides.length / batchSize)}`);
+    console.log(`🎨 [OpenAI DALL-E 3] Batch ${batchIndex + 1}: slides ${startIdx + 1}-${endIdx} de ${slides.length}`);
 
     if (slidesToProcess.length === 0) {
       return new Response(
         JSON.stringify({
-          slides: slides, // Retorna todos sem modificar
-          stats: {
-            total: slides.length,
-            success: 0,
-            failed: 0,
-            skipped: slides.length
-          },
+          slides: slides,
+          stats: { total: slides.length, success: 0, failed: 0, skipped: slides.length },
           message: 'No slides to process in this batch'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -55,154 +49,118 @@ serve(async (req) => {
 
     const generatedSlides = [...slides]; // Copiar todos os slides
     const errors = [];
+    let successCount = 0;
 
-    // Processar apenas os slides deste batch
+    // Processar slides SEQUENCIALMENTE (1 por vez)
     for (let i = 0; i < slidesToProcess.length; i++) {
       const slide = slidesToProcess[i];
       const globalIndex = startIdx + i;
+
       try {
-        console.log(`   🖼️ Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
+        console.log(`   🖼️ [${i + 1}/${slidesToProcess.length}] Slide ${slide.slideNumber}: "${slide.contentIdea?.substring(0, 50)}..."`);
 
         const startTime = Date.now();
 
-        // Gerar prompt detalhado
-        const imagePrompt = `Create a professional, modern, educational slide image for: ${slide.contentIdea}
+        // Prompt otimizado para DALL-E 3
+        const imagePrompt = `Educational illustration for a course slide about: ${slide.contentIdea}
 
-Style requirements:
-- Clean and professional design
-- Friendly and approachable
-- Educational and engaging
-- Vibrant but not overwhelming colors
-- Modern flat design aesthetic
-- Suitable for learning content about AI and technology
-- High contrast for readability
-- Horizontal composition (landscape orientation)
-- No text overlays (text will be added separately)
+Style: Modern, clean, professional, minimalist design.
+- Use soft gradients and modern colors
+- Abstract/symbolic representation (no text)
+- High contrast, suitable for presentations
+- Friendly and approachable visual style`;
 
-The image should visually represent the concept in an abstract, symbolic way that supports learning.`;
-
-        // Chamar Lovable AI com modelo de geração de imagens
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        // ============================================================================
+        // CHAMAR OPENAI DALL-E 3 (API OFICIAL - FUNCIONA!)
+        // ============================================================================
+        const response = await fetch("https://api.openai.com/v1/images/generations", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
-            messages: [
-              {
-                role: "user",
-                content: imagePrompt
-              }
-            ],
-            modalities: ["image", "text"]
+            model: "dall-e-3",
+            prompt: imagePrompt,
+            n: 1,
+            size: "1792x1024", // Landscape (melhor para slides)
+            quality: "standard", // standard é mais rápido e barato
+            response_format: "b64_json" // Base64 direto
           })
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`   ❌ Lovable AI error for slide ${slide.slideNumber}:`, errorText);
-          
-          // Detectar erros específicos
-          let errorMessage = `Lovable AI error (${response.status})`;
+          console.error(`   ❌ OpenAI error (${response.status}):`, errorText);
+
+          let errorMessage = `OpenAI error (${response.status})`;
           if (response.status === 429) {
-            errorMessage = 'Rate limit excedido - tente novamente em alguns minutos';
-          } else if (response.status === 402) {
-            errorMessage = 'Créditos do Lovable AI esgotados';
+            errorMessage = 'Rate limit - aguarde alguns minutos';
+          } else if (response.status === 401) {
+            errorMessage = 'OPENAI_API_KEY inválida';
+          } else if (response.status === 400) {
+            errorMessage = 'Prompt rejeitado pela OpenAI';
           }
-          
-          errors.push({
-            slideId: slide.id,
-            slideNumber: slide.slideNumber,
-            error: errorMessage
-          });
 
-          // Atualizar slide com erro (sem imageUrl)
-          generatedSlides[globalIndex] = {
-            ...slide,
-            imageUrl: '', // Vazio indica falha
-            imagePrompt: imagePrompt,
-            error: errorMessage
-          };
-
-          continue; // Pular para próximo slide
-        }
-
-        const data = await response.json();
-        const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-        if (!imageUrl) {
-          console.error(`   ❌ No image returned for slide ${slide.slideNumber}. Response:`, JSON.stringify(data));
-          errors.push({
-            slideId: slide.id,
-            slideNumber: slide.slideNumber,
-            error: 'No image in Lovable AI response'
-          });
-
-          generatedSlides[globalIndex] = {
-            ...slide,
-            imageUrl: '',
-            imagePrompt: imagePrompt,
-            error: 'No image returned'
-          };
-
+          errors.push({ slideId: slide.id, slideNumber: slide.slideNumber, error: errorMessage });
+          generatedSlides[globalIndex] = { ...slide, imageUrl: '', error: errorMessage };
           continue;
         }
 
+        const data = await response.json();
+        const imageBase64 = data.data?.[0]?.b64_json;
+
+        if (!imageBase64) {
+          console.error(`   ❌ No b64_json in response:`, JSON.stringify(data).substring(0, 200));
+          errors.push({ slideId: slide.id, slideNumber: slide.slideNumber, error: 'No image data' });
+          generatedSlides[globalIndex] = { ...slide, imageUrl: '', error: 'No image data' };
+          continue;
+        }
+
+        // Converter para data URL
+        const dataUrl = `data:image/png;base64,${imageBase64}`;
+        const sizeKB = Math.round(imageBase64.length / 1024);
         const elapsedTime = Date.now() - startTime;
-        const sizeEstimate = Math.round(imageUrl.length / 1024);
 
-        console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (~${sizeEstimate}KB em ${elapsedTime}ms)`);
+        console.log(`   ✅ Slide ${slide.slideNumber}: ${sizeKB}KB em ${elapsedTime}ms`);
 
-        // Atualizar slide na posição correta do array completo
         generatedSlides[globalIndex] = {
           ...slide,
-          imageUrl: imageUrl, // Data URL PNG/JPEG
+          imageUrl: dataUrl,
           imagePrompt: imagePrompt
         };
+        successCount++;
+
+        // Delay entre imagens para evitar rate limit (1 segundo)
+        if (i < slidesToProcess.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
       } catch (slideError) {
-        console.error(`   ❌ Erro ao processar slide ${slide.slideNumber}:`, slideError);
+        console.error(`   ❌ Erro slide ${slide.slideNumber}:`, slideError);
         errors.push({
           slideId: slide.id,
           slideNumber: slide.slideNumber,
           error: slideError instanceof Error ? slideError.message : 'Unknown error'
         });
-
-        // Atualizar slide com erro
-        generatedSlides[globalIndex] = {
-          ...slide,
-          imageUrl: '',
-          error: slideError instanceof Error ? slideError.message : 'Unknown error'
-        };
+        generatedSlides[globalIndex] = { ...slide, imageUrl: '', error: String(slideError) };
       }
     }
 
-    const successCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl !== '').length;
-    const failCount = errors.length;
-    const processedCount = slidesToProcess.length;
-
-    console.log(`✅ Resultado do batch: ${successCount}/${processedCount} imagens geradas com sucesso`);
-    if (failCount > 0) {
-      console.warn(`⚠️ ${failCount} imagens falharam neste batch:`, errors);
-    }
-
-    // Calcular se há mais batches
     const totalBatches = Math.ceil(slides.length / batchSize);
-    const hasMoreBatches = (batchIndex + 1) < totalBatches;
+    console.log(`✅ Batch ${batchIndex + 1}/${totalBatches}: ${successCount}/${slidesToProcess.length} OK`);
 
     return new Response(
       JSON.stringify({
         slides: generatedSlides,
         stats: {
           total: slides.length,
-          processed: processedCount,
+          processed: slidesToProcess.length,
           success: successCount,
-          failed: failCount,
+          failed: errors.length,
           batchIndex,
           totalBatches,
-          hasMoreBatches
+          hasMoreBatches: (batchIndex + 1) < totalBatches
         },
         errors: errors.length > 0 ? errors : undefined
       }),
@@ -210,7 +168,7 @@ The image should visually represent the concept in an abstract, symbolic way tha
     );
 
   } catch (error) {
-    console.error('❌ Erro fatal ao gerar imagens:', error);
+    console.error('❌ Erro fatal:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
