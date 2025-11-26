@@ -108,6 +108,31 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* Card: Teste de Geração de Imagens */}
+        <Card className="border-2 border-green-500/20 bg-green-500/5 hover:border-green-500/40 transition-colors">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🖼️ Teste de Geração de Imagens
+            </CardTitle>
+            <CardDescription>
+              Testar a edge function generate-slide-images com OpenAI DALL-E 3
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm space-y-2 mb-4">
+              <p>🎨 Geração de imagens com DALL-E 3</p>
+              <p>📊 Estatísticas em tempo real</p>
+              <p>🖼️ Preview visual das imagens geradas</p>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => navigate('/admin/test-images')}
+            >
+              Testar Geração de Imagens
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-center pt-4">
           <Button
             variant="outline"
