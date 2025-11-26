@@ -64,9 +64,23 @@ serve(async (req) => {
     if (!response.ok) {
       const error = await response.text();
       console.error('❌ ElevenLabs API error:', response.status, error);
+      
+      // Detectar tipo de erro específico
+      let errorMessage = 'Falha ao gerar áudio';
+      
+      if (response.status === 401) {
+        errorMessage = 'API Key do ElevenLabs inválida. Verifique a configuração do secret ELEVENLABS_API_KEY.';
+      } else if (response.status === 402) {
+        errorMessage = 'Saldo/créditos do ElevenLabs esgotados. Adicione créditos na sua conta ElevenLabs.';
+      } else if (response.status === 429) {
+        errorMessage = 'Rate limit do ElevenLabs atingido. Aguarde alguns minutos e tente novamente.';
+      } else if (response.status === 422) {
+        errorMessage = 'Texto inválido ou muito longo para o ElevenLabs processar.';
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: 'Falha ao gerar áudio',
+          error: errorMessage,
           details: error,
           status: response.status
         }),
