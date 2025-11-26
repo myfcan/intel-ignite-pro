@@ -332,8 +332,8 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const totalSlides = input.v3Data!.slides.length;
   console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
 
-  const BATCH_SIZE = 2; // 2 imagens por batch (mais conservador, ~60-90s)
-  const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch (75s por imagem em média)
+  const BATCH_SIZE = 4; // 4 imagens por batch (configuração original que funcionava)
+  const BATCH_TIMEOUT_MS = 180000; // 3 minutos por batch (mais tempo para API lenta)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
@@ -430,18 +430,32 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       const isLastBatch = batchIndex === totalBatches - 1;
       if (isLastBatch && completedCount > 0) {
         console.warn(`⚠️ [V3] Último batch falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
-        // Não lançar erro, permitir continuar com as imagens que temos
-      } else {
-        throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
+        break; // Sair do loop, continuar com o que temos
       }
+      
+      // Se temos QUALQUER imagem já gerada, continuar
+      if (completedCount > 0) {
+        console.warn(`⚠️ [V3] Batch ${batchIndex + 1} falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
+        break; // Sair do loop, continuar com o que temos
+      }
+      
+      // Só falhar completamente se for o primeiro batch
+      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
     }
 
     if (!batchData || !batchData.slides) {
       const isLastBatch = batchIndex === totalBatches - 1;
       if (isLastBatch && completedCount > 0) {
         console.warn(`⚠️ [V3] Último batch sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
-        continue; // Pular para próxima iteração (não há próxima, vai sair do loop)
+        break; // Sair do loop
       }
+      
+      // Se temos QUALQUER imagem já gerada, continuar
+      if (completedCount > 0) {
+        console.warn(`⚠️ [V3] Batch ${batchIndex + 1} sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
+        break;
+      }
+      
       console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
       throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
     }
@@ -472,7 +486,12 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
   console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
-  console.log(`   🎉 Concluído: 100% das imagens processadas`);
+  
+  if (successfulImages < slidesInput.length) {
+    console.warn(`   ⚠️ ATENÇÃO: Apenas ${successfulImages} de ${slidesInput.length} imagens foram geradas. Slides sem imagem usarão placeholder.`);
+  } else {
+    console.log(`   🎉 Concluído: 100% das imagens processadas`);
+  }
 
   // 3. Upload das imagens para Storage (converter data URLs em URLs públicas)
   console.log('   📤 Fazendo upload das imagens para Supabase Storage...');

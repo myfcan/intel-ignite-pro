@@ -60,12 +60,6 @@ serve(async (req) => {
     for (let i = 0; i < slidesToProcess.length; i++) {
       const slide = slidesToProcess[i];
       const globalIndex = startIdx + i;
-      
-      // Delay de 1s entre imagens para evitar rate limiting (exceto primeira)
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
       try {
         console.log(`   🖼️ Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
 
