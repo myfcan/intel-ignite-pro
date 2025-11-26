@@ -90,6 +90,14 @@ export function GuidedLessonV3({
       setDuration(audio.duration);
       setIsAudioInitialized(true);
       console.log('✅ Áudio inicializado:', audio.duration.toFixed(1), 's');
+      
+      // Autoplay: tentar reproduzir automaticamente
+      audio.play().then(() => {
+        setIsPlaying(true);
+        console.log('🎵 Autoplay iniciado');
+      }).catch(err => {
+        console.log('⚠️ Autoplay bloqueado pelo navegador:', err);
+      });
     };
 
     const handleTimeUpdate = () => {
@@ -446,6 +454,7 @@ export function GuidedLessonV3({
           ref={audioRef}
           src={lessonData.audioUrl}
           preload="auto"
+          autoPlay
         />
       </div>
     );
