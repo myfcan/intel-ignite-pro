@@ -182,32 +182,41 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         setShowResultCard(true);
         refreshGamification();
       }
-
-      // Buscar próxima aula da trilha
-      const { data: nextLesson } = await supabase
-        .from('lessons')
-        .select('id, lesson_type')
-        .eq('trail_id', lesson.trail_id)
-        .eq('is_active', true)
-        .gt('order_index', lesson.order_index)
-        .order('order_index', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      const isLast = !nextLesson;
-
-      if (isLast) {
-        // Última aula - mostra Maia de celebração
-        setIsLastLesson(true);
-        setTimeout(() => setShowMaia(true), 1000);
-      }
-
-      // NÃO redirecionar automaticamente - deixar usuário clicar nos botões
-      // Os botões estão nos componentes ExerciseResults/ConclusionScreen
-      return { ...result, isLastLesson: isLast };
     }
+  };
+
+  const handleContinueFromGamification = async () => {
+    setShowResultCard(false);
     
-    return { ...result, isLastLesson: false };
+    if (!lesson) return;
+    
+    // Buscar próxima aula da trilha
+    const { data: nextLesson } = await supabase
+      .from('lessons')
+      .select('id, lesson_type')
+      .eq('trail_id', lesson.trail_id)
+      .eq('is_active', true)
+      .gt('order_index', lesson.order_index)
+      .order('order_index', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextLesson) {
+      // Navegar para próxima aula
+      navigate(`/lessons-interactive/${nextLesson.id}`);
+    } else {
+      // Última aula - voltar ao dashboard
+      navigate('/dashboard');
+    }
+  };
+  
+  const handleBackToTrail = () => {
+    setShowResultCard(false);
+    if (lesson?.trail_id) {
+      navigate(`/trails/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleMaiaClose = async () => {
@@ -759,7 +768,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
           nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
-          onClose={() => setShowResultCard(false)}
+          onContinue={handleContinueFromGamification}
+          onBackToTrail={handleBackToTrail}
         />
       )}
     </>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Trophy, Zap, Coins, TrendingUp, X } from 'lucide-react';
+import { Trophy, Zap, Coins, TrendingUp, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { RewardCelebration } from './RewardCelebration';
+import { Button } from '@/components/ui/button';
 
 type LessonResultCardProps = {
   xpDelta: number;
@@ -10,7 +11,8 @@ type LessonResultCardProps = {
   patentName: string;
   isNewPatent?: boolean;
   nextPatentThreshold?: number;
-  onClose: () => void;
+  onContinue: () => void;
+  onBackToTrail: () => void;
 };
 
 // Hook personalizado para animar contadores
@@ -52,9 +54,11 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   patentName,
   isNewPatent = false,
   nextPatentThreshold,
-  onClose,
+  onContinue,
+  onBackToTrail,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showCoins, setShowCoins] = useState(false);
   
   // Animar os contadores
   const animatedXP = useCountUp(xpDelta, 1200);
@@ -64,10 +68,19 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
 
   useEffect(() => {
     // Trigger confetti após um pequeno delay
-    const timer = setTimeout(() => {
+    const confettiTimer = setTimeout(() => {
       setShowConfetti(true);
     }, 300);
-    return () => clearTimeout(timer);
+    
+    // Trigger moedas caindo após delay
+    const coinsTimer = setTimeout(() => {
+      setShowCoins(true);
+    }, 500);
+    
+    return () => {
+      clearTimeout(confettiTimer);
+      clearTimeout(coinsTimer);
+    };
   }, []);
 
   const progressData = nextPatentThreshold ? {
@@ -82,10 +95,30 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
         trigger={showConfetti} 
       />
       
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+        {/* Moedas caindo animadas */}
+        {showCoins && (
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(15)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-coin-fall"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: '-20px',
+                  animationDelay: `${Math.random() * 1}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`,
+                }}
+              >
+                <Coins className="w-6 h-6 text-amber-400" />
+              </div>
+            ))}
+          </div>
+        )}
+        
         <div className="relative max-w-lg w-full rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-6 py-6 shadow-2xl animate-in fade-in zoom-in duration-300">
-          <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-slate-800 transition-colors">
+          <button onClick={onBackToTrail} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5 text-slate-400" />
           </button>
 
@@ -163,9 +196,23 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
             )}
           </div>
 
-          <button onClick={onClose} className="w-full mt-6 px-4 py-3 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg transition-colors">
-            Continuar
-          </button>
+          <div className="flex gap-3 mt-6">
+            <Button
+              onClick={onBackToTrail}
+              variant="outline"
+              className="flex-1 h-12 border-slate-700 hover:bg-slate-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button
+              onClick={onContinue}
+              className="flex-1 h-12 bg-sky-600 hover:bg-sky-500"
+            >
+              Continuar
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
     </>

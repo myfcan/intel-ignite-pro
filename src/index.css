@@ -180,6 +180,21 @@ All colors MUST be HSL.
   }
 }
 
+@keyframes coin-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-coin-fall {
+  animation: coin-fall linear forwards;
+}
+
 @layer base {
   * {
     @apply border-border;

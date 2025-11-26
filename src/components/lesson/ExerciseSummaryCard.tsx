@@ -36,23 +36,36 @@ export const ExerciseSummaryCard = ({
         {isGoodScore ? "Exercícios Concluídos!" : "Continue Praticando!"}
       </h3>
 
-      {/* Pontuação */}
-      <div className="bg-secondary rounded-lg p-4">
-        <div className="text-4xl font-bold text-primary mb-1">
-          {percentage}%
+      {/* Pontuação compacta */}
+      <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex items-center justify-center gap-3">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary">
+              {percentage}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              de acerto
+            </p>
+          </div>
+          <div className="w-px h-12 bg-border" />
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary">
+              {correctAnswers}/{totalQuestions}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              questões corretas
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {correctAnswers} de {totalQuestions} corretas
-        </p>
       </div>
 
-      {/* Botão */}
+      {/* Botão com efeito visual */}
       <Button
         onClick={onContinue}
-        className="w-full h-12"
+        className="w-full h-12 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
         disabled={!isGoodScore}
       >
-        Avançar
+        Ver Recompensas 🎁
       </Button>
 
       {!isGoodScore && (
