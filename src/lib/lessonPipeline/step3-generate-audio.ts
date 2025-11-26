@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
  * - Retorna URLs públicas
  * - Suporta V1 (áudio único), V2 (múltiplos áudios), V3 (áudio + imagens)
  */
-export async function step3GenerateAudio(input: Step2Output): Promise<Step3Output> {
+export async function step3GenerateAudio(input: Step2Output, logger?: any): Promise<Step3Output> {
   const startTime = Date.now();
   console.log('🎙️ [STEP 3] Gerando áudio...');
   console.log(`🐛 [STEP 3] Modelo: ${input.model}`);
@@ -19,7 +19,7 @@ export async function step3GenerateAudio(input: Step2Output): Promise<Step3Outpu
     // V2 e V4 usam mesma lógica: múltiplos áudios (um por seção)
     return await generateAudioV2(input);
   } else if (input.model === 'v3') {
-    return await generateAudioV3(input);
+    return await generateAudioV3(input, logger);
   } else {
     throw new Error(`Modelo desconhecido: ${input.model}`);
   }
@@ -205,7 +205,7 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
 /**
  * V3: Áudio único + imagens de slides
  */
-async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
+async function generateAudioV3(input: Step2Output, logger?: any): Promise<Step3Output> {
   const startTime = Date.now();
   console.log('🎙️ [V3] Gerando áudio + imagens de slides...');
 
@@ -276,7 +276,9 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
   // 2. Gerar imagens dos slides em lotes para evitar timeout
-  console.log('   🖼️ Gerando imagens dos slides em lotes...');
+  const totalSlides = input.v3Data!.slides.length;
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em lotes...`);
+  logger?.info(3, 'generate-images', `📊 Iniciando: 0/${totalSlides} imagens concluídas`);
   
   const allSlides = input.v3Data!.slides.map(slide => ({
     id: slide.id,
@@ -286,10 +288,15 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   
   const BATCH_SIZE = 2; // 2 imagens por requisição (~120s)
   const generatedSlides = [];
+  let completedCount = 0;
   
   for (let i = 0; i < allSlides.length; i += BATCH_SIZE) {
     const batch = allSlides.slice(i, i + BATCH_SIZE);
-    console.log(`   📦 Processando lote ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(allSlides.length / BATCH_SIZE)} (${batch.length} slides)...`);
+    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(allSlides.length / BATCH_SIZE);
+    
+    console.log(`   📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} slides)...`);
+    logger?.info(3, 'generate-images', `📦 Lote ${batchNumber}/${totalBatches}: Gerando ${batch.length} imagens...`);
     
     const IMAGES_TIMEOUT_MS = 300000; // 5 minutos por lote (2 imagens ~168s + margem)
     
@@ -316,20 +323,27 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     }
 
     if (imagesError) {
-      console.error(`❌ [V3] Erro ao gerar imagens do lote ${Math.floor(i / BATCH_SIZE) + 1}:`, imagesError);
+      console.error(`❌ [V3] Erro ao gerar imagens do lote ${batchNumber}:`, imagesError);
+      logger?.error(3, 'generate-images', `❌ Erro no lote ${batchNumber}: ${imagesError.message}`);
       throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
     }
 
     if (!imagesData || !imagesData.slides) {
-      console.error(`❌ [V3] Resposta inválida da edge function (imagens - lote ${Math.floor(i / BATCH_SIZE) + 1})`);
+      console.error(`❌ [V3] Resposta inválida da edge function (imagens - lote ${batchNumber})`);
+      logger?.error(3, 'generate-images', `❌ Resposta inválida no lote ${batchNumber}`);
       throw new Error('Resposta inválida: imagens não retornadas pela edge function');
     }
 
     generatedSlides.push(...imagesData.slides);
-    console.log(`   ✅ Lote ${Math.floor(i / BATCH_SIZE) + 1} processado (${imagesData.slides.length} imagens)`);
+    completedCount += imagesData.slides.length;
+    
+    const progressPercent = Math.round((completedCount / totalSlides) * 100);
+    console.log(`   ✅ Lote ${batchNumber} processado (${imagesData.slides.length} imagens)`);
+    logger?.success(3, 'generate-images', `✅ Progresso: ${completedCount}/${totalSlides} imagens concluídas (${progressPercent}%)`);
   }
 
   console.log(`   ✅ Total: ${generatedSlides.length} imagens geradas`);
+  logger?.success(3, 'generate-images', `🎉 Concluído: ${generatedSlides.length}/${totalSlides} imagens geradas (100%)`);
 
   // 3. Upload das imagens geradas
   console.log('   📤 Fazendo upload das imagens...');

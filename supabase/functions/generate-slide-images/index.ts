@@ -29,12 +29,13 @@ serve(async (req) => {
     const BATCH_SIZE = 2;
     const slidesToProcess = slides.slice(0, BATCH_SIZE);
     
-    console.log(`🎨 Gerando ${slidesToProcess.length} de ${slides.length} imagens (lote)...`);
+    console.log(`🎨 Gerando ${slidesToProcess.length} de ${slides.length} imagens (processamento sequencial)...\n`);
     
     const generatedSlides = [];
     
-    for (const slide of slidesToProcess) {
-      console.log(`   Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
+    for (let i = 0; i < slidesToProcess.length; i++) {
+      const slide = slidesToProcess[i];
+      console.log(`   🎨 [${i + 1}/${slidesToProcess.length}] Gerando imagem para Slide ${slide.slideNumber}...\n`);
       
       // Gerar imagem usando OpenAI gpt-image-1
       const response = await fetch("https://api.openai.com/v1/images/generations", {
@@ -108,7 +109,7 @@ Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`,
       // Converter para data URL
       const imageDataUrl = `data:image/png;base64,${imageBase64}`;
       
-      console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (${Math.round(imageBase64.length / 1024)}KB)`);
+      console.log(`   ✅ [${i + 1}/${slidesToProcess.length}] Imagem gerada para Slide ${slide.slideNumber} (${Math.round(imageBase64.length / 1024)}KB)\n`);
       
       generatedSlides.push({
         ...slide,
@@ -116,7 +117,7 @@ Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`,
       });
     }
 
-    console.log(`✅ Total: ${generatedSlides.length} imagens geradas com sucesso`);
+    console.log(`✅ Lote completo: ${generatedSlides.length} imagens geradas com sucesso\n`);
 
     return new Response(
       JSON.stringify({ slides: generatedSlides }),
