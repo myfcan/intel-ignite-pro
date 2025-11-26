@@ -28,36 +28,36 @@ export const LessonCompletionCard = ({
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <Card className="p-8 text-center space-y-6 animate-fade-in border-primary/20 max-w-lg mx-auto">
+      <Card className="p-6 text-center space-y-4 animate-fade-in border-primary/20 max-w-lg mx-auto">
         {/* Ícone de sucesso */}
         <div className="flex justify-center">
-          <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-12 h-12 text-success" />
+          <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
         </div>
 
         {/* Título */}
         <div>
-          <h2 className="text-3xl font-bold mb-2">
+          <h2 className="text-2xl font-bold mb-1">
             🎉 Parabéns!
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base">
             Você completou a aula
           </p>
-          <p className="text-primary font-semibold text-xl mt-2 break-words">
+          <p className="text-primary font-semibold text-lg mt-1 break-words">
             {lessonTitle}
           </p>
         </div>
 
         {/* Badge */}
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4">
-          <div className="flex items-center justify-center gap-3">
-            <Trophy className="w-8 h-8 text-amber-500" />
+        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-3">
+          <div className="flex items-center justify-center gap-2">
+            <Trophy className="w-6 h-6 text-amber-500" />
             <div>
-              <h3 className="font-bold text-amber-700 dark:text-amber-400">
+              <h3 className="font-bold text-base text-amber-700 dark:text-amber-400">
                 Aula Dominada
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Conteúdo concluído com sucesso
               </p>
             </div>
@@ -66,24 +66,24 @@ export const LessonCompletionCard = ({
 
         {/* Desempenho nos Exercícios */}
         {exerciseScores.length > 0 && (
-          <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Target className="w-5 h-5 text-primary" />
-              <h4 className="font-semibold text-foreground">
+          <div className="bg-secondary/50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Target className="w-4 h-4 text-primary" />
+              <h4 className="font-semibold text-sm text-foreground">
                 Desempenho nos Exercícios
               </h4>
             </div>
             
             {/* Lista de exercícios */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {exerciseScores.map((score, index) => (
                 <div 
                   key={index}
-                  className="flex items-center justify-between bg-background/50 rounded-lg px-3 py-2"
+                  className="flex items-center justify-between bg-background/50 rounded-lg px-3 py-1.5"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{getScoreEmoji(score)}</span>
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-lg">{getScoreEmoji(score)}</span>
+                    <span className="text-xs font-medium text-foreground">
                       Exercício {index + 1}
                     </span>
                   </div>
@@ -99,12 +99,12 @@ export const LessonCompletionCard = ({
             </div>
 
             {/* Média geral */}
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-1.5 border-t border-border/50">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">
+                <span className="text-xs font-semibold text-foreground">
                   Média Geral
                 </span>
-                <span className="text-lg font-bold text-primary">
+                <span className="text-base font-bold text-primary">
                   {avgScore}%
                 </span>
               </div>
@@ -116,7 +116,7 @@ export const LessonCompletionCard = ({
         <Button
           onClick={onContinue}
           size="lg"
-          className="w-full h-14"
+          className="w-full h-12"
         >
           Ver Recompensas
         </Button>
