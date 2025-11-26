@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
  * - Retorna URLs públicas
  * - Suporta V1 (áudio único), V2 (múltiplos áudios), V3 (áudio + imagens)
  */
-export async function step3GenerateAudio(input: Step2Output, logger?: any): Promise<Step3Output> {
+export async function step3GenerateAudio(input: Step2Output): Promise<Step3Output> {
   const startTime = Date.now();
   console.log('🎙️ [STEP 3] Gerando áudio...');
   console.log(`🐛 [STEP 3] Modelo: ${input.model}`);
@@ -19,7 +19,7 @@ export async function step3GenerateAudio(input: Step2Output, logger?: any): Prom
     // V2 e V4 usam mesma lógica: múltiplos áudios (um por seção)
     return await generateAudioV2(input);
   } else if (input.model === 'v3') {
-    return await generateAudioV3(input, logger);
+    return await generateAudioV3(input);
   } else {
     throw new Error(`Modelo desconhecido: ${input.model}`);
   }
@@ -205,7 +205,7 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
 /**
  * V3: Áudio único + imagens de slides
  */
-async function generateAudioV3(input: Step2Output, logger?: any): Promise<Step3Output> {
+async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   const startTime = Date.now();
   console.log('🎙️ [V3] Gerando áudio + imagens de slides...');
 
@@ -275,122 +275,93 @@ async function generateAudioV3(input: Step2Output, logger?: any): Promise<Step3O
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em lotes para evitar timeout
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 3
   const totalSlides = input.v3Data!.slides.length;
-  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em lotes...`);
-  logger?.info(3, 'generate-images', `📊 Iniciando: 0/${totalSlides} imagens concluídas`);
-  
-  const allSlides = input.v3Data!.slides.map(slide => ({
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3)...`);
+
+  const BATCH_SIZE = 4; // 4 imagens por batch (~120s, dentro do limite de 150s)
+  const BATCH_TIMEOUT_MS = 150000; // 2.5 minutos por batch
+
+  const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
     slideNumber: slide.slideNumber,
     contentIdea: slide.contentIdea
   }));
-  
-  const BATCH_SIZE = 2; // 2 imagens por requisição (~120s)
-  const generatedSlides = [];
+
+  const totalBatches = Math.ceil(slidesInput.length / BATCH_SIZE);
+  console.log(`   📦 Processando ${totalSlides} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
+
+  let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais
   let completedCount = 0;
-  
-  for (let i = 0; i < allSlides.length; i += BATCH_SIZE) {
-    const batch = allSlides.slice(i, i + BATCH_SIZE);
-    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(allSlides.length / BATCH_SIZE);
-    
-    console.log(`   📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} slides)...`);
-    logger?.info(3, 'generate-images', `📦 Lote ${batchNumber}/${totalBatches}: Gerando ${batch.length} imagens...`);
-    
-    const IMAGES_TIMEOUT_MS = 300000; // 5 minutos por lote (2 imagens ~168s + margem)
-    
-    const invokeImagesWithTimeout = async () => {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout ao gerar imagens (3min)')), IMAGES_TIMEOUT_MS)
+
+  // Processar cada batch sequencialmente
+  for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+    const batchNumber = batchIndex + 1;
+    console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
+
+    const invokeBatchWithTimeout = async () => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout no batch ${batchIndex + 1}`)), BATCH_TIMEOUT_MS)
       );
-      
+
       const invokePromise = supabase.functions.invoke('generate-slide-images', {
-        body: { slides: batch }
+        body: {
+          slides: slidesInput,
+          batchSize: BATCH_SIZE,
+          batchIndex: batchIndex
+        }
       });
-      
+
       return Promise.race([invokePromise, timeoutPromise]);
     };
 
-    let imagesData, imagesError;
+    let batchData, batchError;
     try {
-      const result = await invokeImagesWithTimeout() as any;
-      imagesData = result.data;
-      imagesError = result.error;
+      const result = await invokeBatchWithTimeout() as any;
+      batchData = result.data;
+      batchError = result.error;
     } catch (timeoutError: any) {
-      console.error(`❌ [V3] Timeout ao gerar lote ${Math.floor(i / BATCH_SIZE) + 1}:`, timeoutError);
-      throw new Error(`Timeout ao gerar imagens do lote ${Math.floor(i / BATCH_SIZE) + 1}. Tente novamente.`);
+      console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
+      throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
     }
 
-    if (imagesError) {
-      console.error(`❌ [V3] Erro ao gerar imagens do lote ${batchNumber}:`, imagesError);
-      logger?.error(3, 'generate-images', `❌ Erro no lote ${batchNumber}: ${imagesError.message}`);
-      throw new Error(`Falha ao gerar imagens: ${imagesError.message}`);
+    if (batchError) {
+      console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
+      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
     }
 
-    if (!imagesData || !imagesData.slides) {
-      console.error(`❌ [V3] Resposta inválida da edge function (imagens - lote ${batchNumber})`);
-      logger?.error(3, 'generate-images', `❌ Resposta inválida no lote ${batchNumber}`);
-      throw new Error('Resposta inválida: imagens não retornadas pela edge function');
+    if (!batchData || !batchData.slides) {
+      console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
+      throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
     }
 
-    generatedSlides.push(...imagesData.slides);
-    completedCount += imagesData.slides.length;
-    
+    // Atualizar slides com as imagens geradas neste batch
+    const startIdx = batchIndex * BATCH_SIZE;
+    const endIdx = Math.min(startIdx + BATCH_SIZE, slidesInput.length);
+
+    for (let i = startIdx; i < endIdx; i++) {
+      const slideFromBatch = batchData.slides[i];
+      if (slideFromBatch && slideFromBatch.imageUrl) {
+        finalSlidesWithImages[i] = {
+          ...finalSlidesWithImages[i],
+          imageUrl: slideFromBatch.imageUrl,
+          imagePrompt: slideFromBatch.imagePrompt || slideFromBatch.contentIdea
+        };
+      }
+    }
+
+    // Atualizar contador de progresso
+    const batchSuccess = batchData.stats?.success || 0;
+    completedCount += batchSuccess;
     const progressPercent = Math.round((completedCount / totalSlides) * 100);
-    console.log(`   ✅ Lote ${batchNumber} processado (${imagesData.slides.length} imagens)`);
-    logger?.success(3, 'generate-images', `✅ Progresso: ${completedCount}/${totalSlides} imagens concluídas (${progressPercent}%)`);
+
+    console.log(`   ✅ Batch ${batchNumber}/${totalBatches}: ${batchSuccess} imagens geradas`);
+    console.log(`   📊 Progresso: ${completedCount}/${totalSlides} imagens concluídas (${progressPercent}%)`);
   }
 
-  console.log(`   ✅ Total: ${generatedSlides.length} imagens geradas`);
-  logger?.success(3, 'generate-images', `🎉 Concluído: ${generatedSlides.length}/${totalSlides} imagens geradas (100%)`);
-
-  // 3. Upload das imagens geradas
-  console.log('   📤 Fazendo upload das imagens...');
-  const slidesWithImageUrls = [];
-
-  for (const genSlide of generatedSlides) {
-    // Converter base64 para buffer
-    const imageBase64 = genSlide.imageUrl.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0));
-    const imageFileName = `slide-${genSlide.id}-${Date.now()}.png`;
-    
-    // Upload da imagem
-    const { error: uploadError } = await supabase.storage
-      .from('lesson-audios')
-      .upload(imageFileName, imageBuffer, {
-        contentType: 'image/png',
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error(`❌ Erro ao fazer upload da imagem ${genSlide.slideNumber}:`, uploadError);
-      throw new Error(`Falha no upload da imagem ${genSlide.slideNumber}: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl: imageUrl } } = supabase.storage
-      .from('lesson-audios')
-      .getPublicUrl(imageFileName);
-
-    slidesWithImageUrls.push({
-      ...genSlide,
-      imageUrl
-    });
-    
-    console.log(`   ✅ Imagem ${genSlide.slideNumber} salva: ${imageUrl}`);
-  }
-
-  // Atualizar v3Data com URLs das imagens
-  const updatedSlides = input.v3Data.slides.map(slide => {
-    const imageData = slidesWithImageUrls.find((s: any) => s.id === slide.id);
-    return {
-      ...slide,
-      imageUrl: imageData?.imageUrl || '',
-      imagePrompt: imageData?.imagePrompt || slide.contentIdea
-    };
-  });
-
-  console.log(`   ✅ ${updatedSlides.length} imagens geradas`);
+  const successfulImages = finalSlidesWithImages.filter(s => s.imageUrl && s.imageUrl !== '').length;
+  console.log(`   ✅ Total: ${successfulImages}/${slidesInput.length} imagens geradas com sucesso`);
+  console.log(`   🎉 Concluído: 100% das imagens processadas`);
   
   const elapsedTime = Date.now() - startTime;
   console.log(`✅ [V3] Áudio + imagens completos em ${elapsedTime}ms`);
@@ -401,7 +372,7 @@ async function generateAudioV3(input: Step2Output, logger?: any): Promise<Step3O
     wordTimestamps: audioData.word_timestamps,
     v3Data: {
       ...input.v3Data,
-      slides: updatedSlides
+      slides: finalSlidesWithImages
     }
   };
 }

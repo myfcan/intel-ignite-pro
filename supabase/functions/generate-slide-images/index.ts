@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
@@ -14,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { slides } = await req.json();
-    
+    const { slides, batchSize = 4, batchIndex = 0 } = await req.json();
+
     if (!slides || !Array.isArray(slides)) {
       throw new Error('slides array is required');
     }
@@ -24,110 +23,188 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
-    // Processar no máximo 2 slides por requisição para evitar timeout (150s limite)
-    // Cada imagem leva ~60s, então 2 imagens = ~120s + overhead
-    const BATCH_SIZE = 2;
-    const slidesToProcess = slides.slice(0, BATCH_SIZE);
-    
-    console.log(`🎨 Gerando ${slidesToProcess.length} de ${slides.length} imagens (processamento sequencial)...\n`);
-    
-    const generatedSlides = [];
-    
-    for (let i = 0; i < slidesToProcess.length; i++) {
-      const slide = slidesToProcess[i];
-      console.log(`   🎨 [${i + 1}/${slidesToProcess.length}] Gerando imagem para Slide ${slide.slideNumber}...\n`);
-      
-      // Gerar imagem usando OpenAI gpt-image-1
-      const response = await fetch("https://api.openai.com/v1/images/generations", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-image-1",
-          prompt: `Create a HORIZONTAL WIDESCREEN educational slide image in 16:9 aspect ratio for: ${slide.contentIdea}
+    // ============================================================================
+    // BATCHING: Processar apenas um subset dos slides por vez
+    // ============================================================================
+    // Edge Functions têm limite de 150s. Com batchSize=4:
+    // - 4 imagens × 30s = 120s (dentro do limite com margem)
+    // ============================================================================
 
-CRITICAL FORMAT REQUIREMENTS:
-- Image MUST be LANDSCAPE/HORIZONTAL format (wider than it is tall)
-- Aspect ratio: 16:9 (e.g., 1920x1080 or 1600x900)
-- Optimized for widescreen displays
-- Content distributed horizontally across the image
+    const startIdx = batchIndex * batchSize;
+    const endIdx = Math.min(startIdx + batchSize, slides.length);
+    const slidesToProcess = slides.slice(startIdx, endIdx);
 
-VISUAL STYLE:
-- Professional and modern design with a tech-forward aesthetic
-- Friendly, approachable, and engaging for adult learners
-- Use gradients and modern UI elements (cards, icons, subtle shadows)
-- Color palette: Vibrant purples, blues, and teals with white/light backgrounds
-- Modern flat design with subtle depth (not completely flat)
-- High contrast for excellent readability
-- Include relevant icons or simple illustrations to support the concept
-- Avoid cluttered designs - use white space effectively
+    console.log(`🎨 Gerando imagens para slides ${startIdx + 1}-${endIdx} de ${slides.length} usando OpenAI...`);
+    console.log(`   Batch ${batchIndex + 1} de ${Math.ceil(slides.length / batchSize)}`);
 
-CONTENT GUIDELINES:
-- Focus on visual representation of the concept
-- Minimal text (if any) - prioritize visual storytelling
-- Use metaphors and visual analogies to explain abstract concepts
-- Include subtle tech/AI themed elements when relevant
-- Professional photography style or modern vector illustrations
-
-COMPOSITION:
-- Layout optimized for WIDE HORIZONTAL space
-- Center focus with balanced left-right distribution
-- Avoid vertical-heavy layouts
-- Consider rule of thirds for visual interest
-
-QUALITY:
-- Ultra high resolution and sharp details
-- Professional lighting and color grading
-- Polished, publication-ready quality
-
-Format: Horizontal landscape 16:9 ratio (1920x1080 recommended)`,
-          n: 1,
-          size: "1536x1024", // Landscape 3:2 ratio (closest to 16:9)
-          quality: "high",
-          output_format: "png"
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`   ❌ Error response from OpenAI for slide ${slide.slideNumber}:`, errorText);
-        throw new Error(`OpenAI error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      
-      // OpenAI retorna base64 diretamente no campo b64_json quando model é gpt-image-1
-      const imageBase64 = data.data?.[0]?.b64_json;
-      
-      if (!imageBase64) {
-        console.error(`   ❌ No image returned for slide ${slide.slideNumber}. Response:`, JSON.stringify(data));
-        throw new Error(`Falha ao gerar imagem para slide ${slide.slideNumber}: No image in response`);
-      }
-
-      // Converter para data URL
-      const imageDataUrl = `data:image/png;base64,${imageBase64}`;
-      
-      console.log(`   ✅ [${i + 1}/${slidesToProcess.length}] Imagem gerada para Slide ${slide.slideNumber} (${Math.round(imageBase64.length / 1024)}KB)\n`);
-      
-      generatedSlides.push({
-        ...slide,
-        imageUrl: imageDataUrl
-      });
+    if (slidesToProcess.length === 0) {
+      return new Response(
+        JSON.stringify({
+          slides: slides, // Retorna todos sem modificar
+          stats: {
+            total: slides.length,
+            success: 0,
+            failed: 0,
+            skipped: slides.length
+          },
+          message: 'No slides to process in this batch'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log(`✅ Lote completo: ${generatedSlides.length} imagens geradas com sucesso\n`);
+    const generatedSlides = [...slides]; // Copiar todos os slides
+    const errors = [];
+
+    // Processar apenas os slides deste batch
+    for (let i = 0; i < slidesToProcess.length; i++) {
+      const slide = slidesToProcess[i];
+      const globalIndex = startIdx + i;
+      try {
+        console.log(`   🖼️ Gerando imagem para Slide ${slide.slideNumber}: "${slide.contentIdea}"`);
+
+        const startTime = Date.now();
+
+        // Gerar prompt detalhado
+        const imagePrompt = `Create a professional, modern, educational slide image for: ${slide.contentIdea}
+
+Style requirements:
+- Clean and professional design
+- Friendly and approachable
+- Educational and engaging
+- Vibrant but not overwhelming colors
+- Modern flat design aesthetic
+- Suitable for learning content about AI and technology
+- High contrast for readability
+- Horizontal composition (landscape orientation)
+- No text overlays (text will be added separately)
+
+The image should visually represent the concept in an abstract, symbolic way that supports learning.`;
+
+        // Chamar OpenAI DALL-E 3
+        const response = await fetch("https://api.openai.com/v1/images/generations", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "dall-e-3",
+            prompt: imagePrompt,
+            n: 1,
+            size: "1792x1024", // Horizontal (16:9 aproximado)
+            quality: "standard", // "standard" ou "hd" (hd é 2x mais caro)
+            response_format: "b64_json" // Retorna base64
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`   ❌ OpenAI API error for slide ${slide.slideNumber}:`, errorText);
+          errors.push({
+            slideId: slide.id,
+            slideNumber: slide.slideNumber,
+            error: `OpenAI API error (${response.status}): ${errorText}`
+          });
+
+          // Atualizar slide com erro (sem imageUrl)
+          generatedSlides[globalIndex] = {
+            ...slide,
+            imageUrl: '', // Vazio indica falha
+            imagePrompt: imagePrompt,
+            error: `Failed to generate (${response.status})`
+          };
+
+          continue; // Pular para próximo slide
+        }
+
+        const data = await response.json();
+        const imageBase64 = data.data?.[0]?.b64_json;
+
+        if (!imageBase64) {
+          console.error(`   ❌ No image returned for slide ${slide.slideNumber}. Response:`, JSON.stringify(data));
+          errors.push({
+            slideId: slide.id,
+            slideNumber: slide.slideNumber,
+            error: 'No image in OpenAI response'
+          });
+
+          generatedSlides[globalIndex] = {
+            ...slide,
+            imageUrl: '',
+            imagePrompt: imagePrompt,
+            error: 'No image returned'
+          };
+
+          continue;
+        }
+
+        // Converter base64 para data URL
+        const dataUrl = `data:image/png;base64,${imageBase64}`;
+
+        const elapsedTime = Date.now() - startTime;
+        const sizeKB = Math.round(imageBase64.length / 1024);
+
+        console.log(`   ✅ Imagem gerada para Slide ${slide.slideNumber} (${sizeKB}KB em ${elapsedTime}ms)`);
+
+        // Atualizar slide na posição correta do array completo
+        generatedSlides[globalIndex] = {
+          ...slide,
+          imageUrl: dataUrl, // Data URL PNG
+          imagePrompt: imagePrompt
+        };
+
+      } catch (slideError) {
+        console.error(`   ❌ Erro ao processar slide ${slide.slideNumber}:`, slideError);
+        errors.push({
+          slideId: slide.id,
+          slideNumber: slide.slideNumber,
+          error: slideError instanceof Error ? slideError.message : 'Unknown error'
+        });
+
+        // Atualizar slide com erro
+        generatedSlides[globalIndex] = {
+          ...slide,
+          imageUrl: '',
+          error: slideError instanceof Error ? slideError.message : 'Unknown error'
+        };
+      }
+    }
+
+    const successCount = generatedSlides.filter(s => s.imageUrl && s.imageUrl !== '').length;
+    const failCount = errors.length;
+    const processedCount = slidesToProcess.length;
+
+    console.log(`✅ Resultado do batch: ${successCount}/${processedCount} imagens geradas com sucesso`);
+    if (failCount > 0) {
+      console.warn(`⚠️ ${failCount} imagens falharam neste batch:`, errors);
+    }
+
+    // Calcular se há mais batches
+    const totalBatches = Math.ceil(slides.length / batchSize);
+    const hasMoreBatches = (batchIndex + 1) < totalBatches;
 
     return new Response(
-      JSON.stringify({ slides: generatedSlides }),
+      JSON.stringify({
+        slides: generatedSlides,
+        stats: {
+          total: slides.length,
+          processed: processedCount,
+          success: successCount,
+          failed: failCount,
+          batchIndex,
+          totalBatches,
+          hasMoreBatches
+        },
+        errors: errors.length > 0 ? errors : undefined
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('❌ Erro ao gerar imagens:', error);
+    console.error('❌ Erro fatal ao gerar imagens:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
         details: error instanceof Error ? error.stack : undefined
       }),
