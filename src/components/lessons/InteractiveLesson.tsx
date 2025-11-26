@@ -303,11 +303,6 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         ? lesson.content as any 
         : null;
       
-      // 🆕 Suporte para formato V3 (slides ao invés de sections)
-      const dbContentV3 = lesson.content && typeof lesson.content === 'object' && 'slides' in lesson.content
-        ? lesson.content as any
-        : null;
-      
       let localContent = null;
       if (lesson.title.includes('que é a IA')) {
         localContent = fundamentos01;
@@ -319,7 +314,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         localContent = fundamentos04;
       }
       
-      const dbVersion = dbContent?.contentVersion || dbContentV3?.contentVersion || 0;
+      const dbVersion = dbContent?.contentVersion || 0;
       const localVersion = localContent?.contentVersion || 0;
       
       if (localVersion > dbVersion && localContent) {
@@ -328,23 +323,6 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       } else if (dbContent) {
         console.log('Using database version', dbVersion);
         guidedLessonData = dbContent;
-      } else if (dbContentV3) {
-        console.log('🔄 [V3] Converting V3 format (slides) to V4 format (sections)');
-        // Converter formato V3 para V4
-        guidedLessonData = {
-          ...dbContentV3,
-          sections: dbContentV3.slides?.map((slide: any, index: number) => ({
-            id: slide.id || `section-${index}`,
-            timestamp: 0, // V3 não tem timestamps separados
-            content: slide.content || '',
-            visualContent: slide.visualContent || slide.content || '',
-            audio_url: index === 0 ? dbContentV3.audioUrl : undefined
-          })) || []
-        };
-        console.log('✅ [V3] Converted', {
-          slidesCount: dbContentV3.slides?.length || 0,
-          sectionsCount: guidedLessonData.sections?.length || 0
-        });
       } else if (localContent) {
         console.log('Fallback to local data', localVersion);
         guidedLessonData = localContent;
@@ -497,6 +475,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         );
       }
 
+      // Renderizar componente apropriado baseado no modelo
       return (
         <>
           {showMaia && isLastLesson && (
