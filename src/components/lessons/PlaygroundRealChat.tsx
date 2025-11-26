@@ -108,7 +108,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
   ];
 
   return (
-    <div className="mt-12 relative">
+    <div className="py-8 relative">
       {/* Separador visual animado */}
       <motion.div
         className="flex items-center gap-4 mb-8"
@@ -129,10 +129,11 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
+        className="mx-auto max-w-5xl"
       >
-        <Card className="bg-gray-950 border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header do Chat - DENTRO do card */}
-          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700">
+        <Card className="bg-gray-950 border-gray-800 rounded-2xl shadow-2xl">
+          {/* Header do Chat */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 sticky top-0 z-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
@@ -153,7 +154,7 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
           </div>
 
           {/* Área de Mensagens */}
-          <div className="bg-gray-900 p-6 min-h-[400px] max-h-[600px] overflow-y-auto">
+          <div className="bg-gray-900 p-6 h-[500px] overflow-y-auto">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
