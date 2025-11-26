@@ -1610,11 +1610,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               <div className="sticky top-24 space-y-3">
                 
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
-                  <div className="flex justify-center mb-3">
+                  <div className="flex justify-center mb-2.5">
                     <div className="relative group cursor-pointer">
                       {/* Liv com animações otimizadas */}
                       <LivAvatar
-                        size="large"
+                        size="medium"
                         isPlaying={isPlaying && isAudioEnabled}
                         showHalo={false}
                         animate={isPlaying && isAudioEnabled}
@@ -1763,13 +1763,13 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         </div>
       </div>
 
-      {/* Liv Mobile - versão balanceada */}
+      {/* Liv Mobile - versão elegante */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 border-2 border-cyan-300/60 shadow-xl max-w-[300px] w-full">
-          <div className="flex items-center gap-3">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-cyan-300/60 shadow-xl max-w-[290px] w-full">
+          <div className="flex items-center gap-2">
             <div className="relative flex-shrink-0">
               <LivAvatar
-                size="medium"
+                size="small"
                 isPlaying={isPlaying && isAudioEnabled}
                 animate={false}
                 className={`
@@ -1787,7 +1787,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              <p className="text-[11px] text-slate-700 leading-snug font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
