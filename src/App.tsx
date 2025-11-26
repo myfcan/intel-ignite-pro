@@ -63,6 +63,7 @@ const App = () => (
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/gamification" element={<AchievementsPage />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/trail/:id" element={<TrailDetail />} />
           <Route path="/trails/:id" element={<TrailDetail />} />
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
