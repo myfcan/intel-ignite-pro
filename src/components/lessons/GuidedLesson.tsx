@@ -1663,11 +1663,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                     disabled={!isRenderable}
                     className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-300 hover:scale-[1.02] ${
                       currentSection === index
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg shadow-cyan-400/30 scale-[1.02]'
+                        ? 'text-white shadow-lg scale-[1.02]'
                         : isSpecial
                         ? 'bg-amber-50 text-amber-600 cursor-default'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
                     } ${!isRenderable ? 'opacity-50' : ''}`}
+                    style={currentSection === index 
+                      ? {backgroundImage: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)', boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'}
+                      : undefined}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
