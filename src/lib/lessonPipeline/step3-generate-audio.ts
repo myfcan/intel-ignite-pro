@@ -30,19 +30,17 @@ export async function step3GenerateAudio(input: Step2Output): Promise<Step3Outpu
  */
 async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
   const startTime = Date.now();
-  const audioTextLength = input.audioText.length;
-  const estimatedMinutes = Math.ceil(audioTextLength / 1000);
   console.log('🎙️ [V1] Gerando áudio único com timestamps...');
-  console.log(`📝 [V1] Texto: ${audioTextLength} caracteres (~${estimatedMinutes}min estimados)`);
-
-  // Timeout estendido para textos longos
-  const TIMEOUT_MS = 600000; // 10 minutos
-
+  console.log(`📝 [V1] Texto: ${input.audioText.length} caracteres`);
+  
+  // Timeout configurável (4 minutos para áudios longos)
+  const TIMEOUT_MS = 240000; // 4 minutos
+  
   const invokeWithTimeout = async () => {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout ao gerar áudio (10min)')), TIMEOUT_MS)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar áudio (4min)')), TIMEOUT_MS)
     );
-
+    
     const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.audioText,
@@ -50,35 +48,18 @@ async function generateAudioV1(input: Step2Output): Promise<Step3Output> {
         speed: 1.0 // Velocidade normal
       }
     });
-
+    
     return Promise.race([invokePromise, timeoutPromise]);
   };
 
-  // Retry logic (2x)
-  const MAX_RETRIES = 1;
   let data, error;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      if (attempt > 0) {
-        console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_RETRIES + 1} de gerar áudio...`);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
-
-      const result = await invokeWithTimeout() as any;
-      data = result.data;
-      error = result.error;
-
-      if (!error) {
-        break; // Sucesso!
-      }
-
-      console.warn(`   ⚠️ Erro ao gerar áudio (tentativa ${attempt + 1}): ${error.message}`);
-
-    } catch (timeoutError: any) {
-      console.error('❌ [V1] Timeout ao gerar áudio:', timeoutError);
-      throw new Error(`Timeout ao gerar áudio (10min). O texto pode ser muito longo (${audioTextLength} caracteres).`);
-    }
+  try {
+    const result = await invokeWithTimeout() as any;
+    data = result.data;
+    error = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V1] Timeout ao gerar áudio:', timeoutError);
+    throw new Error(`Timeout ao gerar áudio (4min). Tente dividir o texto em seções menores.`);
   }
 
   if (error) {
@@ -232,18 +213,15 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     throw new Error('v3Data não disponível para modelo V3');
   }
 
-  // 1. Gerar áudio com timeout estendido (áudios de 18min precisam mais tempo)
-  const audioTextLength = input.audioText.length;
-  const estimatedMinutes = Math.ceil(audioTextLength / 1000); // ~1min por 1000 chars
-  console.log(`   🎙️ Gerando áudio (${audioTextLength} caracteres, ~${estimatedMinutes}min estimados)...`);
-
-  const AUDIO_TIMEOUT_MS = 600000; // 10 minutos (textos longos podem demorar)
-
+  // 1. Gerar áudio com timeout
+  console.log('   🎙️ Gerando áudio...');
+  const AUDIO_TIMEOUT_MS = 240000; // 4 minutos
+  
   const invokeAudioWithTimeout = async () => {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout ao gerar áudio (10min)')), AUDIO_TIMEOUT_MS)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout ao gerar áudio (4min)')), AUDIO_TIMEOUT_MS)
     );
-
+    
     const invokePromise = supabase.functions.invoke('generate-audio-with-timestamps', {
       body: {
         text: input.audioText,
@@ -251,37 +229,18 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
         speed: 1.0 // Velocidade normal
       }
     });
-
+    
     return Promise.race([invokePromise, timeoutPromise]);
   };
 
-  // Retry logic (2x) para áudio
-  const MAX_AUDIO_RETRIES = 1; // 1 retry = 2 tentativas total
   let audioData, audioError;
-  let lastAudioError;
-
-  for (let attempt = 0; attempt <= MAX_AUDIO_RETRIES; attempt++) {
-    try {
-      if (attempt > 0) {
-        console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_AUDIO_RETRIES + 1} de gerar áudio...`);
-        await new Promise(resolve => setTimeout(resolve, 3000)); // 3s entre tentativas
-      }
-
-      const result = await invokeAudioWithTimeout() as any;
-      audioData = result.data;
-      audioError = result.error;
-
-      if (!audioError) {
-        break; // Sucesso!
-      }
-
-      lastAudioError = audioError;
-      console.warn(`   ⚠️ Erro ao gerar áudio (tentativa ${attempt + 1}): ${audioError.message}`);
-
-    } catch (timeoutError: any) {
-      console.error('❌ [V3] Timeout ao gerar áudio:', timeoutError);
-      throw new Error(`Timeout ao gerar áudio (10min). O texto pode ser muito longo (${audioTextLength} caracteres).`);
-    }
+  try {
+    const result = await invokeAudioWithTimeout() as any;
+    audioData = result.data;
+    audioError = result.error;
+  } catch (timeoutError: any) {
+    console.error('❌ [V3] Timeout ao gerar áudio:', timeoutError);
+    throw new Error(`Timeout ao gerar áudio (4min). Tente dividir o texto em seções menores.`);
   }
 
   if (audioError) {
@@ -338,13 +297,6 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
   // Processar cada batch sequencialmente
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
     const batchNumber = batchIndex + 1;
-
-    // Delay de 2s entre batches para evitar rate limiting (exceto primeiro batch)
-    if (batchIndex > 0) {
-      console.log(`   ⏳ Aguardando 2s antes do batch ${batchNumber}...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
     console.log(`   🔄 Batch ${batchNumber}/${totalBatches}...`);
 
     const invokeBatchWithTimeout = async () => {
@@ -363,66 +315,22 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
       return Promise.race([invokePromise, timeoutPromise]);
     };
 
-    // Retry logic com exponential backoff
-    const MAX_RETRIES = 3;
     let batchData, batchError;
-    let lastError;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        if (attempt > 0) {
-          const waitTime = Math.pow(2, attempt - 1) * 2000; // 2s, 4s, 8s
-          console.log(`   🔄 Tentativa ${attempt + 1}/${MAX_RETRIES + 1} após ${waitTime}ms...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
-
-        const result = await invokeBatchWithTimeout() as any;
-        batchData = result.data;
-        batchError = result.error;
-
-        // Se deu timeout, não tentar retry
-        if (!batchError) {
-          break; // Sucesso!
-        }
-
-        // Se deu erro mas não é de network, não retry
-        if (batchError && !batchError.message?.includes('Failed to send')) {
-          break; // Erro diferente, não retry
-        }
-
-        lastError = batchError;
-        console.warn(`   ⚠️ Erro no batch ${batchIndex + 1} (tentativa ${attempt + 1}): ${batchError.message}`);
-
-        // Se foi última tentativa, vai lançar erro fora do loop
-        if (attempt === MAX_RETRIES) {
-          break;
-        }
-
-      } catch (timeoutError: any) {
-        console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
-        throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
-      }
+    try {
+      const result = await invokeBatchWithTimeout() as any;
+      batchData = result.data;
+      batchError = result.error;
+    } catch (timeoutError: any) {
+      console.error(`❌ [V3] Timeout no batch ${batchIndex + 1}:`, timeoutError);
+      throw new Error(`Timeout ao gerar imagens (batch ${batchIndex + 1}/${totalBatches}). Tente reduzir o número de slides.`);
     }
 
     if (batchError) {
       console.error(`❌ [V3] Erro no batch ${batchIndex + 1}:`, batchError);
-
-      // Se for o ÚLTIMO batch e já temos imagens geradas nos anteriores, apenas avisar
-      const isLastBatch = batchIndex === totalBatches - 1;
-      if (isLastBatch && completedCount > 0) {
-        console.warn(`⚠️ [V3] Último batch falhou, mas ${completedCount} imagens já foram geradas. Continuando...`);
-        // Não lançar erro, permitir continuar com as imagens que temos
-      } else {
-        throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
-      }
+      throw new Error(`Falha ao gerar imagens (batch ${batchIndex + 1}): ${batchError.message}`);
     }
 
     if (!batchData || !batchData.slides) {
-      const isLastBatch = batchIndex === totalBatches - 1;
-      if (isLastBatch && completedCount > 0) {
-        console.warn(`⚠️ [V3] Último batch sem dados válidos, mas ${completedCount} imagens já geradas. Continuando...`);
-        continue; // Pular para próxima iteração (não há próxima, vai sair do loop)
-      }
       console.error(`❌ [V3] Resposta inválida no batch ${batchIndex + 1}`);
       throw new Error(`Resposta inválida: imagens não retornadas (batch ${batchIndex + 1})`);
     }
