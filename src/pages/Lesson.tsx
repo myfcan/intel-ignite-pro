@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { AudioPlayer } from "@/components/lesson/AudioPlayer";
 import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExercise";
 import { PlaygroundComponent } from "@/components/lesson/PlaygroundComponent";
-import { ExerciseResults } from "@/components/lesson/ExerciseResults";
+import { ExerciseSummaryCard } from "@/components/lesson/ExerciseSummaryCard";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
 import { registerGamificationEvent, GamificationResult } from "@/services/gamification";
 import { LessonResultCard } from "@/components/gamification/LessonResultCard";
@@ -147,9 +147,21 @@ const Lesson = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleContinueToPlayground = () => {
+  // Novo fluxo: Exercícios → Gamificação → Playground
+  const handleContinueFromExercises = async () => {
+    // 🎮 GAMIFICAÇÃO: Registrar evento e mostrar card de resultado
+    const result = await registerGamificationEvent('lesson_completed', id);
+    if (result) {
+      setGamificationResult(result);
+      setShowResultCard(true);
+      refreshGamification(); // Atualiza o header
+    }
+  };
+
+  const handleCloseGamificationCard = () => {
+    setShowResultCard(false);
+    // Após fechar o card de gamificação, mostra o playground
     setShowPlayground(true);
-    // Scroll suave para o playground
     setTimeout(() => {
       document.getElementById('playground-section')?.scrollIntoView({ 
         behavior: 'smooth',
@@ -198,17 +210,11 @@ const Lesson = () => {
       // 📊 Atualizar missão de aulas completadas
       await updateMissionProgress('aulas', 1);
 
-      // 🎮 GAMIFICAÇÃO: Registrar evento e mostrar card de resultado
-      const result = await registerGamificationEvent('lesson_completed', id);
-      if (result) {
-        setGamificationResult(result);
-        setShowResultCard(true);
-        refreshGamification(); // Atualiza o header
-      }
-
+      // 🎮 Nota: A gamificação já foi registrada quando o usuário avançou dos exercícios
+      // Aqui apenas mostramos um toast de confirmação
       toast({
         title: "Aula concluída! 🎉",
-        description: `Você ganhou ${data.points_earned} pontos!`,
+        description: "Parabéns por finalizar a aula!",
       });
 
       if (data.new_achievements?.length > 0) {
@@ -334,15 +340,14 @@ const Lesson = () => {
             </div>
           )}
 
-          {/* Tela de Resultado */}
+          {/* Tela de Resultado Resumido */}
           {showResults && (
             <>
               <Separator />
-              <ExerciseResults
+              <ExerciseSummaryCard
                 totalQuestions={exercises.length}
                 correctAnswers={correctAnswers}
-                onTryAgain={handleTryAgain}
-                onContinue={handleContinueToPlayground}
+                onContinue={handleContinueFromExercises}
               />
             </>
           )}
@@ -408,13 +413,7 @@ const Lesson = () => {
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
           nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
-          onClose={() => {
-            setShowResultCard(false);
-            // Navegar após fechar o card
-            setTimeout(() => {
-              navigate("/dashboard");
-            }, 500);
-          }}
+          onClose={handleCloseGamificationCard}
         />
       )}
     </div>

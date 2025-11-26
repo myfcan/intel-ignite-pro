@@ -12,7 +12,7 @@ import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
-import { ConclusionScreen } from './ConclusionScreen';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { Card } from '@/components/ui/card';
@@ -1495,23 +1495,15 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
-    const timeSpent = Date.now() - lessonStartTime;
-
-    // Coletar metadata dos exercícios
-    const exerciseMetadata = lessonData.exercisesConfig?.map(ex => ({
-      title: ex.title,
-      type: ex.type,
-    })) || [];
-
     return (
-      <ConclusionScreen
-        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]}
-        timeSpent={timeSpent}
+      <LessonCompletionCard
         lessonTitle={lessonData.title}
-        nextLessonId={nextLessonId}
-        nextLessonType={nextLessonType}
-        exerciseMetadata={exerciseMetadata}
-        onBeforeNavigate={onMarkComplete}
+        onContinue={() => {
+          // Chamar o onMarkComplete para registrar gamificação
+          if (onMarkComplete) {
+            onMarkComplete();
+          }
+        }}
       />
     );
   }
