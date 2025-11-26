@@ -291,7 +291,7 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     const batch = allSlides.slice(i, i + BATCH_SIZE);
     console.log(`   📦 Processando lote ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(allSlides.length / BATCH_SIZE)} (${batch.length} slides)...`);
     
-    const IMAGES_TIMEOUT_MS = 180000; // 3 minutos por lote
+    const IMAGES_TIMEOUT_MS = 300000; // 5 minutos por lote (2 imagens ~168s + margem)
     
     const invokeImagesWithTimeout = async () => {
       const timeoutPromise = new Promise((_, reject) => 
