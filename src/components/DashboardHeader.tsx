@@ -1,9 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import logoAiliv from '@/assets/logo-ailiv.png';
+import logoAiliv from '@/assets/ailiv-logo-new.png';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Menu, User, Trophy, LogOut, ArrowLeft } from 'lucide-react';
+import { RewardCelebration } from '@/components/gamification/RewardCelebration';
+import { useUserGamification } from '@/hooks/useUserGamification';
 
 interface DashboardHeaderProps {
   user: {
@@ -22,6 +24,7 @@ interface DashboardHeaderProps {
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showPatentCelebration } = useUserGamification();
   const interactionsRemaining = user.daily_interaction_limit - user.interactions_used_today;
   
   const showBackButton = ['/guides', '/ai-directory', '/prompt-library', '/ai-playground'].includes(location.pathname);
@@ -32,31 +35,33 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   };
 
   return (
-    <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 md:h-[72px] lg:h-20">
+    <>
+      <RewardCelebration type="patent" trigger={showPatentCelebration} />
+      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-[72px] lg:h-20">
           
           {/* Logo e Botão Voltar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
             {showBackButton && (
               <button
                 onClick={() => navigate('/dashboard')}
-                className="group flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 
+                className="group flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 
                          bg-white/60 hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100
                          border border-slate-200/80 hover:border-slate-300/50
-                         rounded-xl transition-all duration-300 
+                         rounded-lg sm:rounded-xl transition-all duration-300 
                          hover:shadow-lg hover:shadow-slate-500/20 hover:-translate-y-0.5
-                         active:translate-y-0"
+                         active:translate-y-0 flex-shrink-0"
               >
-                <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 group-hover:text-slate-900 transition-colors" />
                 <span className="hidden sm:inline group-hover:text-slate-900 transition-colors">Painel</span>
               </button>
             )}
-            <div className="flex items-center relative z-10 cursor-pointer group py-2" onClick={() => navigate('/dashboard')}>
+            <div className="flex items-center relative z-10 cursor-pointer group py-1 sm:py-2 flex-shrink-0" onClick={() => navigate('/dashboard')}>
               <img 
                 src={logoAiliv} 
                 alt="Ailiv" 
-                className="h-[56px] md:h-[64px] lg:h-[72px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-12 sm:h-16 md:h-[72px] lg:h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
           </div>
@@ -107,11 +112,11 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild className="lg:hidden">
-              <button className="p-2 hover:bg-slate-50 rounded-md transition-colors">
-                <Menu className="h-6 w-6 text-slate-700" />
+              <button className="p-1.5 sm:p-2 hover:bg-slate-50 rounded-md transition-colors flex-shrink-0">
+                <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-slate-700" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+            <SheetContent side="right" className="w-[280px] sm:w-[320px] overflow-y-auto">
               <nav className="flex flex-col gap-2 mt-8">
                 <button
                   onClick={() => navigate('/guides')}
@@ -170,14 +175,14 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           </Sheet>
 
           {/* User Menu */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {/* Limite de interações */}
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
-                            flex items-center justify-center text-white font-semibold shadow-lg shadow-cyan-500/25">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500
+                            flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-lg shadow-cyan-500/25">
                 {interactionsRemaining}
               </div>
-              <span className="text-slate-600 hidden sm:inline">/ {user.daily_interaction_limit}</span>
+              <span className="text-slate-600 hidden xl:inline">/ {user.daily_interaction_limit}</span>
             </div>
 
             {/* Avatar + Dropdown */}
@@ -232,6 +237,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 

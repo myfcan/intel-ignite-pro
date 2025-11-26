@@ -19,6 +19,9 @@ import { fundamentos04 } from '@/data/lessons/fundamentos-04';
 import { WordTimestamp, ExerciseConfig } from '@/types/guidedLesson';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
+import { useUserGamification } from '@/hooks/useUserGamification';
 
 /**
  * ============================================================================
@@ -106,6 +109,9 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [isLastLesson, setIsLastLesson] = useState(false);
   const [wordTimestamps, setWordTimestamps] = useState<WordTimestamp[]>([]);
   const [nextLessonData, setNextLessonData] = useState<{ id: string; lesson_type: string } | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const { refresh: refreshGamification } = useUserGamification();
   const navigate = useNavigate();
 
   // Buscar word_timestamps e próxima aula do banco para aulas guiadas
@@ -169,31 +175,48 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     const result = await submitAnswers(answers, timeSpent);
     
     if (result?.passed && lesson) {
-      // Buscar próxima aula da trilha
-      const { data: nextLesson } = await supabase
-        .from('lessons')
-        .select('id, lesson_type')
-        .eq('trail_id', lesson.trail_id)
-        .eq('is_active', true)
-        .gt('order_index', lesson.order_index)
-        .order('order_index', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      const isLast = !nextLesson;
-
-      if (isLast) {
-        // Última aula - mostra Maia de celebração
-        setIsLastLesson(true);
-        setTimeout(() => setShowMaia(true), 1000);
+      // 🎮 GAMIFICAÇÃO: Registrar evento
+      const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
+      if (gamResult) {
+        setGamificationResult(gamResult);
+        setShowResultCard(true);
+        refreshGamification();
       }
-
-      // NÃO redirecionar automaticamente - deixar usuário clicar nos botões
-      // Os botões estão nos componentes ExerciseResults/ConclusionScreen
-      return { ...result, isLastLesson: isLast };
     }
+  };
+
+  const handleContinueFromGamification = async () => {
+    setShowResultCard(false);
     
-    return { ...result, isLastLesson: false };
+    if (!lesson) return;
+    
+    // Buscar próxima aula da trilha
+    const { data: nextLesson } = await supabase
+      .from('lessons')
+      .select('id, lesson_type')
+      .eq('trail_id', lesson.trail_id)
+      .eq('is_active', true)
+      .gt('order_index', lesson.order_index)
+      .order('order_index', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextLesson) {
+      // Navegar para próxima aula
+      navigate(`/lessons-interactive/${nextLesson.id}`);
+    } else {
+      // Última aula - voltar ao dashboard
+      navigate('/dashboard');
+    }
+  };
+  
+  const handleBackToTrail = () => {
+    setShowResultCard(false);
+    if (lesson?.trail_id) {
+      navigate(`/trail/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleMaiaClose = async () => {
@@ -220,8 +243,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     previousScore: lesson.user_score,
   };
 
-  switch (lesson.lesson_type) {
-    case 'guided':
+  // Renderizar conteúdo baseado no tipo de aula
+  const renderLessonContent = () => {
+    switch (lesson.lesson_type) {
+      case 'guided':
       // Aulas guiadas com Liv narradora
 
       // Função para APENAS marcar aula como completa (sem navegar)
@@ -231,6 +256,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           audioProgress: 100,
           allExercisesCompleted: true
         }, timeSpent);
+
+        // 🎮 GAMIFICAÇÃO: Registrar evento
+        const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
+        if (gamResult) {
+          setGamificationResult(gamResult);
+          setShowResultCard(true);
+          refreshGamification();
+        }
       };
 
       // Função LEGADO para compatibilidade (não deve ser chamada do ConclusionScreen)
@@ -259,7 +292,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             : `/lessons/${nextLesson.id}`;
           navigate(route);
         } else {
-          navigate(`/trails/${lesson.trail_id}`);
+          navigate(`/trail/${lesson.trail_id}`);
         }
       };
 
@@ -268,6 +301,11 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       
       const dbContent = lesson.content && typeof lesson.content === 'object' && 'sections' in lesson.content 
         ? lesson.content as any 
+        : null;
+      
+      // 🆕 Suporte para formato V3 (slides ao invés de sections)
+      const dbContentV3 = lesson.content && typeof lesson.content === 'object' && 'slides' in lesson.content
+        ? lesson.content as any
         : null;
       
       let localContent = null;
@@ -281,7 +319,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         localContent = fundamentos04;
       }
       
-      const dbVersion = dbContent?.contentVersion || 0;
+      const dbVersion = dbContent?.contentVersion || dbContentV3?.contentVersion || 0;
       const localVersion = localContent?.contentVersion || 0;
       
       if (localVersion > dbVersion && localContent) {
@@ -290,6 +328,23 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       } else if (dbContent) {
         console.log('Using database version', dbVersion);
         guidedLessonData = dbContent;
+      } else if (dbContentV3) {
+        console.log('🔄 [V3] Converting V3 format (slides) to V4 format (sections)');
+        // Converter formato V3 para V4
+        guidedLessonData = {
+          ...dbContentV3,
+          sections: dbContentV3.slides?.map((slide: any, index: number) => ({
+            id: slide.id || `section-${index}`,
+            timestamp: 0, // V3 não tem timestamps separados
+            content: slide.content || '',
+            visualContent: slide.visualContent || slide.content || '',
+            audio_url: index === 0 ? dbContentV3.audioUrl : undefined
+          })) || []
+        };
+        console.log('✅ [V3] Converted', {
+          slidesCount: dbContentV3.slides?.length || 0,
+          sectionsCount: guidedLessonData.sections?.length || 0
+        });
       } else if (localContent) {
         console.log('Fallback to local data', localVersion);
         guidedLessonData = localContent;
@@ -499,7 +554,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -538,7 +593,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -577,7 +632,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -616,7 +671,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -655,7 +710,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -694,7 +749,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate(`/trails/${lesson.trail_id}`)}
+                  onClick={() => navigate(`/trail/${lesson.trail_id}`)}
                   className="flex-shrink-0"
                   aria-label="Voltar para trilha"
                 >
@@ -717,5 +772,34 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           <p className="text-lg text-muted-foreground">Tipo de aula não suportado</p>
         </div>
       );
-  }
+    }
+  };
+
+  // Renderizar componente completo com card de gamificação
+  return (
+    <>
+      {renderLessonContent()}
+
+      {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
+      {showResultCard && gamificationResult && (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
+          onContinue={handleContinueFromGamification}
+          onBackToTrail={handleBackToTrail}
+        />
+      )}
+    </>
+  );
 };
+
+// Helper para calcular próxima patente
+function getNextPatentThreshold(currentLevel: number): number | undefined {
+  const thresholds = [200, 600, 1200];
+  return thresholds[currentLevel];
+}

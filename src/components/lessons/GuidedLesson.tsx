@@ -12,9 +12,10 @@ import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
-import { ConclusionScreen } from './ConclusionScreen';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 import { updateMissionProgress } from '@/lib/updateMissionProgress';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 
 export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
@@ -315,9 +317,39 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
     
     console.log('🎮 [PLAYGROUND] ✅ ATIVANDO...');
     
-    // Pausar áudio
-    audio.pause();
-    setIsPlaying(false);
+    // ⏱️ DELAY: Esperar a palavra completar antes de pausar
+    // Se temos wordTimestamps, calcular quanto tempo falta para última palavra terminar
+    let pauseDelay = 0.5; // default: 0.5s
+    
+    if (wordTimestamps && wordTimestamps.length > 0) {
+      const currentTime = audio.currentTime;
+      const playgroundSectionIndex = lessonData.sections.findIndex(s => s.showPlaygroundCall === true && s.playgroundConfig);
+      
+      if (playgroundSectionIndex !== -1) {
+        const playgroundSection = lessonData.sections[playgroundSectionIndex];
+        const nextSection = lessonData.sections[playgroundSectionIndex + 1];
+        const nextSectionTimestamp = nextSection?.timestamp || Infinity;
+        
+        const palavrasDaSecao = wordTimestamps.filter(w => 
+          w.start >= playgroundSection.timestamp && 
+          w.start < nextSectionTimestamp
+        );
+        
+        const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
+        
+        if (ultimaPalavra && ultimaPalavra.end > currentTime) {
+          pauseDelay = (ultimaPalavra.end - currentTime) + 0.3; // tempo até fim + 0.3s buffer
+          console.log(`⏱️ [PLAYGROUND-PAUSE-DELAY] Palavra "${ultimaPalavra.word}" termina em ${ultimaPalavra.end}s | currentTime=${currentTime.toFixed(2)}s | delay=${pauseDelay.toFixed(2)}s`);
+        }
+      }
+    }
+    
+    // Pausar áudio DEPOIS da palavra completar
+    setTimeout(() => {
+      audio.pause();
+      setIsPlaying(false);
+      console.log(`⏸️ [PLAYGROUND-PAUSED] Áudio pausado após delay de ${pauseDelay.toFixed(2)}s`);
+    }, pauseDelay * 1000);
     
     // Marcar como triggered
     setPlaygroundTriggered(true);
@@ -679,7 +711,49 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         if (nextSection) {
           const playgroundSection = lessonData.sections[playgroundSectionIndex];
           const playgroundDelay = playgroundSection.playgroundConfig?.playgroundDelay ?? 0;
-          const triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+          
+          // 🎯 NOVO: Usar end da última palavra da seção ao invés do timestamp da próxima seção
+          let triggerTime: number;
+          
+          console.log('🔍 [DEBUG-TRIGGER] Dados disponíveis:', {
+            hasWordTimestamps: !!wordTimestamps,
+            totalWords: wordTimestamps?.length || 0,
+            playgroundSectionTimestamp: playgroundSection.timestamp,
+            nextSectionTimestamp: nextSection?.timestamp,
+            playgroundDelay
+          });
+          
+          if (wordTimestamps && wordTimestamps.length > 0) {
+            // Filtrar palavras que pertencem à seção do playground
+            const nextSectionTimestamp = nextSection?.timestamp || Infinity;
+            const palavrasDaSecao = wordTimestamps.filter(w => 
+              w.start >= playgroundSection.timestamp && 
+              w.start < nextSectionTimestamp
+            );
+            
+            console.log('🔍 [DEBUG-FILTER] Palavras filtradas:', {
+              total: palavrasDaSecao.length,
+              primeiras3: palavrasDaSecao.slice(0, 3).map(w => `${w.word} (${w.start}-${w.end})`),
+              ultimas3: palavrasDaSecao.slice(-3).map(w => `${w.word} (${w.start}-${w.end})`)
+            });
+            
+            const ultimaPalavra = palavrasDaSecao[palavrasDaSecao.length - 1];
+            
+            if (ultimaPalavra) {
+              // Trigger DEPOIS do end da última palavra + buffer de 0.83s
+              triggerTime = ultimaPalavra.end + 0.83 + playgroundDelay;
+              console.log(`🎯 [TRIGGER-1-NEW] Usando end da última palavra "${ultimaPalavra.word}" (start:${ultimaPalavra.start}, end:${ultimaPalavra.end}s) | trigger=${triggerTime.toFixed(2)}s | playgroundDelay=${playgroundDelay}`);
+            } else {
+              // Fallback se não encontrar palavras
+              triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+              console.log(`⚠️ [TRIGGER-1-FALLBACK] Sem palavras na seção, usando lógica antiga | trigger=${triggerTime.toFixed(2)}s`);
+            }
+          } else {
+            // Fallback se não houver wordTimestamps
+            triggerTime = nextSection.timestamp - 0.5 + playgroundDelay;
+            console.log(`⚠️ [TRIGGER-1-FALLBACK] Sem wordTimestamps, usando lógica antiga | trigger=${triggerTime.toFixed(2)}s`);
+          }
+          
           const windowEnd = nextSection.timestamp + playgroundDelay;
           
           // 🔍 DEBUG: Log contínuo na janela crítica (125s-129s)
@@ -720,7 +794,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   }, [lessonData.sections, audioUrl, isPlaying]);
   
   // 🎮 TRIGGER 2 (FALLBACK): Section-based (26.5s após entrar na seção 4 = ~127.5s)
+  // ❌ DESABILITADO TEMPORARIAMENTE - conflitando com TRIGGER-1 melhorado
   useEffect(() => {
+    console.log(`🔍 [TRIGGER-2-CHECK] DESABILITADO`);
+    return; // Early return para desabilitar
+    
     console.log(`🔍 [TRIGGER-2-CHECK] currentSection=${currentSection} | playgroundTriggered=${playgroundTriggered} | willActivate=${currentSection === 3 && !playgroundTriggered}`);
     
     if (currentSection === 3 && !playgroundTriggered) {
@@ -1266,6 +1344,8 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   const [exerciseScores, setExerciseScores] = useState<number[]>([]);
   const [lessonStartTime] = useState(Date.now());
   const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
   
   // 🎮 Gamification states
   const [pointsNotification, setPointsNotification] = useState<{
@@ -1419,23 +1499,57 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
-    const timeSpent = Date.now() - lessonStartTime;
+    // Se deve mostrar o card de resultado da gamificação
+    if (showResultCard && gamificationResult) {
+      return (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          onContinue={() => {
+            setShowResultCard(false);
+            // Chamar o onMarkComplete para navegação final
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }}
+          onBackToTrail={() => {
+            setShowResultCard(false);
+            if (trailId) {
+              navigate(`/trail/${trailId}`);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+        />
+      );
+    }
 
-    // Coletar metadata dos exercícios
-    const exerciseMetadata = lessonData.exercisesConfig?.map(ex => ({
-      title: ex.title,
-      type: ex.type,
-    })) || [];
-
+    // Mostrar card de conclusão primeiro
     return (
-      <ConclusionScreen
-        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]}
-        timeSpent={timeSpent}
+      <LessonCompletionCard
         lessonTitle={lessonData.title}
-        nextLessonId={nextLessonId}
-        nextLessonType={nextLessonType}
-        exerciseMetadata={exerciseMetadata}
-        onBeforeNavigate={onMarkComplete}
+        exerciseScores={exerciseScores}
+        onContinue={async () => {
+          console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+          // Registrar evento de gamificação
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [RECOMPENSAS] Falha ao obter resultado');
+            // Se falhar, continuar mesmo assim
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }
+        }}
       />
     );
   }
@@ -1500,7 +1614,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
             <button 
-              onClick={() => navigate(`/trails/${trailId || lessonData.trackId}`)} 
+              onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
               className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
               aria-label="Voltar para trilha"
             >
@@ -1541,14 +1655,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/50 shadow-xl">
-                  <div className="flex justify-center mb-3">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl px-4 py-7 border border-slate-200/50 shadow-xl">
+                  <div className="flex justify-center mb-4">
                     <div className="relative group cursor-pointer">
                       {/* Liv com animações otimizadas */}
                       <LivAvatar
-                        size="xl"
+                        size="medium"
                         isPlaying={isPlaying && isAudioEnabled}
-                        showHalo={isPlaying && isAudioEnabled}
+                        showHalo={false}
                         animate={isPlaying && isAudioEnabled}
                         className={`
                           animate-fly-in-rasante
@@ -1560,22 +1674,11 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                       {/* Indicadores de áudio melhorados */}
                       {isPlaying && isAudioEnabled && (
                         <div className="absolute -bottom-1 -right-1 flex gap-1">
-                          <span className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
+                          <span className="w-2 h-2 bg-cyan-400 rounded-full animate-audio-bounce shadow-cyan-glow" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-blue-500 rounded-full animate-audio-bounce shadow-lg" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-purple-500 rounded-full animate-audio-bounce shadow-pink-glow" style={{ animationDelay: '300ms' }} />
                         </div>
                       )}
-                      
-                      {/* Balão fixo ao lado da cabeça */}
-                      <div className="absolute -top-2 -right-12 hidden lg:block">
-                        <div className="relative bg-white rounded-xl px-4 py-2.5 border-2 border-cyan-200 shadow-lg">
-                          <p className="text-xs font-medium text-slate-700 text-center">
-                            Olá, Eu<br />sou a Liv!
-                          </p>
-                          {/* Rabinho do balão apontando para a Liv */}
-                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-3 h-3 bg-white border-l-2 border-b-2 border-cyan-200"></div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                   
@@ -1606,11 +1709,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                     disabled={!isRenderable}
                     className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-300 hover:scale-[1.02] ${
                       currentSection === index
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg shadow-cyan-400/30 scale-[1.02]'
+                        ? 'text-white shadow-lg scale-[1.02]'
                         : isSpecial
                         ? 'bg-amber-50 text-amber-600 cursor-default'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
                     } ${!isRenderable ? 'opacity-50' : ''}`}
+                    style={currentSection === index 
+                      ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'}
+                      : undefined}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
@@ -1706,10 +1812,10 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         </div>
       </div>
 
-      {/* Liv Mobile - versão premium responsiva */}
+      {/* Liv Mobile - versão elegante */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 border-2 border-cyan-300/60 shadow-2xl max-w-[340px] w-full">
-          <div className="flex items-center gap-3">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-cyan-300/60 shadow-xl max-w-[290px] w-full">
+          <div className="flex items-center gap-2">
             <div className="relative flex-shrink-0">
               <LivAvatar
                 size="small"
@@ -1730,7 +1836,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
+              <p className="text-[11px] text-slate-700 leading-snug font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>

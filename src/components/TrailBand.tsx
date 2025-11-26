@@ -35,7 +35,7 @@ export const TrailBand = ({
 
   const handleClick = () => {
     if (!isLocked) {
-      navigate(`/trails/${trail.id}`);
+      navigate(`/trail/${trail.id}`);
     }
   };
 
@@ -44,38 +44,52 @@ export const TrailBand = ({
       onClick={handleClick}
       className={cn(
         "relative overflow-hidden rounded-2xl p-6 transition-all duration-300 min-h-[140px]",
-        isLocked && "opacity-60 cursor-not-allowed",
+        isLocked && "opacity-70 cursor-not-allowed",
         !isLocked && "cursor-pointer hover:-translate-y-0.5"
       )}
       style={{
-        background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-        border: '1px solid rgba(139, 92, 246, 0.3)',
-        boxShadow: `
-          0 0 40px rgba(139, 92, 246, 0.1),
-          0 0 80px rgba(139, 92, 246, 0.05),
-          inset 0 0 60px rgba(139, 92, 246, 0.03)
-        `
+        background: isLocked 
+          ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+          : 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+        backgroundImage: isLocked 
+          ? undefined 
+          : `
+            linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
+            radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
+          `,
+        backgroundSize: isLocked ? 'cover' : 'cover, 16px 16px',
+        backgroundPosition: isLocked ? 'center' : 'center, 0 0',
+        border: isLocked ? '1px solid rgba(107, 114, 128, 0.3)' : '1px solid rgba(139, 92, 246, 0.2)',
+        boxShadow: isLocked 
+          ? '0 2px 8px rgba(0, 0, 0, 0.1)'
+          : '0 2px 8px rgba(139, 92, 246, 0.05)'
       }}
       onMouseEnter={(e) => {
         if (!isLocked) {
-          e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.6)';
+          e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.15)';
         }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.border = '1px solid rgba(139, 92, 246, 0.3)';
+        if (!isLocked) {
+          e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
+        }
       }}
     >
-      {/* Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '20px 20px'
-        }}
-      />
+      {/* Grid Pattern - Only for locked */}
+      {isLocked && (
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(107, 114, 128, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(107, 114, 128, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '20px 20px'
+          }}
+        />
+      )}
       
       {/* Floating Particles - Only for Active Trail */}
       {isActive && (
@@ -130,35 +144,45 @@ export const TrailBand = ({
             isActive && "animate-pulse-glow"
           )}
           style={{
-            background: isLocked ? 'rgba(75, 85, 99, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-            border: isLocked ? '1px solid rgba(75, 85, 99, 0.4)' : '1px solid rgba(139, 92, 246, 0.4)'
+            background: isLocked 
+              ? 'rgba(75, 85, 99, 0.2)' 
+              : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)',
+            border: isLocked 
+              ? '1px solid rgba(75, 85, 99, 0.4)' 
+              : '1px solid rgba(139, 92, 246, 0.3)'
           }}
         >
           {isLocked ? (
             <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-gray-500" />
           ) : (
-            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400" strokeWidth={2.5} />
+            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" strokeWidth={2.5} />
           )}
         </div>
 
         {/* Content Section */}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-            <h3 className="font-bold text-lg sm:text-xl text-gray-100">
+            <h3 className={cn(
+              "font-bold text-lg sm:text-xl",
+              isLocked ? "text-gray-400" : "text-gray-800"
+            )}>
               {trail.title}
             </h3>
             {isCompleted && (
-              <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
+              <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/20 text-green-600 border border-green-500/30">
                 ✓ Concluída
               </span>
             )}
             {isActive && !isCompleted && (
-              <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                ▶ Ativo
+              <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                Ativo
               </span>
             )}
           </div>
-          <p className="text-sm sm:text-base mb-3 line-clamp-2 sm:line-clamp-1 text-gray-400">
+          <p className={cn(
+            "text-sm sm:text-base mb-3 line-clamp-2 sm:line-clamp-1",
+            isLocked ? "text-gray-500" : "text-gray-600"
+          )}>
             {trail.description}
           </p>
           
@@ -178,19 +202,19 @@ export const TrailBand = ({
                     style={{
                       width: `${progress}%`,
                       background: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)'
+                      boxShadow: '0 0 10px rgba(139, 92, 246, 0.3)'
                     }}
                   />
                 </div>
               </div>
               
               <div className="flex items-center gap-2 sm:gap-3">
-                <span className="text-sm font-medium text-gray-400">
+                <span className="text-sm font-medium text-gray-600">
                   {completedLessons}/{totalLessons} aulas
                 </span>
                 {progress > 0 && (
-                  <span className="text-xs font-semibold text-purple-400">
-                    • {Math.round(progress)}%
+                  <span className="text-xs font-semibold text-primary">
+                    {Math.round(progress)}%
                   </span>
                 )}
               </div>
@@ -205,9 +229,14 @@ export const TrailBand = ({
         </div>
       </div>
 
-      {/* Locked overlay */}
+      {/* Locked overlay - Dark mode */}
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm rounded-2xl">
+        <div 
+          className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-2xl"
+          style={{
+            background: 'rgba(31, 41, 55, 0.8)'
+          }}
+        >
           <div className="text-center">
             <Lock className="w-12 h-12 mx-auto mb-2 text-gray-400" />
             <p className="text-sm font-semibold px-4 text-gray-300">

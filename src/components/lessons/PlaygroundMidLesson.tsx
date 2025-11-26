@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, Check, ChevronRight } from 'lucide-react';
+import { Loader2, Copy, Check, ChevronRight, ArrowUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PlaygroundMidLessonProps {
   config: PlaygroundConfig;
@@ -263,16 +264,16 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
       <div 
         data-testid="playground-mid-lesson"
         data-playground-type="real"
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-4 overflow-y-auto"
       >
-        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] my-8 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-cyan-400 to-purple-500 p-6 sticky top-0 z-10">
+          <div className="bg-gradient-to-r from-cyan-400 to-purple-500 py-4 px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <LivAvatar
                 size="medium"
-                showHalo={true}
-                className="rounded-full border-4 border-white shadow-lg flex-shrink-0"
+                showHalo={false}
+                className="flex-shrink-0"
               />
               <div className="flex-1">
                 <h3 className="text-white font-bold text-xl">⏸️ {config.realConfig.title}</h3>
@@ -292,9 +293,9 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           </div>
           
           {/* Conteúdo */}
-          <div className="p-8">
+          <div className="p-6 max-h-[calc(90vh-80px)] overflow-y-auto">
             {/* Mensagem da Liv */}
-            <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-6">
+            <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-4">
               <h4 className="font-semibold text-foreground mb-3">
                 Complete o Desafio:
               </h4>
@@ -304,19 +305,39 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             </div>
             
             {/* Playground */}
-            <div className="mb-6">
+            <div className="mb-4">
               <h4 className="font-semibold text-foreground mb-3">
                 ✍️ Digite seu prompt:
               </h4>
               
               {/* Parte editável */}
               <div>
-                <Textarea
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={config.realConfig.userPlaceholder}
-                  className="w-full px-4 py-3 border-2 border-cyan-400 rounded-lg font-medium min-h-[120px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                />
+                <div className="relative">
+                  <Textarea
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder={config.realConfig.userPlaceholder}
+                    className="w-full px-4 py-3 pr-14 border-2 border-cyan-400 rounded-lg font-medium min-h-[100px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  />
+                  {/* Botão de enviar dentro do textarea */}
+                  <button
+                    onClick={generateAIResponse}
+                    disabled={!validationState.isValid || isGeneratingAI}
+                    className={cn(
+                      "absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all",
+                      validationState.isValid && !isGeneratingAI
+                        ? "bg-cyan-500 hover:bg-cyan-600 shadow-lg animate-pulse"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    )}
+                    aria-label="Enviar prompt"
+                  >
+                    {isGeneratingAI ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4 text-white" />
+                    )}
+                  </button>
+                </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   💡 Dica: Seja específico! Mencione para quem, sobre o quê e qual tom.
                 </p>
@@ -369,26 +390,6 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
 
             {/* Botões de ação */}
             <div className="space-y-3">
-              {/* Botão Gerar IA (aparece quando prompt válido mas ainda não gerou) */}
-              {validationState.isValid && !showAIResult && (
-                <Button
-                  onClick={generateAIResponse}
-                  disabled={isGeneratingAI}
-                  className="w-full py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
-                  size="lg"
-                  data-testid="playground-generate-ai"
-                >
-                  {isGeneratingAI ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Gerando resposta da IA...
-                    </>
-                  ) : (
-                    'Testar com IA Real'
-                  )}
-                </Button>
-              )}
-
               {/* Botões de ação final - dois botões quando tem resposta */}
               {showAIResult && (
                 <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
@@ -411,18 +412,6 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                     <ChevronRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
-              )}
-
-              {/* Botão desabilitado (quando prompt incompleto) */}
-              {!validationState.isValid && (
-                <Button
-                  disabled
-                  className="w-full py-6 text-base sm:text-lg font-bold"
-                  size="lg"
-                  data-testid="playground-mid-continue"
-                >
-                  Complete seu prompt
-                </Button>
               )}
             </div>
           </div>

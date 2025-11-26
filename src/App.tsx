@@ -14,6 +14,7 @@ import LessonInteractive from "./pages/LessonInteractive";
 import Achievements from "./pages/Achievements";
 import AchievementsPage from "./pages/AchievementsPage";
 import Leaderboard from "./pages/Leaderboard";
+import Profile from "./pages/Profile";
 import AdminUpdateTimestamps from "./pages/AdminUpdateTimestamps";
 import Admin from "./pages/Admin";
 import AdminAudioGenerator from "./pages/AdminAudioGenerator";
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/gamification" element={<AchievementsPage />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/trail/:id" element={<TrailDetail />} />
           <Route path="/trails/:id" element={<TrailDetail />} />
           <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
@@ -94,6 +96,7 @@ const App = () => (
           <Route path="/prompt-library/:categoryId" element={<PromptCategory />} />
           <Route path="/ai-playground" element={<AIPlayground />} />
           <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

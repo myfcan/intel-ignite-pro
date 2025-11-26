@@ -163,12 +163,22 @@ const TrailDetail = () => {
           <span className="font-medium text-sm sm:text-base text-gray-700">Voltar</span>
         </button>
 
-        {/* Card de Header - Versão Original com Leve Dark Tech */}
+        {/* Card de Header - Paleta Principal com Degradê */}
         <div className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border"
              style={{
-               background: 'linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%)',
-               borderColor: 'rgba(139, 92, 246, 0.2)'
+               background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+               borderColor: 'rgba(255, 255, 255, 0.3)'
              }}>
+          
+          {/* Textura de Pontos */}
+          <div 
+            className="absolute inset-0 pointer-events-none opacity-20"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0'
+            }}
+          />
           
           {/* Conteúdo */}
           <div className="relative z-10 p-4 sm:p-6 md:p-8">
@@ -179,26 +189,26 @@ const TrailDetail = () => {
                   {/* Ícone grande */}
                   <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 text-2xl sm:text-3xl md:text-4xl"
                        style={{
-                         background: 'rgba(139, 92, 246, 0.2)',
-                         border: '1px solid rgba(139, 92, 246, 0.4)'
+                         background: 'rgba(255, 255, 255, 0.2)',
+                         border: '1px solid rgba(255, 255, 255, 0.3)'
                        }}>
                     {trail.icon}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     {/* Título */}
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-1 sm:mb-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">
                       {trail.title}
                     </h1>
                     {/* Descrição */}
-                    <p className="text-gray-400 text-sm sm:text-base md:text-lg line-clamp-2">
+                    <p className="text-white/90 text-sm sm:text-base md:text-lg line-clamp-2">
                       {trail.description}
                     </p>
                   </div>
                 </div>
                 
                 {/* Metadados */}
-                <div className="flex items-center gap-2 sm:gap-4 text-purple-300 text-xs sm:text-sm">
+                <div className="flex items-center gap-2 sm:gap-4 text-white/90 text-xs sm:text-sm">
                   <span className="flex items-center gap-1 sm:gap-1.5">
                     <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                     {lessons.length} aulas
@@ -214,27 +224,27 @@ const TrailDetail = () => {
               {/* Lado direito: Progresso */}
               <div className="w-full md:w-auto text-center md:text-right backdrop-blur-sm rounded-2xl p-4 sm:p-5 md:p-6 border"
                    style={{
-                     background: 'rgba(139, 92, 246, 0.1)',
-                     borderColor: 'rgba(139, 92, 246, 0.3)'
+                     background: 'rgba(255, 255, 255, 0.15)',
+                     borderColor: 'rgba(255, 255, 255, 0.3)'
                    }}>
-                <div className="text-xs sm:text-sm text-purple-300 mb-1">Seu progresso</div>
-                <div className="text-4xl sm:text-5xl font-bold text-gray-100 mb-1">{Math.round(progress)}%</div>
-                <div className="text-xs sm:text-sm text-purple-300">{completedLessons.length}/{lessons.length} completas</div>
+                <div className="text-xs sm:text-sm text-white/80 mb-1">Seu progresso</div>
+                <div className="text-4xl sm:text-5xl font-bold text-white mb-1">{Math.round(progress)}%</div>
+                <div className="text-xs sm:text-sm text-white/80">{completedLessons.length}/{lessons.length} completas</div>
               </div>
             </div>
             
             {/* Barra de progresso */}
             <div className="h-2 sm:h-3 rounded-full overflow-hidden"
                  style={{
-                   background: 'rgba(139, 92, 246, 0.1)',
-                   border: '1px solid rgba(139, 92, 246, 0.2)'
+                   background: 'rgba(255, 255, 255, 0.2)',
+                   border: '1px solid rgba(255, 255, 255, 0.3)'
                  }}>
               <div 
                 className="h-full shadow-lg transition-all duration-500" 
                 style={{ 
                   width: `${Math.min(100, Math.round(progress))}%`,
-                  background: 'linear-gradient(90deg, #6366F1 0%, #A78BFA 50%, #EC4899 100%)',
-                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)'
+                  background: 'linear-gradient(90deg, #10B981 0%, #06B6D4 100%)',
+                  boxShadow: '0 0 15px rgba(16, 185, 129, 0.5)'
                 }}
               />
             </div>

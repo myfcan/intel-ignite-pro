@@ -11,9 +11,10 @@ import { PlaygroundRealChat } from './PlaygroundRealChat';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
-import { ConclusionScreen } from './ConclusionScreen';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { LivAvatar } from '@/components/LivAvatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 import { updateMissionProgress } from '@/lib/updateMissionProgress';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 
 /**
  * 🚀 GUIDED LESSON V4 - PLAYGROUND REAL INTERATIVO
@@ -1280,6 +1282,8 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   const [exerciseScores, setExerciseScores] = useState<number[]>([]);
   const [lessonStartTime] = useState(Date.now());
   const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
   
   // 🎮 Gamification states
   const [pointsNotification, setPointsNotification] = useState<{
@@ -1489,23 +1493,57 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
-    const timeSpent = Date.now() - lessonStartTime;
+    // Se deve mostrar o card de resultado da gamificação
+    if (showResultCard && gamificationResult) {
+      return (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          onContinue={() => {
+            setShowResultCard(false);
+            // Chamar o onMarkComplete para navegação final
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }}
+          onBackToTrail={() => {
+            setShowResultCard(false);
+            if (trailId) {
+              navigate(`/trail/${trailId}`);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+        />
+      );
+    }
 
-    // Coletar metadata dos exercícios
-    const exerciseMetadata = lessonData.exercisesConfig?.map(ex => ({
-      title: ex.title,
-      type: ex.type,
-    })) || [];
-
+    // Mostrar card de conclusão primeiro
     return (
-      <ConclusionScreen
-        scores={exerciseScores.length > 0 ? exerciseScores : [80, 85, 90]}
-        timeSpent={timeSpent}
+      <LessonCompletionCard
         lessonTitle={lessonData.title}
-        nextLessonId={nextLessonId}
-        nextLessonType={nextLessonType}
-        exerciseMetadata={exerciseMetadata}
-        onBeforeNavigate={onMarkComplete}
+        exerciseScores={exerciseScores}
+        onContinue={async () => {
+          console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+          // Registrar evento de gamificação
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [RECOMPENSAS] Falha ao obter resultado');
+            // Se falhar, continuar mesmo assim
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }
+        }}
       />
     );
   }
@@ -1571,7 +1609,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         <div className="w-full px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
             <button 
-              onClick={() => navigate(`/trails/${trailId || lessonData.trackId}`)} 
+              onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
               className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
               aria-label="Voltar para trilha"
             >
@@ -1582,11 +1620,12 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
               <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-semibold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xs font-semibold bg-clip-text text-transparent"
+                    style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}>
                 {Math.round(progress)}%
               </span>
               <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                <div className="h-full transition-all" style={{width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}} />
               </div>
             </div>
             <button 
@@ -1594,9 +1633,12 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
               disabled={!lessonData.exercisesConfig && !lessonData.finalPlaygroundConfig}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0 ${
                 lessonData.exercisesConfig || lessonData.finalPlaygroundConfig
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 cursor-pointer'
+                  ? 'cursor-pointer'
                   : 'bg-gray-300 cursor-not-allowed opacity-50'
               }`}
+              style={lessonData.exercisesConfig || lessonData.finalPlaygroundConfig 
+                ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}
+                : undefined}
             >
               <Sparkles className="w-3 h-3 inline mr-1" />
               <span className="hidden sm:inline">Exercícios</span>
@@ -1612,12 +1654,12 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-3">
                 
-                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-primary/20 shadow-2xl">
-                  <div className="flex justify-center mb-3">
+                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl px-4 py-7 border border-primary/20 shadow-xl">
+                  <div className="flex justify-center mb-4">
                     <LivAvatar 
-                      size="xl"
+                      size="medium"
                       isPlaying={isPlaying && isAudioEnabled}
-                      showHalo={isPlaying && isAudioEnabled}
+                      showHalo={false}
                       state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
                       theme="fundamentos"
                       className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
@@ -1627,13 +1669,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                   {/* Botão Silenciar Liv - dentro do card */}
                   <button
                     onClick={toggleAudio}
-                    className={`w-full px-3 py-2 rounded-full font-medium text-xs text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                    className={`w-full px-2.5 py-1.5 rounded-full font-medium text-[10px] text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1 ${
                       isAudioEnabled 
                         ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
                         : 'bg-green-500'
                     }`}
                   >
-                    {isAudioEnabled ? '🔊 Silenciar Liv' : '🔇 Ativar Áudio'}
+                    {isAudioEnabled ? '🔊 Silenciar' : '🔇 Ativar'}
                   </button>
                 </div>
                 
@@ -1651,11 +1693,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                     disabled={!isRenderable}
                     className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-300 hover:scale-[1.02] ${
                       currentSection === index
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white shadow-lg shadow-cyan-400/30 scale-[1.02]'
+                        ? 'text-white shadow-lg scale-[1.02]'
                         : isSpecial
                         ? 'bg-amber-50 text-amber-600 cursor-default'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
                     } ${!isRenderable ? 'opacity-50' : ''}`}
+                    style={currentSection === index 
+                      ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'}
+                      : undefined}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
@@ -1708,9 +1753,12 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                       <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
                           currentSection === originalIndex
-                            ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
+                            ? 'text-white'
                             : 'bg-slate-100 text-slate-500'
-                        } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl shadow-cyan-400/60 rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}>
+                        } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}
+                        style={currentSection === originalIndex 
+                          ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.6)'}
+                          : undefined}>
                           {originalIndex + 1}
                         </div>
                         {currentSection === originalIndex && (
@@ -1751,15 +1799,15 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile - versão premium responsiva */}
+      {/* Liv Mobile - versão elegante */}
       <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-3xl p-3 sm:p-4 border-2 border-primary/30 shadow-2xl max-w-[340px] w-full">
-          <div className="flex items-center gap-3">
+        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-primary/30 shadow-xl max-w-[290px] w-full">
+          <div className="flex items-center gap-2">
             <div className="relative flex-shrink-0">
               <LivAvatar 
-                size="medium"
+                size="small"
                 isPlaying={isPlaying && isAudioEnabled}
-                showHalo={isPlaying && isAudioEnabled}
+                showHalo={false}
                 state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
                 theme="fundamentos"
                 className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
@@ -1767,7 +1815,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-slate-700 leading-snug font-medium">
+              <p className="text-[11px] text-slate-700 leading-snug font-medium">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
@@ -1792,9 +1840,19 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                 </button>
                 <button 
                   disabled={showPlaygroundMid || showEndCard}
-                  className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
                   }`}
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                    boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.3)';
+                  }}
                   onClick={() => {
                     togglePlayPause();
                     // Remover pulse ao clicar
@@ -1845,7 +1903,20 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
               <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-white font-bold text-xs transition-all min-w-[55px] flex-shrink-0">
                 {playbackSpeed}x
               </button>
-              <button onClick={handleContinueClick} className="px-5 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all whitespace-nowrap hover:scale-105 flex-shrink-0">
+              <button 
+                onClick={handleContinueClick} 
+                className="px-5 py-2 rounded-xl text-white font-semibold text-sm shadow-lg transition-all whitespace-nowrap hover:scale-105 flex-shrink-0"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                  boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(139, 92, 246, 0.3)';
+                }}
+              >
                 Continuar
               </button>
             </div>
@@ -1880,9 +1951,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                     <SkipBack size={16} />
                   </button>
                   <button 
-                    className={`w-11 h-11 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/30 ${
-                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-cyan-400/50' : ''
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg ${
+                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
                     }`}
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                      boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                    }}
                     onClick={() => {
                       togglePlayPause();
                       if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
@@ -1897,7 +1972,11 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
                     {playbackSpeed}x
                   </button>
                 </div>
-                <button onClick={handleContinueClick} className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg text-white font-semibold text-sm">
+                <button 
+                  onClick={handleContinueClick} 
+                  className="px-4 py-2 rounded-lg text-white font-semibold text-sm"
+                  style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}
+                >
                   Continuar
                 </button>
               </div>

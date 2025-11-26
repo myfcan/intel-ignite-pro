@@ -51,8 +51,11 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     if (!input.v3Data.slides || input.v3Data.slides.length === 0) {
       throw new Error('A lição V3 deve ter pelo menos 1 slide');
     }
-    if (input.v3Data.slides.length > 7) {
-      console.warn(`⚠️ [STEP 1] V3 com ${input.v3Data.slides.length} slides (recomendado: ~7)`);
+    if (input.v3Data.slides.length < 7) {
+      console.warn(`⚠️ [STEP 1] V3 com ${input.v3Data.slides.length} slides (recomendado: mínimo 7)`);
+    }
+    if (input.v3Data.slides.length > 15) {
+      console.warn(`⚠️ [STEP 1] V3 com ${input.v3Data.slides.length} slides (recomendado: máximo 15)`);
     }
     
     // Validar cada slide

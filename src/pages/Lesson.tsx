@@ -8,8 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { AudioPlayer } from "@/components/lesson/AudioPlayer";
 import { MultipleChoiceExercise } from "@/components/lesson/MultipleChoiceExercise";
 import { PlaygroundComponent } from "@/components/lesson/PlaygroundComponent";
-import { ExerciseResults } from "@/components/lesson/ExerciseResults";
+import { ExerciseSummaryCard } from "@/components/lesson/ExerciseSummaryCard";
 import { updateMissionProgress } from "@/lib/updateMissionProgress";
+import { registerGamificationEvent, GamificationResult } from "@/services/gamification";
+import { LessonResultCard } from "@/components/gamification/LessonResultCard";
+import { useUserGamification } from "@/hooks/useUserGamification";
 import { 
   ArrowLeft, 
   Clock, 
@@ -27,6 +30,8 @@ interface Lesson {
   passing_score?: number;
   estimated_time: number;
   difficulty_level: string;
+  trail_id?: string;
+  order_index: number;
 }
 
 interface Exercise {
@@ -51,6 +56,9 @@ const Lesson = () => {
   const [showResults, setShowResults] = useState(false);
   const [showPlayground, setShowPlayground] = useState(false);
   const [startTime] = useState(Date.now());
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const { refresh: refreshGamification } = useUserGamification();
 
   useEffect(() => {
     fetchLessonData();
@@ -141,15 +149,52 @@ const Lesson = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleContinueToPlayground = () => {
-    setShowPlayground(true);
-    // Scroll suave para o playground
-    setTimeout(() => {
-      document.getElementById('playground-section')?.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }, 100);
+  // Novo fluxo: Exercícios → Gamificação → Playground
+  const handleContinueFromExercises = async () => {
+    // 🎮 GAMIFICAÇÃO: Registrar evento e mostrar card de resultado
+    const result = await registerGamificationEvent('lesson_completed', id);
+    if (result) {
+      setGamificationResult(result);
+      setShowResultCard(true);
+      refreshGamification(); // Atualiza o header
+    }
+  };
+
+  const handleContinueFromGamification = async () => {
+    setShowResultCard(false);
+    
+    // Buscar próxima aula da trilha
+    if (lesson?.trail_id) {
+      try {
+        const { data: nextLesson, error } = await supabase
+          .from('lessons')
+          .select('id, order_index')
+          .eq('trail_id', lesson.trail_id)
+          .gt('order_index', lesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (!error && nextLesson) {
+          navigate(`/lessons-interactive/${nextLesson.id}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao buscar próxima aula:', error);
+      }
+    }
+    
+    // Se não houver próxima aula, vai para o dashboard
+    navigate('/dashboard');
+  };
+  
+  const handleBackToTrail = () => {
+    setShowResultCard(false);
+    if (lesson?.trail_id) {
+      navigate(`/trail/${lesson.trail_id}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleCompleteLesson = async () => {
@@ -192,9 +237,11 @@ const Lesson = () => {
       // 📊 Atualizar missão de aulas completadas
       await updateMissionProgress('aulas', 1);
 
+      // 🎮 Nota: A gamificação já foi registrada quando o usuário avançou dos exercícios
+      // Aqui apenas mostramos um toast de confirmação
       toast({
         title: "Aula concluída! 🎉",
-        description: `Você ganhou ${data.points_earned} pontos!`,
+        description: "Parabéns por finalizar a aula!",
       });
 
       if (data.new_achievements?.length > 0) {
@@ -203,11 +250,6 @@ const Lesson = () => {
           description: data.new_achievements[0].achievement_name,
         });
       }
-
-      // Redirect to dashboard after a delay
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
 
     } catch (error: any) {
       console.error("Error completing lesson:", error);
@@ -325,15 +367,14 @@ const Lesson = () => {
             </div>
           )}
 
-          {/* Tela de Resultado */}
+          {/* Tela de Resultado Resumido */}
           {showResults && (
             <>
               <Separator />
-              <ExerciseResults
+              <ExerciseSummaryCard
                 totalQuestions={exercises.length}
                 correctAnswers={correctAnswers}
-                onTryAgain={handleTryAgain}
-                onContinue={handleContinueToPlayground}
+                onContinue={handleContinueFromExercises}
               />
             </>
           )}
@@ -388,8 +429,29 @@ const Lesson = () => {
           )}
         </div>
       </main>
+
+      {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
+      {showResultCard && gamificationResult && (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
+          onContinue={handleContinueFromGamification}
+          onBackToTrail={handleBackToTrail}
+        />
+      )}
     </div>
   );
 };
+
+// Helper para calcular próxima patente
+function getNextPatentThreshold(currentLevel: number): number | undefined {
+  const thresholds = [200, 600, 1200];
+  return thresholds[currentLevel];
+}
 
 export default Lesson;

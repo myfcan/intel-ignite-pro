@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { PremiumUpgradeModal } from '@/components/prompts/PremiumUpgradeModal';
 
 /**
  * PromptCategory Page: Lista prompts de uma categoria específica
@@ -39,6 +41,26 @@ export default function PromptCategory() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
+
+  // Buscar plano do usuário
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('plan')
+          .eq('id', user.id)
+          .single();
+        
+        setUserPlan(userData?.plan || 'basico');
+      }
+    };
+    
+    fetchUserPlan();
+  }, []);
 
   const category = allPromptCategories.find(cat => cat.id === categoryId);
 
@@ -64,8 +86,28 @@ export default function PromptCategory() {
     return prompt.difficulty === difficultyFilter;
   });
 
+  // Verificar se usuário pode acessar prompt
+  const canAccessPrompt = (prompt: Prompt) => {
+    if (!prompt.isPremium) return true;
+    return userPlan === 'ultra' || userPlan === 'pro';
+  };
+
+  // Abrir prompt ou modal de upgrade
+  const handlePromptClick = (prompt: Prompt) => {
+    if (canAccessPrompt(prompt)) {
+      setSelectedPrompt(prompt);
+    } else {
+      setShowUpgradeModal(true);
+    }
+  };
+
   // Copy prompt
   const handleCopyPrompt = (prompt: Prompt) => {
+    if (!canAccessPrompt(prompt)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     navigator.clipboard.writeText(prompt.template);
     setCopiedPrompt(prompt.id);
     toast({
@@ -82,35 +124,35 @@ export default function PromptCategory() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAFBFC] overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-white/70 backdrop-blur-xl border-b border-gray-200 shadow-sm">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 md:py-8">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/prompt-library')}
-            className="mb-4"
+            className="mb-3 sm:mb-4"
           >
-            <ChevronLeft className="w-4 h-4 mr-2" />
+            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
             Voltar
           </Button>
 
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
+          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
                 {category.name}
               </h1>
-              <p className="text-gray-600 mt-2">{category.description}</p>
-              <div className="flex gap-2 mt-3">
-                <Badge variant="outline">
+              <p className="text-sm sm:text-base text-gray-600 mt-2 line-clamp-2">{category.description}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Badge variant="outline" className="text-xs">
                   {category.prompts.length} prompts
                 </Badge>
                 {category.isPopular && (
-                  <Badge className="bg-yellow-500 text-white">
+                  <Badge className="bg-yellow-500 text-white text-xs">
                     <Star className="w-3 h-3 mr-1" />
                     Popular
                   </Badge>
@@ -122,45 +164,50 @@ export default function PromptCategory() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 md:py-12 overflow-x-hidden">
         {/* Filters */}
-        <div className="flex gap-3 mb-8">
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
           <Button
             variant={difficultyFilter === 'all' ? 'default' : 'outline'}
             onClick={() => setDifficultyFilter('all')}
+            size="sm"
+            className="text-xs sm:text-sm"
           >
             Todos ({category.prompts.length})
           </Button>
           <Button
             variant={difficultyFilter === 'beginner' ? 'default' : 'outline'}
             onClick={() => setDifficultyFilter('beginner')}
-            className={difficultyFilter === 'beginner' ? '' : 'border-green-300'}
+            size="sm"
+            className={`text-xs sm:text-sm ${difficultyFilter === 'beginner' ? '' : 'border-green-300'}`}
           >
             Iniciante ({category.prompts.filter(p => p.difficulty === 'beginner').length})
           </Button>
           <Button
             variant={difficultyFilter === 'intermediate' ? 'default' : 'outline'}
             onClick={() => setDifficultyFilter('intermediate')}
-            className={difficultyFilter === 'intermediate' ? '' : 'border-yellow-300'}
+            size="sm"
+            className={`text-xs sm:text-sm ${difficultyFilter === 'intermediate' ? '' : 'border-yellow-300'}`}
           >
             Intermediário ({category.prompts.filter(p => p.difficulty === 'intermediate').length})
           </Button>
           <Button
             variant={difficultyFilter === 'advanced' ? 'default' : 'outline'}
             onClick={() => setDifficultyFilter('advanced')}
-            className={difficultyFilter === 'advanced' ? '' : 'border-red-300'}
+            size="sm"
+            className={`text-xs sm:text-sm ${difficultyFilter === 'advanced' ? '' : 'border-red-300'}`}
           >
             Avançado ({category.prompts.filter(p => p.difficulty === 'advanced').length})
           </Button>
         </div>
 
         {/* Prompts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {filteredPrompts.map((prompt) => (
             <div
               key={prompt.id}
-              className="rounded-xl p-6 border-2 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative"
-              onClick={() => setSelectedPrompt(prompt)}
+              className="rounded-xl p-4 sm:p-6 border-2 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer relative overflow-hidden"
+              onClick={() => handlePromptClick(prompt)}
               style={{
                 background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
                 backgroundImage: `
@@ -196,12 +243,12 @@ export default function PromptCategory() {
               </div>
 
               {/* Header */}
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors break-words">
                 {prompt.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
                 {prompt.description}
               </p>
 
@@ -221,36 +268,52 @@ export default function PromptCategory() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPrompt(prompt);
-                  }}
-                >
-                  Ver Detalhes
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyPrompt(prompt);
-                  }}
-                  className="px-4 py-2 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
-                  style={{background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)'}}
-                >
-                  {copiedPrompt === prompt.id ? (
-                    <>
-                      <Check className="w-4 h-4 inline mr-1" />
-                      Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 inline mr-1" />
-                      Copiar
-                    </>
-                  )}
-                </button>
+              <div className="flex flex-col xs:flex-row gap-2">
+                {prompt.isPremium && !canAccessPrompt(prompt) ? (
+                  <button
+                    className="w-full py-2 sm:py-3 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                    style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUpgradeModal(true);
+                    }}
+                  >
+                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    Desbloquear com Premium
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePromptClick(prompt);
+                      }}
+                    >
+                      Ver Detalhes
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyPrompt(prompt);
+                      }}
+                      className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
+                      style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
+                    >
+                      {copiedPrompt === prompt.id ? (
+                        <>
+                          <Check className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          Copiar
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -354,6 +417,12 @@ export default function PromptCategory() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal 
+        open={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+      />
     </div>
   );
 }

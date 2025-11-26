@@ -44,6 +44,97 @@ export async function step5_5ProcessPlayground(
   // Log de início do step (usando console.log pois é log interno, não de progresso)
   console.log('🎮 [STEP 5.5] Iniciando processamento de playground config...');
 
+  let processedCount = 0;
+  let addedCount = 0;
+
+  // ============================================================================
+  // MODELO V3: ADICIONAR finalPlaygroundConfig AUTOMÁTICO
+  // ============================================================================
+  // V3 usa playground final (não inline). Se não existir, adicionar genérico.
+  // ============================================================================
+  
+  if (input.model === 'v3') {
+    console.log('🎮 [STEP 5.5] Modelo V3 detectado: processando finalPlaygroundConfig...');
+    
+    // V3 armazena o playground em structuredContent.finalPlaygroundConfig
+    if (!input.structuredContent) {
+      console.log('⚠️ [STEP 5.5] structuredContent não encontrado para V3, pulando processamento');
+      return input;
+    }
+
+    // Verificar se já tem finalPlaygroundConfig
+    if (!input.structuredContent.finalPlaygroundConfig) {
+      console.log('🎮 [STEP 5.5] Adicionando playground final genérico para V3');
+      
+      // Adicionar playground genérico padrão
+      input.structuredContent.finalPlaygroundConfig = {
+        type: 'real-playground',
+        instruction: 'Vamos praticar o que você aprendeu!',
+        realConfig: {
+          title: 'Hora da Prática! 🚀',
+          maiaMessage: 'Parabéns por chegar até aqui! Agora é hora de colocar em prática tudo que você aprendeu. Converse com a IA e explore suas possibilidades!',
+          scenario: {
+            title: 'Experimente Livremente',
+            description: 'Use o conhecimento que acabou de adquirir. Seja criativo e teste diferentes abordagens!'
+          },
+          prefilledText: '',
+          userPlaceholder: 'Digite seu prompt aqui... 💭',
+          validation: {
+            minLength: 20,
+            requiredKeywords: [],
+            feedback: {
+              tooShort: '⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!',
+              good: '✅ Ótimo! Vamos testar com a IA.',
+              excellent: '🎉 Perfeito! Pronto para a IA responder!'
+            }
+          }
+        }
+      };
+      
+      addedCount++;
+      console.log('✅ [STEP 5.5] finalPlaygroundConfig genérico adicionado para V3');
+    } else if (input.structuredContent.finalPlaygroundConfig.type === 'real-playground' && !input.structuredContent.finalPlaygroundConfig.realConfig) {
+      // Se tem playground mas falta realConfig, completar
+      console.log('🎮 [STEP 5.5] Completando finalPlaygroundConfig incompleto para V3');
+      
+      input.structuredContent.finalPlaygroundConfig.realConfig = {
+        title: 'Hora da Prática! 🚀',
+        maiaMessage: input.structuredContent.finalPlaygroundConfig.instruction || 'Agora é sua vez de praticar!',
+        scenario: {
+          title: 'Desafio Prático',
+          description: input.structuredContent.finalPlaygroundConfig.instruction || 'Use o que aprendeu para resolver este desafio.'
+        },
+        prefilledText: '',
+        userPlaceholder: 'Digite seu prompt aqui... 💭',
+        validation: {
+          minLength: 20,
+          requiredKeywords: [],
+          feedback: {
+            tooShort: '⚠️ Seu prompt precisa ter pelo menos 20 caracteres. Tente ser mais específico!',
+            good: '✅ Bom trabalho! Seu prompt está bem estruturado.',
+            excellent: '🎉 Excelente! Você dominou a técnica!'
+          }
+        }
+      };
+      
+      processedCount++;
+      console.log('✅ [STEP 5.5] finalPlaygroundConfig completado para V3');
+    } else {
+      console.log('ℹ️ [STEP 5.5] V3 já tem finalPlaygroundConfig completo, respeitando configuração');
+    }
+    
+    // Para V3, retornar aqui (não processar sections inline)
+    const totalActions = addedCount + processedCount;
+    if (totalActions > 0) {
+      console.log(`✅ [STEP 5.5] V3 concluído com ${totalActions} ação(ões)`);
+    }
+    return input;
+  }
+
+  // ============================================================================
+  // MODELOS V1/V2/V4: PROCESSAR PLAYGROUNDS INLINE
+  // ============================================================================
+
   // Se não há structured content, retornar input sem modificações
   if (!input.structuredContent) {
     console.log('⚠️ [STEP 5.5] Nenhum structuredContent encontrado, pulando processamento');
@@ -56,9 +147,6 @@ export async function step5_5ProcessPlayground(
     console.log('ℹ️ [STEP 5.5] Nenhuma seção encontrada, pulando processamento');
     return input;
   }
-
-  let processedCount = 0;
-  let addedCount = 0;
 
   // ============================================================================
   // OPÇÃO C - PARTE 1: ADICIONAR PLAYGROUND AUTOMÁTICO EM MODELO V1

@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { V3LessonProps, PlaygroundConfig } from '@/types/guidedLesson';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
-import { ConclusionScreen } from './ConclusionScreen';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { Card } from '@/components/ui/card';
@@ -90,6 +90,14 @@ export function GuidedLessonV3({
       setDuration(audio.duration);
       setIsAudioInitialized(true);
       console.log('✅ Áudio inicializado:', audio.duration.toFixed(1), 's');
+      
+      // Autoplay: tentar reproduzir automaticamente
+      audio.play().then(() => {
+        setIsPlaying(true);
+        console.log('🎵 Autoplay iniciado');
+      }).catch(err => {
+        console.log('⚠️ Autoplay bloqueado pelo navegador:', err);
+      });
     };
 
     const handleTimeUpdate = () => {
@@ -271,12 +279,13 @@ export function GuidedLessonV3({
     handleLessonComplete();
   };
 
-  // 🔙 Voltar para trilha
+  // 🔙 Voltar - sempre tem uma rota válida
   const handleBack = () => {
     if (trailId) {
       navigate(`/trail/${trailId}`);
     } else {
-      navigate('/trails');
+      // Fallback robusto: volta para o dashboard
+      navigate('/dashboard');
     }
   };
 
@@ -287,141 +296,31 @@ export function GuidedLessonV3({
   // 🎬 FASE: Apresentação de Slides
   if (currentPhase === 'slides') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Voltar
-              </Button>
+      <div className="fixed inset-0 bg-black flex flex-col">
+        {/* Header - ELEGANTE E DISCRETO */}
+        <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/60 via-black/30 to-transparent backdrop-blur-sm">
+          <div className="px-4 py-3 md:py-4 flex items-center justify-between max-w-7xl mx-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="gap-1.5 text-white/90 hover:text-white hover:bg-white/10 transition-all h-9 px-3 rounded-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="font-medium">Voltar</span>
+            </Button>
 
-              <div className="flex-1 mx-4">
-                <h1 className="text-lg font-semibold text-gray-900 text-center">
-                  {lessonData.title}
-                </h1>
-                <p className="text-sm text-gray-500 text-center">
-                  Slide {currentSlideIndex + 1} de {lessonData.slides.length}
-                </p>
-              </div>
-
-              <div className="w-20" /> {/* Spacer para centralizar título */}
+            <div className="absolute left-1/2 -translate-x-1/2 text-center">
+              <p className="text-xs md:text-sm text-white/50 font-medium mb-0.5">
+                Slide {currentSlideIndex + 1} de {lessonData.slides.length}
+              </p>
+              <h1 className="text-sm md:text-base font-semibold text-white/90 max-w-md line-clamp-1">
+                {lessonData.title}
+              </h1>
             </div>
-          </div>
-        </div>
 
-        {/* Área principal com slide */}
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <Card className="overflow-hidden shadow-2xl">
-            {/* Imagem do slide */}
-            {currentSlide?.imageUrl && (
-              <div className="aspect-video bg-gray-900 relative overflow-hidden">
-                <img
-                  src={currentSlide.imageUrl}
-                  alt={currentSlide.contentIdea}
-                  className="w-full h-full object-contain"
-                />
-
-                {/* Número do slide overlay */}
-                <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-full">
-                  <span className="text-white text-sm font-medium">
-                    {currentSlide.slideNumber}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Fallback se não houver imagem */}
-            {!currentSlide?.imageUrl && (
-              <div className="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <div className="text-center text-white px-8">
-                  <Sparkles className="h-16 w-16 mx-auto mb-4 opacity-80" />
-                  <p className="text-xl font-medium">
-                    {currentSlide?.contentIdea || 'Carregando slide...'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Controles de áudio */}
-            <div className="bg-white p-6 border-t">
-              {/* Barra de progresso */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-                <div
-                  className="h-2 bg-gray-200 rounded-full cursor-pointer"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    seekTo(percentage * duration);
-                  }}
-                >
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Botões de controle */}
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={skipToPreviousSlide}
-                  disabled={currentSlideIndex === 0}
-                >
-                  <SkipBack className="h-5 w-5" />
-                </Button>
-
-                <Button
-                  size="lg"
-                  onClick={togglePlayPause}
-                  className="rounded-full h-14 w-14 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-                  disabled={!isAudioInitialized}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-6 w-6" />
-                  ) : (
-                    <Play className="h-6 w-6 ml-1" />
-                  )}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={skipToNextSlide}
-                  disabled={currentSlideIndex === lessonData.slides.length - 1}
-                >
-                  <SkipForward className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {/* Avatar da MAIA */}
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <Avatar className="h-10 w-10 border-2 border-purple-200">
-                  <AvatarImage src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MAIA-yMyV9RI70wvJK0yBXHLBqJTlL9p4zg.png" />
-                </Avatar>
-                <p className="text-sm text-gray-600 italic">
-                  Narração com MAIA
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Botão para pular para exercícios (se já ouviu o áudio) */}
-          {maxAudioProgress > duration * 0.8 && (
-            <div className="mt-6 text-center">
+            {/* Botão continuar (quando disponível) */}
+            {maxAudioProgress > duration * 0.8 && (
               <Button
                 onClick={() => {
                   if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
@@ -432,13 +331,146 @@ export function GuidedLessonV3({
                     handleLessonComplete();
                   }
                 }}
-                variant="outline"
-                className="gap-2"
+                size="sm"
+                className="gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 h-9 px-4 rounded-lg transition-all"
               >
-                Continuar para {lessonData.exercisesConfig?.length ? 'Exercícios' : 'Playground'} →
+                <span className="hidden md:inline">Continuar</span>
+                <span className="md:hidden">→</span>
               </Button>
+            )}
+            {!maxAudioProgress && <div className="w-20" />}
+          </div>
+        </div>
+
+        {/* Container do Slide - ESPAÇO CALCULADO */}
+        <div className="absolute inset-0 top-14 md:top-16 bottom-20 md:bottom-24 flex items-center justify-center px-4 md:px-8">
+          {currentSlide?.imageUrl && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img
+                src={currentSlide.imageUrl}
+                alt={currentSlide.contentIdea}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+
+              {/* Número do slide - ELEGANTE */}
+              <div className="absolute -top-12 md:top-2 right-0 md:right-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                <span className="text-white text-sm font-semibold tabular-nums">
+                  {currentSlide.slideNumber}
+                </span>
+              </div>
             </div>
           )}
+
+          {!currentSlide?.imageUrl && (
+            <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl border border-white/10 flex items-center justify-center">
+              <div className="text-center text-white px-8">
+                <Sparkles className="h-16 w-16 mx-auto mb-4 opacity-60" />
+                <p className="text-xl font-medium opacity-90">
+                  {currentSlide?.contentIdea || 'Carregando slide...'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Player PREMIUM - REFINADO E ELEGANTE */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-black/80 backdrop-blur-xl border-t border-white/10">
+          <div className="px-4 md:px-6 py-3 md:py-4 max-w-7xl mx-auto">
+            {/* Barra de progresso - PREMIUM */}
+            <div className="mb-3 md:mb-4">
+              <div
+                className="relative h-1.5 bg-white/10 rounded-full cursor-pointer overflow-hidden group"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const percentage = x / rect.width;
+                  seekTo(percentage * duration);
+                }}
+              >
+                {/* Progress bar com glow effect */}
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600 rounded-full transition-all shadow-lg shadow-purple-500/50"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+                
+                {/* Hover indicator */}
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+              </div>
+              
+              {/* Timestamps */}
+              <div className="flex justify-between items-center mt-1.5">
+                <span className="text-xs text-white/60 font-medium tabular-nums">
+                  {formatTime(currentTime)}
+                </span>
+                <span className="text-xs text-white/60 font-medium tabular-nums">
+                  {formatTime(duration)}
+                </span>
+              </div>
+            </div>
+
+            {/* Controles - LAYOUT PROFISSIONAL */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Avatar LIV - ESQUERDA */}
+              <div className="flex items-center gap-2.5 min-w-[80px]">
+                <Avatar className="h-9 w-9 md:h-10 md:w-10 ring-2 ring-white/10">
+                  <AvatarImage src="/liv-avatar.png" />
+                </Avatar>
+                <div className="hidden md:block">
+                  <p className="text-xs text-white/90 font-medium leading-tight">LIV</p>
+                  <p className="text-[10px] text-white/50 leading-tight">Narrando</p>
+                </div>
+              </div>
+
+              {/* Botões de controle - CENTRO */}
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={skipToPreviousSlide}
+                  disabled={currentSlideIndex === 0}
+                  className="h-10 w-10 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-all rounded-lg"
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  size="icon"
+                  onClick={togglePlayPause}
+                  className="relative h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+                  disabled={!isAudioInitialized}
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4.5 w-4.5 text-white" />
+                  ) : (
+                    <Play className="h-4.5 w-4.5 text-white ml-0.5" />
+                  )}
+                  
+                  {/* Pulse effect when playing */}
+                  {isPlaying && (
+                    <span className="absolute inset-0 rounded-full bg-purple-400/30 animate-ping" />
+                  )}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={skipToNextSlide}
+                  disabled={currentSlideIndex === lessonData.slides.length - 1}
+                  className="h-10 w-10 text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-all rounded-lg"
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Volume/Info - DIREITA */}
+              <div className="flex items-center gap-2 min-w-[80px] justify-end">
+                <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+                  <Volume2 className="h-3.5 w-3.5 text-white/60" />
+                  <span className="text-xs text-white/60 font-medium">100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Elemento de áudio (hidden) */}
@@ -446,6 +478,7 @@ export function GuidedLessonV3({
           ref={audioRef}
           src={lessonData.audioUrl}
           preload="auto"
+          autoPlay
         />
       </div>
     );
@@ -505,40 +538,15 @@ export function GuidedLessonV3({
   // 🎊 FASE: Conclusão
   if (currentPhase === 'completed') {
     return (
-      <>
-        <ConclusionScreen
-          scores={[100]}
-          timeSpent={0}
-          lessonTitle={lessonData.title}
-          nextLessonId={nextLessonId}
-          nextLessonType={nextLessonType}
-          onBeforeNavigate={() => {
-            if (nextLessonId) {
-              navigate(`/lesson/${nextLessonId}`);
-            } else if (trailId) {
-              navigate(`/trail/${trailId}`);
-            } else {
-              navigate('/trails');
-            }
-          }}
-        />
-
-        {showPointsNotification && (
-          <PointsNotification
-            points={pointsEarned}
-            reason="lesson_complete"
-            show={showPointsNotification}
-            onHide={() => setShowPointsNotification(false)}
-          />
-        )}
-
-        {showAchievement && achievement && (
-          <AchievementBadge
-            milestone={achievement}
-            onClose={() => setShowAchievement(false)}
-          />
-        )}
-      </>
+      <LessonCompletionCard
+        lessonTitle={lessonData.title}
+        onContinue={() => {
+          // Chamar o onMarkComplete para registrar gamificação
+          if (onMarkComplete) {
+            onMarkComplete();
+          }
+        }}
+      />
     );
   }
 

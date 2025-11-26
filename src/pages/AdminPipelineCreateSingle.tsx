@@ -359,13 +359,13 @@ export default function AdminPipelineCreateSingle() {
                   <SelectContent>
                     <SelectItem value="v1">V1 (Áudio por seção + Playgrounds)</SelectItem>
                     <SelectItem value="v2">V2 (Áudio por seção - Sem playgrounds)</SelectItem>
-                    <SelectItem value="v3">V3 (Áudio único + ~7 Slides + Playground final)</SelectItem>
+                    <SelectItem value="v3">V3 (Áudio único + 7-15 Slides + Playground final)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-2">
                   {formData.model === 'v1' && '📚 V1: Áudio por seção, com playgrounds interativos durante e no final'}
                   {formData.model === 'v2' && '📖 V2: Áudio por seção, focado em consumo linear de conteúdo'}
-                  {formData.model === 'v3' && '🎬 V3: Um único áudio, ~7 slides visuais, playground no final'}
+                  {formData.model === 'v3' && '🎬 V3: Um único áudio, 7-15 slides visuais, playground no final'}
                 </p>
               </div>
               <div className="space-y-2">
@@ -474,11 +474,11 @@ export default function AdminPipelineCreateSingle() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Slides Visuais (Máx. 7)</span>
+                  <span>Slides Visuais (7-15 slides)</span>
                   <Button 
                     onClick={addSlideV3} 
                     size="sm" 
-                    disabled={(formData.v3Data?.slides?.length || 0) >= 7}
+                    disabled={(formData.v3Data?.slides?.length || 0) >= 15}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar Slide

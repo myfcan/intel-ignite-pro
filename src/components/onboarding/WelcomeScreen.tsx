@@ -14,11 +14,11 @@ export const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         <p className="text-lg text-gray-600 mb-8">
           Vamos personalizar sua jornada com algumas perguntas rápidas
         </p>
-        <p className="text-sm text-gray-500 mb-8">⏱️ Leva apenas 2 minutos</p>
+        <p className="text-sm text-gray-500 mb-8">Leva apenas 2 minutos</p>
         <Button onClick={onStart} size="lg" className="w-full">
-          Começar Agora →
+          Começar Agora
         </Button>
-        <p className="text-xs text-gray-400 mt-4">🔒 Seus dados estão seguros</p>
+        <p className="text-xs text-gray-400 mt-4">Seus dados estão seguros</p>
       </div>
     </div>
   );
