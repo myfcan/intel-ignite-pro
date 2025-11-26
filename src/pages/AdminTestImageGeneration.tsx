@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminTestImageGeneration() {
+  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
@@ -61,11 +63,20 @@ export default function AdminTestImageGeneration() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Teste de Geração de Imagens</h1>
-        <p className="text-muted-foreground">
-          Teste a edge function generate-slide-images com OpenAI DALL-E 3
-        </p>
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate('/admin')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Teste de Geração de Imagens</h1>
+          <p className="text-muted-foreground">
+            Teste a edge function generate-slide-images com OpenAI DALL-E 3
+          </p>
+        </div>
       </div>
 
       <Card>
