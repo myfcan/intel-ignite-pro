@@ -23,6 +23,8 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  console.log('🎮 [PLAYGROUND-REAL-CHAT] Componente renderizado');
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -113,9 +115,9 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="fixed inset-0 z-50 flex flex-col"
+        className="fixed inset-0 z-[9999] flex flex-col bg-gray-950"
       >
-        <div className="flex flex-col h-full bg-gray-950">
+        <div className="flex flex-col h-full">
           {/* Header do Chat */}
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 flex-shrink-0">
             <div className="flex items-center gap-3">
@@ -130,11 +132,21 @@ export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatP
                 </p>
               </div>
             </div>
-            {interactionsRemaining !== null && (
-              <div className="text-xs text-gray-400">
-                {interactionsRemaining} interações restantes
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {interactionsRemaining !== null && (
+                <div className="text-xs text-gray-400">
+                  {interactionsRemaining} interações restantes
+                </div>
+              )}
+              {onComplete && (
+                <button
+                  onClick={onComplete}
+                  className="text-gray-400 hover:text-white transition-colors text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700"
+                >
+                  Pular →
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Área de Mensagens */}
