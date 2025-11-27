@@ -294,11 +294,11 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
       <div 
         data-testid="playground-mid-lesson"
         data-playground-type="real"
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-start sm:items-center justify-center p-4 pt-8 sm:pt-4 overflow-y-auto"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
       >
-        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] my-8 overflow-hidden">
+        <div className="bg-background rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-cyan-400 to-purple-500 py-4 px-6 sticky top-0 z-10">
+          <div className="bg-gradient-to-r from-cyan-400 to-purple-500 py-4 px-6 flex-shrink-0">
             <div className="flex items-center gap-4">
               <LivAvatar
                 size="medium"
@@ -322,8 +322,8 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             </div>
           </div>
           
-          {/* Conteúdo */}
-          <div className="p-6 max-h-[calc(90vh-80px)] overflow-y-auto">
+          {/* Conteúdo com scroll */}
+          <div className="flex-1 p-6 overflow-y-auto">
             {/* Mensagem da Liv */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-4">
               <h4 className="font-semibold text-foreground mb-3">
@@ -417,34 +417,33 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
                 )}
               </div>
             )}
-
-            {/* Botões de ação */}
-            <div className="space-y-3">
-              {/* Botões de ação final - dois botões quando tem resposta */}
-              {showAIResult && (
-                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
-                  <Button
-                    onClick={handleCreateAnother}
-                    variant="outline"
-                    size="lg"
-                    className="flex-1"
-                  >
-                    <span className="mr-2">🔄</span>
-                    Criar outro prompt
-                  </Button>
-                  <Button
-                    onClick={() => onComplete(userInput)}
-                    size="lg"
-                    className="flex-1"
-                    data-testid="playground-mid-continue"
-                  >
-                    Continuar Aula
-                    <ChevronRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
+
+          {/* Botões fixos no fundo */}
+          {showAIResult && (
+            <div className="flex-shrink-0 p-6 border-t bg-background">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleCreateAnother}
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                >
+                  <span className="mr-2">🔄</span>
+                  Criar outro prompt
+                </Button>
+                <Button
+                  onClick={() => onComplete(userInput)}
+                  size="lg"
+                  className="flex-1"
+                  data-testid="playground-mid-continue"
+                >
+                  Continuar Aula
+                  <ChevronRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
