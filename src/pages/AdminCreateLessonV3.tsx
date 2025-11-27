@@ -179,9 +179,16 @@ export default function AdminCreateLessonV3() {
     setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: newSlides } }));
 
     try {
-      // Gerar nome único para o arquivo
+      // Sanitizar título para nome de arquivo seguro
+      const sanitizedTitle = formData.title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9]+/g, '-') // Substitui caracteres especiais por hífen
+        .replace(/^-+|-+$/g, ''); // Remove hífens do início/fim
+      
       const fileExt = file.name.split('.').pop();
-      const fileName = `slide-${formData.title.replace(/\s+/g, '-').toLowerCase()}-${index + 1}-${Date.now()}.${fileExt}`;
+      const fileName = `slide-${sanitizedTitle}-${index + 1}-${Date.now()}.${fileExt}`;
 
       // Upload para Supabase Storage (bucket lesson-images)
       const { data, error } = await supabase.storage
