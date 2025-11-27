@@ -1505,13 +1505,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           isNewPatent={gamificationResult.is_new_patent}
           exerciseScores={exerciseScores}
           onContinue={() => {
-            setShowResultCard(false);
+            // Navegar direto sem voltar ao completion card
             if (onMarkComplete) {
               onMarkComplete();
             }
+            navigate('/dashboard');
           }}
           onBackToTrail={() => {
-            setShowResultCard(false);
+            // Navegar direto sem voltar ao completion card
             if (trailId) {
               navigate(`/trail/${trailId}`);
             } else {
@@ -1526,7 +1527,6 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
     return (
       <LessonCompletionCard
         lessonTitle={lessonData.title}
-        exerciseScores={exerciseScores}
         onContinue={async () => {
           console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
           // Registrar evento de gamificação
@@ -1542,6 +1542,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
             if (onMarkComplete) {
               onMarkComplete();
             }
+            navigate('/dashboard');
           }
         }}
       />
