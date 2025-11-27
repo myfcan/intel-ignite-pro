@@ -34,7 +34,7 @@ serve(async (req) => {
     const endIdx = Math.min(startIdx + batchSize, slides.length);
     const slidesToProcess = slides.slice(startIdx, endIdx);
 
-    console.log(`🎨 [OpenAI DALL-E 3] Batch ${batchIndex + 1}: slides ${startIdx + 1}-${endIdx} de ${slides.length}`);
+    console.log(`🎨 [OpenAI DALL-E 2] Batch ${batchIndex + 1}: slides ${startIdx + 1}-${endIdx} de ${slides.length}`);
 
     if (slidesToProcess.length === 0) {
       return new Response(
