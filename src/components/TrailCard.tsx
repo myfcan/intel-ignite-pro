@@ -107,17 +107,25 @@ const TrailCard = ({
         style={{
           background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #C084FC 100%)',
           borderColor: 'rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
+          boxShadow: '0 4px 20px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-          e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.5)';
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.4)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
         }}
       >
+        {/* Subtle Shine Overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.08) 100%)',
+          }}
+        />
+        
         {/* Textura de Pontos */}
         <div 
           className="absolute inset-0 pointer-events-none opacity-20"
@@ -208,20 +216,28 @@ const TrailCard = ({
         background: 'linear-gradient(135deg, #5AA0FF 0%, #7162FF 100%)',
         borderColor: isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)',
         boxShadow: isPulsing 
-          ? '0 8px 30px rgba(131, 123, 255, 0.5)' 
-          : '0 4px 20px rgba(131, 123, 255, 0.3)',
+          ? '0 8px 30px rgba(131, 123, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
+          : '0 4px 20px rgba(131, 123, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-        e.currentTarget.style.boxShadow = '0 8px 30px rgba(131, 123, 255, 0.4)';
+        e.currentTarget.style.boxShadow = '0 8px 30px rgba(131, 123, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)';
         e.currentTarget.style.boxShadow = isPulsing 
-          ? '0 8px 30px rgba(131, 123, 255, 0.5)' 
-          : '0 4px 20px rgba(131, 123, 255, 0.3)';
+          ? '0 8px 30px rgba(131, 123, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
+          : '0 4px 20px rgba(131, 123, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
       }}
     >
+      {/* Subtle Shine Overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.08) 100%)',
+        }}
+      />
+      
       {/* Textura de Pontos */}
       <div 
         className="absolute inset-0 pointer-events-none opacity-20"
