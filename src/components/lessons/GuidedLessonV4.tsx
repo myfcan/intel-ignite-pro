@@ -1384,25 +1384,9 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
       console.error('❌ [GAMIFICATION] Erro:', error);
     }
 
-    // Ir direto para gamificação
+    // Ir para tela de conclusão (mostra card de desempenho primeiro)
     setCurrentPhase('completed');
   };
-  
-  // 🎁 Registrar evento de gamificação automaticamente ao completar
-  useEffect(() => {
-    if (currentPhase === 'completed' && !showResultCard && !gamificationResult) {
-      console.log('🎁 [AUTO-GAMIFICATION] Registrando evento automaticamente');
-      registerGamificationEvent('lesson_completed', lessonData.id).then(result => {
-        if (result) {
-          console.log('✅ [AUTO-GAMIFICATION] Resultado recebido:', result);
-          setGamificationResult(result);
-          setShowResultCard(true);
-        } else {
-          console.error('❌ [AUTO-GAMIFICATION] Falha ao obter resultado');
-        }
-      });
-    }
-  }, [currentPhase, showResultCard, gamificationResult, lessonData.id]);
   
   // Resetar estado ao entrar na fase de exercícios
   useEffect(() => {
@@ -1509,7 +1493,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   
   // Renderizar tela de conclusão
   if (currentPhase === 'completed') {
-    // Mostrar card de gamificação diretamente
+    // Se deve mostrar o card de resultado da gamificação
     if (showResultCard && gamificationResult) {
       return (
         <LessonResultCard
@@ -1538,13 +1522,29 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
       );
     }
 
-    // Loading enquanto registra gamificação
+    // Mostrar card de conclusão primeiro (desempenho)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
-          Preparando suas recompensas...
-        </div>
-      </div>
+      <LessonCompletionCard
+        lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
+        onContinue={async () => {
+          console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+          // Registrar evento de gamificação
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [RECOMPENSAS] Falha ao obter resultado');
+            // Se falhar, continuar mesmo assim
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }
+        }}
+      />
     );
   }
 
