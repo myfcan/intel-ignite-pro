@@ -95,12 +95,16 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
       if (!exercise.id) errors.push(`❌ Exercício ${idx + 1} sem ID`);
       if (!exercise.type) errors.push(`❌ Exercício ${idx + 1} sem tipo`);
 
-      // Validar conteúdo baseado no tipo
+      // Validar conteúdo baseado no tipo (suporta exercise.data.* e exercise.* direto)
       const hasContent =
+        exercise.data?.question ||
+        exercise.data?.instruction ||
+        exercise.data?.statements ||  // true-false
+        exercise.data?.sentences ||   // complete-sentence
         exercise.question ||
         exercise.instruction ||
-        exercise.statements ||  // true-false
-        exercise.sentences ||   // complete-sentence
+        exercise.statements ||
+        exercise.sentences ||
         exercise.title;         // fallback
 
       if (!hasContent) {
