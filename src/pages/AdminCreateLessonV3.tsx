@@ -179,6 +179,8 @@ export default function AdminCreateLessonV3() {
     setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: newSlides } }));
 
     try {
+      console.log('🔄 Iniciando upload do slide', index + 1);
+      
       // Sanitizar título para nome de arquivo seguro
       const sanitizedTitle = formData.title
         .toLowerCase()
@@ -189,6 +191,8 @@ export default function AdminCreateLessonV3() {
       
       const fileExt = file.name.split('.').pop();
       const fileName = `slide-${sanitizedTitle}-${index + 1}-${Date.now()}.${fileExt}`;
+      
+      console.log('📁 Nome do arquivo:', fileName);
 
       // Upload para Supabase Storage (bucket lesson-images)
       const { data, error } = await supabase.storage
@@ -199,9 +203,10 @@ export default function AdminCreateLessonV3() {
         });
 
       if (error) {
-        // Se bucket não existe, tentar criar ou usar lesson-audios como fallback
+        console.error('❌ Erro no upload para lesson-images:', error);
+        // Se bucket não existe, tentar lesson-audios como fallback
         if (error.message.includes('Bucket not found')) {
-          // Fallback para lesson-audios
+          console.log('🔄 Tentando fallback para lesson-audios...');
           const { data: fallbackData, error: fallbackError } = await supabase.storage
             .from('lesson-audios')
             .upload(`slides/${fileName}`, file, {
@@ -209,11 +214,17 @@ export default function AdminCreateLessonV3() {
               upsert: true
             });
 
-          if (fallbackError) throw fallbackError;
+          if (fallbackError) {
+            console.error('❌ Erro no fallback:', fallbackError);
+            throw fallbackError;
+          }
 
+          console.log('✅ Upload via fallback bem-sucedido');
           const { data: { publicUrl } } = supabase.storage
             .from('lesson-audios')
             .getPublicUrl(`slides/${fileName}`);
+
+          console.log('🔗 URL pública (fallback):', publicUrl);
 
           // Atualizar slide com URL
           const updatedSlides = [...formData.v3Data!.slides] as SlideWithUpload[];
@@ -233,10 +244,14 @@ export default function AdminCreateLessonV3() {
         throw error;
       }
 
+      console.log('✅ Upload bem-sucedido para lesson-images');
+
       // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('lesson-images')
         .getPublicUrl(fileName);
+
+      console.log('🔗 URL pública:', publicUrl);
 
       // Atualizar slide com URL
       const updatedSlides = [...formData.v3Data!.slides] as SlideWithUpload[];
@@ -245,6 +260,8 @@ export default function AdminCreateLessonV3() {
         imageUrl: publicUrl,
         isUploading: false
       };
+      
+      console.log('💾 Atualizando estado com URL:', publicUrl);
       setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: updatedSlides } }));
 
       toast({
@@ -253,7 +270,7 @@ export default function AdminCreateLessonV3() {
       });
 
     } catch (error) {
-      console.error('Erro no upload:', error);
+      console.error('💥 Erro fatal no upload:', error);
       const updatedSlides = [...formData.v3Data!.slides] as SlideWithUpload[];
       updatedSlides[index] = {
         ...updatedSlides[index],
