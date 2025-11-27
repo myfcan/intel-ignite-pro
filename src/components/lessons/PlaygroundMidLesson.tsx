@@ -59,6 +59,36 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
     );
   }
 
+  // ✅ SUPORTE A PLAYGROUND LEGADO: Se não tem tipo mas tem initialPrompt, considera como real-playground
+  const legacyConfig = config as any;
+  const hasLegacyFormat = !config.type && legacyConfig.initialPrompt;
+  
+  if (hasLegacyFormat) {
+    console.log('⚠️ [PLAYGROUND] Formato legado detectado, convertendo para real-playground');
+    // Converter formato legado para novo formato
+    config.type = 'real-playground';
+    config.realConfig = {
+      type: 'real-playground',
+      title: 'Playground Final',
+      maiaMessage: legacyConfig.initialPrompt || 'Complete o desafio abaixo!',
+      scenario: {
+        title: 'Desafio Final',
+        description: 'Aplique o que aprendeu na aula'
+      },
+      prefilledText: '',
+      userPlaceholder: 'Digite seu prompt aqui...',
+      validation: {
+        minLength: 30,
+        requiredKeywords: [],
+        feedback: {
+          tooShort: '⚠️ Seu prompt precisa ter pelo menos 30 caracteres.',
+          good: '✅ Bom prompt! Clique para gerar a resposta da IA.',
+          excellent: '✨ Excelente! Seu prompt está muito bem estruturado.'
+        }
+      }
+    };
+  }
+
   if (config.type !== 'real-playground' && config.type !== 'multiple-choice-with-feedback') {
     console.error('❌ [PLAYGROUND ERROR] Tipo de playground inválido:', config.type);
   }
