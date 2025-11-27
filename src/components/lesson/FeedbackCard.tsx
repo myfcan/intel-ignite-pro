@@ -61,9 +61,10 @@ export const FeedbackCard = ({
         <Button
           onClick={onTryAgain}
           variant="outline"
-          className="w-full animate-[pulse_1.2s_ease-in-out_infinite] hover:animate-none hover:scale-105 transition-all shadow-lg hover:shadow-xl border-2 border-primary/40"
+          className="w-full relative overflow-hidden border-2 border-primary hover:border-primary shadow-lg hover:shadow-xl hover:scale-105 transition-all animate-pulse"
         >
-          Tentar Novamente
+          <span className="relative z-10">Tentar Novamente</span>
+          <span className="absolute inset-0 bg-primary/10 animate-pulse"></span>
         </Button>
       )}
     </Card>
