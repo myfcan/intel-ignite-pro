@@ -1,0 +1,326 @@
+{
+  "model": "v3",
+  "title": "Os 10 Erros Fatais com I.A. (e Como Evitá-los)",
+  "trackId": "efa0c22c-26fb-44d2-b1dc-721724ca5c5b",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 8,
+  "estimatedTimeMinutes": 20,
+
+  "v3Data": {
+    "audioText": "Chegamos à última aula dos Fundamentos — e essa talvez seja a mais transformadora de todas. Existe uma diferença enorme entre pessoas que têm resultados consistentes com Inteligência Artificial e pessoas que dizem que 'a I.A. não funciona'. E essa diferença não tem nada a ver com inteligência, experiência ou formação. A diferença está nos erros que elas cometem sem perceber. Hoje você vai conhecer os dez erros mais comuns, aqueles que fazem até a melhor I.A. gerar respostas fracas, genéricas ou incompletas. E o mais curioso: a maioria das pessoas comete pelo menos cinco desses erros diariamente. Depois dessa aula, você vai entrar no grupo dos usuários que realmente sabem usar Inteligência Artificial — e a qualidade das suas respostas vai mudar completamente. Vamos começar eliminando os primeiros quatro erros, aqueles que destroem a clareza. O Erro número um é ser vago demais. Quando você diz apenas 'Me ajuda com um texto', a I.A. não sabe o que você imagina. O correto é: 'Escreva um email curto pedindo folga na sexta-feira para meu chefe. Tom profissional e educado.' A regra é simples: se um humano perguntaria 'mas como assim?', a I.A. também precisa de detalhes. O Erro número dois é ignorar o contexto. Em vez de 'Faça um post sobre academia', diga: 'Crie um post sobre academia para mulheres acima de quarenta anos que nunca treinaram e têm receio de começar.' Quanto mais contexto, mais preciso o resultado. O Erro número três é aceitar a primeira resposta. Profissionais NUNCA fazem isso. Eles sempre refinam: 'Refaça de forma mais curta', 'Deixe o tom mais casual', 'Adicione exemplos'. A I.A. tem paciência infinita. Use isso. O Erro número quatro é não usar exemplos. Em vez de apenas 'Escreva um email profissional', adicione: 'Escreva um email profissional. Exemplo do tom desejado: Prezado João, espero que esteja bem…' Exemplos são como bússolas — eles guiam a I.A. com precisão. Esses quatro erros acontecem sem você perceber! Agora vamos aos erros cinco a oito, aqueles que limitam o potencial da I.A. O Erro número cinco é fazer perguntas de 'sim ou não'. Em vez de apenas 'Está certo?', pergunte: 'Analise e diga o que está bom, o que pode melhorar e como corrigir.' Você pode pedir uma análise completa — não aceite respostas de uma palavra. O Erro número seis é esquecer que a I.A. tem memória na conversa. A maioria das pessoas reinicia o chat desnecessariamente. Você pode continuar: 'Pegue o email anterior e transforme em mensagem de WhatsApp', 'Com base na lista que criamos, gere uma tabela', 'Agora resuma tudo em cinco pontos.' A conversa pode evoluir por horas. O Erro número sete é fazer perguntas complexas demais de uma vez. Em vez de 'Crie um plano de negócios completo, com análise de mercado, projeções e estratégias', divida: primeiro 'Faça a análise de mercado', depois 'Agora crie a projeção financeira com base na análise', e por fim 'Com os dois acima, construa a estratégia.' Dividir resulta em qualidade muito superior. O Erro número oito é não definir o formato. Em vez de 'Me dê dicas de economia', especifique: 'Me dê cinco dicas de economia em lista numerada, cada item com duas linhas.' Formatos poderosos incluem: tabela comparativa, passo a passo, tópicos claros, roteiro com horários. Quando você define formato, a I.A. entrega dez vezes melhor! Agora os dois últimos erros e o checklist antimistakes. O Erro número nove é confiar cegamente. A I.A. pode errar em datas, números, fatos recentes, regras, leis e estatísticas. Regra: sempre confirme informação sensível. O Erro número dez é não especificar o tom. Em vez de apenas 'Escreva uma mensagem', diga: 'Escreva uma mensagem em tom profissional, mas amigável, como um colega experiente.' Tons que transformam resultados incluem: executivo, paciente como professor, inspirador, vendedor sutil, e consultivo. Agora o Checklist do Prompt Perfeito. Sempre revise se seu prompt tem: contexto, especificidade, formato, tom, exemplo, tamanho e público. Um modelo pronto para usar é: 'Atue como [papel]. Crie [o que] sobre [tema]. Tom: [estilo]. Público: [quem]. Formato: [como]. Tamanho: [quanto]. Exemplo: [modelo].' Use esse checklist e seus resultados vão melhorar imediatamente! Parabéns! Você acaba de concluir os Fundamentos da Inteligência Artificial. Vamos relembrar sua jornada: você entendeu o que é Inteligência Artificial, descobriu como ela pensa, aprendeu sobre prompts, dominou a estrutura dos prompts, fez sua primeira conversa guiada, aprendeu os sete prompts mágicos, descobriu como usar múltiplas I.A.s, e eliminou os dez erros fatais. Você agora pertence ao grupo das pessoas que realmente sabem usar Inteligência Artificial de forma estratégica. Sua missão final: escolha um problema real hoje. Pode ser um email importante, uma tarefa que está travada, uma decisão difícil, ou uma ideia que você queria desenvolver. E aplique os sete prompts, a técnica dos três Cs, e o checklist antimistakes. Agora sim, vamos para o Playground colocar tudo isso em prática!",
+
+    "slides": [
+      {
+        "id": "slide-1",
+        "slideNumber": 1,
+        "audioMarker": "Chegamos à última aula dos Fundamentos",
+        "contentIdea": "Título épico 'Os 10 Erros Fatais com I.A.' em destaque com número 10 grande e estilizado. Fundo escuro com elementos de alerta em vermelho. Visual de abertura impactante."
+      },
+      {
+        "id": "slide-2",
+        "slideNumber": 2,
+        "audioMarker": "Existe uma diferença enorme entre pessoas",
+        "contentIdea": "Duas pessoas lado a lado: à esquerda pessoa frustrada com respostas genéricas da IA; à direita pessoa satisfeita com resultados excelentes. Contraste visual forte entre fracasso e sucesso."
+      },
+      {
+        "id": "slide-3",
+        "slideNumber": 3,
+        "audioMarker": "a maioria das pessoas comete pelo menos cinco",
+        "contentIdea": "Estatística visual impactante: '5 erros diários' com ícones de pessoas, 5 marcadas em vermelho. Visual que gera identificação e curiosidade."
+      },
+      {
+        "id": "slide-4",
+        "slideNumber": 4,
+        "audioMarker": "O Erro número um é ser vago demais",
+        "contentIdea": "ERRO #1 - SER VAGO DEMAIS em destaque vermelho. Tela de chat mostrando prompt vago 'Me ajuda com um texto' com X vermelho vs versão correta em verde."
+      },
+      {
+        "id": "slide-5",
+        "slideNumber": 5,
+        "audioMarker": "A regra é simples: se um humano perguntaria",
+        "contentIdea": "Balão de fala com 'Mas como assim?' representando a regra: se humano perguntaria, IA também precisa de detalhes. Visual de comparação."
+      },
+      {
+        "id": "slide-6",
+        "slideNumber": 6,
+        "audioMarker": "O Erro número dois é ignorar o contexto",
+        "contentIdea": "ERRO #2 - IGNORAR CONTEXTO em destaque. Lupa adicionando detalhes: silhueta genérica transformando-se em mulher 40+ anos hesitante na academia."
+      },
+      {
+        "id": "slide-7",
+        "slideNumber": 7,
+        "audioMarker": "O Erro número três é aceitar a primeira resposta",
+        "contentIdea": "ERRO #3 - ACEITAR PRIMEIRA RESPOSTA em destaque. Escultor digital refinando resposta como mármore. Três versões: bruta → polida → obra-prima."
+      },
+      {
+        "id": "slide-8",
+        "slideNumber": 8,
+        "audioMarker": "A I.A. tem paciência infinita",
+        "contentIdea": "Mãos digitando com comandos flutuando: 'Refaça mais curto', 'Tom mais casual'. Ícone de infinito representando paciência ilimitada da IA."
+      },
+      {
+        "id": "slide-9",
+        "slideNumber": 9,
+        "audioMarker": "O Erro número quatro é não usar exemplos",
+        "contentIdea": "ERRO #4 - NÃO USAR EXEMPLOS em destaque. Bússola digital apontando para exemplo de email. Antes: direção incerta. Depois: direção precisa."
+      },
+      {
+        "id": "slide-10",
+        "slideNumber": 10,
+        "audioMarker": "Agora vamos aos erros cinco a oito",
+        "contentIdea": "Transição visual: resumo dos 4 primeiros erros com checks verdes. Seta indicando 'Próximo bloco: Erros 5-8 - Potencial da IA'."
+      },
+      {
+        "id": "slide-11",
+        "slideNumber": 11,
+        "audioMarker": "O Erro número cinco é fazer perguntas de sim ou não",
+        "contentIdea": "ERRO #5 - PERGUNTAS SIM/NÃO em destaque. Contraste: resposta 'Sim' vs análise rica em três partes. Expansão de informação visualizada."
+      },
+      {
+        "id": "slide-12",
+        "slideNumber": 12,
+        "audioMarker": "O Erro número seis é esquecer que a I.A. tem memória",
+        "contentIdea": "ERRO #6 - ESQUECER A MEMÓRIA em destaque. Linha do tempo de conversa contínua com mensagens conectadas. Cérebro digital com conexões ativas."
+      },
+      {
+        "id": "slide-13",
+        "slideNumber": 13,
+        "audioMarker": "O Erro número sete é fazer perguntas complexas demais",
+        "contentIdea": "ERRO #7 - PERGUNTAS COMPLEXAS em destaque. Quebra-cabeça 'Plano de Negócios' dividido em 3 peças: 1.Análise 2.Projeção 3.Estratégia."
+      },
+      {
+        "id": "slide-14",
+        "slideNumber": 14,
+        "audioMarker": "O Erro número oito é não definir o formato",
+        "contentIdea": "ERRO #8 - NÃO DEFINIR FORMATO em destaque. Mesmo conteúdo em 4 formatos: tabela, lista numerada, passo a passo, roteiro com horários."
+      },
+      {
+        "id": "slide-15",
+        "slideNumber": 15,
+        "audioMarker": "Agora os dois últimos erros e o checklist",
+        "contentIdea": "ERRO #9 - CONFIAR CEGAMENTE em destaque amarelo. Ícones de perigo sobre: datas, números, fatos, leis. Lupa de verificação como solução."
+      },
+      {
+        "id": "slide-16",
+        "slideNumber": 16,
+        "audioMarker": "O Erro número dez é não especificar o tom",
+        "contentIdea": "ERRO #10 - NÃO ESPECIFICAR TOM em destaque. Mesma mensagem em 5 tons: executivo, professor, inspirador, vendedor, consultivo."
+      },
+      {
+        "id": "slide-17",
+        "slideNumber": 17,
+        "audioMarker": "Agora o Checklist do Prompt Perfeito",
+        "contentIdea": "CHECKLIST DO PROMPT PERFEITO em dashboard moderno. 7 checkmarks verdes: CONTEXTO • ESPECIFICIDADE • FORMATO • TOM • EXEMPLO • TAMANHO • PÚBLICO."
+      },
+      {
+        "id": "slide-18",
+        "slideNumber": 18,
+        "audioMarker": "Um modelo pronto para usar é",
+        "contentIdea": "Fórmula visual: 'Atue como [papel] + Crie [o que] + sobre [tema] + Tom + Público + Formato + Tamanho = PROMPT PERFEITO'. Template pronto."
+      },
+      {
+        "id": "slide-19",
+        "slideNumber": 19,
+        "audioMarker": "Parabéns! Você acaba de concluir",
+        "contentIdea": "Celebração: troféu 'FUNDAMENTOS COMPLETOS' com os 10 erros tachados ao redor. 8 aulas como degraus até o topo. Medalha de conclusão."
+      },
+      {
+        "id": "slide-20",
+        "slideNumber": 20,
+        "audioMarker": "Sua missão final: escolha um problema real",
+        "contentIdea": "MISSÃO FINAL - Call to action épico. Portal brilhante para Playground. 4 opções: email, tarefa travada, decisão difícil, ideia a desenvolver."
+      }
+    ],
+
+    "finalPlaygroundConfig": {
+      "initialPrompt": "🎯 MISSÃO FINAL - Construa um Prompt Perfeito Passo a Passo!\n\nVamos aplicar tudo que você aprendeu sobre os 10 erros fatais criando um prompt completo e eficaz. Eu vou te guiar em cada etapa para garantir que você elimine todos os erros e crie um prompt de nível profissional.\n\nVamos começar! 🚀",
+      "steps": [
+        {
+          "id": "step-1",
+          "title": "1️⃣ Escolha seu desafio",
+          "description": "Qual tipo de problema ou tarefa você quer resolver com IA hoje?",
+          "type": "radio",
+          "options": [
+            {
+              "value": "email-profissional",
+              "label": "📧 Escrever email profissional importante"
+            },
+            {
+              "value": "conteudo-redes",
+              "label": "📱 Criar conteúdo para redes sociais"
+            },
+            {
+              "value": "resolver-problema",
+              "label": "💡 Resolver problema ou tomar decisão"
+            },
+            {
+              "value": "organizar-ideias",
+              "label": "📋 Organizar ideias ou criar plano"
+            }
+          ]
+        },
+        {
+          "id": "step-2",
+          "title": "2️⃣ Contexto e Especificidade",
+          "description": "Descreva DETALHADAMENTE o contexto: o que você precisa, por quê, qual é a situação. Lembre-se: seja específico! Evite o Erro #1 (vago) e Erro #2 (sem contexto).",
+          "type": "textarea",
+          "placeholder": "Exemplo RUIM: 'Preciso de um email'\nExemplo BOM: 'Preciso escrever um email para meu chefe pedindo para trabalhar remoto na sexta-feira porque tenho uma consulta médica às 14h. Quero manter o tom profissional mas demonstrar que já planejei como compensar as horas e não afetar entregas.'"
+        },
+        {
+          "id": "step-3",
+          "title": "3️⃣ Defina o Tom",
+          "description": "Como você quer que a IA escreva? O Erro #10 é não especificar isso!",
+          "type": "radio",
+          "options": [
+            {
+              "value": "profissional-formal",
+              "label": "🎩 Profissional e formal (executivo)"
+            },
+            {
+              "value": "profissional-amigavel",
+              "label": "😊 Profissional mas amigável (colega)"
+            },
+            {
+              "value": "didatico-paciente",
+              "label": "👨‍🏫 Didático e paciente (professor)"
+            },
+            {
+              "value": "inspirador-motivador",
+              "label": "⚡ Inspirador e motivador"
+            },
+            {
+              "value": "consultivo-estrategico",
+              "label": "💼 Consultivo e estratégico"
+            }
+          ]
+        },
+        {
+          "id": "step-4",
+          "title": "4️⃣ Público-alvo",
+          "description": "Para quem é isso? Quanto mais específico sobre o público, melhor o resultado!",
+          "type": "textarea",
+          "placeholder": "Exemplo: 'Meu chefe direto, pessoa de 45 anos, pragmática, valoriza resultados e transparência, não gosta de rodeios'"
+        },
+        {
+          "id": "step-5",
+          "title": "5️⃣ Formato de Saída",
+          "description": "Como você quer receber o resultado? Lembre do Erro #8 (não definir formato)!",
+          "type": "radio",
+          "options": [
+            {
+              "value": "texto-corrido",
+              "label": "📄 Texto corrido (email, carta, mensagem)"
+            },
+            {
+              "value": "lista-numerada",
+              "label": "🔢 Lista numerada (passo a passo)"
+            },
+            {
+              "value": "topicos-bullets",
+              "label": "• Tópicos com bullets (resumo, ideias)"
+            },
+            {
+              "value": "tabela",
+              "label": "📊 Tabela comparativa (análise, opções)"
+            },
+            {
+              "value": "roteiro-timeline",
+              "label": "📅 Roteiro com timeline (planejamento)"
+            }
+          ]
+        },
+        {
+          "id": "step-6",
+          "title": "6️⃣ Monte seu Prompt Completo",
+          "description": "Agora vou montar seu prompt profissional com TODOS os elementos do checklist! Copie e use na IA.",
+          "type": "prompt-builder",
+          "template": "🎯 PROMPT COMPLETO - CHECKLIST APLICADO:\n\n✅ PAPEL: Atue como especialista em {step-1}\n\n✅ CONTEXTO E ESPECIFICIDADE:\n{step-2}\n\n✅ TOM: Use tom {step-3}\n\n✅ PÚBLICO-ALVO:\n{step-4}\n\n✅ FORMATO: Entregue no formato {step-5}\n\n✅ TAMANHO: Aproximadamente 150-200 palavras (ajuste se necessário)\n\n✅ INSTRUÇÃO FINAL:\nLembre-se de ser específico, usar linguagem adequada ao público, e estruturar claramente no formato solicitado.\n\n---\n\n💡 DICA PÓS-RESPOSTA:\nQuando receber a primeira versão, REFINE! (Erro #3: nunca aceite a primeira resposta)\n- 'Refaça de forma mais curta'\n- 'Adicione um exemplo concreto'\n- 'Deixe o tom mais [característica]'\n\n🔍 LEMBRE-SE:\n- Confira informações sensíveis (Erro #9)\n- Continue a conversa se precisar ajustes (Erro #6)\n- Divida tarefas complexas em etapas (Erro #7)"
+        }
+      ]
+    }
+  },
+
+  "exercises": [
+    {
+      "type": "multiple-choice",
+      "data": {
+        "question": "Qual é o Erro número 1 mais comum que as pessoas cometem ao usar IA?",
+        "options": [
+          "Confiar cegamente nos resultados",
+          "Ser vago demais no prompt",
+          "Não especificar o tom",
+          "Fazer perguntas complexas"
+        ],
+        "correctAnswer": "Ser vago demais no prompt",
+        "explanation": "Correto! Ser vago é o erro mais básico. A IA precisa de detalhes específicos para gerar bons resultados."
+      }
+    },
+    {
+      "type": "true-false",
+      "data": {
+        "statements": [
+          {
+            "id": "stmt-1",
+            "text": "Profissionais sempre refinam a primeira resposta da IA ao invés de aceitá-la imediatamente.",
+            "correct": true,
+            "explanation": "Verdadeiro! Aceitar a primeira resposta é o Erro número 3."
+          }
+        ],
+        "feedback": {
+          "perfect": "Exato! Refinar é essencial!",
+          "good": "Bom trabalho!",
+          "needsReview": "Revise o Erro número 3"
+        }
+      }
+    },
+    {
+      "type": "complete-sentence",
+      "data": {
+        "sentences": [
+          {
+            "id": "sent-1",
+            "text": "O checklist do prompt perfeito inclui 7 elementos: contexto, especificidade, formato, _______, exemplo, tamanho e público.",
+            "correctAnswers": ["tom", "Tom"]
+          },
+          {
+            "id": "sent-2",
+            "text": "Quando você faz uma pergunta muito complexa, deve _______ em etapas menores para obter resultados superiores.",
+            "correctAnswers": ["dividir", "separar", "quebrar"]
+          }
+        ]
+      }
+    },
+    {
+      "type": "multiple-choice",
+      "data": {
+        "question": "Por que é importante especificar o tom ao fazer um prompt para a IA?",
+        "options": [
+          "Porque a IA só funciona com tom formal",
+          "Porque o mesmo conteúdo pode ser escrito de formas completamente diferentes dependendo do tom",
+          "Porque a IA não entende contexto sem o tom",
+          "Porque é obrigatório em todos os prompts"
+        ],
+        "correctAnswer": "Porque o mesmo conteúdo pode ser escrito de formas completamente diferentes dependendo do tom",
+        "explanation": "Perfeito! O Erro número 10 mostra que especificar o tom transforma completamente o resultado."
+      }
+    },
+    {
+      "type": "true-false",
+      "data": {
+        "statements": [
+          {
+            "id": "stmt-1",
+            "text": "A IA tem memória dentro da mesma conversa e você pode referenciar respostas anteriores sem precisar repetir tudo.",
+            "correct": true,
+            "explanation": "Verdadeiro! O Erro número 6 é esquecer disso. A conversa pode evoluir por horas!"
+          }
+        ],
+        "feedback": {
+          "perfect": "Excelente! Use a memória da IA!",
+          "good": "Muito bem!",
+          "needsReview": "Revise o Erro número 6"
+        }
+      }
+    }
+  ]
+}
