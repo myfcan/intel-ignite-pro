@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
+type ImageAPI = 'openai' | 'leonardo';
 
 export default function AdminTestImageGeneration() {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const [selectedApi, setSelectedApi] = useState<ImageAPI>('leonardo');
 
   const handleTestGeneration = async () => {
     setIsGenerating(true);
@@ -30,7 +34,8 @@ export default function AdminTestImageGeneration() {
             }
           ],
           batchSize: 1,
-          batchIndex: 0
+          batchIndex: 0,
+          api: selectedApi // Adicionar seleção de API
         }
       });
 
@@ -46,9 +51,10 @@ export default function AdminTestImageGeneration() {
         setImageUrl(data.slides[0].imageUrl);
         setStats({
           ...data.stats,
-          elapsedTime: Math.round(elapsedTime / 1000)
+          elapsedTime: Math.round(elapsedTime / 1000),
+          api: selectedApi
         });
-        toast.success('Imagem gerada com sucesso!');
+        toast.success(`Imagem gerada com ${selectedApi === 'leonardo' ? 'Leonardo.ai' : 'OpenAI DALL-E 2'}!`);
       } else {
         toast.error('Nenhuma imagem foi gerada');
       }
@@ -83,10 +89,27 @@ export default function AdminTestImageGeneration() {
         <CardHeader>
           <CardTitle>Teste Rápido</CardTitle>
           <CardDescription>
-            Clique no botão abaixo para gerar uma imagem de teste
+            Selecione a API e clique no botão para gerar uma imagem de teste
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">API de Geração</label>
+            <Select value={selectedApi} onValueChange={(value) => setSelectedApi(value as ImageAPI)}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border z-50">
+                <SelectItem value="leonardo">Leonardo.ai (Recomendado)</SelectItem>
+                <SelectItem value="openai">OpenAI DALL-E 2</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {selectedApi === 'leonardo' 
+                ? 'Leonardo.ai: Alta qualidade, 1792x1024, photorealistic'
+                : 'OpenAI DALL-E 2: Rápido, 1024x1024, mais simples'}
+            </p>
+          </div>
           <Button
             onClick={handleTestGeneration}
             disabled={isGenerating}
@@ -107,10 +130,11 @@ export default function AdminTestImageGeneration() {
             <div className="p-4 bg-muted rounded-lg space-y-2">
               <h3 className="font-semibold">Estatísticas:</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>API: {stats.api === 'leonardo' ? 'Leonardo.ai' : 'OpenAI DALL-E 2'}</div>
+                <div>Tempo: {stats.elapsedTime}s</div>
                 <div>Total de slides: {stats.total}</div>
                 <div>Sucesso: {stats.success}</div>
                 <div>Falhas: {stats.failed}</div>
-                <div>Tempo: {stats.elapsedTime}s</div>
               </div>
             </div>
           )}

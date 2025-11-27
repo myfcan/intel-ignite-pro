@@ -1,39 +1,132 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // ============================================================================
-// OPENAI DALL-E 3 - ALTA QUALIDADE (landscape 1792x1024)
+// Multi-API Image Generation - Leonardo.ai & OpenAI DALL-E
 // ============================================================================
+const LEONARDO_API_KEY = Deno.env.get('LEONARDO_API_KEY');
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-/**
- * Traduz e simplifica o contentIdea para um prompt eficiente em inglês
- */
-function createImagePrompt(contentIdea: string): string {
-  // Prompt base otimizado para DALL-E 3
-  // - 100% em inglês (melhor resultado)
-  // - Instrução explícita para NÃO incluir texto
-  // - Estilo consistente para todas as imagens
-  return `Create a modern, professional illustration for an educational slide.
+// Delay helper
+async function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-Topic: ${contentIdea}
+// Generate image with Leonardo.ai
+async function generateWithLeonardo(prompt: string): Promise<string> {
+  console.log("🎨 Generating image with Leonardo.ai...");
+  
+  // Step 1: Create generation request (SIMPLIFIED - Basic parameters only)
+  const generationResponse = await fetch(`${LEONARDO_API_URL}/generations`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${LEONARDO_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: prompt,
+      // Using Leonardo Creative model (free tier compatible)
+      width: 1024,
+      height: 768,
+      num_images: 1,
+    }),
+  });
 
-CRITICAL REQUIREMENTS:
-- NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS in the image
-- NO writing of any kind - pure visual illustration only
-- Clean, minimalist design with soft gradients
-- Modern flat design aesthetic
-- Vibrant but professional color palette
-- Abstract/symbolic representation of the concept
-- High contrast, suitable for presentations
-- Horizontal landscape composition
-- Friendly and approachable visual style
+  if (!generationResponse.ok) {
+    const errorText = await generationResponse.text();
+    console.error("Leonardo.ai generation request failed:", errorText);
+    throw new Error(`Leonardo.ai API error: ${generationResponse.status}`);
+  }
 
-Style reference: Modern tech company presentation, Notion/Figma/Linear style illustrations.`;
+  const generationData = await generationResponse.json();
+  const generationId = generationData.sdGenerationJob?.generationId;
+
+  if (!generationId) {
+    throw new Error("No generation ID returned from Leonardo.ai");
+  }
+
+  console.log(`⏳ Generation ID: ${generationId}, waiting for completion...`);
+
+  // Step 2: Poll for completion (max 60 seconds)
+  const maxAttempts = 30;
+  const pollInterval = 2000; // 2 seconds
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await delay(pollInterval);
+    
+    const statusResponse = await fetch(`${LEONARDO_API_URL}/generations/${generationId}`, {
+      headers: {
+        "Authorization": `Bearer ${LEONARDO_API_KEY}`,
+      },
+    });
+
+    if (!statusResponse.ok) {
+      console.error("Failed to check generation status");
+      continue;
+    }
+
+    const statusData = await statusResponse.json();
+    const generation = statusData.generations_by_pk;
+
+    if (generation.status === "COMPLETE" && generation.generated_images?.length > 0) {
+      const imageUrl = generation.generated_images[0].url;
+      console.log("✅ Image generated successfully");
+      
+      // Download and convert to base64
+      const imageResponse = await fetch(imageUrl);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+      return `data:image/png;base64,${base64}`;
+    }
+
+    if (generation.status === "FAILED") {
+      throw new Error("Leonardo.ai generation failed");
+    }
+
+    console.log(`⏳ Attempt ${attempt + 1}/${maxAttempts}: Status ${generation.status}`);
+  }
+
+  throw new Error("Timeout waiting for Leonardo.ai image generation");
+}
+
+// Generate image with OpenAI DALL-E 2
+async function generateWithOpenAI(prompt: string): Promise<string> {
+  console.log("🎨 Generating image with OpenAI DALL-E 2...");
+  
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "dall-e-2",
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+      response_format: "b64_json"
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("OpenAI error:", errorText);
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const imageBase64 = data.data?.[0]?.b64_json;
+
+  if (!imageBase64) {
+    throw new Error("No image data returned from OpenAI");
+  }
+
+  return `data:image/png;base64,${imageBase64}`;
 }
 
 serve(async (req) => {
@@ -42,25 +135,31 @@ serve(async (req) => {
   }
 
   try {
-    const { slides, batchSize = 2, batchIndex = 0 } = await req.json();
+    const { slides, batchSize = 2, batchIndex = 0, api = 'leonardo' } = await req.json();
 
     if (!slides || !Array.isArray(slides)) {
       throw new Error('slides array is required');
     }
 
-    if (!OPENAI_API_KEY) {
+    // Validar API key apropriada
+    if (api === 'leonardo' && !LEONARDO_API_KEY) {
+      console.error('❌ LEONARDO_API_KEY não configurada!');
+      throw new Error('LEONARDO_API_KEY not configured. Configure in Supabase Dashboard > Edge Functions > Secrets');
+    }
+
+    if (api === 'openai' && !OPENAI_API_KEY) {
       console.error('❌ OPENAI_API_KEY não configurada!');
-      throw new Error('OPENAI_API_KEY not configured. Configure no Supabase Dashboard > Edge Functions > Secrets');
+      throw new Error('OPENAI_API_KEY not configured. Configure in Supabase Dashboard > Edge Functions > Secrets');
     }
 
     // ============================================================================
-    // BATCHING: 2 imagens por vez (DALL-E 3: ~30-45s/imagem, total ~90s < 150s)
+    // BATCHING: 2 imagens por vez para evitar timeout
     // ============================================================================
     const startIdx = batchIndex * batchSize;
     const endIdx = Math.min(startIdx + batchSize, slides.length);
     const slidesToProcess = slides.slice(startIdx, endIdx);
 
-    console.log(`🎨 [OpenAI DALL-E 3] Batch ${batchIndex + 1}: slides ${startIdx + 1}-${endIdx} de ${slides.length}`);
+    console.log(`🎨 [${api === 'leonardo' ? 'Leonardo.ai' : 'OpenAI DALL-E 2'}] Batch ${batchIndex + 1}: slides ${startIdx + 1}-${endIdx} de ${slides.length}`);
 
     if (slidesToProcess.length === 0) {
       return new Response(
@@ -73,7 +172,7 @@ serve(async (req) => {
       );
     }
 
-    const generatedSlides = [...slides]; // Copiar todos os slides
+    const generatedSlides = [...slides];
     const errors = [];
     let successCount = 0;
 
@@ -87,77 +186,37 @@ serve(async (req) => {
 
         const startTime = Date.now();
 
-        // Criar prompt otimizado
-        const imagePrompt = createImagePrompt(slide.contentIdea);
+        // Prompt otimizado para Leonardo.ai
+        const imagePrompt = `Professional educational illustration for a learning platform slide: ${slide.contentIdea}
 
-        // ============================================================================
-        // CHAMAR OPENAI DALL-E 3 (ALTA QUALIDADE + LANDSCAPE)
-        // ============================================================================
-        const response = await fetch("https://api.openai.com/v1/images/generations", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "dall-e-3",
-            prompt: imagePrompt,
-            n: 1,
-            size: "1792x1024", // LANDSCAPE - ideal para slides
-            quality: "standard", // standard é mais rápido, hd é mais detalhado
-            style: "vivid", // vivid = cores vibrantes, natural = realista
-            response_format: "b64_json" // Base64 direto
-          })
-        });
+Style requirements:
+- Modern, clean, professional aesthetic
+- High resolution, ultra sharp focus (16:9 landscape)
+- Vibrant colors with soft gradients
+- Abstract/symbolic representation
+- No text, no letters, no numbers, no words anywhere in the image
+- Suitable for professional presentations
+- Photorealistic quality with cinematic lighting`;
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`   ❌ OpenAI error (${response.status}):`, errorText);
-
-          let errorMessage = `OpenAI error (${response.status})`;
-          if (response.status === 429) {
-            errorMessage = 'Rate limit - aguarde alguns minutos';
-          } else if (response.status === 401) {
-            errorMessage = 'OPENAI_API_KEY inválida';
-          } else if (response.status === 400) {
-            // DALL-E 3 pode rejeitar prompts por política de conteúdo
-            errorMessage = 'Prompt rejeitado - ajustando...';
-            console.warn(`   ⚠️ Prompt rejeitado para slide ${slide.slideNumber}, tentando versão simplificada...`);
-          }
-
-          errors.push({ slideId: slide.id, slideNumber: slide.slideNumber, error: errorMessage });
-          generatedSlides[globalIndex] = { ...slide, imageUrl: '', error: errorMessage };
-          continue;
-        }
-
-        const data = await response.json();
-        const imageBase64 = data.data?.[0]?.b64_json;
-
-        if (!imageBase64) {
-          console.error(`   ❌ No b64_json in response:`, JSON.stringify(data).substring(0, 200));
-          errors.push({ slideId: slide.id, slideNumber: slide.slideNumber, error: 'No image data' });
-          generatedSlides[globalIndex] = { ...slide, imageUrl: '', error: 'No image data' };
-          continue;
-        }
-
-        // Converter para data URL
-        const dataUrl = `data:image/png;base64,${imageBase64}`;
-        const sizeKB = Math.round(imageBase64.length / 1024);
+        // Gerar imagem com a API selecionada
+        const imageDataUrl = api === 'leonardo' 
+          ? await generateWithLeonardo(imagePrompt)
+          : await generateWithOpenAI(imagePrompt);
+        const sizeKB = Math.round(imageDataUrl.length / 1024);
         const elapsedTime = Date.now() - startTime;
 
         console.log(`   ✅ Slide ${slide.slideNumber}: ${sizeKB}KB em ${elapsedTime}ms`);
 
         generatedSlides[globalIndex] = {
           ...slide,
-          imageUrl: dataUrl,
+          imageUrl: imageDataUrl,
           imagePrompt: imagePrompt
         };
         successCount++;
 
-        // Delay entre imagens para evitar rate limit (2 segundos)
+        // Delay entre imagens para evitar problemas
         if (i < slidesToProcess.length - 1) {
-          console.log(`   ⏳ Aguardando 2s antes da próxima imagem...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await delay(1000);
         }
 
       } catch (slideError) {
