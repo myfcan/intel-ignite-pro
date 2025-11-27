@@ -1503,6 +1503,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           newCoins={gamificationResult.new_coins}
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
+          exerciseScores={exerciseScores}
           onContinue={() => {
             setShowResultCard(false);
             // Chamar o onMarkComplete para navegação final

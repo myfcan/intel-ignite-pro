@@ -21,6 +21,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
+import { LessonCompletionCard } from '@/components/lessons/LessonCompletionCard';
 import { useUserGamification } from '@/hooks/useUserGamification';
 
 /**
@@ -110,6 +111,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   const [wordTimestamps, setWordTimestamps] = useState<WordTimestamp[]>([]);
   const [nextLessonData, setNextLessonData] = useState<{ id: string; lesson_type: string } | null>(null);
   const [showResultCard, setShowResultCard] = useState(false);
+  const [showCompletionCard, setShowCompletionCard] = useState(false); // ✅ NOVO: card de resumo antes da gamificação
+  const [exerciseScores, setExerciseScores] = useState<number[]>([]); // ✅ NOVO: scores dos exercícios
   const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
   const { refresh: refreshGamification } = useUserGamification();
   const navigate = useNavigate();
@@ -175,13 +178,27 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     const result = await submitAnswers(answers, timeSpent);
     
     if (result?.passed && lesson) {
-      // 🎮 GAMIFICAÇÃO: Registrar evento
-      const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
-      if (gamResult) {
-        setGamificationResult(gamResult);
-        setShowResultCard(true);
-        refreshGamification();
-      }
+      // ✅ CORREÇÃO: Mostrar card de resumo ANTES da gamificação
+      setShowCompletionCard(true);
+    }
+  };
+
+  const handleContinueFromCompletionCard = async () => {
+    console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+    setShowCompletionCard(false);
+    
+    // Registrar evento de gamificação
+    const result = await registerGamificationEvent('lesson_completed', lessonId);
+    
+    if (result) {
+      console.log('✅ [RECOMPENSAS] Resultado recebido:', result);
+      setGamificationResult(result);
+      setShowResultCard(true);
+      refreshGamification();
+    } else {
+      console.error('❌ [RECOMPENSAS] Falha ao obter resultado');
+      // Se falhar, continuar mesmo assim
+      handleContinueFromGamification();
     }
   };
 
@@ -257,13 +274,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           allExercisesCompleted: true
         }, timeSpent);
 
-        // 🎮 GAMIFICAÇÃO: Registrar evento
-        const gamResult = await registerGamificationEvent('lesson_completed', lessonId);
-        if (gamResult) {
-          setGamificationResult(gamResult);
-          setShowResultCard(true);
-          refreshGamification();
-        }
+        // ✅ CORREÇÃO: Mostrar card de resumo ANTES da gamificação
+        setShowCompletionCard(true);
       };
 
       // Função LEGADO para compatibilidade (não deve ser chamada do ConclusionScreen)
@@ -775,10 +787,23 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     }
   };
 
-  // Renderizar componente completo com card de gamificação
+  // Renderizar componente completo com cards de resumo e gamificação
   return (
     <>
       {renderLessonContent()}
+
+      {/* ✅ CARD DE RESUMO (antes da gamificação) */}
+      {showCompletionCard && lesson && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-lg w-full">
+            <LessonCompletionCard
+              lessonTitle={lesson.title}
+              exerciseScores={exerciseScores}
+              onContinue={handleContinueFromCompletionCard}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
       {showResultCard && gamificationResult && (
@@ -789,6 +814,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           newCoins={gamificationResult.new_coins}
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
+          exerciseScores={exerciseScores} 
           nextPatentThreshold={getNextPatentThreshold(gamificationResult.new_patent_level)}
           onContinue={handleContinueFromGamification}
           onBackToTrail={handleBackToTrail}

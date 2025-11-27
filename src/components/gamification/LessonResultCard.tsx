@@ -11,6 +11,7 @@ type LessonResultCardProps = {
   patentName: string;
   isNewPatent?: boolean;
   nextPatentThreshold?: number;
+  exerciseScores?: number[]; // ✅ NOVO: scores dos exercícios para condicionar confete
   onContinue: () => void;
   onBackToTrail: () => void;
 };
@@ -54,9 +55,14 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   patentName,
   isNewPatent = false,
   nextPatentThreshold,
+  exerciseScores,
   onContinue,
   onBackToTrail,
 }) => {
+  // ✅ Calcular média dos exercícios para condicionar confete
+  const avgScore = exerciseScores && exerciseScores.length > 0
+    ? exerciseScores.reduce((sum, score) => sum + score, 0) / exerciseScores.length
+    : 100; // Se não tem scores, assumir que completou bem (ex: aulas sem exercícios)
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
   
@@ -67,21 +73,27 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   const animatedTotalCoins = useCountUp(newCoins, 1500);
 
   useEffect(() => {
-    // Trigger confetti após um pequeno delay
-    const confettiTimer = setTimeout(() => {
-      setShowConfetti(true);
-    }, 300);
+    // ✅ CORREÇÃO: Só disparar confete se performance foi boa (média >= 70%)
+    // Ou se subiu de patente (sempre celebra patente nova)
+    const shouldCelebrate = avgScore >= 70 || isNewPatent;
     
-    // Trigger moedas caindo após delay
-    const coinsTimer = setTimeout(() => {
-      setShowCoins(true);
-    }, 500);
-    
-    return () => {
-      clearTimeout(confettiTimer);
-      clearTimeout(coinsTimer);
-    };
-  }, []);
+    if (shouldCelebrate) {
+      // Trigger confetti após um pequeno delay
+      const confettiTimer = setTimeout(() => {
+        setShowConfetti(true);
+      }, 300);
+      
+      // Trigger moedas caindo após delay
+      const coinsTimer = setTimeout(() => {
+        setShowCoins(true);
+      }, 500);
+      
+      return () => {
+        clearTimeout(confettiTimer);
+        clearTimeout(coinsTimer);
+      };
+    }
+  }, [avgScore, isNewPatent]);
 
   const progressData = nextPatentThreshold ? {
     progress: Math.min((newPowerScore / nextPatentThreshold) * 100, 100),
