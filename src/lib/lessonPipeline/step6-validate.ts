@@ -94,13 +94,22 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
     input.exercisesConfig.forEach((exercise: any, idx: number) => {
       if (!exercise.id) errors.push(`❌ Exercício ${idx + 1} sem ID`);
       if (!exercise.type) errors.push(`❌ Exercício ${idx + 1} sem tipo`);
-      if (!exercise.question && !exercise.instruction) {
-        errors.push(`❌ Exercício ${idx + 1} sem pergunta/instrução`);
+
+      // Validar conteúdo baseado no tipo
+      const hasContent =
+        exercise.question ||
+        exercise.instruction ||
+        exercise.statements ||  // true-false
+        exercise.sentences ||   // complete-sentence
+        exercise.title;         // fallback
+
+      if (!hasContent) {
+        errors.push(`❌ Exercício ${idx + 1} sem conteúdo válido`);
       }
     });
 
-    const validExercises = input.exercisesConfig.filter((e: any) => 
-      e.id && e.type && (e.question || e.instruction)
+    const validExercises = input.exercisesConfig.filter((e: any) =>
+      e.id && e.type && (e.question || e.instruction || e.statements || e.sentences || e.title)
     ).length;
     console.log(`      ✅ ${validExercises}/${input.exercisesConfig.length} exercícios válidos`);
   }
