@@ -39,26 +39,28 @@ export default function AdminCreateLessonV3() {
   });
 
   const [slideCount, setSlideCount] = useState<number>(10);
+  const [availableTrails, setAvailableTrails] = useState<{ id: string; title: string }[]>([]);
 
-  // Auto-preencher Trail Info
+  // Buscar todas as trails disponíveis
   useEffect(() => {
-    const fetchTrailInfo = async () => {
-      const { data: trail } = await supabase
+    const fetchTrails = async () => {
+      const { data: trails } = await supabase
         .from('trails')
         .select('id, title')
-        .eq('title', 'Fundamentos de IA')
         .eq('is_active', true)
-        .single();
+        .order('title');
 
-      if (trail) {
+      if (trails && trails.length > 0) {
+        setAvailableTrails(trails);
+        // Auto-selecionar a primeira trail
         setFormData(prev => ({
           ...prev,
-          trackId: trail.id,
-          trackName: trail.title,
+          trackId: trails[0].id,
+          trackName: trails[0].title,
         }));
       }
     };
-    fetchTrailInfo();
+    fetchTrails();
   }, []);
 
   // Calcular próximo Order Index
@@ -399,14 +401,43 @@ export default function AdminCreateLessonV3() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div>
-                <Label className="text-xs text-muted-foreground">Trail</Label>
-                <p className="font-medium">{formData.trackName || 'Carregando...'}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Trail (Trilha)</Label>
+                <Select
+                  value={formData.trackId}
+                  onValueChange={(value) => {
+                    const selectedTrail = availableTrails.find(t => t.id === value);
+                    setFormData(prev => ({
+                      ...prev,
+                      trackId: value,
+                      trackName: selectedTrail?.title || '',
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma trilha..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTrails.map(trail => (
+                      <SelectItem key={trail.id} value={trail.id}>
+                        {trail.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Order Index</Label>
-                <p className="font-medium">{formData.orderIndex}</p>
+              <div className="space-y-2">
+                <Label>Order Index (Número da Aula)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={formData.orderIndex}
+                  onChange={(e) => setFormData(prev => ({ ...prev, orderIndex: parseInt(e.target.value) || 1 }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Próximo disponível calculado automaticamente
+                </p>
               </div>
             </div>
           </CardContent>
