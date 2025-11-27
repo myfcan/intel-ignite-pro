@@ -1,3 +1,4 @@
+// Force sync: 2024-11-27 - Versão com JSON Input
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -127,6 +127,7 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
 
 /**
  * V3: Distribuir único áudio pelos slides
+ * CORRIGIDO: Usa audioMarker para fazer word matching inteligente
  */
 function calculateTimestampsV3(input: Step3Output): Step4Output {
   console.log('⏱️ [V3] Distribuindo timestamps pelos slides...');
@@ -137,14 +138,43 @@ function calculateTimestampsV3(input: Step3Output): Step4Output {
 
   const totalWords = input.wordTimestamps.length;
   const totalSlides = input.v3Data.slides.length;
-  const wordsPerSlide = Math.ceil(totalWords / totalSlides);
 
-  // CORREÇÃO: Limpar slides para evitar dados duplicados
+  // CORREÇÃO: Usar audioMarker para word matching inteligente
   const slidesWithTimestamps = input.v3Data.slides.map((slide, idx) => {
-    const wordIndex = idx * wordsPerSlide;
-    const timestamp = input.wordTimestamps![wordIndex]?.start_time || 0;
+    let timestamp = 0;
 
-    console.log(`   Slide ${idx + 1}: ${timestamp.toFixed(1)}s`);
+    // Se o slide tem audioMarker, fazer word matching
+    if (slide.audioMarker) {
+      const markerWords = getFirstWords(slide.audioMarker, 6).toLowerCase();
+
+      // Buscar no wordTimestamps
+      for (let i = 0; i < input.wordTimestamps!.length - 5; i++) {
+        const windowWords = input.wordTimestamps!
+          .slice(i, i + 6)
+          .map(w => w.word.toLowerCase().replace(/[.,!?]/g, ''))
+          .join(' ');
+
+        if (windowWords.includes(markerWords.replace(/[.,!?]/g, ''))) {
+          timestamp = input.wordTimestamps![i].start_time;
+          console.log(`   Slide ${idx + 1}: ${timestamp.toFixed(1)}s (matched: "${markerWords.substring(0, 30)}...")`);
+          break;
+        }
+      }
+
+      // Se não encontrou match, usar fallback proporcional
+      if (timestamp === 0 && idx > 0) {
+        const wordsPerSlide = Math.ceil(totalWords / totalSlides);
+        const wordIndex = idx * wordsPerSlide;
+        timestamp = input.wordTimestamps![wordIndex]?.start_time || 0;
+        console.log(`   Slide ${idx + 1}: ${timestamp.toFixed(1)}s (fallback proporcional)`);
+      }
+    } else {
+      // Fallback: distribuição uniforme (comportamento anterior)
+      const wordsPerSlide = Math.ceil(totalWords / totalSlides);
+      const wordIndex = idx * wordsPerSlide;
+      timestamp = input.wordTimestamps![wordIndex]?.start_time || 0;
+      console.log(`   Slide ${idx + 1}: ${timestamp.toFixed(1)}s (sem audioMarker, fallback)`);
+    }
 
     // Retornar apenas campos necessários (evitar dados duplicados)
     return {
