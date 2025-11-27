@@ -21,7 +21,7 @@ async function delay(ms: number) {
 async function generateWithLeonardo(prompt: string): Promise<string> {
   console.log("🎨 Generating image with Leonardo.ai...");
   
-  // Step 1: Create generation request
+  // Step 1: Create generation request (SIMPLIFIED - Basic parameters only)
   const generationResponse = await fetch(`${LEONARDO_API_URL}/generations`, {
     method: "POST",
     headers: {
@@ -30,15 +30,10 @@ async function generateWithLeonardo(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       prompt: prompt,
-      modelId: "6b645e3a-d64f-4341-a6d8-7a3690fbf042", // Leonardo Kino XL (high quality)
-      width: 1792,
-      height: 1024,
+      // Using Leonardo Creative model (free tier compatible)
+      width: 1024,
+      height: 768,
       num_images: 1,
-      guidance_scale: 7,
-      sd_version: "SDXL_1_0",
-      photoReal: true,
-      photoRealStrength: 0.55,
-      alchemy: true,
     }),
   });
 
