@@ -109,11 +109,11 @@ export function GuidedLessonV3({
       console.log('🎵 Áudio finalizado');
       setIsPlaying(false);
 
-      // Se completou o áudio, avança para exercícios (se houver) ou playground
-      if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
-        setCurrentPhase('exercises');
-      } else if (lessonData.finalPlaygroundConfig) {
+      // ✅ ORDEM CORRETA: playground ANTES de exercises
+      if (lessonData.finalPlaygroundConfig) {
         setCurrentPhase('playground-final');
+      } else if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+        setCurrentPhase('exercises');
       } else {
         handleLessonComplete();
       }
@@ -254,12 +254,8 @@ export function GuidedLessonV3({
     console.log('✅ Todos os exercícios completados');
     setAllExercisesCompleted(true);
 
-    // Se tem playground, avança para ele
-    if (lessonData.finalPlaygroundConfig) {
-      setCurrentPhase('playground-final');
-    } else {
-      handleLessonComplete();
-    }
+    // Exercícios sempre são a última etapa - completa a lição
+    handleLessonComplete();
   };
 
   const handleSkipExercises = () => {
@@ -276,7 +272,13 @@ export function GuidedLessonV3({
   const handlePlaygroundComplete = () => {
     console.log('✅ Playground final completado');
     setPlaygroundCompleted(true);
-    handleLessonComplete();
+    
+    // Após playground, vai para exercises (se houver) ou completa
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      setCurrentPhase('exercises');
+    } else {
+      handleLessonComplete();
+    }
   };
 
   // 🔙 Voltar - sempre tem uma rota válida
@@ -323,10 +325,11 @@ export function GuidedLessonV3({
             {maxAudioProgress > duration * 0.8 && (
               <Button
                 onClick={() => {
-                  if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
-                    setCurrentPhase('exercises');
-                  } else if (lessonData.finalPlaygroundConfig) {
+                  // ✅ ORDEM CORRETA: playground ANTES de exercises
+                  if (lessonData.finalPlaygroundConfig) {
                     setCurrentPhase('playground-final');
+                  } else if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+                    setCurrentPhase('exercises');
                   } else {
                     handleLessonComplete();
                   }
