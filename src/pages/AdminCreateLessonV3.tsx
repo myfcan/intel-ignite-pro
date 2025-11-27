@@ -387,7 +387,7 @@ export default function AdminCreateLessonV3() {
             </div>
 
             <div className="space-y-2">
-              <Label>Texto do Áudio (Speech da MAIA)</Label>
+              <Label>Texto do Áudio (Speech da LIV)</Label>
               <Textarea
                 value={formData.v3Data?.audioText || ''}
                 onChange={(e) => setFormData({
