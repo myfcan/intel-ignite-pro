@@ -36,6 +36,7 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
       contentIdea: slide.contentIdea,
       imagePrompt: slide.imagePrompt,
       imageUrl: slide.imageUrl,
+      audioMarker: slide.audioMarker,  // ✅ CRÍTICO: preservar audioMarker para word matching
       timestamp: slide.timestamp
     }));
 
