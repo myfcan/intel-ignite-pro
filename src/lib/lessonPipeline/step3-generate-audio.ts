@@ -328,13 +328,13 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 2
+  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 3
   const totalSlides = input.v3Data!.slides.length;
-  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 2)...`);
+  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3 - Landscape 1792x1024)...`);
 
-  // DALL-E 2: ~10-20s por imagem. Com 4 imagens: ~60-80s (< 150s limite)
-  const BATCH_SIZE = 4; // 4 imagens por batch (DALL-E 2 é rápido)
-  const BATCH_TIMEOUT_MS = 120000; // 2 minutos por batch
+  // DALL-E 3: ~30-45s por imagem. Com 2 imagens + delay: ~90s (< 150s limite edge function)
+  const BATCH_SIZE = 2; // 2 imagens por batch (DALL-E 3 é mais lento mas melhor)
+  const BATCH_TIMEOUT_MS = 180000; // 3 minutos por batch (margem de segurança)
 
   const slidesInput = input.v3Data!.slides.map(slide => ({
     id: slide.id,
