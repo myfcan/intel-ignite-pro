@@ -19,9 +19,10 @@ export interface V3Slide {
   id: string;
   slideNumber: number;
   contentIdea: string; // Texto livre: "Mostrar uma pessoa trabalhando com IA"
+  audioMarker?: string; // Trecho do audioText onde este slide deve entrar (para word matching)
   imagePrompt?: string; // Gerado pela IA a partir de contentIdea
   imageUrl?: string; // URL gerada após criar a imagem
-  timestamp?: number; // Timestamp calculado no step 7
+  timestamp?: number; // Timestamp calculado no step 4
 }
 
 export interface V3Data {
