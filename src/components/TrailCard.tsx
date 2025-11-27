@@ -175,14 +175,19 @@ const TrailCard = ({
       {/* Botão CTA */}
       <button className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl transition-all relative z-10 flex-shrink-0"
               style={{
-                background: '#FFFFFF',
-                color: '#8B5CF6',
+                background: 'linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)',
+                color: '#475569',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F8FAFC';
+                e.currentTarget.style.background = 'linear-gradient(135deg, #CBD5E1 0%, #B9C6D6 100%)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.25)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.background = 'linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
               }}>
         Revisar
       </button>
@@ -284,14 +289,19 @@ const TrailCard = ({
       {/* Botão CTA */}
       <button className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl transition-all relative z-10 flex-shrink-0"
               style={{
-                background: '#FFFFFF',
-                color: '#5AA0FF',
+                background: 'linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)',
+                color: '#475569',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F8FAFC';
+                e.currentTarget.style.background = 'linear-gradient(135deg, #CBD5E1 0%, #B9C6D6 100%)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.25)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.background = 'linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
               }}>
         Continuar
       </button>
