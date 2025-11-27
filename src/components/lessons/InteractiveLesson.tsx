@@ -178,13 +178,14 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
     const result = await submitAnswers(answers, timeSpent);
     
     if (result?.passed && lesson) {
-      // ✅ Ir direto para gamificação
-      handleContinueFromCompletionCard();
+      // Mostrar card de desempenho primeiro
+      setShowCompletionCard(true);
     }
   };
 
   const handleContinueFromCompletionCard = async () => {
     console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
+    setShowCompletionCard(false);
     
     // Registrar evento de gamificação
     const result = await registerGamificationEvent('lesson_completed', lessonId);
@@ -273,8 +274,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
           allExercisesCompleted: true
         }, timeSpent);
 
-        // ✅ Ir direto para gamificação
-        handleContinueFromCompletionCard();
+        // Mostrar card de desempenho primeiro
+        setShowCompletionCard(true);
       };
 
       // Função LEGADO para compatibilidade (não deve ser chamada do ConclusionScreen)
@@ -790,6 +791,19 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
   return (
     <>
       {renderLessonContent()}
+
+      {/* ✅ CARD DE RESUMO (desempenho antes da gamificação) */}
+      {showCompletionCard && lesson && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-lg w-full">
+            <LessonCompletionCard
+              lessonTitle={lesson.title}
+              exerciseScores={exerciseScores}
+              onContinue={handleContinueFromCompletionCard}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 🎮 CARD DE RESULTADO DA GAMIFICAÇÃO */}
       {showResultCard && gamificationResult && (

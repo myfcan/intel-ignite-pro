@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import { V3LessonProps, PlaygroundConfig } from '@/types/guidedLesson';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
@@ -263,22 +264,6 @@ export function GuidedLessonV3({
     // Exercícios sempre são a última etapa - completa a lição
     handleLessonComplete();
   };
-
-  // 🎁 Registrar evento de gamificação automaticamente ao completar
-  useEffect(() => {
-    if (currentPhase === 'completed' && !showResultCard && !gamificationResult) {
-      console.log('🎁 [V3-AUTO-GAMIFICATION] Registrando evento automaticamente');
-      registerGamificationEvent('lesson_completed', lessonData.id).then(result => {
-        if (result) {
-          console.log('✅ [V3-AUTO-GAMIFICATION] Resultado recebido:', result);
-          setGamificationResult(result);
-          setShowResultCard(true);
-        } else {
-          console.error('❌ [V3-AUTO-GAMIFICATION] Falha ao obter resultado');
-        }
-      });
-    }
-  }, [currentPhase, showResultCard, gamificationResult, lessonData.id]);
 
   const handleSkipExercises = () => {
     console.log('⏭️ Exercícios pulados');
@@ -563,7 +548,7 @@ export function GuidedLessonV3({
 
   // 🎊 FASE: Conclusão
   if (currentPhase === 'completed') {
-    // Mostrar card de gamificação diretamente
+    // Se deve mostrar o card de resultado da gamificação
     if (showResultCard && gamificationResult) {
       return (
         <LessonResultCard
@@ -592,13 +577,29 @@ export function GuidedLessonV3({
       );
     }
 
-    // Loading enquanto registra gamificação
+    // Mostrar card de conclusão primeiro (desempenho)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
-          Preparando suas recompensas...
-        </div>
-      </div>
+      <LessonCompletionCard
+        lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
+        onContinue={async () => {
+          console.log('🎁 [V3-RECOMPENSAS] Registrando evento de gamificação');
+          // Registrar evento de gamificação
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [V3-RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [V3-RECOMPENSAS] Falha ao obter resultado');
+            // Se falhar, continuar mesmo assim
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }
+        }}
+      />
     );
   }
 
