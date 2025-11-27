@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { V3LessonProps, PlaygroundConfig } from '@/types/guidedLesson';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
-import { LessonCompletionCard } from './LessonCompletionCard';
+import { LessonCompletionSummary } from './LessonCompletionSummary';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
@@ -580,8 +580,10 @@ export function GuidedLessonV3({
 
     // Mostrar card de conclusão primeiro (desempenho)
     return (
-      <LessonCompletionCard
+      <LessonCompletionSummary
         lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
+        totalExercises={lessonData.exercisesConfig?.length || 0}
         onContinue={async () => {
           console.log('🎁 [V3-RECOMPENSAS] Registrando evento de gamificação');
           // Registrar evento de gamificação

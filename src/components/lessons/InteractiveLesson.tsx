@@ -21,7 +21,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
-import { LessonCompletionCard } from '@/components/lessons/LessonCompletionCard';
+import { LessonCompletionSummary } from '@/components/lessons/LessonCompletionSummary';
 import { useUserGamification } from '@/hooks/useUserGamification';
 
 /**
@@ -796,9 +796,10 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
       {showCompletionCard && lesson && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-lg w-full">
-            <LessonCompletionCard
+            <LessonCompletionSummary
               lessonTitle={lesson.title}
               exerciseScores={exerciseScores}
+              totalExercises={lesson.exercises?.length || 0}
               onContinue={handleContinueFromCompletionCard}
             />
           </div>

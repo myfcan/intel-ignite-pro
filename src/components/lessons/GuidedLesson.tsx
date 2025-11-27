@@ -12,7 +12,7 @@ import { ExercisesSection } from './ExercisesSection';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { PlaygroundCallCard } from './PlaygroundCallCard';
-import { LessonCompletionCard } from './LessonCompletionCard';
+import { LessonCompletionSummary } from './LessonCompletionSummary';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
@@ -1531,8 +1531,10 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
 
     // Mostrar card de conclusão primeiro (desempenho)
     return (
-      <LessonCompletionCard
+      <LessonCompletionSummary
         lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
+        totalExercises={lessonData.exercisesConfig?.length || 0}
         onContinue={async () => {
           console.log('🎁 [RECOMPENSAS] Registrando evento de gamificação');
           // Registrar evento de gamificação
