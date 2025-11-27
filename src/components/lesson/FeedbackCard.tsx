@@ -6,12 +6,14 @@ interface FeedbackCardProps {
   feedbackText: string;
   suggestions?: string[];
   onApplySuggestion?: () => void;
+  onTryAgain?: () => void;
 }
 
 export const FeedbackCard = ({
   feedbackText,
   suggestions,
   onApplySuggestion,
+  onTryAgain,
 }: FeedbackCardProps) => {
   return (
     <Card className="p-6 space-y-4 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 animate-fade-in">
@@ -53,6 +55,16 @@ export const FeedbackCard = ({
             </Button>
           )}
         </div>
+      )}
+      
+      {onTryAgain && (
+        <Button
+          onClick={onTryAgain}
+          variant="outline"
+          className="w-full animate-pulse hover:animate-none hover:scale-105 transition-all"
+        >
+          Tentar Novamente
+        </Button>
       )}
     </Card>
   );
