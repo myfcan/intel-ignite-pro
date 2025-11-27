@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // ============================================================================
-// OPENAI DALL-E 2 - MAIS RÁPIDO (~10-20s por imagem vs 40-60s do DALL-E 3)
+// OPENAI DALL-E 3 - ALTA QUALIDADE (landscape 1792x1024)
 // ============================================================================
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
@@ -10,13 +10,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Traduz e simplifica o contentIdea para um prompt eficiente em inglês
+ */
+function createImagePrompt(contentIdea: string): string {
+  // Prompt base otimizado para DALL-E 3
+  // - 100% em inglês (melhor resultado)
+  // - Instrução explícita para NÃO incluir texto
+  // - Estilo consistente para todas as imagens
+  return `Create a modern, professional illustration for an educational slide.
+
+Topic: ${contentIdea}
+
+CRITICAL REQUIREMENTS:
+- NO TEXT, NO LETTERS, NO WORDS, NO NUMBERS in the image
+- NO writing of any kind - pure visual illustration only
+- Clean, minimalist design with soft gradients
+- Modern flat design aesthetic
+- Vibrant but professional color palette
+- Abstract/symbolic representation of the concept
+- High contrast, suitable for presentations
+- Horizontal landscape composition
+- Friendly and approachable visual style
+
+Style reference: Modern tech company presentation, Notion/Figma/Linear style illustrations.`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { slides, batchSize = 4, batchIndex = 0 } = await req.json();
+    const { slides, batchSize = 2, batchIndex = 0 } = await req.json();
 
     if (!slides || !Array.isArray(slides)) {
       throw new Error('slides array is required');
@@ -28,7 +54,7 @@ serve(async (req) => {
     }
 
     // ============================================================================
-    // BATCHING: 4 imagens por vez (DALL-E 2: ~15s/imagem, total ~60s < 150s limite)
+    // BATCHING: 2 imagens por vez (DALL-E 3: ~30-45s/imagem, total ~90s < 150s)
     // ============================================================================
     const startIdx = batchIndex * batchSize;
     const endIdx = Math.min(startIdx + batchSize, slides.length);
@@ -61,17 +87,11 @@ serve(async (req) => {
 
         const startTime = Date.now();
 
-        // Prompt otimizado para DALL-E 3
-        const imagePrompt = `Educational illustration for a course slide about: ${slide.contentIdea}
-
-Style: Modern, clean, professional, minimalist design.
-- Use soft gradients and modern colors
-- Abstract/symbolic representation (no text)
-- High contrast, suitable for presentations
-- Friendly and approachable visual style`;
+        // Criar prompt otimizado
+        const imagePrompt = createImagePrompt(slide.contentIdea);
 
         // ============================================================================
-        // CHAMAR OPENAI DALL-E 2 (MAIS RÁPIDO: ~10-20s por imagem)
+        // CHAMAR OPENAI DALL-E 3 (ALTA QUALIDADE + LANDSCAPE)
         // ============================================================================
         const response = await fetch("https://api.openai.com/v1/images/generations", {
           method: "POST",
@@ -80,10 +100,12 @@ Style: Modern, clean, professional, minimalist design.
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "dall-e-2",
+            model: "dall-e-3",
             prompt: imagePrompt,
             n: 1,
-            size: "1024x1024", // DALL-E 2 só suporta 256x256, 512x512, 1024x1024
+            size: "1792x1024", // LANDSCAPE - ideal para slides
+            quality: "standard", // standard é mais rápido, hd é mais detalhado
+            style: "vivid", // vivid = cores vibrantes, natural = realista
             response_format: "b64_json" // Base64 direto
           })
         });
@@ -98,7 +120,9 @@ Style: Modern, clean, professional, minimalist design.
           } else if (response.status === 401) {
             errorMessage = 'OPENAI_API_KEY inválida';
           } else if (response.status === 400) {
-            errorMessage = 'Prompt rejeitado pela OpenAI';
+            // DALL-E 3 pode rejeitar prompts por política de conteúdo
+            errorMessage = 'Prompt rejeitado - ajustando...';
+            console.warn(`   ⚠️ Prompt rejeitado para slide ${slide.slideNumber}, tentando versão simplificada...`);
           }
 
           errors.push({ slideId: slide.id, slideNumber: slide.slideNumber, error: errorMessage });
@@ -130,9 +154,10 @@ Style: Modern, clean, professional, minimalist design.
         };
         successCount++;
 
-        // Delay entre imagens para evitar rate limit (1 segundo)
+        // Delay entre imagens para evitar rate limit (2 segundos)
         if (i < slidesToProcess.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log(`   ⏳ Aguardando 2s antes da próxima imagem...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
       } catch (slideError) {
