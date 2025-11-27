@@ -5,9 +5,9 @@ import confetti from 'canvas-confetti';
 import { V3LessonProps, PlaygroundConfig } from '@/types/guidedLesson';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
-import { LessonCompletionCard } from './LessonCompletionCard';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 import { updateMissionProgress } from '@/lib/updateMissionProgress';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 
 /**
  * 🎬 GUIDED LESSON V3 - APRESENTAÇÃO PEDAGÓGICA COM SLIDES
@@ -58,6 +59,11 @@ export function GuidedLessonV3({
   const [pointsEarned, setPointsEarned] = useState(0);
   const [showAchievement, setShowAchievement] = useState(false);
   const [achievement, setAchievement] = useState<any>(null);
+
+  // 🎮 Estado de gamificação
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [exerciseScores, setExerciseScores] = useState<number[]>([]);
 
   // 🔊 Referência do elemento de áudio
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -257,6 +263,22 @@ export function GuidedLessonV3({
     // Exercícios sempre são a última etapa - completa a lição
     handleLessonComplete();
   };
+
+  // 🎁 Registrar evento de gamificação automaticamente ao completar
+  useEffect(() => {
+    if (currentPhase === 'completed' && !showResultCard && !gamificationResult) {
+      console.log('🎁 [V3-AUTO-GAMIFICATION] Registrando evento automaticamente');
+      registerGamificationEvent('lesson_completed', lessonData.id).then(result => {
+        if (result) {
+          console.log('✅ [V3-AUTO-GAMIFICATION] Resultado recebido:', result);
+          setGamificationResult(result);
+          setShowResultCard(true);
+        } else {
+          console.error('❌ [V3-AUTO-GAMIFICATION] Falha ao obter resultado');
+        }
+      });
+    }
+  }, [currentPhase, showResultCard, gamificationResult, lessonData.id]);
 
   const handleSkipExercises = () => {
     console.log('⏭️ Exercícios pulados');
@@ -505,6 +527,7 @@ export function GuidedLessonV3({
           <ExercisesSection
             exercises={lessonData.exercisesConfig}
             onComplete={handleExercisesComplete}
+            onScoreUpdate={(scores) => setExerciseScores(scores)}
           />
         </div>
       </div>
@@ -540,16 +563,42 @@ export function GuidedLessonV3({
 
   // 🎊 FASE: Conclusão
   if (currentPhase === 'completed') {
+    // Mostrar card de gamificação diretamente
+    if (showResultCard && gamificationResult) {
+      return (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          exerciseScores={exerciseScores}
+          onContinue={() => {
+            setShowResultCard(false);
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+          }}
+          onBackToTrail={() => {
+            setShowResultCard(false);
+            if (trailId) {
+              navigate(`/trail/${trailId}`);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+        />
+      );
+    }
+
+    // Loading enquanto registra gamificação
     return (
-      <LessonCompletionCard
-        lessonTitle={lessonData.title}
-        onContinue={() => {
-          // Chamar o onMarkComplete para registrar gamificação
-          if (onMarkComplete) {
-            onMarkComplete();
-          }
-        }}
-      />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">
+          Preparando suas recompensas...
+        </div>
+      </div>
     );
   }
 
