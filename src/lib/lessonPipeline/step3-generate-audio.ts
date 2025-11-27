@@ -328,25 +328,59 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
 
   console.log(`   ✅ Áudio salvo: ${audioUrl}`);
 
-  // 2. Gerar imagens dos slides em BATCHES (evitar timeout) - OpenAI DALL-E 3
+  // 2. Verificar se os slides já têm imagens (upload manual)
+  const slidesWithImages = input.v3Data!.slides.filter(s => s.imageUrl && s.imageUrl.trim() !== '');
+  const slidesNeedingImages = input.v3Data!.slides.filter(s => !s.imageUrl || s.imageUrl.trim() === '');
   const totalSlides = input.v3Data!.slides.length;
-  console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3 - Landscape 1792x1024)...`);
+
+  // Se TODOS os slides já têm imagens (upload manual), pular geração via API
+  if (slidesNeedingImages.length === 0) {
+    console.log(`   ✅ Todas as ${totalSlides} imagens já foram enviadas manualmente. Pulando geração via API.`);
+    console.log(`   🎉 Economia de tempo e custo com DALL-E!`);
+
+    const elapsedTime = Date.now() - startTime;
+    console.log(`✅ [V3] Áudio completo em ${elapsedTime}ms (imagens pré-carregadas)`);
+
+    return {
+      ...input,
+      audioUrl,
+      wordTimestamps: audioData.word_timestamps,
+      v3Data: input.v3Data // Manter slides originais com imageUrl já preenchido
+    };
+  }
+
+  // Se ALGUNS slides já têm imagens, logar e continuar gerando apenas os faltantes
+  if (slidesWithImages.length > 0) {
+    console.log(`   📋 ${slidesWithImages.length}/${totalSlides} slides já têm imagens (upload manual)`);
+    console.log(`   🖼️ Gerando ${slidesNeedingImages.length} imagens restantes via API...`);
+  } else {
+    console.log(`   🖼️ Gerando ${totalSlides} imagens dos slides em batches (OpenAI DALL-E 3 - Landscape 1792x1024)...`);
+  }
 
   // DALL-E 3: ~30-45s por imagem. Com 2 imagens + delay: ~90s (< 150s limite edge function)
   const BATCH_SIZE = 2; // 2 imagens por batch (DALL-E 3 é mais lento mas melhor)
   const BATCH_TIMEOUT_MS = 180000; // 3 minutos por batch (margem de segurança)
 
-  const slidesInput = input.v3Data!.slides.map(slide => ({
-    id: slide.id,
-    slideNumber: slide.slideNumber,
-    contentIdea: slide.contentIdea
-  }));
+  // Preparar apenas slides que PRECISAM de imagem (não têm imageUrl)
+  // Criar mapeamento de índice (slidesInput → original slides array)
+  const slideIndexMap: { inputIndex: number; originalIndex: number }[] = [];
+  const slidesInput = slidesNeedingImages.map((slide, inputIdx) => {
+    // Encontrar índice original no array completo
+    const originalIdx = input.v3Data!.slides.findIndex(s => s.id === slide.id);
+    slideIndexMap.push({ inputIndex: inputIdx, originalIndex: originalIdx });
+    return {
+      id: slide.id,
+      slideNumber: slide.slideNumber,
+      contentIdea: slide.contentIdea
+    };
+  });
 
-  const totalBatches = Math.ceil(slidesInput.length / BATCH_SIZE);
-  console.log(`   📦 Processando ${totalSlides} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
+  const slidesToGenerate = slidesInput.length;
+  const totalBatches = Math.ceil(slidesToGenerate / BATCH_SIZE);
+  console.log(`   📦 Processando ${slidesToGenerate} imagens em ${totalBatches} batches de ${BATCH_SIZE}`);
 
-  let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais
-  let completedCount = 0;
+  let finalSlidesWithImages = [...input.v3Data!.slides]; // Cópia dos slides originais (preserva os que já têm imagem)
+  let completedCount = slidesWithImages.length; // Começar contando os que já têm imagem
 
   // Processar cada batch sequencialmente
   for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
@@ -462,17 +496,23 @@ async function generateAudioV3(input: Step2Output): Promise<Step3Output> {
     }
 
     // Atualizar slides com as imagens geradas neste batch
+    // Usar o mapeamento de índices para encontrar a posição correta no array original
     const startIdx = batchIndex * BATCH_SIZE;
     const endIdx = Math.min(startIdx + BATCH_SIZE, slidesInput.length);
 
     for (let i = startIdx; i < endIdx; i++) {
       const slideFromBatch = batchData.slides[i];
       if (slideFromBatch && slideFromBatch.imageUrl) {
-        finalSlidesWithImages[i] = {
-          ...finalSlidesWithImages[i],
-          imageUrl: slideFromBatch.imageUrl,
-          imagePrompt: slideFromBatch.imagePrompt || slideFromBatch.contentIdea
-        };
+        // Encontrar o índice original usando o mapeamento
+        const mapping = slideIndexMap.find(m => m.inputIndex === i);
+        if (mapping) {
+          const originalIndex = mapping.originalIndex;
+          finalSlidesWithImages[originalIndex] = {
+            ...finalSlidesWithImages[originalIndex],
+            imageUrl: slideFromBatch.imageUrl,
+            imagePrompt: slideFromBatch.imagePrompt || slideFromBatch.contentIdea
+          };
+        }
       }
     }
 

@@ -29,6 +29,7 @@ import AdminValidationSystem from "./pages/AdminValidationSystem";
 import AdminPipelineTest from "./pages/AdminPipelineTest";
 import AdminPipelineHub from "./pages/AdminPipelineHub";
 import AdminManualHub from "./pages/AdminManualHub";
+import AdminCreateLessonV3 from "./pages/AdminCreateLessonV3";
 import AdminTestImageGeneration from "./pages/AdminTestImageGeneration";
 import AdminPipelineCreateSingle from "./pages/AdminPipelineCreateSingle";
 import AdminPipelineCreateBatch from "./pages/AdminPipelineCreateBatch";
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/admin/pipeline/fix-exercises" element={<ProtectedRoute><AdminFixLessonExercises /></ProtectedRoute>} />
           <Route path="/admin/pipeline/monitor/:executionId?" element={<ProtectedRoute><AdminPipelineMonitor /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute><AdminManualHub /></ProtectedRoute>} />
+          <Route path="/admin/create-lesson-v3" element={<ProtectedRoute><AdminCreateLessonV3 /></ProtectedRoute>} />
           <Route path="/admin/audio-generator" element={<ProtectedRoute><AdminAudioGenerator /></ProtectedRoute>} />
           <Route path="/admin/audio-batch" element={<ProtectedRoute><AdminAudioBatch /></ProtectedRoute>} />
           <Route path="/admin/sync-tester" element={<ProtectedRoute><AdminSyncTester /></ProtectedRoute>} />

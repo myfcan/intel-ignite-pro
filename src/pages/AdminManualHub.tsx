@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical, 
-  Volume2, ArrowLeft, Wrench 
+import {
+  Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical,
+  Volume2, ArrowLeft, Wrench, Image
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,6 +26,29 @@ export default function AdminManualHub() {
             </p>
           </div>
         </div>
+
+        {/* NOVO: Criação Aula V3 com Upload Manual */}
+        <Card className="border-2 border-purple-500/20 bg-purple-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Image className="w-5 h-5 text-purple-600" />
+              Criação Aula V3
+            </CardTitle>
+            <CardDescription>
+              Crie aulas V3 com upload manual de imagens - Sem geração via API (mais rápido e confiável)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/create-lesson-v3')}
+              size="lg"
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              <Image className="w-4 h-4 mr-2" />
+              Criar Aula V3
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
