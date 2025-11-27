@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Upload, Trash2, Image, Rocket, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, Image, Rocket, CheckCircle, AlertCircle, FileJson, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,9 @@ export default function AdminCreateLessonV3() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState('');
+  const [jsonParsed, setJsonParsed] = useState(false);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [formData, setFormData] = useState<PipelineInput>({
@@ -38,7 +41,6 @@ export default function AdminCreateLessonV3() {
     estimatedTimeMinutes: 15,
   });
 
-  const [slideCount, setSlideCount] = useState<number>(10);
   const [availableTrails, setAvailableTrails] = useState<{ id: string; title: string }[]>([]);
 
   // Buscar todas as trails disponíveis
@@ -52,67 +54,89 @@ export default function AdminCreateLessonV3() {
 
       if (trails && trails.length > 0) {
         setAvailableTrails(trails);
-        // Auto-selecionar a primeira trail
-        setFormData(prev => ({
-          ...prev,
-          trackId: trails[0].id,
-          trackName: trails[0].title,
-        }));
       }
     };
     fetchTrails();
   }, []);
 
-  // Calcular próximo Order Index
-  useEffect(() => {
-    const fetchNextOrderIndex = async () => {
-      if (!formData.trackId) return;
+  // Parsear JSON quando digitado
+  const handleJsonChange = (value: string) => {
+    setJsonInput(value);
+    setJsonError('');
+    setJsonParsed(false);
 
-      const { data: lessons } = await supabase
-        .from('lessons')
-        .select('order_index')
-        .eq('trail_id', formData.trackId)
-        .order('order_index', { ascending: false })
-        .limit(1);
+    if (!value.trim()) return;
 
-      const nextIndex = lessons && lessons.length > 0
-        ? lessons[0].order_index + 1
-        : 1;
+    try {
+      const parsed = JSON.parse(value);
 
-      setFormData(prev => ({ ...prev, orderIndex: nextIndex }));
-    };
-
-    fetchNextOrderIndex();
-  }, [formData.trackId]);
-
-  // Gerar slides quando slideCount mudar
-  const generateSlides = (count: number) => {
-    const newSlides: SlideWithUpload[] = Array.from({ length: count }, (_, i) => ({
-      id: `slide-${i + 1}-${Date.now()}`,
-      slideNumber: i + 1,
-      contentIdea: '',
-      imageUrl: '',
-    }));
-
-    setFormData(prev => ({
-      ...prev,
-      v3Data: {
-        ...prev.v3Data!,
-        slides: newSlides,
+      // Validar campos obrigatórios
+      if (!parsed.title) {
+        setJsonError('Campo "title" obrigatório');
+        return;
       }
-    }));
-  };
+      if (!parsed.v3Data || !parsed.v3Data.audioText) {
+        setJsonError('Campo "v3Data.audioText" obrigatório');
+        return;
+      }
+      if (!parsed.v3Data.slides || parsed.v3Data.slides.length === 0) {
+        setJsonError('Campo "v3Data.slides" obrigatório (array não vazio)');
+        return;
+      }
+      if (!parsed.exercises) {
+        setJsonError('Campo "exercises" obrigatório');
+        return;
+      }
 
-  // Aplicar quantidade de slides
-  const handleSlideCountChange = (value: string) => {
-    const count = parseInt(value);
-    setSlideCount(count);
-    generateSlides(count);
+      // Encontrar trail pelo nome ou usar a primeira
+      let selectedTrail = availableTrails[0];
+      if (parsed.trackName) {
+        const found = availableTrails.find(t =>
+          t.title.toLowerCase().includes(parsed.trackName.toLowerCase())
+        );
+        if (found) selectedTrail = found;
+      }
+
+      // Converter slides para formato com upload
+      const slidesWithUpload: SlideWithUpload[] = parsed.v3Data.slides.map((slide: any, idx: number) => ({
+        id: slide.id || `slide-${idx + 1}-${Date.now()}`,
+        slideNumber: slide.slideNumber || idx + 1,
+        contentIdea: slide.contentIdea || '',
+        timestamp: slide.timestamp || 0,
+        imageUrl: slide.imageUrl || '', // Vazio para upload manual
+        imagePrompt: slide.imagePrompt || '',
+      }));
+
+      // Atualizar formData
+      setFormData({
+        model: 'v3',
+        title: parsed.title,
+        trackId: selectedTrail?.id || '',
+        trackName: selectedTrail?.title || '',
+        orderIndex: parsed.orderIndex || 1,
+        sections: [],
+        v3Data: {
+          audioText: parsed.v3Data.audioText,
+          slides: slidesWithUpload,
+          finalPlaygroundConfig: parsed.v3Data.finalPlaygroundConfig || undefined,
+        },
+        exercises: parsed.exercises || [],
+        estimatedTimeMinutes: parsed.estimatedTimeMinutes || 15,
+      });
+
+      setJsonParsed(true);
+      toast({
+        title: "JSON válido!",
+        description: `${slidesWithUpload.length} slides carregados. Agora faça upload das imagens.`
+      });
+
+    } catch (error) {
+      setJsonError(`JSON inválido: ${(error as Error).message}`);
+    }
   };
 
   // Upload de imagem para um slide específico
   const handleImageUpload = async (index: number, file: File) => {
-    // Validar tipo de arquivo
     const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({
@@ -123,7 +147,6 @@ export default function AdminCreateLessonV3() {
       return;
     }
 
-    // Validar tamanho (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Arquivo muito grande",
@@ -139,57 +162,37 @@ export default function AdminCreateLessonV3() {
     setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: newSlides } }));
 
     try {
-      // Gerar nome único para o arquivo
       const fileExt = file.name.split('.').pop();
       const fileName = `slide-${formData.title.replace(/\s+/g, '-').toLowerCase()}-${index + 1}-${Date.now()}.${fileExt}`;
 
-      // Upload para Supabase Storage (bucket lesson-images)
-      const { data, error } = await supabase.storage
+      // Tentar bucket lesson-images, fallback para lesson-audios
+      let publicUrl = '';
+
+      const { error } = await supabase.storage
         .from('lesson-images')
-        .upload(fileName, file, {
-          contentType: file.type,
-          upsert: true
-        });
+        .upload(fileName, file, { contentType: file.type, upsert: true });
 
       if (error) {
-        // Se bucket não existe, tentar criar ou usar lesson-audios como fallback
         if (error.message.includes('Bucket not found')) {
-          // Fallback para lesson-audios
-          const { data: fallbackData, error: fallbackError } = await supabase.storage
+          const { error: fallbackError } = await supabase.storage
             .from('lesson-audios')
-            .upload(`slides/${fileName}`, file, {
-              contentType: file.type,
-              upsert: true
-            });
+            .upload(`slides/${fileName}`, file, { contentType: file.type, upsert: true });
 
           if (fallbackError) throw fallbackError;
 
-          const { data: { publicUrl } } = supabase.storage
+          const { data: { publicUrl: url } } = supabase.storage
             .from('lesson-audios')
             .getPublicUrl(`slides/${fileName}`);
-
-          // Atualizar slide com URL
-          const updatedSlides = [...formData.v3Data!.slides] as SlideWithUpload[];
-          updatedSlides[index] = {
-            ...updatedSlides[index],
-            imageUrl: publicUrl,
-            isUploading: false
-          };
-          setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: updatedSlides } }));
-
-          toast({
-            title: "Imagem enviada!",
-            description: `Slide ${index + 1} atualizado`
-          });
-          return;
+          publicUrl = url;
+        } else {
+          throw error;
         }
-        throw error;
+      } else {
+        const { data: { publicUrl: url } } = supabase.storage
+          .from('lesson-images')
+          .getPublicUrl(fileName);
+        publicUrl = url;
       }
-
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('lesson-images')
-        .getPublicUrl(fileName);
 
       // Atualizar slide com URL
       const updatedSlides = [...formData.v3Data!.slides] as SlideWithUpload[];
@@ -230,20 +233,19 @@ export default function AdminCreateLessonV3() {
     setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: newSlides } }));
   };
 
-  // Atualizar contentIdea de um slide
-  const updateSlideContentIdea = (index: number, value: string) => {
-    const newSlides = [...formData.v3Data!.slides];
-    newSlides[index] = { ...newSlides[index], contentIdea: value };
-    setFormData(prev => ({ ...prev, v3Data: { ...prev.v3Data!, slides: newSlides } }));
-  };
-
   // Contar slides com imagem
   const slidesWithImage = formData.v3Data?.slides.filter(s => s.imageUrl).length || 0;
   const totalSlides = formData.v3Data?.slides.length || 0;
 
+  // Formatar timestamp para exibição
+  const formatTimestamp = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Submit do formulário
   const handleSubmit = async () => {
-    // Validação
     if (!formData.title) {
       toast({ title: "Título obrigatório", variant: "destructive" });
       return;
@@ -255,11 +257,10 @@ export default function AdminCreateLessonV3() {
     }
 
     if (totalSlides === 0) {
-      toast({ title: "Adicione pelo menos um slide", variant: "destructive" });
+      toast({ title: "Cole o JSON para carregar os slides", variant: "destructive" });
       return;
     }
 
-    // Verificar se todas as imagens foram enviadas
     const slidesWithoutImage = formData.v3Data?.slides.filter(s => !s.imageUrl) || [];
     if (slidesWithoutImage.length > 0) {
       toast({
@@ -270,10 +271,14 @@ export default function AdminCreateLessonV3() {
       return;
     }
 
+    if (!formData.trackId) {
+      toast({ title: "Selecione uma Trail", variant: "destructive" });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // 1. Criar registro de execução
       const { data, error } = await supabase
         .from('pipeline_executions')
         .insert({
@@ -295,7 +300,6 @@ export default function AdminCreateLessonV3() {
         description: "Iniciando execução (imagens já enviadas - mais rápido!)"
       });
 
-      // 2. Executar pipeline
       const result = await runLessonPipeline(formData, data.id);
 
       if (result.success) {
@@ -305,7 +309,6 @@ export default function AdminCreateLessonV3() {
         });
       }
 
-      // 3. Redirecionar para monitor
       navigate(`/admin/pipeline/monitor/${data.id}`);
 
     } catch (error) {
@@ -322,7 +325,7 @@ export default function AdminCreateLessonV3() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin/manual')}>
@@ -334,263 +337,288 @@ export default function AdminCreateLessonV3() {
               Criação Aula V3
             </h1>
             <p className="text-muted-foreground">
-              Upload manual de imagens - Sem geração via API
+              Cole o JSON completo + Upload manual de imagens
             </p>
           </div>
         </div>
 
-        {/* Status Bar */}
-        <Card className={`border-2 ${slidesWithImage === totalSlides && totalSlides > 0 ? 'border-green-500 bg-green-500/10' : 'border-yellow-500 bg-yellow-500/10'}`}>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {slidesWithImage === totalSlides && totalSlides > 0 ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
-                )}
-                <span className="font-medium">
-                  {slidesWithImage}/{totalSlides} imagens enviadas
-                </span>
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {slidesWithImage === totalSlides && totalSlides > 0
-                  ? "Pronto para criar aula!"
-                  : "Envie todas as imagens para continuar"
-                }
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Informações Básicas */}
-        <Card>
+        {/* STEP 1: Cole o JSON */}
+        <Card className={jsonParsed ? 'border-green-500' : ''}>
           <CardHeader>
-            <CardTitle>Informações da Aula</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileJson className="w-5 h-5" />
+              1. Cole o JSON da Aula
+            </CardTitle>
+            <CardDescription>
+              JSON com title, orderIndex, v3Data (audioText, slides com timestamps, finalPlaygroundConfig), exercises
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Título da Aula</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Ex: Os 10 Erros Fatais com I.A."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Tempo Estimado (min)</Label>
-                <Input
-                  type="number"
-                  value={formData.estimatedTimeMinutes}
-                  onChange={(e) => setFormData({ ...formData, estimatedTimeMinutes: parseInt(e.target.value) })}
-                />
-              </div>
-            </div>
+            <Textarea
+              value={jsonInput}
+              onChange={(e) => handleJsonChange(e.target.value)}
+              placeholder={`{
+  "title": "Os 10 Erros Fatais com IA",
+  "orderIndex": 8,
+  "estimatedTimeMinutes": 15,
+  "v3Data": {
+    "audioText": "Olá! Hoje vamos aprender...",
+    "slides": [
+      { "contentIdea": "Intro - Título chamativo", "timestamp": 0 },
+      { "contentIdea": "Erro 1 - Não validar outputs", "timestamp": 45 },
+      { "contentIdea": "Erro 2 - Prompts vagos", "timestamp": 90 }
+    ],
+    "finalPlaygroundConfig": {
+      "type": "real-playground",
+      "instruction": "Agora pratique!"
+    }
+  },
+  "exercises": [
+    { "type": "multiple-choice", "question": "...", "options": [...] }
+  ]
+}`}
+              rows={12}
+              className="font-mono text-sm"
+            />
 
-            <div className="space-y-2">
-              <Label>Texto do Áudio (Speech da MAIA)</Label>
-              <Textarea
-                value={formData.v3Data?.audioText || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  v3Data: { ...formData.v3Data!, audioText: e.target.value }
-                })}
-                placeholder="Cole aqui o texto completo que será convertido em áudio..."
-                rows={8}
-              />
-            </div>
+            {jsonError && (
+              <div className="flex items-center gap-2 text-red-500 text-sm">
+                <AlertCircle className="w-4 h-4" />
+                {jsonError}
+              </div>
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Trail (Trilha)</Label>
-                <Select
-                  value={formData.trackId}
-                  onValueChange={(value) => {
-                    const selectedTrail = availableTrails.find(t => t.id === value);
-                    setFormData(prev => ({
-                      ...prev,
-                      trackId: value,
-                      trackName: selectedTrail?.title || '',
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma trilha..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTrails.map(trail => (
-                      <SelectItem key={trail.id} value={trail.id}>
-                        {trail.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {jsonParsed && (
+              <div className="flex items-center gap-2 text-green-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                JSON válido! {totalSlides} slides carregados com timestamps.
               </div>
-              <div className="space-y-2">
-                <Label>Order Index (Número da Aula)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={formData.orderIndex}
-                  onChange={(e) => setFormData(prev => ({ ...prev, orderIndex: parseInt(e.target.value) || 1 }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Próximo disponível calculado automaticamente
-                </p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Seletor de Quantidade de Slides */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quantidade de Slides</CardTitle>
-            <CardDescription>
-              Escolha quantos slides a aula terá. As caixas de upload serão geradas automaticamente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Select value={slideCount.toString()} onValueChange={handleSlideCountChange}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n} slides</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Recomendado: 10-15 slides para aulas de 10-15 minutos
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* STEP 2: Configurações (aparece após JSON válido) */}
+        {jsonParsed && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>2. Confirme as Configurações</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Título</Label>
+                    <Input value={formData.title} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Order Index</Label>
+                    <Input
+                      type="number"
+                      value={formData.orderIndex}
+                      onChange={(e) => setFormData(prev => ({ ...prev, orderIndex: parseInt(e.target.value) || 1 }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Trail</Label>
+                    <Select
+                      value={formData.trackId}
+                      onValueChange={(value) => {
+                        const selectedTrail = availableTrails.find(t => t.id === value);
+                        setFormData(prev => ({
+                          ...prev,
+                          trackId: value,
+                          trackName: selectedTrail?.title || '',
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTrails.map(trail => (
+                          <SelectItem key={trail.id} value={trail.id}>
+                            {trail.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tempo (min)</Label>
+                    <Input value={formData.estimatedTimeMinutes} readOnly className="bg-muted" />
+                  </div>
+                </div>
 
-        {/* Grid de Slides */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload de Imagens</CardTitle>
-            <CardDescription>
-              Envie uma imagem para cada slide. Formato recomendado: 1792x1024 (landscape 16:9)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {formData.v3Data?.slides.map((slide, index) => {
-                const slideWithUpload = slide as SlideWithUpload;
-                return (
-                  <Card key={slide.id} className={`relative ${slide.imageUrl ? 'border-green-500' : 'border-dashed'}`}>
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-sm">Slide {index + 1}</span>
-                        {slide.imageUrl && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => removeImage(index)}
+                {/* Info dos exercícios e playground */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Exercícios</Label>
+                    <p className="font-medium">{formData.exercises.length} exercício(s)</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Playground Final</Label>
+                    <p className="font-medium">
+                      {formData.v3Data?.finalPlaygroundConfig ? '✅ Configurado' : '❌ Não configurado'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Bar */}
+            <Card className={`border-2 ${slidesWithImage === totalSlides ? 'border-green-500 bg-green-500/10' : 'border-yellow-500 bg-yellow-500/10'}`}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {slidesWithImage === totalSlides ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                    )}
+                    <span className="font-medium">
+                      {slidesWithImage}/{totalSlides} imagens enviadas
+                    </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {slidesWithImage === totalSlides
+                      ? "Pronto para criar aula!"
+                      : "Faça upload das imagens para cada slide"
+                    }
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* STEP 3: Upload de Imagens */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5" />
+                  3. Upload de Imagens
+                </CardTitle>
+                <CardDescription>
+                  Clique em cada slide para fazer upload. Os timestamps já estão definidos pelo JSON.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {formData.v3Data?.slides.map((slide, index) => {
+                    const slideWithUpload = slide as SlideWithUpload;
+                    return (
+                      <Card key={slide.id} className={`relative ${slide.imageUrl ? 'border-green-500' : 'border-dashed border-2'}`}>
+                        <CardContent className="p-3 space-y-2">
+                          {/* Header do slide */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm">#{index + 1}</span>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatTimestamp(slide.timestamp || 0)}
+                              </span>
+                            </div>
+                            {slide.imageUrl && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => removeImage(index)}
+                              >
+                                <Trash2 className="w-3 h-3 text-red-500" />
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Área de Upload/Preview */}
+                          <div
+                            className={`
+                              aspect-video rounded-lg overflow-hidden cursor-pointer
+                              ${slide.imageUrl
+                                ? 'bg-black'
+                                : 'bg-muted border border-dashed flex items-center justify-center hover:bg-muted/80'
+                              }
+                            `}
+                            onClick={() => !slide.imageUrl && fileInputRefs.current[index]?.click()}
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        )}
-                      </div>
-
-                      {/* Área de Upload/Preview */}
-                      <div
-                        className={`
-                          aspect-video rounded-lg overflow-hidden cursor-pointer
-                          ${slide.imageUrl
-                            ? 'bg-black'
-                            : 'bg-muted border-2 border-dashed flex items-center justify-center hover:bg-muted/80'
-                          }
-                        `}
-                        onClick={() => !slide.imageUrl && fileInputRefs.current[index]?.click()}
-                      >
-                        {slideWithUpload.isUploading ? (
-                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                            <span className="text-xs">Enviando...</span>
+                            {slideWithUpload.isUploading ? (
+                              <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                                <span className="text-xs">Enviando...</span>
+                              </div>
+                            ) : slide.imageUrl ? (
+                              <img
+                                src={slide.imageUrl}
+                                alt={`Slide ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center gap-1 text-muted-foreground p-2">
+                                <Upload className="w-5 h-5" />
+                                <span className="text-xs text-center">Upload</span>
+                              </div>
+                            )}
                           </div>
-                        ) : slide.imageUrl ? (
-                          <img
-                            src={slide.imageUrl}
-                            alt={`Slide ${index + 1}`}
-                            className="w-full h-full object-cover"
+
+                          {/* Input hidden */}
+                          <input
+                            ref={el => fileInputRefs.current[index] = el}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(index, file);
+                              e.target.value = '';
+                            }}
                           />
-                        ) : (
-                          <div className="flex flex-col items-center gap-2 text-muted-foreground p-4">
-                            <Upload className="w-6 h-6" />
-                            <span className="text-xs text-center">Clique para enviar</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Input hidden para upload */}
-                      <input
-                        ref={el => fileInputRefs.current[index] = el}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(index, file);
-                          e.target.value = ''; // Reset para permitir mesmo arquivo
-                        }}
-                      />
+                          {/* Content Idea */}
+                          <p className="text-xs text-muted-foreground line-clamp-2" title={slide.contentIdea}>
+                            {slide.contentIdea || 'Sem descrição'}
+                          </p>
 
-                      {/* Descrição opcional */}
-                      <Input
-                        placeholder="Descrição (opcional)"
-                        value={slide.contentIdea}
-                        onChange={(e) => updateSlideContentIdea(index, e.target.value)}
-                        className="text-xs"
-                      />
+                          {/* Status */}
+                          {slide.imageUrl && (
+                            <div className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="w-3 h-3" />
+                              <span className="text-xs">OK</span>
+                            </div>
+                          )}
 
-                      {/* Erro de upload */}
-                      {slideWithUpload.uploadError && (
-                        <p className="text-xs text-red-500">{slideWithUpload.uploadError}</p>
-                      )}
+                          {slideWithUpload.uploadError && (
+                            <p className="text-xs text-red-500">{slideWithUpload.uploadError}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-                      {/* Status */}
-                      {slide.imageUrl && (
-                        <div className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-3 h-3" />
-                          <span className="text-xs">Enviado</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            {/* Botões de Ação */}
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => navigate('/admin/manual')} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting || slidesWithImage !== totalSlides || totalSlides === 0}
+                className="flex-1"
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                {isSubmitting ? 'Criando...' : 'Criar Aula V3'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Botões de Ação */}
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => navigate('/admin/manual')} className="flex-1">
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || slidesWithImage !== totalSlides || totalSlides === 0}
-            className="flex-1"
-          >
-            <Rocket className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Criando...' : 'Criar Aula V3'}
-          </Button>
-        </div>
+          </>
+        )}
 
         {/* Dica */}
         <Card className="bg-blue-500/10 border-blue-500/20">
           <CardContent className="py-4">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Dica:</strong> Crie suas imagens no Canva, Figma ou Midjourney com tamanho 1792x1024 pixels
-              para melhor qualidade nos slides.
+              <strong>Fluxo:</strong> 1. Cole o JSON → 2. Confirme Trail e Order Index → 3. Faça upload das imagens → 4. Criar Aula
+              <br />
+              <strong>Dica:</strong> Crie imagens no Canva/Figma com 1792x1024 pixels (landscape 16:9)
             </p>
           </CardContent>
         </Card>
