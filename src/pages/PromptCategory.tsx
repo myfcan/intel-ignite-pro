@@ -12,7 +12,9 @@ import {
   Lock,
   Star,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Coins,
+  Crown
 } from 'lucide-react';
 import {
   Dialog,
@@ -292,21 +294,49 @@ export default function PromptCategory() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col xs:flex-row gap-2">
+              <div className="flex flex-col gap-2">
                 {prompt.isPremium && !canAccessPrompt(prompt) ? (
-                  <button
-                    className="w-full py-2 sm:py-3 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                    style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUpgradeModal(true);
-                    }}
-                  >
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                    Desbloquear com Premium
-                  </button>
-                ) : (
                   <>
+                    {/* Botão Usar Créditos */}
+                    <button
+                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)'}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPromptForUnlock(prompt);
+                        setShowUpgradeModal(true);
+                      }}
+                    >
+                      <Coins className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      Usar 1.000 Créditos
+                    </button>
+                    
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-300"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="bg-white px-2 text-[10px] text-gray-500">ou</span>
+                      </div>
+                    </div>
+
+                    {/* Botão Upgrade Premium */}
+                    <button
+                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                      style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPromptForUnlock(prompt);
+                        setShowUpgradeModal(true);
+                      }}
+                    >
+                      <Crown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      Fazer Upgrade
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex gap-2">
                     <button
                       className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-all"
                       onClick={(e) => {
@@ -336,7 +366,7 @@ export default function PromptCategory() {
                         </>
                       )}
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
