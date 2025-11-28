@@ -64,11 +64,11 @@ export default function PromptCategory() {
           .select('plan')
           .eq('id', user.id)
           .single();
-        
+
         setUserPlan(userData?.plan || 'basico');
       }
     };
-    
+
     fetchUserData();
   }, []);
 
@@ -100,12 +100,12 @@ export default function PromptCategory() {
   const canAccessPrompt = (prompt: Prompt) => {
     // Admins têm acesso total
     if (isAdmin) return true;
-    
+
     if (!prompt.isPremium) return true;
-    
+
     // Verificar se tem plano premium
     if (userPlan === 'ultra' || userPlan === 'pro') return true;
-    
+
     // Verificar se desbloqueou com créditos
     return checkPromptUnlocked(prompt.id);
   };
@@ -131,7 +131,7 @@ export default function PromptCategory() {
       setShowUpgradeModal(true);
       return;
     }
-    
+
     navigator.clipboard.writeText(prompt.template);
     setCopiedPrompt(prompt.id);
     toast({
@@ -323,7 +323,7 @@ export default function PromptCategory() {
                         <span className="font-semibold text-amber-900">1.000 Créditos</span>
                       </div>
                     </button>
-                    
+
                     {/* Divider com estilo */}
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
@@ -371,7 +371,7 @@ export default function PromptCategory() {
                         handleCopyPrompt(prompt);
                       }}
                       className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
-                      style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
+                      style={{ background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)' }}
                     >
                       {copiedPrompt === prompt.id ? (
                         <>
@@ -492,8 +492,8 @@ export default function PromptCategory() {
       </Dialog>
 
       {/* Premium Upgrade Modal */}
-      <PremiumUpgradeModal 
-        open={showUpgradeModal} 
+      <PremiumUpgradeModal
+        open={showUpgradeModal}
         onClose={() => {
           setShowUpgradeModal(false);
           setSelectedPromptForUnlock(null);
