@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PremiumUpgradeModal } from '@/components/prompts/PremiumUpgradeModal';
 import { useUnlockedPrompts } from '@/hooks/useUnlockedPrompts';
 import { CreditsDisplay } from '@/components/prompts/CreditsDisplay';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 /**
  * PromptCategory Page: Lista prompts de uma categoria específica
@@ -48,13 +49,16 @@ export default function PromptCategory() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPromptForUnlock, setSelectedPromptForUnlock] = useState<Prompt | null>(null);
   const [userPlan, setUserPlan] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
   const { unlockedPrompts, isPromptUnlocked: checkPromptUnlocked, refresh: refreshUnlockedPrompts } = useUnlockedPrompts();
+  const { isAdmin } = useIsAdmin(userId);
 
-  // Buscar plano do usuário
+  // Buscar plano do usuário e ID
   useEffect(() => {
-    const fetchUserPlan = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setUserId(user.id);
         const { data: userData } = await supabase
           .from('users')
           .select('plan')
@@ -65,7 +69,7 @@ export default function PromptCategory() {
       }
     };
     
-    fetchUserPlan();
+    fetchUserData();
   }, []);
 
   const category = allPromptCategories.find(cat => cat.id === categoryId);
@@ -94,6 +98,9 @@ export default function PromptCategory() {
 
   // Verificar se usuário pode acessar prompt
   const canAccessPrompt = (prompt: Prompt) => {
+    // Admins têm acesso total
+    if (isAdmin) return true;
+    
     if (!prompt.isPremium) return true;
     
     // Verificar se tem plano premium
