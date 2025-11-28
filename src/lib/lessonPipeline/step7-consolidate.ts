@@ -68,23 +68,18 @@ export async function step7Consolidate(input: Step6Output): Promise<Step7Output>
   console.log(`      Audio URL: ${audioUrl ? 'presente' : 'null'}`);
   console.log(`      Word Timestamps: ${wordTimestamps ? 'presente' : 'null'}`);
 
-  // Buscar próximo order_index disponível para evitar conflitos
-  let orderIndex = input.orderIndex;
+  // Verificar se o order_index específico já existe
+  const orderIndex = input.orderIndex;
 
-  const { data: maxOrderData } = await supabase
+  const { data: existingLesson } = await supabase
     .from('lessons')
-    .select('order_index')
+    .select('id, title')
     .eq('trail_id', input.trackId)
-    .order('order_index', { ascending: false })
-    .limit(1);
+    .eq('order_index', orderIndex)
+    .single();
 
-  if (maxOrderData && maxOrderData.length > 0) {
-    const maxOrder = maxOrderData[0].order_index;
-    // Se o orderIndex solicitado já existe ou é menor que o máximo, usar próximo disponível
-    if (orderIndex <= maxOrder) {
-      orderIndex = maxOrder + 1;
-      console.log(`   ⚠️ orderIndex ${input.orderIndex} já existe. Usando próximo disponível: ${orderIndex}`);
-    }
+  if (existingLesson) {
+    throw new Error(`Já existe uma aula com order_index ${orderIndex} na trilha: "${existingLesson.title}". Use outro order_index ou remova a aula existente.`);
   }
 
   // Usar SECURITY DEFINER function para criar a lição (validação de admin está na função)
