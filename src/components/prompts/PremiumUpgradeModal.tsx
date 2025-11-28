@@ -1,9 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Crown, CheckCircle2, Coins, Sparkles } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Coins, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { useUserGamification } from '@/hooks/useUserGamification';
 import { unlockPromptWithCredits } from '@/services/promptUnlock';
 import { toast } from 'sonner';
@@ -66,131 +64,110 @@ export function PremiumUpgradeModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                <Lock className="w-6 h-6 text-white" />
-              </div>
-            </div>
+          <DialogTitle className="text-xl font-bold text-center">
+            Desbloquear Prompt Premium
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Hero Message */}
-          <div className="text-center">
-            <p className="text-lg font-semibold text-gray-900 mb-1">
-              Conteúdo <span className="text-purple-600">Premium</span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Desbloqueie <strong>todos os 30 prompts</strong> de Renda Extra
-            </p>
-          </div>
-
-          {/* Benefits - Compact */}
-          <div className="space-y-2">
-            {[
-              'Acesso a 300+ prompts profissionais',
-              'Novos prompts toda semana',
-              'Estratégias de monetização validadas'
-            ].map((benefit, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span>{benefit}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Opção de Créditos */}
+        <div className="space-y-4 py-4">
+          {/* Opção: Usar Créditos */}
           {promptId && categoryId && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-amber-600" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">Desbloquear com Créditos</p>
-                    <p className="text-xs text-gray-600">Apenas este prompt</p>
+            <div className="border-2 border-amber-300 rounded-lg p-4 bg-amber-50/50">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Coins className="w-5 h-5 text-amber-700" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm text-amber-900">Usar Créditos</h3>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Use seus créditos ganhos para desbloquear este prompt
+                  </p>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-amber-900">{stats?.coins || 0}</span>
+                    <span className="text-xs text-amber-600">créditos disponíveis</span>
+                  </div>
+                  <div className="text-xs text-amber-600 mt-1">
+                    Necessário: <span className="font-semibold">{requiredCoins}</span> créditos
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-amber-600">1.000</p>
-                  <p className="text-xs text-gray-500">créditos</p>
-                </div>
               </div>
-
-              {/* Saldo atual */}
-              <div className="bg-white/70 rounded-lg p-2 mb-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Seu saldo:</span>
-                  <span className={`font-bold ${hasEnoughCoins ? 'text-green-600' : 'text-red-600'}`}>
-                    {stats?.coins || 0} créditos
-                  </span>
-                </div>
-              </div>
-
-              <Button 
+              <button
                 onClick={handleUnlockWithCredits}
                 disabled={!hasEnoughCoins || isUnlocking}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold disabled:opacity-50"
-                size="lg"
+                className="w-full mt-4 py-2.5 px-4 rounded-lg font-medium text-amber-700 border-2 border-amber-400 bg-white hover:bg-amber-50 text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isUnlocking ? (
-                  'Desbloqueando...'
-                ) : !hasEnoughCoins ? (
                   <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    Créditos Insuficientes
+                    <div className="w-4 h-4 border-2 border-amber-700 border-t-transparent rounded-full animate-spin" />
+                    Desbloqueando...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Usar 1.000 Créditos
+                    <Coins className="w-4 h-4" />
+                    Usar {requiredCoins.toLocaleString('pt-BR')} Créditos
                   </>
                 )}
-              </Button>
+              </button>
+              {!hasEnoughCoins && (
+                <p className="text-xs text-amber-600 mt-2 text-center">
+                  Você precisa de mais {(requiredCoins - (stats?.coins || 0)).toLocaleString('pt-BR')} créditos
+                </p>
+              )}
             </div>
           )}
 
           {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-gray-500">ou</span>
-            </div>
-          </div>
-
-          {/* CTA Premium */}
-          <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-5 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm opacity-90">Plano Ultra</p>
-                <p className="text-2xl font-bold">R$ 97<span className="text-sm font-normal">/mês</span></p>
+          {promptId && categoryId && (
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
               </div>
-              <Crown className="w-8 h-8 text-amber-300" />
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-xs text-gray-400 font-medium">ou</span>
+              </div>
             </div>
-            
-            <Button 
-              onClick={handleUpgrade}
-              className="w-full bg-white text-purple-600 hover:bg-gray-100 font-bold"
-              size="lg"
-            >
-              Fazer Upgrade
-            </Button>
-            <p className="text-xs text-center mt-2 opacity-80">
-              Acesso ilimitado a todos os prompts
-            </p>
-          </div>
+          )}
 
-          {/* Footer */}
-          <div className="text-center">
+          {/* Opção: Upgrade Premium */}
+          <div className="border-2 border-purple-300 rounded-lg p-4 bg-purple-50/50">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-purple-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm text-purple-900">Plano Premium</h3>
+                <ul className="mt-2 space-y-1.5">
+                  <li className="text-xs text-purple-700 flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                    Todos os prompts desbloqueados
+                  </li>
+                  <li className="text-xs text-purple-700 flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                    Acesso ilimitado
+                  </li>
+                  <li className="text-xs text-purple-700 flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                    Novos prompts toda semana
+                  </li>
+                </ul>
+              </div>
+            </div>
             <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-xs underline"
+              onClick={handleUpgrade}
+              className="w-full mt-4 py-2.5 px-4 rounded-lg font-medium text-purple-700 border-2 border-purple-400 bg-white hover:bg-purple-50 text-sm transition-all flex items-center justify-center gap-2"
             >
-              Continuar com plano gratuito
+              <Sparkles className="w-4 h-4" />
+              Fazer Upgrade
             </button>
           </div>
+
+          {/* Botão Continuar Grátis */}
+          <button
+            onClick={onClose}
+            className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Continuar com plano grátis
+          </button>
         </div>
       </DialogContent>
     </Dialog>
