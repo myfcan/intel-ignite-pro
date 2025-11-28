@@ -637,6 +637,68 @@ Corpo:
       difficulty: 'intermediate',
       isPremium: true,
       usageCount: 0
+    },
+    // Mais 15 prompts de Marketing Digital
+    {
+      id: 'md-google-ads',
+      categoryId: 'marketing-digital',
+      title: 'Campanha Google Ads Lucrativa',
+      description: 'Estruture campanha Google Ads com ROI positivo',
+      template: 'Crie campanha Google Ads para produto: {product}, budget: {budget}, objetivo: {goal}. Inclua: estrutura de campanha, grupos de anúncios, palavras-chave (com match type), anúncios responsivos, extensões, lances, e métricas alvo.',
+      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Software CRM', type: 'text', required: true}, {name: 'budget', label: 'Budget diário', placeholder: 'Ex: R$ 200', type: 'text', required: true}, {name: 'goal', label: 'Objetivo', placeholder: 'Ex: Gerar leads', type: 'text', required: true}],
+      examples: [],
+      tags: ['google ads', 'sem', 'ppc', 'anúncios'],
+      difficulty: 'advanced',
+      isPremium: true
+    },
+    {
+      id: 'md-seo-strategy',
+      categoryId: 'marketing-digital',
+      title: 'Estratégia de SEO Completa',
+      description: 'Monte estratégia SEO para ranquear no Google',
+      template: 'Crie estratégia SEO para site: {website}, nicho: {niche}, palavras-chave principais: {keywords}. Inclua: auditoria técnica, estratégia de conteúdo, link building, otimizações on-page e cronograma de implementação.',
+      variables: [{name: 'website', label: 'Site', placeholder: 'Ex: www.meusite.com', type: 'text', required: true}, {name: 'niche', label: 'Nicho', placeholder: 'Ex: E-commerce de moda', type: 'text', required: true}, {name: 'keywords', label: 'Palavras-chave principais', placeholder: 'Ex: vestidos femininos, roupas online', type: 'textarea', required: true}],
+      examples: [],
+      tags: ['seo', 'google', 'orgânico', 'ranqueamento'],
+      difficulty: 'advanced',
+      isPremium: true
+    },
+    {
+      id: 'md-content-calendar',
+      categoryId: 'marketing-digital',
+      title: 'Calendário Editorial 90 Dias',
+      description: 'Planeje conteúdo para 3 meses',
+      template: 'Crie calendário editorial de 90 dias para: {brand}, plataformas: {platforms}, pilares: {pillars}, frequência: {frequency}. Inclua temas, formatos, CTAs e distribuição semanal.',
+      variables: [{name: 'brand', label: 'Marca/Negócio', placeholder: 'Ex: Consultoria financeira', type: 'text', required: true}, {name: 'platforms', label: 'Plataformas', placeholder: 'Ex: Instagram, LinkedIn, Blog', type: 'text', required: true}, {name: 'pillars', label: 'Pilares de conteúdo', placeholder: 'Ex: Educação, Inspiração, Vendas', type: 'text', required: true}, {name: 'frequency', label: 'Frequência', placeholder: 'Ex: 5 posts/semana', type: 'text', required: true}],
+      examples: [],
+      tags: ['conteúdo', 'planejamento', 'calendário', 'social media'],
+      difficulty: 'intermediate',
+      isPremium: false
+    },
+    {
+      id: 'md-influencer-outreach',
+      categoryId: 'marketing-digital',
+      title: 'Estratégia de Marketing de Influência',
+      description: 'Encontre e aborde influenciadores certos',
+      template: 'Crie estratégia de influencer marketing para: {product}, nicho: {niche}, budget: {budget}, objetivo: {goal}. Inclua perfil ideal de influenciador, onde encontrar, script de approach, estrutura de parceria e ROI esperado.',
+      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Marca de skincare', type: 'text', required: true}, {name: 'niche', label: 'Nicho', placeholder: 'Ex: Beleza natural', type: 'text', required: true}, {name: 'budget', label: 'Budget', placeholder: 'Ex: R$ 5.000', type: 'text', required: true}, {name: 'goal', label: 'Objetivo', placeholder: 'Ex: Awareness', type: 'text', required: true}],
+      examples: [],
+      tags: ['influencer', 'parcerias', 'awareness', 'social media'],
+      difficulty: 'intermediate',
+      isPremium: true
+    },
+    {
+      id: 'md-retargeting',
+      categoryId: 'marketing-digital',
+      title: 'Campanha de Retargeting',
+      description: 'Recupere visitantes que não converteram',
+      template: 'Crie estratégia de retargeting para: {business}, pixel instalado: {pixel}, segmentos: {segments}. Inclua públicos customizados, criativos específicos por estágio, ofertas, frequência e budget allocation.',
+      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce de eletrônicos', type: 'text', required: true}, {name: 'pixel', label: 'Pixel instalado', placeholder: 'Ex: Facebook, Google', type: 'text', required: true}, {name: 'segments', label: 'Segmentos disponíveis', placeholder: 'Ex: Visitantes site, add to cart, visualizou produto', type: 'textarea', required: true}],
+      examples: [],
+      tags: ['retargeting', 'remarketing', 'conversão', 'ads'],
+      difficulty: 'advanced',
+      isPremium: true
     }
   ]
 };
+
