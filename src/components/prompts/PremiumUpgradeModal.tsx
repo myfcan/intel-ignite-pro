@@ -152,34 +152,35 @@ export function PremiumUpgradeModal({
             </div>
           )}
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-gray-500">ou</span>
-            </div>
+          {/* Divider minimalista */}
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span>ou</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
-          {/* CTA Premium */}
-          <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-5 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm opacity-90">Plano Ultra</p>
-                <p className="text-2xl font-bold">R$ 97<span className="text-sm font-normal">/mês</span></p>
+          {/* CTA Premium - Minimalista */}
+          <div className="border-2 border-purple-200 bg-purple-50/30 rounded-2xl p-5 hover:border-purple-300 transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                  <Crown className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Plano Ultra</p>
+                  <p className="text-2xl font-bold text-purple-700">R$ 97<span className="text-sm font-normal text-gray-600">/mês</span></p>
+                </div>
               </div>
-              <Crown className="w-8 h-8 text-amber-300" />
             </div>
             
             <Button 
               onClick={handleUpgrade}
-              className="w-full bg-white text-purple-600 hover:bg-gray-100 font-bold"
-              size="lg"
+              className="w-full h-12 rounded-xl font-semibold text-base border-2 border-purple-300 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:border-purple-400"
+              variant="outline"
             >
               Fazer Upgrade
             </Button>
-            <p className="text-xs text-center mt-2 opacity-80">
+            <p className="text-xs text-center mt-3 text-gray-500">
               Acesso ilimitado a todos os prompts
             </p>
           </div>
