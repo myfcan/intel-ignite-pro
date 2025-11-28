@@ -44,6 +44,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Verificar se usuário é admin
+    const { data: userRoles } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    const isAdmin = !!userRoles;
+
     // Verificar se já possui o prompt desbloqueado
     const { data: existingUnlock } = await supabaseClient
       .from('user_unlocked_prompts')
@@ -59,47 +69,52 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Buscar coins do usuário
-    const { data: userData, error: fetchError } = await supabaseClient
-      .from('users')
-      .select('coins')
-      .eq('id', user.id)
-      .single();
-
-    if (fetchError || !userData) {
-      console.error('[unlock-premium-prompt] Erro ao buscar usuário:', fetchError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar dados do usuário' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const currentCoins = userData.coins || 0;
+    let currentCoins = 0;
     const requiredCoins = 1000;
 
-    if (currentCoins < requiredCoins) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Créditos insuficientes',
-          required: requiredCoins,
-          current: currentCoins
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Admins não precisam gastar créditos
+    if (!isAdmin) {
+      // Buscar coins do usuário
+      const { data: userData, error: fetchError } = await supabaseClient
+        .from('users')
+        .select('coins')
+        .eq('id', user.id)
+        .single();
 
-    // Deduzir créditos
-    const { error: updateError } = await supabaseClient
-      .from('users')
-      .update({ coins: currentCoins - requiredCoins })
-      .eq('id', user.id);
+      if (fetchError || !userData) {
+        console.error('[unlock-premium-prompt] Erro ao buscar usuário:', fetchError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao buscar dados do usuário' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    if (updateError) {
-      console.error('[unlock-premium-prompt] Erro ao deduzir créditos:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Erro ao processar pagamento' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      currentCoins = userData.coins || 0;
+
+      if (currentCoins < requiredCoins) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Créditos insuficientes',
+            required: requiredCoins,
+            current: currentCoins
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Deduzir créditos
+      const { error: updateError } = await supabaseClient
+        .from('users')
+        .update({ coins: currentCoins - requiredCoins })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('[unlock-premium-prompt] Erro ao deduzir créditos:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao processar pagamento' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Desbloquear prompt
@@ -109,17 +124,19 @@ Deno.serve(async (req) => {
         user_id: user.id,
         prompt_id: promptId,
         category_id: categoryId,
-        credits_spent: requiredCoins
+        credits_spent: isAdmin ? 0 : requiredCoins
       })
       .select()
       .single();
 
     if (unlockError) {
-      // Reverter dedução de créditos em caso de erro
-      await supabaseClient
-        .from('users')
-        .update({ coins: currentCoins })
-        .eq('id', user.id);
+      // Reverter dedução de créditos em caso de erro (só se não for admin)
+      if (!isAdmin) {
+        await supabaseClient
+          .from('users')
+          .update({ coins: currentCoins })
+          .eq('id', user.id);
+      }
 
       console.error('[unlock-premium-prompt] Erro ao desbloquear:', unlockError);
       return new Response(
@@ -128,13 +145,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[unlock-premium-prompt] Prompt ${promptId} desbloqueado para usuário ${user.id}`);
+    console.log(`[unlock-premium-prompt] Prompt ${promptId} desbloqueado para usuário ${user.id}${isAdmin ? ' (admin)' : ''}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         unlockedPrompt,
-        remainingCoins: currentCoins - requiredCoins
+        remainingCoins: isAdmin ? currentCoins : currentCoins - requiredCoins,
+        isAdmin
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
