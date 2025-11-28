@@ -14,12 +14,12 @@ interface PremiumUpgradeModalProps {
   onUnlockSuccess?: () => void;
 }
 
-export function PremiumUpgradeModal({ 
-  open, 
-  onClose, 
-  promptId, 
+export function PremiumUpgradeModal({
+  open,
+  onClose,
+  promptId,
   categoryId,
-  onUnlockSuccess 
+  onUnlockSuccess
 }: PremiumUpgradeModalProps) {
   const navigate = useNavigate();
   const { stats, refresh: refreshGamification } = useUserGamification();
@@ -82,7 +82,7 @@ export function PremiumUpgradeModal({
               }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-              
+
               <div className="relative">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export function PremiumUpgradeModal({
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
+
             <div className="relative">
               <div className="flex items-center gap-2.5 mb-2">
                 <div className="w-9 h-9 rounded-lg bg-white/90 flex items-center justify-center shadow-sm">
