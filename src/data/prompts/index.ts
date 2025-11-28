@@ -1,33 +1,41 @@
 import { emailPromptsCategory } from './email-prompts';
 import { blogPromptsCategory } from './blog-prompts';
-import { marketingPromptsCategory } from './marketing-prompts';
 import { studyPromptsCategory } from './study-prompts';
 import { contentPromptsCategory } from './content-prompts';
-import { businessPromptsCategory } from './business-prompts';
 import { socialPromptsCategory } from './social-prompts';
 import { seoPromptsCategory } from './seo-prompts';
 import { extraIncomePromptsCategory } from './extra-income-prompts';
 import { dailyLifePromptsCategory } from './daily-life-prompts';
 import { freePromptsCategory } from './free-prompts';
+import { businessPromptsCategory } from './business-prompts-new';
+import { marketingDigitalPromptsCategory } from './marketing-digital-prompts';
+import { personalFinancePromptsCategory } from './personal-finance-prompts';
+import { productCreationPromptsCategory } from './product-creation-prompts';
+import { salesMarketingPromptsCategory } from './sales-marketing-prompts';
 import { PromptCategory, Prompt } from '../../types/prompt';
 
-// NOVA ORGANIZAÇÃO PROFISSIONAL - 4 Categorias Principais
+// NOVAS CATEGORIAS PRINCIPAIS
 export const mainPromptCategories: PromptCategory[] = [
-  extraIncomePromptsCategory,
-  freePromptsCategory,
-  dailyLifePromptsCategory,
-  businessPromptsCategory
+  marketingDigitalPromptsCategory,
+  businessPromptsCategory,
+  personalFinancePromptsCategory,
+  productCreationPromptsCategory,
+  salesMarketingPromptsCategory,
+  extraIncomePromptsCategory
 ];
 
-// Export all prompt categories (legado + novos)
+// Export all prompt categories
 export const allPromptCategories: PromptCategory[] = [
+  marketingDigitalPromptsCategory,
+  businessPromptsCategory,
+  personalFinancePromptsCategory,
+  productCreationPromptsCategory,
+  salesMarketingPromptsCategory,
   extraIncomePromptsCategory,
   freePromptsCategory,
   dailyLifePromptsCategory,
-  businessPromptsCategory,
   emailPromptsCategory,
   blogPromptsCategory,
-  marketingPromptsCategory,
   studyPromptsCategory,
   contentPromptsCategory,
   socialPromptsCategory,
@@ -38,12 +46,15 @@ export const allPromptCategories: PromptCategory[] = [
 export {
   emailPromptsCategory,
   blogPromptsCategory,
-  marketingPromptsCategory,
   studyPromptsCategory,
   contentPromptsCategory,
-  businessPromptsCategory,
   socialPromptsCategory,
-  seoPromptsCategory
+  seoPromptsCategory,
+  marketingDigitalPromptsCategory,
+  businessPromptsCategory,
+  personalFinancePromptsCategory,
+  productCreationPromptsCategory,
+  salesMarketingPromptsCategory
 };
 
 // Helper functions
