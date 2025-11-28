@@ -1787,10 +1787,10 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
                         )}
                       </div>
                       <div className={`prose prose-slate prose-sm max-w-none transition-all duration-500
-  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
-  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
-  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
-  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-slate-700
+  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-5 [&_h1]:!font-bold
+  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-4 [&_h2]:!mt-6 [&_h2]:!font-bold
+  [&_h3]:!text-[17px] [&_h3]:!mb-3 [&_h3]:!mt-4 [&_h3]:!font-bold
+  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-4 [&_p]:text-slate-700
   [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
   [&_ul]:!my-3 [&_ul]:!space-y-2
   [&_ol]:!my-3 [&_ol]:!space-y-2
@@ -1804,7 +1804,14 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
     currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
-                        <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
+                        <ReactMarkdown
+                          components={{
+                            h2: ({node, ...props}) => <h2 className="text-[21px] leading-snug mb-4 mt-6 font-bold text-slate-900" {...props} />,
+                            p: ({node, ...props}) => <p className="text-base leading-relaxed mb-4 text-slate-700" {...props} />,
+                          }}
+                        >
+                          {section.visualContent || section.content}
+                        </ReactMarkdown>
                       </div>
                     </div>
                   </div>
