@@ -100,26 +100,28 @@ export function PremiumUpgradeModal({
             ))}
           </div>
 
-          {/* Opção de Créditos */}
+          {/* Opção de Créditos - Minimalista */}
           {promptId && categoryId && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-amber-600" />
+            <div className="border-2 border-amber-200 bg-amber-50/30 rounded-2xl p-5 hover:border-amber-300 transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Coins className="w-5 h-5 text-amber-600" />
+                  </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">Desbloquear com Créditos</p>
-                    <p className="text-xs text-gray-600">Apenas este prompt</p>
+                    <p className="text-base font-semibold text-gray-900">Desbloquear com Créditos</p>
+                    <p className="text-sm text-gray-600 mt-0.5">Apenas este prompt</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-amber-600">1.000</p>
+                  <p className="text-2xl font-bold text-amber-600">1.000</p>
                   <p className="text-xs text-gray-500">créditos</p>
                 </div>
               </div>
 
               {/* Saldo atual */}
-              <div className="bg-white/70 rounded-lg p-2 mb-3">
-                <div className="flex items-center justify-between text-xs">
+              <div className="bg-white/70 rounded-xl p-3 mb-4 border border-amber-100">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Seu saldo:</span>
                   <span className={`font-bold ${hasEnoughCoins ? 'text-green-600' : 'text-red-600'}`}>
                     {stats?.coins || 0} créditos
@@ -130,8 +132,8 @@ export function PremiumUpgradeModal({
               <Button 
                 onClick={handleUnlockWithCredits}
                 disabled={!hasEnoughCoins || isUnlocking}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold disabled:opacity-50"
-                size="lg"
+                className="w-full h-12 rounded-xl font-semibold text-base disabled:opacity-50 border-2 border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 hover:border-amber-400"
+                variant="outline"
               >
                 {isUnlocking ? (
                   'Desbloqueando...'
