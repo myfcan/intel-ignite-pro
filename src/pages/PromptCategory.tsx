@@ -299,40 +299,38 @@ export default function PromptCategory() {
                   <>
                     {/* Botão Usar Créditos */}
                     <button
-                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)'}}
+                      className="w-full py-2 px-4 rounded-lg font-medium text-amber-700 border-2 border-amber-300 bg-amber-50/50 hover:bg-amber-100 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Coins className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                      Usar 1.000 Créditos
+                      <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>Usar 1.000 Créditos</span>
                     </button>
                     
                     {/* Divider */}
-                    <div className="relative">
+                    <div className="relative py-1">
                       <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-300"></div>
+                        <div className="w-full border-t border-gray-200"></div>
                       </div>
                       <div className="relative flex justify-center">
-                        <span className="bg-white px-2 text-[10px] text-gray-500">ou</span>
+                        <span className="bg-white px-3 text-[10px] text-gray-400 font-medium">ou</span>
                       </div>
                     </div>
 
                     {/* Botão Upgrade Premium */}
                     <button
-                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                      style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
+                      className="w-full py-2 px-4 rounded-lg font-medium text-purple-700 border-2 border-purple-300 bg-purple-50/50 hover:bg-purple-100 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Crown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                      Fazer Upgrade
+                      <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>Upgrade Premium</span>
                     </button>
                   </>
                 ) : (
