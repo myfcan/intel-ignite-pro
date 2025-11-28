@@ -294,43 +294,57 @@ export default function PromptCategory() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {prompt.isPremium && !canAccessPrompt(prompt) ? (
                   <>
                     {/* Botão Usar Créditos */}
                     <button
-                      className="w-full py-2 px-4 rounded-lg font-medium text-amber-700 border-2 border-amber-300 bg-amber-50/50 hover:bg-amber-100 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+                      className="group relative w-full py-3 px-4 rounded-xl font-medium text-sm overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
+                        boxShadow: '0 2px 8px rgba(251, 191, 36, 0.15)'
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>Usar 1.000 Créditos</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative flex items-center justify-center gap-2">
+                        <Coins className="w-4 h-4 text-amber-700" />
+                        <span className="font-semibold text-amber-900">Usar 1.000 Créditos</span>
+                      </div>
                     </button>
                     
-                    {/* Divider */}
-                    <div className="relative py-1">
+                    {/* Divider com estilo */}
+                    <div className="relative">
                       <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
+                        <div className="w-full border-t border-dashed border-gray-300"></div>
                       </div>
                       <div className="relative flex justify-center">
-                        <span className="bg-white px-3 text-[10px] text-gray-400 font-medium">ou</span>
+                        <span className="bg-white px-3 text-[10px] text-gray-400 font-medium uppercase tracking-wider">ou</span>
                       </div>
                     </div>
 
                     {/* Botão Upgrade Premium */}
                     <button
-                      className="w-full py-2 px-4 rounded-lg font-medium text-purple-700 border-2 border-purple-300 bg-purple-50/50 hover:bg-purple-100 text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
+                      className="group relative w-full py-3 px-4 rounded-xl font-medium text-sm overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: 'linear-gradient(135deg, #FAE8FF 0%, #F3E8FF 100%)',
+                        boxShadow: '0 2px 8px rgba(168, 85, 247, 0.15)'
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>Upgrade Premium</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative flex items-center justify-center gap-2">
+                        <Crown className="w-4 h-4 text-purple-700" />
+                        <span className="font-semibold text-purple-900">Upgrade Premium</span>
+                      </div>
                     </button>
                   </>
                 ) : (
