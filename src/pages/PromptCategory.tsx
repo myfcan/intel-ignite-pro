@@ -294,51 +294,46 @@ export default function PromptCategory() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {prompt.isPremium && !canAccessPrompt(prompt) ? (
                   <>
-                    {/* Botão Usar Créditos */}
+                    {/* Botão Usar Créditos - Minimalista */}
                     <button
-                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)'}}
+                      className="w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 border-2 border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100/70 hover:border-amber-300 hover:scale-[1.02] active:scale-[0.98]"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Coins className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                      Usar 1.000 Créditos
+                      <Coins className="w-4 h-4" />
+                      <span>Usar 1.000 Créditos</span>
                     </button>
                     
-                    {/* Divider */}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-300"></div>
-                      </div>
-                      <div className="relative flex justify-center">
-                        <span className="bg-white px-2 text-[10px] text-gray-500">ou</span>
-                      </div>
+                    {/* Divider minimalista */}
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <div className="flex-1 h-px bg-gray-200"></div>
+                      <span>ou</span>
+                      <div className="flex-1 h-px bg-gray-200"></div>
                     </div>
 
-                    {/* Botão Upgrade Premium */}
+                    {/* Botão Upgrade Premium - Minimalista */}
                     <button
-                      className="w-full py-2.5 rounded-lg font-bold text-white text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                      style={{background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)'}}
+                      className="w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 border-2 border-purple-200 bg-purple-50/50 text-purple-700 hover:bg-purple-100/70 hover:border-purple-300 hover:scale-[1.02] active:scale-[0.98]"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPromptForUnlock(prompt);
                         setShowUpgradeModal(true);
                       }}
                     >
-                      <Crown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                      Fazer Upgrade
+                      <Crown className="w-4 h-4" />
+                      <span>Fazer Upgrade</span>
                     </button>
                   </>
                 ) : (
                   <div className="flex gap-2">
                     <button
-                      className="flex-1 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-all"
+                      className="flex-1 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePromptClick(prompt);
@@ -351,17 +346,16 @@ export default function PromptCategory() {
                         e.stopPropagation();
                         handleCopyPrompt(prompt);
                       }}
-                      className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
-                      style={{background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)'}}
+                      className="px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap"
                     >
                       {copiedPrompt === prompt.id ? (
                         <>
-                          <Check className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          <Check className="w-4 h-4 inline mr-1.5" />
                           Copiado
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                          <Copy className="w-4 h-4 inline mr-1.5" />
                           Copiar
                         </>
                       )}
