@@ -21,7 +21,9 @@ export const mainPromptCategories: PromptCategory[] = [
   personalFinancePromptsCategory,
   productCreationPromptsCategory,
   salesMarketingPromptsCategory,
-  extraIncomePromptsCategory
+  extraIncomePromptsCategory,
+  dailyLifePromptsCategory,
+  freePromptsCategory
 ];
 
 // Export all prompt categories
