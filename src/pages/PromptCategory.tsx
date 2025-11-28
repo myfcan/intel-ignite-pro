@@ -24,6 +24,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PremiumUpgradeModal } from '@/components/prompts/PremiumUpgradeModal';
+import { useUnlockedPrompts } from '@/hooks/useUnlockedPrompts';
+import { CreditsDisplay } from '@/components/prompts/CreditsDisplay';
 
 /**
  * PromptCategory Page: Lista prompts de uma categoria específica
@@ -42,7 +44,9 @@ export default function PromptCategory() {
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPromptForUnlock, setSelectedPromptForUnlock] = useState<Prompt | null>(null);
   const [userPlan, setUserPlan] = useState<string | null>(null);
+  const { unlockedPrompts, isPromptUnlocked: checkPromptUnlocked, refresh: refreshUnlockedPrompts } = useUnlockedPrompts();
 
   // Buscar plano do usuário
   useEffect(() => {
@@ -89,7 +93,16 @@ export default function PromptCategory() {
   // Verificar se usuário pode acessar prompt
   const canAccessPrompt = (prompt: Prompt) => {
     if (!prompt.isPremium) return true;
-    return userPlan === 'ultra' || userPlan === 'pro';
+    
+    // Verificar se tem plano premium
+    if (userPlan === 'ultra' || userPlan === 'pro') return true;
+    
+    // Verificar se desbloqueou com créditos
+    return checkPromptUnlocked(prompt.id);
+  };
+
+  const isPromptUnlockedWithCredits = (prompt: Prompt) => {
+    return checkPromptUnlocked(prompt.id);
   };
 
   // Abrir prompt ou modal de upgrade
@@ -97,6 +110,7 @@ export default function PromptCategory() {
     if (canAccessPrompt(prompt)) {
       setSelectedPrompt(prompt);
     } else {
+      setSelectedPromptForUnlock(prompt);
       setShowUpgradeModal(true);
     }
   };
@@ -104,6 +118,7 @@ export default function PromptCategory() {
   // Copy prompt
   const handleCopyPrompt = (prompt: Prompt) => {
     if (!canAccessPrompt(prompt)) {
+      setSelectedPromptForUnlock(prompt);
       setShowUpgradeModal(true);
       return;
     }
@@ -158,6 +173,9 @@ export default function PromptCategory() {
                   </Badge>
                 )}
               </div>
+            </div>
+            <div className="sm:ml-auto">
+              <CreditsDisplay />
             </div>
           </div>
         </div>
@@ -219,8 +237,8 @@ export default function PromptCategory() {
                 borderColor: 'rgba(139, 92, 246, 0.2)',
               }}
             >
-              {/* Badge Premium/Featured */}
-              {(prompt.isPremium || prompt.isFeatured) && (
+              {/* Badge Premium/Featured/Unlocked */}
+              {(prompt.isPremium || prompt.isFeatured || isPromptUnlockedWithCredits(prompt)) && (
                 <div className="absolute top-2 right-2 flex gap-2 z-10">
                   {prompt.isFeatured && (
                     <span className="px-2 py-1 bg-amber-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow-md">
@@ -228,7 +246,13 @@ export default function PromptCategory() {
                       Destaque
                     </span>
                   )}
-                  {prompt.isPremium && (
+                  {isPromptUnlockedWithCredits(prompt) && (
+                    <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow-md">
+                      <Check className="w-3 h-3" />
+                      Desbloqueado
+                    </span>
+                  )}
+                  {prompt.isPremium && !canAccessPrompt(prompt) && (
                     <span className="px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded flex items-center gap-1 shadow-md">
                       <Lock className="w-3 h-3" />
                       Premium
@@ -421,7 +445,13 @@ export default function PromptCategory() {
       {/* Premium Upgrade Modal */}
       <PremiumUpgradeModal 
         open={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
+        onClose={() => {
+          setShowUpgradeModal(false);
+          setSelectedPromptForUnlock(null);
+        }}
+        promptId={selectedPromptForUnlock?.id}
+        categoryId={categoryId}
+        onUnlockSuccess={refreshUnlockedPrompts}
       />
     </div>
   );

@@ -1028,6 +1028,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_unlocked_prompts: {
+        Row: {
+          category_id: string
+          credits_spent: number
+          id: string
+          prompt_id: string
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          credits_spent?: number
+          id?: string
+          prompt_id: string
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          credits_spent?: number
+          id?: string
+          prompt_id?: string
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           age: number | null

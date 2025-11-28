@@ -2,19 +2,64 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Crown, CheckCircle2 } from 'lucide-react';
+import { Lock, Crown, CheckCircle2, Coins, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useUserGamification } from '@/hooks/useUserGamification';
+import { unlockPromptWithCredits } from '@/services/promptUnlock';
+import { toast } from 'sonner';
 
 interface PremiumUpgradeModalProps {
   open: boolean;
   onClose: () => void;
+  promptId?: string;
+  categoryId?: string;
+  onUnlockSuccess?: () => void;
 }
 
-export function PremiumUpgradeModal({ open, onClose }: PremiumUpgradeModalProps) {
+export function PremiumUpgradeModal({ 
+  open, 
+  onClose, 
+  promptId, 
+  categoryId,
+  onUnlockSuccess 
+}: PremiumUpgradeModalProps) {
   const navigate = useNavigate();
+  const { stats, refresh: refreshGamification } = useUserGamification();
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  const requiredCoins = 1000;
+  const hasEnoughCoins = (stats?.coins || 0) >= requiredCoins;
 
   const handleUpgrade = () => {
     navigate('/curso-exclusivo');
     onClose();
+  };
+
+  const handleUnlockWithCredits = async () => {
+    if (!promptId || !categoryId) {
+      toast.error('Erro ao identificar prompt');
+      return;
+    }
+
+    if (!hasEnoughCoins) {
+      toast.error(`Você precisa de ${requiredCoins} créditos para desbloquear este prompt`);
+      return;
+    }
+
+    setIsUnlocking(true);
+
+    const result = await unlockPromptWithCredits(promptId, categoryId);
+
+    if (result.success) {
+      toast.success('🎉 Prompt desbloqueado com sucesso!');
+      await refreshGamification();
+      onUnlockSuccess?.();
+      onClose();
+    } else {
+      toast.error(result.error || 'Erro ao desbloquear prompt');
+    }
+
+    setIsUnlocking(false);
   };
 
   return (
@@ -55,7 +100,67 @@ export function PremiumUpgradeModal({ open, onClose }: PremiumUpgradeModalProps)
             ))}
           </div>
 
-          {/* CTA */}
+          {/* Opção de Créditos */}
+          {promptId && categoryId && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Desbloquear com Créditos</p>
+                    <p className="text-xs text-gray-600">Apenas este prompt</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-amber-600">1.000</p>
+                  <p className="text-xs text-gray-500">créditos</p>
+                </div>
+              </div>
+
+              {/* Saldo atual */}
+              <div className="bg-white/70 rounded-lg p-2 mb-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Seu saldo:</span>
+                  <span className={`font-bold ${hasEnoughCoins ? 'text-green-600' : 'text-red-600'}`}>
+                    {stats?.coins || 0} créditos
+                  </span>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleUnlockWithCredits}
+                disabled={!hasEnoughCoins || isUnlocking}
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold disabled:opacity-50"
+                size="lg"
+              >
+                {isUnlocking ? (
+                  'Desbloqueando...'
+                ) : !hasEnoughCoins ? (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    Créditos Insuficientes
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Usar 1.000 Créditos
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-gray-500">ou</span>
+            </div>
+          </div>
+
+          {/* CTA Premium */}
           <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-5 text-white">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -72,6 +177,9 @@ export function PremiumUpgradeModal({ open, onClose }: PremiumUpgradeModalProps)
             >
               Fazer Upgrade
             </Button>
+            <p className="text-xs text-center mt-2 opacity-80">
+              Acesso ilimitado a todos os prompts
+            </p>
           </div>
 
           {/* Footer */}
