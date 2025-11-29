@@ -37,7 +37,7 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   return (
     <>
       <RewardCelebration type="patent" trigger={showPatentCelebration} />
-      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
+      <header className="bg-slate-50/85 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-[72px] lg:h-20">
           
