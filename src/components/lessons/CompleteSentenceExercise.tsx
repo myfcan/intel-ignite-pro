@@ -84,27 +84,27 @@ export function CompleteSentenceExercise({
   const allAnswered = sentences.every(s => answers[s.id]?.trim());
 
   return (
-    <Card className="p-8 max-w-4xl mx-auto">
-      <h3 className="text-2xl font-bold mb-2">{title}</h3>
-      <p className="text-muted-foreground mb-6">{instruction}</p>
+    <Card className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
+      <h3 className="text-xl sm:text-2xl font-bold mb-2">{title}</h3>
+      <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">{instruction}</p>
 
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         {sentences.map(sentence => {
           const parts = splitByPlaceholder(sentence.text);
           const hasOptions = sentence.options && sentence.options.length > 0;
           
           return (
-            <div key={sentence.id} className="space-y-4">
+            <div key={sentence.id} className="space-y-3 sm:space-y-4">
               {/* Texto da frase */}
-              <p className="text-lg text-foreground font-medium">
+              <p className="text-base sm:text-lg text-foreground font-medium leading-relaxed">
                 {parts[0]}<span className="text-primary font-bold">_______</span>{parts[1]}
               </p>
 
               {/* 💡 Hints (se existirem) */}
               {sentence.hints && sentence.hints.length > 0 && !submitted && (
-                <div className="flex items-start gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-2 text-xs sm:text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 p-2.5 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                   <span className="font-semibold shrink-0">💡 Dicas:</span>
-                  <span>{sentence.hints.join(' • ')}</span>
+                  <span className="break-words">{sentence.hints.join(' • ')}</span>
                 </div>
               )}
 
@@ -115,7 +115,7 @@ export function CompleteSentenceExercise({
                   value={answers[sentence.id] || ''}
                   onValueChange={(value) => setAnswers(prev => ({ ...prev, [sentence.id]: value }))}
                   disabled={submitted}
-                  className="space-y-3"
+                  className="space-y-2 sm:space-y-3"
                 >
                   {sentence.options!.map(option => {
                     const optionId = `${sentence.id}-${option}`;
@@ -125,7 +125,7 @@ export function CompleteSentenceExercise({
                     return (
                       <div
                         key={optionId}
-                        className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${
+                        className={`flex items-center space-x-2 sm:space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all ${
                           submitted
                             ? isSelected && isCorrect
                               ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
@@ -140,7 +140,7 @@ export function CompleteSentenceExercise({
                         <RadioGroupItem value={option} id={optionId} />
                         <Label 
                           htmlFor={optionId} 
-                          className="flex-1 cursor-pointer text-base font-medium"
+                          className="flex-1 cursor-pointer text-sm sm:text-base font-medium break-words"
                         >
                           {option}
                         </Label>
@@ -161,7 +161,7 @@ export function CompleteSentenceExercise({
                     value={answers[sentence.id] || ''}
                     onChange={(e) => setAnswers(prev => ({ ...prev, [sentence.id]: e.target.value }))}
                     disabled={submitted}
-                    className={`max-w-xs ${
+                    className={`w-full sm:max-w-xs ${
                       submitted 
                         ? results[sentence.id] 
                           ? 'border-green-500 bg-green-50 dark:bg-green-950/30' 
@@ -175,12 +175,12 @@ export function CompleteSentenceExercise({
 
               {/* Feedback */}
               {submitted && !results[sentence.id] && (
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium break-words">
                   ❌ Resposta esperada: {sentence.correctAnswers[0]}
                 </p>
               )}
               {submitted && results[sentence.id] && (
-                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">
                   ✅ Correto!
                 </p>
               )}
@@ -193,7 +193,7 @@ export function CompleteSentenceExercise({
         <Button
           onClick={handleSubmit}
           disabled={!allAnswered}
-          className="w-full mt-8"
+          className="w-full mt-6 sm:mt-8 text-sm sm:text-base"
           size="lg"
         >
           {allAnswered ? '✅ Verificar Respostas' : '⏳ Complete todas as frases'}
@@ -201,8 +201,8 @@ export function CompleteSentenceExercise({
       )}
 
       {submitted && (
-        <div className="mt-8 p-6 bg-gradient-to-r from-cyan-50 to-purple-50 dark:from-cyan-950/30 dark:to-purple-950/30 rounded-xl text-center">
-          <p className="text-lg font-bold text-foreground">
+        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-cyan-50 to-purple-50 dark:from-cyan-950/30 dark:to-purple-950/30 rounded-xl text-center">
+          <p className="text-base sm:text-lg font-bold text-foreground">
             🎉 Você acertou {Object.values(results).filter(Boolean).length} de {sentences.length}!
           </p>
         </div>

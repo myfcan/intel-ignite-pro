@@ -96,19 +96,19 @@ export function PlatformMatchExercise({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8 text-center"
+        className="mb-6 sm:mb-8 text-center"
       >
-        <h3 className="text-3xl font-bold mb-3 text-foreground">{title}</h3>
-        <p className="text-muted-foreground text-lg">{instruction}</p>
-        <div className="mt-4 flex items-center justify-center gap-2">
+        <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-foreground px-2">{title}</h3>
+        <p className="text-muted-foreground text-sm sm:text-base md:text-lg px-2">{instruction}</p>
+        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-1.5 sm:gap-2">
           {scenarios.map((_, idx) => (
             <div
               key={idx}
-              className={`h-2 w-8 rounded-full transition-all ${
+              className={`h-1.5 sm:h-2 w-6 sm:w-8 rounded-full transition-all ${
                 idx < currentScenarioIndex
                   ? 'bg-green-500'
                   : idx === currentScenarioIndex
@@ -128,15 +128,15 @@ export function PlatformMatchExercise({
           exit={{ opacity: 0, x: -100 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
-          <Card className="p-8 mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-2">
-            <div className="text-center mb-8">
-              <span className="text-6xl mb-4 block">{currentScenario.emoji}</span>
-              <p className="text-xl font-medium text-foreground">
+          <Card className="p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-2">
+            <div className="text-center mb-6 sm:mb-8">
+              <span className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4 block">{currentScenario.emoji}</span>
+              <p className="text-base sm:text-lg md:text-xl font-medium text-foreground px-2 break-words">
                 {currentScenario.text}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto">
               {platforms.map((platform) => (
                 <motion.button
                   key={platform.id}
@@ -145,7 +145,7 @@ export function PlatformMatchExercise({
                   whileHover={{ scale: showFeedback ? 1 : 1.05 }}
                   whileTap={{ scale: showFeedback ? 1 : 0.95 }}
                   className={`
-                    relative p-6 rounded-2xl border-2 transition-all
+                    relative p-4 sm:p-6 rounded-2xl border-2 transition-all
                     ${showFeedback && platform.id === currentScenario.correctPlatform
                       ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
                       : showFeedback && answers[currentScenario.id] === platform.id
@@ -160,9 +160,9 @@ export function PlatformMatchExercise({
                       : 'none'
                   }}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <span className="text-4xl">{platform.icon}</span>
-                    <span className="font-bold text-lg text-foreground">{platform.name}</span>
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <span className="text-3xl sm:text-4xl">{platform.icon}</span>
+                    <span className="font-bold text-base sm:text-lg text-foreground break-words text-center">{platform.name}</span>
                   </div>
 
                   {showFeedback && platform.id === currentScenario.correctPlatform && (
@@ -195,7 +195,7 @@ export function PlatformMatchExercise({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={`text-center p-6 rounded-xl ${
+                className={`text-center p-4 sm:p-6 rounded-xl ${
                   isCorrect
                     ? 'bg-green-50 dark:bg-green-950/30 border-2 border-green-500'
                     : 'bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-500'
@@ -205,12 +205,12 @@ export function PlatformMatchExercise({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                  className="text-2xl font-bold"
+                  className="text-xl sm:text-2xl font-bold"
                 >
                   {isCorrect ? '🎉 Correto!' : '💡 Não foi dessa vez!'}
                 </motion.p>
                 {!isCorrect && (
-                  <p className="text-sm mt-2 text-muted-foreground">
+                  <p className="text-xs sm:text-sm mt-2 text-muted-foreground break-words">
                     A resposta correta era: {platforms.find(p => p.id === currentScenario.correctPlatform)?.name}
                   </p>
                 )}
@@ -224,9 +224,9 @@ export function PlatformMatchExercise({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center mt-8"
+          className="text-center mt-6 sm:mt-8"
         >
-          <p className="text-lg text-muted-foreground">Calculando seu resultado...</p>
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-2">Calculando seu resultado...</p>
         </motion.div>
       )}
     </div>

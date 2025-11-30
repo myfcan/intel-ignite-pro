@@ -76,15 +76,15 @@ export function ScenarioSelectionExercise({
   };
 
   return (
-    <Card className="p-8 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold mb-2">{title}</h3>
-        <p className="text-muted-foreground mb-4">{instruction}</p>
+    <Card className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
+      <div className="mb-4 sm:mb-6">
+        <h3 className="text-xl sm:text-2xl font-bold mb-2">{title}</h3>
+        <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">{instruction}</p>
       </div>
 
       {isSimpleChoice ? (
         // Formato simple-choice: mostra cards para escolher
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {scenarioList.map((scenario) => (
             <button
               key={scenario.id}
@@ -101,7 +101,7 @@ export function ScenarioSelectionExercise({
                 }
               }}
               disabled={hasAnswered}
-              className={`p-6 rounded-xl border-2 transition-all text-left ${
+              className={`p-4 sm:p-6 rounded-xl border-2 transition-all text-left ${
                 selectedAnswer === scenario.id
                   ? showExplanation && scenario.isCorrect
                     ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
@@ -111,11 +111,11 @@ export function ScenarioSelectionExercise({
                   : 'border-border hover:border-primary hover:bg-muted'
               } ${hasAnswered ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">{scenario.emoji}</span>
-                <div className="flex-1">
-                  <h4 className="font-bold text-lg mb-2">{scenario.title}</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <span className="text-2xl sm:text-3xl flex-shrink-0">{scenario.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 break-words">{scenario.title}</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">
                     {scenario.description}
                   </p>
                 </div>
@@ -126,8 +126,8 @@ export function ScenarioSelectionExercise({
       ) : (
         // Formato multi-option original
         <>
-          <div className="mb-6 p-6 bg-muted rounded-xl">
-            <p className="text-lg font-medium text-foreground leading-relaxed">
+          <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-muted rounded-xl">
+            <p className="text-base sm:text-lg font-medium text-foreground leading-relaxed break-words">
               {scenarioList[0]?.situation}
             </p>
           </div>
@@ -136,12 +136,12 @@ export function ScenarioSelectionExercise({
             value={selectedAnswer} 
             onValueChange={setSelectedAnswer}
             disabled={showExplanation}
-            className="space-y-3 mb-6"
+            className="space-y-2 sm:space-y-3 mb-4 sm:mb-6"
           >
             {scenarioList[0]?.options?.map((option) => (
               <div 
                 key={option}
-                className={`flex items-center space-x-3 border-2 rounded-lg p-4 transition-all ${
+                className={`flex items-center space-x-2 sm:space-x-3 border-2 rounded-lg p-3 sm:p-4 transition-all ${
                   showExplanation && option === scenarioList[0]?.correctAnswer
                     ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
                     : showExplanation && option === selectedAnswer
@@ -150,7 +150,7 @@ export function ScenarioSelectionExercise({
                 }`}
               >
                 <RadioGroupItem value={option} id={option} />
-                <Label htmlFor={option} className="flex-1 cursor-pointer font-medium">
+                <Label htmlFor={option} className="flex-1 cursor-pointer font-medium text-sm sm:text-base break-words">
                   {option}
                 </Label>
               </div>
@@ -160,21 +160,21 @@ export function ScenarioSelectionExercise({
       )}
 
       {showExplanation && (
-        <div className={`p-6 rounded-xl mb-6 ${
+        <div className={`p-4 sm:p-6 rounded-xl mb-4 sm:mb-6 ${
           isCorrect 
             ? 'bg-green-50 dark:bg-green-950/30 border-2 border-green-300 dark:border-green-800'
             : 'bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-800'
         }`}>
-          <p className={`font-bold mb-2 ${isCorrect ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}`}>
+          <p className={`font-bold mb-2 text-sm sm:text-base ${isCorrect ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}`}>
             {isCorrect ? '✅ Correto!' : '💡 Veja a explicação:'}
           </p>
-          <p className={isCorrect ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>
+          <p className={`text-xs sm:text-sm break-words ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
             {isSimpleChoice 
               ? scenarioList.find(s => s.id === selectedAnswer)?.feedback 
               : scenarioList[0]?.explanation}
           </p>
           {isSimpleChoice && data?.correctExplanation && (
-            <p className="mt-4 text-foreground font-medium">
+            <p className="mt-3 sm:mt-4 text-foreground font-medium text-xs sm:text-sm break-words">
               💡 {data.correctExplanation}
             </p>
           )}
@@ -185,7 +185,7 @@ export function ScenarioSelectionExercise({
         <Button
           onClick={handleSubmit}
           disabled={!selectedAnswer}
-          className="w-full"
+          className="w-full text-sm sm:text-base"
           size="lg"
         >
           {selectedAnswer ? '✅ Verificar Resposta' : '⏳ Escolha uma opção'}
