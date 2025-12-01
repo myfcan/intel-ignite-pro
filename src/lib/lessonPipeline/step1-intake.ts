@@ -2,7 +2,7 @@ import { PipelineInput, Step1Output } from './types';
 
 /**
  * STEP 1: INTAKE & VALIDAÇÃO INICIAL
- * - Valida se o modelo existe (V1 ou V2)
+ * - Valida se o modelo existe (V1, V2, V3, V4 ou V5)
  * - Valida estrutura básica do conteúdo
  * - Conta número de seções e exercícios
  */
@@ -32,11 +32,30 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     }
     console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (${input.model.toUpperCase()})`);
 
-    // Validar visualContent em cada seção
+    // Validar visualContent em cada seção com mensagens detalhadas
     for (let i = 0; i < input.sections.length; i++) {
       const section = input.sections[i];
-      if (!section.id || !section.visualContent) {
-        throw new Error(`Seção ${i + 1} está incompleta (falta id ou visualContent)`);
+      const missing: string[] = [];
+      
+      if (!section.id) missing.push('id');
+      if (!section.visualContent) missing.push('visualContent');
+      
+      if (missing.length > 0) {
+        console.error(`❌ [STEP 1] Seção ${i + 1} recebida:`, JSON.stringify(section, null, 2));
+        throw new Error(
+          `❌ Seção ${i + 1} está incompleta\n\n` +
+          `Campos AUSENTES: ${missing.join(', ')}\n` +
+          `Campos PRESENTES: ${Object.keys(section).join(', ')}\n\n` +
+          `📋 Estrutura CORRETA para ${input.model.toUpperCase()}:\n` +
+          `{\n` +
+          `  "id": "intro",           // ✅ OBRIGATÓRIO\n` +
+          `  "title": "Título",        // opcional\n` +
+          `  "visualContent": "...",   // ✅ OBRIGATÓRIO (markdown)\n` +
+          `  "speechBubbleText": "...", // opcional\n` +
+          `  "showPlaygroundCall": true // opcional\n` +
+          `}\n\n` +
+          `💡 Veja TEMPLATE-AULA-V5-COMPLETO.json para exemplo completo`
+        );
       }
     }
     console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
