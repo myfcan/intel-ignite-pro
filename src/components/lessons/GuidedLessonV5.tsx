@@ -96,36 +96,52 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
    * 🎨 HELPER: Renderizar Experience Cards
    * 
    * Esta função determina se deve renderizar um experience card
-   * em uma seção específica baseando-se em lessonId + sectionIndex.
+   * em uma seção específica baseando-se na configuração do JSON.
    * 
-   * EXEMPLO DE USO:
-   * - Se lessonId === 'fundamentos-01' && sectionIndex === 3
-   *   → Renderiza <IaBookExperienceCard />
+   * LÓGICA:
+   * 1. Tenta buscar configuração do lessonData.experienceCards
+   * 2. Se não houver, usa regra hardcoded de fallback
    * 
    * EXPANSÃO FUTURA:
    * - Adicionar mais cards (IaImageGeneratorCard, IaChatCard, etc.)
-   * - Ler configuração do JSON (lessonData.experienceCards)
-   * - Suportar cards em múltiplas seções da mesma lição
+   * - Suportar props customizadas por card
    */
   const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
-    // 🎯 REGRA 1: IaBookExperienceCard na aula "fundamentos-01", seção 3
-    if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
-      console.log('🎨 [V5] Renderizando IaBookExperienceCard na seção 3');
-      return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
+    // 🔍 PRIORIDADE 1: Buscar no lessonData.experienceCards
+    if (lessonData.experienceCards) {
+      const cardConfig = lessonData.experienceCards.find(
+        (card) => card.sectionIndex === sectionIndex
+      );
+      
+      if (cardConfig) {
+        console.log('🎨 [V5] Renderizando card do JSON:', cardConfig);
+        
+        switch (cardConfig.type) {
+          case 'ia-book':
+            return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
+          
+          case 'ia-image-generator':
+            // TODO: Implementar IaImageGeneratorCard
+            console.log('⚠️ [V5] IaImageGeneratorCard ainda não implementado');
+            return null;
+          
+          case 'ia-chat-simulator':
+            // TODO: Implementar IaChatSimulatorCard
+            console.log('⚠️ [V5] IaChatSimulatorCard ainda não implementado');
+            return null;
+          
+          default:
+            console.warn('⚠️ [V5] Tipo de card desconhecido:', cardConfig.type);
+            return null;
+        }
+      }
     }
     
-    // 🔮 FUTURO: Adicionar mais cards aqui
-    // if (lessonId === 'fundamentos-02' && sectionIndex === 5) {
-    //   return <IaImageGeneratorCard key={`experience-card-${sectionIndex}`} />;
-    // }
-    
-    // 🔮 FUTURO: Ler de lessonData.experienceCards[]
-    // const cardConfig = lessonData.experienceCards?.find(
-    //   card => card.sectionIndex === sectionIndex
-    // );
-    // if (cardConfig) {
-    //   return renderCardByType(cardConfig.type, cardConfig.props);
-    // }
+    // 🔮 PRIORIDADE 2: Fallback para regras hardcoded (compatibilidade)
+    if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
+      console.log('🎨 [V5] Renderizando IaBookExperienceCard (fallback hardcoded)');
+      return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
+    }
     
     return null;
   };

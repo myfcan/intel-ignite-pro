@@ -415,7 +415,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             ? normalizedExercises
             : guidedLessonData.exercisesConfig,
           finalPlaygroundConfig: guidedLessonData.finalPlaygroundConfig,
-          contentVersion: guidedLessonData.contentVersion
+          contentVersion: guidedLessonData.contentVersion,
+          experienceCards: guidedLessonData.experienceCards || [] // 🆕 V5: Experience cards
         };
 
         console.log('✅ Objeto GuidedLessonData completo criado:', {

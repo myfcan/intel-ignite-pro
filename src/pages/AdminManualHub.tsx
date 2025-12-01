@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical,
-  Volume2, ArrowLeft, Wrench, Image
+  Volume2, ArrowLeft, Wrench, Image, Wand2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,6 +46,29 @@ export default function AdminManualHub() {
             >
               <Image className="w-4 h-4 mr-2" />
               Criar Aula V3
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* NOVO: Configurador V5 Experience Cards */}
+        <Card className="border-2 border-cyan-500/20 bg-cyan-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-cyan-600" />
+              Configurador V5 - Experience Cards
+            </CardTitle>
+            <CardDescription>
+              Configure experience cards interativos para aulas V5 (IaBookExperienceCard, etc.)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate('/admin/v5-card-config')}
+              size="lg"
+              className="w-full bg-cyan-600 hover:bg-cyan-700"
+            >
+              <Wand2 className="w-4 h-4 mr-2" />
+              Configurar V5 Cards
             </Button>
           </CardContent>
         </Card>

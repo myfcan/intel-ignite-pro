@@ -38,6 +38,7 @@ import AdminManageLessons from "./pages/AdminManageLessons";
 import AdminLessonDebug from "./pages/AdminLessonDebug";
 import AdminFixLessonExercises from "./pages/AdminFixLessonExercises";
 import AdminPlaygroundSessions from "./pages/AdminPlaygroundSessions";
+import AdminV5CardConfig from "./pages/AdminV5CardConfig";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
 import AIDirectory from "./pages/AIDirectory";
@@ -93,6 +94,7 @@ const App = () => (
           <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
           <Route path="/admin/test-images" element={<ProtectedRoute><AdminTestImageGeneration /></ProtectedRoute>} />
           <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
+          <Route path="/admin/v5-card-config" element={<ProtectedRoute><AdminV5CardConfig /></ProtectedRoute>} />
           <Route path="/admin/test-card" element={<ProtectedRoute><TestCard /></ProtectedRoute>} />
           {/* NEW FEATURES ROUTES */}
           <Route path="/guides" element={<Guides />} />
