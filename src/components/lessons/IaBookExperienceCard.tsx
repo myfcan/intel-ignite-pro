@@ -10,24 +10,24 @@ const chapters = [
 
 export function IaBookExperienceCard() {
   return (
+    // SCENE 1: Card entrance (0.0s - 0.4s)
     <motion.div
       className="w-full max-w-6xl mx-auto"
-      // SCENE 1: Card entrance (0.0s - 0.4s)
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="grid md:grid-cols-2 gap-8 items-stretch">
+      <div className="grid md:grid-cols-2 gap-0 items-stretch">
         
-        {/* LEFT SIDE - Book Cover */}
+        {/* LEFT: Book Cover (capa do livro) */}
         <motion.div
-          className="relative bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl border border-primary/20 overflow-hidden min-h-[500px]"
+          className="relative bg-gradient-to-br from-primary via-primary to-primary/80 rounded-l-2xl p-8 flex flex-col justify-center items-center shadow-2xl border-y border-l border-primary/20 overflow-hidden min-h-[500px]"
           // SCENE 2: Book cover appears (0.4s - 0.8s)
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.3, ease: "easeOut" }}
         >
-          {/* SCENE 6: Subtle alive effect - soft glow pulse (loop every 6-8s) */}
+          {/* SCENE 6: Subtle alive effect - soft glow pulse */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-primary/40 via-transparent to-transparent"
             animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -39,8 +39,9 @@ export function IaBookExperienceCard() {
             }}
           />
 
+          {/* SCENE 3: Title written on cover (0.8s - 1.5s) */}
           <div className="relative z-10 text-center space-y-6">
-            {/* SCENE 3: Badge appears (0.8s) */}
+            {/* Badge I.A. BOOK (0.8s) */}
             <motion.div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -51,7 +52,7 @@ export function IaBookExperienceCard() {
               <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
             </motion.div>
 
-            {/* SCENE 3: Title lines staggered (0.8s - 1.5s) */}
+            {/* Title lines with stagger (0.8s - 1.5s) */}
             <div className="space-y-2">
               {["Seu Primeiro Livro", "com Inteligência", "Artificial"].map((line, index) => (
                 <motion.h2
@@ -72,16 +73,19 @@ export function IaBookExperienceCard() {
           </div>
         </motion.div>
 
-        {/* RIGHT SIDE - AI Response Panel */}
+        {/* RIGHT: Opened Page (página aberta do livro) */}
+        {/* SCENE 4: Book opening - right panel appears (1.5s - 2.1s) */}
         <motion.div
-          className="bg-card rounded-2xl p-8 shadow-xl border border-border"
-          // SCENE 4: Book opening - right panel expands (1.5s - 2.1s)
+          className="bg-card rounded-r-2xl p-8 shadow-2xl border-y border-r border-border relative"
           style={{ transformOrigin: 'left center' }}
           initial={{ opacity: 0, scaleX: 0.9, x: 8 }}
           animate={{ opacity: 1, scaleX: 1, x: 0 }}
           transition={{ delay: 1.5, duration: 0.5, ease: "easeOut" }}
         >
-          <div className="space-y-6">
+          {/* Página binding shadow effect */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/5 to-transparent pointer-events-none" />
+          
+          <div className="space-y-6 relative">
             
             {/* Status badge */}
             <motion.div
@@ -112,7 +116,7 @@ export function IaBookExperienceCard() {
               </p>
             </motion.div>
 
-            {/* SCENE 5: Chapters list with stagger (2.1s - 2.7s) */}
+            {/* SCENE 5: Chapters list stagger (2.1s - 2.7s) */}
             <div className="space-y-3">
               {chapters.map((chapter, index) => (
                 <motion.div
