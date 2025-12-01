@@ -1,21 +1,89 @@
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Wand2, Heart, Code2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 console.log("🔥🔥🔥 ARQUIVO IaBookExperienceCard.tsx FOI CARREGADO 🔥🔥🔥");
 
-const chapters = [
-  "1. O Que É Inteligência Artificial",
-  "2. Primeiros Passos com ChatGPT",
-  "3. Criando Conteúdo de Valor",
-  "4. Automatizando Tarefas Diárias"
-];
+type BookTheme = "technical" | "fantasy" | "romance";
 
-const titleLines = ["Seu Primeiro Livro", "com Inteligência", "Artificial"];
+interface ThemeConfig {
+  name: string;
+  icon: typeof Sparkles;
+  coverGradient: string;
+  accentColor: string;
+  badge: string;
+  leftPageContent: {
+    title: string;
+    subtitle: string;
+    description: string;
+  };
+  chapters: string[];
+}
+
+const themes: Record<BookTheme, ThemeConfig> = {
+  technical: {
+    name: "I.A. BOOK",
+    icon: Sparkles,
+    coverGradient: "from-primary via-primary to-primary/80",
+    accentColor: "primary",
+    badge: "I.A. BOOK",
+    leftPageContent: {
+      title: "Introdução",
+      subtitle: "Seu guia completo",
+      description: "Este livro foi criado especialmente para você dominar as técnicas mais avançadas de Inteligência Artificial de forma prática e objetiva."
+    },
+    chapters: [
+      "1. O Que É Inteligência Artificial",
+      "2. Primeiros Passos com ChatGPT",
+      "3. Criando Conteúdo de Valor",
+      "4. Automatizando Tarefas Diárias"
+    ]
+  },
+  fantasy: {
+    name: "MAGIC TOME",
+    icon: Wand2,
+    coverGradient: "from-purple-600 via-purple-700 to-purple-900",
+    accentColor: "purple-500",
+    badge: "MAGIC BOOK",
+    leftPageContent: {
+      title: "O Livro dos Feitiços",
+      subtitle: "Magia ancestral",
+      description: "Nas páginas antigas deste grimório, encontram-se os segredos mais poderosos da magia antiga, passados de geração em geração."
+    },
+    chapters: [
+      "1. Feitiços de Proteção",
+      "2. Poções Mágicas Essenciais",
+      "3. Encantamentos de Luz",
+      "4. Rituais de Transformação"
+    ]
+  },
+  romance: {
+    name: "LOVE STORY",
+    icon: Heart,
+    coverGradient: "from-pink-500 via-rose-500 to-red-500",
+    accentColor: "rose-500",
+    badge: "ROMANCE",
+    leftPageContent: {
+      title: "Cartas de Amor",
+      subtitle: "Uma história inesquecível",
+      description: "Cada palavra escrita nestas páginas carrega a intensidade de um amor que transcende o tempo e o espaço."
+    },
+    chapters: [
+      "1. O Primeiro Encontro",
+      "2. Momentos Inesquecíveis",
+      "3. Desafios do Coração",
+      "4. Para Sempre Juntos"
+    ]
+  }
+};
 
 export function IaBookExperienceCard() {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<BookTheme>("technical");
   const [typedChapters, setTypedChapters] = useState<string[]>(["", "", "", ""]);
+  
+  const theme = themes[currentTheme];
+  const ThemeIcon = theme.icon;
 
   useEffect(() => {
     console.log("📕 Livro carregado!");
@@ -29,12 +97,15 @@ export function IaBookExperienceCard() {
   // Efeito typewriter nos capítulos
   useEffect(() => {
     if (!isOpen) return;
+    
+    // Reset typed chapters quando mudar tema
+    setTypedChapters(["", "", "", ""]);
 
-    const startDelay = 2200; // Começa depois que a página abre
-    const chapterDelay = 150; // Delay entre cada capítulo
-    const typingSpeed = 30; // Velocidade de digitação (ms por caractere)
+    const startDelay = 2200;
+    const chapterDelay = 150;
+    const typingSpeed = 30;
 
-    chapters.forEach((chapter, chapterIndex) => {
+    theme.chapters.forEach((chapter, chapterIndex) => {
       const chapterStartTime = startDelay + (chapterIndex * chapterDelay);
       
       for (let i = 0; i <= chapter.length; i++) {
@@ -47,19 +118,62 @@ export function IaBookExperienceCard() {
         }, chapterStartTime + (i * typingSpeed));
       }
     });
-  }, [isOpen]);
+  }, [isOpen, currentTheme]);
+
+  const handleThemeChange = (newTheme: BookTheme) => {
+    setCurrentTheme(newTheme);
+    setIsOpen(false);
+    setTimeout(() => setIsOpen(true), 100);
+  };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-12" style={{ perspective: '2500px' }}>
-      <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
+    <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4">
+      {/* Theme Selector */}
+      <div className="flex justify-center gap-3 mb-8 flex-wrap">
+        <button
+          onClick={() => handleThemeChange("technical")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+            currentTheme === "technical" 
+              ? "border-primary bg-primary/10 text-primary" 
+              : "border-border hover:border-primary/50"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-sm font-medium">Técnico</span>
+        </button>
+        <button
+          onClick={() => handleThemeChange("fantasy")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+            currentTheme === "fantasy" 
+              ? "border-purple-500 bg-purple-500/10 text-purple-500" 
+              : "border-border hover:border-purple-500/50"
+          }`}
+        >
+          <Wand2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Fantasia</span>
+        </button>
+        <button
+          onClick={() => handleThemeChange("romance")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+            currentTheme === "romance" 
+              ? "border-rose-500 bg-rose-500/10 text-rose-500" 
+              : "border-border hover:border-rose-500/50"
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          <span className="text-sm font-medium">Romance</span>
+        </button>
+      </div>
+
+      <div className="relative" style={{ perspective: '2500px' }}>
         
         {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
-          className="absolute inset-0 rounded-2xl shadow-2xl min-h-[600px] w-[400px] mx-auto"
+          className="absolute inset-0 rounded-2xl shadow-2xl min-h-[400px] md:min-h-[600px] w-full md:w-[400px] mx-auto"
           initial={{ rotateY: 0, z: 100 }}
           animate={isOpen ? { 
             rotateY: -165,
-            x: -350,
+            x: window.innerWidth < 768 ? -150 : -350,
             z: -50,
             scale: 0.95
           } : { 
@@ -80,14 +194,14 @@ export function IaBookExperienceCard() {
         >
           {/* FRENTE DA CAPA */}
           <div 
-            className="absolute inset-0 rounded-2xl overflow-hidden flex items-center justify-center p-12"
+            className="absolute inset-0 rounded-2xl overflow-hidden flex items-center justify-center p-8 md:p-12"
             style={{ 
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden'
             }}
           >
             {/* Gradiente de fundo da capa */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl" />
+            <div className={`absolute inset-0 bg-gradient-to-br ${theme.coverGradient} rounded-2xl`} />
             
             {/* Reflexo glossy animado */}
             <motion.div
@@ -113,14 +227,14 @@ export function IaBookExperienceCard() {
               animate={isOpen ? { opacity: 0 } : { opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              {[0, 1, 2, 3, 4, 5].map((i) => (
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
                   className="absolute right-0 bg-background/90 border-r border-background/50"
                   style={{
-                    top: `${4 + i * 2}px`,
-                    bottom: `${4 + i * 2}px`,
-                    right: `${i * 2}px`,
+                    top: `${4 + i * 1.5}px`,
+                    bottom: `${4 + i * 1.5}px`,
+                    right: `${i * 1.5}px`,
                     width: '2px',
                     boxShadow: '1px 0 2px rgba(0,0,0,0.1)'
                   }}
@@ -128,39 +242,31 @@ export function IaBookExperienceCard() {
               ))}
             </motion.div>
 
-            <div className="relative z-10 text-center space-y-8">
+            <div className="relative z-10 text-center space-y-6 md:space-y-8">
               <motion.div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
+                className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
-                <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
+                <ThemeIcon className="w-3 h-3 md:w-4 md:h-4 text-primary-foreground" />
+                <span className="text-xs md:text-sm font-medium text-primary-foreground">{theme.badge}</span>
               </motion.div>
 
-              <div className="space-y-3">
-                {titleLines.map((line, index) => (
-                  <motion.h2
-                    key={index}
-                    className="text-4xl md:text-5xl font-bold text-primary-foreground"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      delay: 0.4 + (index * 0.1), 
-                      duration: 0.4
-                    }}
-                  >
-                    {line}
-                  </motion.h2>
-                ))}
-              </div>
+              <motion.h2
+                className="text-3xl md:text-5xl font-bold text-primary-foreground px-4"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+              >
+                {theme.name}
+              </motion.h2>
             </div>
           </div>
 
           {/* CONTRACAPA (verso da capa) */}
           <div 
-            className="absolute inset-0 bg-gradient-to-br from-card via-card to-card/90 rounded-2xl flex items-center justify-center p-12"
+            className="absolute inset-0 bg-gradient-to-br from-card via-card to-card/90 rounded-2xl flex items-center justify-center p-8 md:p-12"
             style={{ 
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
@@ -168,14 +274,14 @@ export function IaBookExperienceCard() {
             }}
           >
             <motion.div 
-              className="text-center space-y-6 max-w-sm"
+              className="text-center space-y-4 md:space-y-6 max-w-sm"
               initial={{ opacity: 0 }}
               animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 1.5, duration: 0.6 }}
             >
-              <div className="text-sm text-muted-foreground space-y-3">
+              <div className="text-xs md:text-sm text-muted-foreground space-y-3">
                 <p className="italic">
-                  "Com este livro, você dominará técnicas avançadas de IA em tempo recorde."
+                  "Um guia completo e transformador que mudará sua perspectiva."
                 </p>
                 <p className="text-xs">
                   ⭐⭐⭐⭐⭐ (4.9/5)
@@ -193,7 +299,7 @@ export function IaBookExperienceCard() {
 
         {/* LIVRO ABERTO - Duas páginas lado a lado */}
         <motion.div
-          className="grid grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden relative"
+          className="grid grid-cols-1 md:grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden relative"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={isOpen ? { 
             opacity: 1,
@@ -214,7 +320,7 @@ export function IaBookExperienceCard() {
         >
           {/* Sombra da lombada (centro do livro) */}
           <motion.div
-            className="absolute left-1/2 top-0 bottom-0 w-8 -ml-4 pointer-events-none z-20"
+            className="hidden md:block absolute left-1/2 top-0 bottom-0 w-8 -ml-4 pointer-events-none z-20"
             initial={{ opacity: 0 }}
             animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
             transition={{ delay: 1.8, duration: 0.6 }}
@@ -223,9 +329,10 @@ export function IaBookExperienceCard() {
               boxShadow: '0 0 20px rgba(0,0,0,0.15)'
             }}
           />
-          {/* Página esquerda */}
+
+          {/* Página esquerda - Conteúdo */}
           <motion.div
-            className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50 relative overflow-hidden"
+            className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] flex items-center justify-center border-b md:border-b-0 md:border-r border-border/50 relative overflow-hidden"
             initial={{ rotateY: 20 }}
             animate={isOpen ? { rotateY: 2 } : { rotateY: 20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
@@ -234,7 +341,7 @@ export function IaBookExperienceCard() {
               transformOrigin: 'right center'
             }}
           >
-            {/* Gradiente de iluminação - luz vindo da esquerda */}
+            {/* Gradiente de iluminação */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -248,15 +355,54 @@ export function IaBookExperienceCard() {
                 background: 'radial-gradient(ellipse 200% 100% at 100% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
               }}
             />
-            <div className="relative z-10 text-center space-y-4 text-muted-foreground">
-              <p className="text-lg italic">Página em branco...</p>
-              <p className="text-sm">O ChatGPT vai escrever aqui</p>
+            
+            {/* Páginas empilhadas na borda interna */}
+            <div className="hidden md:block absolute right-0 top-4 bottom-4 w-1">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="absolute right-0 bg-muted/80 border-r border-border/30"
+                  style={{
+                    top: `${2 + i * 1}px`,
+                    bottom: `${2 + i * 1}px`,
+                    right: `${i * 1}px`,
+                    width: '1px'
+                  }}
+                />
+              ))}
             </div>
+
+            <motion.div 
+              className="relative z-10 space-y-4 md:space-y-6 max-w-md"
+              initial={{ opacity: 0 }}
+              animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ delay: 1.8, duration: 0.6 }}
+            >
+              <div className="space-y-3">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  {theme.leftPageContent.title}
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground font-medium">
+                  {theme.leftPageContent.subtitle}
+                </p>
+              </div>
+              
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                {theme.leftPageContent.description}
+              </p>
+
+              <div className="pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <BookOpen className="w-4 h-4" />
+                  <span>Criado com IA</span>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
 
-          {/* Página direita - Conteúdo */}
+          {/* Página direita - Índice */}
           <motion.div
-            className="bg-card p-10 min-h-[600px] relative overflow-hidden"
+            className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] relative overflow-hidden"
             initial={{ rotateY: -20 }}
             animate={isOpen ? { rotateY: -2 } : { rotateY: -20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
@@ -265,7 +411,7 @@ export function IaBookExperienceCard() {
               transformOrigin: 'left center'
             }}
           >
-            {/* Gradiente de iluminação - luz vindo da direita */}
+            {/* Gradiente de iluminação */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -279,14 +425,31 @@ export function IaBookExperienceCard() {
                 background: 'radial-gradient(ellipse 200% 100% at 0% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
               }}
             />
+
+            {/* Páginas empilhadas na borda interna */}
+            <div className="hidden md:block absolute left-0 top-4 bottom-4 w-1">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="absolute left-0 bg-muted/80 border-l border-border/30"
+                  style={{
+                    top: `${2 + i * 1}px`,
+                    bottom: `${2 + i * 1}px`,
+                    left: `${i * 1}px`,
+                    width: '1px'
+                  }}
+                />
+              ))}
+            </div>
+            
             <motion.div 
-              className="space-y-6 relative z-10"
+              className="space-y-4 md:space-y-6 relative z-10"
               initial={{ opacity: 0 }}
               animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 1.8, duration: 0.6 }}
             >
               {/* Status badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 border border-primary/20">
                 <motion.div
                   className="w-2 h-2 rounded-full bg-primary"
                   animate={{ scale: [1, 1.2, 1] }}
@@ -297,20 +460,20 @@ export function IaBookExperienceCard() {
 
               {/* Title */}
               <div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                   Estrutura do Livro
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   Índice gerado automaticamente
                 </p>
               </div>
 
               {/* Chapters list */}
-              <div className="space-y-3">
-                {chapters.map((chapter, index) => (
+              <div className="space-y-2 md:space-y-3">
+                {theme.chapters.map((chapter, index) => (
                   <motion.div
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all"
+                    className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all"
                     initial={{ opacity: 0, x: -10 }}
                     animate={isOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
                     transition={{ 
@@ -318,13 +481,13 @@ export function IaBookExperienceCard() {
                       duration: 0.4
                     }}
                   >
-                    <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-bold text-primary">{index + 1}</span>
                     </div>
-                    <p className="text-sm font-medium text-foreground leading-relaxed pt-0.5 min-h-[24px]">
+                    <p className="text-xs md:text-sm font-medium text-foreground leading-relaxed pt-0.5 min-h-[20px] md:min-h-[24px]">
                       {typedChapters[index]}
                       {isOpen && typedChapters[index].length < chapter.length && (
-                        <span className="inline-block w-[2px] h-[16px] bg-primary ml-1 animate-pulse" />
+                        <span className="inline-block w-[2px] h-[14px] md:h-[16px] bg-primary ml-1 animate-pulse" />
                       )}
                     </p>
                   </motion.div>
@@ -333,7 +496,7 @@ export function IaBookExperienceCard() {
 
               {/* Final note */}
               <motion.p
-                className="text-xs text-muted-foreground italic text-center pt-4 border-t border-border"
+                className="text-xs text-muted-foreground italic text-center pt-3 md:pt-4 border-t border-border"
                 initial={{ opacity: 0 }}
                 animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 3.0, duration: 0.5 }}
