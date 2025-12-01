@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { IaBookExperienceCard } from '@/components/lessons/IaBookExperienceCard';
 
 interface Section {
   id: string;
@@ -25,13 +24,14 @@ interface Section {
 interface ExperienceCard {
   sectionIndex: number;
   cardIndex: number; // 1 ou 2
-  cardType: 'ia-book';
+  cardType: string; // texto livre (ex: "ia-digital-employee", "ia-image-gen")
   anchorText: string; // Trecho do markdown que serve como gatilho
   title: string;
   subtitle: string;
-  payload: {
-    body: string;
-  };
+  icon?: string; // emoji ou nome do ícone
+  colorScheme?: string; // cor de destaque (hex ou css)
+  effectDescription?: string; // descrição técnica das animações
+  chapters?: string[]; // páginas/capítulos internos do card
 }
 
 export default function AdminV5CardConfig() {
@@ -48,18 +48,24 @@ export default function AdminV5CardConfig() {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
   const [cardsQuantity, setCardsQuantity] = useState<1 | 2>(1);
   const [card1, setCard1] = useState<Partial<ExperienceCard>>({
-    cardType: 'ia-book',
+    cardType: '',
     anchorText: '',
     title: '',
     subtitle: '',
-    payload: { body: '' }
+    icon: '',
+    colorScheme: '',
+    effectDescription: '',
+    chapters: []
   });
   const [card2, setCard2] = useState<Partial<ExperienceCard>>({
-    cardType: 'ia-book',
+    cardType: '',
     anchorText: '',
     title: '',
     subtitle: '',
-    payload: { body: '' }
+    icon: '',
+    colorScheme: '',
+    effectDescription: '',
+    chapters: []
   });
 
   // Estado do preview modal
@@ -124,10 +130,10 @@ export default function AdminV5CardConfig() {
     const newCards: ExperienceCard[] = [];
 
     // Validar e adicionar Card 1
-    if (!card1.anchorText || !card1.title) {
+    if (!card1.cardType || !card1.anchorText || !card1.title) {
       toast({
         title: "❌ Erro no Card 1",
-        description: "AnchorText e Título são obrigatórios",
+        description: "CardType, AnchorText e Título são obrigatórios",
         variant: "destructive",
       });
       return;
@@ -136,19 +142,22 @@ export default function AdminV5CardConfig() {
     newCards.push({
       sectionIndex: selectedSectionIndex,
       cardIndex: 1,
-      cardType: 'ia-book',
+      cardType: card1.cardType!,
       anchorText: card1.anchorText!,
       title: card1.title!,
       subtitle: card1.subtitle || '',
-      payload: card1.payload || { body: '' }
+      icon: card1.icon,
+      colorScheme: card1.colorScheme,
+      effectDescription: card1.effectDescription,
+      chapters: card1.chapters || []
     });
 
     // Se quantidade for 2, validar e adicionar Card 2
     if (cardsQuantity === 2) {
-      if (!card2.anchorText || !card2.title) {
+      if (!card2.cardType || !card2.anchorText || !card2.title) {
         toast({
           title: "❌ Erro no Card 2",
-          description: "AnchorText e Título são obrigatórios para o Card 2",
+          description: "CardType, AnchorText e Título são obrigatórios para o Card 2",
           variant: "destructive",
         });
         return;
@@ -157,11 +166,14 @@ export default function AdminV5CardConfig() {
       newCards.push({
         sectionIndex: selectedSectionIndex,
         cardIndex: 2,
-        cardType: 'ia-book',
+        cardType: card2.cardType!,
         anchorText: card2.anchorText!,
         title: card2.title!,
         subtitle: card2.subtitle || '',
-        payload: card2.payload || { body: '' }
+        icon: card2.icon,
+        colorScheme: card2.colorScheme,
+        effectDescription: card2.effectDescription,
+        chapters: card2.chapters || []
       });
     }
 
@@ -182,18 +194,24 @@ export default function AdminV5CardConfig() {
 
     // Resetar formulário
     setCard1({
-      cardType: 'ia-book',
+      cardType: '',
       anchorText: '',
       title: '',
       subtitle: '',
-      payload: { body: '' }
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
     });
     setCard2({
-      cardType: 'ia-book',
+      cardType: '',
       anchorText: '',
       title: '',
       subtitle: '',
-      payload: { body: '' }
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
     });
 
     // Fechar modal
@@ -418,9 +436,13 @@ export default function AdminV5CardConfig() {
                           </h4>
                           
                           <div className="space-y-2">
-                            <Label>Tipo de Card</Label>
-                            <Input value="ia-book" disabled className="bg-background/50" />
-                            <p className="text-xs text-muted-foreground">Único tipo disponível no momento</p>
+                            <Label>Tipo de Card *</Label>
+                            <Input 
+                              placeholder='Ex: "ia-digital-employee", "ia-image-gen"'
+                              value={card1.cardType}
+                              onChange={(e) => setCard1({ ...card1, cardType: e.target.value })}
+                            />
+                            <p className="text-xs text-muted-foreground">Identificador técnico do card effect</p>
                           </div>
 
                           <div className="space-y-2">
@@ -454,13 +476,42 @@ export default function AdminV5CardConfig() {
                             </div>
                           </div>
 
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Ícone</Label>
+                              <Input
+                                placeholder='Ex: 🤖 ou "Bot"'
+                                value={card1.icon}
+                                onChange={(e) => setCard1({ ...card1, icon: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Cor de Destaque</Label>
+                              <Input
+                                placeholder="Ex: #837BFF ou purple"
+                                value={card1.colorScheme}
+                                onChange={(e) => setCard1({ ...card1, colorScheme: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
                           <div className="space-y-2">
-                            <Label>Conteúdo / Body</Label>
+                            <Label>Descrição do Efeito Visual</Label>
                             <Textarea
-                              placeholder="Texto ou configuração interna do card..."
-                              value={card1.payload?.body}
-                              onChange={(e) => setCard1({ ...card1, payload: { body: e.target.value } })}
-                              rows={3}
+                              placeholder="Ex: pulso marcado no ícone, badge 24/7, animação spring..."
+                              value={card1.effectDescription}
+                              onChange={(e) => setCard1({ ...card1, effectDescription: e.target.value })}
+                              rows={2}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Capítulos / Páginas (um por linha)</Label>
+                            <Textarea
+                              placeholder="Linha 1: primeiro capítulo&#10;Linha 2: segundo capítulo&#10;Linha 3: terceiro capítulo"
+                              value={card1.chapters?.join('\n')}
+                              onChange={(e) => setCard1({ ...card1, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
+                              rows={4}
                             />
                           </div>
                         </div>
@@ -474,8 +525,12 @@ export default function AdminV5CardConfig() {
                             </h4>
                             
                             <div className="space-y-2">
-                              <Label>Tipo de Card</Label>
-                              <Input value="ia-book" disabled className="bg-background/50" />
+                              <Label>Tipo de Card *</Label>
+                              <Input 
+                                placeholder='Ex: "ia-digital-employee", "ia-chat-sim"'
+                                value={card2.cardType}
+                                onChange={(e) => setCard2({ ...card2, cardType: e.target.value })}
+                              />
                             </div>
 
                             <div className="space-y-2">
@@ -506,13 +561,42 @@ export default function AdminV5CardConfig() {
                               </div>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Ícone</Label>
+                                <Input
+                                  placeholder='Ex: 💡 ou "Lightbulb"'
+                                  value={card2.icon}
+                                  onChange={(e) => setCard2({ ...card2, icon: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Cor de Destaque</Label>
+                                <Input
+                                  placeholder="Ex: #FF6B9D ou pink"
+                                  value={card2.colorScheme}
+                                  onChange={(e) => setCard2({ ...card2, colorScheme: e.target.value })}
+                                />
+                              </div>
+                            </div>
+
                             <div className="space-y-2">
-                              <Label>Conteúdo / Body</Label>
+                              <Label>Descrição do Efeito Visual</Label>
                               <Textarea
-                                placeholder="Texto ou configuração interna do card..."
-                                value={card2.payload?.body}
-                                onChange={(e) => setCard2({ ...card2, payload: { body: e.target.value } })}
-                                rows={3}
+                                placeholder="Ex: fade-in suave, rotação do ícone..."
+                                value={card2.effectDescription}
+                                onChange={(e) => setCard2({ ...card2, effectDescription: e.target.value })}
+                                rows={2}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Capítulos / Páginas (um por linha)</Label>
+                              <Textarea
+                                placeholder="Linha 1: primeiro capítulo&#10;Linha 2: segundo capítulo"
+                                value={card2.chapters?.join('\n')}
+                                onChange={(e) => setCard2({ ...card2, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
+                                rows={4}
                               />
                             </div>
                           </div>
@@ -649,16 +733,21 @@ export default function AdminV5CardConfig() {
                     <p><strong>AnchorText:</strong> "{card.anchorText}"</p>
                     <p><strong>Título:</strong> {card.title}</p>
                     <p><strong>Subtítulo:</strong> {card.subtitle || '(vazio)'}</p>
-                    <p><strong>Body:</strong> {card.payload.body || '(vazio)'}</p>
+                    <p><strong>Ícone:</strong> {card.icon || '(vazio)'}</p>
+                    <p><strong>Cor:</strong> {card.colorScheme || '(vazio)'}</p>
+                    <p><strong>Efeito:</strong> {card.effectDescription || '(vazio)'}</p>
+                    <p><strong>Capítulos:</strong> {card.chapters?.length || 0} página(s)</p>
                   </div>
 
-                  {/* Preview Visual do Card */}
+                  {/* Placeholder para preview visual */}
                   <div className="border-2 border-dashed border-primary/30 rounded-xl p-6 bg-gradient-to-br from-background to-muted/20">
                     <p className="text-xs text-muted-foreground mb-4 text-center">
-                      👁️ Preview Visual (animação será executada na lição real)
+                      ℹ️ O componente visual será criado pela IA baseado nessas especificações
                     </p>
-                    <div className="flex justify-center">
-                      <IaBookExperienceCard key={`preview-${idx}`} />
+                    <div className="text-center text-muted-foreground text-sm space-y-2">
+                      <p className="font-semibold text-foreground">{card.title}</p>
+                      <p className="text-xs">{card.subtitle}</p>
+                      {card.icon && <p className="text-4xl">{card.icon}</p>}
                     </div>
                   </div>
                 </div>
