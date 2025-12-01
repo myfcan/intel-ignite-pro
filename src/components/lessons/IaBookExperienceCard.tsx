@@ -189,7 +189,7 @@ export function IaBookExperienceCard() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 relative">
+    <div className="w-full max-w-6xl mx-auto py-4 md:py-6 px-4 relative min-h-screen flex flex-col">
       
       {/* Carimbo "Obra Completa" */}
       <AnimatePresence>
@@ -369,7 +369,7 @@ export function IaBookExperienceCard() {
       </AnimatePresence>
       
       {/* Theme Selector */}
-      <div className="flex justify-center gap-3 mb-8 flex-wrap">
+      <div className="flex justify-center gap-3 mb-6 flex-wrap">
         <button
           onClick={() => handleThemeChange("technical")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
@@ -405,7 +405,7 @@ export function IaBookExperienceCard() {
         </button>
       </div>
 
-      <div className="relative" style={{ perspective: '2500px' }}>
+      <div className="relative flex-1 flex items-center justify-center" style={{ perspective: '2500px' }}>
         
         {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
