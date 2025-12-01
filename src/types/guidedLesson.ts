@@ -187,6 +187,7 @@ export interface GuidedLessonData {
   finalPlaygroundConfig?: FinalPlaygroundConfig | PlaygroundConfig; // V1/V2: FinalPlaygroundConfig (customizado) | V3: PlaygroundConfig (genérico)
   contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
   schemaVersion?: number; // 🆕 Para FASE 4 - controlar versão da estrutura
+  experienceCards?: Array<{ type: string; sectionIndex: number; props?: Record<string, any> }>; // 🆕 V5: Experience cards configurados
 }
 
 export interface GuidedLessonProps {
