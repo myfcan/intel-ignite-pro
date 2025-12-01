@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
+console.log("🔥🔥🔥 ARQUIVO IaBookExperienceCard.tsx FOI CARREGADO 🔥🔥🔥");
+
 const chapters = [
   "1. O Que É Inteligência Artificial",
   "2. Primeiros Passos com ChatGPT",
