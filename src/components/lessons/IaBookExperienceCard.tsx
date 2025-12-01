@@ -31,7 +31,7 @@ export function IaBookExperienceCard() {
         
         {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
-          className="absolute inset-0 rounded-2xl shadow-2xl flex items-center justify-center p-12 min-h-[600px] w-[400px] mx-auto overflow-hidden"
+          className="absolute inset-0 rounded-2xl shadow-2xl min-h-[600px] w-[400px] mx-auto"
           initial={{ rotateY: 0, z: 100 }}
           animate={isOpen ? { 
             rotateY: -165,
@@ -51,72 +51,119 @@ export function IaBookExperienceCard() {
           style={{ 
             transformStyle: 'preserve-3d',
             transformOrigin: 'right center',
-            backfaceVisibility: 'visible',
             pointerEvents: isOpen ? 'none' : 'auto'
           }}
         >
-          {/* Gradiente de fundo da capa */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl" />
-          
-          {/* Sombra de dobra dinâmica */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none rounded-2xl"
-            initial={{ opacity: 0 }}
-            animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            style={{
-              background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0.5) 40%, transparent 60%)'
+          {/* FRENTE DA CAPA */}
+          <div 
+            className="absolute inset-0 rounded-2xl overflow-hidden flex items-center justify-center p-12"
+            style={{ 
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden'
             }}
-          />
-
-          {/* Páginas empilhadas na lateral */}
-          <motion.div 
-            className="absolute right-0 top-2 bottom-2 w-2"
-            initial={{ opacity: 1 }}
-            animate={isOpen ? { opacity: 0 } : { opacity: 1 }}
-            transition={{ duration: 0.5 }}
           >
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="absolute right-0 bg-background/90 border-r border-background/50"
-                style={{
-                  top: `${4 + i * 2}px`,
-                  bottom: `${4 + i * 2}px`,
-                  right: `${i * 2}px`,
-                  width: '2px',
-                  boxShadow: '1px 0 2px rgba(0,0,0,0.1)'
-                }}
-              />
-            ))}
-          </motion.div>
-          <div className="relative z-10 text-center space-y-8">
+            {/* Gradiente de fundo da capa */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl" />
+            
+            {/* Reflexo glossy animado */}
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
+              className="absolute inset-0 rounded-2xl pointer-events-none"
+              animate={{
+                background: [
+                  'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 30%, transparent 50%, transparent 100%)',
+                  'linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3) 70%, transparent 90%, transparent 100%)',
+                  'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.3) 30%, transparent 50%, transparent 100%)'
+                ]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+
+            {/* Páginas empilhadas na lateral */}
+            <motion.div 
+              className="absolute right-0 top-2 bottom-2 w-2"
+              initial={{ opacity: 1 }}
+              animate={isOpen ? { opacity: 0 } : { opacity: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-              <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="absolute right-0 bg-background/90 border-r border-background/50"
+                  style={{
+                    top: `${4 + i * 2}px`,
+                    bottom: `${4 + i * 2}px`,
+                    right: `${i * 2}px`,
+                    width: '2px',
+                    boxShadow: '1px 0 2px rgba(0,0,0,0.1)'
+                  }}
+                />
+              ))}
             </motion.div>
 
-            <div className="space-y-3">
-              {titleLines.map((line, index) => (
-                <motion.h2
-                  key={index}
-                  className="text-4xl md:text-5xl font-bold text-primary-foreground"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.4 + (index * 0.1), 
-                    duration: 0.4
-                  }}
-                >
-                  {line}
-                </motion.h2>
-              ))}
+            <div className="relative z-10 text-center space-y-8">
+              <motion.div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              >
+                <Sparkles className="w-4 h-4 text-primary-foreground" />
+                <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
+              </motion.div>
+
+              <div className="space-y-3">
+                {titleLines.map((line, index) => (
+                  <motion.h2
+                    key={index}
+                    className="text-4xl md:text-5xl font-bold text-primary-foreground"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      delay: 0.4 + (index * 0.1), 
+                      duration: 0.4
+                    }}
+                  >
+                    {line}
+                  </motion.h2>
+                ))}
+              </div>
             </div>
+          </div>
+
+          {/* CONTRACAPA (verso da capa) */}
+          <div 
+            className="absolute inset-0 bg-gradient-to-br from-card via-card to-card/90 rounded-2xl flex items-center justify-center p-12"
+            style={{ 
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)'
+            }}
+          >
+            <motion.div 
+              className="text-center space-y-6 max-w-sm"
+              initial={{ opacity: 0 }}
+              animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ delay: 1.5, duration: 0.6 }}
+            >
+              <div className="text-sm text-muted-foreground space-y-3">
+                <p className="italic">
+                  "Com este livro, você dominará técnicas avançadas de IA em tempo recorde."
+                </p>
+                <p className="text-xs">
+                  ⭐⭐⭐⭐⭐ (4.9/5)
+                </p>
+              </div>
+              
+              <div className="pt-4 border-t border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  ISBN: 978-1-2345-6789-0
+                </p>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -177,7 +224,7 @@ export function IaBookExperienceCard() {
                 background: 'radial-gradient(ellipse 200% 100% at 100% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
               }}
             />
-            <div className="text-center space-y-4 text-muted-foreground">
+            <div className="relative z-10 text-center space-y-4 text-muted-foreground">
               <p className="text-lg italic">Página em branco...</p>
               <p className="text-sm">O ChatGPT vai escrever aqui</p>
             </div>
@@ -209,7 +256,7 @@ export function IaBookExperienceCard() {
               }}
             />
             <motion.div 
-              className="space-y-6"
+              className="space-y-6 relative z-10"
               initial={{ opacity: 0 }}
               animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
               transition={{ delay: 1.8, duration: 0.6 }}
