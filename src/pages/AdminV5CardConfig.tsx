@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Section {
@@ -45,6 +45,41 @@ export default function AdminV5CardConfig() {
   const [experienceCards, setExperienceCards] = useState<ExperienceCard[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [generatingProgress, setGeneratingProgress] = useState<string | null>(null);
+  
+  // Auto-save recovery
+  useEffect(() => {
+    const saved = localStorage.getItem('v5-card-config-autosave');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.lessonJson && data.timestamp && Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+          toast({
+            title: "💾 Progresso recuperado",
+            description: "Trabalho anterior restaurado automaticamente.",
+          });
+          setLessonJson(data.lessonJson);
+          if (data.parsedLesson) setParsedLesson(data.parsedLesson);
+          if (data.sections) setSections(data.sections);
+          if (data.experienceCards) setExperienceCards(data.experienceCards);
+        }
+      } catch (e) {
+        console.error('Erro ao recuperar auto-save:', e);
+      }
+    }
+  }, [toast]);
+
+  // Auto-save on changes
+  useEffect(() => {
+    if (lessonJson || experienceCards.length > 0) {
+      localStorage.setItem('v5-card-config-autosave', JSON.stringify({
+        lessonJson,
+        parsedLesson,
+        sections,
+        experienceCards,
+        timestamp: Date.now()
+      }));
+    }
+  }, [lessonJson, parsedLesson, sections, experienceCards]);
   
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
@@ -428,6 +463,14 @@ export default function AdminV5CardConfig() {
 
       console.log('🎉 [V5-CONFIG] Pipeline execution criada:', data);
 
+      // Limpar auto-save após sucesso
+      localStorage.removeItem('v5-card-config-autosave');
+      
+      setLessonJson('');
+      setParsedLesson(null);
+      setSections([]);
+      setExperienceCards([]);
+
       // Redirecionar para o monitor após 2s
       setTimeout(() => {
         navigate('/admin/pipeline/monitor');
@@ -451,18 +494,66 @@ export default function AdminV5CardConfig() {
     <div className="min-h-screen bg-gradient-to-br from-background via-purple-50/30 to-blue-50/30 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/manual')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Wand2 className="w-8 h-8 text-purple-600" />
-              Criar Lição V5 com Experience Cards
-            </h1>
-            <p className="text-muted-foreground">
-              Cole o JSON, configure cards ancorados no texto, e crie a lição
-            </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/manual')}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Wand2 className="w-8 h-8 text-purple-600" />
+                Criar Lição V5 com Experience Cards
+              </h1>
+              <p className="text-muted-foreground">
+                Cole o JSON, configure cards ancorados no texto, e crie a lição
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const data = {
+                  lessonJson,
+                  parsedLesson,
+                  sections,
+                  experienceCards,
+                  timestamp: Date.now()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `v5-progress-${Date.now()}.json`;
+                a.click();
+                toast({ title: "💾 Backup exportado" });
+              }}
+              disabled={!lessonJson && experienceCards.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+            
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm('Limpar todo o progresso? Esta ação não pode ser desfeita.')) {
+                  localStorage.removeItem('v5-card-config-autosave');
+                  setLessonJson('');
+                  setParsedLesson(null);
+                  setSections([]);
+                  setExperienceCards([]);
+                  toast({ title: "🗑️ Progresso limpo" });
+                }
+              }}
+              disabled={!lessonJson && experienceCards.length === 0}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Limpar
+            </Button>
           </div>
         </div>
 
