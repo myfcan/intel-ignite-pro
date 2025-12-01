@@ -506,13 +506,16 @@ export default function AdminV5CardConfig() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Capítulos / Páginas (um por linha)</Label>
+                            <Label>Capítulos / Páginas (opcional)</Label>
                             <Textarea
-                              placeholder="Linha 1: primeiro capítulo&#10;Linha 2: segundo capítulo&#10;Linha 3: terceiro capítulo"
+                              placeholder="Deixe vazio se o card não tiver páginas internas.&#10;&#10;Se tiver conteúdo sequencial:&#10;Linha 1: primeiro texto&#10;Linha 2: segundo texto&#10;Linha 3: terceiro texto"
                               value={card1.chapters?.join('\n')}
                               onChange={(e) => setCard1({ ...card1, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
                               rows={4}
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Apenas para cards com conteúdo que alterna/transiciona (ex: slides, páginas de livro)
+                            </p>
                           </div>
                         </div>
 
@@ -591,13 +594,16 @@ export default function AdminV5CardConfig() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label>Capítulos / Páginas (um por linha)</Label>
+                              <Label>Capítulos / Páginas (opcional)</Label>
                               <Textarea
-                                placeholder="Linha 1: primeiro capítulo&#10;Linha 2: segundo capítulo"
+                                placeholder="Deixe vazio se o card não tiver conteúdo interno sequencial"
                                 value={card2.chapters?.join('\n')}
                                 onChange={(e) => setCard2({ ...card2, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
                                 rows={4}
                               />
+                              <p className="text-xs text-muted-foreground">
+                                Apenas para cards com conteúdo que alterna/transiciona
+                              </p>
                             </div>
                           </div>
                         )}
