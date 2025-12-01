@@ -46,6 +46,7 @@ import PromptCategory from "./pages/PromptCategory";
 import AIPlayground from "./pages/AIPlayground";
 import CursoExclusivo from "./pages/CursoExclusivo";
 import NotFound from "./pages/NotFound";
+import TestCard from "./pages/TestCard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,7 @@ const App = () => (
           <Route path="/ai-playground" element={<AIPlayground />} />
           <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/test-card" element={<TestCard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
