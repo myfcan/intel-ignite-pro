@@ -81,9 +81,17 @@ export function IaBookExperienceCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<BookTheme>("technical");
   const [typedChapters, setTypedChapters] = useState<string[]>(["", "", "", ""]);
+  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const [showChapterContent, setShowChapterContent] = useState(false);
+  const [typedLeftContent, setTypedLeftContent] = useState("");
+  const [typedRightContent, setTypedRightContent] = useState("");
   
   const theme = themes[currentTheme];
   const ThemeIcon = theme.icon;
+
+  // Conteúdo do capítulo 1
+  const chapter1LeftContent = "A Inteligência Artificial (IA) é uma tecnologia revolucionária que permite que máquinas aprendam, raciocinem e tomem decisões de forma autônoma. Ela está transformando todos os setores da economia e da sociedade.";
+  const chapter1RightContent = "Neste capítulo, você vai descobrir os conceitos fundamentais da IA, entender como ela funciona na prática e aprender a identificar oportunidades para aplicá-la no seu dia a dia e no seu trabalho.";
 
   useEffect(() => {
     console.log("📕 Livro carregado!");
@@ -100,6 +108,10 @@ export function IaBookExperienceCard() {
     
     // Reset typed chapters quando mudar tema
     setTypedChapters(["", "", "", ""]);
+    setSelectedChapter(null);
+    setShowChapterContent(false);
+    setTypedLeftContent("");
+    setTypedRightContent("");
 
     const startDelay = 2200;
     const chapterDelay = 150;
@@ -118,6 +130,32 @@ export function IaBookExperienceCard() {
         }, chapterStartTime + (i * typingSpeed));
       }
     });
+
+    // Auto-selecionar capítulo 1 após todos os capítulos aparecerem
+    setTimeout(() => {
+      setSelectedChapter(0);
+      
+      // Abrir conteúdo do capítulo após 1s
+      setTimeout(() => {
+        setShowChapterContent(true);
+        
+        // Digitar conteúdo da página esquerda
+        for (let i = 0; i <= chapter1LeftContent.length; i++) {
+          setTimeout(() => {
+            setTypedLeftContent(chapter1LeftContent.slice(0, i));
+          }, i * 25);
+        }
+        
+        // Digitar conteúdo da página direita (começa após a esquerda)
+        setTimeout(() => {
+          for (let i = 0; i <= chapter1RightContent.length; i++) {
+            setTimeout(() => {
+              setTypedRightContent(chapter1RightContent.slice(0, i));
+            }, i * 25);
+          }
+        }, chapter1LeftContent.length * 25);
+      }, 1000);
+    }, 4000);
   }, [isOpen, currentTheme]);
 
   const handleThemeChange = (newTheme: BookTheme) => {
@@ -477,18 +515,34 @@ export function IaBookExperienceCard() {
                 {theme.chapters.map((chapter, index) => (
                   <motion.div
                     key={index}
-                    className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all"
+                    className={`flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg border transition-all ${
+                      selectedChapter === index 
+                        ? 'bg-primary/20 border-primary shadow-lg scale-105' 
+                        : 'bg-muted/30 border-border hover:border-primary/40'
+                    }`}
                     initial={{ opacity: 0, x: -10 }}
-                    animate={isOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+                    animate={isOpen ? { 
+                      opacity: 1, 
+                      x: 0,
+                      scale: selectedChapter === index ? 1.05 : 1
+                    } : { opacity: 0, x: -10 }}
                     transition={{ 
                       delay: 2.0 + (index * 0.15), 
                       duration: 0.4
                     }}
                   >
-                    <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">{index + 1}</span>
+                    <div className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      selectedChapter === index
+                        ? 'bg-primary border-2 border-primary'
+                        : 'bg-primary/15 border border-primary/30'
+                    }`}>
+                      <span className={`text-xs font-bold ${
+                        selectedChapter === index ? 'text-primary-foreground' : 'text-primary'
+                      }`}>{index + 1}</span>
                     </div>
-                    <p className="text-xs md:text-sm font-medium text-foreground leading-relaxed pt-0.5 min-h-[20px] md:min-h-[24px]">
+                    <p className={`text-xs md:text-sm font-medium leading-relaxed pt-0.5 min-h-[20px] md:min-h-[24px] ${
+                      selectedChapter === index ? 'text-primary font-bold' : 'text-foreground'
+                    }`}>
                       {typedChapters[index]}
                       {isOpen && typedChapters[index].length < chapter.length && (
                         <span className="inline-block w-[2px] h-[14px] md:h-[16px] bg-primary ml-1 animate-pulse" />
@@ -509,6 +563,71 @@ export function IaBookExperienceCard() {
               </motion.p>
             </motion.div>
           </motion.div>
+        </motion.div>
+
+        {/* NOVA PÁGINA - Conteúdo do Capítulo 1 */}
+        <motion.div
+          className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden"
+          initial={{ opacity: 0, rotateY: -90, x: '50%' }}
+          animate={showChapterContent ? { 
+            opacity: 1,
+            rotateY: 0,
+            x: 0
+          } : { 
+            opacity: 0,
+            rotateY: -90,
+            x: '50%'
+          }}
+          transition={{ 
+            duration: 1.5,
+            ease: [0.16, 1, 0.3, 1]
+          }}
+          style={{ 
+            transformStyle: 'preserve-3d',
+            transformOrigin: 'left center',
+            zIndex: 30
+          }}
+        >
+          {/* Página esquerda - Conteúdo do capítulo */}
+          <div className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] flex flex-col justify-center border-b md:border-b-0 md:border-r border-border/50 relative overflow-hidden">
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
+            
+            <div className="relative z-10 space-y-4">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                {theme.chapters[0]}
+              </h2>
+              <p className="text-sm md:text-base text-foreground leading-relaxed">
+                {typedLeftContent}
+                {showChapterContent && typedLeftContent.length < chapter1LeftContent.length && (
+                  <span className="inline-block w-[2px] h-[18px] bg-primary ml-1 animate-pulse" />
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Página direita - Continuação do conteúdo */}
+          <div className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] flex flex-col justify-center relative overflow-hidden">
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(270deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
+            
+            <div className="relative z-10 space-y-4">
+              <p className="text-sm md:text-base text-foreground leading-relaxed">
+                {typedRightContent}
+                {showChapterContent && typedRightContent.length > 0 && typedRightContent.length < chapter1RightContent.length && (
+                  <span className="inline-block w-[2px] h-[18px] bg-primary ml-1 animate-pulse" />
+                )}
+              </p>
+            </div>
+          </div>
         </motion.div>
 
       </div>
