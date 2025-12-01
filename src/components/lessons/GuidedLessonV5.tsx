@@ -1,3 +1,31 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
+import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
+import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { TransitionCard } from './TransitionCard';
+import { ExercisesSection } from './ExercisesSection';
+import { PlaygroundRealChat } from './PlaygroundRealChat';
+import { GuidedPlayground } from './GuidedPlayground';
+import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
+import { PlaygroundCallCard } from './PlaygroundCallCard';
+import { LessonCompletionSummary } from './LessonCompletionSummary';
+import { AchievementBadge } from './AchievementBadge';
+import { PointsNotification } from '@/components/gamification/PointsNotification';
+import { LessonResultCard } from '@/components/gamification/LessonResultCard';
+import { LivAvatar } from '@/components/LivAvatar';
+import { IaBookExperienceCard } from './IaBookExperienceCard';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
+import { updateMissionProgress } from '@/lib/updateMissionProgress';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
+
 /**
  * 🚀 GUIDED LESSON V5 - EXPERIENCE CARDS ANIMADOS
  *
@@ -12,75 +40,1537 @@
  * - Cards são definidos manualmente no JSON da lição (não via pipeline automático)
  *
  * CREATED: 2025-12-01 - V5 Model implementation
- * 
- * ⚠️ IMPORTANTE: Este componente herda TODO o código do V4.
- * Para implementação completa, copiar o conteúdo integral do GuidedLessonV4.tsx
- * e adicionar apenas a lógica de renderização de experience cards abaixo.
  */
+export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
+  const navigate = useNavigate();
+  const [currentSection, setCurrentSection] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(lessonData.duration || 0);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
+  const [maxAudioProgress, setMaxAudioProgress] = useState(0);
 
-import { GuidedLessonV4 } from './GuidedLessonV4';
-import { IaBookExperienceCard } from './IaBookExperienceCard';
-import { GuidedLessonProps } from '@/types/guidedLesson';
+  // 🆕 V5: Usa estrutura de V2 (áudios separados) + experience cards
+  const isV2 = true;
+  const hasPlaygroundSupport = false;
+  const [sectionJustChanged, setSectionJustChanged] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
+  const [showEndCard, setShowEndCard] = useState(false);
+  const [showPlaygroundCall, setShowPlaygroundCall] = useState(false);
+  const [showPlaygroundMid, setShowPlaygroundMid] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState<
+    'audio' | 'playground-real' | 'playground-mid' | 'transition' | 'exercises' | 'playground-final' | 'completed'
+  >('audio');
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
+  const lastSectionRef = useRef<number>(0);
+  const prevSectionRef = useRef<number>(-1);
+  
+  const [playgroundTriggered, setPlaygroundTriggered] = useState(false);
+  const [playgroundCompleted, setPlaygroundCompleted] = useState(false);
+  const [jumpedToExercises, setJumpedToExercises] = useState(false);
+  const [pendingAudioReset, setPendingAudioReset] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [shouldShowPlayPulse, setShouldShowPlayPulse] = useState(false);
+  
+  // 🔍 DEBUG: Ver dados carregados
+  useEffect(() => {
+    console.log('📦 [V5 LESSON DATA]', {
+      id: lessonData.id,
+      title: lessonData.title,
+      model: 'v5',
+      numSections: lessonData.sections.length,
+      sections: lessonData.sections.map((s, i) => ({
+        index: i,
+        id: s.id,
+        timestamp: s.timestamp,
+        showPlaygroundCall: s.showPlaygroundCall,
+        hasContent: !!(s.visualContent || s.content)
+      }))
+    });
+  }, [lessonData]);
+  
+  /**
+   * 🎨 HELPER: Renderizar Experience Cards
+   * 
+   * Esta função determina se deve renderizar um experience card
+   * em uma seção específica baseando-se em lessonId + sectionIndex.
+   * 
+   * EXEMPLO DE USO:
+   * - Se lessonId === 'fundamentos-01' && sectionIndex === 3
+   *   → Renderiza <IaBookExperienceCard />
+   * 
+   * EXPANSÃO FUTURA:
+   * - Adicionar mais cards (IaImageGeneratorCard, IaChatCard, etc.)
+   * - Ler configuração do JSON (lessonData.experienceCards)
+   * - Suportar cards em múltiplas seções da mesma lição
+   */
+  const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
+    // 🎯 REGRA 1: IaBookExperienceCard na aula "fundamentos-01", seção 3
+    if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
+      console.log('🎨 [V5] Renderizando IaBookExperienceCard na seção 3');
+      return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
+    }
+    
+    // 🔮 FUTURO: Adicionar mais cards aqui
+    // if (lessonId === 'fundamentos-02' && sectionIndex === 5) {
+    //   return <IaImageGeneratorCard key={`experience-card-${sectionIndex}`} />;
+    // }
+    
+    // 🔮 FUTURO: Ler de lessonData.experienceCards[]
+    // const cardConfig = lessonData.experienceCards?.find(
+    //   card => card.sectionIndex === sectionIndex
+    // );
+    // if (cardConfig) {
+    //   return renderCardByType(cardConfig.type, cardConfig.props);
+    // }
+    
+    return null;
+  };
+  
+  // 🔧 Helper: Verificar se seção é renderizável no DOM
+  const isSectionRenderable = (section: any) => {
+    return !section.type || section.type === 'text' || section.type === 'end-audio';
+  };
+  
+  // 📊 Helper: Calcular seção ativa com binary search O(log n)
+  const calculateActiveSection = (currentTime: number): number => {
+    let left = 0;
+    let right = lessonData.sections.length - 1;
+    let result = 0;
+    
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      
+      if (lessonData.sections[mid].timestamp <= currentTime) {
+        result = mid;
+        left = mid + 1;
+      } else {
+        right = mid - 1;
+      }
+    }
+    
+    return result;
+  };
+  
+  // 🎯 Helper: Pular direto para exercícios
+  const skipToExercises = () => {
+    const hasExercises = lessonData.exercisesConfig || lessonData.finalPlaygroundConfig;
+    
+    if (!hasExercises) {
+      console.log('⚠️ [SKIP] Aula não tem exercícios, chamando onComplete');
+      onComplete({ audioProgress: maxAudioProgress });
+      return;
+    }
+    
+    console.log('⏭️ [SKIP] Pulando direto para exercícios');
+    setJumpedToExercises(true);
+    
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
+    }
+    
+    setCurrentPhase('transition');
+  };
 
-/**
- * Por enquanto, V5 é uma extensão do V4.
- * A diferença principal é a capacidade de renderizar experience cards
- * em seções específicas baseando-se em lessonId + sectionIndex.
- *
- * TODO: Quando houver tempo, copiar todo o código do V4 e adicionar
- * a lógica de experience cards inline no renderizador de seções.
- *
- * Estrutura de como será implementado:
- * 
- * ```tsx
- * // Na parte do render de seções:
- * {lessonData.sections.map((section, idx) => (
- *   <>
- *     {renderExperienceCard(lessonData.id, idx)}
- *     <div className="section-content">
- *       {section.visualContent}
- *     </div>
- *   </>
- * ))}
- * ```
- * 
- * Onde renderExperienceCard seria:
- * ```tsx
- * const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
- *   if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
- *     return <IaBookExperienceCard />;
- *   }
- *   // Adicionar mais cards conforme necessário
- *   return null;
- * };
- * ```
- */
+  // 🔄 Helper: Resetar áudio para uma seção específica
+  const resetAudioToSection = (sectionIndex: number) => {
+    const audio = audioRef.current;
+    if (!audio) {
+      console.warn('⚠️ [RESET-AUDIO] Áudio não disponível, ignorando reset');
+      return;
+    }
+    
+    const targetSection = lessonData.sections[sectionIndex];
+    if (!targetSection) {
+      console.warn('⚠️ [RESET-AUDIO] Seção não encontrada, ignorando reset');
+      return;
+    }
+    
+    const targetTime = targetSection.timestamp;
+    
+    console.log(`🔄 [RESET-AUDIO] Resetando para seção ${sectionIndex} (${targetTime}s)`);
+    
+    setIsResetting(true);
+    
+    lastSectionRef.current = sectionIndex;
+    prevSectionRef.current = sectionIndex - 1;
+    
+    if (isV2 && targetSection.audio_url) {
+      audio.pause();
+      audio.src = targetSection.audio_url;
+      audio.load();
+    }
+    
+    audio.currentTime = targetTime;
+    audio.pause();
+    setIsPlaying(false);
+    
+    setCurrentSection(sectionIndex);
+    setCurrentTime(targetTime);
+    
+    const handleSeeked = () => {
+      console.log(`✅ [RESET-AUDIO] Seek concluído, liberando syncLoop`);
+      setIsResetting(false);
+      audio.removeEventListener('seeked', handleSeeked);
+    };
+    
+    audio.addEventListener('seeked', handleSeeked);
+    
+    setTimeout(() => {
+      console.log(`✅ [RESET-AUDIO] Fallback timeout, liberando syncLoop`);
+      setIsResetting(false);
+      audio.removeEventListener('seeked', handleSeeked);
+    }, 300);
+  };
 
-export function GuidedLessonV5(props: GuidedLessonProps) {
-  // Por enquanto, renderizar o V4 diretamente
-  // TODO: Implementar versão completa com experience cards
-  console.log('[V5] Renderizando GuidedLessonV5 (versão stub baseada em V4)');
-  return <GuidedLessonV4 {...props} />;
+  // 🔄 Helper: Resetar completamente a aula para o início
+  const resetLessonToBeginning = (targetSection: number) => {
+    console.log(`🔄 [RESET] Resetando aula para seção ${targetSection}`);
+    
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      setIsPlaying(false);
+    }
+    
+    setPlaygroundTriggered(false);
+    setPlaygroundCompleted(false);
+    setShowPlaygroundCall(false);
+    setShowPlaygroundMid(false);
+    setShowEndCard(false);
+    setSectionJustChanged(false);
+    
+    hasScrolledRef.current = {};
+    lastSectionRef.current = targetSection;
+    prevSectionRef.current = -1;
+    
+    setPendingAudioReset(targetSection);
+    
+    console.log('✅ [RESET] Estados resetados, áudio será resetado quando fase mudar para audio');
+  };
+
+  // 🔄 useEffect: Resetar áudio quando voltar para fase 'audio'
+  useEffect(() => {
+    if (currentPhase !== 'audio' || pendingAudioReset === null) return;
+    
+    const audio = audioRef.current;
+    if (!audio) {
+      console.warn('⚠️ [RESET-PENDING] Áudio ainda não disponível, aguardando...');
+      return;
+    }
+    
+    console.log(`🔄 [RESET-PENDING] Executando reset pendente para seção ${pendingAudioReset}`);
+    resetAudioToSection(pendingAudioReset);
+    setPendingAudioReset(null);
+    
+    const tryAutoplay = async () => {
+      try {
+        await audio.play();
+        setIsPlaying(true);
+        console.log('✅ [AUTOPLAY-RESUME] Áudio reiniciado automaticamente');
+      } catch (error) {
+        console.warn('⚠️ [AUTOPLAY-RESUME] Bloqueado pelo navegador, mostrando hint');
+        
+        toast({
+          title: "▶️ Continue sua aula",
+          description: "Clique em Play para retomar o áudio",
+          duration: 5000,
+        });
+        
+        setShouldShowPlayPulse(true);
+        setTimeout(() => setShouldShowPlayPulse(false), 8000);
+      }
+    };
+    
+    setTimeout(tryAutoplay, 100);
+  }, [currentPhase, pendingAudioReset]);
+
+  // 🎮 Helper: Ativar playground (V5 não usa, mas mantém compatibilidade)
+  const activatePlayground = () => {
+    console.log(`🔍 [V5-activatePlayground] BLOCKED: V5 não suporta playground mid-lesson`);
+    return;
+  };
+  
+  // 📊 Helper: Telemetria
+  const logTelemetry = (event: string, data?: any) => {
+    const timestamp = performance.now().toFixed(0);
+    const audioTime = audioRef.current?.currentTime.toFixed(1) || '0.0';
+    
+    console.log(
+      `[V5-TELEMETRY] ${timestamp}ms | Audio: ${audioTime}s | ${event}`,
+      data || ''
+    );
+  };
+
+  const sendDiagnosticLog = async () => {
+    // Diagnostic logs desabilitados
+    return;
+  };
+  
+  // 🔧 INICIALIZAÇÃO DO ÁUDIO
+  useEffect(() => {
+    const audio = audioRef.current;
+    
+    lastSectionRef.current = 0;
+    
+    console.log('🔍 [V5-DEBUG] isV2:', isV2);
+    console.log('🔍 [V5-DEBUG] audioUrl recebido:', audioUrl);
+    console.log('🔍 [V5-DEBUG] audioRef.current:', audio);
+    
+    if (!audio) {
+      console.error('❌ [V5-ÁUDIO] Elemento de áudio não encontrado');
+      return;
+    }
+    
+    const initialAudioUrl = isV2 ? lessonData.sections[0]?.audio_url : audioUrl;
+    
+    if (!initialAudioUrl) {
+      console.error('❌ [V5-ÁUDIO] URL do áudio não fornecida');
+      return;
+    }
+    
+    console.log(`✅ [V5-ÁUDIO] Inicializando áudio (V2):`, initialAudioUrl);
+    console.log('📋 [V5-ÁUDIO] Seções:', lessonData.sections.map(s => `${s.id} (${s.timestamp}s)`));
+    
+    audio.volume = 1.0;
+    console.log('🔊 [V5-VOLUME] Configurado: 100%');
+    
+    const handleLoadedMetadata = () => {
+      console.log(`✅ [V5-ÁUDIO] Carregado! Duração: ${audio.duration}s`);
+      
+      audio.volume = 1.0;
+      
+      audio.play().then(() => {
+        console.log('✅ [V5-AUTOPLAY] Áudio iniciado automaticamente');
+        setIsPlaying(true);
+        setIsAudioInitialized(true);
+      }).catch(err => {
+        console.warn('⚠️ [V5-AUTOPLAY] Bloqueado pelo navegador:', err);
+        setIsAudioInitialized(true);
+      });
+    };
+    
+    const handleError = (e: Event) => {
+      console.error('❌ [V5-ÁUDIO] Erro ao carregar:', e);
+      console.error('❌ [V5-ÁUDIO] URL problemática:', audioUrl);
+    };
+    
+    const handleCanPlay = () => {
+      console.log('🎵 [V5-ÁUDIO] Pronto para reproduzir');
+    };
+    
+    const handleSeeking = () => {
+      console.log('🔄 [V5-SEEKING] Áudio pulou para:', audio.currentTime);
+      lastSectionRef.current = -1;
+    };
+    
+    audio.onplay = () => {
+      console.log('▶️ [V5-AUDIO] Play iniciado');
+      setIsPlaying(true);
+    };
+
+    audio.onpause = () => {
+      console.log('⏸️ [V5-AUDIO] Pausado');
+      setIsPlaying(false);
+    };
+    
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('seeking', handleSeeking);
+    
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('seeking', handleSeeking);
+    };
+  }, [lessonData.sections, audioUrl, isV2]);
+
+  // 🔥 SINCRONIZAÇÃO COM requestAnimationFrame (60fps, <100ms latência)
+  useEffect(() => {
+    const audio = audioRef.current;
+    const hasAudio = isV2 ? lessonData.sections[0]?.audio_url : audioUrl;
+    if (!audio || !hasAudio) return;
+    
+    let animationFrameId: number;
+    let lastLoggedTime = -1;
+    
+    const syncLoop = () => {
+      const currentTime = audio.currentTime;
+      setCurrentTime(currentTime);
+      
+      if (duration > 0) {
+        const progress = Math.round((currentTime / duration) * 100);
+        setMaxAudioProgress(prev => Math.max(prev, progress));
+      }
+      
+      if (isV2) {
+        animationFrameId = requestAnimationFrame(syncLoop);
+        return;
+      }
+      
+      const activeIndex = calculateActiveSection(currentTime);
+      
+      if (Math.floor(currentTime) !== Math.floor(lastLoggedTime)) {
+        console.log(`[V5-SYNC-STATE] Time: ${currentTime.toFixed(2)}s | Current: ${lastSectionRef.current} | Should be: ${activeIndex}`);
+        lastLoggedTime = currentTime;
+      }
+      
+      if (activeIndex !== lastSectionRef.current && !isResetting) {
+        const detectionTime = performance.now();
+        
+        console.log(`[V5-DETECTION] ${currentTime.toFixed(2)}s | Transition: ${lastSectionRef.current}→${activeIndex} | Detection timestamp: ${detectionTime.toFixed(2)}`);
+        
+        logTelemetry('SECTION_CHANGED', { from: lastSectionRef.current, to: activeIndex });
+        
+        lastSectionRef.current = activeIndex;
+        setCurrentSection(activeIndex);
+        setSectionJustChanged(true);
+        setTimeout(() => setSectionJustChanged(false), 1000);
+      }
+      
+      animationFrameId = requestAnimationFrame(syncLoop);
+    };
+    
+    animationFrameId = requestAnimationFrame(syncLoop);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [lessonData.sections, audioUrl, isV2, currentSection]);
+  
+  // 🆕 V2: Trocar áudio ao mudar de seção
+  useEffect(() => {
+    if (!isV2 || !audioRef.current) return;
+    
+    if (currentSection === 0 && prevSectionRef.current === -1) {
+      prevSectionRef.current = 0;
+      return;
+    }
+    
+    if (prevSectionRef.current === currentSection) {
+      console.log(`🛡️ [V5-V2] Seção ${currentSection} já carregada, pulando troca`);
+      return;
+    }
+    
+    const section = lessonData.sections[currentSection];
+    if (!section?.audio_url) return;
+    
+    const audio = audioRef.current;
+    const wasPlaying = !audio.paused;
+    
+    console.log(`🔄 [V5-V2] Mudando para áudio da seção ${currentSection}: ${section.audio_url}`);
+    
+    prevSectionRef.current = currentSection;
+    
+    audio.pause();
+    
+    audio.src = section.audio_url;
+    audio.currentTime = 0;
+    audio.load();
+    
+    if (wasPlaying) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log(`✅ [V5-V2] Áudio da seção ${currentSection} reproduzindo`);
+            setIsPlaying(true);
+          })
+          .catch((err) => {
+            console.warn('⚠️ [V5-V2] Erro ao reproduzir áudio:', err);
+            setIsPlaying(false);
+          });
+      }
+    }
+  }, [currentSection, isV2, lessonData.sections]);
+  
+  // 📊 LOG 3: Medir latência do state update e scroll
+  useEffect(() => {
+    const updateTime = performance.now();
+    const audioTime = audioRef.current?.currentTime || 0;
+    
+    console.log(`[V5-STATE-UPDATE] Section changed to: ${currentSection} | Audio time: ${audioTime.toFixed(2)}s | Update timestamp: ${updateTime.toFixed(2)}`);
+    
+    const section = lessonData.sections[currentSection];
+    if (isSectionRenderable(section)) {
+      const scrollStart = performance.now();
+      
+      setTimeout(() => {
+        const sectionElement = document.getElementById(`section-${currentSection}`);
+        if (sectionElement) {
+          const headerHeight = 120;
+          const elementTop = sectionElement.getBoundingClientRect().top;
+          const offsetTop = elementTop + window.pageYOffset;
+          const targetPosition = offsetTop - headerHeight;
+          
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+          
+          const scrollEnd = performance.now();
+          const latency = scrollEnd - scrollStart;
+          console.log(`📜 [V5-SCROLL] Animação suave completada em ${latency.toFixed(2)}ms para seção ${currentSection}`);
+        } else {
+          console.warn(`[V5-SCROLL] Element #section-${currentSection} not found`);
+        }
+      }, 50);
+    }
+  }, [currentSection]);
+  
+  const togglePlayPause = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().then(() => {
+        setIsAudioInitialized(true);
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
+  
+  const skipBackward = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    console.log(`⏪ [V5-SKIP-BACK] currentTime=${audio.currentTime.toFixed(1)}s, currentSection=${currentSection}`);
+    
+    if (isV2) {
+      if (audio.currentTime < 3 && currentSection > 0) {
+        const previousSection = currentSection - 1;
+        console.log(`⏪ [V5-V2-SKIP-BACK] Voltando para seção ${previousSection}`);
+        
+        jumpToSection(previousSection);
+        
+        setTimeout(() => {
+          const prevAudio = audioRef.current;
+          if (prevAudio && prevAudio.duration > 10) {
+            prevAudio.currentTime = prevAudio.duration - 5;
+            console.log(`⏪ [V5-V2-SKIP-BACK] Posicionado em ${prevAudio.currentTime.toFixed(1)}s`);
+          }
+        }, 300);
+        
+      } else {
+        audio.currentTime = Math.max(0, audio.currentTime - 10);
+        console.log(`⏪ [V5-V2-SKIP-BACK] Retrocedeu 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+      }
+      
+    } else {
+      audio.currentTime = Math.max(0, audio.currentTime - 10);
+      console.log(`⏪ [V5-V1-SKIP-BACK] Retrocedeu 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+    }
+  };
+  
+  const skipForward = () => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    
+    console.log(`⏩ [V5-SKIP-FWD] currentTime=${audio.currentTime.toFixed(1)}s, duration=${audio.duration.toFixed(1)}s, currentSection=${currentSection}`);
+    
+    if (isV2) {
+      const timeRemaining = audio.duration - audio.currentTime;
+      
+      if (timeRemaining < 3 && currentSection < lessonData.sections.length - 1) {
+        const nextSection = currentSection + 1;
+        console.log(`⏩ [V5-V2-SKIP-FWD] Avançando para seção ${nextSection}`);
+        
+        jumpToSection(nextSection);
+        
+      } else {
+        audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+        console.log(`⏩ [V5-V2-SKIP-FWD] Avançou 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+      }
+      
+    } else {
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+      console.log(`⏩ [V5-V1-SKIP-FWD] Avançou 10s, agora em ${audio.currentTime.toFixed(1)}s`);
+    }
+  };
+  
+  const cycleSpeed = () => {
+    const speeds = [1, 1.25, 1.5, 2];
+    const currentIndex = speeds.indexOf(playbackSpeed);
+    const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
+    setPlaybackSpeed(nextSpeed);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextSpeed;
+    }
+  };
+  
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    if (isV2) {
+      console.log('⚠️ [V5-V2] Progress bar não implementado para V2 (áudios separados)');
+      return;
+    }
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const newTime = percentage * (duration || 0);
+    
+    audio.currentTime = newTime;
+    console.log(`🎯 [V5-PROGRESS-BAR] Pulou para ${newTime.toFixed(1)}s (${Math.round(percentage * 100)}%)`);
+  };
+
+  const jumpToSection = (index: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const section = lessonData.sections[index];
+    if (!section) return;
+    
+    console.log(`🎯 [V5-JUMP] Pulando para seção ${index}: ${section.id}`);
+    
+    const wasPlaying = !audio.paused;
+    
+    if (isV2) {
+      if (section.audio_url) {
+        console.log(`🔄 [V5-V2-JUMP] Trocando para áudio da seção ${index}: ${section.audio_url}`);
+        
+        audio.pause();
+        
+        prevSectionRef.current = index;
+        lastSectionRef.current = index;
+        
+        audio.src = section.audio_url;
+        audio.currentTime = 0;
+        audio.load();
+        
+        setCurrentSection(index);
+        
+        if (wasPlaying) {
+          audio.play().then(() => {
+            setIsPlaying(true);
+            console.log(`✅ [V5-V2-JUMP] Áudio da seção ${index} reproduzindo`);
+          }).catch((err) => {
+            console.warn('⚠️ [V5-V2-JUMP] Erro ao reproduzir áudio:', err);
+            setIsPlaying(false);
+          });
+        }
+      }
+    } else {
+      if (section.timestamp !== undefined) {
+        audio.currentTime = section.timestamp;
+        setCurrentSection(index);
+        
+        if (wasPlaying) {
+          audio.play();
+          setIsPlaying(true);
+        }
+      }
+    }
+    
+    hasScrolledRef.current[index] = false;
+    
+    setTimeout(() => {
+      const sectionElement = document.getElementById(`section-${index}`);
+      if (sectionElement) {
+        const headerHeight = 120;
+        const elementTop = sectionElement.getBoundingClientRect().top;
+        const offsetTop = elementTop + window.pageYOffset;
+        const targetPosition = offsetTop - headerHeight;
+        
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+        
+        console.log(`📜 [V5-JUMP] Scroll para seção ${index} completo`);
+      }
+    }, 100);
+  };
+  
+  const toggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    if (isAudioEnabled) {
+      audio.pause();
+      setIsPlaying(false);
+      setSectionWhenMuted(currentSection);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+      
+      const sectionElement = document.getElementById(`section-${sectionWhenMuted}`);
+      if (sectionElement) {
+        const yOffset = -80;
+        const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+    
+    setIsAudioEnabled(!isAudioEnabled);
+  };
+  
+  const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Detectar fim do áudio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleAudioEnded = () => {
+      console.log(`🎯 [V5-AUDIO-ENDED] Áudio da seção ${currentSection} terminou naturalmente`);
+      setIsPlaying(false);
+      
+      setJumpedToExercises(false);
+      
+      if (isV2) {
+        const isLastSection = currentSection >= lessonData.sections.length - 1;
+        
+        if (!isLastSection) {
+          console.log(`🎯 [V5-V2] Avançando para próxima seção (${currentSection} → ${currentSection + 1})`);
+          setCurrentSection(prev => prev + 1);
+          return;
+        }
+        
+        console.log('🎯 [V5-V2] Última seção completada');
+      }
+      
+      if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
+        console.log('🎉 [V5-CONFETTI] Última seção completa! Disparando celebração...');
+        
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+        
+        const interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            return;
+          }
+          
+          const particleCount = 50 * (timeLeft / duration);
+          
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+          });
+          
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ['#06b6d4', '#8b5cf6', '#fbbf24', '#f472b6']
+          });
+        }, 250);
+        
+        toast({
+          title: "🎉 Aula completa!",
+          description: "Você dominou o conteúdo! Agora vamos praticar!",
+          duration: 4000,
+        });
+
+        console.log('🎯 [V5-AUDIO-ENDED] Verificando condições:', {
+          hasExercisesConfig: !!lessonData.exercisesConfig,
+          exercisesCount: lessonData.exercisesConfig?.length || 0,
+          hasFinalPlayground: !!lessonData.finalPlaygroundConfig,
+          currentPhaseBeforeChange: currentPhase
+        });
+        setCurrentPhase('playground-real');
+        console.log('🎯 [V5-AUDIO-ENDED] Fase alterada para: playground-real');
+      } else {
+        setShowEndCard(true);
+        console.log('🎯 [V5-AUDIO-ENDED] Mostrando end card');
+      }
+    };
+
+    audio.addEventListener('ended', handleAudioEnded);
+    return () => audio.removeEventListener('ended', handleAudioEnded);
+  }, [lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, currentPhase, isV2, currentSection, lessonData.sections.length]);
+
+  // Detectar seção end-audio
+  useEffect(() => {
+    const section = lessonData.sections[currentSection];
+    
+    if (isV2 && section?.type === 'end-audio') {
+      console.log('🎯 [V5-V2] Seção end-audio detectada, deixando áudio tocar até o fim');
+      return;
+    }
+    
+    if (!isV2 && section?.type === 'end-audio' && !showEndCard && currentPhase === 'audio') {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        setIsPlaying(false);
+      }
+      
+      setJumpedToExercises(false);
+      
+      if (lessonData.exercisesConfig || lessonData.finalPlaygroundConfig) {
+        setCurrentPhase('transition');
+        console.log('🎯 [V5-END-AUDIO] Indo para transição (tem exercícios)');
+      } else {
+        setShowEndCard(true);
+        console.log('🎯 [V5-END-AUDIO] Fim da mini-aula detectado');
+      }
+    }
+  }, [currentSection, lessonData.sections, lessonData.exercisesConfig, lessonData.finalPlaygroundConfig, showEndCard, currentPhase, isV2]);
+
+  // Ir para exercícios após end-audio
+  const handleGoToExercises = () => {
+    console.log('🎯 [V5-DEBUG HANDLER] handleGoToExercises chamado');
+    console.log('🎯 [V5-DEBUG HANDLER] Estado atual:', {
+      hasExercisesConfig: !!lessonData.exercisesConfig,
+      exercisesConfigLength: lessonData.exercisesConfig?.length,
+      exercisesConfig: lessonData.exercisesConfig,
+      hasFinalPlaygroundConfig: !!lessonData.finalPlaygroundConfig,
+      showEndCard,
+      currentPhase
+    });
+
+    setShowEndCard(false);
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('🎯 [V5-DEBUG HANDLER] Indo para fase de exercícios');
+      setCurrentPhase('exercises');
+    } else if (lessonData.finalPlaygroundConfig) {
+      setCurrentPhase('playground-final');
+    } else {
+      onComplete({ audioProgress: maxAudioProgress });
+    }
+  };
+
+  const [exercisesCompleted, setExercisesCompleted] = useState(false);
+  const [exerciseScores, setExerciseScores] = useState<number[]>([]);
+  const [lessonStartTime] = useState(Date.now());
+  const [achievementMilestone, setAchievementMilestone] = useState<number | null>(null);
+  const [showResultCard, setShowResultCard] = useState(false);
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  
+  const [pointsNotification, setPointsNotification] = useState<{
+    show: boolean;
+    points: number;
+    reason: string;
+  }>({ show: false, points: 0, reason: '' });
+
+  const handleExercisesComplete = async (data?: { allExercisesCompleted?: boolean }) => {
+    if (exercisesCompleted) {
+      console.warn('⚠️ [V5-EXERCISES] Já foi completado, ignorando chamada duplicada');
+      return;
+    }
+    
+    setExercisesCompleted(true);
+    console.log('✅ [V5-EXERCISES] Completados');
+    console.log('📊 [V5-EXERCISES] Scores finais:', exerciseScores);
+    console.log('📊 [V5-EXERCISES] All exercises completed:', data?.allExercisesCompleted);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const timeSpent = (Date.now() - lessonStartTime) / 1000 / 60;
+        const avgScore = exerciseScores.length > 0 
+          ? exerciseScores.reduce((a, b) => a + b, 0) / exerciseScores.length 
+          : 0;
+        
+        let totalPoints = POINTS.LESSON_COMPLETE;
+        let bonusReasons: string[] = [];
+        
+        if (avgScore >= 100) {
+          totalPoints += POINTS.PERFECT_SCORE;
+          bonusReasons.push('+50 perfeição');
+        }
+        
+        if (timeSpent < 15) {
+          totalPoints += POINTS.FAST_COMPLETION;
+          bonusReasons.push('+30 velocidade');
+        }
+        
+        const newStreak = await updateStreak(user.id);
+        
+        if (newStreak >= 7) {
+          totalPoints = Math.round(totalPoints * POINTS.STREAK_BONUS_MULTIPLIER);
+          bonusReasons.push('x1.5 streak');
+        }
+        
+        await awardPoints(user.id, totalPoints, 'Aula completada');
+        
+        await updateMissionProgress('aulas', 1);
+        
+        const bonusText = bonusReasons.length > 0 ? ` (${bonusReasons.join(', ')})` : '';
+        setPointsNotification({
+          show: true,
+          points: totalPoints,
+          reason: `Aula completada${bonusText}`,
+        });
+        
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_progress')
+          .select('lesson_id')
+          .eq('user_id', user.id)
+          .eq('status', 'completed');
+        
+        if (!progressError && progressData) {
+          const totalCompleted = progressData.length + 1;
+          console.log(`🎯 [V5-ACHIEVEMENT] Total de aulas completadas: ${totalCompleted}`);
+          
+          if (totalCompleted === 1) await checkAndAwardAchievement(user.id, '1_lesson');
+          if (totalCompleted === 5) await checkAndAwardAchievement(user.id, '5_lessons');
+          if (totalCompleted === 10) await checkAndAwardAchievement(user.id, '10_lessons');
+          if (totalCompleted === 25) await checkAndAwardAchievement(user.id, '25_lessons');
+          if (totalCompleted === 50) await checkAndAwardAchievement(user.id, '50_lessons');
+          
+          const milestones = [1, 5, 10, 25, 50];
+          const achievedMilestone = milestones.find(m => m === totalCompleted);
+          
+          if (achievedMilestone) {
+            console.log(`🏆 [V5-ACHIEVEMENT] Marco atingido: ${achievedMilestone} aulas!`);
+            setAchievementMilestone(achievedMilestone);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ [V5-GAMIFICATION] Erro:', error);
+    }
+
+    setCurrentPhase('completed');
+  };
+  
+  useEffect(() => {
+    if (currentPhase === 'exercises') {
+      console.log('🎯 [V5-EXERCISES] Entrando na fase de exercícios');
+      setExercisesCompleted(false);
+    }
+  }, [currentPhase]);
+
+  const handleFinalPlaygroundComplete = () => {
+    setCurrentPhase('completed');
+  };
+  
+  const progress = isV2
+    ? ((currentSection / Math.max(1, lessonData.sections.length - 1)) * 100)
+    : (duration > 0 ? (currentTime / duration) * 100 : 0);
+  
+  const handleContinueClick = () => {
+    onComplete({ audioProgress: maxAudioProgress });
+  };
+
+  console.log('🔍 [V5-RENDER] Fase atual:', currentPhase, {
+    hasExercises: !!lessonData.exercisesConfig,
+    exercisesCount: lessonData.exercisesConfig?.length || 0,
+    showEndCard,
+    currentSection,
+    totalSections: lessonData.sections.length
+  });
+
+  // 🚀 Renderizar playground real interativo
+  if (currentPhase === 'playground-real') {
+    console.log('🎮 [V5-RENDER] Renderizando fase playground-real');
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {lessonData.sections.map((section, idx) => {
+            const sectionContent = section.visualContent || section.content;
+            if (!sectionContent) return null;
+
+            return (
+              <Card key={idx} className="p-6">
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <ReactMarkdown>
+                    {sectionContent}
+                  </ReactMarkdown>
+                </div>
+              </Card>
+            );
+          })}
+
+          <PlaygroundRealChat
+            lessonId={lessonData.id}
+            onComplete={() => {
+              console.log('✅ [V5-PLAYGROUND-REAL] Usuário completou interação');
+              setCurrentPhase('transition');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Renderizar transição para exercícios
+  if (currentPhase === 'transition') {
+    return (
+      <TransitionCard 
+        title="Hora dos Exercícios! 🎯"
+        onContinue={() => {
+          if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+            setCurrentPhase('exercises');
+          } else if (lessonData.finalPlaygroundConfig) {
+            setCurrentPhase('playground-final');
+          } else {
+            onComplete({ audioProgress: maxAudioProgress });
+          }
+        }}
+      />
+    );
+  }
+
+  // Renderizar conclusão (gamificação)
+  if (currentPhase === 'completed') {
+    if (showResultCard && gamificationResult) {
+      return (
+        <LessonResultCard
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
+          exerciseScores={exerciseScores}
+          onContinue={() => {
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+            navigate('/dashboard');
+          }}
+          onBackToTrail={() => {
+            if (trailId) {
+              navigate(`/trail/${trailId}`);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+        />
+      );
+    }
+
+    return (
+      <LessonCompletionSummary
+        lessonTitle={lessonData.title}
+        exerciseScores={exerciseScores}
+        totalExercises={lessonData.exercisesConfig?.length || 0}
+        onContinue={async () => {
+          console.log('🎁 [V5-RECOMPENSAS] Registrando evento de gamificação');
+          const result = await registerGamificationEvent('lesson_completed', lessonData.id);
+          
+          if (result) {
+            console.log('✅ [V5-RECOMPENSAS] Resultado recebido:', result);
+            setGamificationResult(result);
+            setShowResultCard(true);
+          } else {
+            console.error('❌ [V5-RECOMPENSAS] Falha ao obter resultado');
+            if (onMarkComplete) {
+              onMarkComplete();
+            }
+            navigate('/dashboard');
+          }
+        }}
+      />
+    );
+  }
+
+  // Renderizar fase de exercícios
+  if (currentPhase === 'exercises' && lessonData.exercisesConfig) {
+    console.log('📝 [V5-RENDER] Renderizando fase exercises');
+    const exerciseMetadata = lessonData.exercisesConfig.map(ex => ({
+      title: ex.title,
+      type: ex.type,
+    }));
+    
+    return (
+      <ExercisesSection
+        key="exercises-phase"
+        exercises={lessonData.exercisesConfig}
+        onComplete={handleExercisesComplete}
+        onScoreUpdate={(scores) => setExerciseScores(scores)}
+        exerciseMetadata={exerciseMetadata}
+        onBack={() => {
+          console.log('⬅️ [V5-EXERCISES] Voltando para aula');
+          
+          const targetSection = jumpedToExercises 
+            ? 0
+            : Math.max(0, lessonData.sections.filter(s => !s.type || s.type === 'text').length - 1);
+          
+          resetLessonToBeginning(targetSection);
+          setJumpedToExercises(false);
+          setCurrentPhase('audio');
+        }}
+      />
+    );
+  }
+
+  // Renderizar playground final
+  if (currentPhase === 'playground-final' && lessonData.finalPlaygroundConfig) {
+    const isFinalPlaygroundConfig = 'steps' in lessonData.finalPlaygroundConfig;
+    
+    if (!isFinalPlaygroundConfig) {
+      console.warn('⚠️ [V5] finalPlaygroundConfig não é FinalPlaygroundConfig, pulando playground final');
+      handleFinalPlaygroundComplete();
+      return null;
+    }
+    
+    return (
+      <GuidedPlayground
+        config={lessonData.finalPlaygroundConfig as FinalPlaygroundConfig}
+        onComplete={handleFinalPlaygroundComplete}
+      />
+    );
+  }
+  
+  return (
+    <div 
+      data-testid="guided-lesson-v5"
+      data-current-phase={currentPhase}
+      data-current-section={currentSection}
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in"
+    >
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
+        <div className="w-full px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
+            <button 
+              onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
+              className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+              aria-label="Voltar para trilha"
+            >
+              <ChevronLeft className="w-5 h-5 text-slate-700" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
+              <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xs font-semibold bg-clip-text text-transparent"
+                    style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}>
+                {Math.round(progress)}%
+              </span>
+              <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full transition-all" style={{width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}} />
+              </div>
+            </div>
+            <button 
+              onClick={skipToExercises}
+              disabled={!lessonData.exercisesConfig && !lessonData.finalPlaygroundConfig}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0 ${
+                lessonData.exercisesConfig || lessonData.finalPlaygroundConfig
+                  ? 'cursor-pointer'
+                  : 'bg-gray-300 cursor-not-allowed opacity-50'
+              }`}
+              style={lessonData.exercisesConfig || lessonData.finalPlaygroundConfig 
+                ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}
+                : undefined}
+            >
+              <Sparkles className="w-3 h-3 inline mr-1" />
+              <span className="hidden sm:inline">Exercícios</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="w-full px-3 sm:px-6 pt-20 pb-32">
+        <div className="w-full max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-12">
+            
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 space-y-3">
+                
+                <div className="bg-gradient-to-br from-white/90 to-white/80 backdrop-blur-xl rounded-2xl px-4 py-7 border border-primary/20 shadow-xl">
+                  <div className="flex justify-center mb-4">
+                    <LivAvatar 
+                      size="medium"
+                      isPlaying={isPlaying && isAudioEnabled}
+                      showHalo={false}
+                      state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
+                      theme="fundamentos"
+                      className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={toggleAudio}
+                    className={`w-full px-2.5 py-1.5 rounded-full font-medium text-[10px] text-white shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1 ${
+                      isAudioEnabled 
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500' 
+                        : 'bg-green-500'
+                    }`}
+                  >
+                    {isAudioEnabled ? '🔊 Silenciar' : '🔇 Ativar'}
+                  </button>
+                </div>
+                
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-3 border border-slate-200/50 shadow-xl">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Seções da aula</h3>
+                  <div className="space-y-1.5">
+              {lessonData.sections.map((section, index) => {
+                const isRenderable = !section.type || section.type === 'text';
+                const isSpecial = section.type === 'playground' || section.type === 'end-audio';
+                
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => isRenderable ? jumpToSection(index) : null}
+                    disabled={!isRenderable}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-medium transition-all duration-300 hover:scale-[1.02] ${
+                      currentSection === index
+                        ? 'text-white shadow-lg scale-[1.02]'
+                        : isSpecial
+                        ? 'bg-amber-50 text-amber-600 cursor-default'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-md'
+                    } ${!isRenderable ? 'opacity-50' : ''}`}
+                    style={currentSection === index 
+                      ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'}
+                      : undefined}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        currentSection === index ? 'bg-white/20' : 'bg-slate-200'
+                      }`}>
+                        {isSpecial ? '🎮' : index + 1}
+                      </span>
+                      <span className="truncate">{section.title || section.id}</span>
+                    </div>
+                  </button>
+                );
+              })}
+                  </div>
+                </div>
+                
+              </div>
+            </aside>
+            
+            <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
+              {lessonData.sections
+                .map((section, originalIndex) => ({ section, originalIndex }))
+                .map(({ section, originalIndex }) => (
+                  <React.Fragment key={section.id}>
+                    {/* 🎨 V5: Renderizar Experience Card ANTES da seção */}
+                    {renderExperienceCard(lessonData.id, originalIndex)}
+                    
+                    {/* Renderizar conteúdo normal da seção */}
+                    <div
+                      id={`section-${originalIndex}`}
+                      data-testid="lesson-section"
+                      data-section-index={originalIndex}
+                      data-is-active={currentSection === originalIndex}
+                      data-section-updated={currentSection === originalIndex && sectionJustChanged ? 'true' : 'false'}
+                      className={`transition-all duration-1000 ease-out ${
+                        isAudioEnabled 
+                          ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0 scale-100' : 'opacity-30 translate-y-8 scale-95')
+                          : 'opacity-100 translate-y-0 scale-100'
+                      } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[fade-in_0.6s_ease-out]' : ''}`}
+                      style={{
+                        transitionDelay: currentSection === originalIndex ? '0ms' : `${Math.abs(originalIndex - currentSection) * 50}ms`
+                      }}
+                    >
+                      <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-700 ease-out relative overflow-hidden ${
+                        currentSection === originalIndex
+                          ? 'border-cyan-300/60 ring-2 ring-cyan-400/30 shadow-2xl shadow-cyan-400/20 scale-[1.01]'
+                          : 'border-slate-200/50 hover:border-slate-300/50 hover:shadow-2xl'
+                      } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[scale-in_0.5s_ease-out]' : ''}`}>
+                        {currentSection === originalIndex && sectionJustChanged && (
+                          <>
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-transparent animate-[slide-in-right_1s_ease-out]" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/5 to-purple-300/5 animate-pulse" />
+                          </>
+                        )}
+                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
+                            currentSection === originalIndex
+                              ? 'text-white'
+                              : 'bg-slate-100 text-slate-500'
+                          } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}
+                          style={currentSection === originalIndex 
+                            ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.6)'}
+                            : undefined}>
+                            {originalIndex + 1}
+                          </div>
+                          {currentSection === originalIndex && (
+                            <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
+                              sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
+                            }`}>
+                              <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                              Você está aqui
+                            </span>
+                          )}
+                        </div>
+                        <div className={`prose prose-slate prose-sm max-w-none transition-all duration-500
+  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
+  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
+  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
+  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-slate-700
+  [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
+  [&_ul]:!my-3 [&_ul]:!space-y-2
+  [&_ol]:!my-3 [&_ol]:!space-y-2
+  [&_strong]:!font-semibold [&_strong]:!text-cyan-600 [&_strong]:bg-cyan-50/50 [&_strong]:px-0.5 [&_strong]:rounded
+  [&_em]:!text-slate-600 [&_em]:!not-italic [&_em]:!font-medium
+  [&_code]:!text-purple-600 [&_code]:!bg-purple-100 [&_code]:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded [&_code]:!text-sm [&_code]:!font-mono
+  [&_blockquote]:!border-l-4 [&_blockquote]:!border-l-cyan-400 [&_blockquote]:!bg-gradient-to-r [&_blockquote]:!from-cyan-50/60 [&_blockquote]:!to-blue-50/40
+  [&_blockquote]:!py-3 [&_blockquote]:!px-4 [&_blockquote]:!rounded-r-lg [&_blockquote]:!my-4 [&_blockquote]:!text-base
+  [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
+  [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
+  [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
+    currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
+  }`}>
+                          <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
+                        </div>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
+            </main>
+            
+          </div>
+        </div>
+      </div>
+
+      {/* Liv Mobile */}
+      <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
+        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-primary/30 shadow-xl max-w-[290px] w-full">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-shrink-0">
+              <LivAvatar 
+                size="small"
+                isPlaying={isPlaying && isAudioEnabled}
+                showHalo={false}
+                state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
+                theme="fundamentos"
+                className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
+                animate={false}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-slate-700 leading-snug font-medium">
+                {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 ${
+        !isAudioEnabled ? 'grayscale opacity-60' : ''
+      }`}>
+        <div className="w-full px-4 sm:px-6 py-3">
+          <div className="max-w-[1800px] mx-auto">
+            
+            {/* Desktop Player */}
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button 
+                  onClick={skipBackward} 
+                  disabled={showPlaygroundMid || showEndCard}
+                  className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <SkipBack size={16} />
+                </button>
+                <button 
+                  disabled={showPlaygroundMid || showEndCard}
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                    shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
+                  }`}
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                    boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                  }}
+                  onClick={() => {
+                    togglePlayPause();
+                    if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
+                  }}
+                >
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                </button>
+                <button 
+                  onClick={skipForward} 
+                  disabled={showPlaygroundMid || showEndCard}
+                  className="w-9 h-9 bg-slate-700/50 hover:bg-slate-700 rounded-lg flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <SkipForward size={16} />
+                </button>
+              </div>
+              
+              <div className="flex-1 flex items-center gap-3 min-w-0">
+                <Volume2 className="text-cyan-400 flex-shrink-0" size={18} />
+                
+                {!isV2 && (
+                  <>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all group min-w-0" onClick={handleProgressBarClick}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                  </>
+                )}
+                
+                {isV2 && (
+                  <>
+                    <span className="text-xs text-slate-300 font-medium">
+                      Seção {currentSection + 1} de {lessonData.sections.length}
+                    </span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden group min-w-0">
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all relative" style={{ width: `${progress}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                  </>
+                )}
+              </div>
+              
+              <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg text-white font-bold text-xs transition-all min-w-[55px] flex-shrink-0">
+                {playbackSpeed}x
+              </button>
+              <button 
+                onClick={handleContinueClick} 
+                className="px-5 py-2 rounded-xl text-white font-semibold text-sm shadow-lg transition-all whitespace-nowrap hover:scale-105 flex-shrink-0"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                  boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                }}
+              >
+                Continuar
+              </button>
+            </div>
+            
+            {/* Mobile Player */}
+            <div className="flex md:hidden flex-col gap-2.5">
+              <div className="flex items-center gap-2">
+                {!isV2 && (
+                  <>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
+                  </>
+                )}
+                
+                {isV2 && (
+                  <>
+                    <span className="text-xs text-slate-300 font-medium flex-shrink-0">
+                      {currentSection + 1}/{lessonData.sections.length}
+                    </span>
+                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button onClick={skipBackward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
+                    <SkipBack size={16} />
+                  </button>
+                  <button 
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg ${
+                      shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
+                    }`}
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
+                      boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                    }}
+                    onClick={() => {
+                      togglePlayPause();
+                      if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
+                    }}
+                  >
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                  </button>
+                  <button onClick={skipForward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
+                    <SkipForward size={16} />
+                  </button>
+                  <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 rounded-lg text-white font-bold text-xs min-w-[50px]">
+                    {playbackSpeed}x
+                  </button>
+                </div>
+                <button 
+                  onClick={handleContinueClick} 
+                  className="px-4 py-2 rounded-lg text-white font-semibold text-sm"
+                  style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+      {/* Card de Fim da Aula */}
+      {showEndCard && (
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-500">
+          <Card className="max-w-lg w-full p-8 text-center bg-white/95 backdrop-blur-xl border-2 border-primary/50 shadow-2xl">
+            <div className="flex justify-center mb-6">
+              <LivAvatar 
+                size="xl"
+                showHalo={true}
+                state="idle"
+                theme="fundamentos"
+              />
+            </div>
+            
+            <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+              ✅ Aula completa! Parabéns! 🎉
+            </h2>
+            
+            <p className="text-slate-600 text-lg mb-8 leading-relaxed">
+              Você aprendeu sobre as três principais ferramentas de IA gratuitas!
+              <br />
+              Agora vamos fixar esse conhecimento com exercícios práticos.
+            </p>
+            
+            <Button
+              onClick={() => {
+                console.log('🎯 [V5-BUTTON] Botão "Ir para Exercícios" clicado!');
+                handleGoToExercises();
+              }}
+              size="lg"
+              className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
+            >
+              🎯 Ir para Exercícios
+            </Button>
+          </Card>
+        </div>
+      )}
+
+      {(audioUrl || isV2) && (
+        <audio
+          ref={audioRef}
+          src={isV2 ? lessonData.sections[0]?.audio_url : audioUrl}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          preload="auto"
+        />
+      )}
+      
+      {/* Achievement Badge */}
+      {achievementMilestone && (
+        <AchievementBadge
+          milestone={achievementMilestone}
+          onClose={() => setAchievementMilestone(null)}
+        />
+      )}
+      
+      {/* Points Notification */}
+      <PointsNotification
+        points={pointsNotification.points}
+        reason={pointsNotification.reason}
+        show={pointsNotification.show}
+        onHide={() => setPointsNotification(prev => ({ ...prev, show: false }))}
+      />
+    </div>
+  );
 }
-
-/**
- * 📋 ROADMAP DE IMPLEMENTAÇÃO V5:
- * 
- * 1. ✅ Tipos atualizados (LessonModel agora inclui 'v5')
- * 2. ✅ Roteamento configurado (InteractiveLesson.tsx)
- * 3. ✅ Estrutura base criada (este arquivo)
- * 4. ⏳ PRÓXIMO PASSO: Copiar código completo do V4 e adicionar:
- *    - Helper function renderExperienceCard()
- *    - Integração no loop de renderização de seções
- *    - Suporte a múltiplos tipos de cards (não apenas IaBookExperienceCard)
- *    - Configuração via content.experienceCards no JSON
- * 
- * 5. ⏳ ADMIN: Criar interface para configurar experience cards manualmente
- *    - Similar ao fluxo do V3 (criar slides manualmente)
- *    - JSON editor para definir qual card em qual seção
- *    - Preview em tempo real
- * 
- * 6. ⏳ PIPELINE: Integrar com step7-consolidate.ts
- *    - Preservar configuração de experienceCards do JSON manual
- *    - Validar estrutura antes de salvar no DB
- */
