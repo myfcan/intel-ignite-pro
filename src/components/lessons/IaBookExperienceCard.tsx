@@ -29,26 +29,27 @@ export function IaBookExperienceCard() {
     <div className="w-full max-w-6xl mx-auto py-12" style={{ perspective: '2500px' }}>
       <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
         
-        {/* LIVRO FECHADO - Capa que desaparece quando abre */}
+        {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl shadow-2xl flex items-center justify-center p-12 min-h-[600px] w-[400px] mx-auto"
-          initial={{ opacity: 1, rotateY: 0 }}
+          initial={{ rotateY: 0, z: 100 }}
           animate={isOpen ? { 
-            opacity: 0, 
-            rotateY: -180,
-            scale: 0.8
+            rotateY: -160,
+            x: -300,
+            z: -50
           } : { 
-            opacity: 1, 
             rotateY: 0,
-            scale: 1
+            x: 0,
+            z: 100
           }}
           transition={{ 
-            duration: 1.5,
+            duration: 1.8,
             ease: [0.16, 1, 0.3, 1]
           }}
           style={{ 
             transformStyle: 'preserve-3d',
-            transformOrigin: 'center',
+            transformOrigin: 'right center',
+            backfaceVisibility: 'visible',
             pointerEvents: isOpen ? 'none' : 'auto'
           }}
         >
@@ -84,7 +85,7 @@ export function IaBookExperienceCard() {
 
         {/* LIVRO ABERTO - Duas páginas lado a lado */}
         <motion.div
-          className="grid grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden"
+          className="grid grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden relative"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={isOpen ? { 
             opacity: 1,
@@ -103,6 +104,17 @@ export function IaBookExperienceCard() {
             pointerEvents: isOpen ? 'auto' : 'none'
           }}
         >
+          {/* Sombra da lombada (centro do livro) */}
+          <motion.div
+            className="absolute left-1/2 top-0 bottom-0 w-8 -ml-4 pointer-events-none z-20"
+            initial={{ opacity: 0 }}
+            animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 1.8, duration: 0.6 }}
+            style={{
+              background: 'linear-gradient(90deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 100%)',
+              boxShadow: '0 0 20px rgba(0,0,0,0.15)'
+            }}
+          />
           {/* Página esquerda */}
           <motion.div
             className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50"
