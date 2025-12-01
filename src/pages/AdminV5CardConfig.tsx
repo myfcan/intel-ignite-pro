@@ -373,9 +373,18 @@ export default function AdminV5CardConfig() {
 
       console.log(`📊 [V5-CONFIG] Próximo order_index disponível: ${nextOrderIndex}`);
 
-      // PASSO 3: Salvar lição com componentes gerados
-      const content = {
+      // PASSO 3: Criar execução do PIPELINE (não inserir direto)
+      setGeneratingProgress("Criando execução do pipeline...");
+
+      const pipelineInput = {
+        title: parsedLesson.title,
+        trackId: parsedLesson.trackId,
+        trackName: parsedLesson.trackName || "Trilha Desconhecida",
+        orderIndex: nextOrderIndex,
+        model: 'v5',
+        estimatedTime: parsedLesson.estimatedTimeMinutes || 5,
         sections: parsedLesson.sections || parsedLesson.content?.sections,
+        exercises: parsedLesson.exercises || [],
         experienceCards: generatedData.cards.map((card: any) => ({
           sectionIndex: card.sectionIndex,
           cardIndex: card.cardIndex,
@@ -393,20 +402,17 @@ export default function AdminV5CardConfig() {
       };
 
       const { data, error } = await supabase
-        .from('lessons')
+        .from('pipeline_executions')
         .insert({
-          title: parsedLesson.title,
-          trail_id: parsedLesson.trackId,
-          order_index: nextOrderIndex,
-          estimated_time: parsedLesson.estimatedTimeMinutes || 5,
-          content: content as any,
-          exercises: parsedLesson.exercises ? (parsedLesson.exercises as any) : null,
-          audio_url: null,
-          word_timestamps: null,
+          lesson_title: parsedLesson.title,
           model: 'v5',
-          is_active: false,
-          lesson_type: 'guided',
-          difficulty_level: 'beginner',
+          track_id: parsedLesson.trackId,
+          track_name: parsedLesson.trackName || "Trilha Desconhecida",
+          order_index: nextOrderIndex,
+          status: 'pending',
+          input_data: pipelineInput,
+          current_step: 1,
+          total_steps: 8
         })
         .select()
         .single();
@@ -416,16 +422,16 @@ export default function AdminV5CardConfig() {
       setGeneratingProgress(null);
 
       toast({
-        title: "✅ Lição V5 criada!",
-        description: `Lição "${parsedLesson.title}" criada com ${generatedData.cards.length} card effects gerados por IA.`,
+        title: "✅ Pipeline iniciado!",
+        description: `Lição "${parsedLesson.title}" entrando no pipeline com ${generatedData.cards.length} card effects.`,
       });
 
-      console.log('🎉 [V5-CONFIG] Lição V5 criada com cards:', data);
+      console.log('🎉 [V5-CONFIG] Pipeline execution criada:', data);
 
-      setLessonJson('');
-      setParsedLesson(null);
-      setSections([]);
-      setExperienceCards([]);
+      // Redirecionar para o monitor após 2s
+      setTimeout(() => {
+        navigate('/admin/pipeline/monitor');
+      }, 2000);
 
     } catch (error: any) {
       console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
