@@ -18,23 +18,23 @@ export function IaBookExperienceCard() {
   useEffect(() => {
     const sequence = async () => {
       // 1. Show book dramatically
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 400));
       setShowBook(true);
       
-      // 2. Flip pages one by one with dramatic rotation
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // 2. Flip pages one by one - SLOWER for drama
+      await new Promise(resolve => setTimeout(resolve, 1000));
       for (let i = 0; i < 5; i++) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 250));
         setPageFlips(prev => [...prev, i]);
       }
       
       // 3. Show content after pages opened
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 500));
       setShowContent(true);
       
       // 4. Reveal chapters
       for (let i = 0; i < chapters.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 350));
         setChaptersVisible(i + 1);
       }
     };
@@ -62,60 +62,103 @@ export function IaBookExperienceCard() {
               <motion.div
                 className="relative w-72 h-96"
                 initial={{ 
-                  scale: 0.3, 
-                  rotateY: -180,
-                  rotateX: 45,
+                  scale: 0.2, 
+                  rotateY: -120,
+                  rotateX: 60,
+                  z: -500,
                   opacity: 0
                 }}
                 animate={{ 
                   scale: 1, 
                   rotateY: 0,
                   rotateX: 0,
+                  z: 0,
                   opacity: 1
                 }}
                 transition={{ 
-                  duration: 1.2,
-                  ease: [0.16, 1, 0.3, 1]
+                  duration: 1.6,
+                  ease: [0.16, 1, 0.3, 1],
+                  scale: { type: "spring", stiffness: 80, damping: 12 }
                 }}
                 style={{ 
                   transformStyle: "preserve-3d",
                 }}
               >
+                {/* Dramatic glow pulse */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl blur-3xl"
+                  style={{ background: "hsl(var(--primary)/0.5)" }}
+                  animate={{
+                    scale: [1, 1.4, 1],
+                    opacity: [0.3, 0.7, 0.3]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+
                 {/* Book cover base */}
                 <div 
                   className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 shadow-2xl border-2 border-primary/30 overflow-visible"
                   style={{ 
                     transformStyle: "preserve-3d",
-                    boxShadow: "0 30px 60px -15px hsl(var(--primary)/0.6)"
+                    boxShadow: "0 30px 60px -15px hsl(var(--primary)/0.6), 0 0 100px hsl(var(--primary)/0.3)"
                   }}
                 >
-                  {/* Pages that flip open - DRAMATIC 3D rotation */}
+                  {/* Pages that flip open - ULTRA DRAMATIC 3D rotation */}
                   {[...Array(5)].map((_, i) => (
                     <motion.div
                       key={`page-${i}`}
-                      className="absolute inset-y-2 left-2 right-2 bg-gradient-to-r from-primary-foreground/20 via-primary-foreground/15 to-primary-foreground/10 rounded-l-xl border-r-2 border-primary-foreground/30"
+                      className="absolute inset-y-2 left-2 right-2 rounded-l-xl border-r-2"
                       initial={{ 
                         rotateY: 0,
                         x: 0,
+                        scale: 1,
+                        z: 0,
                         originX: 0
                       }}
                       animate={pageFlips.includes(i) ? { 
-                        rotateY: [-90, -180],
-                        x: [0, -(i + 1) * 4],
+                        rotateY: [0, -45, -90, -135, -175, -180],
+                        x: [0, -20, -40, -50, -(i + 1) * 8, -(i + 1) * 8],
+                        scale: [1, 1.02, 1.04, 1.02, 1, 1],
+                        z: [0, 50, 100, 50, 0, 0],
                         transition: {
-                          duration: 0.8,
-                          ease: [0.16, 1, 0.3, 1]
+                          duration: 1.4,
+                          ease: [0.43, 0.13, 0.23, 0.96],
+                          times: [0, 0.2, 0.4, 0.6, 0.85, 1]
                         }
                       } : {}}
                       style={{ 
                         transformStyle: "preserve-3d",
                         transformOrigin: "left center",
                         zIndex: 10 - i,
-                        backfaceVisibility: "hidden"
+                        backfaceVisibility: "hidden",
+                        background: `linear-gradient(to right, 
+                          hsl(var(--primary-foreground) / ${0.25 - i * 0.03}), 
+                          hsl(var(--primary-foreground) / ${0.18 - i * 0.03}), 
+                          hsl(var(--primary-foreground) / ${0.12 - i * 0.03}))`,
+                        borderColor: `hsl(var(--primary-foreground) / ${0.3 - i * 0.05})`
                       }}
                     >
-                      {/* Page shadow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent" />
+                      {/* Dynamic shadow based on rotation */}
+                      <motion.div 
+                        className="absolute inset-0 bg-gradient-to-r from-black/20 via-black/10 to-transparent"
+                        animate={pageFlips.includes(i) ? {
+                          opacity: [0, 0.4, 0.6, 0.4, 0.2, 0]
+                        } : {}}
+                        transition={{ duration: 1.4 }}
+                      />
+                      
+                      {/* Page edge highlight */}
+                      <motion.div 
+                        className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-foreground/40 via-primary-foreground/20 to-primary-foreground/40"
+                        animate={pageFlips.includes(i) ? {
+                          opacity: [0, 1, 1, 0.5, 0]
+                        } : {}}
+                        transition={{ duration: 1.4 }}
+                      />
                     </motion.div>
                   ))}
 
