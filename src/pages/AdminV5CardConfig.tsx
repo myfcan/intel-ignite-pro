@@ -283,7 +283,25 @@ export default function AdminV5CardConfig() {
       
       setGeneratingProgress("Componentes gerados! Salvando lição no banco...");
 
-      // PASSO 2: Salvar lição com componentes gerados
+      // PASSO 2: Buscar próximo order_index disponível na trilha
+      const { data: existingLessons, error: fetchError } = await supabase
+        .from('lessons')
+        .select('order_index')
+        .eq('trail_id', parsedLesson.trackId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+
+      if (fetchError) {
+        console.warn('⚠️ [V5-CONFIG] Erro ao buscar order_index:', fetchError);
+      }
+
+      const nextOrderIndex = existingLessons && existingLessons.length > 0 
+        ? existingLessons[0].order_index + 1 
+        : parsedLesson.orderIndex || 1;
+
+      console.log(`📊 [V5-CONFIG] Próximo order_index disponível: ${nextOrderIndex}`);
+
+      // PASSO 3: Salvar lição com componentes gerados
       const content = {
         sections: parsedLesson.sections || parsedLesson.content?.sections,
         experienceCards: generatedData.cards.map((card: any) => ({
@@ -307,7 +325,7 @@ export default function AdminV5CardConfig() {
         .insert({
           title: parsedLesson.title,
           trail_id: parsedLesson.trackId,
-          order_index: parsedLesson.orderIndex || 0,
+          order_index: nextOrderIndex,
           estimated_time: parsedLesson.estimatedTimeMinutes || 5,
           content: content as any,
           exercises: parsedLesson.exercises ? (parsedLesson.exercises as any) : null,
