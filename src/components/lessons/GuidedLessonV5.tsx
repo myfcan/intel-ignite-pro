@@ -53,7 +53,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
   // 🆕 V5: Usa estrutura de V2 (áudios separados) + experience cards
   const isV2 = true;
-  const hasPlaygroundSupport = false;
+  const hasPlaygroundSupport = true; // V5 agora suporta playground mid-lesson
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
@@ -858,11 +858,13 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     });
 
     setShowEndCard(false);
-    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+    // 🔄 Nova ordem: Playground Final ANTES dos Exercises
+    if (lessonData.finalPlaygroundConfig) {
+      console.log('🎯 [V5-DEBUG HANDLER] Indo para playground final');
+      setCurrentPhase('playground-final');
+    } else if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       console.log('🎯 [V5-DEBUG HANDLER] Indo para fase de exercícios');
       setCurrentPhase('exercises');
-    } else if (lessonData.finalPlaygroundConfig) {
-      setCurrentPhase('playground-final');
     } else {
       onComplete({ audioProgress: maxAudioProgress });
     }
@@ -972,7 +974,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   }, [currentPhase]);
 
   const handleFinalPlaygroundComplete = () => {
-    setCurrentPhase('completed');
+    // 🔄 Após playground final: ir para exercises se existirem, senão ir para completed
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('🎯 [V5-FINAL-PLAYGROUND] Indo para fase de exercícios');
+      setCurrentPhase('exercises');
+    } else {
+      console.log('🎯 [V5-FINAL-PLAYGROUND] Indo para tela de conclusão');
+      setCurrentPhase('completed');
+    }
   };
   
   const progress = isV2

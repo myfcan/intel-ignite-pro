@@ -47,7 +47,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
 
   // 🆕 V4: Usa estrutura de V2 (áudios separados) + recursos interativos
   const isV2 = true; // V4 sempre usa estrutura V2
-  const hasPlaygroundSupport = false; // V4 não usa playground mid-lesson
+  const hasPlaygroundSupport = true; // V4 agora suporta playground mid-lesson
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
@@ -1268,11 +1268,13 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
     });
 
     setShowEndCard(false);
-    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+    // 🔄 Nova ordem: Playground Final ANTES dos Exercises
+    if (lessonData.finalPlaygroundConfig) {
+      console.log('🎯 [DEBUG HANDLER] Indo para playground final');
+      setCurrentPhase('playground-final');
+    } else if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
       console.log('🎯 [DEBUG HANDLER] Indo para fase de exercícios');
       setCurrentPhase('exercises');
-    } else if (lessonData.finalPlaygroundConfig) {
-      setCurrentPhase('playground-final');
     } else {
       onComplete({ audioProgress: maxAudioProgress });
     }
@@ -1397,8 +1399,14 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
   }, [currentPhase]);
 
   const handleFinalPlaygroundComplete = () => {
-    // Ir para tela de conclusão (NÃO chamar onComplete aqui - será chamado quando usuário clicar no botão)
-    setCurrentPhase('completed');
+    // 🔄 Após playground final: ir para exercises se existirem, senão ir para completed
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('🎯 [FINAL-PLAYGROUND] Indo para fase de exercícios');
+      setCurrentPhase('exercises');
+    } else {
+      console.log('🎯 [FINAL-PLAYGROUND] Indo para tela de conclusão');
+      setCurrentPhase('completed');
+    }
   };
   
   // 📊 Calcular progresso correto (V1 vs V2)
