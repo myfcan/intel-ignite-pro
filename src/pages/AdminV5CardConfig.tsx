@@ -66,7 +66,8 @@ export default function AdminV5CardConfig() {
     const foundSuggestions: CardSuggestion[] = [];
 
     sections.forEach((section: any, sectionIndex) => {
-      const content = (section.visualContent || '').toLowerCase();
+      // 🔧 V5 usa "markdown" ao invés de "visualContent"
+      const content = (section.markdown || section.visualContent || '').toLowerCase();
       if (!content) return;
 
       const words = content.split(/\s+/);
@@ -195,31 +196,44 @@ export default function AdminV5CardConfig() {
 
   const handleAnalyzeJson = () => {
     try {
-      const parsed = JSON.parse(lessonJson);
+      let parsed = JSON.parse(lessonJson);
+      
+      // 🔧 Se o JSON for um array, pegar o primeiro elemento
+      if (Array.isArray(parsed)) {
+        if (parsed.length === 0) {
+          throw new Error('Array JSON está vazio');
+        }
+        parsed = parsed[0];
+        console.log('📦 [V5-CONFIG] JSON é array, extraindo primeiro elemento');
+      }
       
       // Validar estrutura básica
       if (!parsed.title) {
         throw new Error('JSON precisa ter campo "title"');
       }
       
-      if (!parsed.content?.sections || !Array.isArray(parsed.content.sections)) {
-        throw new Error('JSON precisa ter "content.sections" como array');
+      // 🔧 Verificar estrutura V5 (sections diretamente, não em content.sections)
+      const sections = parsed.sections || parsed.content?.sections;
+      
+      if (!sections || !Array.isArray(sections)) {
+        throw new Error('JSON precisa ter "sections" ou "content.sections" como array');
       }
 
       setParsedLesson(parsed);
-      setSections(parsed.content.sections);
+      setSections(sections);
       
       toast({
         title: "✅ JSON analisado!",
-        description: `Detectadas ${parsed.content.sections.length} seções na lição "${parsed.title}"`,
+        description: `Detectadas ${sections.length} seções na lição "${parsed.title}"`,
       });
       
       console.log('📊 [V5-CONFIG] JSON analisado:', {
         title: parsed.title,
-        sectionsCount: parsed.content.sections.length,
-        sections: parsed.content.sections.map((s: any) => ({
-          id: s.id,
-          title: s.title,
+        sectionsCount: sections.length,
+        model: parsed.model,
+        sections: sections.map((s: any, idx: number) => ({
+          index: s.index || idx,
+          markdown: s.markdown?.substring(0, 50) + '...',
         })),
       });
       
@@ -315,14 +329,17 @@ export default function AdminV5CardConfig() {
     setIsSaving(true);
 
     try {
-      // Adicionar experienceCards ao conteúdo
+      // 🔧 V5 tem sections diretamente, não em content.sections
       const lessonData = {
         ...parsedLesson,
-        model: 'v5', // Forçar modelo V5
-        content: {
-          ...parsedLesson.content,
-          experienceCards,
-        },
+        model: 'v5',
+        experienceCards, // Adicionar experienceCards diretamente
+      };
+
+      // Construir content com sections + experienceCards
+      const content = {
+        sections: parsedLesson.sections || parsedLesson.content?.sections,
+        experienceCards,
       };
 
       // Inserir no banco
@@ -330,15 +347,15 @@ export default function AdminV5CardConfig() {
         .from('lessons')
         .insert({
           title: lessonData.title,
-          trail_id: lessonData.trail_id,
-          order_index: lessonData.order_index || 0,
-          estimated_time: lessonData.estimated_time || 5,
-          content: lessonData.content,
-          exercises: lessonData.exercises || [],
-          audio_url: lessonData.audio_url || null,
-          word_timestamps: lessonData.word_timestamps || null,
+          trail_id: lessonData.trackId, // V5 usa "trackId" não "trail_id"
+          order_index: lessonData.orderIndex || 0,
+          estimated_time: lessonData.estimatedTimeMinutes || 5,
+          content: content as any,
+          exercises: lessonData.exercises ? (lessonData.exercises as any) : null,
+          audio_url: null, // V5 não tem audio_url único
+          word_timestamps: null,
           model: 'v5',
-          is_active: false, // Começa inativa para revisão
+          is_active: false,
           lesson_type: 'guided',
           difficulty_level: 'beginner',
         })
