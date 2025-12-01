@@ -26,6 +26,15 @@ interface ExperienceCard {
   props?: Record<string, any>;
 }
 
+interface CardSuggestion {
+  type: 'ia-book' | 'ia-image-generator' | 'ia-chat-simulator';
+  sectionIndex: number;
+  timestamp: number;
+  confidence: 'high' | 'medium' | 'low';
+  reasoning: string;
+  keywords: string[];
+}
+
 export default function AdminV5CardConfig() {
   const navigate = useNavigate();
   
@@ -40,6 +49,149 @@ export default function AdminV5CardConfig() {
   
   // Estado de salvamento
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Estado de sugestões automáticas
+  const [suggestions, setSuggestions] = useState<CardSuggestion[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const analyzeTextForCards = (): CardSuggestion[] => {
+    if (!parsedLesson || !sections.length) return [];
+
+    const cardKeywords = {
+      'ia-book': ['livro', 'escrever', 'autor', 'capítulo', 'publicar', 'obra', 'literatura', 'narrativa'],
+      'ia-image-generator': ['imagem', 'visual', 'design', 'criar', 'gerar', 'ilustração', 'arte', 'foto'],
+      'ia-chat-simulator': ['conversa', 'chat', 'diálogo', 'perguntar', 'responder', 'interação', 'mensagem'],
+    };
+
+    const foundSuggestions: CardSuggestion[] = [];
+
+    sections.forEach((section: any, sectionIndex) => {
+      const content = (section.visualContent || '').toLowerCase();
+      if (!content) return;
+
+      const words = content.split(/\s+/);
+      const totalWords = words.length;
+      
+      // Calcular duração do áudio da seção (se disponível)
+      const audioDuration = section.timestamp?.end && section.timestamp?.start 
+        ? section.timestamp.end - section.timestamp.start 
+        : 60; // fallback: 60s
+
+      // Procurar por cada tipo de card
+      Object.entries(cardKeywords).forEach(([cardType, keywords]) => {
+        keywords.forEach((keyword) => {
+          const regex = new RegExp(`\\b${keyword}\\w*\\b`, 'gi');
+          const matches = content.match(regex);
+          
+          if (matches && matches.length > 0) {
+            // Encontrar posição da primeira ocorrência
+            const firstMatch = matches[0];
+            const firstIndex = content.indexOf(firstMatch.toLowerCase());
+            const wordsBeforeMatch = content.substring(0, firstIndex).split(/\s+/).length;
+            
+            // Calcular percentual da posição no texto
+            const textPercentage = wordsBeforeMatch / totalWords;
+            
+            // Estimar timestamp baseado na posição no texto
+            const estimatedTimestamp = Math.round(textPercentage * audioDuration);
+            
+            // Calcular confiança
+            const matchCount = matches.length;
+            const confidence: 'high' | 'medium' | 'low' = 
+              matchCount >= 3 ? 'high' : matchCount >= 2 ? 'medium' : 'low';
+
+            foundSuggestions.push({
+              type: cardType as any,
+              sectionIndex,
+              timestamp: estimatedTimestamp,
+              confidence,
+              reasoning: `Detectada ${matchCount}x a palavra "${keyword}" (~${Math.round(textPercentage * 100)}% do texto)`,
+              keywords: matches.slice(0, 3), // Primeiras 3 ocorrências
+            });
+          }
+        });
+      });
+    });
+
+    // Remover duplicatas (mesma seção + mesmo tipo)
+    const uniqueSuggestions = foundSuggestions.reduce((acc, curr) => {
+      const exists = acc.find(
+        s => s.sectionIndex === curr.sectionIndex && s.type === curr.type
+      );
+      
+      if (!exists || curr.confidence === 'high') {
+        return [...acc.filter(s => 
+          !(s.sectionIndex === curr.sectionIndex && s.type === curr.type)
+        ), curr];
+      }
+      return acc;
+    }, [] as CardSuggestion[]);
+
+    // Ordenar por confiança e seção
+    return uniqueSuggestions.sort((a, b) => {
+      const confidenceOrder = { high: 3, medium: 2, low: 1 };
+      if (confidenceOrder[a.confidence] !== confidenceOrder[b.confidence]) {
+        return confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
+      }
+      return a.sectionIndex - b.sectionIndex;
+    });
+  };
+
+  const handleAutoSuggest = () => {
+    setIsAnalyzing(true);
+    
+    // Simular delay de análise (para UX)
+    setTimeout(() => {
+      const suggested = analyzeTextForCards();
+      setSuggestions(suggested);
+      setIsAnalyzing(false);
+      
+      toast({
+        title: suggested.length > 0 ? "✨ Sugestões geradas!" : "⚠️ Nenhuma sugestão encontrada",
+        description: suggested.length > 0 
+          ? `${suggested.length} experience cards sugeridos baseados no conteúdo`
+          : "Não encontrei palavras-chave relevantes no texto das seções",
+      });
+
+      console.log('🧠 [V5-CONFIG] Sugestões automáticas:', suggested);
+    }, 800);
+  };
+
+  const handleAcceptSuggestion = (suggestion: CardSuggestion) => {
+    const newCard: ExperienceCard = {
+      type: suggestion.type,
+      sectionIndex: suggestion.sectionIndex,
+      timestamp: suggestion.timestamp,
+      props: {},
+    };
+    
+    setExperienceCards([...experienceCards, newCard]);
+    
+    // Remover da lista de sugestões
+    setSuggestions(suggestions.filter(s => s !== suggestion));
+    
+    toast({
+      title: "✅ Card adicionado",
+      description: `${suggestion.type} adicionado na Seção ${suggestion.sectionIndex + 1}`,
+    });
+  };
+
+  const handleAcceptAllSuggestions = () => {
+    const newCards: ExperienceCard[] = suggestions.map(s => ({
+      type: s.type,
+      sectionIndex: s.sectionIndex,
+      timestamp: s.timestamp,
+      props: {},
+    }));
+    
+    setExperienceCards([...experienceCards, ...newCards]);
+    setSuggestions([]);
+    
+    toast({
+      title: "✅ Todas as sugestões aceitas",
+      description: `${newCards.length} cards adicionados`,
+    });
+  };
 
   const handleAnalyzeJson = () => {
     try {
@@ -283,6 +435,93 @@ export default function AdminV5CardConfig() {
               </CardContent>
             </Card>
 
+            {/* Step 1.5: Sugestões Automáticas */}
+            {parsedLesson && (
+              <Card className="border-2 border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-600" />
+                    Sugestões Automáticas de Cards
+                  </CardTitle>
+                  <CardDescription>
+                    Analisamos o conteúdo das seções para sugerir experience cards baseados em palavras-chave
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    onClick={handleAutoSuggest}
+                    disabled={isAnalyzing}
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                    variant="default"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isAnalyzing ? 'Analisando...' : 'Sugerir Cards Automaticamente'}
+                  </Button>
+
+                  {suggestions.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{suggestions.length} sugestões encontradas</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleAcceptAllSuggestions}
+                        >
+                          Aceitar Todas
+                        </Button>
+                      </div>
+
+                      {suggestions.map((suggestion, idx) => (
+                        <Card key={idx} className="border-2 border-amber-200">
+                          <CardContent className="pt-4 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={
+                                    suggestion.confidence === 'high' ? 'default' :
+                                    suggestion.confidence === 'medium' ? 'secondary' : 'outline'
+                                  }>
+                                    {suggestion.confidence === 'high' ? '🔥' : suggestion.confidence === 'medium' ? '👍' : '🤔'} {suggestion.confidence}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {suggestion.type === 'ia-book' ? '📚' :
+                                     suggestion.type === 'ia-image-generator' ? '🎨' : '💬'} {suggestion.type}
+                                  </Badge>
+                                </div>
+                                
+                                <p className="text-sm">
+                                  <strong>Seção {suggestion.sectionIndex + 1}</strong> aos <strong>{suggestion.timestamp}s</strong>
+                                </p>
+                                
+                                <p className="text-xs text-muted-foreground">
+                                  {suggestion.reasoning}
+                                </p>
+                                
+                                <div className="flex gap-1 flex-wrap">
+                                  {suggestion.keywords.map((kw, i) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">
+                                      {kw}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <Button
+                                size="sm"
+                                onClick={() => handleAcceptSuggestion(suggestion)}
+                              >
+                                Aceitar
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Step 2: Adicionar Cards */}
             {parsedLesson && (
               <Card>
@@ -292,7 +531,7 @@ export default function AdminV5CardConfig() {
                     Configure os Experience Cards
                   </CardTitle>
                   <CardDescription>
-                    Adicione cards interativos que aparecem durante a apresentação
+                    Adicione cards interativos manualmente ou aceite as sugestões automáticas
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -302,7 +541,7 @@ export default function AdminV5CardConfig() {
                     variant="outline"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Experience Card
+                    Adicionar Card Manualmente
                   </Button>
 
                   {experienceCards.length > 0 && (
