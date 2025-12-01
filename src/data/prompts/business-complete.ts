@@ -11,87 +11,642 @@ export const businessPromptsCategory: PromptCategory = {
     {
       id: 'biz-swot',
       categoryId: 'business',
-      title: 'Análise SWOT',
-      description: 'Forças, fraquezas, oportunidades e ameaças',
-      template: 'SWOT para: {business}, mercado: {market}, momento: {stage}. Analise internamente (forças/fraquezas) e externamente (oportunidades/ameaças) com planos de ação.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Startup fintech', type: 'text', required: true}, {name: 'market', label: 'Mercado', placeholder: 'Ex: Pagamentos digitais', type: 'text', required: true}, {name: 'stage', label: 'Estágio', placeholder: 'Ex: Crescimento', type: 'text', required: true}],
+      title: 'Análise SWOT Completa',
+      description: 'Forças, fraquezas, oportunidades e ameaças com plano de ação',
+      template: `Faça uma análise SWOT completa:
+
+**NEGÓCIO:** {business}
+**MERCADO:** {market}
+**ESTÁGIO ATUAL:** {stage}
+
+---
+
+**ANÁLISE SWOT:**
+
+**1. FORÇAS (Strengths) - Interno/Positivo**
+Analise vantagens competitivas internas:
+- Recursos únicos
+- Competências da equipe
+- Ativos e propriedade intelectual
+- Relacionamentos e parcerias
+- Processos eficientes
+- Reputação e marca
+
+**2. FRAQUEZAS (Weaknesses) - Interno/Negativo**
+Identifique limitações internas:
+- Gaps de competência
+- Recursos limitados
+- Processos ineficientes
+- Dependências críticas
+- Problemas de cultura/equipe
+- Dívidas técnicas ou financeiras
+
+**3. OPORTUNIDADES (Opportunities) - Externo/Positivo**
+Mapeie tendências favoráveis:
+- Mudanças de mercado
+- Novas tecnologias
+- Mudanças regulatórias
+- Comportamento do consumidor
+- Gaps dos concorrentes
+- Parcerias potenciais
+
+**4. AMEAÇAS (Threats) - Externo/Negativo**
+Identifique riscos externos:
+- Novos concorrentes
+- Mudanças econômicas
+- Regulamentação adversa
+- Obsolescência tecnológica
+- Mudança de comportamento
+- Dependência de fornecedores
+
+**5. MATRIZ SWOT**
+|  | Positivo | Negativo |
+|--|----------|----------|
+| Interno | FORÇAS | FRAQUEZAS |
+| Externo | OPORTUNIDADES | AMEAÇAS |
+
+**6. ESTRATÉGIAS CRUZADAS**
+- SO (Forças + Oportunidades): Como usar forças para aproveitar oportunidades
+- WO (Fraquezas + Oportunidades): Como superar fraquezas para aproveitar oportunidades
+- ST (Forças + Ameaças): Como usar forças para mitigar ameaças
+- WT (Fraquezas + Ameaças): Como minimizar fraquezas e evitar ameaças
+
+**7. PLANO DE AÇÃO**
+| Prioridade | Ação | Prazo | Responsável |
+|------------|------|-------|-------------|
+| Alta | | | |
+| Alta | | | |
+| Média | | | |
+| Média | | | |`,
+      variables: [
+        { name: 'business', label: 'Negócio', placeholder: 'Ex: Startup de fintech para PMEs', type: 'text', required: true },
+        { name: 'market', label: 'Mercado', placeholder: 'Ex: Pagamentos e gestão financeira digital', type: 'text', required: true },
+        { name: 'stage', label: 'Estágio', placeholder: 'Ex: Crescimento inicial (Series A)', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['swot', 'estratégia', 'análise'],
+      tags: ['swot', 'estratégia', 'análise', 'planejamento'],
       difficulty: 'beginner',
       isPremium: false,
       isFeatured: true
     },
     {
-      id: 'biz-mvp',
-      categoryId: 'business',
-      title: 'Definição de MVP',
-      description: 'Mínimo produto viável',
-      template: 'MVP para: {idea}, problema: {problem}, hipóteses: {hypotheses}. Defina features essenciais, métricas validação e timeline.',
-      variables: [{name: 'idea', label: 'Ideia', placeholder: 'Ex: App gestão tarefas', type: 'text', required: true}, {name: 'problem', label: 'Problema', placeholder: 'Ex: Perda de produtividade', type: 'textarea', required: true}, {name: 'hypotheses', label: 'Hipóteses', placeholder: 'Ex: Pessoas pagariam R$ 20/mês', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['mvp', 'produto', 'validação', 'lean'],
-      difficulty: 'intermediate',
-      isPremium: false
-    },
-    {
-      id: 'biz-cashflow',
-      categoryId: 'business',
-      title: 'Projeção de Fluxo de Caixa',
-      description: 'Monte projeção financeira realista',
-      template: 'Projete fluxo de caixa de 12 meses para: {business}, receita mensal: {revenue}, custos fixos: {fixed_costs}, custos variáveis: {variable_costs}. Inclua sazonalidade, reserva e breakeven.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Agência de marketing', type: 'text', required: true}, {name: 'revenue', label: 'Receita mensal média', placeholder: 'Ex: R$ 50.000', type: 'text', required: true}, {name: 'fixed_costs', label: 'Custos fixos', placeholder: 'Ex: Aluguel R$ 5k, salários R$ 20k', type: 'textarea', required: true}, {name: 'variable_costs', label: 'Custos variáveis', placeholder: 'Ex: 30% da receita', type: 'text', required: true}],
-      examples: [],
-      tags: ['finanças', 'fluxo de caixa', 'projeção', 'dfc'],
-      difficulty: 'intermediate',
-      isPremium: false
-    },
-    {
       id: 'biz-competitor-analysis',
       categoryId: 'business',
       title: 'Análise de Concorrentes',
-      description: 'Mapeie e analise competição',
-      template: 'Analise concorrentes de: {business}, principais competidores: {competitors}, diferenciais: {differentials}. Compare preços, canais, posicionamento e identifique gaps.',
-      variables: [{name: 'business', label: 'Seu negócio', placeholder: 'Ex: E-commerce roupas', type: 'text', required: true}, {name: 'competitors', label: 'Concorrentes', placeholder: 'Ex: Zara, Renner, C&A', type: 'text', required: true}, {name: 'differentials', label: 'Seus diferenciais', placeholder: 'Ex: Sustentável, brasileiro', type: 'text', required: true}],
+      description: 'Mapeie e analise a competição detalhadamente',
+      template: `Faça uma análise completa de concorrentes:
+
+**SEU NEGÓCIO:** {business}
+**PRINCIPAIS CONCORRENTES:** {competitors}
+**SEUS DIFERENCIAIS:** {differentials}
+
+---
+
+**ANÁLISE COMPETITIVA:**
+
+**1. MAPEAMENTO DE CONCORRENTES**
+
+*Concorrentes Diretos (mesma solução, mesmo público):*
+| Concorrente | Tamanho | Posicionamento | Força principal |
+|-------------|---------|----------------|-----------------|
+| | | | |
+| | | | |
+
+*Concorrentes Indiretos (solução diferente, mesmo problema):*
+| Concorrente | Solução alternativa | Público |
+|-------------|---------------------|---------|
+| | | |
+| | | |
+
+**2. ANÁLISE DETALHADA POR CONCORRENTE**
+
+*Concorrente 1: [Nome]*
+- Website/presença digital:
+- Proposta de valor:
+- Modelo de negócio:
+- Pricing:
+- Pontos fortes:
+- Pontos fracos:
+- Canais de aquisição:
+- Público principal:
+
+*[Repetir para outros concorrentes]*
+
+**3. COMPARATIVO**
+
+| Critério | Você | Conc. 1 | Conc. 2 | Conc. 3 |
+|----------|------|---------|---------|---------|
+| Preço | | | | |
+| Qualidade | | | | |
+| Features | | | | |
+| Suporte | | | | |
+| UX/Design | | | | |
+| Marca | | | | |
+
+**4. ANÁLISE DE PREÇOS**
+| Produto/Plano | Você | Mercado (média) | Líder |
+|---------------|------|-----------------|-------|
+| Básico | | | |
+| Intermediário | | | |
+| Premium | | | |
+
+**5. GAPS E OPORTUNIDADES**
+- O que ninguém faz bem?
+- Reclamações comuns dos clientes deles?
+- Nichos mal atendidos?
+- Features pedidos e não entregues?
+
+**6. SEUS DIFERENCIAIS**
+- Por que um cliente escolheria você?
+- O que é difícil de copiar?
+- Qual sua "unfair advantage"?
+
+**7. ESTRATÉGIA COMPETITIVA**
+- Onde competir de frente
+- Onde evitar competição
+- Como se posicionar
+- Ações prioritárias`,
+      variables: [
+        { name: 'business', label: 'Seu negócio', placeholder: 'Ex: E-commerce de moda sustentável', type: 'text', required: true },
+        { name: 'competitors', label: 'Concorrentes', placeholder: 'Ex: Zara, Renner, Amaro, Insecta Shoes', type: 'text', required: true },
+        { name: 'differentials', label: 'Seus diferenciais', placeholder: 'Ex: 100% sustentável, produção local, transparência', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['concorrência', 'análise', 'mercado', 'benchmark'],
+      tags: ['concorrência', 'análise', 'mercado', 'benchmark', 'estratégia'],
       difficulty: 'beginner',
       isPremium: false
     },
     {
       id: 'biz-elevator-pitch',
       categoryId: 'business',
-      title: 'Elevator Pitch',
-      description: 'Apresente seu negócio em 30s',
-      template: 'Pitch para: {business}, problema que resolve: {problem}, solução: {solution}, diferencial: {unique}. Crie versões de 30s, 1min e 2min.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: App meditação', type: 'text', required: true}, {name: 'problem', label: 'Problema', placeholder: 'Ex: Estresse e ansiedade', type: 'text', required: true}, {name: 'solution', label: 'Solução', placeholder: 'Ex: Meditações guiadas personalizadas', type: 'text', required: true}, {name: 'unique', label: 'Diferencial', placeholder: 'Ex: AI adapta às necessidades', type: 'text', required: true}],
+      title: 'Elevator Pitch Perfeito',
+      description: 'Apresente seu negócio de forma impactante em 30 segundos',
+      template: `Crie um elevator pitch impactante:
+
+**NEGÓCIO:** {business}
+**PROBLEMA QUE RESOLVE:** {problem}
+**SUA SOLUÇÃO:** {solution}
+**DIFERENCIAL ÚNICO:** {unique}
+
+---
+
+**ESTRUTURA DO PITCH:**
+
+**1. FÓRMULA DO PITCH (30 segundos)**
+
+"Para [PÚBLICO-ALVO] que [TÊM O PROBLEMA],
+[NOME DO NEGÓCIO] é [CATEGORIA]
+que [BENEFÍCIO PRINCIPAL].
+Diferente de [ALTERNATIVAS],
+nós [DIFERENCIAL ÚNICO]."
+
+**2. VERSÃO 30 SEGUNDOS (Elevador)**
+[Escreva a versão mais concisa]
+
+**3. VERSÃO 1 MINUTO (Networking)**
+- Gancho de atenção (problema)
+- Sua solução
+- Como funciona (1 frase)
+- Resultados/prova social
+- Call to action
+
+**4. VERSÃO 2 MINUTOS (Apresentação)**
+- Contexto do problema
+- Tamanho da oportunidade
+- Sua solução detalhada
+- Modelo de negócio
+- Tração/resultados
+- Equipe (se relevante)
+- Próximos passos
+
+**5. ELEMENTOS-CHAVE**
+- Headline memorável:
+- Analogia ("Somos o X para Y"):
+- Número impactante:
+- História pessoal (opcional):
+
+**6. PARA DIFERENTES AUDIÊNCIAS**
+
+*Para Investidores:*
+[Foco em oportunidade de mercado e crescimento]
+
+*Para Clientes:*
+[Foco em benefícios e resultados]
+
+*Para Parceiros:*
+[Foco em sinergia e complementaridade]
+
+*Para Imprensa:*
+[Foco em novidade e impacto social]
+
+**7. PERGUNTAS FREQUENTES**
+Prepare respostas curtas para:
+- Como vocês ganham dinheiro?
+- Quem são os concorrentes?
+- Por que vocês?
+- Qual o tamanho do mercado?
+- Qual a tração até agora?`,
+      variables: [
+        { name: 'business', label: 'Negócio', placeholder: 'Ex: NutriApp - app de nutrição personalizada', type: 'text', required: true },
+        { name: 'problem', label: 'Problema', placeholder: 'Ex: Pessoas não conseguem manter dietas porque são genéricas', type: 'text', required: true },
+        { name: 'solution', label: 'Solução', placeholder: 'Ex: IA que cria planos alimentares personalizados', type: 'text', required: true },
+        { name: 'unique', label: 'Diferencial', placeholder: 'Ex: Adapta em tempo real baseado em feedback e resultados', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['pitch', 'apresentação', 'networking', 'vendas'],
+      tags: ['pitch', 'apresentação', 'networking', 'vendas', 'investidores'],
       difficulty: 'beginner',
+      isPremium: false
+    },
+    {
+      id: 'biz-cashflow',
+      categoryId: 'business',
+      title: 'Projeção de Fluxo de Caixa',
+      description: 'Monte uma projeção financeira realista de 12 meses',
+      template: `Crie uma projeção de fluxo de caixa:
+
+**NEGÓCIO:** {business}
+**RECEITA MENSAL ATUAL:** {revenue}
+**CUSTOS FIXOS:** {fixed_costs}
+**CUSTOS VARIÁVEIS:** {variable_costs}
+
+---
+
+**PROJEÇÃO DE FLUXO DE CAIXA (12 MESES):**
+
+**1. PREMISSAS**
+- Crescimento mensal de receita: X%
+- Sazonalidade: [meses de alta/baixa]
+- Inflação de custos: X%
+- Novos custos previstos: [quando/quanto]
+- Investimentos planejados: [quando/quanto]
+
+**2. RECEITAS PROJETADAS**
+| Mês | Receita Operacional | Outras Receitas | Total |
+|-----|---------------------|-----------------|-------|
+| Jan | | | |
+| Fev | | | |
+| Mar | | | |
+| Abr | | | |
+| Mai | | | |
+| Jun | | | |
+| Jul | | | |
+| Ago | | | |
+| Set | | | |
+| Out | | | |
+| Nov | | | |
+| Dez | | | |
+
+**3. CUSTOS FIXOS MENSAIS**
+| Item | Valor |
+|------|-------|
+| Aluguel | R$ |
+| Salários | R$ |
+| Benefícios | R$ |
+| Contabilidade | R$ |
+| Software/SaaS | R$ |
+| Marketing fixo | R$ |
+| Outros | R$ |
+| **Total Fixo** | **R$** |
+
+**4. CUSTOS VARIÁVEIS**
+| Item | % da Receita | Valor médio |
+|------|--------------|-------------|
+| CMV/Custo produto | % | R$ |
+| Comissões | % | R$ |
+| Frete | % | R$ |
+| Impostos | % | R$ |
+| Taxas cartão | % | R$ |
+| **Total Variável** | **%** | **R$** |
+
+**5. FLUXO DE CAIXA MENSAL**
+| Mês | Entradas | Saídas | Saldo Mês | Saldo Acum. |
+|-----|----------|--------|-----------|-------------|
+| Jan | | | | |
+| Fev | | | | |
+| ... | | | | |
+| Dez | | | | |
+
+**6. INDICADORES**
+- Ponto de Equilíbrio: R$ [X]/mês
+- Margem de Contribuição: X%
+- Margem Líquida: X%
+- Burn rate (se aplicável): R$ [X]/mês
+- Runway: X meses
+
+**7. CENÁRIOS**
+| Cenário | Receita | Lucro | Caixa final |
+|---------|---------|-------|-------------|
+| Pessimista | | | |
+| Realista | | | |
+| Otimista | | | |
+
+**8. RESERVA E CONTINGÊNCIA**
+- Reserva recomendada: X meses de custo fixo
+- Valor: R$ [X]
+- Plano de contingência se caixa apertar`,
+      variables: [
+        { name: 'business', label: 'Negócio', placeholder: 'Ex: Agência de marketing digital', type: 'text', required: true },
+        { name: 'revenue', label: 'Receita mensal atual', placeholder: 'Ex: R$ 50.000', type: 'text', required: true },
+        { name: 'fixed_costs', label: 'Custos fixos', placeholder: 'Ex: Aluguel R$ 3k, Salários R$ 25k, Software R$ 2k', type: 'textarea', required: true },
+        { name: 'variable_costs', label: 'Custos variáveis', placeholder: 'Ex: Impostos 15%, Comissões 10%, Ferramentas por projeto 5%', type: 'text', required: true }
+      ],
+      examples: [],
+      tags: ['finanças', 'fluxo de caixa', 'projeção', 'DFC', 'planejamento'],
+      difficulty: 'intermediate',
       isPremium: false
     },
     {
       id: 'biz-meeting-agenda',
       categoryId: 'business',
       title: 'Agenda de Reunião Produtiva',
-      description: 'Estruture reuniões eficientes',
-      template: 'Agenda para reunião sobre: {topic}, participantes: {participants}, duração: {duration}, decisões necessárias: {decisions}. Inclua pré-trabalho, timing e follow-up.',
-      variables: [{name: 'topic', label: 'Tema', placeholder: 'Ex: Planejamento trimestral', type: 'text', required: true}, {name: 'participants', label: 'Participantes', placeholder: 'Ex: Liderança (5 pessoas)', type: 'text', required: true}, {name: 'duration', label: 'Duração', placeholder: 'Ex: 2h', type: 'text', required: true}, {name: 'decisions', label: 'Decisões', placeholder: 'Ex: Budget, prioridades, OKRs', type: 'textarea', required: true}],
+      description: 'Estruture reuniões que geram resultado',
+      template: `Estruture uma reunião produtiva:
+
+**TEMA:** {topic}
+**PARTICIPANTES:** {participants}
+**DURAÇÃO:** {duration}
+**DECISÕES NECESSÁRIAS:** {decisions}
+
+---
+
+**PLANEJAMENTO DA REUNIÃO:**
+
+**1. OBJETIVO SMART DA REUNIÃO**
+- Específico: O que queremos ao final?
+- Mensurável: Como saber se foi produtiva?
+- Atingível: É possível nesse tempo?
+- Relevante: Por que essa reunião agora?
+- Temporal: Deadline das decisões
+
+**2. PRÉ-TRABALHO (Enviar 24h antes)**
+*Para todos os participantes:*
+- Contexto em 3 bullets
+- Materiais para revisar
+- Perguntas para preparar
+- Decisões que serão tomadas
+
+**3. AGENDA DA REUNIÃO**
+
+| Tempo | Tópico | Responsável | Tipo |
+|-------|--------|-------------|------|
+| 5 min | Check-in e alinhamento | Facilitador | Abertura |
+| X min | [Tópico 1] | [Nome] | Discussão |
+| X min | [Tópico 2] | [Nome] | Decisão |
+| X min | [Tópico 3] | [Nome] | Informação |
+| 5 min | Próximos passos e fechamento | Facilitador | Encerramento |
+
+**4. REGRAS DA REUNIÃO**
+- [ ] Começar e terminar no horário
+- [ ] Câmeras ligadas (se virtual)
+- [ ] Um fala por vez
+- [ ] Foco no objetivo
+- [ ] Decisões registradas na hora
+
+**5. FRAMEWORK PARA CADA TÓPICO**
+1. Contexto (2 min): O que está em discussão
+2. Opções (5 min): Quais as alternativas
+3. Discussão (X min): Prós e contras
+4. Decisão (2 min): O que foi decidido
+5. Ação (1 min): Quem faz o quê até quando
+
+**6. TEMPLATE DE REGISTRO**
+| Decisão | Ação | Responsável | Prazo |
+|---------|------|-------------|-------|
+| | | | |
+| | | | |
+| | | | |
+
+**7. FOLLOW-UP (Enviar em 24h)**
+*Email de follow-up contendo:*
+- Resumo das decisões
+- Lista de ações com responsáveis
+- Prazos acordados
+- Data da próxima reunião (se houver)
+- Materiais complementares
+
+**8. CHECKLIST PÓS-REUNIÃO**
+- [ ] Ata enviada para todos
+- [ ] Ações adicionadas em ferramenta de gestão
+- [ ] Próxima reunião agendada (se necessário)
+- [ ] Feedback coletado (se relevante)`,
+      variables: [
+        { name: 'topic', label: 'Tema da reunião', placeholder: 'Ex: Planejamento estratégico Q1 2025', type: 'text', required: true },
+        { name: 'participants', label: 'Participantes', placeholder: 'Ex: Diretoria (CEO, CFO, CMO, CTO) - 4 pessoas', type: 'text', required: true },
+        { name: 'duration', label: 'Duração', placeholder: 'Ex: 2 horas', type: 'text', required: true },
+        { name: 'decisions', label: 'Decisões necessárias', placeholder: 'Ex: Definir OKRs, aprovar budget de marketing, priorizar projetos', type: 'textarea', required: true }
+      ],
       examples: [],
-      tags: ['reuniões', 'produtividade', 'gestão', 'agenda'],
+      tags: ['reuniões', 'produtividade', 'gestão', 'agenda', 'facilitação'],
       difficulty: 'beginner',
       isPremium: false
     },
+    {
+      id: 'biz-mvp-definition',
+      categoryId: 'business',
+      title: 'Definição de MVP',
+      description: 'Estruture seu Produto Mínimo Viável',
+      template: `Defina o MVP do seu produto/serviço:
 
-    // PREMIUM PROMPTS (54 total)
+**IDEIA:** {idea}
+**PROBLEMA:** {problem}
+**HIPÓTESES A VALIDAR:** {hypotheses}
+
+---
+
+**DEFINIÇÃO DO MVP:**
+
+**1. PROBLEMA E SOLUÇÃO**
+- Problema específico que resolve:
+- Para quem (persona):
+- Alternativas atuais:
+- Por que sua solução é melhor:
+
+**2. HIPÓTESES CRÍTICAS**
+| Hipótese | Como validar | Métrica de sucesso |
+|----------|--------------|-------------------|
+| H1: [Pessoas têm esse problema] | | |
+| H2: [Estão dispostas a pagar] | | |
+| H3: [Nossa solução resolve] | | |
+| H4: [Conseguimos entregar] | | |
+
+**3. FEATURES DO MVP**
+
+*Essencial (must have):*
+- Feature 1: [Descrição]
+- Feature 2: [Descrição]
+- Feature 3: [Descrição]
+
+*Nice to have (versão 2):*
+- Feature A: [Por que não agora]
+- Feature B: [Por que não agora]
+
+*Não terá (por enquanto):*
+- Feature X: [Motivo]
+- Feature Y: [Motivo]
+
+**4. MÉTRICAS DE VALIDAÇÃO**
+| Métrica | Meta MVP | Como medir |
+|---------|----------|------------|
+| Usuários/clientes | | |
+| Retenção | | |
+| NPS/Satisfação | | |
+| Receita/Conversão | | |
+
+**5. CRITÉRIOS DE SUCESSO**
+O MVP é validado se:
+- [ ] Critério 1: [quantitativo]
+- [ ] Critério 2: [quantitativo]
+- [ ] Critério 3: [qualitativo]
+
+**6. TIMELINE**
+| Fase | Atividades | Duração |
+|------|-----------|---------|
+| Semana 1-2 | Design e prototipagem | |
+| Semana 3-4 | Desenvolvimento | |
+| Semana 5 | Testes internos | |
+| Semana 6-8 | Beta com early adopters | |
+
+**7. RECURSOS NECESSÁRIOS**
+- Equipe:
+- Ferramentas:
+- Budget:
+- Tempo total:
+
+**8. PRÓXIMOS PASSOS PÓS-MVP**
+- Se validado: [plano de escala]
+- Se não validado: [opções de pivot]`,
+      variables: [
+        { name: 'idea', label: 'Ideia', placeholder: 'Ex: App de gestão de tarefas para times remotos', type: 'text', required: true },
+        { name: 'problem', label: 'Problema', placeholder: 'Ex: Times remotos perdem produtividade com ferramentas fragmentadas', type: 'textarea', required: true },
+        { name: 'hypotheses', label: 'Hipóteses', placeholder: 'Ex: Times pagariam R$ 15/usuário/mês por uma solução unificada', type: 'textarea', required: true }
+      ],
+      examples: [],
+      tags: ['mvp', 'produto', 'validação', 'lean startup', 'startup'],
+      difficulty: 'intermediate',
+      isPremium: false
+    },
+
+    // PREMIUM PROMPTS
     {
       id: 'biz-business-plan',
       categoryId: 'business',
       title: 'Plano de Negócios Completo',
-      description: 'Crie plano estruturado para seu negócio',
-      template: 'Plano de negócios para: {business}, segmento: {segment}, investimento: {investment}. Inclua sumário executivo, análise de mercado, estratégia, operacional, financeiro (3 anos), riscos e anexos.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Cafeteria premium', type: 'text', required: true}, {name: 'segment', label: 'Segmento', placeholder: 'Ex: Alimentação', type: 'text', required: true}, {name: 'investment', label: 'Investimento', placeholder: 'Ex: R$ 100.000', type: 'text', required: true}],
+      description: 'Crie um plano de negócios profissional',
+      template: `Crie um plano de negócios completo:
+
+**NEGÓCIO:** {business}
+**SEGMENTO:** {segment}
+**INVESTIMENTO INICIAL:** {investment}
+
+---
+
+**PLANO DE NEGÓCIOS:**
+
+**1. SUMÁRIO EXECUTIVO**
+- Descrição do negócio (2-3 parágrafos)
+- Missão, visão e valores
+- Proposta de valor única
+- Objetivos de curto, médio e longo prazo
+- Investimento necessário e uso dos recursos
+- Projeção de resultados (3 anos)
+
+**2. ANÁLISE DE MERCADO**
+
+*2.1 Setor e Tendências*
+- Tamanho do mercado (TAM, SAM, SOM)
+- Taxa de crescimento
+- Tendências principais
+- Regulamentação relevante
+
+*2.2 Público-Alvo*
+- Perfil demográfico
+- Comportamento de compra
+- Necessidades e dores
+- Poder aquisitivo
+
+*2.3 Análise Competitiva*
+| Concorrente | Forças | Fraquezas | Market share |
+|-------------|--------|-----------|--------------|
+| | | | |
+| | | | |
+
+**3. PRODUTOS/SERVIÇOS**
+- Descrição detalhada
+- Benefícios e diferenciais
+- Ciclo de vida
+- Roadmap de desenvolvimento
+- Propriedade intelectual
+
+**4. ESTRATÉGIA DE MARKETING**
+
+*4.1 Posicionamento*
+- Público-alvo principal
+- Proposta de valor
+- Mensagem-chave
+
+*4.2 Mix de Marketing*
+- Produto
+- Preço
+- Praça (canais)
+- Promoção
+
+*4.3 Plano de Ação*
+| Canal | Investimento | Meta | ROI esperado |
+|-------|--------------|------|--------------|
+| | | | |
+
+**5. PLANO OPERACIONAL**
+- Localização e infraestrutura
+- Processos principais
+- Fornecedores-chave
+- Tecnologia necessária
+- Equipe e organograma
+
+**6. PLANO FINANCEIRO**
+
+*6.1 Investimento Inicial*
+| Item | Valor |
+|------|-------|
+| | |
+| Total | R$ |
+
+*6.2 Projeção de Receitas (3 anos)*
+| Ano | Receita | Crescimento |
+|-----|---------|-------------|
+| 1 | R$ | - |
+| 2 | R$ | X% |
+| 3 | R$ | X% |
+
+*6.3 Projeção de Custos*
+| Tipo | Ano 1 | Ano 2 | Ano 3 |
+|------|-------|-------|-------|
+| Fixos | | | |
+| Variáveis | | | |
+
+*6.4 Indicadores*
+- Ponto de equilíbrio:
+- Margem líquida:
+- ROI:
+- Payback:
+
+**7. ANÁLISE DE RISCOS**
+| Risco | Probabilidade | Impacto | Mitigação |
+|-------|---------------|---------|-----------|
+| | | | |
+
+**8. CRONOGRAMA DE IMPLEMENTAÇÃO**
+| Fase | Atividades | Prazo |
+|------|-----------|-------|
+| 1 | | |
+| 2 | | |
+| 3 | | |`,
+      variables: [
+        { name: 'business', label: 'Negócio', placeholder: 'Ex: Cafeteria especializada em café artesanal', type: 'text', required: true },
+        { name: 'segment', label: 'Segmento', placeholder: 'Ex: Alimentação / Food Service', type: 'text', required: true },
+        { name: 'investment', label: 'Investimento inicial', placeholder: 'Ex: R$ 150.000', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['plano', 'estratégia', 'negócio', 'startup'],
+      tags: ['plano de negócios', 'estratégia', 'startup', 'empreendedorismo'],
       difficulty: 'advanced',
       isPremium: true,
       isFeatured: true
@@ -99,24 +654,98 @@ export const businessPromptsCategory: PromptCategory = {
     {
       id: 'biz-okr',
       categoryId: 'business',
-      title: 'Framework OKR para Equipe',
-      description: 'Defina objetivos e resultados-chave',
-      template: 'Crie OKRs trimestrais para: {company}, time: {team}, objetivos principais: {objectives}. Defina 3-5 objectives e 3-4 key results cada, com métricas, baseline e target.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: TechStart SaaS', type: 'text', required: true}, {name: 'team', label: 'Time/Departamento', placeholder: 'Ex: Produto', type: 'text', required: true}, {name: 'objectives', label: 'Objetivos gerais', placeholder: 'Ex: Aumentar retenção', type: 'textarea', required: true}],
+      title: 'Definição de OKRs',
+      description: 'Crie objetivos e resultados-chave para seu negócio',
+      template: `Defina OKRs (Objectives and Key Results):
+
+**EMPRESA/ÁREA:** {company}
+**PERÍODO:** {period}
+**CONTEXTO:** {context}
+
+---
+
+**FRAMEWORK OKR:**
+
+**1. OBJETIVOS DA EMPRESA (Top-level)**
+
+*Objetivo 1: [Qualitativo, inspirador]*
+- KR 1.1: [Quantitativo, mensurável]
+- KR 1.2: [Quantitativo, mensurável]
+- KR 1.3: [Quantitativo, mensurável]
+
+*Objetivo 2: [Qualitativo, inspirador]*
+- KR 2.1: [Quantitativo, mensurável]
+- KR 2.2: [Quantitativo, mensurável]
+- KR 2.3: [Quantitativo, mensurável]
+
+**2. OKRs POR ÁREA**
+
+*Marketing:*
+- O: [Objetivo]
+  - KR: [Resultado-chave]
+  - KR: [Resultado-chave]
+
+*Vendas:*
+- O: [Objetivo]
+  - KR: [Resultado-chave]
+  - KR: [Resultado-chave]
+
+*Produto:*
+- O: [Objetivo]
+  - KR: [Resultado-chave]
+  - KR: [Resultado-chave]
+
+*Operações:*
+- O: [Objetivo]
+  - KR: [Resultado-chave]
+  - KR: [Resultado-chave]
+
+**3. ALINHAMENTO**
+```
+Objetivo Empresa
+    ├── Objetivo Marketing → KRs
+    ├── Objetivo Vendas → KRs
+    └── Objetivo Produto → KRs
+```
+
+**4. MÉTRICAS E TRACKING**
+
+| Objetivo | Key Result | Baseline | Meta | Atual | Status |
+|----------|------------|----------|------|-------|--------|
+| O1 | KR 1.1 | | | | 🟢🟡🔴 |
+| O1 | KR 1.2 | | | | |
+| O2 | KR 2.1 | | | | |
+
+**5. INICIATIVAS**
+Para cada Key Result, quais iniciativas/projetos:
+
+| KR | Iniciativa | Responsável | Prazo |
+|----|-----------|-------------|-------|
+| | | | |
+
+**6. CADÊNCIA DE REVIEW**
+- Weekly: Check-in de progresso
+- Monthly: Review e ajustes
+- Quarterly: Retrospectiva e novos OKRs
+
+**7. REGRAS DE SCORING**
+- 0-30%: Vermelho (em risco)
+- 30-70%: Amarelo (em progresso)
+- 70-100%: Verde (no caminho)
+- >100%: Azul (meta muito fácil?)
+
+**8. BOAS PRÁTICAS**
+- Máximo 3-5 objetivos por período
+- 3-5 KRs por objetivo
+- KRs devem ser difíceis mas atingíveis (70% confiança)
+- Separar OKRs comprometidos de aspiracionais`,
+      variables: [
+        { name: 'company', label: 'Empresa/Área', placeholder: 'Ex: Startup de SaaS - toda a empresa', type: 'text', required: true },
+        { name: 'period', label: 'Período', placeholder: 'Ex: Q1 2025 (Janeiro-Março)', type: 'text', required: true },
+        { name: 'context', label: 'Contexto', placeholder: 'Ex: Pós-Series A, foco em crescimento de receita e expansão de time', type: 'textarea', required: true }
+      ],
       examples: [],
-      tags: ['okr', 'metas', 'kpi', 'gestão'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-business-model-canvas',
-      categoryId: 'business',
-      title: 'Business Model Canvas',
-      description: 'Visualize modelo de negócio completo',
-      template: 'Canvas para: {business}, segmento: {segment}, proposta valor: {value_prop}. Preencha os 9 blocos: segmentos clientes, proposta valor, canais, relacionamento, receitas, recursos, atividades, parcerias e custos.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Marketplace B2B', type: 'text', required: true}, {name: 'segment', label: 'Segmento', placeholder: 'Ex: Fornecedores industriais', type: 'text', required: true}, {name: 'value_prop', label: 'Proposta de valor', placeholder: 'Ex: Conectar fornecedores com compradores', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['canvas', 'modelo', 'estratégia', 'negócio'],
+      tags: ['okr', 'objetivos', 'gestão', 'metas', 'planejamento'],
       difficulty: 'intermediate',
       isPremium: true
     },
@@ -124,11 +753,103 @@ export const businessPromptsCategory: PromptCategory = {
       id: 'biz-pitch-deck',
       categoryId: 'business',
       title: 'Pitch Deck para Investidores',
-      description: 'Apresentação que capta investimento',
-      template: 'Pitch deck para: {startup}, problema: {problem}, solução: {solution}, mercado: {market}, tração: {traction}, ask: {funding_ask}. 15 slides: problema, solução, mercado, produto, tração, time, financeiro, ask.',
-      variables: [{name: 'startup', label: 'Startup', placeholder: 'Ex: HealthTech telemedicina', type: 'text', required: true}, {name: 'problem', label: 'Problema', placeholder: 'Ex: Acesso limitado médicos', type: 'textarea', required: true}, {name: 'solution', label: 'Solução', placeholder: 'Ex: Consultas online 24/7', type: 'textarea', required: true}, {name: 'market', label: 'Tamanho mercado', placeholder: 'Ex: R$ 50bi no Brasil', type: 'text', required: true}, {name: 'traction', label: 'Tração', placeholder: 'Ex: 10k usuários, R$ 100k MRR', type: 'text', required: true}, {name: 'funding_ask', label: 'Investimento', placeholder: 'Ex: R$ 2M para expansão', type: 'text', required: true}],
+      description: 'Crie uma apresentação para captar investimento',
+      template: `Crie um pitch deck para investidores:
+
+**STARTUP:** {startup}
+**ESTÁGIO:** {stage}
+**CAPTAÇÃO:** {raise}
+**TRAÇÃO:** {traction}
+
+---
+
+**ESTRUTURA DO PITCH DECK (12 slides):**
+
+**Slide 1: Capa**
+- Nome da empresa
+- Tagline (1 frase)
+- Logo
+- Informação de contato
+
+**Slide 2: Problema**
+- Qual problema você resolve?
+- Quão grande é o problema?
+- Por que é urgente resolver?
+- Dados que comprovam a dor
+
+**Slide 3: Solução**
+- Como você resolve o problema?
+- Demonstração visual do produto
+- Benefícios principais (3 bullets)
+- Por que funciona?
+
+**Slide 4: Mercado**
+- TAM (Total Addressable Market)
+- SAM (Serviceable Addressable Market)
+- SOM (Serviceable Obtainable Market)
+- Taxa de crescimento do mercado
+
+**Slide 5: Modelo de Negócio**
+- Como você ganha dinheiro?
+- Estrutura de pricing
+- Unit economics (LTV, CAC, Margem)
+- Projeção de receita
+
+**Slide 6: Tração**
+- Métricas principais
+- Crescimento (MoM, YoY)
+- Clientes notáveis
+- Gráfico de evolução
+
+**Slide 7: Produto**
+- Screenshot ou demo
+- Features principais
+- Roadmap (próximos 12 meses)
+- Propriedade intelectual
+
+**Slide 8: Competição**
+- Mapa competitivo (matriz 2x2)
+- Principais concorrentes
+- Seu diferencial
+- Barreiras de entrada
+
+**Slide 9: Go-to-Market**
+- Estratégia de aquisição
+- Canais principais
+- Custo de aquisição
+- Parcerias estratégicas
+
+**Slide 10: Time**
+- Fundadores (foto + bio 1 linha)
+- Advisors
+- Por que esse time?
+- Contratações planejadas
+
+**Slide 11: Financeiro**
+- Receita atual e projetada (3-5 anos)
+- Burn rate atual
+- Runway com esse raise
+- Caminho para profitabilidade
+
+**Slide 12: Ask**
+- Quanto está captando
+- Valuation (se definido)
+- Uso dos recursos (% por área)
+- Próximos milestones
+
+**ANEXOS (se pedirem)**
+- Projeções financeiras detalhadas
+- Contratos relevantes
+- Pesquisas de mercado
+- Testimonials de clientes`,
+      variables: [
+        { name: 'startup', label: 'Nome da startup', placeholder: 'Ex: FinanceApp - Gestão financeira para PMEs', type: 'text', required: true },
+        { name: 'stage', label: 'Estágio', placeholder: 'Ex: Seed / Pre-Series A', type: 'text', required: true },
+        { name: 'raise', label: 'Quanto quer captar', placeholder: 'Ex: R$ 2 milhões', type: 'text', required: true },
+        { name: 'traction', label: 'Tração atual', placeholder: 'Ex: R$ 50k MRR, 200 clientes, crescendo 15% ao mês', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['pitch', 'investimento', 'vc', 'startup'],
+      tags: ['pitch deck', 'investidores', 'captação', 'startup', 'apresentação'],
       difficulty: 'advanced',
       isPremium: true
     },
@@ -136,612 +857,523 @@ export const businessPromptsCategory: PromptCategory = {
       id: 'biz-pricing-strategy',
       categoryId: 'business',
       title: 'Estratégia de Precificação',
-      description: 'Defina preços que maximizam lucro',
-      template: 'Precificação para: {product}, custo: {cost}, mercado: {market}, concorrência: {competition}. Analise cost-plus, value-based, competitive. Defina tiers, ancoragem e psicologia de preços.',
-      variables: [{name: 'product', label: 'Produto/Serviço', placeholder: 'Ex: SaaS gestão projetos', type: 'text', required: true}, {name: 'cost', label: 'Custo unitário', placeholder: 'Ex: R$ 10/usuário', type: 'text', required: true}, {name: 'market', label: 'Mercado', placeholder: 'Ex: PMEs Brasil', type: 'text', required: true}, {name: 'competition', label: 'Preços concorrentes', placeholder: 'Ex: R$ 50-200/usuário', type: 'text', required: true}],
+      description: 'Defina preços que maximizam lucro e valor',
+      template: `Crie uma estratégia de precificação:
+
+**PRODUTO/SERVIÇO:** {product}
+**CUSTOS:** {costs}
+**CONCORRENTES:** {competitors}
+**VALOR ENTREGUE:** {value}
+
+---
+
+**ESTRATÉGIA DE PRECIFICAÇÃO:**
+
+**1. ANÁLISE DE CUSTOS**
+- Custo variável unitário: R$
+- Custo fixo total: R$
+- Custo total por unidade: R$
+- Margem mínima necessária: X%
+
+**2. ANÁLISE DE MERCADO**
+| Concorrente | Produto | Preço | Posicionamento |
+|-------------|---------|-------|----------------|
+| | | | |
+| | | | |
+| Média de mercado | | R$ | |
+
+**3. ANÁLISE DE VALOR**
+- Quanto o cliente economiza?
+- Quanto tempo ganha?
+- Qual o custo de não resolver?
+- ROI para o cliente:
+
+**4. ESTRATÉGIAS DE PREÇO**
+
+*Opção A: Cost-Plus*
+- Preço = Custo + Margem desejada
+- Preço sugerido: R$
+- Prós e contras
+
+*Opção B: Value-Based*
+- Preço = % do valor entregue
+- Preço sugerido: R$
+- Prós e contras
+
+*Opção C: Competitive*
+- Preço = Baseado no mercado
+- Preço sugerido: R$
+- Prós e contras
+
+**5. ESTRUTURA DE PREÇOS**
+
+| Plano | Features | Preço | Target |
+|-------|----------|-------|--------|
+| Básico | | R$ | |
+| Pro | | R$ | |
+| Enterprise | | Sob consulta | |
+
+**6. TÁTICAS DE PRICING**
+- Ancoragem: Mostrar plano mais caro primeiro
+- Decoy: Plano intermediário para empurrar premium
+- Bundling: Pacotes com desconto
+- Freemium: Converter free para pago
+
+**7. ELASTICIDADE**
+| Preço | Volume esperado | Receita |
+|-------|-----------------|---------|
+| R$ X | | |
+| R$ Y | | |
+| R$ Z | | |
+
+**8. DESCONTOS**
+| Tipo | Desconto | Condição |
+|------|----------|----------|
+| Anual vs mensal | % | Pagamento antecipado |
+| Volume | % | +X unidades |
+| Indicação | % | Cliente indica |
+
+**9. RECOMENDAÇÃO**
+- Estratégia escolhida:
+- Preço recomendado:
+- Justificativa:
+- Revisão prevista: [quando]`,
+      variables: [
+        { name: 'product', label: 'Produto/Serviço', placeholder: 'Ex: Software de gestão de projetos SaaS', type: 'text', required: true },
+        { name: 'costs', label: 'Custos', placeholder: 'Ex: Infra R$ 5/usuário, suporte R$ 2/usuário, CAC R$ 50', type: 'textarea', required: true },
+        { name: 'competitors', label: 'Preços concorrentes', placeholder: 'Ex: Monday $10/usuário, Asana $13/usuário, Trello $5/usuário', type: 'text', required: true },
+        { name: 'value', label: 'Valor entregue', placeholder: 'Ex: Economia de 5h/semana por usuário, redução de 30% em atrasos', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['pricing', 'preço', 'revenue', 'estratégia'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-unit-economics',
-      categoryId: 'business',
-      title: 'Unit Economics e Viabilidade',
-      description: 'Valide viabilidade econômica',
-      template: 'Unit economics para: {business}, CAC: {cac}, LTV: {ltv}, margem: {margin}. Calcule LTV/CAC ratio, payback period, churn impact e projeção escala.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: SaaS B2B', type: 'text', required: true}, {name: 'cac', label: 'CAC atual', placeholder: 'Ex: R$ 500', type: 'text', required: true}, {name: 'ltv', label: 'LTV estimado', placeholder: 'Ex: R$ 3.000', type: 'text', required: true}, {name: 'margin', label: 'Margem bruta', placeholder: 'Ex: 70%', type: 'text', required: true}],
-      examples: [],
-      tags: ['unit economics', 'ltv', 'cac', 'financeiro'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-team-structure',
-      categoryId: 'business',
-      title: 'Estrutura de Time e Cargos',
-      description: 'Organize equipe eficientemente',
-      template: 'Estrutura para: {company}, estágio: {stage}, budget: {budget}, objetivos: {goals}. Defina organograma, cargos prioritários, JDs, senioridade e cronograma contratação.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Startup crescimento', type: 'text', required: true}, {name: 'stage', label: 'Estágio', placeholder: 'Ex: Series A, 20 pessoas', type: 'text', required: true}, {name: 'budget', label: 'Budget contratação', placeholder: 'Ex: R$ 50k/mês folha', type: 'text', required: true}, {name: 'goals', label: 'Objetivos', placeholder: 'Ex: Escalar vendas 3x', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['rh', 'time', 'organograma', 'contratação'],
+      tags: ['pricing', 'preço', 'monetização', 'estratégia', 'valor'],
       difficulty: 'intermediate',
       isPremium: true
     },
     {
-      id: 'biz-kpi-dashboard',
+      id: 'biz-hiring-plan',
       categoryId: 'business',
-      title: 'Dashboard de KPIs Essenciais',
-      description: 'Acompanhe métricas que importam',
-      template: 'KPIs para: {business}, tipo: {type}, objetivos: {objectives}. Defina North Star Metric, KPIs leading e lagging por área, metas e frequência análise.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'type', label: 'Tipo negócio', placeholder: 'Ex: B2C SaaS', type: 'text', required: true}, {name: 'objectives', label: 'Objetivos principais', placeholder: 'Ex: Crescimento revenue, retenção', type: 'textarea', required: true}],
+      title: 'Plano de Contratação',
+      description: 'Estruture o crescimento da sua equipe',
+      template: `Crie um plano de contratação:
+
+**EMPRESA:** {company}
+**ÁREA/DEPARTAMENTO:** {department}
+**VAGAS:** {positions}
+**PRAZO:** {timeline}
+
+---
+
+**PLANO DE CONTRATAÇÃO:**
+
+**1. CONTEXTO E NECESSIDADE**
+- Por que contratar agora?
+- O que muda com essas contratações?
+- Impacto no negócio
+- Budget disponível
+
+**2. PERFIL DA VAGA**
+
+*Vaga 1: [Título]*
+| Item | Descrição |
+|------|-----------|
+| Missão | |
+| Responsabilidades (5-7) | |
+| Requisitos obrigatórios | |
+| Diferenciais | |
+| Senioridade | |
+| Modelo (PJ/CLT/Remoto) | |
+| Salário/Faixa | |
+
+**3. JOB DESCRIPTION**
+
+*[Título da Vaga]*
+
+**Sobre a empresa**
+[2-3 parágrafos]
+
+**O desafio**
+[O que a pessoa vai fazer]
+
+**Responsabilidades**
+- [Lista de responsabilidades]
+
+**Requisitos**
+- [Obrigatórios]
+- [Diferenciais]
+
+**Benefícios**
+- [Lista de benefícios]
+
+**Processo seletivo**
+1. Triagem de currículo
+2. Entrevista inicial (30 min)
+3. Case/teste técnico
+4. Entrevista com gestor
+5. Fit cultural / referências
+6. Proposta
+
+**4. ESTRATÉGIA DE SOURCING**
+| Canal | Custo | Qualidade | Volume |
+|-------|-------|-----------|--------|
+| LinkedIn | | | |
+| Indicação | | | |
+| Job boards | | | |
+| Headhunter | | | |
+| Universidades | | | |
+
+**5. CRONOGRAMA**
+| Fase | Semana 1 | Semana 2 | Semana 3 | Semana 4 |
+|------|----------|----------|----------|----------|
+| Divulgação | X | | | |
+| Triagem | | X | | |
+| Entrevistas | | X | X | |
+| Decisão | | | | X |
+| Proposta | | | | X |
+
+**6. SCORECARDS DE AVALIAÇÃO**
+| Critério | Peso | Nota (1-5) |
+|----------|------|------------|
+| Hard skills | 30% | |
+| Soft skills | 25% | |
+| Cultura | 25% | |
+| Potencial | 20% | |
+
+**7. ONBOARDING**
+- Semana 1: [Atividades]
+- Semana 2: [Atividades]
+- Mês 1: [Objetivos]
+- Mês 3: [Avaliação]
+
+**8. MÉTRICAS DO PROCESSO**
+| Métrica | Meta |
+|---------|------|
+| Time to hire | X dias |
+| Cost per hire | R$ |
+| Offer acceptance rate | X% |
+| Quality of hire (90 dias) | |`,
+      variables: [
+        { name: 'company', label: 'Empresa', placeholder: 'Ex: Startup de tecnologia, 30 pessoas', type: 'text', required: true },
+        { name: 'department', label: 'Área', placeholder: 'Ex: Engenharia / Produto', type: 'text', required: true },
+        { name: 'positions', label: 'Vagas', placeholder: 'Ex: 2 desenvolvedores senior, 1 product manager', type: 'text', required: true },
+        { name: 'timeline', label: 'Prazo', placeholder: 'Ex: Próximos 2 meses', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['kpi', 'métricas', 'dashboard', 'analytics'],
+      tags: ['contratação', 'RH', 'recrutamento', 'equipe', 'gestão de pessoas'],
       difficulty: 'intermediate',
       isPremium: true
     },
     {
-      id: 'biz-partnership-strategy',
+      id: 'biz-partnership',
       categoryId: 'business',
       title: 'Estratégia de Parcerias',
-      description: 'Cresça através de partnerships',
-      template: 'Parcerias para: {business}, objetivo: {goal}, perfil parceiro: {partner_profile}. Identifique tipos parcerias (distribuição, tecnologia, conteúdo), approach, contrato e KPIs.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Fintech', type: 'text', required: true}, {name: 'goal', label: 'Objetivo', placeholder: 'Ex: Alcançar 50k novos clientes', type: 'text', required: true}, {name: 'partner_profile', label: 'Perfil parceiro ideal', placeholder: 'Ex: Bancos digitais, fintechs', type: 'textarea', required: true}],
+      description: 'Identifique e estruture parcerias estratégicas',
+      template: `Crie uma estratégia de parcerias:
+
+**SEU NEGÓCIO:** {business}
+**OBJETIVO:** {goal}
+**PARCEIROS POTENCIAIS:** {partners}
+
+---
+
+**ESTRATÉGIA DE PARCERIAS:**
+
+**1. OBJETIVOS DA PARCERIA**
+- O que você quer alcançar?
+- Métricas de sucesso
+- Prazo para resultados
+- O que você oferece em troca?
+
+**2. TIPOS DE PARCERIA**
+
+| Tipo | Descrição | Exemplo |
+|------|-----------|---------|
+| Distribuição | Acesso a novos canais | Revenda, white-label |
+| Co-marketing | Ampliar alcance | Webinars, conteúdo |
+| Integração | Produto complementar | APIs, plugins |
+| Referral | Indicações mútuas | Comissionamento |
+| Licenciamento | Uso de tecnologia | B2B2C |
+
+**3. MAPEAMENTO DE PARCEIROS**
+
+| Parceiro | Tipo | Fit | Benefício para eles | Benefício para nós |
+|----------|------|-----|--------------------|--------------------|
+| | | | | |
+| | | | | |
+
+**4. PROPOSTA DE VALOR PARA O PARCEIRO**
+- O que eles ganham:
+  - Receita adicional
+  - Acesso a mercado
+  - Complemento de produto
+  - Credibilidade/marca
+- Por que fechar com você vs concorrentes
+- Cases/provas de sucesso
+
+**5. MODELO DE PARCERIA**
+
+*Modelo 1: Revenue Share*
+- Split: X% para cada lado
+- Quem faz a venda
+- Como rastrear
+
+*Modelo 2: Fee Fixo*
+- Valor mensal/anual
+- Entregáveis
+- SLAs
+
+*Modelo 3: Referral*
+- Comissão por lead/venda
+- Duração (one-time vs recorrente)
+- Condições
+
+**6. ABORDAGEM COMERCIAL**
+
+*Email de primeiro contato:*
+[Template de email]
+
+*Deck de parceria:*
+- Slide 1: Quem somos
+- Slide 2: Proposta
+- Slide 3: Benefícios mútuos
+- Slide 4: Modelo
+- Slide 5: Cases
+- Slide 6: Próximos passos
+
+**7. OPERACIONALIZAÇÃO**
+- Onboarding do parceiro
+- Materiais de apoio
+- Treinamento
+- Suporte
+- Comunicação regular
+
+**8. GOVERNANÇA**
+- Reuniões de alinhamento: [frequência]
+- KPIs compartilhados
+- Processo de escalação
+- Renovação/término`,
+      variables: [
+        { name: 'business', label: 'Seu negócio', placeholder: 'Ex: Plataforma de e-learning para empresas', type: 'text', required: true },
+        { name: 'goal', label: 'Objetivo', placeholder: 'Ex: Ampliar distribuição via consultorias de RH', type: 'text', required: true },
+        { name: 'partners', label: 'Parceiros potenciais', placeholder: 'Ex: Consultorias de RH, empresas de benefícios, ERPs', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['parcerias', 'bd', 'partnerships', 'crescimento'],
+      tags: ['parcerias', 'B2B', 'crescimento', 'distribuição', 'negócios'],
       difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-segmentation',
-      categoryId: 'business',
-      title: 'Segmentação de Clientes',
-      description: 'Entenda e segmente sua base',
-      template: 'Segmentação para: {business}, base: {customer_base}, critérios: {criteria}. Crie personas detalhadas, RFM analysis, segmentos prioritários e estratégias específicas.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Marketplace', type: 'text', required: true}, {name: 'customer_base', label: 'Base atual', placeholder: 'Ex: 50k clientes', type: 'text', required: true}, {name: 'criteria', label: 'Critérios', placeholder: 'Ex: Valor, frequência, categoria', type: 'text', required: true}],
-      examples: [],
-      tags: ['segmentação', 'clientes', 'personas', 'targeting'],
-      difficulty: 'intermediate',
       isPremium: true
     },
     {
       id: 'biz-crisis-management',
       categoryId: 'business',
       title: 'Plano de Gestão de Crise',
-      description: 'Prepare-se para adversidades',
-      template: 'Plano de crise para: {business}, cenários: {scenarios}, stakeholders: {stakeholders}. Protocolos, porta-vozes, comunicação, contenção e recuperação.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Startup tech', type: 'text', required: true}, {name: 'scenarios', label: 'Cenários de crise', placeholder: 'Ex: Data breach, PR negativo', type: 'textarea', required: true}, {name: 'stakeholders', label: 'Stakeholders', placeholder: 'Ex: Clientes, investidores, equipe', type: 'text', required: true}],
+      description: 'Prepare-se para crises e minimize impactos',
+      template: `Crie um plano de gestão de crise:
+
+**EMPRESA:** {company}
+**TIPO DE CRISE:** {crisis_type}
+**STAKEHOLDERS:** {stakeholders}
+
+---
+
+**PLANO DE GESTÃO DE CRISE:**
+
+**1. IDENTIFICAÇÃO DE RISCOS**
+
+| Tipo de crise | Probabilidade | Impacto | Prioridade |
+|---------------|---------------|---------|------------|
+| Operacional | | | |
+| Financeira | | | |
+| Reputacional | | | |
+| Legal | | | |
+| Tecnológica | | | |
+
+**2. COMITÊ DE CRISE**
+| Papel | Nome | Contato | Responsabilidade |
+|-------|------|---------|------------------|
+| Líder de crise | | | Decisões finais |
+| Comunicação | | | Porta-voz |
+| Operações | | | Continuidade |
+| Jurídico | | | Aspectos legais |
+| RH | | | Colaboradores |
+
+**3. PROTOCOLO DE ACIONAMENTO**
+
+*Nível 1 (Baixo):*
+- Critérios: [Quando acionar]
+- Quem é notificado
+- Ações imediatas
+
+*Nível 2 (Médio):*
+- Critérios: [Quando acionar]
+- Quem é notificado
+- Ações imediatas
+
+*Nível 3 (Crítico):*
+- Critérios: [Quando acionar]
+- Quem é notificado
+- Ações imediatas
+
+**4. PRIMEIRAS 24 HORAS**
+
+| Hora | Ação | Responsável |
+|------|------|-------------|
+| 0-1h | Avaliação inicial | |
+| 1-2h | Reunião comitê | |
+| 2-4h | Comunicação interna | |
+| 4-8h | Comunicação externa | |
+| 8-24h | Plano de ação | |
+
+**5. COMUNICAÇÃO**
+
+*Interna (colaboradores):*
+- Canal:
+- Tom:
+- Frequência:
+- Template de comunicado:
+
+*Externa (clientes, mídia):*
+- Porta-voz designado:
+- Mensagens-chave (3):
+- Canais:
+- Q&A preparado:
+
+*Stakeholders específicos:*
+- Investidores:
+- Parceiros:
+- Fornecedores:
+
+**6. PLANO DE CONTINUIDADE**
+- Processos críticos que não podem parar
+- Backup de sistemas
+- Equipe de contingência
+- Local alternativo (se necessário)
+
+**7. DOCUMENTAÇÃO**
+- [ ] Log de eventos
+- [ ] Decisões tomadas
+- [ ] Comunicações enviadas
+- [ ] Custos incorridos
+- [ ] Lições aprendidas
+
+**8. PÓS-CRISE**
+- Avaliação de danos
+- Plano de recuperação
+- Comunicação de resolução
+- Análise de root cause
+- Atualização de processos`,
+      variables: [
+        { name: 'company', label: 'Empresa', placeholder: 'Ex: E-commerce de médio porte, 100 funcionários', type: 'text', required: true },
+        { name: 'crisis_type', label: 'Tipo de crise', placeholder: 'Ex: Vazamento de dados de clientes', type: 'text', required: true },
+        { name: 'stakeholders', label: 'Stakeholders', placeholder: 'Ex: Clientes, funcionários, investidores, imprensa, reguladores', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['crise', 'risco', 'contingência', 'gestão'],
+      tags: ['crise', 'gestão', 'comunicação', 'risco', 'continuidade'],
       difficulty: 'advanced',
       isPremium: true
     },
     {
-      id: 'biz-franchise-model',
+      id: 'biz-board-meeting',
       categoryId: 'business',
-      title: 'Modelo de Franquia',
-      description: 'Estruture negócio para franchising',
-      template: 'Franquia para: {business}, investimento: {investment}, royalties: {royalties}. COF, manual operacional, suporte, seleção franqueados e expansão.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Lanchonete', type: 'text', required: true}, {name: 'investment', label: 'Investimento franqueado', placeholder: 'Ex: R$ 200.000', type: 'text', required: true}, {name: 'royalties', label: 'Modelo royalties', placeholder: 'Ex: 5% faturamento + 2% marketing', type: 'text', required: true}],
+      title: 'Apresentação para Board/Conselho',
+      description: 'Prepare uma apresentação executiva para diretoria',
+      template: `Crie uma apresentação para Board/Conselho:
+
+**EMPRESA:** {company}
+**PERÍODO:** {period}
+**PAUTA PRINCIPAL:** {agenda}
+**DECISÕES ESPERADAS:** {decisions}
+
+---
+
+**ESTRUTURA DA APRESENTAÇÃO:**
+
+**1. SUMÁRIO EXECUTIVO (1 slide)**
+- Highlights do período
+- Principais conquistas
+- Desafios enfrentados
+- Decisões necessárias
+
+**2. PERFORMANCE FINANCEIRA (2-3 slides)**
+
+*Receita:*
+| Métrica | Meta | Realizado | Var. |
+|---------|------|-----------|------|
+| Receita | | | |
+| Clientes | | | |
+| Ticket médio | | | |
+
+*Custos e Margem:*
+| Item | Orçado | Real | Var. |
+|------|--------|------|------|
+| CMV | | | |
+| Opex | | | |
+| Margem | | | |
+
+*Cash:*
+- Posição de caixa
+- Burn rate
+- Runway
+
+**3. PERFORMANCE OPERACIONAL (2 slides)**
+
+*Métricas-chave:*
+| KPI | Meta | Real | Tendência |
+|-----|------|------|-----------|
+| | | | ↑↓→ |
+| | | | |
+
+*Projetos/Iniciativas:*
+| Projeto | Status | % | Observação |
+|---------|--------|---|------------|
+| | 🟢🟡🔴 | | |
+
+**4. PESSOAS (1 slide)**
+- Headcount: atual vs planejado
+- Contratações/saídas
+- eNPS/clima
+- Plano de contratação
+
+**5. ANÁLISE COMPETITIVA (1 slide)**
+- Movimentos relevantes do mercado
+- Impacto para o negócio
+- Ações tomadas/planejadas
+
+**6. RISCOS E ISSUES (1 slide)**
+| Risco/Issue | Impacto | Mitigação | Status |
+|-------------|---------|-----------|--------|
+| | | | |
+
+**7. OUTLOOK PRÓXIMO PERÍODO (1 slide)**
+- Projeções atualizadas
+- Principais iniciativas
+- Recursos necessários
+- Alertas
+
+**8. ITENS DE DECISÃO (1 slide)**
+| Item | Contexto | Recomendação | Decisão |
+|------|----------|--------------|---------|
+| | | | Aprovar/Rejeitar |
+| | | | |
+
+**9. ANEXOS**
+- Detalhamento financeiro
+- Pipeline de vendas
+- Roadmap de produto
+- Benchmark competitivo
+
+**DICAS DE APRESENTAÇÃO:**
+- Máximo 15-20 slides
+- Dados e não opiniões
+- Visualizações claras
+- Highlight para números importantes
+- Prepare backup para perguntas difíceis`,
+      variables: [
+        { name: 'company', label: 'Empresa', placeholder: 'Ex: TechStartup S.A.', type: 'text', required: true },
+        { name: 'period', label: 'Período', placeholder: 'Ex: Q4 2024 / Anual 2024', type: 'text', required: true },
+        { name: 'agenda', label: 'Pauta principal', placeholder: 'Ex: Resultados do ano + Plano 2025 + Captação', type: 'text', required: true },
+        { name: 'decisions', label: 'Decisões esperadas', placeholder: 'Ex: Aprovação orçamento, autorização para nova rodada', type: 'text', required: true }
+      ],
       examples: [],
-      tags: ['franquia', 'expansão', 'franchising', 'escala'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-remote-work-policy',
-      categoryId: 'business',
-      title: 'Política de Trabalho Remoto',
-      description: 'Estruture trabalho híbrido/remoto',
-      template: 'Política remota para: {company}, modelo: {model}, time: {team_size}. Diretrizes, ferramentas, comunicação, produtividade e cultura.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Tech startup', type: 'text', required: true}, {name: 'model', label: 'Modelo', placeholder: 'Ex: Híbrido 3x semana', type: 'text', required: true}, {name: 'team_size', label: 'Tamanho time', placeholder: 'Ex: 30 pessoas', type: 'text', required: true}],
-      examples: [],
-      tags: ['remoto', 'híbrido', 'work policy', 'cultura'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-succession-planning',
-      categoryId: 'business',
-      title: 'Planejamento de Sucessão',
-      description: 'Prepare sucessores para cargos-chave',
-      template: 'Sucessão para: {company}, posições críticas: {positions}, horizonte: {timeframe}. Identifique sucessores, planos desenvolvimento, transição e contingência.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Empresa familiar', type: 'text', required: true}, {name: 'positions', label: 'Posições críticas', placeholder: 'Ex: CEO, CFO, Diretores', type: 'text', required: true}, {name: 'timeframe', label: 'Horizonte', placeholder: 'Ex: 3-5 anos', type: 'text', required: true}],
-      examples: [],
-      tags: ['sucessão', 'liderança', 'talento', 'planejamento'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-innovation-process',
-      categoryId: 'business',
-      title: 'Processo de Inovação',
-      description: 'Sistematize inovação na empresa',
-      template: 'Inovação para: {company}, foco: {focus}, recursos: {resources}. Processo ideação, validação, experimentação, escala e cultura de inovação.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Empresa tradicional', type: 'text', required: true}, {name: 'focus', label: 'Foco inovação', placeholder: 'Ex: Produtos, processos', type: 'text', required: true}, {name: 'resources', label: 'Recursos', placeholder: 'Ex: Budget, time dedicado', type: 'text', required: true}],
-      examples: [],
-      tags: ['inovação', 'processo', 'r&d', 'cultura'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-vendor-management',
-      categoryId: 'business',
-      title: 'Gestão de Fornecedores',
-      description: 'Otimize relacionamento com vendors',
-      template: 'Gestão vendors para: {business}, categorias: {categories}, volume: {volume}. Seleção, negociação, contratos, SLAs, avaliação e otimização custos.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'categories', label: 'Categorias', placeholder: 'Ex: Logística, tecnologia', type: 'text', required: true}, {name: 'volume', label: 'Volume gasto/mês', placeholder: 'Ex: R$ 100k', type: 'text', required: true}],
-      examples: [],
-      tags: ['vendors', 'fornecedores', 'procurement', 'supply chain'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-board-meetings',
-      categoryId: 'business',
-      title: 'Board Meetings Eficientes',
-      description: 'Estruture reuniões de conselho',
-      template: 'Board meeting para: {company}, frequência: {frequency}, composição: {board_composition}. Agenda, materiais pré-leitura, apresentações, decisões e follow-up.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Startup Series B', type: 'text', required: true}, {name: 'frequency', label: 'Frequência', placeholder: 'Ex: Mensal', type: 'text', required: true}, {name: 'board_composition', label: 'Composição board', placeholder: 'Ex: 2 fundadores, 3 investidores', type: 'text', required: true}],
-      examples: [],
-      tags: ['board', 'governança', 'conselho', 'reunião'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-retention',
-      categoryId: 'business',
-      title: 'Programa de Retenção',
-      description: 'Reduza churn e aumente LTV',
-      template: 'Retenção para: {business}, churn atual: {churn}, LTV: {ltv}. Onboarding, engagement, win-back, loyalty program e cs operations.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: SaaS', type: 'text', required: true}, {name: 'churn', label: 'Churn mensal', placeholder: 'Ex: 5%', type: 'text', required: true}, {name: 'ltv', label: 'LTV atual', placeholder: 'Ex: R$ 2.000', type: 'text', required: true}],
-      examples: [],
-      tags: ['retenção', 'churn', 'ltv', 'customer success'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-market-entry',
-      categoryId: 'business',
-      title: 'Estratégia de Entrada em Mercado',
-      description: 'Entre em novo mercado/região',
-      template: 'Market entry em: {market}, produto: {product}, investimento: {investment}. Análise viabilidade, regulatório, go-to-market, parcerias locais e timeline.',
-      variables: [{name: 'market', label: 'Mercado', placeholder: 'Ex: México', type: 'text', required: true}, {name: 'product', label: 'Produto', placeholder: 'Ex: SaaS RH', type: 'text', required: true}, {name: 'investment', label: 'Investimento', placeholder: 'Ex: R$ 500k', type: 'text', required: true}],
-      examples: [],
-      tags: ['expansão', 'internacional', 'market entry', 'growth'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-performance-reviews',
-      categoryId: 'business',
-      title: 'Sistema de Avaliação de Desempenho',
-      description: 'Avalie e desenvolva talentos',
-      template: 'Performance review para: {company}, frequência: {frequency}, método: {method}. Critérios, calibração, feedback, PDI e consequências.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Startup 50 pessoas', type: 'text', required: true}, {name: 'frequency', label: 'Frequência', placeholder: 'Ex: Trimestral', type: 'text', required: true}, {name: 'method', label: 'Metodologia', placeholder: 'Ex: 360, OKR-based', type: 'text', required: true}],
-      examples: [],
-      tags: ['performance', 'avaliação', 'rh', 'feedback'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-exit-strategy',
-      categoryId: 'business',
-      title: 'Estratégia de Saída',
-      description: 'Planeje exit (M&A ou IPO)',
-      template: 'Exit para: {company}, tipo: {exit_type}, timeline: {timeline}, valuation: {valuation}. Preparação, due diligence, negociação e transição.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: SaaS mature', type: 'text', required: true}, {name: 'exit_type', label: 'Tipo de exit', placeholder: 'Ex: M&A estratégico', type: 'text', required: true}, {name: 'timeline', label: 'Timeline', placeholder: 'Ex: 12-18 meses', type: 'text', required: true}, {name: 'valuation', label: 'Valuation alvo', placeholder: 'Ex: R$ 50M', type: 'text', required: true}],
-      examples: [],
-      tags: ['exit', 'm&a', 'ipo', 'venda'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-diversity-inclusion',
-      categoryId: 'business',
-      title: 'Programa de Diversidade e Inclusão',
-      description: 'Construa time diverso e inclusivo',
-      template: 'D&I para: {company}, situação atual: {current}, objetivos: {goals}. Diagnóstico, recrutamento inclusivo, políticas, treinamentos e métricas.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Tech company', type: 'text', required: true}, {name: 'current', label: 'Situação atual', placeholder: 'Ex: 80% homens, 20% mulheres', type: 'text', required: true}, {name: 'goals', label: 'Objetivos', placeholder: 'Ex: 50/50 em 2 anos', type: 'text', required: true}],
-      examples: [],
-      tags: ['diversidade', 'inclusão', 'd&i', 'cultura'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    // Adicionando mais 34 prompts premium para completar 54 premium
-    {
-      id: 'biz-customer-acquisition',
-      categoryId: 'business',
-      title: 'Estratégia de Aquisição',
-      description: 'Canais e táticas de crescimento',
-      template: 'Aquisição para: {product}, CAC alvo: {cac_target}, canais: {channels}. Mix de canais, budget allocation, experimentação e escala.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: App B2C', type: 'text', required: true}, {name: 'cac_target', label: 'CAC alvo', placeholder: 'Ex: R$ 30', type: 'text', required: true}, {name: 'channels', label: 'Canais testados', placeholder: 'Ex: Ads, viral, content', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['aquisição', 'growth', 'cac', 'canais'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-agile-transformation',
-      categoryId: 'business',
-      title: 'Transformação Ágil',
-      description: 'Implemente metodologias ágeis',
-      template: 'Agile para: {company}, estado atual: {current}, objetivo: {goal}. Escolha framework (Scrum/Kanban), treinamento, rituais e métricas.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Empresa tradicional', type: 'text', required: true}, {name: 'current', label: 'Estado atual', placeholder: 'Ex: Waterfall', type: 'text', required: true}, {name: 'goal', label: 'Objetivo', placeholder: 'Ex: Reduzir time-to-market 50%', type: 'text', required: true}],
-      examples: [],
-      tags: ['agile', 'scrum', 'transformação', 'metodologia'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-quality-assurance',
-      categoryId: 'business',
-      title: 'Sistema de Garantia de Qualidade',
-      description: 'Assegure qualidade produtos/serviços',
-      template: 'QA para: {business}, tipo: {type}, problemas atuais: {issues}. Processos, checklists, testes, métricas qualidade e melhoria contínua.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Software development', type: 'text', required: true}, {name: 'type', label: 'Tipo produto', placeholder: 'Ex: SaaS enterprise', type: 'text', required: true}, {name: 'issues', label: 'Problemas atuais', placeholder: 'Ex: Bugs em produção', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['qualidade', 'qa', 'processos', 'testes'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-feedback',
-      categoryId: 'business',
-      title: 'Sistema de Feedback de Clientes',
-      description: 'Colete e aja sobre feedback',
-      template: 'Feedback system para: {product}, volume clientes: {volume}, canais: {channels}. Coleta (NPS, CSAT, entrevistas), análise, priorização e loop fechado.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: SaaS', type: 'text', required: true}, {name: 'volume', label: 'Volume clientes', placeholder: 'Ex: 5.000', type: 'text', required: true}, {name: 'channels', label: 'Canais feedback', placeholder: 'Ex: Email, in-app, suporte', type: 'text', required: true}],
-      examples: [],
-      tags: ['feedback', 'voc', 'nps', 'customer'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-inventory-management',
-      categoryId: 'business',
-      title: 'Gestão de Estoque',
-      description: 'Otimize níveis de inventário',
-      template: 'Inventário para: {business}, SKUs: {skus}, giro: {turnover}. Sistema controle, previsão demanda, reposição, dead stock e otimização capital.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'skus', label: 'Número SKUs', placeholder: 'Ex: 500', type: 'text', required: true}, {name: 'turnover', label: 'Giro atual', placeholder: 'Ex: 4x/ano', type: 'text', required: true}],
-      examples: [],
-      tags: ['estoque', 'inventário', 'supply chain', 'operações'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-brand-architecture',
-      categoryId: 'business',
-      title: 'Arquitetura de Marca',
-      description: 'Estruture portfolio de marcas',
-      template: 'Arquitetura para: {company}, marcas: {brands}, estratégia: {strategy}. Defina relação entre marcas (house of brands vs branded house), hierarquia e extensões.',
-      variables: [{name: 'company', label: 'Company', placeholder: 'Ex: Holding', type: 'text', required: true}, {name: 'brands', label: 'Marcas portfolio', placeholder: 'Ex: 3 marcas principais', type: 'text', required: true}, {name: 'strategy', label: 'Estratégia desejada', placeholder: 'Ex: House of brands', type: 'text', required: true}],
-      examples: [],
-      tags: ['marca', 'brand', 'arquitetura', 'portfolio'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-operational-excellence',
-      categoryId: 'business',
-      title: 'Programa de Excelência Operacional',
-      description: 'Otimize operações e reduza custos',
-      template: 'Operational excellence para: {company}, processos-chave: {processes}, meta redução custo: {cost_target}. Lean, Six Sigma, automação e melhoria contínua.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Manufatura', type: 'text', required: true}, {name: 'processes', label: 'Processos críticos', placeholder: 'Ex: Produção, logística', type: 'textarea', required: true}, {name: 'cost_target', label: 'Meta redução', placeholder: 'Ex: 20% em 12 meses', type: 'text', required: true}],
-      examples: [],
-      tags: ['operações', 'lean', 'six sigma', 'eficiência'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-lifetime',
-      categoryId: 'business',
-      title: 'Maximização de Customer Lifetime Value',
-      description: 'Aumente valor gerado por cliente',
-      template: 'CLV para: {business}, atual: {current_clv}, benchmark: {benchmark}. Estratégias upsell, cross-sell, retenção, frequency e referral.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'current_clv', label: 'CLV atual', placeholder: 'Ex: R$ 500', type: 'text', required: true}, {name: 'benchmark', label: 'Benchmark setor', placeholder: 'Ex: R$ 800', type: 'text', required: true}],
-      examples: [],
-      tags: ['clv', 'ltv', 'retenção', 'monetização'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-scenario-planning',
-      categoryId: 'business',
-      title: 'Planejamento de Cenários',
-      description: 'Prepare-se para múltiplos futuros',
-      template: 'Cenários para: {company}, horizonte: {timeframe}, incertezas: {uncertainties}. Crie 3-4 cenários (otimista, provável, pessimista), planos ação e triggers.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Tech startup', type: 'text', required: true}, {name: 'timeframe', label: 'Horizonte', placeholder: 'Ex: 3 anos', type: 'text', required: true}, {name: 'uncertainties', label: 'Incertezas-chave', placeholder: 'Ex: Regulação, economia', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['cenários', 'planejamento', 'estratégia', 'risco'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-product-roadmap',
-      categoryId: 'business',
-      title: 'Roadmap de Produto',
-      description: 'Planeje evolução do produto',
-      template: 'Roadmap para: {product}, horizonte: {timeframe}, objetivos: {objectives}. Priorização (RICE/Value vs Effort), releases, recursos e comunicação stakeholders.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: App mobile', type: 'text', required: true}, {name: 'timeframe', label: 'Horizonte', placeholder: 'Ex: 12 meses', type: 'text', required: true}, {name: 'objectives', label: 'Objetivos produto', placeholder: 'Ex: Engagement, monetização', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['roadmap', 'produto', 'planejamento', 'priorização'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-change-management',
-      categoryId: 'business',
-      title: 'Gestão de Mudança Organizacional',
-      description: 'Implemente mudanças com sucesso',
-      template: 'Change management para: {change}, impacto: {impact}, resistência: {resistance}. ADKAR model, comunicação, treinamento, champions e sustentação.',
-      variables: [{name: 'change', label: 'Mudança', placeholder: 'Ex: Novo ERP', type: 'text', required: true}, {name: 'impact', label: 'Impacto', placeholder: 'Ex: 200 usuários, 10 processos', type: 'text', required: true}, {name: 'resistance', label: 'Resistências esperadas', placeholder: 'Ex: Complexidade, mudança hábitos', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['mudança', 'change', 'transformação', 'gestão'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-service',
-      categoryId: 'business',
-      title: 'Excelência em Atendimento',
-      description: 'Estruture customer service de classe mundial',
-      template: 'Customer service para: {business}, volume: {volume}, canais: {channels}. SLAs, scripts, treinamento, métricas (CSAT, FRT, FCR) e escalação.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'volume', label: 'Volume tickets/mês', placeholder: 'Ex: 5.000', type: 'text', required: true}, {name: 'channels', label: 'Canais', placeholder: 'Ex: Email, chat, telefone', type: 'text', required: true}],
-      examples: [],
-      tags: ['customer service', 'atendimento', 'suporte', 'cs'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-sales-compensation',
-      categoryId: 'business',
-      title: 'Plano de Comissionamento',
-      description: 'Incentive performance de vendas',
-      template: 'Compensação para: {sales_team}, estrutura: {structure}, metas: {quotas}. Base + variável, aceleradores, SPIFs, clawback e governança.',
-      variables: [{name: 'sales_team', label: 'Time vendas', placeholder: 'Ex: 10 AEs', type: 'text', required: true}, {name: 'structure', label: 'Estrutura', placeholder: 'Ex: 70/30 base/variável', type: 'text', required: true}, {name: 'quotas', label: 'Quotas', placeholder: 'Ex: R$ 50k MRR/mês', type: 'text', required: true}],
-      examples: [],
-      tags: ['compensação', 'comissão', 'vendas', 'incentivos'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-marketing-budget',
-      categoryId: 'business',
-      title: 'Orçamento de Marketing',
-      description: 'Aloque budget por canal e objetivo',
-      template: 'Budget marketing para: {business}, total: {total_budget}, objetivos: {objectives}. Split por canal, campaigns, experimentação e ROI esperado.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: SaaS B2B', type: 'text', required: true}, {name: 'total_budget', label: 'Budget total', placeholder: 'Ex: R$ 100k/mês', type: 'text', required: true}, {name: 'objectives', label: 'Objetivos', placeholder: 'Ex: 500 leads/mês, brand awareness', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['budget', 'marketing', 'alocação', 'roi'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-data-strategy',
-      categoryId: 'business',
-      title: 'Estratégia de Dados',
-      description: 'Torne-se data-driven',
-      template: 'Data strategy para: {company}, maturidade atual: {maturity}, objetivos: {goals}. Governança, stack tecnológica, analytics, data science e cultura.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Varejo', type: 'text', required: true}, {name: 'maturity', label: 'Maturidade atual', placeholder: 'Ex: Básica - Excel', type: 'text', required: true}, {name: 'goals', label: 'Objetivos', placeholder: 'Ex: Personalização, forecasting', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['dados', 'analytics', 'bi', 'data-driven'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-product-market-fit',
-      categoryId: 'business',
-      title: 'Validação de Product-Market Fit',
-      description: 'Encontre e valide PMF',
-      template: 'PMF para: {product}, hipótese: {hypothesis}, métrica: {metric}. Sean Ellis test, retenção cohorts, entrevistas e iteração produto.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: App produtividade', type: 'text', required: true}, {name: 'hypothesis', label: 'Hipótese PMF', placeholder: 'Ex: Freelancers pagam R$ 20/mês', type: 'textarea', required: true}, {name: 'metric', label: 'Métrica norte', placeholder: 'Ex: 40% very disappointed', type: 'text', required: true}],
-      examples: [],
-      tags: ['pmf', 'product-market fit', 'validação', 'startup'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-competitive-advantage',
-      categoryId: 'business',
-      title: 'Construção de Vantagem Competitiva',
-      description: 'Crie moat defensável',
-      template: 'Vantagem competitiva para: {business}, competidores: {competitors}, diferenciais atuais: {current}. Identifique/construa moats: network effects, switching costs, propriedade intelectual, escala.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: Marketplace', type: 'text', required: true}, {name: 'competitors', label: 'Principais competidores', placeholder: 'Ex: 3 players grandes', type: 'text', required: true}, {name: 'current', label: 'Diferenciais atuais', placeholder: 'Ex: Tecnologia proprietária', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['vantagem competitiva', 'moat', 'estratégia', 'diferenciação'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-international-expansion',
-      categoryId: 'business',
-      title: 'Expansão Internacional',
-      description: 'Entre em mercados globais',
-      template: 'Expansão para: {countries}, produto: {product}, modelo: {model}. Priorização países, adaptação produto, operações locais, parcerias e compliance.',
-      variables: [{name: 'countries', label: 'Países alvo', placeholder: 'Ex: México, Colômbia, Chile', type: 'text', required: true}, {name: 'product', label: 'Produto', placeholder: 'Ex: SaaS B2B', type: 'text', required: true}, {name: 'model', label: 'Modelo entrada', placeholder: 'Ex: Remoto ou local', type: 'text', required: true}],
-      examples: [],
-      tags: ['internacional', 'expansão', 'global', 'latam'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-culture-code',
-      categoryId: 'business',
-      title: 'Código de Cultura',
-      description: 'Defina valores e cultura da empresa',
-      template: 'Culture code para: {company}, estágio: {stage}, valores atuais: {current_values}. Defina missão, visão, valores, comportamentos esperados e anti-patterns.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Tech startup', type: 'text', required: true}, {name: 'stage', label: 'Estágio', placeholder: 'Ex: 30 pessoas, crescimento', type: 'text', required: true}, {name: 'current_values', label: 'Valores atuais/implícitos', placeholder: 'Ex: Transparência, velocidade', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['cultura', 'valores', 'culture code', 'missão'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-fundraising-strategy',
-      categoryId: 'business',
-      title: 'Estratégia de Captação',
-      description: 'Levante funding de investidores',
-      template: 'Fundraising para: {startup}, rodada: {round}, valuation: {valuation}, uso capital: {use_of_funds}. Timeline, target investors, materiais, processo e negociação.',
-      variables: [{name: 'startup', label: 'Startup', placeholder: 'Ex: HealthTech', type: 'text', required: true}, {name: 'round', label: 'Rodada', placeholder: 'Ex: Series A', type: 'text', required: true}, {name: 'valuation', label: 'Valuation alvo', placeholder: 'Ex: R$ 30M pre-money', type: 'text', required: true}, {name: 'use_of_funds', label: 'Uso do capital', placeholder: 'Ex: Product, sales, hiring', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['fundraising', 'captação', 'investimento', 'vc'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-onboarding',
-      categoryId: 'business',
-      title: 'Processo de Onboarding',
-      description: 'Ative novos clientes com sucesso',
-      template: 'Onboarding para: {product}, complexidade: {complexity}, time-to-value: {ttv_target}. Jornada, milestones, automação, touches humanos e métricas ativação.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Software B2B', type: 'text', required: true}, {name: 'complexity', label: 'Complexidade', placeholder: 'Ex: Médio - requer configuração', type: 'text', required: true}, {name: 'ttv_target', label: 'Time-to-value alvo', placeholder: 'Ex: 7 dias', type: 'text', required: true}],
-      examples: [],
-      tags: ['onboarding', 'ativação', 'customer success', 'ttv'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-referral-partnerships',
-      categoryId: 'business',
-      title: 'Programa de Parcerias de Referral',
-      description: 'Escale através de referrals B2B',
-      template: 'Referral partners para: {product}, perfil parceiro: {partner_profile}, comissão: {commission}. Recrutamento, enablement, tracking e incentivos.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Software RH', type: 'text', required: true}, {name: 'partner_profile', label: 'Perfil parceiro', placeholder: 'Ex: Consultorias RH', type: 'textarea', required: true}, {name: 'commission', label: 'Estrutura comissão', placeholder: 'Ex: 20% ano 1, 10% recorrente', type: 'text', required: true}],
-      examples: [],
-      tags: ['partnerships', 'referral', 'channel', 'b2b'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-customer-advocacy',
-      categoryId: 'business',
-      title: 'Programa de Customer Advocacy',
-      description: 'Transforme clientes em promotores',
-      template: 'Advocacy para: {business}, base: {customer_base}, objetivos: {goals}. Identificação advocates, incentivos, ativação (reviews, cases, referrals) e medição impacto.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: SaaS', type: 'text', required: true}, {name: 'customer_base', label: 'Base clientes', placeholder: 'Ex: 1.000 clientes', type: 'text', required: true}, {name: 'goals', label: 'Objetivos', placeholder: 'Ex: 50 case studies, 100 reviews', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['advocacy', 'promotores', 'referências', 'marketing'],
-      difficulty: 'intermediate',
-      isPremium: true
-    },
-    {
-      id: 'biz-digital-transformation',
-      categoryId: 'business',
-      title: 'Roadmap de Transformação Digital',
-      description: 'Digitalize operações e modelo de negócio',
-      template: 'Transformação digital para: {company}, situação atual: {current}, visão: {vision}. Diagnóstico, priorização iniciativas, tecnologias, change management e ROI.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Indústria tradicional', type: 'text', required: true}, {name: 'current', label: 'Estado atual', placeholder: 'Ex: Processos manuais, sem dados', type: 'textarea', required: true}, {name: 'vision', label: 'Visão futura', placeholder: 'Ex: Operações digitais, data-driven', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['transformação digital', 'digitalização', 'tecnologia', 'inovação'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-subscription-model',
-      categoryId: 'business',
-      title: 'Modelo de Assinatura',
-      description: 'Desenhe subscription business',
-      template: 'Subscription para: {product}, pricing: {pricing}, frequência: {frequency}. Tiers, features por tier, trial, garantias, churn mitigation e upsell path.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Software', type: 'text', required: true}, {name: 'pricing', label: 'Faixas preço', placeholder: 'Ex: R$ 50, 150, 300', type: 'text', required: true}, {name: 'frequency', label: 'Frequência', placeholder: 'Ex: Mensal e anual', type: 'text', required: true}],
-      examples: [],
-      tags: ['subscription', 'saas', 'recorrência', 'pricing'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-account-based-marketing',
-      categoryId: 'business',
-      title: 'Estratégia ABM (Account-Based Marketing)',
-      description: 'Venda para contas-alvo estratégicas',
-      template: 'ABM para: {product}, contas-alvo: {target_accounts}, ticket: {deal_size}. Seleção contas, research, personalização, orquestração multi-canal e ABM-SDR alignment.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: Enterprise software', type: 'text', required: true}, {name: 'target_accounts', label: 'Número contas', placeholder: 'Ex: 50 contas enterprise', type: 'text', required: true}, {name: 'deal_size', label: 'Tamanho deal', placeholder: 'Ex: R$ 500k+', type: 'text', required: true}],
-      examples: [],
-      tags: ['abm', 'enterprise', 'b2b', 'marketing'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-value-proposition',
-      categoryId: 'business',
-      title: 'Proposta de Valor Imbatível',
-      description: 'Articule valor único claramente',
-      template: 'Value prop para: {product}, cliente: {customer}, alternativas: {alternatives}. Use canvas: jobs to be done, pains, gains. Defina proposta única, evidências e mensagens por segmento.',
-      variables: [{name: 'product', label: 'Produto', placeholder: 'Ex: CRM para imobiliárias', type: 'text', required: true}, {name: 'customer', label: 'Cliente típico', placeholder: 'Ex: Gerente vendas imobiliária', type: 'text', required: true}, {name: 'alternatives', label: 'Alternativas atuais', placeholder: 'Ex: Planilhas, CRMs genéricos', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['value proposition', 'posicionamento', 'mensagem', 'diferenciação'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-licensing-model',
-      categoryId: 'business',
-      title: 'Modelo de Licenciamento',
-      description: 'Monetize IP através de licenças',
-      template: 'Licensing para: {ip}, mercados: {markets}, tipos licença: {license_types}. Estrutura contratos, royalties, territórios, exclusividade e proteção IP.',
-      variables: [{name: 'ip', label: 'Propriedade intelectual', placeholder: 'Ex: Tecnologia patenteada', type: 'text', required: true}, {name: 'markets', label: 'Mercados alvo', placeholder: 'Ex: Manufatura, automotivo', type: 'text', required: true}, {name: 'license_types', label: 'Tipos licença', placeholder: 'Ex: Exclusiva, não-exclusiva', type: 'text', required: true}],
-      examples: [],
-      tags: ['licensing', 'ip', 'royalties', 'monetização'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-platform-strategy',
-      categoryId: 'business',
-      title: 'Estratégia de Plataforma',
-      description: 'Construa marketplace/plataforma de dois lados',
-      template: 'Platform para: {concept}, lados: {sides}, chicken-egg: {bootstrap}. Network effects, subsidize which side, monetização, governança e cold start.',
-      variables: [{name: 'concept', label: 'Conceito plataforma', placeholder: 'Ex: Marketplace freelancers', type: 'text', required: true}, {name: 'sides', label: 'Dois lados', placeholder: 'Ex: Freelancers e empresas', type: 'text', required: true}, {name: 'bootstrap', label: 'Cold start strategy', placeholder: 'Ex: Focar em freelancers primeiro', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['platform', 'marketplace', 'network effects', 'two-sided'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-corporate-innovation',
-      categoryId: 'business',
-      title: 'Programa de Inovação Corporativa',
-      description: 'Inove em empresa estabelecida',
-      template: 'Corporate innovation para: {company}, foco: {focus}, recursos: {resources}. Estrutura (lab, aceleradora, ventures), processos, métricas e integração com core business.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Banco tradicional', type: 'text', required: true}, {name: 'focus', label: 'Foco inovação', placeholder: 'Ex: Fintech, novos produtos', type: 'text', required: true}, {name: 'resources', label: 'Recursos disponíveis', placeholder: 'Ex: R$ 10M, 5 pessoas', type: 'text', required: true}],
-      examples: [],
-      tags: ['inovação', 'corporate', 'ventures', 'lab'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-supply-chain',
-      categoryId: 'business',
-      title: 'Otimização de Supply Chain',
-      description: 'Otimize cadeia de suprimentos',
-      template: 'Supply chain para: {business}, complexidade: {complexity}, problemas: {issues}. Mapeamento end-to-end, identificação gargalos, otimizações, tecnologia e resiliência.',
-      variables: [{name: 'business', label: 'Negócio', placeholder: 'Ex: E-commerce', type: 'text', required: true}, {name: 'complexity', label: 'Complexidade', placeholder: 'Ex: 10 fornecedores, 3 CDs', type: 'text', required: true}, {name: 'issues', label: 'Problemas atuais', placeholder: 'Ex: Atrasos, ruptura estoque', type: 'textarea', required: true}],
-      examples: [],
-      tags: ['supply chain', 'logística', 'operações', 'otimização'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-corporate-venture',
-      categoryId: 'business',
-      title: 'Corporate Venture Capital',
-      description: 'Invista em startups estratégicas',
-      template: 'CVC para: {corporate}, tese: {thesis}, ticket: {ticket_size}, governance: {governance}. Sourcing, due diligence, termos, integração estratégica e exits.',
-      variables: [{name: 'corporate', label: 'Corporação', placeholder: 'Ex: Varejista grande porte', type: 'text', required: true}, {name: 'thesis', label: 'Tese investimento', placeholder: 'Ex: E-commerce, logística', type: 'textarea', required: true}, {name: 'ticket_size', label: 'Ticket médio', placeholder: 'Ex: R$ 1-5M', type: 'text', required: true}, {name: 'governance', label: 'Governança', placeholder: 'Ex: Comitê, board seats', type: 'text', required: true}],
-      examples: [],
-      tags: ['cvc', 'venture capital', 'investimento', 'm&a'],
-      difficulty: 'advanced',
-      isPremium: true
-    },
-    {
-      id: 'biz-sustainability-strategy',
-      categoryId: 'business',
-      title: 'Estratégia de Sustentabilidade',
-      description: 'ESG e impacto socioambiental',
-      template: 'Sustentabilidade para: {company}, baseline: {current}, metas: {targets}. Diagnóstico ESG, roadmap reduções, certificações, reporting e brand ESG.',
-      variables: [{name: 'company', label: 'Empresa', placeholder: 'Ex: Indústria', type: 'text', required: true}, {name: 'current', label: 'Situação atual', placeholder: 'Ex: Emissões CO2, resíduos', type: 'textarea', required: true}, {name: 'targets', label: 'Metas', placeholder: 'Ex: Net zero 2030', type: 'text', required: true}],
-      examples: [],
-      tags: ['sustentabilidade', 'esg', 'impacto', 'ambiental'],
+      tags: ['board', 'conselho', 'apresentação', 'executivo', 'governança'],
       difficulty: 'advanced',
       isPremium: true
     }
