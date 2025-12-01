@@ -270,34 +270,34 @@ export function IaBookExperienceCard() {
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
             style={{ transformStyle: "preserve-3d" }}
           >
-            <div className="bg-gradient-to-br from-card via-card to-card/95 rounded-2xl p-12 shadow-2xl border-2 border-border min-w-[400px] min-h-[500px] flex flex-col items-center justify-center space-y-8">
+            <div className="bg-gradient-to-br from-card via-card to-card/95 rounded-xl p-6 md:p-8 shadow-2xl border-2 border-border w-[280px] md:w-[320px] flex flex-col items-center justify-center space-y-4">
               {/* Ornamento superior */}
               <motion.div
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
-                className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+                className="w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent"
               />
               
-              <div className="text-center space-y-6">
+              <div className="text-center space-y-3">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <BookOpen className="w-16 h-16 text-primary mx-auto mb-4" />
+                  <BookOpen className="w-10 h-10 text-primary mx-auto mb-2" />
                 </motion.div>
                 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="space-y-2"
+                  className="space-y-1"
                 >
-                  <h3 className="text-3xl font-serif font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-serif font-bold text-foreground">
                     {theme.name}
                   </h3>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
                     Uma Obra Original
                   </p>
                 </motion.div>
@@ -306,12 +306,12 @@ export function IaBookExperienceCard() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
-                  className="pt-6 space-y-3"
+                  className="pt-3 space-y-2"
                 >
-                  <p className="text-sm text-muted-foreground italic">
+                  <p className="text-xs text-muted-foreground italic">
                     Escrito por
                   </p>
-                  <p className="text-2xl font-serif font-semibold text-foreground">
+                  <p className="text-lg md:text-xl font-serif font-semibold text-foreground">
                     Você
                   </p>
                 </motion.div>
@@ -320,12 +320,12 @@ export function IaBookExperienceCard() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.0 }}
-                  className="pt-6 text-xs text-muted-foreground space-y-1"
+                  className="pt-3 text-xs text-muted-foreground space-y-1"
                 >
                   <p>{new Date().getFullYear()}</p>
-                  <p className="flex items-center justify-center gap-2">
+                  <p className="flex items-center justify-center gap-1.5">
                     <Sparkles className="w-3 h-3" />
-                    Criado com I.A.
+                    <span className="text-[10px]">Criado com I.A.</span>
                     <Sparkles className="w-3 h-3" />
                   </p>
                 </motion.div>
@@ -336,7 +336,7 @@ export function IaBookExperienceCard() {
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
-                className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+                className="w-20 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent"
               />
             </div>
           </motion.div>
