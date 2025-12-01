@@ -93,6 +93,7 @@ const App = () => (
           <Route path="/admin/pipeline-test" element={<ProtectedRoute><AdminPipelineTest /></ProtectedRoute>} />
           <Route path="/admin/test-images" element={<ProtectedRoute><AdminTestImageGeneration /></ProtectedRoute>} />
           <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
+          <Route path="/admin/test-card" element={<ProtectedRoute><TestCard /></ProtectedRoute>} />
           {/* NEW FEATURES ROUTES */}
           <Route path="/guides" element={<Guides />} />
           <Route path="/guides/:guideId" element={<GuideDetail />} />
@@ -102,7 +103,6 @@ const App = () => (
           <Route path="/ai-playground" element={<AIPlayground />} />
           <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/test-card" element={<TestCard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
