@@ -43,6 +43,7 @@ export default function AdminV5CardConfig() {
   const [sections, setSections] = useState<Section[]>([]);
   const [experienceCards, setExperienceCards] = useState<ExperienceCard[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState<string | null>(null);
   
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
@@ -255,11 +256,49 @@ export default function AdminV5CardConfig() {
     }
 
     setIsSaving(true);
+    setGeneratingProgress("Gerando componentes dos card effects com IA...");
 
     try {
+      // PASSO 1: Gerar componentes React via IA
+      console.log('🎨 [V5-CONFIG] Calling generate-card-effects edge function...');
+      
+      const { data: generatedData, error: generateError } = await supabase.functions.invoke(
+        'generate-card-effects',
+        {
+          body: { cards: experienceCards }
+        }
+      );
+
+      if (generateError) {
+        console.error('❌ [V5-CONFIG] Error generating cards:', generateError);
+        throw new Error(generateError.message || 'Erro ao gerar card effects');
+      }
+
+      if (!generatedData.success) {
+        throw new Error(generatedData.error || 'Falha ao gerar componentes');
+      }
+
+      console.log('✅ [V5-CONFIG] Cards generated successfully:', generatedData.cards.length);
+      
+      setGeneratingProgress("Componentes gerados! Salvando lição no banco...");
+
+      // PASSO 2: Salvar lição com componentes gerados
       const content = {
         sections: parsedLesson.sections || parsedLesson.content?.sections,
-        experienceCards,
+        experienceCards: generatedData.cards.map((card: any) => ({
+          sectionIndex: card.sectionIndex,
+          cardIndex: card.cardIndex,
+          cardType: card.cardType,
+          anchorText: card.anchorText,
+          title: card.title,
+          subtitle: card.subtitle,
+          icon: card.icon,
+          colorScheme: card.colorScheme,
+          effectDescription: card.effectDescription,
+          chapters: card.chapters,
+          componentCode: card.componentCode,
+          componentName: card.componentName
+        }))
       };
 
       const { data, error } = await supabase
@@ -283,12 +322,14 @@ export default function AdminV5CardConfig() {
 
       if (error) throw error;
 
+      setGeneratingProgress(null);
+
       toast({
         title: "✅ Lição V5 criada!",
-        description: `Lição "${parsedLesson.title}" criada com ${experienceCards.length} experience cards.`,
+        description: `Lição "${parsedLesson.title}" criada com ${generatedData.cards.length} card effects gerados por IA.`,
       });
 
-      console.log('🎉 [V5-CONFIG] Lição V5 criada:', data);
+      console.log('🎉 [V5-CONFIG] Lição V5 criada com cards:', data);
 
       setLessonJson('');
       setParsedLesson(null);
@@ -297,6 +338,8 @@ export default function AdminV5CardConfig() {
 
     } catch (error: any) {
       console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
+      setGeneratingProgress(null);
+      
       toast({
         title: "Erro ao criar lição",
         description: error.message || "Não foi possível criar a lição V5.",
@@ -661,13 +704,13 @@ export default function AdminV5CardConfig() {
                 {experienceCards.length > 0 && (
                   <Button
                     onClick={handleCreateLesson}
-                    disabled={isSaving}
+                    disabled={isSaving || experienceCards.length === 0}
                     className="w-full"
                     size="lg"
                     variant="default"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Salvando...' : `Criar Lição V5 com ${experienceCards.length} Cards`}
+                    {generatingProgress || (isSaving ? 'Salvando...' : `Criar Lição V5 com ${experienceCards.length} Cards`)}
                   </Button>
                 )}
               </TabsContent>
@@ -693,6 +736,14 @@ export default function AdminV5CardConfig() {
                 <p className="text-xs text-muted-foreground">
                   Cada seção pode ter até 2 cards ancorados em trechos do markdown.
                 </p>
+                
+                {generatingProgress && (
+                  <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-xs font-medium text-primary animate-pulse">
+                      {generatingProgress}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
