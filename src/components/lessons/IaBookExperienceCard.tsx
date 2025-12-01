@@ -189,7 +189,7 @@ export function IaBookExperienceCard() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-4 md:py-6 px-4 relative min-h-screen flex flex-col">
+    <div className="w-full max-w-6xl mx-auto py-4 md:py-6 px-4 relative">
       
       {/* Carimbo "Obra Completa" */}
       <AnimatePresence>
@@ -405,7 +405,7 @@ export function IaBookExperienceCard() {
         </button>
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center" style={{ perspective: '2500px' }}>
+      <div className="relative h-[600px] md:h-[700px]" style={{ perspective: '2500px' }}>
         
         {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
