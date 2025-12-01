@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Sparkles, Wand2, Heart, Code2, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
-import { RewardCelebration } from "@/components/gamification/RewardCelebration";
 
 console.log("🔥🔥🔥 ARQUIVO IaBookExperienceCard.tsx FOI CARREGADO 🔥🔥🔥");
 
@@ -89,7 +88,6 @@ export function IaBookExperienceCard() {
   const [isClosing, setIsClosing] = useState(false);
   const [showStamp, setShowStamp] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
   
   const theme = themes[currentTheme];
   const ThemeIcon = theme.icon;
@@ -173,17 +171,6 @@ export function IaBookExperienceCard() {
               setTimeout(() => {
                 setShowStamp(false);
                 setShowCredits(true);
-                
-                // Mostrar celebração final
-                setTimeout(() => {
-                  setShowCredits(false);
-                  setShowCelebration(true);
-                  
-                  // Fazer desaparecer após 4 segundos
-                  setTimeout(() => {
-                    setShowCelebration(false);
-                  }, 4000);
-                }, 3000);
               }, 2000);
             }, 2500);
           }, (chapter1RightContent.length * 25) + 2000);
@@ -198,13 +185,11 @@ export function IaBookExperienceCard() {
     setIsClosing(false);
     setShowStamp(false);
     setShowCredits(false);
-    setShowCelebration(false);
     setTimeout(() => setIsOpen(true), 100);
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 relative">
-      <RewardCelebration type="lesson" trigger={showCelebration} />
       
       {/* Carimbo "Obra Completa" */}
       <AnimatePresence>
@@ -383,37 +368,6 @@ export function IaBookExperienceCard() {
         )}
       </AnimatePresence>
       
-      {/* Mensagem de celebração */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
-          >
-            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-xl p-6 shadow-2xl border-2 border-primary-foreground/20 text-center space-y-3 w-[280px] md:w-[320px]">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              >
-                <Trophy className="w-12 h-12 text-primary-foreground mx-auto" />
-              </motion.div>
-              
-              <div className="space-y-2">
-                <h3 className="text-xl md:text-2xl font-bold text-primary-foreground">
-                  🎉 Parabéns, Autor!
-                </h3>
-                <p className="text-primary-foreground/90 text-sm md:text-base">
-                  Você criou seu próprio livro!
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       {/* Theme Selector */}
       <div className="flex justify-center gap-3 mb-8 flex-wrap">
         <button
