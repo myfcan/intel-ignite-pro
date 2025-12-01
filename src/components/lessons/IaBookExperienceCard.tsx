@@ -1,130 +1,168 @@
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
 export function IaBookExperienceCard() {
   return (
-    <div className="mt-6 w-full">
-      <div className="text-sm text-muted-foreground mb-3">
-        Exemplo visual: como a Inteligência Artificial pode estruturar um livro
-        inteiro em poucos minutos.
-      </div>
+    <motion.div
+      className="relative w-full rounded-3xl border-2 border-border bg-gradient-to-br from-card via-card to-card/90 p-8 shadow-2xl overflow-hidden"
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      {/* Subtle gradient overlay */}
+      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_left,_hsl(var(--primary)/0.2)_0,_transparent_50%),_radial-gradient(circle_at_bottom_right,_hsl(var(--accent)/0.15)_0,_transparent_50%)]" />
 
-      <motion.div
-        className="relative w-full rounded-3xl border border-border bg-card/80 p-5 shadow-xl overflow-hidden flex flex-col md:flex-row gap-5"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Brilho de fundo suave */}
-        <div className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_hsl(var(--primary))_0,_transparent_55%),_radial-gradient(circle_at_bottom,_hsl(var(--accent))_0,_transparent_55%)]" />
-
-        {/* Conteúdo principal */}
-        <div className="relative z-10 flex flex-col md:flex-row gap-6 w-full">
-          {/* Lado esquerdo: capa do livro */}
-          <motion.div
-            className="w-full md:w-1/3 flex items-center justify-center"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            <div className="w-40 h-56 rounded-2xl bg-gradient-to-b from-primary to-primary/80 shadow-2xl border border-border flex flex-col items-center justify-center px-3 text-center">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-primary-foreground/70 mb-2">
-                Livro criado com I.A.
+      {/* Main content grid */}
+      <div className="relative z-10 grid md:grid-cols-[320px_1fr] gap-10 items-center">
+        
+        {/* LEFT: Book cover */}
+        <motion.div
+          className="flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <div className="w-56 h-80 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 shadow-2xl border-2 border-primary/20 flex flex-col items-center justify-center px-6 py-8 text-center relative overflow-hidden">
+            {/* Book cover glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+            
+            <div className="relative z-10 space-y-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20">
+                <Sparkles className="w-3 h-3 text-primary-foreground" />
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-foreground">
+                  I.A. Book
+                </span>
               </div>
-              <div className="text-sm font-semibold text-primary-foreground">
-                "Seu Primeiro Livro
+              
+              <h3 className="text-lg font-bold text-primary-foreground leading-tight">
+                Seu Primeiro Livro
                 <br />
-                com Inteligência Artificial"
-              </div>
-              <div className="mt-3 text-[10px] text-primary-foreground/70">
+                com Inteligência
+                <br />
+                Artificial
+              </h3>
+              
+              <div className="text-xs text-primary-foreground/80 leading-relaxed">
                 Índice, capítulos e revisão
                 <br />
-                gerados em minutos.
+                estruturados em minutos
               </div>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          {/* Lado direito: índice/capítulos */}
-          <motion.div
-            className="w-full md:w-2/3 flex flex-col justify-center gap-3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <div className="text-xs font-semibold text-accent-foreground">
-              Simulação de interface de I.A.
-            </div>
-            <div className="text-sm font-semibold text-foreground mb-1">
-              Prompt:
-              <span className="ml-1 text-xs font-normal text-muted-foreground">
-                "Crie o índice e a estrutura de capítulos de um livro sobre
-                Inteligência Artificial para iniciantes."
+        {/* RIGHT: AI Interface panel */}
+        <motion.div
+          className="flex flex-col gap-5"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          {/* Main headline */}
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent/20 border border-accent/30">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-xs font-semibold text-accent-foreground uppercase tracking-wide">
+                I.A. Trabalhando
               </span>
             </div>
+            <h2 className="text-2xl font-bold text-foreground leading-tight">
+              Livro estruturado em minutos
+              <br />
+              com Inteligência Artificial
+            </h2>
+          </div>
 
-            <div className="mt-2 bg-muted/50 border border-border rounded-2xl p-3">
-              <div className="text-[11px] text-muted-foreground mb-2">
-                Resposta da I.A. (resumo do índice):
-              </div>
-
-              {/* Linhas simulando capítulos */}
-              <div className="space-y-2 text-xs text-foreground">
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4, duration: 0.4 }}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[9px] font-bold">
-                    1
-                  </span>
-                  <span>Introdução: por que a Inteligência Artificial está em todo lugar.</span>
-                </motion.div>
-
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, duration: 0.4 }}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[9px] font-bold">
-                    2
-                  </span>
-                  <span>Tipos de Inteligência Artificial e onde eles aparecem no dia a dia.</span>
-                </motion.div>
-
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, duration: 0.4 }}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[9px] font-bold">
-                    3
-                  </span>
-                  <span>Como conversar com a I.A.: prompts, exemplos e boas práticas.</span>
-                </motion.div>
-
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7, duration: 0.4 }}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-accent text-accent-foreground text-[9px] font-bold">
-                    4
-                  </span>
-                  <span>Aplicações práticas: trabalho, estudos, negócios e vida pessoal.</span>
-                </motion.div>
-              </div>
-
-              <div className="mt-3 text-[11px] text-muted-foreground">
-                *Em poucos minutos, você sai de "tenho uma ideia de livro" para
-                "tenho um índice estruturado e pronto para desenvolver".*
-              </div>
+          {/* AI Response panel */}
+          <div className="bg-muted/50 border-2 border-border/50 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Resposta da I.A.
+              </span>
+              <span className="text-xs text-muted-foreground">Índice gerado</span>
             </div>
-          </motion.div>
-        </div>
-      </motion.div>
-    </div>
+
+            {/* Chapter list */}
+            <div className="space-y-3">
+              <motion.div
+                className="flex items-start gap-3 group"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
+              >
+                <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
+                  <span className="text-sm font-bold text-accent-foreground">1</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <p className="text-sm font-medium text-foreground leading-relaxed">
+                    Introdução: por que a Inteligência Artificial está em todo lugar
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex items-start gap-3 group"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.75, duration: 0.4 }}
+              >
+                <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
+                  <span className="text-sm font-bold text-accent-foreground">2</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <p className="text-sm font-medium text-foreground leading-relaxed">
+                    Tipos de I.A. e onde eles aparecem no dia a dia
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex items-start gap-3 group"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9, duration: 0.4 }}
+              >
+                <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
+                  <span className="text-sm font-bold text-accent-foreground">3</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <p className="text-sm font-medium text-foreground leading-relaxed">
+                    Como conversar com a I.A.: prompts e boas práticas
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="flex items-start gap-3 group"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.05, duration: 0.4 }}
+              >
+                <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
+                  <span className="text-sm font-bold text-accent-foreground">4</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <p className="text-sm font-medium text-foreground leading-relaxed">
+                    Aplicações práticas: trabalho, estudos e negócios
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Bottom note */}
+            <motion.div
+              className="pt-3 border-t border-border/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3, duration: 0.4 }}
+            >
+              <p className="text-xs text-muted-foreground italic">
+                De "tenho uma ideia" para "tenho um índice estruturado" em minutos.
+              </p>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
