@@ -17,163 +17,157 @@ export function IaBookExperienceCard() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    console.log("🎬 IaBookExperienceCard MONTADO - Livro vai abrir!");
-    // Aguarda um momento e então abre o livro
+    console.log("📕 Livro carregado!");
     const timer = setTimeout(() => {
+      console.log("🔓 Abrindo livro...");
       setIsOpen(true);
-    }, 800);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="w-full max-w-6xl mx-auto perspective-[2000px]" style={{ perspective: '2000px' }}>
-      <motion.div
-        className="relative mx-auto"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        style={{ 
-          transformStyle: 'preserve-3d',
-          maxWidth: isOpen ? '100%' : '400px',
-          transition: 'max-width 1.5s ease-out'
-        }}
-      >
-        <div 
-          className="relative grid gap-0 items-stretch shadow-2xl rounded-2xl"
+    <div className="w-full max-w-6xl mx-auto py-12" style={{ perspective: '2500px' }}>
+      <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
+        
+        {/* LIVRO FECHADO - Capa que desaparece quando abre */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl shadow-2xl flex items-center justify-center p-12 min-h-[600px] w-[400px] mx-auto"
+          initial={{ opacity: 1, rotateY: 0 }}
+          animate={isOpen ? { 
+            opacity: 0, 
+            rotateY: -180,
+            scale: 0.8
+          } : { 
+            opacity: 1, 
+            rotateY: 0,
+            scale: 1
+          }}
+          transition={{ 
+            duration: 1.5,
+            ease: [0.16, 1, 0.3, 1]
+          }}
           style={{ 
             transformStyle: 'preserve-3d',
-            gridTemplateColumns: isOpen ? '1fr 1fr' : '1fr'
+            transformOrigin: 'center',
+            pointerEvents: isOpen ? 'none' : 'auto'
           }}
         >
-          
-          {/* LEFT: Book Cover */}
+          <div className="relative z-10 text-center space-y-8">
+            <motion.div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+              <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
+            </motion.div>
+
+            <div className="space-y-3">
+              {titleLines.map((line, index) => (
+                <motion.h2
+                  key={index}
+                  className="text-4xl md:text-5xl font-bold text-primary-foreground"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    delay: 0.4 + (index * 0.1), 
+                    duration: 0.4
+                  }}
+                >
+                  {line}
+                </motion.h2>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* LIVRO ABERTO - Duas páginas lado a lado */}
+        <motion.div
+          className="grid grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={isOpen ? { 
+            opacity: 1,
+            scale: 1
+          } : { 
+            opacity: 0,
+            scale: 0.8
+          }}
+          transition={{ 
+            delay: isOpen ? 0.8 : 0,
+            duration: 1.2,
+            ease: [0.16, 1, 0.3, 1]
+          }}
+          style={{ 
+            transformStyle: 'preserve-3d',
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          {/* Página esquerda */}
           <motion.div
-            className="relative bg-gradient-to-br from-primary via-primary to-primary/80 rounded-l-2xl p-12 flex flex-col justify-center items-center overflow-hidden min-h-[600px]"
+            className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50"
+            initial={{ rotateY: 20 }}
+            animate={isOpen ? { rotateY: 0 } : { rotateY: 20 }}
+            transition={{ delay: 1.0, duration: 1.0 }}
             style={{ transformStyle: 'preserve-3d' }}
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-primary/40 via-transparent to-transparent"
-              animate={{ opacity: [0.3, 0.6, 0.3] }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-
-            <div className="relative z-10 text-center space-y-8">
-              <motion.div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
-                <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
-              </motion.div>
-
-              <div className="space-y-3">
-                {titleLines.map((line, index) => (
-                  <motion.h2
-                    key={index}
-                    className="text-4xl md:text-5xl font-bold text-primary-foreground"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      delay: 0.5 + (index * 0.15), 
-                      duration: 0.5
-                    }}
-                  >
-                    {line}
-                  </motion.h2>
-                ))}
-              </div>
+            <div className="text-center space-y-4 text-muted-foreground">
+              <p className="text-lg italic">Página em branco...</p>
+              <p className="text-sm">O ChatGPT vai escrever aqui</p>
             </div>
           </motion.div>
 
-          {/* RIGHT: Página interna que abre */}
+          {/* Página direita - Conteúdo */}
           <motion.div
-            className="bg-card rounded-r-2xl p-10 relative min-h-[600px]"
-            initial={{ 
-              rotateY: -180,
-              opacity: 0
-            }}
-            animate={isOpen ? { 
-              rotateY: 0,
-              opacity: 1
-            } : {
-              rotateY: -180,
-              opacity: 0
-            }}
-            transition={{ 
-              duration: 1.8,
-              ease: [0.16, 1, 0.3, 1],
-              delay: 0.2
-            }}
-            style={{ 
-              transformStyle: 'preserve-3d',
-              transformOrigin: 'left center',
-              backfaceVisibility: 'hidden'
-            }}
-            onAnimationStart={() => console.log("📖 PÁGINA ABRINDO!")}
-            onAnimationComplete={() => console.log("✅ Página aberta")}
+            className="bg-card p-10 min-h-[600px] relative"
+            initial={{ rotateY: -20 }}
+            animate={isOpen ? { rotateY: 0 } : { rotateY: -20 }}
+            transition={{ delay: 1.0, duration: 1.0 }}
+            style={{ transformStyle: 'preserve-3d' }}
           >
-            {/* Sombra da lombada */}
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/15 to-transparent pointer-events-none rounded-l-2xl" />
-            
             <motion.div 
-              className="space-y-6 relative"
+              className="space-y-6"
               initial={{ opacity: 0 }}
               animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ delay: 1.5, duration: 0.8 }}
+              transition={{ delay: 1.8, duration: 0.6 }}
             >
-              
               {/* Status badge */}
-              <motion.div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
-                initial={{ opacity: 0, y: 10 }}
-                animate={isOpen ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                transition={{ delay: 2.0, duration: 0.5 }}
-              >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <motion.div
                   className="w-2 h-2 rounded-full bg-primary"
                   animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 2.5 }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 2.0 }}
                 />
                 <span className="text-xs font-medium text-primary">Resposta da I.A.</span>
-              </motion.div>
+              </div>
 
               {/* Title */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={isOpen ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                transition={{ delay: 2.3, duration: 0.5 }}
-              >
+              <div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">
                   Estrutura do Livro
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Índice gerado automaticamente
                 </p>
-              </motion.div>
+              </div>
 
               {/* Chapters list */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3">
                 {chapters.map((chapter, index) => (
                   <motion.div
                     key={index}
-                    className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border hover:border-primary/40 hover:bg-muted/50 transition-all"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={isOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/40 transition-all"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={isOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
                     transition={{ 
-                      delay: 2.6 + (index * 0.2), 
-                      duration: 0.5
+                      delay: 2.0 + (index * 0.15), 
+                      duration: 0.4
                     }}
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-sm font-bold text-primary">{index + 1}</span>
+                    <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">{index + 1}</span>
                     </div>
-                    <p className="text-base font-medium text-foreground leading-relaxed pt-1">
+                    <p className="text-sm font-medium text-foreground leading-relaxed pt-0.5">
                       {chapter}
                     </p>
                   </motion.div>
@@ -182,18 +176,18 @@ export function IaBookExperienceCard() {
 
               {/* Final note */}
               <motion.p
-                className="text-sm text-muted-foreground italic text-center pt-6 border-t-2 border-border"
+                className="text-xs text-muted-foreground italic text-center pt-4 border-t border-border"
                 initial={{ opacity: 0 }}
                 animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
-                transition={{ delay: 3.8, duration: 0.6 }}
+                transition={{ delay: 3.0, duration: 0.5 }}
               >
                 ✨ Estrutura criada em segundos pela I.A.
               </motion.p>
             </motion.div>
           </motion.div>
-          
-        </div>
-      </motion.div>
+        </motion.div>
+
+      </div>
     </div>
   );
 }
