@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,26 +49,80 @@ export default function AdminV5CardConfig() {
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
   const [cardsQuantity, setCardsQuantity] = useState<1 | 2>(1);
-  const [card1, setCard1] = useState<Partial<ExperienceCard>>({
-    cardType: '',
-    anchorText: '',
-    title: '',
-    subtitle: '',
-    icon: '',
-    colorScheme: '',
-    effectDescription: '',
-    chapters: []
+  // LocalStorage keys
+  const CARD1_STORAGE_KEY = 'v5-card-config-card1';
+  const CARD2_STORAGE_KEY = 'v5-card-config-card2';
+
+  // Inicializar com dados salvos ou valores padrão
+  const [card1, setCard1] = useState<Partial<ExperienceCard>>(() => {
+    const saved = localStorage.getItem(CARD1_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          cardType: '',
+          anchorText: '',
+          title: '',
+          subtitle: '',
+          icon: '',
+          colorScheme: '',
+          effectDescription: '',
+          chapters: []
+        };
+      }
+    }
+    return {
+      cardType: '',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
+    };
   });
-  const [card2, setCard2] = useState<Partial<ExperienceCard>>({
-    cardType: '',
-    anchorText: '',
-    title: '',
-    subtitle: '',
-    icon: '',
-    colorScheme: '',
-    effectDescription: '',
-    chapters: []
+
+  const [card2, setCard2] = useState<Partial<ExperienceCard>>(() => {
+    const saved = localStorage.getItem(CARD2_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          cardType: '',
+          anchorText: '',
+          title: '',
+          subtitle: '',
+          icon: '',
+          colorScheme: '',
+          effectDescription: '',
+          chapters: []
+        };
+      }
+    }
+    return {
+      cardType: '',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
+    };
   });
+
+  // Auto-save card1 no localStorage
+  useEffect(() => {
+    localStorage.setItem(CARD1_STORAGE_KEY, JSON.stringify(card1));
+  }, [card1]);
+
+  // Auto-save card2 no localStorage
+  useEffect(() => {
+    localStorage.setItem(CARD2_STORAGE_KEY, JSON.stringify(card2));
+  }, [card2]);
 
   // Estado do preview modal
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -194,8 +248,8 @@ export default function AdminV5CardConfig() {
       description: `${previewCards.length} card(s) configurado(s) para Seção ${selectedSectionIndex}`,
     });
 
-    // Resetar formulário
-    setCard1({
+    // Resetar formulário E limpar localStorage
+    const emptyCard = {
       cardType: '',
       anchorText: '',
       title: '',
@@ -204,17 +258,12 @@ export default function AdminV5CardConfig() {
       colorScheme: '',
       effectDescription: '',
       chapters: []
-    });
-    setCard2({
-      cardType: '',
-      anchorText: '',
-      title: '',
-      subtitle: '',
-      icon: '',
-      colorScheme: '',
-      effectDescription: '',
-      chapters: []
-    });
+    };
+    
+    setCard1(emptyCard);
+    setCard2(emptyCard);
+    localStorage.removeItem(CARD1_STORAGE_KEY);
+    localStorage.removeItem(CARD2_STORAGE_KEY);
 
     // Fechar modal
     setShowPreviewModal(false);
@@ -224,6 +273,29 @@ export default function AdminV5CardConfig() {
   const handleCancelPreview = () => {
     setShowPreviewModal(false);
     setPreviewCards([]);
+  };
+
+  const handleClearCards = () => {
+    const emptyCard = {
+      cardType: '',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
+    };
+    
+    setCard1(emptyCard);
+    setCard2(emptyCard);
+    localStorage.removeItem(CARD1_STORAGE_KEY);
+    localStorage.removeItem(CARD2_STORAGE_KEY);
+    
+    toast({
+      title: "🧹 Formulário limpo",
+      description: "Dados dos cards foram apagados",
+    });
   };
 
   const handleRemoveCard = (sectionIndex: number, cardIndex: number) => {
@@ -492,9 +564,20 @@ export default function AdminV5CardConfig() {
                       <div className="space-y-6 border-t pt-6">
                         {/* Card 1 */}
                         <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                          <h4 className="font-semibold flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
-                            Card 1
+                          <h4 className="font-semibold flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
+                              Card 1
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleClearCards}
+                              className="h-7 text-xs"
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Limpar tudo
+                            </Button>
                           </h4>
                           
                           <div className="space-y-2">
