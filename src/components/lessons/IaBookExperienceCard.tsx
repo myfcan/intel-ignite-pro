@@ -31,19 +31,21 @@ export function IaBookExperienceCard() {
         
         {/* LIVRO FECHADO - Capa que vira para trás */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl shadow-2xl flex items-center justify-center p-12 min-h-[600px] w-[400px] mx-auto"
+          className="absolute inset-0 rounded-2xl shadow-2xl flex items-center justify-center p-12 min-h-[600px] w-[400px] mx-auto overflow-hidden"
           initial={{ rotateY: 0, z: 100 }}
           animate={isOpen ? { 
-            rotateY: -160,
-            x: -300,
-            z: -50
+            rotateY: -165,
+            x: -350,
+            z: -50,
+            scale: 0.95
           } : { 
             rotateY: 0,
             x: 0,
-            z: 100
+            z: 100,
+            scale: 1
           }}
           transition={{ 
-            duration: 1.8,
+            duration: 2.0,
             ease: [0.16, 1, 0.3, 1]
           }}
           style={{ 
@@ -53,6 +55,20 @@ export function IaBookExperienceCard() {
             pointerEvents: isOpen ? 'none' : 'auto'
           }}
         >
+          {/* Gradiente de fundo da capa */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl" />
+          
+          {/* Sombra de dobra dinâmica */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={isOpen ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0.5) 40%, transparent 60%)'
+            }}
+          />
+
           {/* Páginas empilhadas na lateral */}
           <motion.div 
             className="absolute right-0 top-2 bottom-2 w-2"
