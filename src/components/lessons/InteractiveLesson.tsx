@@ -10,6 +10,7 @@ import { BeforeAfterLesson } from './BeforeAfterLesson';
 import { GuidedLesson } from './GuidedLesson';
 import { GuidedLessonV3 } from './GuidedLessonV3';
 import { GuidedLessonV4 } from './GuidedLessonV4';
+import { GuidedLessonV5 } from './GuidedLessonV5';
 import { supabase } from '@/integrations/supabase/client';
 import { MiniLiv } from '@/components/MiniMaia';
 import { fundamentos01 } from '@/data/lessons/fundamentos-01';
@@ -454,6 +455,7 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
         title: lesson.title,
         model: lesson.model,
         willUseV4Component: lesson.model === 'v4',
+        willUseV5Component: lesson.model === 'v5',
         hasExercises: !!guidedLessonData?.exercisesConfig,
         exercisesCount: guidedLessonData?.exercisesConfig?.length || 0
       });
@@ -501,6 +503,37 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               lessonData={v3LessonData}
               onComplete={handleGuidedComplete}
               onMarkComplete={markLessonComplete}
+              nextLessonId={nextLessonData?.id}
+              nextLessonType={nextLessonData?.lesson_type}
+              trailId={lesson.trail_id}
+            />
+          </>
+        );
+      }
+
+      // 🚀 V5: Experience Cards Animados
+      if (lesson.model === 'v5') {
+        console.log('✨ [V5] Renderizando lição com Experience Cards:', {
+          numSections: guidedLessonData?.sections?.length || 0,
+          hasExperienceCards: guidedLessonData?.sections?.some((s: any) => s.experienceCards?.length > 0)
+        });
+
+        return (
+          <>
+            {showMaia && isLastLesson && (
+              <MiniLiv
+                message="🎉 Parabéns! Você concluiu todas as aulas desta trilha! Continue assim e você vai dominar a IA!"
+                variant="celebration"
+                showConfetti={true}
+                onClose={handleMaiaClose}
+              />
+            )}
+            <GuidedLessonV5
+              lessonData={guidedLessonData}
+              onComplete={handleGuidedComplete}
+              onMarkComplete={markLessonComplete}
+              audioUrl={audioUrl}
+              wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
               nextLessonId={nextLessonData?.id}
               nextLessonType={nextLessonData?.lesson_type}
               trailId={lesson.trail_id}

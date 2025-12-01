@@ -13,8 +13,8 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log(`🐛 [STEP 1] Dados do input: trackId=${input.trackId}, orderIndex=${input.orderIndex}`);
   
   // Validar modelo
-  if (!['v1', 'v2', 'v3', 'v4'].includes(input.model)) {
-    throw new Error(`Modelo inválido: ${input.model}. Use 'v1', 'v2', 'v3' ou 'v4'.`);
+  if (!['v1', 'v2', 'v3', 'v4', 'v5'].includes(input.model)) {
+    throw new Error(`Modelo inválido: ${input.model}. Use 'v1', 'v2', 'v3', 'v4' ou 'v5'.`);
   }
   console.log(`✅ [STEP 1] Modelo validado: ${input.model.toUpperCase()}`);
 
@@ -25,7 +25,29 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log(`✅ [STEP 1] Título validado: "${input.title}"`);
 
   // Validar conteúdo baseado no modelo
-  if (input.model === 'v4') {
+  if (input.model === 'v5') {
+    // V5: Similar a V4, mas com suporte a Experience Cards animados
+    if (!input.sections || input.sections.length === 0) {
+      throw new Error('A lição V5 deve ter pelo menos 1 seção');
+    }
+    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (V5 - Experience Cards)`);
+
+    // Validar visualContent em cada seção
+    let totalExperienceCards = 0;
+    for (let i = 0; i < input.sections.length; i++) {
+      const section = input.sections[i];
+      if (!section.id || !section.visualContent) {
+        throw new Error(`Seção ${i + 1} está incompleta (falta id ou visualContent)`);
+      }
+      // Contar experience cards
+      if (section.experienceCards && section.experienceCards.length > 0) {
+        totalExperienceCards += section.experienceCards.length;
+        console.log(`   📦 Seção ${i + 1}: ${section.experienceCards.length} experience cards`);
+      }
+    }
+    console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
+    console.log(`✨ [STEP 1] Total de Experience Cards: ${totalExperienceCards}`);
+  } else if (input.model === 'v4') {
     // V4: Similar a V2, mas com suporte a playground interativo
     if (!input.sections || input.sections.length === 0) {
       throw new Error('A lição V4 deve ter pelo menos 1 seção');

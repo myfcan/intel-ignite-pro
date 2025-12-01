@@ -2,9 +2,106 @@
 
 import { PlaygroundConfig } from '@/types/guidedLesson';
 
-export type LessonModel = 'v1' | 'v2' | 'v3' | 'v4';
+export type LessonModel = 'v1' | 'v2' | 'v3' | 'v4' | 'v5';
 
 export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
+
+// ===========================================
+// EXPERIENCE CARDS (V5)
+// ===========================================
+
+export type ExperienceCardType =
+  | 'ia-book'           // Card do livro com IA
+  | 'ia-chat'           // Simulação de chat com IA
+  | 'ia-image'          // Geração de imagem com IA
+  | 'ia-code'           // Geração de código com IA
+  | 'ia-data'           // Análise de dados com IA
+  | 'ia-audio'          // Transcrição/geração de áudio
+  | 'comparison'        // Comparação lado a lado
+  | 'timeline'          // Timeline animada
+  | 'stats'             // Cards de estatísticas
+  | 'quote';            // Citação destacada
+
+export interface ExperienceCardBase {
+  id: string;
+  type: ExperienceCardType;
+  anchorText?: string;     // Texto na narração que trigga o card
+  triggerTimestamp?: number; // Timestamp alternativo para trigger
+  duration?: number;       // Duração em segundos que o card fica visível
+}
+
+// Card: I.A. Book Experience
+export interface IaBookExperienceCard extends ExperienceCardBase {
+  type: 'ia-book';
+  config: {
+    bookTitle: string;
+    bookSubtitle?: string;
+    coverGradient?: string;  // Ex: 'from-purple-600 to-blue-600'
+    chapters: Array<{
+      number: number;
+      title: string;
+      description?: string;
+    }>;
+    aiResponseTitle?: string;
+  };
+}
+
+// Card: I.A. Chat Experience
+export interface IaChatExperienceCard extends ExperienceCardBase {
+  type: 'ia-chat';
+  config: {
+    messages: Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      typing?: boolean;
+    }>;
+  };
+}
+
+// Card: Comparison
+export interface ComparisonExperienceCard extends ExperienceCardBase {
+  type: 'comparison';
+  config: {
+    before: { title: string; items: string[]; icon?: string };
+    after: { title: string; items: string[]; icon?: string };
+  };
+}
+
+// Card: Stats
+export interface StatsExperienceCard extends ExperienceCardBase {
+  type: 'stats';
+  config: {
+    stats: Array<{
+      value: string;
+      label: string;
+      icon?: string;
+      color?: string;
+    }>;
+  };
+}
+
+// Card: Quote
+export interface QuoteExperienceCard extends ExperienceCardBase {
+  type: 'quote';
+  config: {
+    quote: string;
+    author?: string;
+    role?: string;
+    avatar?: string;
+  };
+}
+
+// Union type para todos os cards
+export type ExperienceCard =
+  | IaBookExperienceCard
+  | IaChatExperienceCard
+  | ComparisonExperienceCard
+  | StatsExperienceCard
+  | QuoteExperienceCard;
+
+// ===========================================
+// LESSON SECTION
+// ===========================================
 
 export interface LessonSection {
   id: string;
@@ -13,6 +110,8 @@ export interface LessonSection {
   speechBubbleText?: string;
   showPlaygroundCall?: boolean;
   playgroundConfig?: PlaygroundConfig;
+  // V5: Experience Cards
+  experienceCards?: ExperienceCard[];
 }
 
 export interface V3Slide {

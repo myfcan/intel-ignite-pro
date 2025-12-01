@@ -12,8 +12,9 @@ export function step4CalculateTimestamps(input: Step3Output): Step4Output {
 
   if (input.model === 'v1') {
     return calculateTimestampsV1(input);
-  } else if (input.model === 'v2' || input.model === 'v4') {
-    // V2 e V4 usam mesma lógica: timestamps cumulativos por seção
+  } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
+    // V2, V4 e V5 usam mesma lógica: timestamps cumulativos por seção
+    // V5 adiciona experienceCards mas a lógica de timestamps é a mesma
     return calculateTimestampsV2(input);
   } else if (input.model === 'v3') {
     return calculateTimestampsV3(input);

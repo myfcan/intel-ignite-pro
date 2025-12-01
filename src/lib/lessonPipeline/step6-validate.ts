@@ -27,17 +27,33 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
     } else {
       console.log(`      ✅ ${input.wordTimestamps.length} word timestamps`);
     }
-  } else if (input.model === 'v2') {
+  } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
+    // V2, V4 e V5 usam audioUrls por seção
     if (!input.audioUrls || input.audioUrls.length === 0) {
       errors.push('❌ audioUrls ausentes');
     } else {
       console.log(`      ✅ ${input.audioUrls.length} audioUrls presentes`);
     }
-    
+
     if (!input.durations || input.durations.length === 0) {
       errors.push('❌ durations ausentes');
     } else {
       console.log(`      ✅ ${input.durations.length} durações`);
+    }
+
+    // V5: Validar experienceCards se presentes
+    if (input.model === 'v5' && input.sections) {
+      let totalCards = 0;
+      input.sections.forEach((section: any, idx: number) => {
+        if (section.experienceCards && section.experienceCards.length > 0) {
+          totalCards += section.experienceCards.length;
+          section.experienceCards.forEach((card: any, cardIdx: number) => {
+            if (!card.id) warnings.push(`⚠️ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem ID`);
+            if (!card.type) errors.push(`❌ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem tipo`);
+          });
+        }
+      });
+      console.log(`      ✨ ${totalCards} experience cards validados`);
     }
   }
 
@@ -46,7 +62,7 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   if (!input.structuredContent) {
     errors.push('❌ structuredContent ausente');
     console.error('      ❌ structuredContent está undefined');
-  } else if (input.model === 'v1' || input.model === 'v2') {
+  } else if (input.model === 'v1' || input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
     const sections = input.structuredContent.sections || [];
     if (sections.length === 0) {
       errors.push('❌ Nenhuma seção em structuredContent');
