@@ -15,6 +15,7 @@ const titleLines = ["Seu Primeiro Livro", "com Inteligência", "Artificial"];
 
 export function IaBookExperienceCard() {
   const [isOpen, setIsOpen] = useState(false);
+  const [typedChapters, setTypedChapters] = useState<string[]>(["", "", "", ""]);
 
   useEffect(() => {
     console.log("📕 Livro carregado!");
@@ -24,6 +25,29 @@ export function IaBookExperienceCard() {
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Efeito typewriter nos capítulos
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const startDelay = 2200; // Começa depois que a página abre
+    const chapterDelay = 150; // Delay entre cada capítulo
+    const typingSpeed = 30; // Velocidade de digitação (ms por caractere)
+
+    chapters.forEach((chapter, chapterIndex) => {
+      const chapterStartTime = startDelay + (chapterIndex * chapterDelay);
+      
+      for (let i = 0; i <= chapter.length; i++) {
+        setTimeout(() => {
+          setTypedChapters(prev => {
+            const newChapters = [...prev];
+            newChapters[chapterIndex] = chapter.slice(0, i);
+            return newChapters;
+          });
+        }, chapterStartTime + (i * typingSpeed));
+      }
+    });
+  }, [isOpen]);
 
   return (
     <div className="w-full max-w-6xl mx-auto py-12" style={{ perspective: '2500px' }}>
@@ -297,8 +321,11 @@ export function IaBookExperienceCard() {
                     <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-bold text-primary">{index + 1}</span>
                     </div>
-                    <p className="text-sm font-medium text-foreground leading-relaxed pt-0.5">
-                      {chapter}
+                    <p className="text-sm font-medium text-foreground leading-relaxed pt-0.5 min-h-[24px]">
+                      {typedChapters[index]}
+                      {isOpen && typedChapters[index].length < chapter.length && (
+                        <span className="inline-block w-[2px] h-[16px] bg-primary ml-1 animate-pulse" />
+                      )}
                     </p>
                   </motion.div>
                 ))}
