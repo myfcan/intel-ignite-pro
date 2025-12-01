@@ -411,6 +411,31 @@ export default function AdminV5CardConfig() {
       // PASSO 3: Criar execução do PIPELINE (não inserir direto)
       setGeneratingProgress("Criando execução do pipeline...");
 
+      // 🔧 NORMALIZADOR: Converte campos antigos/incorretos para o formato correto
+      const rawSections = parsedLesson.sections || parsedLesson.content?.sections || [];
+      const normalizedSections = rawSections.map((section: any, index: number) => {
+        const normalized: any = {
+          id: section.id || `section-${index + 1}`, // ✅ OBRIGATÓRIO
+          visualContent: section.visualContent || section.markdown || section.content || '', // ✅ OBRIGATÓRIO
+        };
+        
+        // Campos opcionais
+        if (section.title) normalized.title = section.title;
+        if (section.speechBubbleText || section.speechBubble) {
+          normalized.speechBubbleText = section.speechBubbleText || section.speechBubble;
+        }
+        if (section.showPlaygroundCall !== undefined) {
+          normalized.showPlaygroundCall = section.showPlaygroundCall;
+        }
+        if (section.playgroundConfig) {
+          normalized.playgroundConfig = section.playgroundConfig;
+        }
+        
+        return normalized;
+      });
+
+      console.log('🔧 [V5-CONFIG] Seções normalizadas:', normalizedSections.length);
+
       const pipelineInput = {
         title: parsedLesson.title,
         trackId: parsedLesson.trackId,
@@ -418,7 +443,7 @@ export default function AdminV5CardConfig() {
         orderIndex: nextOrderIndex,
         model: 'v5',
         estimatedTime: parsedLesson.estimatedTimeMinutes || 5,
-        sections: parsedLesson.sections || parsedLesson.content?.sections,
+        sections: normalizedSections, // ✅ Agora com campos corretos!
         exercises: parsedLesson.exercises || [],
         experienceCards: generatedData.cards.map((card: any) => ({
           sectionIndex: card.sectionIndex,
