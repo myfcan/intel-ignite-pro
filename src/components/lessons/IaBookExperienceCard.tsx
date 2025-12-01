@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const chapters = [
   "1. O Que É Inteligência Artificial",
@@ -11,6 +12,18 @@ const chapters = [
 const titleLines = ["Seu Primeiro Livro", "com Inteligência", "Artificial"];
 
 export function IaBookExperienceCard() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    console.log("🎬 IaBookExperienceCard MONTADO - Iniciando animações");
+    setMounted(true);
+  }, []);
+
+  // Força remount quando a página carrega
+  if (!mounted) {
+    return <div className="w-full h-[600px] bg-muted animate-pulse" />;
+  }
+
   return (
     // SCENE 1: Card entrance (0.0s - 0.8s)
     <motion.div
@@ -18,7 +31,8 @@ export function IaBookExperienceCard() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      style={{ perspective: "2000px" }}
+      onAnimationStart={() => console.log("🎬 Animação do CARD iniciou")}
+      onAnimationComplete={() => console.log("✅ Animação do CARD completou")}
     >
       <div className="grid md:grid-cols-[45%_55%] gap-0 items-stretch shadow-2xl rounded-2xl overflow-visible">
         
@@ -29,6 +43,8 @@ export function IaBookExperienceCard() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+          onAnimationStart={() => console.log("📕 Animação da CAPA iniciou")}
+          onAnimationComplete={() => console.log("✅ Animação da CAPA completou")}
         >
           {/* SCENE 6: Subtle glow pulse */}
           <motion.div
@@ -49,6 +65,7 @@ export function IaBookExperienceCard() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1.6, duration: 0.4 }}
+              onAnimationStart={() => console.log("🏷️ Animação do BADGE iniciou")}
             >
               <Sparkles className="w-4 h-4 text-primary-foreground" />
               <span className="text-sm font-medium text-primary-foreground">I.A. BOOK</span>
@@ -67,6 +84,7 @@ export function IaBookExperienceCard() {
                     duration: 0.6,
                     ease: "easeOut"
                   }}
+                  onAnimationStart={() => console.log(`📝 Animação TÍTULO linha ${index + 1} iniciou`)}
                 >
                   {line}
                 </motion.h2>
@@ -75,7 +93,7 @@ export function IaBookExperienceCard() {
           </div>
         </motion.div>
 
-        {/* RIGHT: Opened Page - SCENE 4 (3.0s - 5.4s) - ABERTURA SUPER DRAMÁTICA */}
+        {/* RIGHT: Opened Page - SCENE 4 (3.0s - 5.4s) - ABERTURA DRAMÁTICA */}
         <motion.div
           className="bg-card rounded-r-2xl p-10 relative border-l-4 border-primary/10 overflow-hidden"
           style={{ 
@@ -100,6 +118,8 @@ export function IaBookExperienceCard() {
             ease: [0.22, 1, 0.36, 1],
             opacity: { duration: 1.6 }
           }}
+          onAnimationStart={() => console.log("📄 Animação PÁGINA ABRINDO iniciou - OLHE AGORA!")}
+          onAnimationComplete={() => console.log("✅ Animação PÁGINA completou")}
         >
           {/* Book binding shadow - CRESCE COM A ABERTURA */}
           <motion.div
@@ -175,6 +195,7 @@ export function IaBookExperienceCard() {
                     duration: 0.8, 
                     ease: "easeOut" 
                   }}
+                  onAnimationStart={() => console.log(`📋 Capítulo ${index + 1} animando`)}
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-sm font-bold text-primary">{index + 1}</span>
