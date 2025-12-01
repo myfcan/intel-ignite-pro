@@ -3,6 +3,7 @@ import { PipelineInput, Step1Output } from './types';
 /**
  * STEP 1: INTAKE & VALIDAÇÃO INICIAL
  * - Valida se o modelo existe (V1, V2, V3, V4 ou V5)
+ * - NORMALIZA campos desatualizados automaticamente
  * - Valida estrutura básica do conteúdo
  * - Conta número de seções e exercícios
  */
@@ -30,35 +31,53 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     if (!input.sections || input.sections.length === 0) {
       throw new Error(`A lição ${input.model.toUpperCase()} deve ter pelo menos 1 seção`);
     }
-    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (${input.model.toUpperCase()})`);
+    console.log(`✅ [STEP 1] ${input.sections.length} seções recebidas (${input.model.toUpperCase()})`);
 
-    // Validar visualContent em cada seção com mensagens detalhadas
+    // 🔧 NORMALIZAÇÃO AUTOMÁTICA: Converte campos antigos/incorretos
+    console.log('🔧 [STEP 1] Normalizando estrutura das seções...');
+    input.sections = input.sections.map((section: any, index: number) => {
+      const normalized: any = {
+        id: section.id || `section-${index + 1}`, // ✅ OBRIGATÓRIO
+        visualContent: section.visualContent || section.markdown || section.content || '', // ✅ OBRIGATÓRIO
+      };
+      
+      // Campos opcionais
+      if (section.title) normalized.title = section.title;
+      if (section.speechBubbleText || section.speechBubble) {
+        normalized.speechBubbleText = section.speechBubbleText || section.speechBubble;
+      }
+      if (section.showPlaygroundCall !== undefined) {
+        normalized.showPlaygroundCall = section.showPlaygroundCall;
+      }
+      if (section.playgroundConfig) {
+        normalized.playgroundConfig = section.playgroundConfig;
+      }
+      
+      return normalized;
+    });
+    console.log(`✅ [STEP 1] ${input.sections.length} seções normalizadas com sucesso`);
+
+    // Validar após normalização
     for (let i = 0; i < input.sections.length; i++) {
       const section = input.sections[i];
       const missing: string[] = [];
       
       if (!section.id) missing.push('id');
-      if (!section.visualContent) missing.push('visualContent');
+      if (!section.visualContent || section.visualContent.trim().length === 0) {
+        missing.push('visualContent');
+      }
       
       if (missing.length > 0) {
-        console.error(`❌ [STEP 1] Seção ${i + 1} recebida:`, JSON.stringify(section, null, 2));
+        console.error(`❌ [STEP 1] Seção ${i + 1} após normalização:`, JSON.stringify(section, null, 2));
         throw new Error(
-          `❌ Seção ${i + 1} está incompleta\n\n` +
+          `❌ Seção ${i + 1} ainda está incompleta após normalização\n\n` +
           `Campos AUSENTES: ${missing.join(', ')}\n` +
           `Campos PRESENTES: ${Object.keys(section).join(', ')}\n\n` +
-          `📋 Estrutura CORRETA para ${input.model.toUpperCase()}:\n` +
-          `{\n` +
-          `  "id": "intro",           // ✅ OBRIGATÓRIO\n` +
-          `  "title": "Título",        // opcional\n` +
-          `  "visualContent": "...",   // ✅ OBRIGATÓRIO (markdown)\n` +
-          `  "speechBubbleText": "...", // opcional\n` +
-          `  "showPlaygroundCall": true // opcional\n` +
-          `}\n\n` +
-          `💡 Veja TEMPLATE-AULA-V5-COMPLETO.json para exemplo completo`
+          `Possível causa: campo de conteúdo está vazio ou ausente no JSON original`
         );
       }
     }
-    console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
+    console.log(`✅ [STEP 1] Todas as seções validadas com sucesso`);
   } else if (input.model === 'v3') {
     // V3: Validar v3Data
     if (!input.v3Data) {
