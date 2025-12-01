@@ -185,7 +185,7 @@ export default function AdminPipelineCreateBatch() {
 
         // ✅ Validar que há modelo selecionado
         if (!lesson.model && !selectedTemplate) {
-          setValidationError('❌ Selecione um modelo (V1, V2 ou V3) clicando nos botões acima antes de validar');
+          setValidationError('❌ Selecione um modelo (V1, V2, V3, V4 ou V5) clicando nos botões acima antes de validar');
           return null;
         }
 
@@ -356,13 +356,14 @@ export default function AdminPipelineCreateBatch() {
   };
 
   // Função para selecionar modelo pedagógico (sem carregar template JSON)
-  const selectModel = (model: 'v1' | 'v2' | 'v3' | 'v4') => {
+  const selectModel = (model: 'v1' | 'v2' | 'v3' | 'v4' | 'v5') => {
     setSelectedTemplate(model);
     const descriptions = {
       v1: '🎮 Modelo V1 selecionado: Aula Interativa com Playground no Meio',
       v2: '📚 Modelo V2 selecionado: Modelo Linear Simples (sem playground)',
       v3: '🎨 Modelo V3 selecionado: Apresentação Visual com Slides + Playground Final',
-      v4: '🚀 Modelo V4 selecionado: Playground Real Interativo com IA'
+      v4: '🚀 Modelo V4 selecionado: Playground Real Interativo com IA',
+      v5: '✨ Modelo V5 selecionado: Experience Cards Animados com Narrativa Imersiva'
     };
     toast({
       title: "✓ Modelo selecionado",
