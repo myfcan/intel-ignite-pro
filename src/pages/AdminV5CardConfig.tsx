@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -736,16 +737,37 @@ export default function AdminV5CardConfig() {
                 <p className="text-xs text-muted-foreground">
                   Cada seção pode ter até 2 cards ancorados em trechos do markdown.
                 </p>
-                
-                {generatingProgress && (
-                  <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                    <p className="text-xs font-medium text-primary animate-pulse">
-                      {generatingProgress}
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
+
+            {/* BARRA DE PROGRESSO VISUAL */}
+            {generatingProgress && (
+              <Card className="border-primary/50 bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
+                    />
+                    Gerando Cards...
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-primary to-accent"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 3, ease: "easeInOut" }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {generatingProgress}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {parsedLesson && (
               <Card>
