@@ -95,61 +95,42 @@ export function IaBookExperienceCard() {
           </div>
         </motion.div>
 
-        {/* RIGHT: Opened Page - SCENE 4 (3.0s - 5.4s) - ABERTURA DRAMÁTICA */}
+        {/* RIGHT: Opened Page - SCENE 4 (3.0s - 5.4s) - ABERTURA SUPER DRAMÁTICA */}
         <motion.div
-          className="bg-card rounded-r-2xl p-10 relative border-l-4 border-primary/10 overflow-hidden"
-          style={{ 
-            transformOrigin: 'left center',
-            transformStyle: 'preserve-3d'
-          }}
+          className="bg-card rounded-r-2xl p-10 relative border-l-4 border-primary/10"
           initial={{ 
-            opacity: 0, 
-            scaleX: 0,
-            rotateY: -25,
-            x: -40
+            width: 0,
+            opacity: 0,
+            x: -200,
+            scale: 0.8
           }}
           animate={{ 
-            opacity: 1, 
-            scaleX: 1,
-            rotateY: 0,
-            x: 0
+            width: "100%",
+            opacity: 1,
+            x: 0,
+            scale: 1
           }}
           transition={{ 
             delay: 3.0, 
-            duration: 2.4,
-            ease: [0.22, 1, 0.36, 1],
-            opacity: { duration: 1.6 }
+            duration: 3.0,
+            ease: "easeInOut",
+            width: { duration: 3.0, ease: [0.22, 1, 0.36, 1] },
+            opacity: { duration: 2.0, ease: "easeIn" },
+            x: { duration: 3.0, ease: [0.22, 1, 0.36, 1] },
+            scale: { duration: 3.0, ease: "easeOut" }
           }}
           onAnimationStart={() => console.log("📄 Animação PÁGINA ABRINDO iniciou - OLHE AGORA!")}
           onAnimationComplete={() => console.log("✅ Animação PÁGINA completou")}
         >
-          {/* Book binding shadow - CRESCE COM A ABERTURA */}
+          {/* Sombra lateral crescente */}
           <motion.div
-            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-black/20 via-black/10 to-transparent pointer-events-none"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: "80px", opacity: 1 }}
+            className="absolute -left-8 top-0 bottom-0 w-12 bg-black/30 blur-2xl pointer-events-none"
+            initial={{ opacity: 0, scaleY: 0 }}
+            animate={{ opacity: 1, scaleY: 1 }}
             transition={{ 
-              delay: 3.0, 
-              duration: 2.4,
-              ease: [0.22, 1, 0.36, 1]
-            }}
-          />
-
-          {/* Sombra dinâmica 3D que cresce */}
-          <motion.div
-            className="absolute -left-4 top-4 bottom-4 w-8 blur-xl pointer-events-none"
-            initial={{ 
-              background: "transparent",
-              scaleY: 0
-            }}
-            animate={{ 
-              background: "linear-gradient(to right, rgba(0,0,0,0.3), transparent)",
-              scaleY: 1
-            }}
-            transition={{ 
-              delay: 3.0, 
-              duration: 2.4,
-              ease: [0.22, 1, 0.36, 1]
+              delay: 3.5, 
+              duration: 2.5,
+              ease: "easeOut"
             }}
           />
           
@@ -160,7 +141,7 @@ export function IaBookExperienceCard() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 5.8, duration: 0.6 }}
+              transition={{ delay: 6.5, duration: 0.6 }}
             >
               <motion.div
                 className="w-2 h-2 rounded-full bg-primary"
@@ -174,7 +155,7 @@ export function IaBookExperienceCard() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 6.2, duration: 0.6 }}
+              transition={{ delay: 7.0, duration: 0.6 }}
             >
               <h3 className="text-2xl font-bold text-foreground mb-2">
                 Estrutura do Livro
@@ -184,7 +165,7 @@ export function IaBookExperienceCard() {
               </p>
             </motion.div>
 
-            {/* SCENE 5: Chapters list (7.0s - 9.4s) */}
+            {/* SCENE 5: Chapters list (8.0s - 10.4s) */}
             <div className="space-y-4 pt-2">
               {chapters.map((chapter, index) => (
                 <motion.div
@@ -193,7 +174,7 @@ export function IaBookExperienceCard() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ 
-                    delay: 7.0 + (index * 0.6), 
+                    delay: 8.0 + (index * 0.6), 
                     duration: 0.8, 
                     ease: "easeOut" 
                   }}
@@ -214,7 +195,7 @@ export function IaBookExperienceCard() {
               className="text-sm text-muted-foreground italic text-center pt-6 border-t-2 border-border"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 10.0, duration: 0.8 }}
+              transition={{ delay: 11.0, duration: 0.8 }}
             >
               ✨ Estrutura criada em segundos pela I.A.
             </motion.p>
