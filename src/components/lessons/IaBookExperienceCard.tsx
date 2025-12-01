@@ -222,6 +222,46 @@ export function IaBookExperienceCard() {
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
           >
             <div className="relative">
+              {/* Partículas brilhantes flutuando */}
+              {[...Array(12)].map((_, i) => {
+                const angle = (i / 12) * Math.PI * 2;
+                const distance = 140 + Math.random() * 30;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ 
+                      scale: 0,
+                      x: 0,
+                      y: 0,
+                      opacity: 0
+                    }}
+                    animate={{ 
+                      scale: [0, 1, 0.8, 1, 0],
+                      x: Math.cos(angle) * distance,
+                      y: Math.sin(angle) * distance,
+                      opacity: [0, 1, 0.8, 1, 0],
+                      rotate: [0, 180, 360]
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      delay: 0.3 + (i * 0.08),
+                      repeat: Infinity,
+                      repeatDelay: 0.5,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  >
+                    <Sparkles 
+                      className="w-5 h-5 text-yellow-400" 
+                      fill="currentColor"
+                      style={{
+                        filter: "drop-shadow(0 0 4px rgba(250, 204, 21, 0.8))"
+                      }}
+                    />
+                  </motion.div>
+                );
+              })}
+              
               {/* Círculo externo do carimbo */}
               <div className="w-64 h-64 rounded-full border-8 border-red-600 flex items-center justify-center bg-red-600/10 backdrop-blur-sm">
                 {/* Círculo interno */}
@@ -353,39 +393,23 @@ export function IaBookExperienceCard() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
           >
-            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl p-8 shadow-2xl border-4 border-primary-foreground/20 text-center space-y-4 max-w-md">
+            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-xl p-6 shadow-2xl border-2 border-primary-foreground/20 text-center space-y-3 w-[280px] md:w-[320px]">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
               >
-                <Trophy className="w-16 h-16 text-primary-foreground mx-auto" />
+                <Trophy className="w-12 h-12 text-primary-foreground mx-auto" />
               </motion.div>
               
-              <div className="space-y-3">
-                <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground">
+              <div className="space-y-2">
+                <h3 className="text-xl md:text-2xl font-bold text-primary-foreground">
                   🎉 Parabéns, Autor!
                 </h3>
-                <p className="text-primary-foreground/90 text-base md:text-lg font-semibold">
-                  Você acaba de criar seu próprio livro!
-                </p>
-                <p className="text-primary-foreground/80 text-sm">
-                  Uma conquista de grande mérito. Você transformou ideias em páginas, criou capítulos completos e deu vida a uma obra única.
+                <p className="text-primary-foreground/90 text-sm md:text-base">
+                  Você criou seu próprio livro!
                 </p>
               </div>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="pt-4 border-t border-primary-foreground/20"
-              >
-                <div className="flex items-center justify-center gap-2 text-primary-foreground/90 text-sm font-medium">
-                  <BookOpen className="w-4 h-4" />
-                  <span>Sua jornada como autor começa aqui</span>
-                  <Sparkles className="w-4 h-4" />
-                </div>
-              </motion.div>
             </div>
           </motion.div>
         )}
