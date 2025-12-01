@@ -74,7 +74,12 @@ export default function PromptCategory() {
 
   const category = allPromptCategories.find(cat => cat.id === categoryId);
 
+  console.log('[PromptCategory] categoryId:', categoryId);
+  console.log('[PromptCategory] category found:', category?.name);
+  console.log('[PromptCategory] total categories:', allPromptCategories.length);
+
   if (!category) {
+    console.error('[PromptCategory] Category not found for ID:', categoryId);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">

@@ -701,12 +701,12 @@ O MVP é validado se:
   - KR: [Resultado-chave]
 
 **3. ALINHAMENTO**
-```
+\`\`\`
 Objetivo Empresa
-    ├── Objetivo Marketing → KRs
-    ├── Objetivo Vendas → KRs
-    └── Objetivo Produto → KRs
-```
+    |-- Objetivo Marketing -> KRs
+    |-- Objetivo Vendas -> KRs
+    '-- Objetivo Produto -> KRs
+\`\`\`
 
 **4. MÉTRICAS E TRACKING**
 
