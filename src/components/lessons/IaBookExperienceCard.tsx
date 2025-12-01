@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Sparkles, Wand2, Heart, Code2 } from "lucide-react";
+import { BookOpen, Sparkles, Wand2, Heart, Code2, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
+import { RewardCelebration } from "@/components/gamification/RewardCelebration";
 
 console.log("🔥🔥🔥 ARQUIVO IaBookExperienceCard.tsx FOI CARREGADO 🔥🔥🔥");
 
@@ -85,6 +86,8 @@ export function IaBookExperienceCard() {
   const [showChapterContent, setShowChapterContent] = useState(false);
   const [typedLeftContent, setTypedLeftContent] = useState("");
   const [typedRightContent, setTypedRightContent] = useState("");
+  const [isClosing, setIsClosing] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   
   const theme = themes[currentTheme];
   const ThemeIcon = theme.icon;
@@ -153,6 +156,18 @@ export function IaBookExperienceCard() {
               setTypedRightContent(chapter1RightContent.slice(0, i));
             }, i * 25);
           }
+          
+          // Após terminar de digitar tudo, fechar o livro e celebrar
+          setTimeout(() => {
+            console.log("📖 Fechando livro...");
+            setIsClosing(true);
+            setIsOpen(false);
+            
+            // Mostrar celebração após fechar
+            setTimeout(() => {
+              setShowCelebration(true);
+            }, 2500);
+          }, (chapter1RightContent.length * 25) + 2000);
         }, chapter1LeftContent.length * 25);
       }, 1000);
     }, 4000);
@@ -161,11 +176,57 @@ export function IaBookExperienceCard() {
   const handleThemeChange = (newTheme: BookTheme) => {
     setCurrentTheme(newTheme);
     setIsOpen(false);
+    setIsClosing(false);
+    setShowCelebration(false);
     setTimeout(() => setIsOpen(true), 100);
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4">
+    <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 relative">
+      <RewardCelebration type="lesson" trigger={showCelebration} />
+      
+      {/* Mensagem de celebração */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+          >
+            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl p-8 shadow-2xl border-4 border-primary-foreground/20 text-center space-y-4">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+              >
+                <Trophy className="w-16 h-16 text-primary-foreground mx-auto" />
+              </motion.div>
+              
+              <div className="space-y-2">
+                <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground">
+                  🎉 Parabéns!
+                </h3>
+                <p className="text-primary-foreground/90 text-sm md:text-base">
+                  Você completou este capítulo com grande mérito!
+                </p>
+              </div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="flex items-center justify-center gap-2 text-primary-foreground/80 text-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Continue sua jornada de aprendizado</span>
+                <Sparkles className="w-4 h-4" />
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Theme Selector */}
       <div className="flex justify-center gap-3 mb-8 flex-wrap">
         <button
