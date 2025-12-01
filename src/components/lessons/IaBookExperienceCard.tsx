@@ -140,15 +140,25 @@ export function IaBookExperienceCard() {
           <motion.div
             className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50 relative overflow-hidden"
             initial={{ rotateY: 20 }}
-            animate={isOpen ? { rotateY: 0 } : { rotateY: 20 }}
+            animate={isOpen ? { rotateY: 2 } : { rotateY: 20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
-            style={{ transformStyle: 'preserve-3d' }}
+            style={{ 
+              transformStyle: 'preserve-3d',
+              transformOrigin: 'right center'
+            }}
           >
             {/* Gradiente de iluminação - luz vindo da esquerda */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
+            {/* Gradiente de curvatura */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 200% 100% at 100% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
               }}
             />
             <div className="text-center space-y-4 text-muted-foreground">
@@ -161,15 +171,25 @@ export function IaBookExperienceCard() {
           <motion.div
             className="bg-card p-10 min-h-[600px] relative overflow-hidden"
             initial={{ rotateY: -20 }}
-            animate={isOpen ? { rotateY: 0 } : { rotateY: -20 }}
+            animate={isOpen ? { rotateY: -2 } : { rotateY: -20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
-            style={{ transformStyle: 'preserve-3d' }}
+            style={{ 
+              transformStyle: 'preserve-3d',
+              transformOrigin: 'left center'
+            }}
           >
             {/* Gradiente de iluminação - luz vindo da direita */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: 'linear-gradient(270deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
+            {/* Gradiente de curvatura */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 200% 100% at 0% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
               }}
             />
             <motion.div 
