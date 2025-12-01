@@ -53,6 +53,27 @@ export function IaBookExperienceCard() {
             pointerEvents: isOpen ? 'none' : 'auto'
           }}
         >
+          {/* Páginas empilhadas na lateral */}
+          <motion.div 
+            className="absolute right-0 top-2 bottom-2 w-2"
+            initial={{ opacity: 1 }}
+            animate={isOpen ? { opacity: 0 } : { opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="absolute right-0 bg-background/90 border-r border-background/50"
+                style={{
+                  top: `${4 + i * 2}px`,
+                  bottom: `${4 + i * 2}px`,
+                  right: `${i * 2}px`,
+                  width: '2px',
+                  boxShadow: '1px 0 2px rgba(0,0,0,0.1)'
+                }}
+              />
+            ))}
+          </motion.div>
           <div className="relative z-10 text-center space-y-8">
             <motion.div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/10 backdrop-blur-sm border border-primary-foreground/20"
@@ -117,12 +138,19 @@ export function IaBookExperienceCard() {
           />
           {/* Página esquerda */}
           <motion.div
-            className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50"
+            className="bg-card p-10 min-h-[600px] flex items-center justify-center border-r border-border/50 relative overflow-hidden"
             initial={{ rotateY: 20 }}
             animate={isOpen ? { rotateY: 0 } : { rotateY: 20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
             style={{ transformStyle: 'preserve-3d' }}
           >
+            {/* Gradiente de iluminação - luz vindo da esquerda */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
             <div className="text-center space-y-4 text-muted-foreground">
               <p className="text-lg italic">Página em branco...</p>
               <p className="text-sm">O ChatGPT vai escrever aqui</p>
@@ -131,12 +159,19 @@ export function IaBookExperienceCard() {
 
           {/* Página direita - Conteúdo */}
           <motion.div
-            className="bg-card p-10 min-h-[600px] relative"
+            className="bg-card p-10 min-h-[600px] relative overflow-hidden"
             initial={{ rotateY: -20 }}
             animate={isOpen ? { rotateY: 0 } : { rotateY: -20 }}
             transition={{ delay: 1.0, duration: 1.0 }}
             style={{ transformStyle: 'preserve-3d' }}
           >
+            {/* Gradiente de iluminação - luz vindo da direita */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(270deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
+              }}
+            />
             <motion.div 
               className="space-y-6"
               initial={{ opacity: 0 }}
