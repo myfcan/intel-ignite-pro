@@ -2,217 +2,79 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Wand2, Plus, Trash2, Eye, Save, AlertCircle, Sparkles } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { IaBookExperienceCard } from '@/components/lessons/IaBookExperienceCard';
+import { ArrowLeft, Plus, Trash2, Save, Wand2 } from 'lucide-react';
 
 interface Section {
   id: string;
-  title: string;
-  audioStart?: number;
-  audioEnd?: number;
+  markdown?: string;
+  visualContent?: string;
 }
 
 interface ExperienceCard {
-  type: 'ia-book' | 'ia-image-generator' | 'ia-chat-simulator';
   sectionIndex: number;
-  timestamp: number;
-  props?: Record<string, any>;
-}
-
-interface CardSuggestion {
-  type: 'ia-book' | 'ia-image-generator' | 'ia-chat-simulator';
-  sectionIndex: number;
-  timestamp: number;
-  confidence: 'high' | 'medium' | 'low';
-  reasoning: string;
-  keywords: string[];
+  cardIndex: number; // 1 ou 2
+  cardType: 'ia-book';
+  anchorText: string; // Trecho do markdown que serve como gatilho
+  title: string;
+  subtitle: string;
+  payload: {
+    body: string;
+  };
 }
 
 export default function AdminV5CardConfig() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Estado do JSON da lição
   const [lessonJson, setLessonJson] = useState('');
   const [parsedLesson, setParsedLesson] = useState<any>(null);
   const [sections, setSections] = useState<Section[]>([]);
-  
-  // Estado dos cards
   const [experienceCards, setExperienceCards] = useState<ExperienceCard[]>([]);
-  const [previewCard, setPreviewCard] = useState<ExperienceCard | null>(null);
-  
-  // Estado de salvamento
   const [isSaving, setIsSaving] = useState(false);
   
-  // Estado de sugestões automáticas
-  const [suggestions, setSuggestions] = useState<CardSuggestion[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const analyzeTextForCards = (): CardSuggestion[] => {
-    if (!parsedLesson || !sections.length) return [];
-
-    const cardKeywords = {
-      'ia-book': ['livro', 'escrever', 'autor', 'capítulo', 'publicar', 'obra', 'literatura', 'narrativa'],
-      'ia-image-generator': ['imagem', 'visual', 'design', 'criar', 'gerar', 'ilustração', 'arte', 'foto'],
-      'ia-chat-simulator': ['conversa', 'chat', 'diálogo', 'perguntar', 'responder', 'interação', 'mensagem'],
-    };
-
-    const foundSuggestions: CardSuggestion[] = [];
-
-    sections.forEach((section: any, sectionIndex) => {
-      // 🔧 V5 usa "markdown" ao invés de "visualContent"
-      const content = (section.markdown || section.visualContent || '').toLowerCase();
-      if (!content) return;
-
-      const words = content.split(/\s+/);
-      const totalWords = words.length;
-      
-      // Calcular duração do áudio da seção (se disponível)
-      const audioDuration = section.timestamp?.end && section.timestamp?.start 
-        ? section.timestamp.end - section.timestamp.start 
-        : 60; // fallback: 60s
-
-      // Procurar por cada tipo de card
-      Object.entries(cardKeywords).forEach(([cardType, keywords]) => {
-        keywords.forEach((keyword) => {
-          const regex = new RegExp(`\\b${keyword}\\w*\\b`, 'gi');
-          const matches = content.match(regex);
-          
-          if (matches && matches.length > 0) {
-            // Encontrar posição da primeira ocorrência
-            const firstMatch = matches[0];
-            const firstIndex = content.indexOf(firstMatch.toLowerCase());
-            const wordsBeforeMatch = content.substring(0, firstIndex).split(/\s+/).length;
-            
-            // Calcular percentual da posição no texto
-            const textPercentage = wordsBeforeMatch / totalWords;
-            
-            // Estimar timestamp baseado na posição no texto
-            const estimatedTimestamp = Math.round(textPercentage * audioDuration);
-            
-            // Calcular confiança
-            const matchCount = matches.length;
-            const confidence: 'high' | 'medium' | 'low' = 
-              matchCount >= 3 ? 'high' : matchCount >= 2 ? 'medium' : 'low';
-
-            foundSuggestions.push({
-              type: cardType as any,
-              sectionIndex,
-              timestamp: estimatedTimestamp,
-              confidence,
-              reasoning: `Detectada ${matchCount}x a palavra "${keyword}" (~${Math.round(textPercentage * 100)}% do texto)`,
-              keywords: matches.slice(0, 3), // Primeiras 3 ocorrências
-            });
-          }
-        });
-      });
-    });
-
-    // Remover duplicatas (mesma seção + mesmo tipo)
-    const uniqueSuggestions = foundSuggestions.reduce((acc, curr) => {
-      const exists = acc.find(
-        s => s.sectionIndex === curr.sectionIndex && s.type === curr.type
-      );
-      
-      if (!exists || curr.confidence === 'high') {
-        return [...acc.filter(s => 
-          !(s.sectionIndex === curr.sectionIndex && s.type === curr.type)
-        ), curr];
-      }
-      return acc;
-    }, [] as CardSuggestion[]);
-
-    // Ordenar por confiança e seção
-    return uniqueSuggestions.sort((a, b) => {
-      const confidenceOrder = { high: 3, medium: 2, low: 1 };
-      if (confidenceOrder[a.confidence] !== confidenceOrder[b.confidence]) {
-        return confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
-      }
-      return a.sectionIndex - b.sectionIndex;
-    });
-  };
-
-  const handleAutoSuggest = () => {
-    setIsAnalyzing(true);
-    
-    // Simular delay de análise (para UX)
-    setTimeout(() => {
-      const suggested = analyzeTextForCards();
-      setSuggestions(suggested);
-      setIsAnalyzing(false);
-      
-      toast({
-        title: suggested.length > 0 ? "✨ Sugestões geradas!" : "⚠️ Nenhuma sugestão encontrada",
-        description: suggested.length > 0 
-          ? `${suggested.length} experience cards sugeridos baseados no conteúdo`
-          : "Não encontrei palavras-chave relevantes no texto das seções",
-      });
-
-      console.log('🧠 [V5-CONFIG] Sugestões automáticas:', suggested);
-    }, 800);
-  };
-
-  const handleAcceptSuggestion = (suggestion: CardSuggestion) => {
-    const newCard: ExperienceCard = {
-      type: suggestion.type,
-      sectionIndex: suggestion.sectionIndex,
-      timestamp: suggestion.timestamp,
-      props: {},
-    };
-    
-    setExperienceCards([...experienceCards, newCard]);
-    
-    // Remover da lista de sugestões
-    setSuggestions(suggestions.filter(s => s !== suggestion));
-    
-    toast({
-      title: "✅ Card adicionado",
-      description: `${suggestion.type} adicionado na Seção ${suggestion.sectionIndex + 1}`,
-    });
-  };
-
-  const handleAcceptAllSuggestions = () => {
-    const newCards: ExperienceCard[] = suggestions.map(s => ({
-      type: s.type,
-      sectionIndex: s.sectionIndex,
-      timestamp: s.timestamp,
-      props: {},
-    }));
-    
-    setExperienceCards([...experienceCards, ...newCards]);
-    setSuggestions([]);
-    
-    toast({
-      title: "✅ Todas as sugestões aceitas",
-      description: `${newCards.length} cards adicionados`,
-    });
-  };
+  // Novos estados para o fluxo correto
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
+  const [cardsQuantity, setCardsQuantity] = useState<1 | 2>(1);
+  const [card1, setCard1] = useState<Partial<ExperienceCard>>({
+    cardType: 'ia-book',
+    anchorText: '',
+    title: '',
+    subtitle: '',
+    payload: { body: '' }
+  });
+  const [card2, setCard2] = useState<Partial<ExperienceCard>>({
+    cardType: 'ia-book',
+    anchorText: '',
+    title: '',
+    subtitle: '',
+    payload: { body: '' }
+  });
 
   const handleAnalyzeJson = () => {
     try {
       let parsed = JSON.parse(lessonJson);
       
-      // 🔧 Se o JSON for um array, pegar o primeiro elemento
       if (Array.isArray(parsed)) {
         if (parsed.length === 0) {
           throw new Error('Array JSON está vazio');
         }
         parsed = parsed[0];
-        console.log('📦 [V5-CONFIG] JSON é array, extraindo primeiro elemento');
       }
       
-      // Validar estrutura básica
       if (!parsed.title) {
         throw new Error('JSON precisa ter campo "title"');
       }
       
-      // 🔧 Verificar estrutura V5 (sections diretamente, não em content.sections)
       const sections = parsed.sections || parsed.content?.sections;
       
       if (!sections || !Array.isArray(sections)) {
@@ -231,10 +93,6 @@ export default function AdminV5CardConfig() {
         title: parsed.title,
         sectionsCount: sections.length,
         model: parsed.model,
-        sections: sections.map((s: any, idx: number) => ({
-          index: s.index || idx,
-          markdown: s.markdown?.substring(0, 50) + '...',
-        })),
       });
       
     } catch (error: any) {
@@ -247,64 +105,95 @@ export default function AdminV5CardConfig() {
     }
   };
 
-  const handleAddCard = () => {
-    const newCard: ExperienceCard = {
-      type: 'ia-book',
-      sectionIndex: 0,
-      timestamp: 0,
-      props: {},
-    };
-    
-    setExperienceCards([...experienceCards, newCard]);
-    console.log('➕ [V5-CONFIG] Card adicionado:', newCard);
-  };
-
-  const handleUpdateCard = (index: number, updates: Partial<ExperienceCard>) => {
-    const updated = [...experienceCards];
-    updated[index] = { ...updated[index], ...updates };
-    setExperienceCards(updated);
-    console.log(`🔄 [V5-CONFIG] Card ${index} atualizado:`, updates);
-  };
-
-  const handleRemoveCard = (index: number) => {
-    const updated = experienceCards.filter((_, i) => i !== index);
-    setExperienceCards(updated);
-    console.log(`🗑️ [V5-CONFIG] Card ${index} removido`);
-  };
-
-  const handlePreviewCard = (card: ExperienceCard) => {
-    setPreviewCard(card);
-    console.log('👁️ [V5-CONFIG] Preview:', card);
-  };
-
-  const renderCardPreview = () => {
-    if (!previewCard) return null;
-
-    switch (previewCard.type) {
-      case 'ia-book':
-        return <IaBookExperienceCard key="preview" />;
-      
-      case 'ia-image-generator':
-        return (
-          <div className="p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200 text-center">
-            <Sparkles className="w-12 h-12 mx-auto mb-4 text-purple-600" />
-            <p className="text-lg font-semibold text-purple-900">IaImageGeneratorCard</p>
-            <p className="text-sm text-purple-600 mt-2">Card ainda não implementado</p>
-          </div>
-        );
-      
-      case 'ia-chat-simulator':
-        return (
-          <div className="p-8 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border-2 border-blue-200 text-center">
-            <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-600" />
-            <p className="text-lg font-semibold text-blue-900">IaChatSimulatorCard</p>
-            <p className="text-sm text-blue-600 mt-2">Card ainda não implementado</p>
-          </div>
-        );
-      
-      default:
-        return null;
+  const handleAddCardsToSection = () => {
+    if (selectedSectionIndex === null) {
+      toast({
+        title: "❌ Erro",
+        description: "Selecione uma seção primeiro",
+        variant: "destructive",
+      });
+      return;
     }
+
+    const newCards: ExperienceCard[] = [];
+
+    // Validar e adicionar Card 1
+    if (!card1.anchorText || !card1.title) {
+      toast({
+        title: "❌ Erro no Card 1",
+        description: "AnchorText e Título são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    newCards.push({
+      sectionIndex: selectedSectionIndex,
+      cardIndex: 1,
+      cardType: 'ia-book',
+      anchorText: card1.anchorText!,
+      title: card1.title!,
+      subtitle: card1.subtitle || '',
+      payload: card1.payload || { body: '' }
+    });
+
+    // Se quantidade for 2, validar e adicionar Card 2
+    if (cardsQuantity === 2) {
+      if (!card2.anchorText || !card2.title) {
+        toast({
+          title: "❌ Erro no Card 2",
+          description: "AnchorText e Título são obrigatórios para o Card 2",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      newCards.push({
+        sectionIndex: selectedSectionIndex,
+        cardIndex: 2,
+        cardType: 'ia-book',
+        anchorText: card2.anchorText!,
+        title: card2.title!,
+        subtitle: card2.subtitle || '',
+        payload: card2.payload || { body: '' }
+      });
+    }
+
+    // Remover cards antigos dessa seção e adicionar os novos
+    const filteredCards = experienceCards.filter(c => c.sectionIndex !== selectedSectionIndex);
+    setExperienceCards([...filteredCards, ...newCards]);
+
+    toast({
+      title: "✅ Cards adicionados!",
+      description: `${newCards.length} card(s) configurado(s) para Seção ${selectedSectionIndex}`,
+    });
+
+    // Resetar formulário
+    setCard1({
+      cardType: 'ia-book',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      payload: { body: '' }
+    });
+    setCard2({
+      cardType: 'ia-book',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      payload: { body: '' }
+    });
+  };
+
+  const handleRemoveCard = (sectionIndex: number, cardIndex: number) => {
+    const filtered = experienceCards.filter(
+      c => !(c.sectionIndex === sectionIndex && c.cardIndex === cardIndex)
+    );
+    setExperienceCards(filtered);
+    toast({
+      title: "🗑️ Card removido",
+      description: `Card ${cardIndex} da Seção ${sectionIndex} foi removido`,
+    });
   };
 
   const handleCreateLesson = async () => {
@@ -329,30 +218,21 @@ export default function AdminV5CardConfig() {
     setIsSaving(true);
 
     try {
-      // 🔧 V5 tem sections diretamente, não em content.sections
-      const lessonData = {
-        ...parsedLesson,
-        model: 'v5',
-        experienceCards, // Adicionar experienceCards diretamente
-      };
-
-      // Construir content com sections + experienceCards
       const content = {
         sections: parsedLesson.sections || parsedLesson.content?.sections,
         experienceCards,
       };
 
-      // Inserir no banco
       const { data, error } = await supabase
         .from('lessons')
         .insert({
-          title: lessonData.title,
-          trail_id: lessonData.trackId, // V5 usa "trackId" não "trail_id"
-          order_index: lessonData.orderIndex || 0,
-          estimated_time: lessonData.estimatedTimeMinutes || 5,
+          title: parsedLesson.title,
+          trail_id: parsedLesson.trackId,
+          order_index: parsedLesson.orderIndex || 0,
+          estimated_time: parsedLesson.estimatedTimeMinutes || 5,
           content: content as any,
-          exercises: lessonData.exercises ? (lessonData.exercises as any) : null,
-          audio_url: null, // V5 não tem audio_url único
+          exercises: parsedLesson.exercises ? (parsedLesson.exercises as any) : null,
+          audio_url: null,
           word_timestamps: null,
           model: 'v5',
           is_active: false,
@@ -366,17 +246,15 @@ export default function AdminV5CardConfig() {
 
       toast({
         title: "✅ Lição V5 criada!",
-        description: `Lição "${lessonData.title}" criada com ${experienceCards.length} experience cards.`,
+        description: `Lição "${parsedLesson.title}" criada com ${experienceCards.length} experience cards.`,
       });
 
       console.log('🎉 [V5-CONFIG] Lição V5 criada:', data);
 
-      // Limpar formulário
       setLessonJson('');
       setParsedLesson(null);
       setSections([]);
       setExperienceCards([]);
-      setPreviewCard(null);
 
     } catch (error: any) {
       console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
@@ -404,363 +282,319 @@ export default function AdminV5CardConfig() {
               Criar Lição V5 com Experience Cards
             </h1>
             <p className="text-muted-foreground">
-              Cole o JSON da lição, configure os cards interativos e crie uma lição V5
+              Cole o JSON, configure cards ancorados no texto, e crie a lição
             </p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Coluna Esquerda: Configuração */}
+        <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+          {/* Coluna Principal */}
           <div className="space-y-6">
-            {/* Step 1: JSON da Lição */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">1</span>
-                  Cole o JSON da Lição
-                </CardTitle>
-                <CardDescription>
-                  JSON completo com title, content.sections, exercises, etc.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  value={lessonJson}
-                  onChange={(e) => setLessonJson(e.target.value)}
-                  placeholder='{"title": "...", "trail_id": "...", "content": {"sections": [...]}}'
-                  className="font-mono text-xs min-h-[200px]"
-                />
-                
-                <Button
-                  onClick={handleAnalyzeJson}
-                  disabled={!lessonJson.trim()}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Analisar JSON
-                </Button>
+            <Tabs defaultValue="paste" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="paste">1️⃣ Colar JSON</TabsTrigger>
+                <TabsTrigger value="manual" disabled={!parsedLesson}>2️⃣ Configurar Cards</TabsTrigger>
+              </TabsList>
 
-                {parsedLesson && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="font-semibold text-green-900">{parsedLesson.title}</p>
-                    <p className="text-sm text-green-700">
-                      {sections.length} seções detectadas
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {/* TAB 1: COLAR JSON */}
+              <TabsContent value="paste" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📋 Cole o JSON da Lição</CardTitle>
+                    <CardDescription>
+                      JSON completo da lição V5 (gerado pelo pipeline)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      value={lessonJson}
+                      onChange={(e) => setLessonJson(e.target.value)}
+                      placeholder='{"title": "...", "trackId": "...", "sections": [...]}'
+                      className="font-mono text-xs min-h-[300px]"
+                    />
+                    
+                    <Button
+                      onClick={handleAnalyzeJson}
+                      disabled={!lessonJson.trim()}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      Analisar JSON
+                    </Button>
 
-            {/* Step 1.5: Sugestões Automáticas */}
-            {parsedLesson && (
-              <Card className="border-2 border-amber-200 bg-amber-50/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-amber-600" />
-                    Sugestões Automáticas de Cards
-                  </CardTitle>
-                  <CardDescription>
-                    Analisamos o conteúdo das seções para sugerir experience cards baseados em palavras-chave
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button
-                    onClick={handleAutoSuggest}
-                    disabled={isAnalyzing}
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                    variant="default"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isAnalyzing ? 'Analisando...' : 'Sugerir Cards Automaticamente'}
-                  </Button>
-
-                  {suggestions.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{suggestions.length} sugestões encontradas</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleAcceptAllSuggestions}
-                        >
-                          Aceitar Todas
-                        </Button>
+                    {parsedLesson && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="font-semibold text-green-900">{parsedLesson.title}</p>
+                        <p className="text-sm text-green-700">
+                          {sections.length} seções detectadas
+                        </p>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                      {suggestions.map((suggestion, idx) => (
-                        <Card key={idx} className="border-2 border-amber-200">
-                          <CardContent className="pt-4 space-y-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={
-                                    suggestion.confidence === 'high' ? 'default' :
-                                    suggestion.confidence === 'medium' ? 'secondary' : 'outline'
-                                  }>
-                                    {suggestion.confidence === 'high' ? '🔥' : suggestion.confidence === 'medium' ? '👍' : '🤔'} {suggestion.confidence}
-                                  </Badge>
-                                  <Badge variant="outline">
-                                    {suggestion.type === 'ia-book' ? '📚' :
-                                     suggestion.type === 'ia-image-generator' ? '🎨' : '💬'} {suggestion.type}
-                                  </Badge>
-                                </div>
-                                
-                                <p className="text-sm">
-                                  <strong>Seção {suggestion.sectionIndex + 1}</strong> aos <strong>{suggestion.timestamp}s</strong>
-                                </p>
-                                
-                                <p className="text-xs text-muted-foreground">
-                                  {suggestion.reasoning}
-                                </p>
-                                
-                                <div className="flex gap-1 flex-wrap">
-                                  {suggestion.keywords.map((kw, i) => (
-                                    <Badge key={i} variant="secondary" className="text-xs">
-                                      {kw}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <Button
-                                size="sm"
-                                onClick={() => handleAcceptSuggestion(suggestion)}
-                              >
-                                Aceitar
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+              {/* TAB 2: CONFIGURAR CARDS MANUALMENTE */}
+              <TabsContent value="manual" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>➕ Configurar Experience Cards</CardTitle>
+                    <CardDescription>
+                      Cada seção pode ter até 2 cards. Use anchorText do markdown como gatilho.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Seleção de Seção */}
+                    <div className="space-y-2">
+                      <Label>1. Selecione a Seção</Label>
+                      <Select 
+                        value={selectedSectionIndex?.toString() || ''} 
+                        onValueChange={(val) => setSelectedSectionIndex(parseInt(val))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha uma seção..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sections.map((_, idx) => (
+                            <SelectItem key={idx} value={String(idx + 1)}>
+                              Seção {idx + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Step 2: Adicionar Cards */}
-            {parsedLesson && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">2</span>
-                    Configure os Experience Cards
-                  </CardTitle>
-                  <CardDescription>
-                    Adicione cards interativos manualmente ou aceite as sugestões automáticas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button
-                    onClick={handleAddCard}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Card Manualmente
-                  </Button>
+                    {/* Quantidade de Cards */}
+                    {selectedSectionIndex !== null && (
+                      <div className="space-y-2">
+                        <Label>2. Quantidade de Cards nesta Seção</Label>
+                        <RadioGroup 
+                          value={String(cardsQuantity)} 
+                          onValueChange={(val) => setCardsQuantity(parseInt(val) as 1 | 2)}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="1" id="qty-1" />
+                            <Label htmlFor="qty-1">1 card</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="2" id="qty-2" />
+                            <Label htmlFor="qty-2">2 cards</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    )}
 
-                  {experienceCards.length > 0 && (
-                    <div className="space-y-3">
-                      {experienceCards.map((card, index) => (
-                        <Card key={index} className="border-2">
-                          <CardContent className="pt-6 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Badge variant="secondary">Card {index + 1}</Badge>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePreviewCard(card)}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleRemoveCard(index)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </div>
+                    {/* Configuração dos Cards */}
+                    {selectedSectionIndex !== null && (
+                      <div className="space-y-6 border-t pt-6">
+                        {/* Card 1 */}
+                        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                          <h4 className="font-semibold flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
+                            Card 1
+                          </h4>
+                          
+                          <div className="space-y-2">
+                            <Label>Tipo de Card</Label>
+                            <Input value="ia-book" disabled className="bg-background/50" />
+                            <p className="text-xs text-muted-foreground">Único tipo disponível no momento</p>
+                          </div>
 
-                            <Separator />
+                          <div className="space-y-2">
+                            <Label>AnchorText (trecho do markdown) *</Label>
+                            <Input
+                              placeholder='Ex: "aplicativo funcional" ou "funcionário digital"'
+                              value={card1.anchorText}
+                              onChange={(e) => setCard1({ ...card1, anchorText: e.target.value })}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Cole o trecho exato do markdown que será o gatilho para exibir o card
+                            </p>
+                          </div>
 
-                            {/* Seção */}
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="text-sm font-medium">Seção</label>
-                              <Select
-                                value={card.sectionIndex.toString()}
-                                onValueChange={(value) =>
-                                  handleUpdateCard(index, { sectionIndex: parseInt(value) })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {sections.map((section, idx) => (
-                                    <SelectItem key={idx} value={idx.toString()}>
-                                      Seção {idx + 1}: {section.title || section.id}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Timestamp */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">
-                                Timestamp (segundos no áudio da seção)
-                              </label>
+                              <Label>Título *</Label>
                               <Input
-                                type="number"
-                                min={0}
-                                step={0.1}
-                                value={card.timestamp}
-                                onChange={(e) =>
-                                  handleUpdateCard(index, {
-                                    timestamp: parseFloat(e.target.value),
-                                  })
-                                }
-                                placeholder="Ex: 15.5"
+                                placeholder="Ex: A I.A. que monta um app"
+                                value={card1.title}
+                                onChange={(e) => setCard1({ ...card1, title: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Subtítulo</Label>
+                              <Input
+                                placeholder="Descrição curta"
+                                value={card1.subtitle}
+                                onChange={(e) => setCard1({ ...card1, subtitle: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Conteúdo / Body</Label>
+                            <Textarea
+                              placeholder="Texto ou configuração interna do card..."
+                              value={card1.payload?.body}
+                              onChange={(e) => setCard1({ ...card1, payload: { body: e.target.value } })}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Card 2 (condicional) */}
+                        {cardsQuantity === 2 && (
+                          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                            <h4 className="font-semibold flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">2</span>
+                              Card 2
+                            </h4>
+                            
+                            <div className="space-y-2">
+                              <Label>Tipo de Card</Label>
+                              <Input value="ia-book" disabled className="bg-background/50" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>AnchorText (trecho do markdown) *</Label>
+                              <Input
+                                placeholder='Ex: "outro trecho importante"'
+                                value={card2.anchorText}
+                                onChange={(e) => setCard2({ ...card2, anchorText: e.target.value })}
                               />
                             </div>
 
-                            {/* Tipo de Card */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Tipo de Card</label>
-                              <Select
-                                value={card.type}
-                                onValueChange={(value: any) =>
-                                  handleUpdateCard(index, { type: value })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="ia-book">
-                                    📚 IaBookExperienceCard
-                                  </SelectItem>
-                                  <SelectItem value="ia-image-generator" disabled>
-                                    🎨 IaImageGeneratorCard (em breve)
-                                  </SelectItem>
-                                  <SelectItem value="ia-chat-simulator" disabled>
-                                    💬 IaChatSimulatorCard (em breve)
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Título *</Label>
+                                <Input
+                                  placeholder="Ex: Segunda demonstração"
+                                  value={card2.title}
+                                  onChange={(e) => setCard2({ ...card2, title: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Subtítulo</Label>
+                                <Input
+                                  placeholder="Descrição curta"
+                                  value={card2.subtitle}
+                                  onChange={(e) => setCard2({ ...card2, subtitle: e.target.value })}
+                                />
+                              </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Step 3: Criar Lição */}
-            {experienceCards.length > 0 && (
-              <Card className="border-2 border-green-600">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600 text-white text-sm font-bold">3</span>
-                    Criar Lição V5
-                  </CardTitle>
-                  <CardDescription>
-                    Salvar no banco de dados com todos os experience cards configurados
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+                            <div className="space-y-2">
+                              <Label>Conteúdo / Body</Label>
+                              <Textarea
+                                placeholder="Texto ou configuração interna do card..."
+                                value={card2.payload?.body}
+                                onChange={(e) => setCard2({ ...card2, payload: { body: e.target.value } })}
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <Button onClick={handleAddCardsToSection} className="w-full" size="lg">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar {cardsQuantity} Card(s) à Seção {selectedSectionIndex}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Lista de Cards Configurados */}
+                {experienceCards.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>📋 Cards Configurados ({experienceCards.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {experienceCards
+                          .sort((a, b) => a.sectionIndex - b.sectionIndex || a.cardIndex - b.cardIndex)
+                          .map((card, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline">Seção {card.sectionIndex}</Badge>
+                                <Badge variant="secondary">Card {card.cardIndex}</Badge>
+                                <Badge>{card.cardType}</Badge>
+                              </div>
+                              <p className="text-sm font-medium">{card.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                AnchorText: "{card.anchorText}"
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveCard(card.sectionIndex, card.cardIndex)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Botão Criar Lição */}
+                {experienceCards.length > 0 && (
                   <Button
                     onClick={handleCreateLesson}
                     disabled={isSaving}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full"
                     size="lg"
+                    variant="default"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Criando...' : 'Criar Lição V5'}
+                    {isSaving ? 'Salvando...' : `Criar Lição V5 com ${experienceCards.length} Cards`}
                   </Button>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Coluna Direita: Preview */}
-          <div className="space-y-6">
-            <Card className="min-h-[600px] sticky top-6">
+          {/* SUMÁRIO LATERAL */}
+          <div className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="w-5 h-5" />
-                  Preview do Card
-                </CardTitle>
-                <CardDescription>
-                  Visualização em tempo real do experience card selecionado
-                </CardDescription>
+                <CardTitle>📊 Resumo</CardTitle>
               </CardHeader>
-              <CardContent>
-                {!previewCard ? (
-                  <div className="flex flex-col items-center justify-center h-96 text-center space-y-4">
-                    <AlertCircle className="w-16 h-16 text-muted-foreground/30" />
-                    <div>
-                      <p className="text-lg font-medium text-muted-foreground">
-                        Nenhum card selecionado
-                      </p>
-                      <p className="text-sm text-muted-foreground/60 mt-1">
-                        Adicione um card e clique no ícone de olho para visualizar
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-medium text-blue-900">
-                        📍 Seção {previewCard.sectionIndex + 1} | ⏱️ {previewCard.timestamp}s
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        Este card aparece {previewCard.timestamp} segundos após o início do áudio
-                        da seção {previewCard.sectionIndex + 1}
-                      </p>
-                    </div>
-                    
-                    <div className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-6">
-                      {renderCardPreview()}
-                    </div>
-                  </div>
-                )}
+              <CardContent className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Seções:</span>
+                  <Badge variant="outline">{sections.length}</Badge>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Cards Configurados:</span>
+                  <Badge>{experienceCards.length}</Badge>
+                </div>
+                <Separator className="my-2" />
+                <p className="text-xs text-muted-foreground">
+                  Cada seção pode ter até 2 cards ancorados em trechos do markdown.
+                </p>
               </CardContent>
             </Card>
 
-            {/* Resumo dos Cards */}
-            {experienceCards.length > 0 && (
+            {parsedLesson && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    📋 Resumo dos Cards
-                  </CardTitle>
+                  <CardTitle>📄 Lição</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {experienceCards.map((card, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">
-                            Card {index + 1}: {card.type}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Seção {card.sectionIndex + 1} · {card.timestamp}s
-                          </p>
-                        </div>
-                        <Badge variant="secondary">{card.type}</Badge>
-                      </div>
-                    ))}
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Título:</strong> {parsedLesson.title}</p>
+                    <p><strong>Modelo:</strong> V5</p>
+                    <p><strong>Seções:</strong> {sections.length}</p>
                   </div>
                 </CardContent>
               </Card>
