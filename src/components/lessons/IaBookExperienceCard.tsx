@@ -1,10 +1,13 @@
-import { motion, useAnimation } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { Sparkles, BookOpen, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function IaBookExperienceCard() {
+  const [showBook, setShowBook] = useState(false);
+  const [pagesOpen, setPagesOpen] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
   const [typingIndex, setTypingIndex] = useState(0);
+  const [showExplosion, setShowExplosion] = useState(false);
   const bookControls = useAnimation();
 
   const chapters = [
@@ -15,118 +18,272 @@ export function IaBookExperienceCard() {
   ];
 
   useEffect(() => {
-    // Trigger book page flip animation
-    const flipPages = async () => {
+    const sequence = async () => {
+      // 1. Explosion + Book dramatic entrance
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setShowExplosion(true);
+      setShowBook(true);
+      
+      // 2. Pages opening animation
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setPagesOpen(true);
+      
       await bookControls.start({
-        rotateY: [0, -15, 0],
-        transition: { duration: 1.2, delay: 0.5, ease: "easeInOut" }
+        rotateY: [0, -25, -15, 0],
+        scale: [1, 1.05, 1],
+        transition: { duration: 1.4, ease: "easeInOut" }
       });
+      
+      // 3. Start chapters reveal
+      await new Promise(resolve => setTimeout(resolve, 300));
       setShowChapters(true);
     };
-    flipPages();
+    
+    sequence();
   }, [bookControls]);
 
   useEffect(() => {
     if (showChapters && typingIndex < chapters.length) {
       const timer = setTimeout(() => {
         setTypingIndex(prev => prev + 1);
-      }, 400);
+      }, 350);
       return () => clearTimeout(timer);
     }
   }, [showChapters, typingIndex, chapters.length]);
 
   return (
     <motion.div
-      className="relative w-full rounded-3xl border-2 border-border bg-gradient-to-br from-card via-card to-card/90 p-8 shadow-2xl overflow-hidden"
-      initial={{ opacity: 0, y: 32 }}
+      className="relative w-full rounded-3xl border-2 border-primary/20 bg-gradient-to-br from-card via-card to-muted/30 p-8 shadow-2xl overflow-hidden"
+      initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.7, ease: "easeOut" }}
     >
-      {/* Animated sparkles */}
-      {[...Array(5)].map((_, i) => (
+      {/* Animated gradient background pulse */}
+      <motion.div 
+        className="pointer-events-none absolute inset-0 opacity-40"
+        animate={{
+          background: [
+            "radial-gradient(circle at 20% 30%, hsl(var(--primary)/0.3) 0%, transparent 50%)",
+            "radial-gradient(circle at 80% 70%, hsl(var(--primary)/0.3) 0%, transparent 50%)",
+            "radial-gradient(circle at 20% 30%, hsl(var(--primary)/0.3) 0%, transparent 50%)"
+          ]
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Explosion particles */}
+      <AnimatePresence>
+        {showExplosion && [...Array(20)].map((_, i) => {
+          const angle = (i / 20) * Math.PI * 2;
+          const distance = 100 + Math.random() * 150;
+          return (
+            <motion.div
+              key={`particle-${i}`}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                left: "25%",
+                top: "50%",
+                background: i % 2 === 0 
+                  ? "hsl(var(--primary))" 
+                  : "hsl(var(--accent))"
+              }}
+              initial={{ 
+                x: 0, 
+                y: 0,
+                scale: 0,
+                opacity: 1 
+              }}
+              animate={{ 
+                x: Math.cos(angle) * distance,
+                y: Math.sin(angle) * distance,
+                scale: [0, 1.5, 0],
+                opacity: [1, 1, 0]
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 1.2,
+                ease: "easeOut"
+              }}
+            />
+          );
+        })}
+      </AnimatePresence>
+
+      {/* Floating sparkles continuous */}
+      {[...Array(12)].map((_, i) => (
         <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-primary rounded-full"
-          initial={{ 
-            x: Math.random() * 100 + "%", 
-            y: Math.random() * 100 + "%",
-            opacity: 0,
-            scale: 0
+          key={`sparkle-${i}`}
+          className="absolute rounded-full"
+          style={{
+            width: Math.random() * 4 + 2,
+            height: Math.random() * 4 + 2,
+            background: i % 3 === 0 
+              ? "hsl(var(--primary))" 
+              : i % 3 === 1 
+              ? "hsl(var(--accent))"
+              : "hsl(var(--primary)/0.5)",
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
           }}
           animate={{ 
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
             opacity: [0, 1, 0],
-            scale: [0, 1.5, 0],
-            y: [Math.random() * 100 + "%", (Math.random() * 50) + "%"]
+            scale: [0, 1, 0]
           }}
           transition={{ 
-            duration: 2 + Math.random() * 2, 
-            delay: Math.random() * 2,
+            duration: 3 + Math.random() * 2, 
+            delay: Math.random() * 3,
             repeat: Infinity,
-            repeatDelay: Math.random() * 3
+            repeatDelay: Math.random() * 2
           }}
         />
       ))}
 
-      {/* Subtle gradient overlay */}
-      <div className="pointer-events-none absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_left,_hsl(var(--primary)/0.2)_0,_transparent_50%),_radial-gradient(circle_at_bottom_right,_hsl(var(--accent)/0.15)_0,_transparent_50%)]" />
-
       {/* Main content grid */}
       <div className="relative z-10 grid md:grid-cols-[320px_1fr] gap-10 items-center">
         
-        {/* LEFT: Book cover with page flip animation */}
-        <motion.div
-          className="flex items-center justify-center perspective-1000"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          style={{ perspective: "1000px" }}
-        >
-          <motion.div 
-            className="w-56 h-80 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 shadow-2xl border-2 border-primary/20 flex flex-col items-center justify-center px-6 py-8 text-center relative overflow-hidden"
-            animate={bookControls}
-            style={{ transformStyle: "preserve-3d" }}
-          >
-            {/* Animated pages effect */}
-            <motion.div
-              className="absolute inset-2 bg-primary-foreground/5 rounded-xl"
-              initial={{ scaleX: 0, originX: 0 }}
-              animate={{ scaleX: [0, 1, 0.95] }}
-              transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
-            />
-            <motion.div
-              className="absolute inset-3 bg-primary-foreground/3 rounded-xl"
-              initial={{ scaleX: 0, originX: 0 }}
-              animate={{ scaleX: [0, 1, 0.9] }}
-              transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
-            />
-            
-            {/* Book cover glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-            
-            <div className="relative z-10 space-y-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/10 border border-primary-foreground/20">
-                <Sparkles className="w-3 h-3 text-primary-foreground" />
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-foreground">
-                  I.A. Book
-                </span>
-              </div>
-              
-              <h3 className="text-lg font-bold text-primary-foreground leading-tight">
-                Seu Primeiro Livro
-                <br />
-                com Inteligência
-                <br />
-                Artificial
-              </h3>
-              
-              <div className="text-xs text-primary-foreground/80 leading-relaxed">
-                Índice, capítulos e revisão
-                <br />
-                estruturados em minutos
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+        {/* LEFT: Book with dramatic entrance and page opening */}
+        <div className="flex items-center justify-center" style={{ perspective: "1200px" }}>
+          <AnimatePresence>
+            {showBook && (
+              <motion.div
+                className="relative"
+                initial={{ 
+                  scale: 0, 
+                  rotateY: -90,
+                  opacity: 0,
+                  z: -100
+                }}
+                animate={{ 
+                  scale: 1, 
+                  rotateY: 0,
+                  opacity: 1,
+                  z: 0
+                }}
+                transition={{ 
+                  duration: 0.8, 
+                  ease: [0.34, 1.56, 0.64, 1],
+                  type: "spring",
+                  stiffness: 100
+                }}
+                style={{ transformStyle: "preserve-3d" }}
+              >
+                {/* Book glow aura */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl blur-2xl"
+                  style={{ background: "hsl(var(--primary)/0.4)" }}
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.6, 0.3]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+
+                {/* Main book cover */}
+                <motion.div 
+                  className="relative w-64 h-[340px] rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/70 shadow-2xl border-2 border-primary/30 flex flex-col items-center justify-center px-6 py-8 text-center overflow-hidden"
+                  animate={bookControls}
+                  style={{ 
+                    transformStyle: "preserve-3d",
+                    boxShadow: "0 25px 50px -12px hsl(var(--primary)/0.5)"
+                  }}
+                >
+                  {/* Animated pages opening effect - Multiple layers */}
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={`page-${i}`}
+                      className="absolute inset-2 bg-primary-foreground/10 rounded-xl border-r border-primary-foreground/20"
+                      initial={{ scaleX: 0, originX: 0 }}
+                      animate={pagesOpen ? { 
+                        scaleX: 1 - (i * 0.05),
+                        rotateY: [0, -15, -5],
+                        x: i * 3
+                      } : { scaleX: 0 }}
+                      transition={{ 
+                        duration: 0.6, 
+                        delay: 0.4 + (i * 0.1), 
+                        ease: "easeOut" 
+                      }}
+                      style={{ 
+                        transformStyle: "preserve-3d",
+                        transformOrigin: "left center",
+                        zIndex: 5 - i
+                      }}
+                    />
+                  ))}
+                  
+                  {/* Energy waves */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl border-2"
+                    style={{ borderColor: "hsl(var(--primary)/0.3)" }}
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      opacity: [0.5, 0, 0.5]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 0.5
+                    }}
+                  />
+
+                  {/* Book cover content */}
+                  <div className="relative z-20 space-y-5">
+                    <motion.div 
+                      className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-foreground/15 border border-primary-foreground/30 backdrop-blur-sm"
+                      initial={{ scale: 0, rotateZ: -180 }}
+                      animate={{ scale: 1, rotateZ: 0 }}
+                      transition={{ delay: 0.6, duration: 0.5, type: "spring" }}
+                    >
+                      <BookOpen className="w-4 h-4 text-primary-foreground" />
+                      <span className="text-xs uppercase tracking-wider font-bold text-primary-foreground">
+                        I.A. Book
+                      </span>
+                    </motion.div>
+                    
+                    <motion.h3 
+                      className="text-xl font-black text-primary-foreground leading-tight"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8, duration: 0.5 }}
+                    >
+                      Seu Primeiro Livro
+                      <br />
+                      com Inteligência
+                      <br />
+                      Artificial
+                    </motion.h3>
+                    
+                    <motion.div 
+                      className="text-sm text-primary-foreground/90 leading-relaxed font-medium"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1, duration: 0.5 }}
+                    >
+                      Índice, capítulos e revisão
+                      <br />
+                      estruturados em minutos
+                    </motion.div>
+
+                    {/* Zap icon animation */}
+                    <motion.div
+                      className="absolute -right-2 -top-2"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ 
+                        scale: [0, 1.2, 1],
+                        rotate: [180, 0, 0]
+                      }}
+                      transition={{ delay: 1.2, duration: 0.6 }}
+                    >
+                      <Zap className="w-6 h-6 text-accent fill-accent" />
+                    </motion.div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* RIGHT: AI Interface panel */}
         <motion.div
@@ -135,98 +292,179 @@ export function IaBookExperienceCard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          {/* Main headline */}
-          <div className="space-y-2">
+          {/* Main headline with stagger animation */}
+          <motion.div 
+            className="space-y-3"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
             <motion.div 
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent/20 border border-accent/30"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/20 border-2 border-accent/40 backdrop-blur-sm"
               animate={{ 
                 boxShadow: [
                   "0 0 0 0 hsl(var(--accent) / 0)",
-                  "0 0 0 4px hsl(var(--accent) / 0.1)",
+                  "0 0 0 6px hsl(var(--accent) / 0.15)",
                   "0 0 0 0 hsl(var(--accent) / 0)"
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
               <motion.div 
-                className="w-2 h-2 rounded-full bg-accent"
-                animate={{ scale: [1, 1.3, 1] }}
+                className="w-2.5 h-2.5 rounded-full bg-accent"
+                animate={{ 
+                  scale: [1, 1.4, 1],
+                  opacity: [1, 0.5, 1]
+                }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
-              <span className="text-xs font-semibold text-accent-foreground uppercase tracking-wide">
+              <span className="text-sm font-bold text-accent-foreground uppercase tracking-wide">
                 I.A. Trabalhando
               </span>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="w-4 h-4 text-accent" />
+              </motion.div>
             </motion.div>
-            <h2 className="text-2xl font-bold text-foreground leading-tight">
+            
+            <motion.h2 
+              className="text-3xl font-black text-foreground leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+            >
               Livro estruturado em minutos
               <br />
-              com Inteligência Artificial
-            </h2>
-          </div>
+              <span className="text-primary">com Inteligência Artificial</span>
+            </motion.h2>
+          </motion.div>
 
-          {/* AI Response panel */}
-          <div className="bg-muted/50 border-2 border-border/50 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Resposta da I.A.
-              </span>
-              <span className="text-xs text-muted-foreground">Índice gerado</span>
+          {/* AI Response panel with enhanced UI */}
+          <motion.div 
+            className="bg-muted/40 border-2 border-primary/20 rounded-2xl p-6 space-y-5 backdrop-blur-sm relative overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1, duration: 0.5 }}
+          >
+            {/* Animated border glow */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                background: "linear-gradient(45deg, hsl(var(--primary)/0.1), hsl(var(--accent)/0.1))"
+              }}
+              animate={{
+                opacity: [0.3, 0.6, 0.3]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                >
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </motion.div>
+                <span className="text-sm font-bold text-foreground uppercase tracking-wide">
+                  Resposta da I.A.
+                </span>
+              </div>
+              <motion.span 
+                className="text-xs text-primary font-semibold px-3 py-1 bg-primary/10 rounded-full border border-primary/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 1.2, type: "spring" }}
+              >
+                Índice gerado
+              </motion.span>
             </div>
 
-            {/* Chapter list with typing effect */}
-            <div className="space-y-3">
+            {/* Chapter list with enhanced typing effect */}
+            <div className="relative z-10 space-y-4">
               {chapters.map((chapter, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-start gap-3 group"
-                  initial={{ opacity: 0, x: -20, height: 0 }}
+                  className="flex items-start gap-4 group relative"
+                  initial={{ opacity: 0, x: -30, height: 0 }}
                   animate={
                     typingIndex > index
                       ? { opacity: 1, x: 0, height: "auto" }
-                      : { opacity: 0, x: -20, height: 0 }
+                      : { opacity: 0, x: -30, height: 0 }
                   }
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
                 >
+                  {/* Chapter number badge with glow */}
                   <motion.div 
-                    className="flex-shrink-0 w-7 h-7 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center"
+                    className="relative flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 border-2 border-primary/30 flex items-center justify-center shadow-lg"
                     initial={{ scale: 0, rotate: -180 }}
                     animate={
                       typingIndex > index
                         ? { scale: 1, rotate: 0 }
                         : { scale: 0, rotate: -180 }
                     }
-                    transition={{ delay: 0.1, duration: 0.3 }}
+                    transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
                   >
-                    <span className="text-sm font-bold text-accent-foreground">{index + 1}</span>
+                    <motion.div
+                      className="absolute inset-0 rounded-xl bg-primary/30 blur-md"
+                      animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.5, 0.8, 0.5]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    <span className="relative z-10 text-base font-black text-primary-foreground">{index + 1}</span>
                   </motion.div>
-                  <div className="flex-1 pt-0.5 overflow-hidden">
+
+                  {/* Chapter text with typing reveal */}
+                  <div className="flex-1 pt-1 overflow-hidden">
                     <motion.p 
-                      className="text-sm font-medium text-foreground leading-relaxed"
-                      initial={{ opacity: 0 }}
-                      animate={typingIndex > index ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ delay: 0.2, duration: 0.3 }}
+                      className="text-base font-semibold text-foreground leading-relaxed"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={typingIndex > index ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                      transition={{ delay: 0.2, duration: 0.4 }}
                     >
                       {chapter}
                     </motion.p>
                   </div>
+
+                  {/* Shine effect on appear */}
+                  {typingIndex > index && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "200%" }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
+                    />
+                  )}
                 </motion.div>
               ))}
             </div>
 
-            {/* Bottom note with fade in */}
+            {/* Bottom note with enhanced styling */}
             {typingIndex >= chapters.length && (
               <motion.div
-                className="pt-3 border-t border-border/50"
+                className="relative z-10 pt-4 border-t-2 border-primary/20"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
               >
-                <p className="text-xs text-muted-foreground italic">
-                  De "tenho uma ideia" para "tenho um índice estruturado" em minutos.
-                </p>
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Zap className="w-4 h-4 text-accent" />
+                  </motion.div>
+                  <p className="text-sm text-foreground/80 font-medium italic">
+                    De "tenho uma ideia" para "tenho um índice estruturado" em minutos.
+                  </p>
+                </div>
               </motion.div>
             )}
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>
