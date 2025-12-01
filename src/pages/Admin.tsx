@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -83,7 +83,7 @@ export default function Admin() {
         </div>
 
         {/* Cards adicionais em grid */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/40 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -129,6 +129,31 @@ export default function Admin() {
                 onClick={() => navigate('/admin/test-images')}
               >
                 Testar Geração de Imagens
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-amber-600" />
+                Teste de Card de Experiência
+              </CardTitle>
+              <CardDescription>
+                Preview do card animado IaBookExperienceCard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✨ Card visual animado com Framer Motion</p>
+                <p>📚 Simula criação de livro com I.A.</p>
+                <p>🎨 Totalmente estilizado com design system</p>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => navigate('/admin/test-card')}
+              >
+                Ver Preview do Card
               </Button>
             </CardContent>
           </Card>
