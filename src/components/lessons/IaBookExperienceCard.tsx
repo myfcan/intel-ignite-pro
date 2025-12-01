@@ -87,6 +87,8 @@ export function IaBookExperienceCard() {
   const [typedLeftContent, setTypedLeftContent] = useState("");
   const [typedRightContent, setTypedRightContent] = useState("");
   const [isClosing, setIsClosing] = useState(false);
+  const [showStamp, setShowStamp] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   
   const theme = themes[currentTheme];
@@ -163,9 +165,21 @@ export function IaBookExperienceCard() {
             setIsClosing(true);
             setIsOpen(false);
             
-            // Mostrar celebração após fechar
+            // Mostrar carimbo após fechar
             setTimeout(() => {
-              setShowCelebration(true);
+              setShowStamp(true);
+              
+              // Mostrar página de créditos
+              setTimeout(() => {
+                setShowStamp(false);
+                setShowCredits(true);
+                
+                // Mostrar celebração final
+                setTimeout(() => {
+                  setShowCredits(false);
+                  setShowCelebration(true);
+                }, 3000);
+              }, 2000);
             }, 2500);
           }, (chapter1RightContent.length * 25) + 2000);
         }, chapter1LeftContent.length * 25);
@@ -177,6 +191,8 @@ export function IaBookExperienceCard() {
     setCurrentTheme(newTheme);
     setIsOpen(false);
     setIsClosing(false);
+    setShowStamp(false);
+    setShowCredits(false);
     setShowCelebration(false);
     setTimeout(() => setIsOpen(true), 100);
   };
@@ -184,6 +200,143 @@ export function IaBookExperienceCard() {
   return (
     <div className="w-full max-w-6xl mx-auto py-8 md:py-12 px-4 relative">
       <RewardCelebration type="lesson" trigger={showCelebration} />
+      
+      {/* Carimbo "Obra Completa" */}
+      <AnimatePresence>
+        {showStamp && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0, rotate: -45 }}
+            animate={{ opacity: 1, scale: 1, rotate: -12 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ 
+              duration: 0.8,
+              type: "spring",
+              stiffness: 200,
+              damping: 15
+            }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+          >
+            <div className="relative">
+              {/* Círculo externo do carimbo */}
+              <div className="w-64 h-64 rounded-full border-8 border-red-600 flex items-center justify-center bg-red-600/10 backdrop-blur-sm">
+                {/* Círculo interno */}
+                <div className="w-56 h-56 rounded-full border-4 border-red-600 flex flex-col items-center justify-center gap-2">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring" }}
+                  >
+                    <Trophy className="w-16 h-16 text-red-600" />
+                  </motion.div>
+                  <div className="text-center">
+                    <p className="text-3xl font-black text-red-600 tracking-wider">
+                      OBRA
+                    </p>
+                    <p className="text-3xl font-black text-red-600 tracking-wider">
+                      COMPLETA
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Efeito de tinta respingada */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.6, 0.4] }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0 rounded-full"
+                style={{
+                  filter: "blur(8px)",
+                  background: "radial-gradient(circle, rgba(220,38,38,0.3) 0%, transparent 70%)"
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Página de Créditos */}
+      <AnimatePresence>
+        {showCredits && (
+          <motion.div
+            initial={{ opacity: 0, rotateY: -90, scale: 0.8 }}
+            animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+            exit={{ opacity: 0, rotateY: 90, scale: 0.8 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            <div className="bg-gradient-to-br from-card via-card to-card/95 rounded-2xl p-12 shadow-2xl border-2 border-border min-w-[400px] min-h-[500px] flex flex-col items-center justify-center space-y-8">
+              {/* Ornamento superior */}
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+              />
+              
+              <div className="text-center space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <BookOpen className="w-16 h-16 text-primary mx-auto mb-4" />
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="space-y-2"
+                >
+                  <h3 className="text-3xl font-serif font-bold text-foreground">
+                    {theme.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wider">
+                    Uma Obra Original
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="pt-6 space-y-3"
+                >
+                  <p className="text-sm text-muted-foreground italic">
+                    Escrito por
+                  </p>
+                  <p className="text-2xl font-serif font-semibold text-foreground">
+                    Você
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.0 }}
+                  className="pt-6 text-xs text-muted-foreground space-y-1"
+                >
+                  <p>{new Date().getFullYear()}</p>
+                  <p className="flex items-center justify-center gap-2">
+                    <Sparkles className="w-3 h-3" />
+                    Criado com I.A.
+                    <Sparkles className="w-3 h-3" />
+                  </p>
+                </motion.div>
+              </div>
+
+              {/* Ornamento inferior */}
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Mensagem de celebração */}
       <AnimatePresence>
