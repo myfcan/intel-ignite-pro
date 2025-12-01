@@ -568,23 +568,31 @@ export function IaBookExperienceCard() {
         {/* NOVA PÁGINA - Conteúdo do Capítulo 1 */}
         <motion.div
           className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden"
-          initial={{ opacity: 0, rotateY: -90, x: '50%' }}
+          initial={{ 
+            opacity: 0, 
+            rotateX: -75,
+            rotateY: 25,
+            transformOrigin: 'top right',
+            z: -200
+          }}
           animate={showChapterContent ? { 
             opacity: 1,
+            rotateX: 0,
             rotateY: 0,
-            x: 0
+            z: 0
           } : { 
             opacity: 0,
-            rotateY: -90,
-            x: '50%'
+            rotateX: -75,
+            rotateY: 25,
+            z: -200
           }}
           transition={{ 
-            duration: 1.5,
+            duration: 2.0,
             ease: [0.16, 1, 0.3, 1]
           }}
           style={{ 
             transformStyle: 'preserve-3d',
-            transformOrigin: 'left center',
+            transformOrigin: 'top right',
             zIndex: 30
           }}
         >
@@ -597,10 +605,23 @@ export function IaBookExperienceCard() {
               }}
             />
             
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-6">
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
                 {theme.chapters[0]}
               </h2>
+              
+              {/* Ilustração decorativa */}
+              <div className="flex items-center justify-center my-6 opacity-20">
+                <div className="relative w-32 h-32">
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 rounded-full"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                  <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 text-primary" />
+                </div>
+              </div>
+              
               <p className="text-sm md:text-base text-foreground leading-relaxed">
                 {typedLeftContent}
                 {showChapterContent && typedLeftContent.length < chapter1LeftContent.length && (
@@ -619,7 +640,43 @@ export function IaBookExperienceCard() {
               }}
             />
             
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-6">
+              {/* Mini ilustração de conceitos */}
+              <div className="flex gap-4 items-center justify-center my-4 opacity-30">
+                <motion.div 
+                  className="flex flex-col items-center gap-2"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+                >
+                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Code2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Código</span>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex flex-col items-center gap-2"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                >
+                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">IA</span>
+                </motion.div>
+                
+                <motion.div 
+                  className="flex flex-col items-center gap-2"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
+                >
+                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Aprenda</span>
+                </motion.div>
+              </div>
+              
               <p className="text-sm md:text-base text-foreground leading-relaxed">
                 {typedRightContent}
                 {showChapterContent && typedRightContent.length > 0 && typedRightContent.length < chapter1RightContent.length && (
