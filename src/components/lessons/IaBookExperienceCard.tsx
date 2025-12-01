@@ -567,7 +567,7 @@ export function IaBookExperienceCard() {
 
         {/* NOVA PÁGINA - Conteúdo do Capítulo 1 */}
         <motion.div
-          className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden"
+          className="absolute inset-0 grid grid-cols-1 md:grid-cols-2 gap-0 shadow-2xl rounded-2xl overflow-hidden relative"
           initial={{ 
             opacity: 0, 
             rotateX: -75,
@@ -596,14 +596,52 @@ export function IaBookExperienceCard() {
             zIndex: 30
           }}
         >
+          {/* Sombra da lombada (centro do livro) */}
+          <motion.div
+            className="hidden md:block absolute left-1/2 top-0 bottom-0 w-8 -ml-4 pointer-events-none z-20"
+            initial={{ opacity: 0 }}
+            animate={showChapterContent ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 1.5, duration: 0.6 }}
+            style={{
+              background: 'linear-gradient(90deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.1) 100%)',
+              boxShadow: '0 0 20px rgba(0,0,0,0.15)'
+            }}
+          />
+
           {/* Página esquerda - Conteúdo do capítulo */}
           <div className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] flex flex-col justify-center border-b md:border-b-0 md:border-r border-border/50 relative overflow-hidden">
+            {/* Gradiente de iluminação */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
               }}
             />
+            {/* Gradiente de curvatura */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 200% 100% at 100% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
+              }}
+            />
+
+            {/* Páginas empilhadas na borda EXTERNA esquerda */}
+            <div className="hidden md:block absolute left-0 top-8 bottom-8">
+              {Array.from({ length: 25 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute bg-card border-l-2 border-border/60 rounded-l-sm"
+                  style={{
+                    top: `${i * 2}px`,
+                    bottom: `${i * 2}px`,
+                    left: `-${i * 1.5}px`,
+                    width: '3px',
+                    boxShadow: '-2px 0 4px rgba(0,0,0,0.15)',
+                    zIndex: 25 - i
+                  }}
+                />
+              ))}
+            </div>
             
             <div className="relative z-10 space-y-6">
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
@@ -633,12 +671,38 @@ export function IaBookExperienceCard() {
 
           {/* Página direita - Continuação do conteúdo */}
           <div className="bg-card p-6 md:p-10 min-h-[400px] md:min-h-[600px] flex flex-col justify-center relative overflow-hidden">
+            {/* Gradiente de iluminação */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: 'linear-gradient(270deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, rgba(0,0,0,0.05) 100%)'
               }}
             />
+            {/* Gradiente de curvatura */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 200% 100% at 0% 50%, transparent 0%, rgba(0,0,0,0.08) 100%)'
+              }}
+            />
+
+            {/* Páginas empilhadas na borda EXTERNA direita */}
+            <div className="hidden md:block absolute right-0 top-8 bottom-8">
+              {Array.from({ length: 25 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute bg-card border-r-2 border-border/60 rounded-r-sm"
+                  style={{
+                    top: `${i * 2}px`,
+                    bottom: `${i * 2}px`,
+                    right: `-${i * 1.5}px`,
+                    width: '3px',
+                    boxShadow: '2px 0 4px rgba(0,0,0,0.15)',
+                    zIndex: 25 - i
+                  }}
+                />
+              ))}
+            </div>
             
             <div className="relative z-10 space-y-6">
               {/* Mini ilustração de conceitos */}
