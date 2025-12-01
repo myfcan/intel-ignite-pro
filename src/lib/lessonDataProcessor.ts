@@ -16,7 +16,7 @@ import { validateAllExercises, formatValidationReport } from './exerciseValidato
  * ✅ Fornece metadata de validação
  */
 
-export type LessonModel = 'v1' | 'v2' | 'v3' | 'v4';
+export type LessonModel = 'v1' | 'v2' | 'v3' | 'v4' | 'v5';
 
 export interface LessonDataInput {
   lessonData: GuidedLessonData;
@@ -27,7 +27,7 @@ export interface LessonDataInput {
   description?: string;
   passingScore?: number;
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
-  model?: LessonModel; // 🆕 Modelo pedagógico da lição (v1, v2, v3, v4)
+  model?: LessonModel; // 🆕 Modelo pedagógico da lição (v1, v2, v3, v4, v5)
 }
 
 export interface ProcessedLessonData {
@@ -43,7 +43,7 @@ export interface ProcessedLessonData {
     difficulty_level: 'beginner' | 'intermediate' | 'advanced';
     content: any; // JSONB com duration preciso
     is_active: boolean;
-    model?: LessonModel; // 🆕 Modelo pedagógico da lição (v1, v2, v3, v4)
+    model?: LessonModel; // 🆕 Modelo pedagógico da lição (v1, v2, v3, v4, v5)
   };
   
   // Dados prontos para geração de áudio
@@ -172,7 +172,7 @@ export function processLessonData(input: LessonDataInput): ProcessedLessonData {
     },
     {
       name: 'model é válido',
-      passed: ['v1', 'v2', 'v3', 'v4'].includes(lessonModel),
+      passed: ['v1', 'v2', 'v3', 'v4', 'v5'].includes(lessonModel),
       details: `${lessonModel}${model ? ' (fornecido)' : ' (inferido)'}`
     }
   ];

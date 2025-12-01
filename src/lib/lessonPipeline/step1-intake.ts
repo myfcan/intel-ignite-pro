@@ -13,8 +13,8 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log(`🐛 [STEP 1] Dados do input: trackId=${input.trackId}, orderIndex=${input.orderIndex}`);
   
   // Validar modelo
-  if (!['v1', 'v2', 'v3', 'v4'].includes(input.model)) {
-    throw new Error(`Modelo inválido: ${input.model}. Use 'v1', 'v2', 'v3' ou 'v4'.`);
+  if (!['v1', 'v2', 'v3', 'v4', 'v5'].includes(input.model)) {
+    throw new Error(`Modelo inválido: ${input.model}. Use 'v1', 'v2', 'v3', 'v4' ou 'v5'.`);
   }
   console.log(`✅ [STEP 1] Modelo validado: ${input.model.toUpperCase()}`);
 
@@ -25,12 +25,12 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log(`✅ [STEP 1] Título validado: "${input.title}"`);
 
   // Validar conteúdo baseado no modelo
-  if (input.model === 'v4') {
-    // V4: Similar a V2, mas com suporte a playground interativo
+  if (input.model === 'v4' || input.model === 'v5') {
+    // V4/V5: Similar a V2, mas com suporte a playground interativo (v4) e experience cards (v5)
     if (!input.sections || input.sections.length === 0) {
-      throw new Error('A lição V4 deve ter pelo menos 1 seção');
+      throw new Error(`A lição ${input.model.toUpperCase()} deve ter pelo menos 1 seção`);
     }
-    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (V4 - Playground Real)`);
+    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (${input.model.toUpperCase()})`);
 
     // Validar visualContent em cada seção
     for (let i = 0; i < input.sections.length; i++) {

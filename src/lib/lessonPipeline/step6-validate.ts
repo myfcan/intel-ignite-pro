@@ -27,7 +27,7 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
     } else {
       console.log(`      ✅ ${input.wordTimestamps.length} word timestamps`);
     }
-  } else if (input.model === 'v2') {
+  } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
     if (!input.audioUrls || input.audioUrls.length === 0) {
       errors.push('❌ audioUrls ausentes');
     } else {
@@ -46,7 +46,7 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   if (!input.structuredContent) {
     errors.push('❌ structuredContent ausente');
     console.error('      ❌ structuredContent está undefined');
-  } else if (input.model === 'v1' || input.model === 'v2') {
+  } else if (input.model === 'v1' || input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
     const sections = input.structuredContent.sections || [];
     if (sections.length === 0) {
       errors.push('❌ Nenhuma seção em structuredContent');

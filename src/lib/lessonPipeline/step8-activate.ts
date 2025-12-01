@@ -36,7 +36,7 @@ export async function step8Activate(input: Step7Output): Promise<PipelineResult>
 
   const updateData: any = {
     is_active: true,
-    model: input.model,                         // ✅ Salvar modelo (v1/v2/v3/v4)
+    model: input.model,                         // ✅ Salvar modelo (v1/v2/v3/v4/v5)
     content: contentWithoutExercises,           // ✅ Salvar content (limpo)
     exercises: exercises,                       // ✅ Salvar exercises
     exercises_version: 1,                       // ✅ Salvar versão
