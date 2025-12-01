@@ -12,7 +12,9 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Plus, Trash2, Save, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { IaBookExperienceCard } from '@/components/lessons/IaBookExperienceCard';
 
 interface Section {
   id: string;
@@ -59,6 +61,10 @@ export default function AdminV5CardConfig() {
     subtitle: '',
     payload: { body: '' }
   });
+
+  // Estado do preview modal
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewCards, setPreviewCards] = useState<ExperienceCard[]>([]);
 
   const handleAnalyzeJson = () => {
     try {
@@ -159,13 +165,19 @@ export default function AdminV5CardConfig() {
       });
     }
 
+    // Abrir modal de preview ao invés de adicionar direto
+    setPreviewCards(newCards);
+    setShowPreviewModal(true);
+  };
+
+  const handleConfirmCards = () => {
     // Remover cards antigos dessa seção e adicionar os novos
     const filteredCards = experienceCards.filter(c => c.sectionIndex !== selectedSectionIndex);
-    setExperienceCards([...filteredCards, ...newCards]);
+    setExperienceCards([...filteredCards, ...previewCards]);
 
     toast({
       title: "✅ Cards adicionados!",
-      description: `${newCards.length} card(s) configurado(s) para Seção ${selectedSectionIndex}`,
+      description: `${previewCards.length} card(s) configurado(s) para Seção ${selectedSectionIndex}`,
     });
 
     // Resetar formulário
@@ -183,6 +195,15 @@ export default function AdminV5CardConfig() {
       subtitle: '',
       payload: { body: '' }
     });
+
+    // Fechar modal
+    setShowPreviewModal(false);
+    setPreviewCards([]);
+  };
+
+  const handleCancelPreview = () => {
+    setShowPreviewModal(false);
+    setPreviewCards([]);
   };
 
   const handleRemoveCard = (sectionIndex: number, cardIndex: number) => {
@@ -498,8 +519,8 @@ export default function AdminV5CardConfig() {
                         )}
 
                         <Button onClick={handleAddCardsToSection} className="w-full" size="lg">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Adicionar {cardsQuantity} Card(s) à Seção {selectedSectionIndex}
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview e Adicionar {cardsQuantity} Card(s) à Seção {selectedSectionIndex}
                         </Button>
                       </div>
                     )}
@@ -601,6 +622,60 @@ export default function AdminV5CardConfig() {
             )}
           </div>
         </div>
+
+        {/* MODAL DE PREVIEW */}
+        <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Preview dos Experience Cards
+              </DialogTitle>
+              <DialogDescription>
+                Veja como o(s) card(s) vai(ão) aparecer na lição. Confira os detalhes antes de adicionar.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-6">
+              {previewCards.map((card, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge variant="outline">Seção {card.sectionIndex}</Badge>
+                    <Badge variant="secondary">Card {card.cardIndex}</Badge>
+                    <Badge>{card.cardType}</Badge>
+                  </div>
+
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2 text-sm">
+                    <p><strong>AnchorText:</strong> "{card.anchorText}"</p>
+                    <p><strong>Título:</strong> {card.title}</p>
+                    <p><strong>Subtítulo:</strong> {card.subtitle || '(vazio)'}</p>
+                    <p><strong>Body:</strong> {card.payload.body || '(vazio)'}</p>
+                  </div>
+
+                  {/* Preview Visual do Card */}
+                  <div className="border-2 border-dashed border-primary/30 rounded-xl p-6 bg-gradient-to-br from-background to-muted/20">
+                    <p className="text-xs text-muted-foreground mb-4 text-center">
+                      👁️ Preview Visual (animação será executada na lição real)
+                    </p>
+                    <div className="flex justify-center">
+                      <IaBookExperienceCard key={`preview-${idx}`} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={handleCancelPreview}>
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmCards} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Confirmar e Adicionar {previewCards.length} Card(s)
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
