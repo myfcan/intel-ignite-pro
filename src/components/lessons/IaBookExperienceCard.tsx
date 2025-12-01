@@ -178,6 +178,11 @@ export function IaBookExperienceCard() {
                 setTimeout(() => {
                   setShowCredits(false);
                   setShowCelebration(true);
+                  
+                  // Fazer desaparecer após 4 segundos
+                  setTimeout(() => {
+                    setShowCelebration(false);
+                  }, 4000);
                 }, 3000);
               }, 2000);
             }, 2500);
