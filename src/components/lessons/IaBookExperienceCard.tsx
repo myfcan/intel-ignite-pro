@@ -356,17 +356,19 @@ export function IaBookExperienceCard() {
               }}
             />
             
-            {/* Páginas empilhadas na borda interna */}
-            <div className="hidden md:block absolute right-0 top-4 bottom-4 w-1">
-              {[0, 1, 2, 3, 4].map((i) => (
+            {/* Páginas empilhadas na borda interna - efeito 3D */}
+            <div className="hidden md:block absolute right-0 top-8 bottom-8 w-4">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                 <div
                   key={i}
-                  className="absolute right-0 bg-muted/80 border-r border-border/30"
+                  className="absolute right-0 bg-card border-r-2 border-border/60 rounded-r-sm"
                   style={{
-                    top: `${2 + i * 1}px`,
-                    bottom: `${2 + i * 1}px`,
-                    right: `${i * 1}px`,
-                    width: '1px'
+                    top: `${i * 3}px`,
+                    bottom: `${i * 3}px`,
+                    right: `${i * 2}px`,
+                    width: '3px',
+                    boxShadow: '2px 0 4px rgba(0,0,0,0.15)',
+                    zIndex: 10 - i
                   }}
                 />
               ))}
@@ -426,17 +428,19 @@ export function IaBookExperienceCard() {
               }}
             />
 
-            {/* Páginas empilhadas na borda interna */}
-            <div className="hidden md:block absolute left-0 top-4 bottom-4 w-1">
-              {[0, 1, 2, 3, 4].map((i) => (
+            {/* Páginas empilhadas na borda interna - efeito 3D */}
+            <div className="hidden md:block absolute left-0 top-8 bottom-8 w-4">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                 <div
                   key={i}
-                  className="absolute left-0 bg-muted/80 border-l border-border/30"
+                  className="absolute left-0 bg-card border-l-2 border-border/60 rounded-l-sm"
                   style={{
-                    top: `${2 + i * 1}px`,
-                    bottom: `${2 + i * 1}px`,
-                    left: `${i * 1}px`,
-                    width: '1px'
+                    top: `${i * 3}px`,
+                    bottom: `${i * 3}px`,
+                    left: `${i * 2}px`,
+                    width: '3px',
+                    boxShadow: '-2px 0 4px rgba(0,0,0,0.15)',
+                    zIndex: 10 - i
                   }}
                 />
               ))}
