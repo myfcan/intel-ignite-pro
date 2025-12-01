@@ -1,97 +1,120 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Wand2, Eye, Save, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, Wand2, Plus, Trash2, Eye, Save, AlertCircle, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { IaBookExperienceCard } from '@/components/lessons/IaBookExperienceCard';
 
-interface Lesson {
+interface Section {
   id: string;
   title: string;
-  model: string;
-  content: any;
-  trail_id: string;
+  audioStart?: number;
+  audioEnd?: number;
 }
 
-type CardType = 'ia-book' | 'ia-image-generator' | 'ia-chat-simulator';
-
-interface ExperienceCardConfig {
-  type: CardType;
+interface ExperienceCard {
+  type: 'ia-book' | 'ia-image-generator' | 'ia-chat-simulator';
   sectionIndex: number;
+  timestamp: number;
   props?: Record<string, any>;
 }
 
 export default function AdminV5CardConfig() {
   const navigate = useNavigate();
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [selectedSection, setSelectedSection] = useState<number>(0);
-  const [selectedCardType, setSelectedCardType] = useState<CardType>('ia-book');
+  
+  // Estado do JSON da lição
+  const [lessonJson, setLessonJson] = useState('');
+  const [parsedLesson, setParsedLesson] = useState<any>(null);
+  const [sections, setSections] = useState<Section[]>([]);
+  
+  // Estado dos cards
+  const [experienceCards, setExperienceCards] = useState<ExperienceCard[]>([]);
+  const [previewCard, setPreviewCard] = useState<ExperienceCard | null>(null);
+  
+  // Estado de salvamento
   const [isSaving, setIsSaving] = useState(false);
-  const [previewConfig, setPreviewConfig] = useState<ExperienceCardConfig | null>(null);
 
-  // Carregar lições V5 ou V4 (que podem ser convertidas para V5)
-  useEffect(() => {
-    loadLessons();
-  }, []);
-
-  const loadLessons = async () => {
+  const handleAnalyzeJson = () => {
     try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .select('id, title, model, content, trail_id')
-        .in('model', ['v4', 'v5'])
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+      const parsed = JSON.parse(lessonJson);
+      
+      // Validar estrutura básica
+      if (!parsed.title) {
+        throw new Error('JSON precisa ter campo "title"');
+      }
+      
+      if (!parsed.content?.sections || !Array.isArray(parsed.content.sections)) {
+        throw new Error('JSON precisa ter "content.sections" como array');
+      }
 
-      if (error) throw error;
-
-      setLessons(data || []);
-      console.log('📚 [V5-CONFIG] Lições carregadas:', data?.length);
-    } catch (error) {
-      console.error('❌ [V5-CONFIG] Erro ao carregar lições:', error);
+      setParsedLesson(parsed);
+      setSections(parsed.content.sections);
+      
       toast({
-        title: "Erro ao carregar lições",
-        description: "Não foi possível carregar a lista de lições.",
+        title: "✅ JSON analisado!",
+        description: `Detectadas ${parsed.content.sections.length} seções na lição "${parsed.title}"`,
+      });
+      
+      console.log('📊 [V5-CONFIG] JSON analisado:', {
+        title: parsed.title,
+        sectionsCount: parsed.content.sections.length,
+        sections: parsed.content.sections.map((s: any) => ({
+          id: s.id,
+          title: s.title,
+        })),
+      });
+      
+    } catch (error: any) {
+      console.error('❌ [V5-CONFIG] Erro ao analisar JSON:', error);
+      toast({
+        title: "Erro ao analisar JSON",
+        description: error.message || "JSON inválido. Verifique a sintaxe.",
         variant: "destructive",
       });
     }
   };
 
-  const handleLessonSelect = (lessonId: string) => {
-    const lesson = lessons.find(l => l.id === lessonId);
-    setSelectedLesson(lesson || null);
-    setSelectedSection(0);
-    setPreviewConfig(null);
-  };
-
-  const getSections = () => {
-    if (!selectedLesson?.content?.sections) return [];
-    return selectedLesson.content.sections;
-  };
-
-  const generatePreview = () => {
-    if (!selectedLesson) return;
-
-    const config: ExperienceCardConfig = {
-      type: selectedCardType,
-      sectionIndex: selectedSection,
-      props: selectedCardType === 'ia-book' ? {} : undefined,
+  const handleAddCard = () => {
+    const newCard: ExperienceCard = {
+      type: 'ia-book',
+      sectionIndex: 0,
+      timestamp: 0,
+      props: {},
     };
+    
+    setExperienceCards([...experienceCards, newCard]);
+    console.log('➕ [V5-CONFIG] Card adicionado:', newCard);
+  };
 
-    setPreviewConfig(config);
-    console.log('🎨 [V5-CONFIG] Preview gerado:', config);
+  const handleUpdateCard = (index: number, updates: Partial<ExperienceCard>) => {
+    const updated = [...experienceCards];
+    updated[index] = { ...updated[index], ...updates };
+    setExperienceCards(updated);
+    console.log(`🔄 [V5-CONFIG] Card ${index} atualizado:`, updates);
+  };
+
+  const handleRemoveCard = (index: number) => {
+    const updated = experienceCards.filter((_, i) => i !== index);
+    setExperienceCards(updated);
+    console.log(`🗑️ [V5-CONFIG] Card ${index} removido`);
+  };
+
+  const handlePreviewCard = (card: ExperienceCard) => {
+    setPreviewCard(card);
+    console.log('👁️ [V5-CONFIG] Preview:', card);
   };
 
   const renderCardPreview = () => {
-    if (!previewConfig) return null;
+    if (!previewCard) return null;
 
-    switch (previewConfig.type) {
+    switch (previewCard.type) {
       case 'ia-book':
         return <IaBookExperienceCard key="preview" />;
       
@@ -118,11 +141,20 @@ export default function AdminV5CardConfig() {
     }
   };
 
-  const saveConfiguration = async () => {
-    if (!selectedLesson || !previewConfig) {
+  const handleCreateLesson = async () => {
+    if (!parsedLesson) {
       toast({
-        title: "Configuração incompleta",
-        description: "Selecione uma lição, seção e gere o preview antes de salvar.",
+        title: "JSON não analisado",
+        description: "Cole o JSON e clique em 'Analisar JSON' primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (experienceCards.length === 0) {
+      toast({
+        title: "Nenhum card configurado",
+        description: "Adicione pelo menos um experience card.",
         variant: "destructive",
       });
       return;
@@ -131,126 +163,63 @@ export default function AdminV5CardConfig() {
     setIsSaving(true);
 
     try {
-      // Buscar conteúdo atual da lição
-      const { data: lessonData, error: fetchError } = await supabase
-        .from('lessons')
-        .select('content, model')
-        .eq('id', selectedLesson.id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const currentContent = (lessonData.content || {}) as any;
-      const experienceCards = currentContent.experienceCards || [];
-
-      // Verificar se já existe um card nesta seção
-      const existingIndex = experienceCards.findIndex(
-        (card: any) => card.sectionIndex === previewConfig.sectionIndex
-      );
-
-      if (existingIndex >= 0) {
-        // Substituir card existente
-        experienceCards[existingIndex] = previewConfig;
-        console.log('🔄 [V5-CONFIG] Card existente atualizado na seção', previewConfig.sectionIndex);
-      } else {
-        // Adicionar novo card
-        experienceCards.push(previewConfig);
-        console.log('✨ [V5-CONFIG] Novo card adicionado na seção', previewConfig.sectionIndex);
-      }
-
-      // Atualizar conteúdo com experienceCards e garantir que model seja v5
-      const updatedContent = {
-        ...currentContent,
-        experienceCards,
+      // Adicionar experienceCards ao conteúdo
+      const lessonData = {
+        ...parsedLesson,
+        model: 'v5', // Forçar modelo V5
+        content: {
+          ...parsedLesson.content,
+          experienceCards,
+        },
       };
 
-      const { error: updateError } = await supabase
+      // Inserir no banco
+      const { data, error } = await supabase
         .from('lessons')
-        .update({
-          content: updatedContent,
-          model: 'v5', // Forçar modelo V5
+        .insert({
+          title: lessonData.title,
+          trail_id: lessonData.trail_id,
+          order_index: lessonData.order_index || 0,
+          estimated_time: lessonData.estimated_time || 5,
+          content: lessonData.content,
+          exercises: lessonData.exercises || [],
+          audio_url: lessonData.audio_url || null,
+          word_timestamps: lessonData.word_timestamps || null,
+          model: 'v5',
+          is_active: false, // Começa inativa para revisão
+          lesson_type: 'guided',
+          difficulty_level: 'beginner',
         })
-        .eq('id', selectedLesson.id);
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       toast({
-        title: "✅ Configuração salva!",
-        description: `Experience card "${previewConfig.type}" adicionado à seção ${previewConfig.sectionIndex + 1}.`,
+        title: "✅ Lição V5 criada!",
+        description: `Lição "${lessonData.title}" criada com ${experienceCards.length} experience cards.`,
       });
 
-      // Recarregar lições
-      await loadLessons();
-      
-      // Atualizar lição selecionada
-      const updatedLesson = lessons.find(l => l.id === selectedLesson.id);
-      if (updatedLesson) {
-        setSelectedLesson({ ...updatedLesson, content: updatedContent, model: 'v5' });
-      }
+      console.log('🎉 [V5-CONFIG] Lição V5 criada:', data);
 
-    } catch (error) {
-      console.error('❌ [V5-CONFIG] Erro ao salvar:', error);
+      // Limpar formulário
+      setLessonJson('');
+      setParsedLesson(null);
+      setSections([]);
+      setExperienceCards([]);
+      setPreviewCard(null);
+
+    } catch (error: any) {
+      console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
       toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar a configuração. Tente novamente.",
+        title: "Erro ao criar lição",
+        description: error.message || "Não foi possível criar a lição V5.",
         variant: "destructive",
       });
     } finally {
       setIsSaving(false);
     }
   };
-
-  const getExistingCards = () => {
-    if (!selectedLesson?.content) return [];
-    const content = selectedLesson.content as any;
-    if (!content.experienceCards) return [];
-    return content.experienceCards as ExperienceCardConfig[];
-  };
-
-  const removeCard = async (sectionIndex: number) => {
-    if (!selectedLesson) return;
-
-    try {
-      const currentContent = (selectedLesson.content || {}) as any;
-      const experienceCards = (currentContent.experienceCards || []).filter(
-        (card: any) => card.sectionIndex !== sectionIndex
-      );
-
-      const updatedContent = {
-        ...currentContent,
-        experienceCards,
-      };
-
-      const { error: updateError } = await supabase
-        .from('lessons')
-        .update({ content: updatedContent })
-        .eq('id', selectedLesson.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Card removido",
-        description: `Experience card removido da seção ${sectionIndex + 1}.`,
-      });
-
-      await loadLessons();
-      const updatedLesson = lessons.find(l => l.id === selectedLesson.id);
-      if (updatedLesson) {
-        setSelectedLesson({ ...updatedLesson, content: updatedContent });
-      }
-
-    } catch (error) {
-      console.error('❌ [V5-CONFIG] Erro ao remover:', error);
-      toast({
-        title: "Erro ao remover",
-        description: "Não foi possível remover o card.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const sections = getSections();
-  const existingCards = getExistingCards();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-purple-50/30 to-blue-50/30 p-6">
@@ -263,198 +232,230 @@ export default function AdminV5CardConfig() {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Wand2 className="w-8 h-8 text-purple-600" />
-              Configurador V5 - Experience Cards
+              Criar Lição V5 com Experience Cards
             </h1>
             <p className="text-muted-foreground">
-              Adicione cards interativos animados nas seções das aulas V5
+              Cole o JSON da lição, configure os cards interativos e crie uma lição V5
             </p>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Painel de Configuração */}
+          {/* Coluna Esquerda: Configuração */}
           <div className="space-y-6">
-            {/* Card de Seleção */}
+            {/* Step 1: JSON da Lição */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="w-5 h-5" />
-                  Configuração
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">1</span>
+                  Cole o JSON da Lição
                 </CardTitle>
                 <CardDescription>
-                  Selecione a aula, seção e tipo de card
+                  JSON completo com title, content.sections, exercises, etc.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Seleção de Lição */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Lição</label>
-                  <Select onValueChange={handleLessonSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma lição..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {lessons.map((lesson) => (
-                        <SelectItem key={lesson.id} value={lesson.id}>
-                          {lesson.title} <Badge variant="outline" className="ml-2">{lesson.model}</Badge>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Textarea
+                  value={lessonJson}
+                  onChange={(e) => setLessonJson(e.target.value)}
+                  placeholder='{"title": "...", "trail_id": "...", "content": {"sections": [...]}}'
+                  className="font-mono text-xs min-h-[200px]"
+                />
+                
+                <Button
+                  onClick={handleAnalyzeJson}
+                  disabled={!lessonJson.trim()}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Analisar JSON
+                </Button>
 
-                {/* Seleção de Seção */}
-                {selectedLesson && sections.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Seção</label>
-                    <Select
-                      value={selectedSection.toString()}
-                      onValueChange={(value) => setSelectedSection(parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sections.map((section: any, idx: number) => {
-                          const hasCard = existingCards.some(c => c.sectionIndex === idx);
-                          return (
-                            <SelectItem key={idx} value={idx.toString()}>
-                              Seção {idx + 1}: {section.title || section.id}
-                              {hasCard && <Badge variant="secondary" className="ml-2">Com card</Badge>}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Seleção de Tipo de Card */}
-                {selectedLesson && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Tipo de Card</label>
-                    <Select
-                      value={selectedCardType}
-                      onValueChange={(value) => setSelectedCardType(value as CardType)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ia-book">
-                          📚 IaBookExperienceCard
-                        </SelectItem>
-                        <SelectItem value="ia-image-generator" disabled>
-                          🎨 IaImageGeneratorCard (em breve)
-                        </SelectItem>
-                        <SelectItem value="ia-chat-simulator" disabled>
-                          💬 IaChatSimulatorCard (em breve)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Botão de Preview */}
-                {selectedLesson && (
-                  <div className="pt-2">
-                    <Button
-                      onClick={generatePreview}
-                      className="w-full bg-purple-600 hover:bg-purple-700"
-                      size="lg"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Gerar Preview
-                    </Button>
+                {parsedLesson && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="font-semibold text-green-900">{parsedLesson.title}</p>
+                    <p className="text-sm text-green-700">
+                      {sections.length} seções detectadas
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Cards Existentes */}
-            {selectedLesson && existingCards.length > 0 && (
+            {/* Step 2: Adicionar Cards */}
+            {parsedLesson && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    Cards Configurados
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">2</span>
+                    Configure os Experience Cards
                   </CardTitle>
                   <CardDescription>
-                    Experience cards já adicionados nesta lição
+                    Adicione cards interativos que aparecem durante a apresentação
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {existingCards.map((card, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium">Seção {card.sectionIndex + 1}</p>
-                        <p className="text-sm text-muted-foreground">{card.type}</p>
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeCard(card.sectionIndex)}
-                      >
-                        Remover
-                      </Button>
+                <CardContent className="space-y-4">
+                  <Button
+                    onClick={handleAddCard}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Experience Card
+                  </Button>
+
+                  {experienceCards.length > 0 && (
+                    <div className="space-y-3">
+                      {experienceCards.map((card, index) => (
+                        <Card key={index} className="border-2">
+                          <CardContent className="pt-6 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary">Card {index + 1}</Badge>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handlePreviewCard(card)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveCard(index)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Seção */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Seção</label>
+                              <Select
+                                value={card.sectionIndex.toString()}
+                                onValueChange={(value) =>
+                                  handleUpdateCard(index, { sectionIndex: parseInt(value) })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {sections.map((section, idx) => (
+                                    <SelectItem key={idx} value={idx.toString()}>
+                                      Seção {idx + 1}: {section.title || section.id}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Timestamp */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">
+                                Timestamp (segundos no áudio da seção)
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step={0.1}
+                                value={card.timestamp}
+                                onChange={(e) =>
+                                  handleUpdateCard(index, {
+                                    timestamp: parseFloat(e.target.value),
+                                  })
+                                }
+                                placeholder="Ex: 15.5"
+                              />
+                            </div>
+
+                            {/* Tipo de Card */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Tipo de Card</label>
+                              <Select
+                                value={card.type}
+                                onValueChange={(value: any) =>
+                                  handleUpdateCard(index, { type: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ia-book">
+                                    📚 IaBookExperienceCard
+                                  </SelectItem>
+                                  <SelectItem value="ia-image-generator" disabled>
+                                    🎨 IaImageGeneratorCard (em breve)
+                                  </SelectItem>
+                                  <SelectItem value="ia-chat-simulator" disabled>
+                                    💬 IaChatSimulatorCard (em breve)
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
             )}
 
-            {/* JSON Preview */}
-            {previewConfig && (
-              <Card>
+            {/* Step 3: Criar Lição */}
+            {experienceCards.length > 0 && (
+              <Card className="border-2 border-green-600">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    JSON Preview
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600 text-white text-sm font-bold">3</span>
+                    Criar Lição V5
                   </CardTitle>
+                  <CardDescription>
+                    Salvar no banco de dados com todos os experience cards configurados
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs">
-                    {JSON.stringify(previewConfig, null, 2)}
-                  </pre>
-                  
                   <Button
-                    onClick={saveConfiguration}
+                    onClick={handleCreateLesson}
                     disabled={isSaving}
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                    className="w-full bg-green-600 hover:bg-green-700"
                     size="lg"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Salvando...' : 'Salvar Configuração'}
+                    {isSaving ? 'Criando...' : 'Criar Lição V5'}
                   </Button>
                 </CardContent>
               </Card>
             )}
           </div>
 
-          {/* Painel de Preview */}
+          {/* Coluna Direita: Preview */}
           <div className="space-y-6">
-            <Card className="min-h-[600px]">
+            <Card className="min-h-[600px] sticky top-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="w-5 h-5" />
                   Preview do Card
                 </CardTitle>
                 <CardDescription>
-                  Visualização em tempo real do experience card
+                  Visualização em tempo real do experience card selecionado
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {!previewConfig ? (
+                {!previewCard ? (
                   <div className="flex flex-col items-center justify-center h-96 text-center space-y-4">
                     <AlertCircle className="w-16 h-16 text-muted-foreground/30" />
                     <div>
                       <p className="text-lg font-medium text-muted-foreground">
-                        Nenhum preview gerado
+                        Nenhum card selecionado
                       </p>
                       <p className="text-sm text-muted-foreground/60 mt-1">
-                        Configure uma lição, seção e tipo de card, depois clique em "Gerar Preview"
+                        Adicione um card e clique no ícone de olho para visualizar
                       </p>
                     </div>
                   </div>
@@ -462,10 +463,11 @@ export default function AdminV5CardConfig() {
                   <div className="space-y-4">
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-sm font-medium text-blue-900">
-                        📍 Este card aparecerá na Seção {previewConfig.sectionIndex + 1}
+                        📍 Seção {previewCard.sectionIndex + 1} | ⏱️ {previewCard.timestamp}s
                       </p>
                       <p className="text-xs text-blue-700 mt-1">
-                        {selectedLesson?.title}
+                        Este card aparece {previewCard.timestamp} segundos após o início do áudio
+                        da seção {previewCard.sectionIndex + 1}
                       </p>
                     </div>
                     
@@ -476,6 +478,37 @@ export default function AdminV5CardConfig() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Resumo dos Cards */}
+            {experienceCards.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    📋 Resumo dos Cards
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {experienceCards.map((card, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">
+                            Card {index + 1}: {card.type}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Seção {card.sectionIndex + 1} · {card.timestamp}s
+                          </p>
+                        </div>
+                        <Badge variant="secondary">{card.type}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
