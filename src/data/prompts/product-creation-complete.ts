@@ -1079,13 +1079,13 @@ Para cada concorrente:
 - Comunidade: Circle / Mighty Networks
 
 **3. ARQUITETURA DO MVP**
-```
-[Usuário] → [Frontend] → [Backend/DB] → [Integrações]
-                ↓
-          [Automações]
-                ↓
-        [Emails/Notificações]
-```
+\`\`\`
+[Usuario] -> [Frontend] -> [Backend/DB] -> [Integracoes]
+                |
+          [Automacoes]
+                |
+         [Emails/Notificacoes]
+\`\`\`
 
 **4. FEATURES E COMO IMPLEMENTAR**
 
