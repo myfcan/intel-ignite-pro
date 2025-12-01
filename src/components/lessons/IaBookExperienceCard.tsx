@@ -195,7 +195,7 @@ export function IaBookExperienceCard() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
           >
-            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl p-8 shadow-2xl border-4 border-primary-foreground/20 text-center space-y-4">
+            <div className="bg-gradient-to-br from-primary via-primary to-primary/80 rounded-2xl p-8 shadow-2xl border-4 border-primary-foreground/20 text-center space-y-4 max-w-md">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -204,12 +204,15 @@ export function IaBookExperienceCard() {
                 <Trophy className="w-16 h-16 text-primary-foreground mx-auto" />
               </motion.div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground">
-                  🎉 Parabéns!
+                  🎉 Parabéns, Autor!
                 </h3>
-                <p className="text-primary-foreground/90 text-sm md:text-base">
-                  Você completou este capítulo com grande mérito!
+                <p className="text-primary-foreground/90 text-base md:text-lg font-semibold">
+                  Você acaba de criar seu próprio livro!
+                </p>
+                <p className="text-primary-foreground/80 text-sm">
+                  Uma conquista de grande mérito. Você transformou ideias em páginas, criou capítulos completos e deu vida a uma obra única.
                 </p>
               </div>
               
@@ -217,11 +220,13 @@ export function IaBookExperienceCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="flex items-center justify-center gap-2 text-primary-foreground/80 text-sm"
+                className="pt-4 border-t border-primary-foreground/20"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>Continue sua jornada de aprendizado</span>
-                <Sparkles className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-2 text-primary-foreground/90 text-sm font-medium">
+                  <BookOpen className="w-4 h-4" />
+                  <span>Sua jornada como autor começa aqui</span>
+                  <Sparkles className="w-4 h-4" />
+                </div>
               </motion.div>
             </div>
           </motion.div>
