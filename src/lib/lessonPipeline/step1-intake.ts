@@ -1,5 +1,20 @@
 import { PipelineInput, Step1Output } from './types';
 
+// Helper: Gerar instrução padrão baseada no tipo de exercício
+function getDefaultInstruction(type: string): string {
+  const instructions: Record<string, string> = {
+    'multiple-choice': 'Selecione a alternativa correta:',
+    'true-false': 'Avalie se a afirmação é verdadeira ou falsa:',
+    'complete-sentence': 'Complete as lacunas:',
+    'fill-in-blanks': 'Preencha os espaços em branco:',
+    'drag-drop': 'Arraste os itens para as posições corretas:',
+    'scenario-selection': 'Analise o cenário e selecione a melhor opção:',
+    'platform-match': 'Associe cada item à plataforma correspondente:',
+    'data-collection': 'Responda às perguntas:'
+  };
+  return instructions[type] || 'Responda a questão:';
+}
+
 /**
  * STEP 1: INTAKE & VALIDAÇÃO INICIAL
  * - Valida se o modelo existe (V1, V2, V3, V4 ou V5)
@@ -39,7 +54,15 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     // Contar experience cards antes da normalização (V5)
     let totalExperienceCards = 0;
 
+    // ✨ V5: Detectar experienceCards no root level (formato AdminV5CardConfig)
+    const rootLevelCards = (input as any).experienceCards || [];
+    if (input.model === 'v5' && rootLevelCards.length > 0) {
+      console.log(`🎨 [STEP 1] Detectados ${rootLevelCards.length} experienceCards no root level`);
+    }
+
     input.sections = input.sections.map((section: any, index: number) => {
+      const sectionIndex = index + 1; // AdminV5CardConfig usa sectionIndex 1-based
+
       const normalized: any = {
         id: section.id || `section-${index + 1}`, // ✅ OBRIGATÓRIO
         visualContent: section.visualContent || section.markdown || section.content || '', // ✅ OBRIGATÓRIO
@@ -57,11 +80,40 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
         normalized.playgroundConfig = section.playgroundConfig;
       }
 
-      // V5: Preservar experience cards
+      // V5: Preservar experience cards que já estão na seção
       if (input.model === 'v5' && section.experienceCards && section.experienceCards.length > 0) {
         normalized.experienceCards = section.experienceCards;
         totalExperienceCards += section.experienceCards.length;
-        console.log(`   📦 Seção ${index + 1}: ${section.experienceCards.length} experience cards`);
+        console.log(`   📦 Seção ${index + 1}: ${section.experienceCards.length} experience cards (inline)`);
+      }
+
+      // ✨ V5: Distribuir experienceCards do root level para as seções correspondentes
+      if (input.model === 'v5' && rootLevelCards.length > 0) {
+        const cardsForThisSection = rootLevelCards.filter(
+          (card: any) => card.sectionIndex === sectionIndex
+        );
+
+        if (cardsForThisSection.length > 0) {
+          // Inicializar array se não existir
+          if (!normalized.experienceCards) {
+            normalized.experienceCards = [];
+          }
+
+          // Converter formato AdminV5CardConfig para formato pipeline
+          cardsForThisSection.forEach((card: any) => {
+            const pipelineCard = {
+              id: `card-${sectionIndex}-${normalized.experienceCards.length + 1}`,
+              type: card.type,
+              anchorText: card.anchorText,
+              // ✨ Preservar props para DynamicExperienceCard
+              props: card.props
+            };
+            normalized.experienceCards.push(pipelineCard);
+            totalExperienceCards++;
+          });
+
+          console.log(`   📦 Seção ${sectionIndex}: +${cardsForThisSection.length} experience cards (do root)`);
+        }
       }
 
       return normalized;
@@ -70,6 +122,27 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
 
     if (input.model === 'v5') {
       console.log(`✨ [STEP 1] Total de Experience Cards: ${totalExperienceCards}`);
+    }
+
+    // ✨ V5: Converter playgroundMidLesson para formato per-section
+    const playgroundMidLesson = (input as any).playgroundMidLesson;
+    if (input.model === 'v5' && playgroundMidLesson) {
+      // Por padrão, adicionar playground na penúltima seção (para aparecer APÓS ela)
+      // Ou na última seção se houver apenas 1-2 seções
+      const targetSectionIndex = Math.max(0, input.sections.length - 2);
+      const targetSection = input.sections[targetSectionIndex] as any;
+
+      // Adicionar showPlaygroundCall e playgroundConfig à seção alvo
+      targetSection.showPlaygroundCall = true;
+      targetSection.playgroundConfig = {
+        type: playgroundMidLesson.type || 'real-playground',
+        instruction: playgroundMidLesson.instruction,
+        triggerAfterSection: targetSectionIndex,
+        realConfig: playgroundMidLesson.realConfig || undefined
+      };
+
+      console.log(`🎮 [STEP 1] playgroundMidLesson configurado na seção ${targetSectionIndex + 1}`);
+      console.log(`   📝 Instrução: "${playgroundMidLesson.instruction?.substring(0, 50)}..."`);
     }
 
     // Validar após normalização
@@ -138,11 +211,41 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
   }
 
-  // Validar exercícios
+  // Validar e normalizar exercícios
   if (!input.exercises || input.exercises.length === 0) {
     throw new Error('A lição deve ter pelo menos 1 exercício');
   }
-  console.log(`✅ [STEP 1] ${input.exercises.length} exercícios solicitados`);
+
+  // ✨ Normalizar formato de exercícios
+  console.log('🔧 [STEP 1] Normalizando exercícios...');
+  input.exercises = input.exercises.map((exercise: any, idx: number) => {
+    const normalized: any = {
+      // ID: usar existente ou gerar
+      id: exercise.id || `exercise-${idx + 1}`,
+      // Tipo: obrigatório
+      type: exercise.type,
+      // Título: usar question como fallback
+      title: exercise.title || exercise.question || `Exercício ${idx + 1}`,
+      // Instrução: usar question ou gerar baseado no tipo
+      instruction: exercise.instruction || exercise.question || getDefaultInstruction(exercise.type),
+      // Data: preservar
+      data: exercise.data || {}
+    };
+
+    // Se o exercise tem question no data, preservar
+    if (exercise.question && !normalized.data.question) {
+      normalized.data.question = exercise.question;
+    }
+
+    // Preservar campos extras do data original
+    if (exercise.data) {
+      normalized.data = { ...exercise.data };
+    }
+
+    return normalized;
+  });
+
+  console.log(`✅ [STEP 1] ${input.exercises.length} exercícios normalizados`);
 
   // Validar trackId e orderIndex
   if (!input.trackId) {
