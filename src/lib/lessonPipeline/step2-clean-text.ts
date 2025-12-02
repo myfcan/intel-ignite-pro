@@ -26,11 +26,11 @@ export async function step2CleanText(input: Step1Output): Promise<Step2Output> {
     };
   }
 
-  // V1, V2 e V4: processar seções
+  // V1, V2, V4 e V5: processar seções
   const sectionTexts: string[] = [];
 
   if (!input.sections || input.sections.length === 0) {
-    throw new Error('sections não disponível para modelo V1/V2/V4');
+    throw new Error('sections não disponível para modelo V1/V2/V4/V5');
   }
   
   for (let i = 0; i < input.sections.length; i++) {
