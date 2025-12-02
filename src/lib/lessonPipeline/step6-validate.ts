@@ -21,23 +21,39 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
     } else {
       console.log(`      ✅ audioUrl presente: ${input.audioUrl}`);
     }
-    
+
     if (!input.wordTimestamps || input.wordTimestamps.length === 0) {
       errors.push('❌ wordTimestamps ausentes');
     } else {
       console.log(`      ✅ ${input.wordTimestamps.length} word timestamps`);
     }
   } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
+    // V2, V4 e V5 usam audioUrls por seção
     if (!input.audioUrls || input.audioUrls.length === 0) {
       errors.push('❌ audioUrls ausentes');
     } else {
       console.log(`      ✅ ${input.audioUrls.length} audioUrls presentes`);
     }
-    
+
     if (!input.durations || input.durations.length === 0) {
       errors.push('❌ durations ausentes');
     } else {
       console.log(`      ✅ ${input.durations.length} durações`);
+    }
+
+    // V5: Validar experienceCards se presentes
+    if (input.model === 'v5' && input.sections) {
+      let totalCards = 0;
+      input.sections.forEach((section: any, idx: number) => {
+        if (section.experienceCards && section.experienceCards.length > 0) {
+          totalCards += section.experienceCards.length;
+          section.experienceCards.forEach((card: any, cardIdx: number) => {
+            if (!card.id) warnings.push(`⚠️ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem ID`);
+            if (!card.type) errors.push(`❌ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem tipo`);
+          });
+        }
+      });
+      console.log(`      ✨ ${totalCards} experience cards validados`);
     }
   }
 
@@ -122,13 +138,13 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   console.log('   🔍 Validando metadados...');
   if (!input.title) errors.push('❌ Título ausente');
   else console.log(`      ✅ Título: "${input.title}"`);
-  
+
   if (!input.trackId) errors.push('❌ trackId ausente');
   else console.log(`      ✅ trackId: ${input.trackId}`);
-  
+
   if (input.orderIndex === undefined) errors.push('❌ orderIndex ausente');
   else console.log(`      ✅ orderIndex: ${input.orderIndex}`);
-  
+
   if (!input.audioText) errors.push('❌ audioText ausente');
   else console.log(`      ✅ audioText: ${input.audioText.length} caracteres`);
 
@@ -146,12 +162,12 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   const elapsedTime = Date.now() - startTime;
   console.log(`\n📊 [STEP 6] Validação completa em ${elapsedTime}ms:`);
   console.log(`   ✅ Checks passados: ${20 - errors.length - warnings.length}/20`);
-  
+
   if (warnings.length > 0) {
     console.warn(`   ⚠️ Warnings: ${warnings.length}`);
     warnings.forEach(w => console.warn(`      ${w}`));
   }
-  
+
   if (errors.length > 0) {
     console.error(`   ❌ Erros críticos: ${errors.length}`);
     errors.forEach(e => console.error(`      ${e}`));

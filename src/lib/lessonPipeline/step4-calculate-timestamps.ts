@@ -3,7 +3,7 @@ import { Step3Output, Step4Output } from './types';
 /**
  * STEP 4: CÁLCULO DE TIMESTAMPS
  * - Distribui timestamps pelo conteúdo
- * - Estrutura content final por modelo (V1/V2/V3)
+ * - Estrutura content final por modelo (V1/V2/V3/V4/V5)
  */
 export function step4CalculateTimestamps(input: Step3Output): Step4Output {
   const startTime = Date.now();
@@ -14,6 +14,7 @@ export function step4CalculateTimestamps(input: Step3Output): Step4Output {
     return calculateTimestampsV1(input);
   } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
     // V2, V4 e V5 usam mesma lógica: timestamps cumulativos por seção
+    // V5 adiciona experienceCards mas a lógica de timestamps é a mesma
     return calculateTimestampsV2(input);
   } else if (input.model === 'v3') {
     return calculateTimestampsV3(input);
@@ -35,14 +36,14 @@ function calculateTimestampsV1(input: Step3Output): Step4Output {
   const sectionsWithTimestamps = input.sections.map((section, idx) => {
     const sectionText = input.sectionTexts[idx];
     const firstWords = getFirstWords(sectionText, 5);
-    
+
     let timestamp = 0;
     for (let i = 0; i < input.wordTimestamps!.length - 4; i++) {
       const windowWords = input.wordTimestamps!
         .slice(i, i + 5)
         .map(w => w.word.toLowerCase())
         .join(' ');
-      
+
       if (windowWords.includes(firstWords.toLowerCase())) {
         timestamp = input.wordTimestamps![i].start_time;
         break;
@@ -80,13 +81,13 @@ function calculateTimestampsV1(input: Step3Output): Step4Output {
 }
 
 /**
- * V2: Cumulative timestamps baseados em durações
+ * V2/V4/V5: Cumulative timestamps baseados em durações
  */
 function calculateTimestampsV2(input: Step3Output): Step4Output {
-  console.log('⏱️ [V2] Calculando timestamps cumulativos...');
+  console.log('⏱️ [V2/V4/V5] Calculando timestamps cumulativos...');
 
   if (!input.sections || !input.durations || !input.audioUrls) {
-    throw new Error('sections, durations ou audioUrls ausentes para V2');
+    throw new Error('sections, durations ou audioUrls ausentes para V2/V4/V5');
   }
 
   let cumulativeTime = 0;
@@ -96,7 +97,7 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
 
     console.log(`   Seção ${idx + 1}: ${timestamp.toFixed(1)}s (duração: ${input.durations![idx].toFixed(1)}s)`);
 
-    return {
+    const result: any = {
       id: section.id,
       title: section.title,
       visualContent: section.visualContent,
@@ -106,16 +107,23 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
       showPlaygroundCall: section.showPlaygroundCall,
       playgroundConfig: section.playgroundConfig
     };
+
+    // V5: Preservar experienceCards
+    if (input.model === 'v5' && (section as any).experienceCards) {
+      result.experienceCards = (section as any).experienceCards;
+    }
+
+    return result;
   });
 
   const totalDuration = cumulativeTime;
 
   const structuredContent = {
-    contentVersion: 'v2',
+    contentVersion: input.model === 'v5' ? 'v5' : 'v2',
     sections: sectionsWithTimestamps
   };
 
-  console.log(`✅ [V2] Timestamps calculados`);
+  console.log(`✅ [${input.model.toUpperCase()}] Timestamps calculados`);
   console.log(`   Duração total: ${totalDuration.toFixed(1)}s`);
 
   return {
