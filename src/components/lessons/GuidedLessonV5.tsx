@@ -100,10 +100,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
    * em uma seção específica baseando-se na configuração do JSON.
    *
    * LÓGICA:
-   * 1. Tenta buscar configuração do lessonData.experienceCards
-   * 2. Se existir e tiver props, usa DynamicExperienceCard (novo componente com animações INCRÍVEIS)
-   * 3. Se não tiver props, usa componentes legados (IaBookExperienceCard, etc.)
-   * 4. Fallback para regras hardcoded (compatibilidade)
+   * 1. Busca cards DENTRO da seção (formato pipeline: sections[i].experienceCards)
+   * 2. Busca cards no ROOT level (formato AdminV5CardConfig: lessonData.experienceCards com sectionIndex)
+   * 3. Fallback para regras hardcoded (compatibilidade)
    *
    * ✨ NOVO: DynamicExperienceCard com Framer Motion!
    * - Animações de entrada com blur + scale + spring
@@ -113,67 +112,104 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
    * - Capítulos com stagger
    */
   const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
-    // 🔍 PRIORIDADE 1: Buscar no lessonData.experienceCards
+    // 🔍 PRIORIDADE 1: Buscar DENTRO da seção (formato pipeline)
+    const currentSection = lessonData.sections[sectionIndex] as any;
+    if (currentSection?.experienceCards && currentSection.experienceCards.length > 0) {
+      console.log(`🎨 [V5] Encontrados ${currentSection.experienceCards.length} cards na seção ${sectionIndex + 1}`);
+
+      return (
+        <>
+          {currentSection.experienceCards.map((cardConfig: any, cardIdx: number) => {
+            // Se tiver props, usar DynamicExperienceCard
+            if (cardConfig.props) {
+              const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
+              return (
+                <div key={`experience-card-${sectionIndex}-${cardIdx}`} className="my-6">
+                  <DynamicExperienceCard
+                    type={cardConfig.type}
+                    title={title || 'Experience Card'}
+                    subtitle={subtitle}
+                    icon={icon || 'sparkles'}
+                    colorScheme={colorScheme || 'purple'}
+                    chapters={chapters || []}
+                    effectDescription={effectDescription}
+                  />
+                </div>
+              );
+            }
+
+            // Fallback para tipos específicos sem props
+            switch (cardConfig.type) {
+              case 'ia-book':
+                return <IaBookExperienceCard key={`experience-card-${sectionIndex}-${cardIdx}`} />;
+              default:
+                return (
+                  <div key={`experience-card-${sectionIndex}-${cardIdx}`} className="my-6">
+                    <DynamicExperienceCard
+                      type={cardConfig.type}
+                      title={cardConfig.type}
+                      icon="sparkles"
+                      colorScheme="purple"
+                    />
+                  </div>
+                );
+            }
+          })}
+        </>
+      );
+    }
+
+    // 🔍 PRIORIDADE 2: Buscar no ROOT level (formato AdminV5CardConfig legado)
     if (lessonData.experienceCards) {
-      const cardConfig = lessonData.experienceCards.find(
-        (card) => card.sectionIndex === sectionIndex
+      const cardsForSection = lessonData.experienceCards.filter(
+        (card) => card.sectionIndex === sectionIndex + 1 // AdminV5CardConfig usa 1-based
       );
 
-      if (cardConfig) {
-        console.log('🎨 [V5] Renderizando card do JSON:', cardConfig);
+      if (cardsForSection.length > 0) {
+        console.log(`🎨 [V5] Encontrados ${cardsForSection.length} cards (root level) para seção ${sectionIndex + 1}`);
 
-        // ✨ NOVO: Se tiver props customizadas, usar DynamicExperienceCard
-        if (cardConfig.props) {
-          const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
+        return (
+          <>
+            {cardsForSection.map((cardConfig: any, cardIdx: number) => {
+              if (cardConfig.props) {
+                const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
+                return (
+                  <div key={`experience-card-root-${sectionIndex}-${cardIdx}`} className="my-6">
+                    <DynamicExperienceCard
+                      type={cardConfig.type}
+                      title={title || 'Experience Card'}
+                      subtitle={subtitle}
+                      icon={icon || 'sparkles'}
+                      colorScheme={colorScheme || 'purple'}
+                      chapters={chapters || []}
+                      effectDescription={effectDescription}
+                    />
+                  </div>
+                );
+              }
 
-          return (
-            <div key={`experience-card-${sectionIndex}`} className="my-6">
-              <DynamicExperienceCard
-                type={cardConfig.type}
-                title={title || 'Experience Card'}
-                subtitle={subtitle}
-                icon={icon || 'sparkles'}
-                colorScheme={colorScheme || 'purple'}
-                chapters={chapters || []}
-                effectDescription={effectDescription}
-              />
-            </div>
-          );
-        }
-
-        // Fallback para componentes legados sem props
-        switch (cardConfig.type) {
-          case 'ia-book':
-            return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
-
-          case 'ia-image-generator':
-            // TODO: Implementar IaImageGeneratorCard
-            console.log('⚠️ [V5] IaImageGeneratorCard ainda não implementado');
-            return null;
-
-          case 'ia-chat-simulator':
-            // TODO: Implementar IaChatSimulatorCard
-            console.log('⚠️ [V5] IaChatSimulatorCard ainda não implementado');
-            return null;
-
-          default:
-            // Para tipos desconhecidos, tentar usar DynamicExperienceCard genérico
-            console.log('🎨 [V5] Usando DynamicExperienceCard para tipo:', cardConfig.type);
-            return (
-              <div key={`experience-card-${sectionIndex}`} className="my-6">
-                <DynamicExperienceCard
-                  type={cardConfig.type}
-                  title={cardConfig.type}
-                  icon="sparkles"
-                  colorScheme="purple"
-                />
-              </div>
-            );
-        }
+              switch (cardConfig.type) {
+                case 'ia-book':
+                  return <IaBookExperienceCard key={`experience-card-root-${sectionIndex}-${cardIdx}`} />;
+                default:
+                  return (
+                    <div key={`experience-card-root-${sectionIndex}-${cardIdx}`} className="my-6">
+                      <DynamicExperienceCard
+                        type={cardConfig.type}
+                        title={cardConfig.type}
+                        icon="sparkles"
+                        colorScheme="purple"
+                      />
+                    </div>
+                  );
+              }
+            })}
+          </>
+        );
       }
     }
 
-    // 🔮 PRIORIDADE 2: Fallback para regras hardcoded (compatibilidade)
+    // 🔮 PRIORIDADE 3: Fallback para regras hardcoded (compatibilidade)
     if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
       console.log('🎨 [V5] Renderizando IaBookExperienceCard (fallback hardcoded)');
       return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
@@ -342,11 +378,41 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     setTimeout(tryAutoplay, 100);
   }, [currentPhase, pendingAudioReset]);
 
-  // 🎮 Helper: Ativar playground (V5 não usa, mas mantém compatibilidade)
-  const activatePlayground = () => {
-    console.log(`🔍 [V5-activatePlayground] BLOCKED: V5 não suporta playground mid-lesson`);
-    return;
+  // 🎮 Helper: Handlers para Playground Mid-Lesson (V5)
+  const handleOpenPlayground = () => {
+    console.log('🎮 [V5] Abrindo playground mid-lesson...');
+    setShowPlaygroundCall(false);
+    setShowPlaygroundMid(true);
   };
+
+  const handleSkipPlayground = () => {
+    console.log('🎮 [V5] Pulando playground mid-lesson...');
+    setShowPlaygroundCall(false);
+    // Avançar para próxima seção
+    const isLastSection = currentSection >= lessonData.sections.length - 1;
+    if (!isLastSection) {
+      setCurrentSection(prev => prev + 1);
+    } else {
+      // Se era a última seção, ir para exercícios
+      setCurrentPhase('playground-real');
+    }
+  };
+
+  const handlePlaygroundComplete = () => {
+    console.log('🎮 [V5] Playground mid-lesson completo!');
+    setShowPlaygroundMid(false);
+    // Avançar para próxima seção
+    const isLastSection = currentSection >= lessonData.sections.length - 1;
+    if (!isLastSection) {
+      setCurrentSection(prev => prev + 1);
+    } else {
+      // Se era a última seção, ir para exercícios
+      setCurrentPhase('playground-real');
+    }
+  };
+
+  // Alias para compatibilidade
+  const activatePlayground = handleOpenPlayground;
   
   // 📊 Helper: Telemetria
   const logTelemetry = (event: string, data?: any) => {
@@ -782,18 +848,27 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     const handleAudioEnded = () => {
       console.log(`🎯 [V5-AUDIO-ENDED] Áudio da seção ${currentSection} terminou naturalmente`);
       setIsPlaying(false);
-      
+
       setJumpedToExercises(false);
-      
+
       if (isV2) {
         const isLastSection = currentSection >= lessonData.sections.length - 1;
-        
+        const currentSectionData = lessonData.sections[currentSection] as any;
+
+        // 🎮 V5: Verificar se a seção atual tem playground mid-lesson
+        if (currentSectionData?.showPlaygroundCall && currentSectionData?.playgroundConfig) {
+          console.log('🎮 [V5-AUDIO-ENDED] Seção com playground detectada!');
+          console.log('   📝 Config:', currentSectionData.playgroundConfig);
+          setShowPlaygroundCall(true);
+          return;
+        }
+
         if (!isLastSection) {
           console.log(`🎯 [V5-V2] Avançando para próxima seção (${currentSection} → ${currentSection + 1})`);
           setCurrentSection(prev => prev + 1);
           return;
         }
-        
+
         console.log('🎯 [V5-V2] Última seção completada');
       }
       
@@ -1632,6 +1707,66 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         show={pointsNotification.show}
         onHide={() => setPointsNotification(prev => ({ ...prev, show: false }))}
       />
+
+      {/* 🎮 V5: Card de Convite do Playground Mid-Lesson */}
+      {showPlaygroundCall && (() => {
+        const playgroundSection = lessonData.sections.find(
+          (s: any) => s.showPlaygroundCall && s.playgroundConfig
+        );
+        return playgroundSection ? (
+          <PlaygroundCallCard
+            title="Hora da Prática!"
+            description={
+              (playgroundSection as any).playgroundConfig?.instruction ||
+              "Que tal praticar o que você aprendeu? É rápido e vai fixar o conhecimento!"
+            }
+            onOpen={handleOpenPlayground}
+            onSkip={handleSkipPlayground}
+          />
+        ) : null;
+      })()}
+
+      {/* 🎮 V5: Overlay do Playground Mid-Lesson */}
+      {showPlaygroundMid && (() => {
+        const playgroundSection = lessonData.sections.find(
+          (s: any) => s.showPlaygroundCall && s.playgroundConfig
+        ) as any;
+
+        if (!playgroundSection?.playgroundConfig) {
+          console.warn('🎮 [V5] Playground config não encontrado!');
+          return null;
+        }
+
+        const config = playgroundSection.playgroundConfig;
+        console.log('🎮 [V5] Renderizando PlaygroundMidLesson:', config);
+
+        return (
+          <PlaygroundMidLesson
+            config={{
+              type: config.type || 'real-playground',
+              instruction: config.instruction,
+              realConfig: config.realConfig || {
+                type: 'real-playground',
+                title: 'Pratique Agora',
+                maiaMessage: config.instruction || 'Pratique o que você aprendeu!',
+                scenario: { title: 'Prática', description: '' },
+                prefilledText: '',
+                userPlaceholder: 'Digite sua resposta...',
+                validation: {
+                  minLength: 10,
+                  feedback: {
+                    tooShort: 'Escreva um pouco mais...',
+                    good: 'Boa resposta!',
+                    excellent: 'Excelente!'
+                  }
+                }
+              }
+            }}
+            onComplete={handlePlaygroundComplete}
+            lessonId={lessonData.id}
+          />
+        );
+      })()}
     </div>
   );
 }
