@@ -15,7 +15,7 @@ export async function step3GenerateAudio(input: Step2Output): Promise<Step3Outpu
 
   if (input.model === 'v1') {
     return await generateAudioV1(input);
-  } else if (input.model === 'v2' || input.model === 'v4') {
+  } else if (input.model === 'v2' || input.model === 'v4' || input.model === 'v5') {
     // V2 e V4 usam mesma lógica: múltiplos áudios (um por seção)
     return await generateAudioV2(input);
   } else if (input.model === 'v3') {
