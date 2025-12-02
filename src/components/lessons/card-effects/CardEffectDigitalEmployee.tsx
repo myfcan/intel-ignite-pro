@@ -24,7 +24,7 @@ export const CardEffectDigitalEmployee: React.FC = () => {
       scale: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200,
         damping: 15,
         duration: 0.5
@@ -35,7 +35,7 @@ export const CardEffectDigitalEmployee: React.FC = () => {
       transition: {
         duration: 1,
         repeat: Infinity,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     }
   };
@@ -62,7 +62,7 @@ export const CardEffectDigitalEmployee: React.FC = () => {
       transition: {
         delay: 0.6 + (i * 0.3),
         duration: 0.3,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 150
       }
     }),
@@ -85,7 +85,7 @@ export const CardEffectDigitalEmployee: React.FC = () => {
       transition: {
         delay: 1.0 + (i * 0.3),
         duration: 0.3,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200
       }
     })

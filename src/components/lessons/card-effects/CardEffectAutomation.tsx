@@ -41,7 +41,7 @@ export const CardEffectAutomation: React.FC = () => {
       transition: {
         delay: 0.2 + (i * 0.15),
         duration: 0.3,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200
       }
     })
@@ -56,7 +56,7 @@ export const CardEffectAutomation: React.FC = () => {
       transition: {
         delay: 0.5 + (i * 0.1),
         duration: 0.4,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     })
   };

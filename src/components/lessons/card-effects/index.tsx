@@ -3,15 +3,6 @@
 import React from 'react';
 
 // Importar todos os card effects
-export { CardEffectAppBuilder } from './CardEffectAppBuilder';
-export { CardEffectDigitalEmployee } from './CardEffectDigitalEmployee';
-export { CardEffectBusinessDesign } from './CardEffectBusinessDesign';
-export { CardEffectContentMachine } from './CardEffectContentMachine';
-export { CardEffectAutomation } from './CardEffectAutomation';
-export { CardEffectDataAnalysis } from './CardEffectDataAnalysis';
-export { CardEffectCreativity } from './CardEffectCreativity';
-
-// Lazy imports para code splitting
 import { CardEffectAppBuilder } from './CardEffectAppBuilder';
 import { CardEffectDigitalEmployee } from './CardEffectDigitalEmployee';
 import { CardEffectBusinessDesign } from './CardEffectBusinessDesign';
@@ -19,6 +10,17 @@ import { CardEffectContentMachine } from './CardEffectContentMachine';
 import { CardEffectAutomation } from './CardEffectAutomation';
 import { CardEffectDataAnalysis } from './CardEffectDataAnalysis';
 import { CardEffectCreativity } from './CardEffectCreativity';
+
+// Re-export todos os componentes
+export {
+  CardEffectAppBuilder,
+  CardEffectDigitalEmployee,
+  CardEffectBusinessDesign,
+  CardEffectContentMachine,
+  CardEffectAutomation,
+  CardEffectDataAnalysis,
+  CardEffectCreativity,
+};
 
 /**
  * Tipos de card effects disponíveis
@@ -128,9 +130,6 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
 
 /**
  * Retorna o componente de card effect para um determinado tipo
- *
- * @param type - Tipo do card effect
- * @returns Componente React ou null se tipo inválido
  */
 export function getCardEffectComponent(type: string): React.FC | null {
   const normalizedType = type.toLowerCase().trim() as CardEffectType;
@@ -139,9 +138,6 @@ export function getCardEffectComponent(type: string): React.FC | null {
 
 /**
  * Verifica se um tipo de card effect é válido
- *
- * @param type - Tipo a verificar
- * @returns true se válido
  */
 export function isValidCardEffectType(type: string): type is CardEffectType {
   const normalizedType = type.toLowerCase().trim();

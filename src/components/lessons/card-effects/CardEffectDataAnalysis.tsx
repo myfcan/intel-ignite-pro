@@ -36,7 +36,7 @@ export const CardEffectDataAnalysis: React.FC = () => {
       transition: {
         delay: 0.3 + (i * 0.1),
         duration: 0.4,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     })
   };
@@ -50,7 +50,7 @@ export const CardEffectDataAnalysis: React.FC = () => {
       transition: {
         delay: 1,
         duration: 0.8,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     }
   };
@@ -64,7 +64,7 @@ export const CardEffectDataAnalysis: React.FC = () => {
       transition: {
         delay: 0.5,
         duration: 0.3,
-        type: 'spring'
+        type: 'spring' as const
       }
     },
     pulse: {
@@ -86,7 +86,7 @@ export const CardEffectDataAnalysis: React.FC = () => {
       transition: {
         delay: 1.5 + (i * 0.15),
         duration: 0.3,
-        type: 'spring'
+        type: 'spring' as const
       }
     })
   };
