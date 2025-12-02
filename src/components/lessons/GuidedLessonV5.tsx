@@ -99,15 +99,27 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   const lastSegmentIdRef = useRef<string | null>(null);
   const segmentRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  // 🎵 V5: Duração do áudio da seção atual (para cálculo automático de timestamps)
+  const [sectionAudioDuration, setSectionAudioDuration] = useState<number>(60); // Default 60s
+
   /**
    * 🎬 Construir lista de segmentos para a seção atual
    * Combina o texto da seção com os experience cards, ordenados por timestamp
+   *
+   * 🆕 CÁLCULO AUTOMÁTICO VIA ANCHORTEXT:
+   * - Se o card tem anchorText, calcula o timestamp automaticamente
+   * - Fórmula: (posição_do_anchorText / tamanho_total_do_texto) × duração_do_áudio = at
+   * - Isso elimina a necessidade de configurar segundos manualmente
    */
   const buildSegmentsForSection = (sectionIndex: number): Segment[] => {
     const section = lessonData.sections[sectionIndex] as any;
     if (!section) return [];
 
     const segments: Segment[] = [];
+
+    // Pegar o texto da seção para cálculo de anchorText
+    const sectionText = section.visualContent || section.content || '';
+    const textLength = sectionText.length;
 
     // Segmento de texto (sempre começa em 0)
     segments.push({
@@ -133,8 +145,38 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
     // Adicionar segmentos para cada card
     cards.forEach((cardConfig: any, cardIdx: number) => {
-      // O timestamp do card pode vir de diferentes campos
-      const cardTimestamp = cardConfig.at || cardConfig.timestamp || cardConfig.showAtTime || (5 + cardIdx * 15);
+      let cardTimestamp: number;
+
+      // 🎯 PRIORIDADE 1: Timestamp manual (se configurado explicitamente)
+      if (cardConfig.at !== undefined && cardConfig.at !== null) {
+        cardTimestamp = cardConfig.at;
+        console.log(`🎬 [V5-SEGMENTS] Card ${cardIdx}: usando at manual = ${cardTimestamp}s`);
+      }
+      // 🎯 PRIORIDADE 2: Calcular automaticamente via anchorText
+      else if (cardConfig.anchorText && textLength > 0) {
+        const anchorPosition = sectionText.indexOf(cardConfig.anchorText);
+        if (anchorPosition !== -1) {
+          const ratio = anchorPosition / textLength;
+          cardTimestamp = Math.round(ratio * sectionAudioDuration);
+          console.log(`🎬 [V5-SEGMENTS] Card ${cardIdx}: anchorText "${cardConfig.anchorText.substring(0, 30)}..." encontrado em ${anchorPosition}/${textLength} (${(ratio * 100).toFixed(1)}%) → at=${cardTimestamp}s de ${sectionAudioDuration}s`);
+        } else {
+          // anchorText não encontrado, usar fallback
+          cardTimestamp = 5 + cardIdx * 15;
+          console.warn(`⚠️ [V5-SEGMENTS] Card ${cardIdx}: anchorText "${cardConfig.anchorText.substring(0, 30)}..." NÃO encontrado no texto. Usando fallback ${cardTimestamp}s`);
+        }
+      }
+      // 🎯 PRIORIDADE 3: Outros campos legacy
+      else if (cardConfig.timestamp !== undefined) {
+        cardTimestamp = cardConfig.timestamp;
+      }
+      else if (cardConfig.showAtTime !== undefined) {
+        cardTimestamp = cardConfig.showAtTime;
+      }
+      // 🎯 FALLBACK: Distribuição uniforme
+      else {
+        cardTimestamp = 5 + cardIdx * 15;
+        console.log(`🎬 [V5-SEGMENTS] Card ${cardIdx}: usando fallback ${cardTimestamp}s`);
+      }
 
       segments.push({
         id: `section-${sectionIndex}-card-${cardIdx}`,
@@ -149,16 +191,17 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     // Ordenar por timestamp
     segments.sort((a, b) => a.at - b.at);
 
-    console.log(`🎬 [V5-SEGMENTS] Seção ${sectionIndex}: ${segments.length} segmentos`,
+    console.log(`🎬 [V5-SEGMENTS] Seção ${sectionIndex}: ${segments.length} segmentos (duração áudio: ${sectionAudioDuration}s)`,
       segments.map(s => `${s.type}@${s.at}s`));
 
     return segments;
   };
 
   // Memoizar segmentos da seção atual
+  // 🆕 Inclui sectionAudioDuration para recalcular quando a duração do áudio mudar
   const currentSectionSegments = useMemo(() => {
     return buildSegmentsForSection(currentSection);
-  }, [currentSection, lessonData.sections, lessonData.experienceCards]);
+  }, [currentSection, lessonData.sections, lessonData.experienceCards, sectionAudioDuration]);
 
   /**
    * 🎬 Calcular segmento ativo baseado no tempo atual do áudio
@@ -571,9 +614,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     
     const handleLoadedMetadata = () => {
       console.log(`✅ [V5-ÁUDIO] Carregado! Duração: ${audio.duration}s`);
-      
+
+      // 🎵 V5: Atualizar duração da seção para cálculo automático de timestamps
+      if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+        setSectionAudioDuration(audio.duration);
+        console.log(`📊 [V5-SEGMENTS] Duração da seção atualizada: ${audio.duration}s (para cálculo de anchorText)`);
+      }
+
       audio.volume = 1.0;
-      
+
       audio.play().then(() => {
         console.log('✅ [V5-AUTOPLAY] Áudio iniciado automaticamente');
         setIsPlaying(true);
@@ -699,11 +748,22 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     prevSectionRef.current = currentSection;
     
     audio.pause();
-    
+
     audio.src = section.audio_url;
     audio.currentTime = 0;
+
+    // 🎵 V5: Atualizar duração quando o áudio da nova seção carregar
+    const updateDuration = () => {
+      if (audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+        setSectionAudioDuration(audio.duration);
+        console.log(`📊 [V5-SEGMENTS] Duração da seção ${currentSection} atualizada: ${audio.duration}s`);
+      }
+      audio.removeEventListener('loadedmetadata', updateDuration);
+    };
+    audio.addEventListener('loadedmetadata', updateDuration);
+
     audio.load();
-    
+
     if (wasPlaying) {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
