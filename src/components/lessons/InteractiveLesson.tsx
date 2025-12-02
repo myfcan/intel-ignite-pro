@@ -415,7 +415,8 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
             ? normalizedExercises
             : guidedLessonData.exercisesConfig,
           finalPlaygroundConfig: guidedLessonData.finalPlaygroundConfig,
-          contentVersion: guidedLessonData.contentVersion
+          contentVersion: guidedLessonData.contentVersion,
+          experienceCards: guidedLessonData.experienceCards || [] // 🆕 V5: Experience cards
         };
 
         console.log('✅ Objeto GuidedLessonData completo criado:', {
@@ -552,7 +553,18 @@ export const InteractiveLesson = ({ lessonId }: InteractiveLessonProps) => {
               onClose={handleMaiaClose}
             />
           )}
-          {lesson.model === 'v4' ? (
+          {lesson.model === 'v5' ? (
+            <GuidedLessonV5
+              lessonData={guidedLessonData}
+              onComplete={handleGuidedComplete}
+              onMarkComplete={markLessonComplete}
+              audioUrl={audioUrl}
+              wordTimestamps={wordTimestamps.length > 0 ? wordTimestamps : undefined}
+              nextLessonId={nextLessonData?.id}
+              nextLessonType={nextLessonData?.lesson_type}
+              trailId={lesson.trail_id}
+            />
+          ) : lesson.model === 'v4' ? (
             <GuidedLessonV4
               lessonData={guidedLessonData}
               onComplete={handleGuidedComplete}

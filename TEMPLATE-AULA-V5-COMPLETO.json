@@ -1,0 +1,168 @@
+{
+  "model": "v5",
+  "title": "Como a IA está Transformando o Mercado de Trabalho",
+  "trackName": "Fundamentos de IA",
+  "orderIndex": 5,
+  "estimatedTime": 8,
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Introdução ao Impacto da IA",
+      "type": "text",
+      "audio_url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/secao-1-intro.mp3",
+      "timestamp": {
+        "start": 0,
+        "end": 45
+      },
+      "speechBubbleText": "Vamos explorar como a IA está revolucionando profissões",
+      "visualContent": "Nos últimos anos, a Inteligência Artificial deixou de ser ficção científica para se tornar uma realidade que transforma profundamente o mercado de trabalho. Desde automações simples até sistemas complexos de tomada de decisão, a IA está redefinindo o que significa trabalhar no século XXI."
+    },
+    {
+      "id": "section-1",
+      "title": "Profissões em Alta com IA",
+      "type": "text",
+      "audio_url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/secao-2-profissoes.mp3",
+      "timestamp": {
+        "start": 45,
+        "end": 120
+      },
+      "speechBubbleText": "Descubra as profissões que mais crescem com IA",
+      "visualContent": "**Engenheiro de Prompt**: Especialistas que criam instruções precisas para sistemas de IA gerarem os melhores resultados.\n\n**Cientista de Dados**: Profissionais que transformam dados brutos em insights valiosos usando machine learning.\n\n**Designer de UX para IA**: Criam interfaces intuitivas para que humanos interajam naturalmente com sistemas inteligentes.\n\n**Especialista em Ética de IA**: Garantem que sistemas de IA sejam justos, transparentes e responsáveis."
+    },
+    {
+      "id": "section-2",
+      "title": "Habilidades do Futuro",
+      "type": "text",
+      "audio_url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/secao-3-habilidades.mp3",
+      "timestamp": {
+        "start": 120,
+        "end": 180
+      },
+      "speechBubbleText": "Desenvolva as competências essenciais da era IA",
+      "visualContent": "Para prosperar na era da IA, você precisa desenvolver:\n\n✨ **Pensamento Crítico**: Questionar resultados da IA e validar informações\n\n🎯 **Criatividade**: Usar IA como ferramenta para amplificar sua criatividade\n\n🤝 **Colaboração Homem-Máquina**: Entender quando delegar tarefas à IA e quando usar julgamento humano\n\n📚 **Aprendizado Contínuo**: Manter-se atualizado com as rápidas mudanças tecnológicas"
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusão",
+      "type": "end-audio",
+      "audio_url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/secao-4-conclusao.mp3",
+      "timestamp": {
+        "start": 180,
+        "end": 210
+      },
+      "speechBubbleText": "Prepare-se para o futuro do trabalho!",
+      "visualContent": "A IA não é uma ameaça, mas uma oportunidade. Profissionais que aprenderem a trabalhar em sinergia com sistemas inteligentes terão vantagem competitiva significativa. O futuro pertence àqueles que combinam expertise humana com o poder da inteligência artificial."
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex1",
+      "type": "multiple-choice",
+      "title": "Profissões com IA",
+      "instruction": "Qual destas profissões NÃO foi mencionada como emergente na era da IA?",
+      "data": {
+        "question": "Qual profissão NÃO é uma das novas carreiras em IA mencionadas na aula?",
+        "options": [
+          "Engenheiro de Prompt",
+          "Designer de UX para IA",
+          "Desenvolvedor de Jogos Analógicos",
+          "Especialista em Ética de IA"
+        ],
+        "correctAnswer": 2,
+        "explanation": "Desenvolvedor de Jogos Analógicos não foi mencionado. As profissões destacadas foram: Engenheiro de Prompt, Cientista de Dados, Designer de UX para IA e Especialista em Ética de IA."
+      }
+    },
+    {
+      "id": "ex2",
+      "type": "true-false",
+      "title": "Habilidades do Futuro",
+      "instruction": "Avalie se as afirmações sobre habilidades essenciais estão corretas:",
+      "data": {
+        "statements": [
+          {
+            "id": "st1",
+            "text": "Pensamento crítico é importante para validar resultados da IA",
+            "correct": true,
+            "explanation": "Correto! É essencial questionar e validar os resultados gerados por sistemas de IA."
+          },
+          {
+            "id": "st2",
+            "text": "A IA substitui completamente a criatividade humana",
+            "correct": false,
+            "explanation": "Falso! A IA é uma ferramenta para amplificar a criatividade humana, não substituí-la."
+          },
+          {
+            "id": "st3",
+            "text": "Aprendizado contínuo é necessário devido às rápidas mudanças tecnológicas",
+            "correct": true,
+            "explanation": "Correto! Manter-se atualizado é crucial na era da IA."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ex3",
+      "type": "scenario-selection",
+      "title": "Cenários de Aplicação",
+      "instruction": "Escolha a melhor abordagem para cada cenário:",
+      "data": {
+        "scenarios": [
+          {
+            "id": "sc1",
+            "situation": "Você precisa criar 100 variações de descrições de produtos para e-commerce",
+            "options": [
+              "Escrever todas manualmente",
+              "Usar IA para gerar + revisar humanamente",
+              "Copiar de concorrentes"
+            ],
+            "correctOption": 1,
+            "explanation": "Usar IA para gerar variações e depois revisar humanamente é o mais eficiente, combinando velocidade da IA com qualidade humana."
+          },
+          {
+            "id": "sc2",
+            "situation": "Um cliente pede uma análise estratégica complexa do mercado",
+            "options": [
+              "Delegar 100% para ChatGPT",
+              "Usar IA para dados + análise humana final",
+              "Fazer tudo manualmente sem IA"
+            ],
+            "correctOption": 1,
+            "explanation": "Combinar IA para coleta/análise de dados com julgamento estratégico humano oferece o melhor resultado."
+          }
+        ]
+      }
+    }
+  ],
+  "experienceCards": [
+    {
+      "id": "card-1",
+      "type": "ia-book",
+      "sectionIndex": 1,
+      "timestamp": 15,
+      "props": {
+        "theme": "technical",
+        "autoStart": true
+      }
+    },
+    {
+      "id": "card-2",
+      "type": "ia-image-generator",
+      "sectionIndex": 2,
+      "timestamp": 30,
+      "props": {
+        "prompt": "Futuro do trabalho com IA",
+        "style": "professional"
+      }
+    },
+    {
+      "id": "card-3",
+      "type": "ia-book",
+      "sectionIndex": 2,
+      "timestamp": 50,
+      "props": {
+        "theme": "fantasy",
+        "autoStart": true
+      }
+    }
+  ]
+}

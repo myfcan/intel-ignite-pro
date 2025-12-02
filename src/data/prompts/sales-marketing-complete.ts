@@ -95,8 +95,8 @@ Vale uma conversa de 15 min?
         { name: 'benefit', label: 'Benefício Principal', placeholder: 'Ex: Reduz 50% do tempo de contratação', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS B2B', variables: { prospect: 'CTOs de startups série A-B', product: 'Plataforma de observabilidade', benefit: 'Reduz MTTR em 70%' } },
-        { title: 'Consultoria', variables: { prospect: 'CEOs de indústrias mid-market', product: 'Consultoria em transformação digital', benefit: 'Aumenta eficiência operacional em 40%' } }
+        { title: 'SaaS B2B', input: { prospect: 'CTOs de startups série A-B', product: 'Plataforma de observabilidade', benefit: 'Reduz MTTR em 70%' }, output: 'Cold email gerado' },
+        { title: 'Consultoria', input: { prospect: 'CEOs de indústrias mid-market', product: 'Consultoria em transformação digital', benefit: 'Aumenta eficiência operacional em 40%' }, output: 'Cold email gerado' }
       ],
       tags: ['cold email', 'prospecção', 'outbound', 'sdr'],
       difficulty: 'beginner',
@@ -204,8 +204,8 @@ Vale uma conversa de 15 min?
         { name: 'attempts', label: 'Número de Tentativas', placeholder: 'Ex: 5 touchpoints em 30 dias', type: 'text', required: true }
       ],
       examples: [
-        { title: 'Pós-Demo', variables: { situation: 'Fez demo há 1 semana, disse que ia avaliar com o time', product: 'Software de automação de marketing', attempts: '5 touchpoints' } },
-        { title: 'Proposta Enviada', variables: { situation: 'Enviou proposta há 5 dias, não respondeu', product: 'Consultoria estratégica', attempts: '4 touchpoints' } }
+        { title: 'Pós-Demo', input: { situation: 'Fez demo há 1 semana, disse que ia avaliar com o time', product: 'Software de automação de marketing', attempts: '5 touchpoints' }, output: 'Sequência de follow-up gerada' },
+        { title: 'Proposta Enviada', input: { situation: 'Enviou proposta há 5 dias, não respondeu', product: 'Consultoria estratégica', attempts: '4 touchpoints' }, output: 'Sequência de follow-up gerada' }
       ],
       tags: ['follow-up', 'persistência', 'vendas', 'sequência'],
       difficulty: 'beginner',
@@ -341,7 +341,7 @@ Terça ou quarta funcionam?
         { name: 'unique', label: 'Diferencial Único', placeholder: 'Ex: Relatórios automatizados que economizam 10h/semana', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS para RH', variables: { icp: 'Heads de RH em scale-ups', product: 'Plataforma de engajamento', unique: 'Aumenta retenção em 35%' } }
+        { title: 'SaaS para RH', input: { icp: 'Heads de RH em scale-ups', product: 'Plataforma de engajamento', unique: 'Aumenta retenção em 35%' }, output: 'Sequência LinkedIn gerada' }
       ],
       tags: ['linkedin', 'social selling', 'b2b', 'outreach'],
       difficulty: 'beginner',
@@ -469,7 +469,7 @@ Faz sentido agendarmos? Que tal [data específica]?"
         { name: 'qualify_criteria', label: 'Critérios de Qualificação', placeholder: 'Ex: Budget mínimo R$50k, empresa 100+ funcionários, decisor presente', type: 'textarea', required: true }
       ],
       examples: [
-        { title: 'SaaS Enterprise', variables: { product: 'Plataforma de dados enterprise', duration: '45 minutos', qualify_criteria: 'Budget $100k+, VP ou C-level, timeline 6 meses' } }
+        { title: 'SaaS Enterprise', input: { product: 'Plataforma de dados enterprise', duration: '45 minutos', qualify_criteria: 'Budget $100k+, VP ou C-level, timeline 6 meses' }, output: 'Script de discovery call gerado' }
       ],
       tags: ['discovery', 'qualificação', 'spin', 'vendas', 'script'],
       difficulty: 'intermediate',
@@ -667,7 +667,7 @@ FASE 3: [Nome] (Semanas 5-8)
         { name: 'investment', label: 'Investimento Total', placeholder: 'Ex: R$ 85.000', type: 'text', required: true }
       ],
       examples: [
-        { title: 'Consultoria', variables: { service: 'Reestruturação comercial', client: 'Distribuidora regional, 50 vendedores', investment: 'R$ 120.000' } }
+        { title: 'Consultoria', input: { service: 'Reestruturação comercial', client: 'Distribuidora regional, 50 vendedores', investment: 'R$ 120.000' }, output: 'Proposta comercial gerada' }
       ],
       tags: ['proposta', 'comercial', 'fechamento', 'vendas', 'template'],
       difficulty: 'intermediate',
@@ -867,7 +867,7 @@ Faz sentido eu explicar como em 2 minutos?"
         { name: 'ticket', label: 'Ticket Médio', placeholder: 'Ex: R$ 15.000/ano', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS SMB', variables: { company: 'Software de gestão financeira', sales_cycle: '21 dias', ticket: 'R$ 500/mês' } }
+        { title: 'SaaS SMB', input: { company: 'Software de gestão financeira', sales_cycle: '21 dias', ticket: 'R$ 500/mês' }, output: 'Playbook de vendas gerado' }
       ],
       tags: ['playbook', 'processo', 'vendas', 'documentação', 'escala'],
       difficulty: 'advanced',
@@ -1035,7 +1035,7 @@ vs META:                         ___%
         { name: 'goal', label: 'Meta Mensal', placeholder: 'Ex: R$ 100.000', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS B2B', variables: { product: 'CRM para imobiliárias', ticket: 'R$ 3.000/ano', cycle: '21 dias', team: '1 SDR + 2 AEs', goal: 'R$ 50.000' } }
+        { title: 'SaaS B2B', input: { product: 'CRM para imobiliárias', ticket: 'R$ 3.000/ano', cycle: '21 dias', team: '1 SDR + 2 AEs', goal: 'R$ 50.000' }, output: 'Pipeline de vendas gerado' }
       ],
       tags: ['pipeline', 'vendas', 'crm', 'processo', 'funil', 'forecast'],
       difficulty: 'advanced',
@@ -1275,7 +1275,7 @@ estou à disposição. Sucesso!
         { name: 'channels', label: 'Canais', placeholder: 'Ex: Cold call, email, LinkedIn', type: 'text', required: true }
       ],
       examples: [
-        { title: 'B2B Tech', variables: { icp: 'CTOs de startups série A-C, 20-100 pessoas', product: 'Plataforma de DevOps', channels: 'Email, LinkedIn, Cold Call' } }
+        { title: 'B2B Tech', input: { icp: 'CTOs de startups série A-C, 20-100 pessoas', product: 'Plataforma de DevOps', channels: 'Email, LinkedIn, Cold Call' }, output: 'Cadência de prospecção gerada' }
       ],
       tags: ['outbound', 'sdr', 'prospecção', 'cold call', 'cadência', 'sequência'],
       difficulty: 'advanced',
@@ -1507,7 +1507,7 @@ E se começássemos pequeno agora?"
         { name: 'objections', label: 'Objeções Mais Comuns', placeholder: 'Ex: Preço alto, já tentaram consultoria antes e não funcionou, timing ruim', type: 'textarea', required: true }
       ],
       examples: [
-        { title: 'SaaS Enterprise', variables: { product: 'Plataforma de dados', price: 'R$ 120.000/ano', objections: 'Preço, tem ferramenta in-house, precisa de aprovação do board' } }
+        { title: 'SaaS Enterprise', input: { product: 'Plataforma de dados', price: 'R$ 120.000/ano', objections: 'Preço, tem ferramenta in-house, precisa de aprovação do board' }, output: 'Scripts de objeções gerados' }
       ],
       tags: ['objeções', 'vendas', 'fechamento', 'scripts', 'negociação'],
       difficulty: 'intermediate',
@@ -1671,7 +1671,7 @@ E se começássemos pequeno agora?"
         { name: 'tools', label: 'Ferramentas', placeholder: 'Ex: HubSpot, Salesforce, RD Station', type: 'text', required: true }
       ],
       examples: [
-        { title: 'B2B SaaS', variables: { business: 'Software de gestão de projetos', criteria: 'PMs e CTOs, empresas 20-200, tech e agências', tools: 'HubSpot' } }
+        { title: 'B2B SaaS', input: { business: 'Software de gestão de projetos', criteria: 'PMs e CTOs, empresas 20-200, tech e agências', tools: 'HubSpot' }, output: 'Sistema de lead scoring gerado' }
       ],
       tags: ['lead scoring', 'qualificação', 'automação', 'mql', 'sql'],
       difficulty: 'advanced',
@@ -1874,7 +1874,7 @@ para [time técnico/financeiro/etc]."
         { name: 'persona', label: 'Persona Principal', placeholder: 'Ex: Head de Marketing em empresa de e-commerce', type: 'textarea', required: true }
       ],
       examples: [
-        { title: 'SaaS B2B', variables: { product: 'CRM com automação', duration: '45 minutos', persona: 'Diretor Comercial de distribuidora' } }
+        { title: 'SaaS B2B', input: { product: 'CRM com automação', duration: '45 minutos', persona: 'Diretor Comercial de distribuidora' }, output: 'Script de demo gerado' }
       ],
       tags: ['demo', 'apresentação', 'vendas', 'script', 'fechamento'],
       difficulty: 'intermediate',
@@ -2068,7 +2068,7 @@ Quer saber mais?
         { name: 'products', label: 'Produtos para Upsell/Cross-sell', placeholder: 'Ex: Plano Business (+50%), Add-on Analytics, Add-on Automação', type: 'textarea', required: true }
       ],
       examples: [
-        { title: 'SaaS B2B', variables: { product: 'CRM Plano Starter', customer_base: '200 PMEs, R$ 300/mês médio', products: 'Plano Pro, Plano Enterprise, Add-on BI' } }
+        { title: 'SaaS B2B', input: { product: 'CRM Plano Starter', customer_base: '200 PMEs, R$ 300/mês médio', products: 'Plano Pro, Plano Enterprise, Add-on BI' }, output: 'Estratégia de upsell gerada' }
       ],
       tags: ['upsell', 'cross-sell', 'expansion', 'crescimento', 'receita'],
       difficulty: 'intermediate',
@@ -2248,7 +2248,7 @@ Temos exatamente isso como add-on..."
         { name: 'goal', label: 'Objetivo Principal', placeholder: 'Ex: Net Revenue Retention de 120%', type: 'text', required: true }
       ],
       examples: [
-        { title: 'Enterprise SaaS', variables: { accounts: 'Empresas Fortune 500', portfolio_size: '15 contas, R$ 5M ARR', goal: 'NRR 125%, zero churn' } }
+        { title: 'Enterprise SaaS', input: { accounts: 'Empresas Fortune 500', portfolio_size: '15 contas, R$ 5M ARR', goal: 'NRR 125%, zero churn' }, output: 'Estratégia de account management gerada' }
       ],
       tags: ['account management', 'retenção', 'expansão', 'customer success', 'qbr'],
       difficulty: 'advanced',
@@ -2438,7 +2438,7 @@ AE Jr (<1 ano):           -25% (ramp)
         { name: 'quota', label: 'Meta Mensal por Rep', placeholder: 'Ex: R$ 100.000 new ARR', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS B2B', variables: { team_structure: '2 SDRs + 4 AEs + 1 Manager', ticket: 'R$ 30.000 ACV', sales_cycle: '60 dias', quota: 'R$ 150.000/mês' } }
+        { title: 'SaaS B2B', input: { team_structure: '2 SDRs + 4 AEs + 1 Manager', ticket: 'R$ 30.000 ACV', sales_cycle: '60 dias', quota: 'R$ 150.000/mês' }, output: 'Plano de compensação gerado' }
       ],
       tags: ['compensação', 'comissão', 'vendas', 'incentivo', 'quota'],
       difficulty: 'advanced',
@@ -2662,7 +2662,7 @@ Cenários:
         { name: 'forecast_goal', label: 'Objetivo do Forecast', placeholder: 'Ex: Planejamento de contratações, previsão de caixa, report para investidores', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS Growth', variables: { business_model: 'PLG + Sales, ARR R$ 5M', historical_data: '18 meses, 30% crescimento MoM', forecast_goal: 'Série A fundraising' } }
+        { title: 'SaaS Growth', input: { business_model: 'PLG + Sales, ARR R$ 5M', historical_data: '18 meses, 30% crescimento MoM', forecast_goal: 'Série A fundraising' }, output: 'Modelo de forecast gerado' }
       ],
       tags: ['forecast', 'previsão', 'vendas', 'planejamento', 'pipeline'],
       difficulty: 'advanced',
@@ -2876,7 +2876,7 @@ SEMANA 4: ATIVAÇÃO
         { name: 'model', label: 'Modelo de Partnership', placeholder: 'Ex: Referral (10%) + Resale (25%) + Co-sell', type: 'text', required: true }
       ],
       examples: [
-        { title: 'SaaS + SI', variables: { product: 'ERP em nuvem', partner_type: 'System Integrators, consultorias de gestão', model: 'Resale 30% + Serviços 100% para parceiro' } }
+        { title: 'SaaS + SI', input: { product: 'ERP em nuvem', partner_type: 'System Integrators, consultorias de gestão', model: 'Resale 30% + Serviços 100% para parceiro' }, output: 'Programa de parceiros gerado' }
       ],
       tags: ['parceiros', 'channel', 'vendas indiretas', 'reseller', 'programa'],
       difficulty: 'advanced',

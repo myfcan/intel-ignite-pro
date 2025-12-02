@@ -49,16 +49,16 @@ export const MultipleChoiceExercise = ({
   };
 
   return (
-    <Card className={`p-6 space-y-4 border-2 border-primary/10 transition-all duration-300 ${
+    <Card className={`p-4 sm:p-6 space-y-3 sm:space-y-4 border-2 border-primary/10 transition-all duration-300 ${
       isFadingOut ? 'animate-fade-out' : 'animate-fade-in'
     }`}>
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-          <span className="text-xl">🎯</span>
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="text-lg sm:text-xl">🎯</span>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold mb-2">Exercício</h3>
-          <p className="text-base text-foreground leading-relaxed">{question}</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Exercício</h3>
+          <p className="text-sm sm:text-base text-foreground leading-relaxed break-words">{question}</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export const MultipleChoiceExercise = ({
         value={selectedAnswer}
         onValueChange={setSelectedAnswer}
         disabled={isSubmitted}
-        className="space-y-3"
+        className="space-y-2 sm:space-y-3"
       >
         {options.map((option, index) => {
           const optionId = `option-${index}`;
@@ -92,14 +92,14 @@ export const MultipleChoiceExercise = ({
           return (
             <div
               key={optionId}
-              className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all ${borderColor} ${bgColor} ${
+              className={`flex items-center space-x-2 sm:space-x-3 p-3 sm:p-4 rounded-lg border-2 transition-all ${borderColor} ${bgColor} ${
                 !isSubmitted ? "hover:border-primary/50 cursor-pointer" : ""
               }`}
             >
               <RadioGroupItem value={option} id={optionId} />
               <Label
                 htmlFor={optionId}
-                className="flex-1 cursor-pointer text-base leading-relaxed"
+                className="flex-1 cursor-pointer text-sm sm:text-base leading-relaxed break-words"
               >
                 {option}
               </Label>
@@ -118,35 +118,35 @@ export const MultipleChoiceExercise = ({
         <Button
           onClick={handleSubmit}
           disabled={!selectedAnswer}
-          className="w-full h-12 text-base"
+          className="w-full h-10 sm:h-12 text-sm sm:text-base"
           size="lg"
         >
           Confirmar Resposta
         </Button>
       ) : isCorrect ? (
         <div
-          className="p-4 rounded-lg border-2 animate-fade-in bg-success/5 border-success/20"
+          className="p-3 sm:p-4 rounded-lg border-2 animate-fade-in bg-success/5 border-success/20"
         >
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold mb-1">Correto! 🎉</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-success flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold mb-1 text-sm sm:text-base">Correto! 🎉</p>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
                 {explanation}
               </p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div
-            className="p-4 rounded-lg border-2 animate-fade-in bg-destructive/5 border-destructive/20"
+            className="p-3 sm:p-4 rounded-lg border-2 animate-fade-in bg-destructive/5 border-destructive/20"
           >
-            <div className="flex items-start gap-3">
-              <Info className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-semibold mb-1">Não foi dessa vez</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <Info className="w-5 h-5 sm:w-6 sm:h-6 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold mb-1 text-sm sm:text-base">Não foi dessa vez</p>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
                   {explanation}
                 </p>
               </div>
@@ -155,7 +155,7 @@ export const MultipleChoiceExercise = ({
           <Button
             onClick={handleTryAgain}
             variant="outline"
-            className="w-full h-12 text-base"
+            className="w-full h-10 sm:h-12 text-sm sm:text-base"
             size="lg"
           >
             Tentar Novamente

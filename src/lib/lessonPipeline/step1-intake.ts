@@ -2,7 +2,8 @@ import { PipelineInput, Step1Output } from './types';
 
 /**
  * STEP 1: INTAKE & VALIDAÇÃO INICIAL
- * - Valida se o modelo existe (V1 ou V2)
+ * - Valida se o modelo existe (V1, V2, V3, V4 ou V5)
+ * - NORMALIZA campos desatualizados automaticamente
  * - Valida estrutura básica do conteúdo
  * - Conta número de seções e exercícios
  */
@@ -11,7 +12,7 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log('📥 [STEP 1] Iniciando intake e validação...');
   console.log(`🐛 [STEP 1] Input recebido: modelo=${input.model}, título="${input.title}"`);
   console.log(`🐛 [STEP 1] Dados do input: trackId=${input.trackId}, orderIndex=${input.orderIndex}`);
-  
+
   // Validar modelo
   if (!['v1', 'v2', 'v3', 'v4', 'v5'].includes(input.model)) {
     throw new Error(`Modelo inválido: ${input.model}. Use 'v1', 'v2', 'v3', 'v4' ou 'v5'.`);
@@ -25,43 +26,73 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   console.log(`✅ [STEP 1] Título validado: "${input.title}"`);
 
   // Validar conteúdo baseado no modelo
-  if (input.model === 'v5') {
-    // V5: Similar a V4, mas com suporte a Experience Cards animados
+  if (input.model === 'v4' || input.model === 'v5') {
+    // V4/V5: Similar a V2, mas com suporte a playground interativo (v4) e experience cards (v5)
     if (!input.sections || input.sections.length === 0) {
-      throw new Error('A lição V5 deve ter pelo menos 1 seção');
+      throw new Error(`A lição ${input.model.toUpperCase()} deve ter pelo menos 1 seção`);
     }
-    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (V5 - Experience Cards)`);
+    console.log(`✅ [STEP 1] ${input.sections.length} seções recebidas (${input.model.toUpperCase()})`);
 
-    // Validar visualContent em cada seção
+    // 🔧 NORMALIZAÇÃO AUTOMÁTICA: Converte campos antigos/incorretos
+    console.log('🔧 [STEP 1] Normalizando estrutura das seções...');
+
+    // Contar experience cards antes da normalização (V5)
     let totalExperienceCards = 0;
-    for (let i = 0; i < input.sections.length; i++) {
-      const section = input.sections[i];
-      if (!section.id || !section.visualContent) {
-        throw new Error(`Seção ${i + 1} está incompleta (falta id ou visualContent)`);
-      }
-      // Contar experience cards
-      if (section.experienceCards && section.experienceCards.length > 0) {
-        totalExperienceCards += section.experienceCards.length;
-        console.log(`   📦 Seção ${i + 1}: ${section.experienceCards.length} experience cards`);
-      }
-    }
-    console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
-    console.log(`✨ [STEP 1] Total de Experience Cards: ${totalExperienceCards}`);
-  } else if (input.model === 'v4') {
-    // V4: Similar a V2, mas com suporte a playground interativo
-    if (!input.sections || input.sections.length === 0) {
-      throw new Error('A lição V4 deve ter pelo menos 1 seção');
-    }
-    console.log(`✅ [STEP 1] ${input.sections.length} seções validadas (V4 - Playground Real)`);
 
-    // Validar visualContent em cada seção
+    input.sections = input.sections.map((section: any, index: number) => {
+      const normalized: any = {
+        id: section.id || `section-${index + 1}`, // ✅ OBRIGATÓRIO
+        visualContent: section.visualContent || section.markdown || section.content || '', // ✅ OBRIGATÓRIO
+      };
+
+      // Campos opcionais
+      if (section.title) normalized.title = section.title;
+      if (section.speechBubbleText || section.speechBubble) {
+        normalized.speechBubbleText = section.speechBubbleText || section.speechBubble;
+      }
+      if (section.showPlaygroundCall !== undefined) {
+        normalized.showPlaygroundCall = section.showPlaygroundCall;
+      }
+      if (section.playgroundConfig) {
+        normalized.playgroundConfig = section.playgroundConfig;
+      }
+
+      // V5: Preservar experience cards
+      if (input.model === 'v5' && section.experienceCards && section.experienceCards.length > 0) {
+        normalized.experienceCards = section.experienceCards;
+        totalExperienceCards += section.experienceCards.length;
+        console.log(`   📦 Seção ${index + 1}: ${section.experienceCards.length} experience cards`);
+      }
+
+      return normalized;
+    });
+    console.log(`✅ [STEP 1] ${input.sections.length} seções normalizadas com sucesso`);
+
+    if (input.model === 'v5') {
+      console.log(`✨ [STEP 1] Total de Experience Cards: ${totalExperienceCards}`);
+    }
+
+    // Validar após normalização
     for (let i = 0; i < input.sections.length; i++) {
       const section = input.sections[i];
-      if (!section.id || !section.visualContent) {
-        throw new Error(`Seção ${i + 1} está incompleta (falta id ou visualContent)`);
+      const missing: string[] = [];
+
+      if (!section.id) missing.push('id');
+      if (!section.visualContent || section.visualContent.trim().length === 0) {
+        missing.push('visualContent');
+      }
+
+      if (missing.length > 0) {
+        console.error(`❌ [STEP 1] Seção ${i + 1} após normalização:`, JSON.stringify(section, null, 2));
+        throw new Error(
+          `❌ Seção ${i + 1} ainda está incompleta após normalização\n\n` +
+          `Campos AUSENTES: ${missing.join(', ')}\n` +
+          `Campos PRESENTES: ${Object.keys(section).join(', ')}\n\n` +
+          `Possível causa: campo de conteúdo está vazio ou ausente no JSON original`
+        );
       }
     }
-    console.log(`✅ [STEP 1] Todas as seções têm conteúdo válido`);
+    console.log(`✅ [STEP 1] Todas as seções validadas com sucesso`);
   } else if (input.model === 'v3') {
     // V3: Validar v3Data
     if (!input.v3Data) {
@@ -79,7 +110,7 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
     if (input.v3Data.slides.length > 15) {
       console.warn(`⚠️ [STEP 1] V3 com ${input.v3Data.slides.length} slides (recomendado: máximo 15)`);
     }
-    
+
     // Validar cada slide
     for (let i = 0; i < input.v3Data.slides.length; i++) {
       const slide = input.v3Data.slides[i];
@@ -87,7 +118,7 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
         throw new Error(`Slide ${i + 1} está incompleto (falta id ou contentIdea)`);
       }
     }
-    
+
     console.log(`✅ [STEP 1] ${input.v3Data.slides.length} slides validados`);
     console.log(`✅ [STEP 1] audioText: ${input.v3Data.audioText.length} caracteres`);
   } else {
@@ -117,17 +148,17 @@ export async function step1Intake(input: PipelineInput): Promise<Step1Output> {
   if (!input.trackId) {
     throw new Error('trackId é obrigatório');
   }
-  
+
   // Validar formato UUID do trackId
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(input.trackId)) {
     throw new Error(`trackId inválido: "${input.trackId}" não é um UUID válido`);
   }
-  
+
   if (input.orderIndex === undefined || input.orderIndex < 0) {
     throw new Error('orderIndex é obrigatório e deve ser >= 0');
   }
-  
+
   console.log(`✅ [STEP 1] trackId validado: ${input.trackId}`);
   console.log(`✅ [STEP 1] orderIndex validado: ${input.orderIndex}`);
 

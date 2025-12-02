@@ -21,7 +21,7 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
     } else {
       console.log(`      ✅ audioUrl presente: ${input.audioUrl}`);
     }
-    
+
     if (!input.wordTimestamps || input.wordTimestamps.length === 0) {
       errors.push('❌ wordTimestamps ausentes');
     } else {
@@ -138,13 +138,13 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   console.log('   🔍 Validando metadados...');
   if (!input.title) errors.push('❌ Título ausente');
   else console.log(`      ✅ Título: "${input.title}"`);
-  
+
   if (!input.trackId) errors.push('❌ trackId ausente');
   else console.log(`      ✅ trackId: ${input.trackId}`);
-  
+
   if (input.orderIndex === undefined) errors.push('❌ orderIndex ausente');
   else console.log(`      ✅ orderIndex: ${input.orderIndex}`);
-  
+
   if (!input.audioText) errors.push('❌ audioText ausente');
   else console.log(`      ✅ audioText: ${input.audioText.length} caracteres`);
 
@@ -162,12 +162,12 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
   const elapsedTime = Date.now() - startTime;
   console.log(`\n📊 [STEP 6] Validação completa em ${elapsedTime}ms:`);
   console.log(`   ✅ Checks passados: ${20 - errors.length - warnings.length}/20`);
-  
+
   if (warnings.length > 0) {
     console.warn(`   ⚠️ Warnings: ${warnings.length}`);
     warnings.forEach(w => console.warn(`      ${w}`));
   }
-  
+
   if (errors.length > 0) {
     console.error(`   ❌ Erros críticos: ${errors.length}`);
     errors.forEach(e => console.error(`      ${e}`));
