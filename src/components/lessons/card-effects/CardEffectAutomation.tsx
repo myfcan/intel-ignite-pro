@@ -1,262 +1,271 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Cog, Zap, ArrowRight, CircleDot } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, Calendar, Mail, CheckCircle2, User } from 'lucide-react';
 
 /**
- * CardEffectAutomation
+ * CardEffectAutomation - "Fluxos de automação com I.A."
  *
- * Animação cinematográfica: Automação/fluxo de processos
- *
- * Sequência de animação (2-3 segundos):
- * 1. Nós aparecem em posições fixas
- * 2. Linhas conectoras surgem entre os nós
- * 3. Pulso de energia percorre as conexões
- * 4. Engrenagens giram mostrando automação ativa
+ * Efeito cinematográfico:
+ * 1. Fluxograma desenhado ao vivo a partir do ponto "Lead"
+ * 2. Linhas se desdobram para: Mensagem, Qualificação, Agenda, Confirmação, Follow-up
+ * 3. Cada caixa surge com "drop-in" e é preenchida pela I.A.
+ * 4. Linhas se acendem com luz percorrendo o caminho
+ * 5. Ícones aparecem sobre as caixas com fade-in
+ * 6. Caixa final "Consulta marcada" cresce com halo verde
  */
 export const CardEffectAutomation: React.FC = () => {
-  // Posições dos nós
-  const nodes = [
-    { x: 40, y: 50, icon: CircleDot, color: 'from-blue-400 to-cyan-500', label: 'Input' },
-    { x: 130, y: 30, icon: Cog, color: 'from-purple-400 to-indigo-500', label: 'Process' },
-    { x: 130, y: 70, icon: Cog, color: 'from-pink-400 to-rose-500', label: 'Process' },
-    { x: 220, y: 50, icon: Zap, color: 'from-yellow-400 to-orange-500', label: 'Output' },
+  const [visibleNodes, setVisibleNodes] = useState(0);
+  const [activeConnection, setActiveConnection] = useState(-1);
+  const [showFinalGlow, setShowFinalGlow] = useState(false);
+
+  const flowNodes = [
+    { id: 0, label: 'Lead', icon: User, x: 10, y: 45, color: 'from-blue-500 to-cyan-500' },
+    { id: 1, label: 'Mensagem', icon: MessageCircle, x: 28, y: 25, color: 'from-purple-500 to-indigo-500' },
+    { id: 2, label: 'Qualificação', icon: CheckCircle2, x: 28, y: 65, color: 'from-pink-500 to-rose-500' },
+    { id: 3, label: 'Agenda', icon: Calendar, x: 50, y: 45, color: 'from-orange-500 to-amber-500' },
+    { id: 4, label: 'Confirmação', icon: Mail, x: 72, y: 45, color: 'from-cyan-500 to-blue-500' },
+    { id: 5, label: 'Consulta', icon: CheckCircle2, x: 90, y: 45, color: 'from-green-500 to-emerald-500', isFinal: true },
   ];
 
-  // Conexões entre nós (índices)
   const connections = [
     { from: 0, to: 1 },
     { from: 0, to: 2 },
     { from: 1, to: 3 },
     { from: 2, to: 3 },
+    { from: 3, to: 4 },
+    { from: 4, to: 5 },
   ];
 
-  // Variantes para os nós
-  const nodeVariants = {
-    hidden: { opacity: 0, scale: 0 },
-    visible: (i: number) => ({
-      opacity: 1,
-      scale: 1,
-      transition: {
-        delay: 0.2 + (i * 0.15),
-        duration: 0.3,
-        type: 'spring',
-        stiffness: 200
-      }
-    })
-  };
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
 
-  // Variantes para as linhas
-  const lineVariants = {
-    hidden: { pathLength: 0, opacity: 0 },
-    visible: (i: number) => ({
-      pathLength: 1,
-      opacity: 1,
-      transition: {
-        delay: 0.5 + (i * 0.1),
-        duration: 0.4,
-        ease: 'easeInOut'
-      }
-    })
-  };
+    // Nós aparecem um a um
+    flowNodes.forEach((_, i) => {
+      timers.push(setTimeout(() => setVisibleNodes(i + 1), 400 + i * 400));
+    });
 
-  // Calcular posição do nó (escalado)
-  const getNodePos = (index: number) => {
-    const node = nodes[index];
-    return { x: node.x, y: node.y };
+    // Conexões se iluminam
+    connections.forEach((_, i) => {
+      timers.push(setTimeout(() => setActiveConnection(i), 800 + i * 350));
+    });
+
+    // Glow final
+    timers.push(setTimeout(() => setShowFinalGlow(true), 3500));
+
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const getNodePosition = (id: number) => {
+    const node = flowNodes.find(n => n.id === id);
+    return node ? { x: node.x, y: node.y } : { x: 0, y: 0 };
   };
 
   return (
-    <div className="relative w-full h-64 flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 rounded-xl">
-      {/* Circuit board background */}
-      <div className="absolute inset-0 opacity-5">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <pattern id="circuit" patternUnits="userSpaceOnUse" width="20" height="20">
-            <path d="M10 0v10h10M0 10h10v10" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-purple-400" />
-          </pattern>
-          <rect width="100" height="100" fill="url(#circuit)" />
-        </svg>
+    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
+      {/* Grid de fundo */}
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="w-full h-full"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(16, 185, 129, 0.2) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(16, 185, 129, 0.2) 1px, transparent 1px)
+            `,
+            backgroundSize: '30px 30px',
+          }}
+        />
       </div>
 
-      {/* Main SVG canvas */}
-      <svg
-        className="relative z-10 w-72 h-32"
-        viewBox="0 0 260 100"
-      >
-        {/* Connection lines */}
-        {connections.map((conn, i) => {
-          const from = getNodePos(conn.from);
-          const to = getNodePos(conn.to);
-
-          return (
-            <g key={i}>
-              {/* Background line */}
-              <motion.path
-                d={`M${from.x},${from.y} L${to.x},${to.y}`}
-                stroke="rgba(139, 92, 246, 0.2)"
-                strokeWidth="3"
-                fill="none"
-                custom={i}
-                variants={lineVariants}
-                initial="hidden"
-                animate="visible"
-              />
-
-              {/* Animated line */}
-              <motion.path
-                d={`M${from.x},${from.y} L${to.x},${to.y}`}
-                stroke="url(#lineGradient)"
-                strokeWidth="3"
-                fill="none"
-                strokeLinecap="round"
-                custom={i}
-                variants={lineVariants}
-                initial="hidden"
-                animate="visible"
-              />
-
-              {/* Energy pulse */}
-              <motion.circle
-                r="4"
-                fill="#a855f7"
-                filter="url(#glow)"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0, 1, 0],
-                  offsetDistance: ['0%', '100%'],
-                }}
-                transition={{
-                  delay: 1 + (i * 0.2),
-                  duration: 0.8,
-                  repeat: Infinity,
-                  repeatDelay: 1
-                }}
-                style={{
-                  offsetPath: `path('M${from.x},${from.y} L${to.x},${to.y}')`,
-                }}
-              />
-            </g>
-          );
-        })}
-
-        {/* Gradient and filter definitions */}
+      {/* SVG para conexões */}
+      <svg className="absolute inset-0 w-full h-full">
         <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#06b6d4" />
+          <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
           </linearGradient>
 
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
-      </svg>
 
-      {/* Nodes overlay (positioned absolutely) */}
-      <div className="absolute inset-0 z-20">
-        {nodes.map((node, i) => {
-          const Icon = node.icon;
-          const isGear = node.icon === Cog;
+        {/* Linhas de conexão */}
+        {connections.map((conn, i) => {
+          const from = getNodePosition(conn.from);
+          const to = getNodePosition(conn.to);
+          const isActive = activeConnection >= i;
 
           return (
-            <motion.div
-              key={i}
-              className="absolute"
-              style={{
-                left: `calc(50% - 144px + ${node.x}px - 16px)`,
-                top: `calc(50% - 64px + ${node.y}px - 16px)`,
-              }}
-              custom={i}
-              variants={nodeVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <div className="relative">
-                {/* Glow */}
-                <motion.div
-                  className={`absolute inset-0 bg-gradient-to-r ${node.color} rounded-full blur-md opacity-50`}
+            <g key={i}>
+              {/* Linha base */}
+              <motion.path
+                d={`M ${from.x}% ${from.y}% L ${to.x}% ${to.y}%`}
+                stroke="rgba(100, 116, 139, 0.3)"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+              />
+
+              {/* Linha ativa */}
+              <motion.path
+                d={`M ${from.x}% ${from.y}% L ${to.x}% ${to.y}%`}
+                stroke="#10b981"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                filter="url(#glow)"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{
+                  pathLength: isActive ? 1 : 0,
+                  opacity: isActive ? 1 : 0,
+                }}
+                transition={{ duration: 0.3 }}
+              />
+
+              {/* Pulso de energia */}
+              {isActive && (
+                <motion.circle
+                  r="4"
+                  fill="#10b981"
+                  filter="url(#glow)"
+                  initial={{ opacity: 0 }}
                   animate={{
-                    scale: [1, 1.3, 1],
-                    opacity: [0.3, 0.6, 0.3],
+                    opacity: [0, 1, 0],
+                    cx: [`${from.x}%`, `${to.x}%`],
+                    cy: [`${from.y}%`, `${to.y}%`],
                   }}
                   transition={{
-                    delay: 0.5 + (i * 0.15),
-                    duration: 1.5,
-                    repeat: Infinity
-                  }}
-                />
-
-                {/* Node circle */}
-                <motion.div
-                  className={`relative w-8 h-8 bg-gradient-to-br ${node.color} rounded-full flex items-center justify-center shadow-lg`}
-                  animate={isGear ? { rotate: 360 } : {}}
-                  transition={isGear ? { duration: 4, repeat: Infinity, ease: 'linear' } : {}}
-                >
-                  <Icon className="w-4 h-4 text-white" />
-                </motion.div>
-
-                {/* Pulse ring */}
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-purple-400"
-                  animate={{
-                    scale: [1, 1.8, 1.8],
-                    opacity: [0.5, 0, 0],
-                  }}
-                  transition={{
-                    delay: 0.8 + (i * 0.2),
-                    duration: 1.2,
+                    duration: 1,
                     repeat: Infinity,
-                    repeatDelay: 0.8
+                    repeatDelay: 2,
+                    delay: i * 0.2,
                   }}
                 />
-              </div>
-            </motion.div>
+              )}
+            </g>
           );
         })}
-      </div>
+      </svg>
 
-      {/* Flow arrows */}
+      {/* Nós do fluxograma */}
+      {flowNodes.map((node, i) => {
+        const Icon = node.icon;
+        const isVisible = visibleNodes > i;
+        const isFinal = node.isFinal;
+
+        return (
+          <motion.div
+            key={node.id}
+            className="absolute"
+            style={{
+              left: `${node.x}%`,
+              top: `${node.y}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            initial={{ scale: 0, opacity: 0, y: -20 }}
+            animate={{
+              scale: isVisible ? 1 : 0,
+              opacity: isVisible ? 1 : 0,
+              y: isVisible ? 0 : -20,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 20,
+            }}
+          >
+            {/* Glow para nó final */}
+            {isFinal && showFinalGlow && (
+              <motion.div
+                className="absolute inset-0 bg-green-500 rounded-xl blur-xl"
+                initial={{ opacity: 0, scale: 1 }}
+                animate={{
+                  opacity: [0.3, 0.6, 0.3],
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            )}
+
+            {/* Caixa do nó */}
+            <motion.div
+              className={`relative px-3 py-2 bg-gradient-to-br ${node.color} rounded-xl shadow-lg flex flex-col items-center gap-1 ${
+                isFinal ? 'scale-110' : ''
+              }`}
+              animate={isVisible ? {
+                boxShadow: isFinal && showFinalGlow
+                  ? ['0 0 0 rgba(16, 185, 129, 0)', '0 0 20px rgba(16, 185, 129, 0.5)', '0 0 0 rgba(16, 185, 129, 0)']
+                  : undefined,
+              } : {}}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              {/* Efeito de preenchimento */}
+              <motion.div
+                className="absolute inset-0 bg-white/20 rounded-xl"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: isVisible ? 1 : 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+                style={{ originX: 0 }}
+              />
+
+              {/* Ícone */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isVisible ? 1 : 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Icon className="w-4 h-4 text-white" />
+              </motion.div>
+
+              {/* Label */}
+              <span className="text-[9px] text-white font-medium whitespace-nowrap">{node.label}</span>
+
+              {/* Badge para nó final */}
+              {isFinal && showFinalGlow && (
+                <motion.div
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.3 }}
+                >
+                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        );
+      })}
+
+      {/* Label inferior */}
       <motion.div
-        className="absolute left-8 top-1/2 transform -translate-y-1/2"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.5 }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-emerald-300/70 font-medium"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 3.5 }}
       >
-        <motion.div
-          animate={{ x: [0, 5, 0] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
-          <ArrowRight className="w-5 h-5 text-cyan-400" />
-        </motion.div>
+        Fluxo automatizado ativo
       </motion.div>
 
+      {/* Indicador de status */}
       <motion.div
-        className="absolute right-8 top-1/2 transform -translate-y-1/2"
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.5 }}
+        className="absolute top-4 right-4 flex items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
       >
         <motion.div
-          animate={{ x: [0, 5, 0] }}
+          className="w-2 h-2 bg-green-500 rounded-full"
+          animate={{ opacity: [1, 0.5, 1] }}
           transition={{ duration: 1, repeat: Infinity }}
-        >
-          <ArrowRight className="w-5 h-5 text-yellow-400" />
-        </motion.div>
-      </motion.div>
-
-      {/* Bottom label */}
-      <motion.div
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-sm text-purple-300/70 font-medium"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.8, duration: 0.4 }}
-      >
-        Automatizando processos...
+        />
+        <span className="text-[10px] text-green-400">Automação ativa</span>
       </motion.div>
     </div>
   );
