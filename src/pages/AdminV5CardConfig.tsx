@@ -13,8 +13,37 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
+
+// 🎨 Esquemas de cores disponíveis
+const COLOR_SCHEMES = [
+  { value: 'purple', label: 'Roxo', color: '#a855f7' },
+  { value: 'blue', label: 'Azul', color: '#3b82f6' },
+  { value: 'green', label: 'Verde', color: '#22c55e' },
+  { value: 'orange', label: 'Laranja', color: '#f97316' },
+  { value: 'pink', label: 'Rosa', color: '#ec4899' },
+  { value: 'cyan', label: 'Ciano', color: '#06b6d4' },
+  { value: 'gold', label: 'Dourado', color: '#eab308' },
+  { value: 'red', label: 'Vermelho', color: '#ef4444' },
+];
+
+// 🔣 Ícones disponíveis
+const AVAILABLE_ICONS = [
+  { value: 'book', label: 'Livro', Icon: Book },
+  { value: 'brain', label: 'Cérebro', Icon: Brain },
+  { value: 'sparkles', label: 'Brilhos', Icon: Sparkles },
+  { value: 'zap', label: 'Raio', Icon: Zap },
+  { value: 'star', label: 'Estrela', Icon: Star },
+  { value: 'rocket', label: 'Foguete', Icon: Rocket },
+  { value: 'target', label: 'Alvo', Icon: Target },
+  { value: 'lightbulb', label: 'Lâmpada', Icon: Lightbulb },
+  { value: 'trophy', label: 'Troféu', Icon: Trophy },
+  { value: 'heart', label: 'Coração', Icon: Heart },
+  { value: 'crown', label: 'Coroa', Icon: Crown },
+  { value: 'flame', label: 'Chama', Icon: Flame },
+];
 
 interface Section {
   id: string;
@@ -364,33 +393,14 @@ export default function AdminV5CardConfig() {
     }
 
     setIsSaving(true);
-    setGeneratingProgress("Gerando componentes dos card effects com IA...");
+    setGeneratingProgress("Preparando lição V5...");
 
     try {
-      // PASSO 1: Gerar componentes React via IA
-      console.log('🎨 [V5-CONFIG] Calling generate-card-effects edge function...');
-      
-      const { data: generatedData, error: generateError } = await supabase.functions.invoke(
-        'generate-card-effects',
-        {
-          body: { cards: experienceCards }
-        }
-      );
+      // ✨ NOVO: Não precisa mais de edge function!
+      // O DynamicExperienceCard recebe as props diretamente
+      console.log('🎨 [V5-CONFIG] Preparando experienceCards (sem IA)...');
 
-      if (generateError) {
-        console.error('❌ [V5-CONFIG] Error generating cards:', generateError);
-        throw new Error(generateError.message || 'Erro ao gerar card effects');
-      }
-
-      if (!generatedData.success) {
-        throw new Error(generatedData.error || 'Falha ao gerar componentes');
-      }
-
-      console.log('✅ [V5-CONFIG] Cards generated successfully:', generatedData.cards.length);
-      
-      setGeneratingProgress("Componentes gerados! Salvando lição no banco...");
-
-      // PASSO 2: Buscar próximo order_index disponível na trilha
+      // PASSO 1: Buscar próximo order_index disponível na trilha
       const { data: existingLessons, error: fetchError } = await supabase
         .from('lessons')
         .select('order_index')
@@ -402,13 +412,13 @@ export default function AdminV5CardConfig() {
         console.warn('⚠️ [V5-CONFIG] Erro ao buscar order_index:', fetchError);
       }
 
-      const nextOrderIndex = existingLessons && existingLessons.length > 0 
-        ? existingLessons[0].order_index + 1 
+      const nextOrderIndex = existingLessons && existingLessons.length > 0
+        ? existingLessons[0].order_index + 1
         : parsedLesson.orderIndex || 1;
 
       console.log(`📊 [V5-CONFIG] Próximo order_index disponível: ${nextOrderIndex}`);
 
-      // PASSO 3: Criar execução do PIPELINE (não inserir direto)
+      // PASSO 2: Criar execução do PIPELINE
       setGeneratingProgress("Criando execução do pipeline...");
 
       // 🔧 NORMALIZAÇÃO CRÍTICA: Converter campos ANTES de salvar no banco
@@ -417,14 +427,32 @@ export default function AdminV5CardConfig() {
         id: section.id || `section-${index + 1}`,
         visualContent: section.visualContent || section.markdown || section.content || '',
         ...(section.title && { title: section.title }),
-        ...(section.speechBubbleText || section.speechBubble 
-          ? { speechBubbleText: section.speechBubbleText || section.speechBubble } 
+        ...(section.speechBubbleText || section.speechBubble
+          ? { speechBubbleText: section.speechBubbleText || section.speechBubble }
           : {}),
         ...(section.showPlaygroundCall !== undefined && { showPlaygroundCall: section.showPlaygroundCall }),
         ...(section.playgroundConfig && { playgroundConfig: section.playgroundConfig })
       }));
 
       console.log('🔧 [V5-CONFIG] ✅ Seções normalizadas:', normalizedSections.length);
+
+      // ✨ NOVO: Converter para o formato que o GuidedLessonV5 espera
+      // Usa DynamicExperienceCard com props ao invés de componentCode
+      const formattedExperienceCards = experienceCards.map((card) => ({
+        type: card.cardType,
+        sectionIndex: card.sectionIndex,
+        anchorText: card.anchorText,
+        props: {
+          title: card.title,
+          subtitle: card.subtitle,
+          icon: card.icon || 'sparkles',
+          colorScheme: card.colorScheme || 'purple',
+          chapters: card.chapters || [],
+          effectDescription: card.effectDescription,
+        }
+      }));
+
+      console.log('✅ [V5-CONFIG] Experience cards formatados:', formattedExperienceCards.length);
 
       const pipelineInput = {
         title: parsedLesson.title,
@@ -435,20 +463,7 @@ export default function AdminV5CardConfig() {
         estimatedTime: parsedLesson.estimatedTimeMinutes || 5,
         sections: normalizedSections,
         exercises: parsedLesson.exercises || [],
-        experienceCards: generatedData.cards.map((card: any) => ({
-          sectionIndex: card.sectionIndex,
-          cardIndex: card.cardIndex,
-          cardType: card.cardType,
-          anchorText: card.anchorText,
-          title: card.title,
-          subtitle: card.subtitle,
-          icon: card.icon,
-          colorScheme: card.colorScheme,
-          effectDescription: card.effectDescription,
-          chapters: card.chapters,
-          componentCode: card.componentCode,
-          componentName: card.componentName
-        }))
+        experienceCards: formattedExperienceCards,
       };
 
       const { data, error } = await supabase
@@ -473,14 +488,14 @@ export default function AdminV5CardConfig() {
 
       toast({
         title: "✅ Pipeline iniciado!",
-        description: `Lição "${parsedLesson.title}" entrando no pipeline com ${generatedData.cards.length} card effects.`,
+        description: `Lição "${parsedLesson.title}" com ${experienceCards.length} Experience Cards criada!`,
       });
 
       console.log('🎉 [V5-CONFIG] Pipeline execution criada:', data);
 
       // Limpar auto-save após sucesso
       localStorage.removeItem('v5-card-config-autosave');
-      
+
       setLessonJson('');
       setParsedLesson(null);
       setSections([]);
@@ -494,7 +509,7 @@ export default function AdminV5CardConfig() {
     } catch (error: any) {
       console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
       setGeneratingProgress(null);
-      
+
       toast({
         title: "Erro ao criar lição",
         description: error.message || "Não foi possível criar a lição V5.",
@@ -733,22 +748,51 @@ export default function AdminV5CardConfig() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Ícone</Label>
-                              <Input
-                                placeholder='Ex: 🤖 ou "Bot"'
-                                value={card1.icon}
-                                onChange={(e) => setCard1({ ...card1, icon: e.target.value })}
-                              />
+                          {/* Seletor de Ícone Visual */}
+                          <div className="space-y-2">
+                            <Label>Ícone</Label>
+                            <div className="grid grid-cols-6 gap-2">
+                              {AVAILABLE_ICONS.map(({ value, label, Icon }) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => setCard1({ ...card1, icon: value })}
+                                  className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
+                                    card1.icon === value
+                                      ? 'border-primary bg-primary/10 shadow-md'
+                                      : 'border-muted hover:border-primary/50'
+                                  }`}
+                                  title={label}
+                                >
+                                  <Icon className="w-5 h-5 mx-auto" />
+                                </button>
+                              ))}
                             </div>
-                            <div className="space-y-2">
-                              <Label>Cor de Destaque</Label>
-                              <Input
-                                placeholder="Ex: #837BFF ou purple"
-                                value={card1.colorScheme}
-                                onChange={(e) => setCard1({ ...card1, colorScheme: e.target.value })}
-                              />
+                          </div>
+
+                          {/* Seletor de Cor Visual */}
+                          <div className="space-y-2">
+                            <Label>Cor de Destaque</Label>
+                            <div className="grid grid-cols-4 gap-2">
+                              {COLOR_SCHEMES.map(({ value, label, color }) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => setCard1({ ...card1, colorScheme: value })}
+                                  className={`p-2 rounded-lg border-2 transition-all hover:scale-105 flex items-center gap-2 ${
+                                    card1.colorScheme === value
+                                      ? 'border-primary shadow-md'
+                                      : 'border-muted hover:border-primary/50'
+                                  }`}
+                                  title={label}
+                                >
+                                  <div
+                                    className="w-4 h-4 rounded-full"
+                                    style={{ backgroundColor: color }}
+                                  />
+                                  <span className="text-xs">{label}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
 
@@ -821,22 +865,51 @@ export default function AdminV5CardConfig() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Ícone</Label>
-                                <Input
-                                  placeholder='Ex: 💡 ou "Lightbulb"'
-                                  value={card2.icon}
-                                  onChange={(e) => setCard2({ ...card2, icon: e.target.value })}
-                                />
+                            {/* Seletor de Ícone Visual - Card 2 */}
+                            <div className="space-y-2">
+                              <Label>Ícone</Label>
+                              <div className="grid grid-cols-6 gap-2">
+                                {AVAILABLE_ICONS.map(({ value, label, Icon }) => (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setCard2({ ...card2, icon: value })}
+                                    className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
+                                      card2.icon === value
+                                        ? 'border-primary bg-primary/10 shadow-md'
+                                        : 'border-muted hover:border-primary/50'
+                                    }`}
+                                    title={label}
+                                  >
+                                    <Icon className="w-5 h-5 mx-auto" />
+                                  </button>
+                                ))}
                               </div>
-                              <div className="space-y-2">
-                                <Label>Cor de Destaque</Label>
-                                <Input
-                                  placeholder="Ex: #FF6B9D ou pink"
-                                  value={card2.colorScheme}
-                                  onChange={(e) => setCard2({ ...card2, colorScheme: e.target.value })}
-                                />
+                            </div>
+
+                            {/* Seletor de Cor Visual - Card 2 */}
+                            <div className="space-y-2">
+                              <Label>Cor de Destaque</Label>
+                              <div className="grid grid-cols-4 gap-2">
+                                {COLOR_SCHEMES.map(({ value, label, color }) => (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setCard2({ ...card2, colorScheme: value })}
+                                    className={`p-2 rounded-lg border-2 transition-all hover:scale-105 flex items-center gap-2 ${
+                                      card2.colorScheme === value
+                                        ? 'border-primary shadow-md'
+                                        : 'border-muted hover:border-primary/50'
+                                    }`}
+                                    title={label}
+                                  >
+                                    <div
+                                      className="w-4 h-4 rounded-full"
+                                      style={{ backgroundColor: color }}
+                                    />
+                                    <span className="text-xs">{label}</span>
+                                  </button>
+                                ))}
                               </div>
                             </div>
 
@@ -963,7 +1036,7 @@ export default function AdminV5CardConfig() {
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                       className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
                     />
-                    Gerando Cards...
+                    Salvando...
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -972,7 +1045,7 @@ export default function AdminV5CardConfig() {
                       className="h-full bg-gradient-to-r from-primary to-accent"
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
-                      transition={{ duration: 3, ease: "easeInOut" }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -1012,35 +1085,36 @@ export default function AdminV5CardConfig() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 py-6">
+            <div className="space-y-8 py-6">
               {previewCards.map((card, idx) => (
-                <div key={idx} className="space-y-3">
-                  <div className="flex items-center gap-2 mb-4">
+                <div key={idx} className="space-y-4">
+                  {/* Header com badges */}
+                  <div className="flex items-center gap-2">
                     <Badge variant="outline">Seção {card.sectionIndex}</Badge>
                     <Badge variant="secondary">Card {card.cardIndex}</Badge>
                     <Badge>{card.cardType}</Badge>
                   </div>
 
-                  <div className="p-4 bg-muted/30 rounded-lg space-y-2 text-sm">
+                  {/* Info resumida */}
+                  <div className="p-3 bg-muted/30 rounded-lg text-xs space-y-1">
                     <p><strong>AnchorText:</strong> "{card.anchorText}"</p>
-                    <p><strong>Título:</strong> {card.title}</p>
-                    <p><strong>Subtítulo:</strong> {card.subtitle || '(vazio)'}</p>
-                    <p><strong>Ícone:</strong> {card.icon || '(vazio)'}</p>
-                    <p><strong>Cor:</strong> {card.colorScheme || '(vazio)'}</p>
-                    <p><strong>Efeito:</strong> {card.effectDescription || '(vazio)'}</p>
-                    <p><strong>Capítulos:</strong> {card.chapters?.length || 0} página(s)</p>
+                    {card.effectDescription && <p><strong>Efeito:</strong> {card.effectDescription}</p>}
                   </div>
 
-                  {/* Placeholder para preview visual */}
-                  <div className="border-2 border-dashed border-primary/30 rounded-xl p-6 bg-gradient-to-br from-background to-muted/20">
-                    <p className="text-xs text-muted-foreground mb-4 text-center">
-                      ℹ️ O componente visual será criado pela IA baseado nessas especificações
+                  {/* 🎨 PREVIEW REAL com DynamicExperienceCard */}
+                  <div className="rounded-xl overflow-hidden bg-slate-900 p-6">
+                    <p className="text-xs text-slate-400 mb-4 text-center">
+                      ✨ Preview em tempo real - exatamente como aparecerá na aula
                     </p>
-                    <div className="text-center text-muted-foreground text-sm space-y-2">
-                      <p className="font-semibold text-foreground">{card.title}</p>
-                      <p className="text-xs">{card.subtitle}</p>
-                      {card.icon && <p className="text-4xl">{card.icon}</p>}
-                    </div>
+                    <DynamicExperienceCard
+                      type={card.cardType}
+                      title={card.title}
+                      subtitle={card.subtitle}
+                      icon={card.icon || 'sparkles'}
+                      colorScheme={card.colorScheme || 'purple'}
+                      chapters={card.chapters || []}
+                      effectDescription={card.effectDescription}
+                    />
                   </div>
                 </div>
               ))}
