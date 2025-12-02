@@ -34,7 +34,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
       transition: {
         delay: 0.3 + (i * 0.35),
         duration: 0.4,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200
       }
     })
@@ -61,7 +61,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
       transition: {
         delay: 0.4,
         duration: 1.8,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     }
   };
@@ -75,7 +75,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
       transition: {
         delay: 2.2,
         duration: 0.3,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200
       }
     }

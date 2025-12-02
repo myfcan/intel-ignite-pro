@@ -23,7 +23,7 @@ export const CardEffectAppBuilder: React.FC = () => {
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: { duration: 0.4, ease: 'easeOut' }
+      transition: { duration: 0.4, ease: 'easeOut' as const }
     }
   };
 
@@ -36,7 +36,7 @@ export const CardEffectAppBuilder: React.FC = () => {
       transition: {
         delay: 0.5 + (i * 0.1),
         duration: 0.3,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     })
   };
@@ -55,7 +55,7 @@ export const CardEffectAppBuilder: React.FC = () => {
       transition: {
         repeat: Infinity,
         duration: 0.8,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     }
   };
@@ -87,7 +87,7 @@ export const CardEffectAppBuilder: React.FC = () => {
       transition: {
         delay: 1.8,
         duration: 0.4,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 200
       }
     }
@@ -102,7 +102,7 @@ export const CardEffectAppBuilder: React.FC = () => {
       transition: {
         delay: 1.9,
         duration: 0.6,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     }
   };

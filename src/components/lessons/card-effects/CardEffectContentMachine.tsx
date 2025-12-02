@@ -44,7 +44,7 @@ export const CardEffectContentMachine: React.FC = () => {
       transition: {
         delay: 0.5 + (i * 0.5),
         duration: 2.5,
-        ease: 'linear',
+        ease: 'linear' as const,
         repeat: Infinity,
         repeatDelay: contentTypes.length * 0.5 - 0.5
       }
@@ -64,7 +64,7 @@ export const CardEffectContentMachine: React.FC = () => {
       transition: {
         duration: 3,
         repeat: Infinity,
-        ease: 'linear'
+        ease: 'linear' as const
       }
     }
   };

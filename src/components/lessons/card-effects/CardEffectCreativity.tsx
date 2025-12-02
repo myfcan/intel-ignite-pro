@@ -35,7 +35,7 @@ export const CardEffectCreativity: React.FC = () => {
       y: 0,
       transition: {
         duration: 0.5,
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 150
       }
     }
@@ -50,7 +50,7 @@ export const CardEffectCreativity: React.FC = () => {
       transition: {
         delay: 0.4,
         duration: 0.6,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     },
     pulse: {
@@ -74,7 +74,7 @@ export const CardEffectCreativity: React.FC = () => {
       transition: {
         delay: 0.8 + (i * 0.15),
         duration: 0.5,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     }),
     float: (i: number) => ({
@@ -83,7 +83,7 @@ export const CardEffectCreativity: React.FC = () => {
         delay: 1.3 + (i * 0.1),
         duration: 2,
         repeat: Infinity,
-        ease: 'easeInOut'
+        ease: 'easeInOut' as const
       }
     })
   };
@@ -97,7 +97,7 @@ export const CardEffectCreativity: React.FC = () => {
       transition: {
         delay: 0.5 + (i * 0.08),
         duration: 0.4,
-        ease: 'easeOut'
+        ease: 'easeOut' as const
       }
     })
   };
@@ -112,7 +112,7 @@ export const CardEffectCreativity: React.FC = () => {
       transition: {
         delay: 1.5 + (i * 0.1),
         duration: 0.4,
-        type: 'spring'
+        type: 'spring' as const
       }
     }),
     twinkle: {
