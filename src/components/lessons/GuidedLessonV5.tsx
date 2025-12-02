@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { awardPoints, updateStreak, checkAndAwardAchievement, POINTS } from '@/lib/gamification';
 import { updateMissionProgress } from '@/lib/updateMissionProgress';
 import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
+
+/**
+ * 🎬 SISTEMA DE SEGMENTOS V5
+ *
+ * Cada seção pode ter múltiplos segmentos:
+ * - type: 'text' → bloco de texto da seção
+ * - type: 'card' → experience card cinematográfico
+ *
+ * O scroll é controlado pelo segmento ativo, não apenas pela seção.
+ * Isso permite que os cards apareçam no momento certo durante a narração.
+ */
+type SegmentType = 'text' | 'card';
+
+interface Segment {
+  id: string;
+  type: SegmentType;
+  sectionIndex: number;
+  /** Timestamp em segundos (relativo ao áudio da seção para V2) */
+  at: number;
+  /** Para cards: índice do card dentro da seção */
+  cardIndex?: number;
+  /** Para cards: configuração do card */
+  cardConfig?: any;
+}
 
 /**
  * 🚀 GUIDED LESSON V5 - EXPERIENCE CARDS ANIMADOS
@@ -69,6 +93,91 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   const hasScrolledRef = useRef<{ [key: number]: boolean }>({});
   const lastSectionRef = useRef<number>(0);
   const prevSectionRef = useRef<number>(-1);
+
+  // 🎬 V5 SEGMENTOS: Estado do segmento ativo
+  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
+  const lastSegmentIdRef = useRef<string | null>(null);
+  const segmentRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  /**
+   * 🎬 Construir lista de segmentos para a seção atual
+   * Combina o texto da seção com os experience cards, ordenados por timestamp
+   */
+  const buildSegmentsForSection = (sectionIndex: number): Segment[] => {
+    const section = lessonData.sections[sectionIndex] as any;
+    if (!section) return [];
+
+    const segments: Segment[] = [];
+
+    // Segmento de texto (sempre começa em 0)
+    segments.push({
+      id: `section-${sectionIndex}-text`,
+      type: 'text',
+      sectionIndex,
+      at: 0,
+    });
+
+    // Buscar cards da seção
+    let cards: any[] = [];
+
+    // Prioridade 1: Cards dentro da seção (formato pipeline)
+    if (section.experienceCards && section.experienceCards.length > 0) {
+      cards = section.experienceCards;
+    }
+    // Prioridade 2: Cards no root level (formato AdminV5CardConfig)
+    else if (lessonData.experienceCards) {
+      cards = lessonData.experienceCards.filter(
+        (card: any) => card.sectionIndex === sectionIndex + 1 // AdminV5CardConfig usa 1-based
+      );
+    }
+
+    // Adicionar segmentos para cada card
+    cards.forEach((cardConfig: any, cardIdx: number) => {
+      // O timestamp do card pode vir de diferentes campos
+      const cardTimestamp = cardConfig.at || cardConfig.timestamp || cardConfig.showAtTime || (5 + cardIdx * 15);
+
+      segments.push({
+        id: `section-${sectionIndex}-card-${cardIdx}`,
+        type: 'card',
+        sectionIndex,
+        at: cardTimestamp,
+        cardIndex: cardIdx,
+        cardConfig,
+      });
+    });
+
+    // Ordenar por timestamp
+    segments.sort((a, b) => a.at - b.at);
+
+    console.log(`🎬 [V5-SEGMENTS] Seção ${sectionIndex}: ${segments.length} segmentos`,
+      segments.map(s => `${s.type}@${s.at}s`));
+
+    return segments;
+  };
+
+  // Memoizar segmentos da seção atual
+  const currentSectionSegments = useMemo(() => {
+    return buildSegmentsForSection(currentSection);
+  }, [currentSection, lessonData.sections, lessonData.experienceCards]);
+
+  /**
+   * 🎬 Calcular segmento ativo baseado no tempo atual do áudio
+   */
+  const getActiveSegment = (time: number): Segment | null => {
+    if (currentSectionSegments.length === 0) return null;
+
+    // Encontrar o último segmento cujo timestamp é <= tempo atual
+    let activeSegment = currentSectionSegments[0];
+    for (const segment of currentSectionSegments) {
+      if (segment.at <= time) {
+        activeSegment = segment;
+      } else {
+        break; // Como está ordenado, podemos parar aqui
+      }
+    }
+
+    return activeSegment;
+  };
   
   const [playgroundTriggered, setPlaygroundTriggered] = useState(false);
   const [playgroundCompleted, setPlaygroundCompleted] = useState(false);
@@ -615,35 +724,77 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   useEffect(() => {
     const updateTime = performance.now();
     const audioTime = audioRef.current?.currentTime || 0;
-    
+
     console.log(`[V5-STATE-UPDATE] Section changed to: ${currentSection} | Audio time: ${audioTime.toFixed(2)}s | Update timestamp: ${updateTime.toFixed(2)}`);
-    
+
+    // Resetar segmento ativo quando mudar de seção
+    setActiveSegmentId(null);
+    lastSegmentIdRef.current = null;
+
     const section = lessonData.sections[currentSection];
     if (isSectionRenderable(section)) {
-      const scrollStart = performance.now();
-      
+      // O scroll agora é controlado pelo sistema de segmentos
+      // Apenas fazer scroll inicial para a seção se não houver segmentos
+      if (currentSectionSegments.length === 0) {
+        const scrollStart = performance.now();
+
+        setTimeout(() => {
+          const sectionElement = document.getElementById(`section-${currentSection}`);
+          if (sectionElement) {
+            const headerHeight = 120;
+            const elementTop = sectionElement.getBoundingClientRect().top;
+            const offsetTop = elementTop + window.pageYOffset;
+            const targetPosition = offsetTop - headerHeight;
+
+            window.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth'
+            });
+
+            const scrollEnd = performance.now();
+            const latency = scrollEnd - scrollStart;
+            console.log(`📜 [V5-SCROLL] Animação suave completada em ${latency.toFixed(2)}ms para seção ${currentSection}`);
+          }
+        }, 50);
+      }
+    }
+  }, [currentSection]);
+
+  // 🎬 V5 SEGMENTOS: Sincronizar segmento ativo com tempo do áudio
+  useEffect(() => {
+    if (!isV2 || currentSectionSegments.length === 0) return;
+
+    const activeSegment = getActiveSegment(currentTime);
+    if (!activeSegment) return;
+
+    // Só fazer scroll se o segmento mudou
+    if (activeSegment.id !== lastSegmentIdRef.current) {
+      console.log(`🎬 [V5-SEGMENT-CHANGE] ${lastSegmentIdRef.current} → ${activeSegment.id} (at ${currentTime.toFixed(1)}s)`);
+
+      lastSegmentIdRef.current = activeSegment.id;
+      setActiveSegmentId(activeSegment.id);
+
+      // Fazer scroll para o elemento do segmento
       setTimeout(() => {
-        const sectionElement = document.getElementById(`section-${currentSection}`);
-        if (sectionElement) {
+        const targetElement = segmentRefs.current[activeSegment.id];
+        if (targetElement) {
           const headerHeight = 120;
-          const elementTop = sectionElement.getBoundingClientRect().top;
+          const elementTop = targetElement.getBoundingClientRect().top;
           const offsetTop = elementTop + window.pageYOffset;
           const targetPosition = offsetTop - headerHeight;
-          
+
           window.scrollTo({
             top: targetPosition,
             behavior: 'smooth'
           });
-          
-          const scrollEnd = performance.now();
-          const latency = scrollEnd - scrollStart;
-          console.log(`📜 [V5-SCROLL] Animação suave completada em ${latency.toFixed(2)}ms para seção ${currentSection}`);
+
+          console.log(`📜 [V5-SEGMENT-SCROLL] Scroll para ${activeSegment.type === 'card' ? 'CARD' : 'TEXT'} ${activeSegment.id}`);
         } else {
-          console.warn(`[V5-SCROLL] Element #section-${currentSection} not found`);
+          console.warn(`📜 [V5-SEGMENT-SCROLL] Elemento não encontrado: ${activeSegment.id}`);
         }
       }, 50);
     }
-  }, [currentSection]);
+  }, [currentTime, currentSectionSegments]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -1389,20 +1540,31 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             <main className={`space-y-4 sm:space-y-6 min-w-0 transition-opacity duration-500`}>
               {lessonData.sections
                 .map((section, originalIndex) => ({ section, originalIndex }))
-                .map(({ section, originalIndex }) => (
+                .map(({ section, originalIndex }) => {
+                  // 🎬 V5 SEGMENTOS: Construir segmentos para esta seção
+                  const sectionSegments = buildSegmentsForSection(originalIndex);
+                  const textSegmentId = `section-${originalIndex}-text`;
+                  const isTextActive = currentSection === originalIndex && activeSegmentId === textSegmentId;
+                  const isCardActive = (cardIdx: number) =>
+                    currentSection === originalIndex && activeSegmentId === `section-${originalIndex}-card-${cardIdx}`;
+
+                  // Buscar cards da seção
+                  const sectionCards = sectionSegments.filter(s => s.type === 'card');
+
+                  return (
                   <React.Fragment key={section.id}>
-                    {/* 🎨 V5: Renderizar Experience Card ANTES da seção */}
-                    {renderExperienceCard(lessonData.id, originalIndex)}
-                    
-                    {/* Renderizar conteúdo normal da seção */}
+                    {/* 🎬 V5 SEGMENTOS: Renderizar texto da seção como segmento */}
                     <div
+                      ref={(el) => { segmentRefs.current[textSegmentId] = el; }}
                       id={`section-${originalIndex}`}
                       data-testid="lesson-section"
                       data-section-index={originalIndex}
+                      data-segment-id={textSegmentId}
                       data-is-active={currentSection === originalIndex}
+                      data-segment-active={isTextActive}
                       data-section-updated={currentSection === originalIndex && sectionJustChanged ? 'true' : 'false'}
                       className={`transition-all duration-1000 ease-out ${
-                        isAudioEnabled 
+                        isAudioEnabled
                           ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0 scale-100' : 'opacity-30 translate-y-8 scale-95')
                           : 'opacity-100 translate-y-0 scale-100'
                       } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[fade-in_0.6s_ease-out]' : ''}`}
@@ -1411,11 +1573,13 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                       }}
                     >
                       <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-700 ease-out relative overflow-hidden ${
-                        currentSection === originalIndex
+                        isTextActive
                           ? 'border-cyan-300/60 ring-2 ring-cyan-400/30 shadow-2xl shadow-cyan-400/20 scale-[1.01]'
+                          : currentSection === originalIndex
+                          ? 'border-cyan-200/40 shadow-lg'
                           : 'border-slate-200/50 hover:border-slate-300/50 hover:shadow-2xl'
                       } ${currentSection === originalIndex && sectionJustChanged ? 'animate-[scale-in_0.5s_ease-out]' : ''}`}>
-                        {currentSection === originalIndex && sectionJustChanged && (
+                        {isTextActive && sectionJustChanged && (
                           <>
                             <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-transparent animate-[slide-in-right_1s_ease-out]" />
                             <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/5 to-purple-300/5 animate-pulse" />
@@ -1426,13 +1590,13 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                             currentSection === originalIndex
                               ? 'text-white'
                               : 'bg-slate-100 text-slate-500'
-                          } ${currentSection === originalIndex && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}
-                          style={currentSection === originalIndex 
+                          } ${isTextActive && sectionJustChanged ? 'duration-300 scale-125 shadow-2xl rotate-[360deg]' : 'duration-500 scale-100 rotate-0'}`}
+                          style={currentSection === originalIndex
                             ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)', boxShadow: '0 10px 30px rgba(34, 211, 238, 0.6)'}
                             : undefined}>
                             {originalIndex + 1}
                           </div>
-                          {currentSection === originalIndex && (
+                          {isTextActive && (
                             <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
                               sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
                             }`}>
@@ -1457,14 +1621,75 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
   [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
-    currentSection === originalIndex && sectionJustChanged ? 'animate-scale-in' : ''
+    isTextActive && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
                           <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
                         </div>
                       </div>
                     </div>
+
+                    {/* 🎬 V5 SEGMENTOS: Renderizar Experience Cards como segmentos separados */}
+                    {sectionCards.map((cardSegment, cardIdx) => {
+                      const cardId = cardSegment.id;
+                      const cardConfig = cardSegment.cardConfig;
+                      const cardType = cardConfig?.type || cardConfig?.effectType || '';
+                      const isThisCardActive = isCardActive(cardIdx);
+
+                      return (
+                        <div
+                          key={cardId}
+                          ref={(el) => { segmentRefs.current[cardId] = el; }}
+                          data-segment-id={cardId}
+                          data-segment-type="card"
+                          data-segment-active={isThisCardActive}
+                          className={`transition-all duration-700 ease-out ${
+                            isAudioEnabled
+                              ? (currentSection >= originalIndex ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-8')
+                              : 'opacity-100 translate-y-0'
+                          } ${isThisCardActive ? 'scale-[1.02] z-10' : 'scale-100'}`}
+                        >
+                          <div className={`relative rounded-2xl overflow-hidden transition-all duration-500 ${
+                            isThisCardActive
+                              ? 'ring-4 ring-purple-400/50 shadow-2xl shadow-purple-500/30'
+                              : 'shadow-lg hover:shadow-xl'
+                          }`}>
+                            {/* Indicador visual quando o card está ativo */}
+                            {isThisCardActive && (
+                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white text-xs font-bold shadow-lg animate-bounce">
+                                🎬 Efeito em foco
+                              </div>
+                            )}
+
+                            {/* Renderizar o card effect */}
+                            {isValidCardEffectType(cardType) ? (
+                              <DynamicCardEffect type={cardType} />
+                            ) : cardType === 'ia-book' ? (
+                              <IaBookExperienceCard />
+                            ) : cardConfig?.props ? (
+                              <DynamicExperienceCard
+                                type={cardType}
+                                title={cardConfig.props.title || 'Experience Card'}
+                                subtitle={cardConfig.props.subtitle}
+                                icon={cardConfig.props.icon || 'sparkles'}
+                                colorScheme={cardConfig.props.colorScheme || 'purple'}
+                                chapters={cardConfig.props.chapters || []}
+                                effectDescription={cardConfig.props.effectDescription}
+                              />
+                            ) : (
+                              <DynamicExperienceCard
+                                type={cardType}
+                                title={cardType}
+                                icon="sparkles"
+                                colorScheme="purple"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </React.Fragment>
-                ))}
+                );
+                })}
             </main>
             
           </div>
