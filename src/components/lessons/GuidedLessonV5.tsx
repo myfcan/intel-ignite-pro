@@ -17,6 +17,7 @@ import { PointsNotification } from '@/components/gamification/PointsNotification
 import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { LivAvatar } from '@/components/LivAvatar';
 import { IaBookExperienceCard } from './IaBookExperienceCard';
+import { DynamicExperienceCard } from './DynamicExperienceCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -94,17 +95,22 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   
   /**
    * 🎨 HELPER: Renderizar Experience Cards
-   * 
+   *
    * Esta função determina se deve renderizar um experience card
    * em uma seção específica baseando-se na configuração do JSON.
-   * 
+   *
    * LÓGICA:
    * 1. Tenta buscar configuração do lessonData.experienceCards
-   * 2. Se não houver, usa regra hardcoded de fallback
-   * 
-   * EXPANSÃO FUTURA:
-   * - Adicionar mais cards (IaImageGeneratorCard, IaChatCard, etc.)
-   * - Suportar props customizadas por card
+   * 2. Se existir e tiver props, usa DynamicExperienceCard (novo componente com animações INCRÍVEIS)
+   * 3. Se não tiver props, usa componentes legados (IaBookExperienceCard, etc.)
+   * 4. Fallback para regras hardcoded (compatibilidade)
+   *
+   * ✨ NOVO: DynamicExperienceCard com Framer Motion!
+   * - Animações de entrada com blur + scale + spring
+   * - Ícone pulsante com glow
+   * - Partículas flutuantes
+   * - Gradientes animados
+   * - Capítulos com stagger
    */
   const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
     // 🔍 PRIORIDADE 1: Buscar no lessonData.experienceCards
@@ -112,37 +118,67 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       const cardConfig = lessonData.experienceCards.find(
         (card) => card.sectionIndex === sectionIndex
       );
-      
+
       if (cardConfig) {
         console.log('🎨 [V5] Renderizando card do JSON:', cardConfig);
-        
+
+        // ✨ NOVO: Se tiver props customizadas, usar DynamicExperienceCard
+        if (cardConfig.props) {
+          const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
+
+          return (
+            <div key={`experience-card-${sectionIndex}`} className="my-6">
+              <DynamicExperienceCard
+                type={cardConfig.type}
+                title={title || 'Experience Card'}
+                subtitle={subtitle}
+                icon={icon || 'sparkles'}
+                colorScheme={colorScheme || 'purple'}
+                chapters={chapters || []}
+                effectDescription={effectDescription}
+              />
+            </div>
+          );
+        }
+
+        // Fallback para componentes legados sem props
         switch (cardConfig.type) {
           case 'ia-book':
             return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
-          
+
           case 'ia-image-generator':
             // TODO: Implementar IaImageGeneratorCard
             console.log('⚠️ [V5] IaImageGeneratorCard ainda não implementado');
             return null;
-          
+
           case 'ia-chat-simulator':
             // TODO: Implementar IaChatSimulatorCard
             console.log('⚠️ [V5] IaChatSimulatorCard ainda não implementado');
             return null;
-          
+
           default:
-            console.warn('⚠️ [V5] Tipo de card desconhecido:', cardConfig.type);
-            return null;
+            // Para tipos desconhecidos, tentar usar DynamicExperienceCard genérico
+            console.log('🎨 [V5] Usando DynamicExperienceCard para tipo:', cardConfig.type);
+            return (
+              <div key={`experience-card-${sectionIndex}`} className="my-6">
+                <DynamicExperienceCard
+                  type={cardConfig.type}
+                  title={cardConfig.type}
+                  icon="sparkles"
+                  colorScheme="purple"
+                />
+              </div>
+            );
         }
       }
     }
-    
+
     // 🔮 PRIORIDADE 2: Fallback para regras hardcoded (compatibilidade)
     if (lessonId === 'fundamentos-01' && sectionIndex === 3) {
       console.log('🎨 [V5] Renderizando IaBookExperienceCard (fallback hardcoded)');
       return <IaBookExperienceCard key={`experience-card-${sectionIndex}`} />;
     }
-    
+
     return null;
   };
   

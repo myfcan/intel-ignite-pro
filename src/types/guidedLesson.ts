@@ -176,6 +176,24 @@ export interface V3LessonProps {
   trailId?: string;
 }
 
+// 🎨 V5: Props para DynamicExperienceCard
+export interface ExperienceCardProps {
+  title: string;
+  subtitle?: string;
+  icon?: string; // Nome do ícone Lucide (book, brain, sparkles, zap, star, rocket, etc.)
+  colorScheme?: 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'gold' | 'red';
+  chapters?: string[]; // Lista de capítulos/tópicos para exibir com stagger
+  effectDescription?: string; // Descrição do efeito visual
+}
+
+// 🎨 V5: Configuração de um Experience Card
+export interface ExperienceCardConfig {
+  type: string; // Tipo do card (ia-book, ia-image-generator, custom, etc.)
+  sectionIndex: number; // Índice da seção onde aparece
+  anchorText?: string; // Texto âncora para timing (opcional)
+  props?: ExperienceCardProps; // Props para DynamicExperienceCard
+}
+
 export interface GuidedLessonData {
   id: string;
   title: string;
@@ -187,7 +205,7 @@ export interface GuidedLessonData {
   finalPlaygroundConfig?: FinalPlaygroundConfig | PlaygroundConfig; // V1/V2: FinalPlaygroundConfig (customizado) | V3: PlaygroundConfig (genérico)
   contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
   schemaVersion?: number; // 🆕 Para FASE 4 - controlar versão da estrutura
-  experienceCards?: Array<{ type: string; sectionIndex: number; props?: Record<string, any> }>; // 🆕 V5: Experience cards configurados
+  experienceCards?: ExperienceCardConfig[]; // 🆕 V5: Experience cards configurados com animações INCRÍVEIS
 }
 
 export interface GuidedLessonProps {
