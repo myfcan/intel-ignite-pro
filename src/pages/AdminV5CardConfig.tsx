@@ -16,6 +16,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
+import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, isValidCardEffectType } from '@/components/lessons/card-effects';
+
+// 🎬 Tipos de Card Effects Cinematográficos
+const CINEMATOGRAPHIC_CARD_TYPES = CARD_EFFECT_TYPES.map(type => ({
+  value: type,
+  label: CARD_EFFECT_LABELS[type] || type,
+  isCinematic: true
+}));
+
+// 📝 Tipos de Card com texto (legado)
+const TEXT_CARD_TYPES = [
+  { value: 'ia-book', label: 'Livro I.A.', isCinematic: false },
+  { value: 'ia-chat', label: 'Chat I.A.', isCinematic: false },
+  { value: 'comparison', label: 'Comparação', isCinematic: false },
+  { value: 'quote', label: 'Citação', isCinematic: false },
+];
 
 // 🎨 Esquemas de cores disponíveis
 const COLOR_SCHEMES = [
@@ -708,13 +724,46 @@ export default function AdminV5CardConfig() {
                           </h4>
                           
                           <div className="space-y-2">
-                            <Label>Tipo de Card *</Label>
-                            <Input 
-                              placeholder='Ex: "ia-digital-employee", "ia-image-gen"'
+                            <Label>Tipo de Card Effect *</Label>
+                            <Select
                               value={card1.cardType}
-                              onChange={(e) => setCard1({ ...card1, cardType: e.target.value })}
-                            />
-                            <p className="text-xs text-muted-foreground">Identificador técnico do card effect</p>
+                              onValueChange={(value) => setCard1({ ...card1, cardType: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Escolha o tipo de animação" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                  🎬 Animações Cinematográficas
+                                </div>
+                                {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                  <SelectItem key={value} value={value}>
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-purple-400">▸</span>
+                                      {label}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                                <Separator className="my-2" />
+                                <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                  📝 Cards de Texto (Legado)
+                                </div>
+                                {TEXT_CARD_TYPES.map(({ value, label }) => (
+                                  <SelectItem key={value} value={value}>
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-blue-400">▹</span>
+                                      {label}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              {isValidCardEffectType(card1.cardType || '')
+                                ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
+                                : 'Escolha o tipo de card effect para esta seção'
+                              }
+                            </p>
                           </div>
 
                           <div className="space-y-2">
@@ -829,12 +878,40 @@ export default function AdminV5CardConfig() {
                             </h4>
                             
                             <div className="space-y-2">
-                              <Label>Tipo de Card *</Label>
-                              <Input 
-                                placeholder='Ex: "ia-digital-employee", "ia-chat-sim"'
+                              <Label>Tipo de Card Effect *</Label>
+                              <Select
                                 value={card2.cardType}
-                                onChange={(e) => setCard2({ ...card2, cardType: e.target.value })}
-                              />
+                                onValueChange={(value) => setCard2({ ...card2, cardType: value })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Escolha o tipo de animação" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                    🎬 Animações Cinematográficas
+                                  </div>
+                                  {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                    <SelectItem key={value} value={value}>
+                                      <span className="flex items-center gap-2">
+                                        <span className="text-purple-400">▸</span>
+                                        {label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                  <Separator className="my-2" />
+                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                    📝 Cards de Texto (Legado)
+                                  </div>
+                                  {TEXT_CARD_TYPES.map(({ value, label }) => (
+                                    <SelectItem key={value} value={value}>
+                                      <span className="flex items-center gap-2">
+                                        <span className="text-blue-400">▹</span>
+                                        {label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -1101,20 +1178,27 @@ export default function AdminV5CardConfig() {
                     {card.effectDescription && <p><strong>Efeito:</strong> {card.effectDescription}</p>}
                   </div>
 
-                  {/* 🎨 PREVIEW REAL com DynamicExperienceCard */}
-                  <div className="rounded-xl overflow-hidden bg-slate-900 p-6">
-                    <p className="text-xs text-slate-400 mb-4 text-center">
-                      ✨ Preview em tempo real - exatamente como aparecerá na aula
+                  {/* 🎬 PREVIEW: Cinematográfico ou Texto */}
+                  <div className="rounded-xl overflow-hidden bg-slate-900 p-4">
+                    <p className="text-xs text-slate-400 mb-3 text-center">
+                      {isValidCardEffectType(card.cardType)
+                        ? '🎬 Preview Cinematográfico - animação em tempo real'
+                        : '✨ Preview - exatamente como aparecerá na aula'
+                      }
                     </p>
-                    <DynamicExperienceCard
-                      type={card.cardType}
-                      title={card.title}
-                      subtitle={card.subtitle}
-                      icon={card.icon || 'sparkles'}
-                      colorScheme={card.colorScheme || 'purple'}
-                      chapters={card.chapters || []}
-                      effectDescription={card.effectDescription}
-                    />
+                    {isValidCardEffectType(card.cardType) ? (
+                      <DynamicCardEffect type={card.cardType} />
+                    ) : (
+                      <DynamicExperienceCard
+                        type={card.cardType}
+                        title={card.title}
+                        subtitle={card.subtitle}
+                        icon={card.icon || 'sparkles'}
+                        colorScheme={card.colorScheme || 'purple'}
+                        chapters={card.chapters || []}
+                        effectDescription={card.effectDescription}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

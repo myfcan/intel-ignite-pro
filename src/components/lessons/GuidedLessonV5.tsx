@@ -18,6 +18,7 @@ import { LessonResultCard } from '@/components/gamification/LessonResultCard';
 import { LivAvatar } from '@/components/LivAvatar';
 import { IaBookExperienceCard } from './IaBookExperienceCard';
 import { DynamicExperienceCard } from './DynamicExperienceCard';
+import { DynamicCardEffect, isValidCardEffectType } from './card-effects';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -112,6 +113,71 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
    * - Capítulos com stagger
    */
   const renderExperienceCard = (lessonId: string, sectionIndex: number) => {
+    /**
+     * 🎬 CARD EFFECTS CINEMATOGRÁFICOS (V5)
+     *
+     * Renderiza animações temáticas baseadas no tipo do card:
+     * - app-builder: Celular com código sendo gerado
+     * - digital-employee: Robô trabalhando
+     * - business-design: Linha de progresso com etapas
+     * - content-machine: Esteira de conteúdo
+     * - automation: Nós conectados
+     * - data-analysis: Gráficos animados
+     * - creativity: Lâmpada com ideias
+     *
+     * Se o tipo não for cinematográfico, usa DynamicExperienceCard (texto)
+     */
+
+    // Helper para renderizar um card baseado na config
+    const renderCard = (cardConfig: any, key: string) => {
+      const cardType = cardConfig.type || cardConfig.effectType || '';
+
+      // 🎬 PRIORIDADE 1: Card Effect Cinematográfico
+      if (isValidCardEffectType(cardType)) {
+        console.log(`🎬 [V5] Renderizando card cinematográfico: ${cardType}`);
+        return (
+          <div key={key} className="my-6">
+            <DynamicCardEffect type={cardType} />
+          </div>
+        );
+      }
+
+      // 📚 PRIORIDADE 2: IaBookExperienceCard específico
+      if (cardType === 'ia-book') {
+        return <IaBookExperienceCard key={key} />;
+      }
+
+      // 📝 PRIORIDADE 3: DynamicExperienceCard com texto (fallback)
+      if (cardConfig.props) {
+        const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
+        return (
+          <div key={key} className="my-6">
+            <DynamicExperienceCard
+              type={cardType}
+              title={title || 'Experience Card'}
+              subtitle={subtitle}
+              icon={icon || 'sparkles'}
+              colorScheme={colorScheme || 'purple'}
+              chapters={chapters || []}
+              effectDescription={effectDescription}
+            />
+          </div>
+        );
+      }
+
+      // 🎯 FALLBACK: DynamicExperienceCard simples
+      return (
+        <div key={key} className="my-6">
+          <DynamicExperienceCard
+            type={cardType}
+            title={cardType}
+            icon="sparkles"
+            colorScheme="purple"
+          />
+        </div>
+      );
+    };
+
     // 🔍 PRIORIDADE 1: Buscar DENTRO da seção (formato pipeline)
     const currentSection = lessonData.sections[sectionIndex] as any;
     if (currentSection?.experienceCards && currentSection.experienceCards.length > 0) {
@@ -119,47 +185,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
       return (
         <>
-          {currentSection.experienceCards.map((cardConfig: any, cardIdx: number) => {
-            // Se tiver props, usar DynamicExperienceCard
-            if (cardConfig.props) {
-              const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
-              return (
-                <div key={`experience-card-${sectionIndex}-${cardIdx}`} className="my-6">
-                  <DynamicExperienceCard
-                    type={cardConfig.type}
-                    title={title || 'Experience Card'}
-                    subtitle={subtitle}
-                    icon={icon || 'sparkles'}
-                    colorScheme={colorScheme || 'purple'}
-                    chapters={chapters || []}
-                    effectDescription={effectDescription}
-                  />
-                </div>
-              );
-            }
-
-            // Fallback para tipos específicos sem props
-            switch (cardConfig.type) {
-              case 'ia-book':
-                return <IaBookExperienceCard key={`experience-card-${sectionIndex}-${cardIdx}`} />;
-              default:
-                return (
-                  <div key={`experience-card-${sectionIndex}-${cardIdx}`} className="my-6">
-                    <DynamicExperienceCard
-                      type={cardConfig.type}
-                      title={cardConfig.type}
-                      icon="sparkles"
-                      colorScheme="purple"
-                    />
-                  </div>
-                );
-            }
-          })}
+          {currentSection.experienceCards.map((cardConfig: any, cardIdx: number) =>
+            renderCard(cardConfig, `experience-card-${sectionIndex}-${cardIdx}`)
+          )}
         </>
       );
     }
 
-    // 🔍 PRIORIDADE 2: Buscar no ROOT level (formato AdminV5CardConfig legado)
+    // 🔍 PRIORIDADE 2: Buscar no ROOT level (formato AdminV5CardConfig)
     if (lessonData.experienceCards) {
       const cardsForSection = lessonData.experienceCards.filter(
         (card) => card.sectionIndex === sectionIndex + 1 // AdminV5CardConfig usa 1-based
@@ -170,40 +203,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
         return (
           <>
-            {cardsForSection.map((cardConfig: any, cardIdx: number) => {
-              if (cardConfig.props) {
-                const { title, subtitle, icon, colorScheme, chapters, effectDescription } = cardConfig.props;
-                return (
-                  <div key={`experience-card-root-${sectionIndex}-${cardIdx}`} className="my-6">
-                    <DynamicExperienceCard
-                      type={cardConfig.type}
-                      title={title || 'Experience Card'}
-                      subtitle={subtitle}
-                      icon={icon || 'sparkles'}
-                      colorScheme={colorScheme || 'purple'}
-                      chapters={chapters || []}
-                      effectDescription={effectDescription}
-                    />
-                  </div>
-                );
-              }
-
-              switch (cardConfig.type) {
-                case 'ia-book':
-                  return <IaBookExperienceCard key={`experience-card-root-${sectionIndex}-${cardIdx}`} />;
-                default:
-                  return (
-                    <div key={`experience-card-root-${sectionIndex}-${cardIdx}`} className="my-6">
-                      <DynamicExperienceCard
-                        type={cardConfig.type}
-                        title={cardConfig.type}
-                        icon="sparkles"
-                        colorScheme="purple"
-                      />
-                    </div>
-                  );
-              }
-            })}
+            {cardsForSection.map((cardConfig: any, cardIdx: number) =>
+              renderCard(cardConfig, `experience-card-root-${sectionIndex}-${cardIdx}`)
+            )}
           </>
         );
       }
