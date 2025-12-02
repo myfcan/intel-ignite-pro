@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
-import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, isValidCardEffectType } from '@/components/lessons/card-effects';
+import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, isValidCardEffectType } from '@/components/lessons/card-effects';
 
 // 🎬 Tipos de Card Effects Cinematográficos
 const CINEMATOGRAPHIC_CARD_TYPES = CARD_EFFECT_TYPES.map(type => ({
@@ -266,10 +266,10 @@ export default function AdminV5CardConfig() {
     const newCards: ExperienceCard[] = [];
 
     // Validar e adicionar Card 1
-    if (!card1.cardType || !card1.anchorText || !card1.title) {
+    if (!card1.cardType || !card1.anchorText) {
       toast({
         title: "❌ Erro no Card 1",
-        description: "CardType, AnchorText e Título são obrigatórios",
+        description: "CardType e AnchorText são obrigatórios",
         variant: "destructive",
       });
       return;
@@ -290,10 +290,10 @@ export default function AdminV5CardConfig() {
 
     // Se quantidade for 2, validar e adicionar Card 2
     if (cardsQuantity === 2) {
-      if (!card2.cardType || !card2.anchorText || !card2.title) {
+      if (!card2.cardType || !card2.anchorText) {
         toast({
           title: "❌ Erro no Card 2",
-          description: "CardType, AnchorText e Título são obrigatórios para o Card 2",
+          description: "CardType e AnchorText são obrigatórios para o Card 2",
           variant: "destructive",
         });
         return;
@@ -778,95 +778,14 @@ export default function AdminV5CardConfig() {
                             </p>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Título *</Label>
-                              <Input
-                                placeholder="Ex: A I.A. que monta um app"
-                                value={card1.title}
-                                onChange={(e) => setCard1({ ...card1, title: e.target.value })}
-                              />
+                          {/* Descrição do efeito selecionado */}
+                          {card1.cardType && isValidCardEffectType(card1.cardType) && (
+                            <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                              <p className="text-xs text-purple-300">
+                                <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card1.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
+                              </p>
                             </div>
-                            <div className="space-y-2">
-                              <Label>Subtítulo</Label>
-                              <Input
-                                placeholder="Descrição curta"
-                                value={card1.subtitle}
-                                onChange={(e) => setCard1({ ...card1, subtitle: e.target.value })}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Seletor de Ícone Visual */}
-                          <div className="space-y-2">
-                            <Label>Ícone</Label>
-                            <div className="grid grid-cols-6 gap-2">
-                              {AVAILABLE_ICONS.map(({ value, label, Icon }) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() => setCard1({ ...card1, icon: value })}
-                                  className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
-                                    card1.icon === value
-                                      ? 'border-primary bg-primary/10 shadow-md'
-                                      : 'border-muted hover:border-primary/50'
-                                  }`}
-                                  title={label}
-                                >
-                                  <Icon className="w-5 h-5 mx-auto" />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Seletor de Cor Visual */}
-                          <div className="space-y-2">
-                            <Label>Cor de Destaque</Label>
-                            <div className="grid grid-cols-4 gap-2">
-                              {COLOR_SCHEMES.map(({ value, label, color }) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() => setCard1({ ...card1, colorScheme: value })}
-                                  className={`p-2 rounded-lg border-2 transition-all hover:scale-105 flex items-center gap-2 ${
-                                    card1.colorScheme === value
-                                      ? 'border-primary shadow-md'
-                                      : 'border-muted hover:border-primary/50'
-                                  }`}
-                                  title={label}
-                                >
-                                  <div
-                                    className="w-4 h-4 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  <span className="text-xs">{label}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Descrição do Efeito Visual</Label>
-                            <Textarea
-                              placeholder="Ex: pulso marcado no ícone, badge 24/7, animação spring..."
-                              value={card1.effectDescription}
-                              onChange={(e) => setCard1({ ...card1, effectDescription: e.target.value })}
-                              rows={2}
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Capítulos / Páginas (opcional)</Label>
-                            <Textarea
-                              placeholder="Deixe vazio se o card não tiver páginas internas.&#10;&#10;Se tiver conteúdo sequencial:&#10;Linha 1: primeiro texto&#10;Linha 2: segundo texto&#10;Linha 3: terceiro texto"
-                              value={card1.chapters?.join('\n')}
-                              onChange={(e) => setCard1({ ...card1, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
-                              rows={4}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Apenas para cards com conteúdo que alterna/transiciona (ex: slides, páginas de livro)
-                            </p>
-                          </div>
+                          )}
                         </div>
 
                         {/* Card 2 (condicional) */}
@@ -876,7 +795,7 @@ export default function AdminV5CardConfig() {
                               <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">2</span>
                               Card 2
                             </h4>
-                            
+
                             <div className="space-y-2">
                               <Label>Tipo de Card Effect *</Label>
                               <Select
@@ -912,6 +831,12 @@ export default function AdminV5CardConfig() {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              <p className="text-xs text-muted-foreground">
+                                {isValidCardEffectType(card2.cardType || '')
+                                  ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
+                                  : 'Escolha o tipo de card effect para esta seção'
+                                }
+                              </p>
                             </div>
 
                             <div className="space-y-2">
@@ -921,97 +846,19 @@ export default function AdminV5CardConfig() {
                                 value={card2.anchorText}
                                 onChange={(e) => setCard2({ ...card2, anchorText: e.target.value })}
                               />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Título *</Label>
-                                <Input
-                                  placeholder="Ex: Segunda demonstração"
-                                  value={card2.title}
-                                  onChange={(e) => setCard2({ ...card2, title: e.target.value })}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Subtítulo</Label>
-                                <Input
-                                  placeholder="Descrição curta"
-                                  value={card2.subtitle}
-                                  onChange={(e) => setCard2({ ...card2, subtitle: e.target.value })}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Seletor de Ícone Visual - Card 2 */}
-                            <div className="space-y-2">
-                              <Label>Ícone</Label>
-                              <div className="grid grid-cols-6 gap-2">
-                                {AVAILABLE_ICONS.map(({ value, label, Icon }) => (
-                                  <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => setCard2({ ...card2, icon: value })}
-                                    className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
-                                      card2.icon === value
-                                        ? 'border-primary bg-primary/10 shadow-md'
-                                        : 'border-muted hover:border-primary/50'
-                                    }`}
-                                    title={label}
-                                  >
-                                    <Icon className="w-5 h-5 mx-auto" />
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Seletor de Cor Visual - Card 2 */}
-                            <div className="space-y-2">
-                              <Label>Cor de Destaque</Label>
-                              <div className="grid grid-cols-4 gap-2">
-                                {COLOR_SCHEMES.map(({ value, label, color }) => (
-                                  <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => setCard2({ ...card2, colorScheme: value })}
-                                    className={`p-2 rounded-lg border-2 transition-all hover:scale-105 flex items-center gap-2 ${
-                                      card2.colorScheme === value
-                                        ? 'border-primary shadow-md'
-                                        : 'border-muted hover:border-primary/50'
-                                    }`}
-                                    title={label}
-                                  >
-                                    <div
-                                      className="w-4 h-4 rounded-full"
-                                      style={{ backgroundColor: color }}
-                                    />
-                                    <span className="text-xs">{label}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Descrição do Efeito Visual</Label>
-                              <Textarea
-                                placeholder="Ex: fade-in suave, rotação do ícone..."
-                                value={card2.effectDescription}
-                                onChange={(e) => setCard2({ ...card2, effectDescription: e.target.value })}
-                                rows={2}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Capítulos / Páginas (opcional)</Label>
-                              <Textarea
-                                placeholder="Deixe vazio se o card não tiver conteúdo interno sequencial"
-                                value={card2.chapters?.join('\n')}
-                                onChange={(e) => setCard2({ ...card2, chapters: e.target.value.split('\n').filter(l => l.trim()) })}
-                                rows={4}
-                              />
                               <p className="text-xs text-muted-foreground">
-                                Apenas para cards com conteúdo que alterna/transiciona
+                                Cole o trecho exato do markdown que será o gatilho para exibir o card
                               </p>
                             </div>
+
+                            {/* Descrição do efeito selecionado */}
+                            {card2.cardType && isValidCardEffectType(card2.cardType) && (
+                              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                                <p className="text-xs text-purple-300">
+                                  <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card2.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
 
