@@ -81,6 +81,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   const isV2 = true;
   const hasPlaygroundSupport = true; // V5 agora suporta playground mid-lesson
   const [sectionJustChanged, setSectionJustChanged] = useState(false);
+  const [forceAutoplayNext, setForceAutoplayNext] = useState(false); // 🔧 FIX: Flag para forçar autoplay na transição
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [sectionWhenMuted, setSectionWhenMuted] = useState(0);
   const [showEndCard, setShowEndCard] = useState(false);
@@ -764,12 +765,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
     audio.load();
 
-    if (wasPlaying) {
+    // 🔧 FIX: Autoplay se estava tocando OU se forceAutoplayNext está ativo
+    if (wasPlaying || forceAutoplayNext) {
+      setForceAutoplayNext(false); // Reset flag
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log(`✅ [V5-V2] Áudio da seção ${currentSection} reproduzindo`);
+            console.log(`✅ [V5-V2] Áudio da seção ${currentSection} reproduzindo (forceAutoplay: ${forceAutoplayNext})`);
             setIsPlaying(true);
           })
           .catch((err) => {
@@ -778,7 +781,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           });
       }
     }
-  }, [currentSection, isV2, lessonData.sections]);
+  }, [currentSection, isV2, lessonData.sections, forceAutoplayNext]);
   
   // 📊 LOG 3: Medir latência do state update e scroll
   useEffect(() => {
@@ -1078,6 +1081,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
         if (!isLastSection) {
           console.log(`🎯 [V5-V2] Avançando para próxima seção (${currentSection} → ${currentSection + 1})`);
+          setForceAutoplayNext(true); // 🔧 FIX: Forçar autoplay na próxima seção
           setCurrentSection(prev => prev + 1);
           return;
         }
