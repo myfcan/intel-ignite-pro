@@ -1772,7 +1772,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           <div 
             className={`w-[54px] h-[54px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'liv-breathing-active' : 'liv-breathing-idle'}`}
+            } ${isPlaying && isAudioEnabled ? 'animate-[avatar-speaking-glow_1.5s_ease-in-out_infinite]' : 'liv-breathing-idle'}`}
           >
             <img 
               src="/liv-avatar-mobile.png" 
