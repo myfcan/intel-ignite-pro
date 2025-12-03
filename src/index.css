@@ -515,6 +515,18 @@ All colors MUST be HSL.
   animation: halo-pulse 4s ease-in-out infinite;
 }
 
+/* Liv Mobile Avatar Pulse - Efeito suave durante reprodução */
+@keyframes liv-pulse {
+  0%, 100% { 
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scale(1.8);
+    opacity: 0.3;
+  }
+}
+
 /* Avatar hover micro-interactions */
 /* Gamification animations */
 @keyframes fade-in {
