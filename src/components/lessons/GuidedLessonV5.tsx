@@ -1768,13 +1768,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           className="relative group touch-manipulation"
           aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
         >
-          {/* Avatar circular recortado da imagem */}
+          {/* Avatar circular recortado da imagem com moldura branca pulsante */}
           <div 
-            className={`w-[58px] h-[58px] rounded-full overflow-hidden transition-all duration-500 ${
+            className={`w-[54px] h-[54px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-white' : 'ring-2 ring-white/80'}`}
+            } ${isPlaying && isAudioEnabled ? 'animate-[liv-glow-pulse_1.5s_ease-in-out_infinite]' : ''}`}
             style={{
-              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3), 0 0 30px rgba(34, 211, 238, 0.15)'
+              boxShadow: isPlaying && isAudioEnabled
+                ? '0 0 0 3px rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)'
+                : '0 0 0 3px rgba(255, 255, 255, 0.85), 0 4px 15px rgba(139, 92, 246, 0.25)'
             }}
           >
             <img 
