@@ -1,49 +1,92 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Smartphone } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectAppBuilder - "A I.A. que monta um app do zero"
  *
  * Efeito cinematográfico:
- * 1. Smartphone 3D desliza da esquerda para o centro (400ms, ease-out)
+ * 1. Smartphone 3D desliza da esquerda para o centro
  * 2. Fundo escurece criando foco
  * 3. Tela começa vazia, linhas de código/UI surgem de baixo para cima
  * 4. Cada bloco tem efeito de "digitação"
  * 5. Ícone de IA envia "pulsos de energia" para os blocos
  * 6. Ícone de app se forma no final com "pop" e glow
- * 7. Estado estável com pulso suave a cada 5s
+ * 7. Loop: animação repete enquanto card estiver ativo
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectAppBuilder: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'building' | 'complete' | 'idle'>('enter');
+export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'building' | 'complete' | 'idle'>('waiting');
   const [visibleBlocks, setVisibleBlocks] = useState(0);
   const [showAppIcon, setShowAppIcon] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Sequência de animação
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
 
-    // Fase 1: Entrada (400ms)
-    timers.push(setTimeout(() => setPhase('building'), 400));
+    // Reset estados
+    setPhase('enter');
+    setVisibleBlocks(0);
+    setShowAppIcon(false);
+
+    // Durações mais lentas (2.5x)
+    const ENTER_DELAY = 1000;      // era 400ms
+    const BLOCK_DELAY = 450;       // era 180ms
+    const COMPLETE_DELAY = 5500;   // era 2200ms
+    const IDLE_DELAY = 7500;       // era 3000ms
+    const LOOP_DELAY = 12000;      // tempo até reiniciar
+
+    // Fase 1: Entrada
+    timersRef.current.push(setTimeout(() => setPhase('building'), ENTER_DELAY));
 
     // Fase 2: Blocos aparecem um a um
     for (let i = 1; i <= 8; i++) {
-      timers.push(setTimeout(() => setVisibleBlocks(i), 400 + i * 180));
+      timersRef.current.push(setTimeout(() => setVisibleBlocks(i), ENTER_DELAY + i * BLOCK_DELAY));
     }
 
     // Fase 3: App icon aparece
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setShowAppIcon(true);
       setPhase('complete');
-    }, 2200));
+    }, COMPLETE_DELAY));
 
     // Fase 4: Idle state
-    timers.push(setTimeout(() => setPhase('idle'), 3000));
+    timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisibleBlocks(0);
+      setShowAppIcon(false);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
 
   // Blocos de código/UI que serão "construídos"
   const codeBlocks = [
@@ -57,15 +100,18 @@ export const CardEffectAppBuilder: React.FC = () => {
     { type: 'footer', width: '65%', color: 'from-indigo-500 to-purple-500' },
   ];
 
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
+
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl">
       {/* Fundo que escurece */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
         animate={{
-          opacity: phase === 'enter' ? 0.7 : 1,
+          opacity: isAnimating ? (phase === 'enter' ? 0.7 : 1) : 0.5,
         }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.8 }} // mais lento
       />
 
       {/* Grid de fundo tech */}
@@ -110,13 +156,13 @@ export const CardEffectAppBuilder: React.FC = () => {
 
       {/* Ícone de IA com pulsos de energia */}
       <motion.div
-        className="absolute top-6 right-8 z-30"
+        className="absolute top-8 right-10 z-30"
         initial={{ opacity: 0, scale: 0 }}
         animate={{
-          opacity: phase !== 'enter' ? 1 : 0,
-          scale: phase !== 'enter' ? 1 : 0,
+          opacity: isAnimating && phase !== 'enter' ? 1 : 0,
+          scale: isAnimating && phase !== 'enter' ? 1 : 0,
         }}
-        transition={{ duration: 0.3, type: 'spring' }}
+        transition={{ duration: 0.6, type: 'spring' }} // mais lento
       >
         <div className="relative">
           {/* Glow pulsante */}
@@ -127,7 +173,7 @@ export const CardEffectAppBuilder: React.FC = () => {
               scale: phase === 'idle' ? [1, 1.2, 1] : [1, 1.4, 1],
             }}
             transition={{
-              duration: phase === 'idle' ? 5 : 1,
+              duration: phase === 'idle' ? 6 : 2.5, // mais lento
               repeat: Infinity,
               ease: 'easeInOut',
             }}
@@ -135,11 +181,11 @@ export const CardEffectAppBuilder: React.FC = () => {
 
           {/* Ícone */}
           <motion.div
-            className="relative w-14 h-14 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/50"
+            className="relative w-16 h-16 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/50"
             animate={{
               rotate: phase === 'building' ? [0, 5, -5, 0] : 0,
             }}
-            transition={{ duration: 0.5, repeat: phase === 'building' ? Infinity : 0 }}
+            transition={{ duration: 1.2, repeat: phase === 'building' ? Infinity : 0 }} // mais lento
           >
             <Sparkles className="w-7 h-7 text-white" />
           </motion.div>
@@ -160,10 +206,10 @@ export const CardEffectAppBuilder: React.FC = () => {
                       scale: [1, 0.5],
                     }}
                     transition={{
-                      duration: 0.8,
-                      delay: i * 0.2,
+                      duration: 1.6, // mais lento
+                      delay: i * 0.4,
                       repeat: Infinity,
-                      repeatDelay: 0.5,
+                      repeatDelay: 1,
                     }}
                   />
                 ))}
@@ -173,33 +219,33 @@ export const CardEffectAppBuilder: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Smartphone 3D */}
+      {/* Smartphone 3D - maior para o novo tamanho do card */}
       <motion.div
         className="absolute left-1/2 top-1/2 z-20"
         initial={{ x: '-150%', y: '-50%', rotateY: -30, opacity: 0 }}
         animate={{
-          x: '-50%',
+          x: isAnimating ? '-50%' : '-150%',
           y: '-50%',
-          rotateY: 0,
-          opacity: 1,
+          rotateY: isAnimating ? 0 : -30,
+          opacity: isAnimating ? 1 : 0,
         }}
         transition={{
-          duration: 0.4,
+          duration: 1, // mais lento (era 0.4)
           ease: [0.25, 0.46, 0.45, 0.94], // ease-out
         }}
         style={{ perspective: 1000 }}
       >
         {/* Sombra do celular */}
         <motion.div
-          className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-4 bg-black/40 rounded-full blur-xl"
+          className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-6 bg-black/40 rounded-full blur-xl"
           animate={{
             scale: phase === 'complete' ? [1, 1.1, 1] : 1,
           }}
-          transition={{ duration: 2, repeat: Infinity }}
+          transition={{ duration: 3, repeat: Infinity }} // mais lento
         />
 
-        {/* Frame do celular */}
-        <div className="relative w-44 h-72 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 rounded-[2.5rem] p-2 shadow-2xl shadow-purple-900/30">
+        {/* Frame do celular - MAIOR para novo tamanho do card */}
+        <div className="relative w-56 h-96 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 rounded-[3rem] p-2.5 shadow-2xl shadow-purple-900/30">
           {/* Borda interna brilhante */}
           <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-slate-600 to-transparent opacity-30" />
 
@@ -214,7 +260,7 @@ export const CardEffectAppBuilder: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-950" />
 
             {/* Área de código/UI sendo construída */}
-            <div className="relative pt-10 px-3 space-y-2 h-full">
+            <div className="relative pt-12 px-4 space-y-3 h-full">
               {codeBlocks.map((block, i) => (
                 <motion.div
                   key={i}
@@ -226,31 +272,31 @@ export const CardEffectAppBuilder: React.FC = () => {
                     scaleX: visibleBlocks > i ? 1 : 0,
                   }}
                   transition={{
-                    duration: 0.2,
+                    duration: 0.5, // mais lento (era 0.2)
                     ease: 'easeOut',
                   }}
                   style={{ width: block.width, originX: 0 }}
                 >
-                  {/* Bloco de código */}
-                  <div className={`h-4 bg-gradient-to-r ${block.color} rounded-sm relative`}>
-                    {/* Efeito de digitação */}
+                  {/* Bloco de código - maior */}
+                  <div className={`h-5 bg-gradient-to-r ${block.color} rounded-sm relative`}>
+                    {/* Efeito de digitação - mais lento */}
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent"
                       initial={{ x: '-100%' }}
                       animate={{ x: visibleBlocks > i ? '200%' : '-100%' }}
-                      transition={{ duration: 0.3, delay: 0.1 }}
+                      transition={{ duration: 0.8, delay: 0.2 }} // mais lento
                     />
 
                     {/* "Código" dentro do bloco */}
-                    <div className="absolute inset-0 flex items-center px-1 gap-1">
+                    <div className="absolute inset-0 flex items-center px-1.5 gap-1.5">
                       {[...Array(Math.floor(Math.random() * 4) + 2)].map((_, j) => (
                         <motion.div
                           key={j}
-                          className="h-1.5 bg-white/40 rounded-full"
+                          className="h-2 bg-white/40 rounded-full"
                           style={{ width: `${10 + Math.random() * 20}%` }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: visibleBlocks > i ? 0.6 : 0 }}
-                          transition={{ delay: j * 0.05 }}
+                          transition={{ delay: j * 0.1 }} // mais lento
                         />
                       ))}
                     </div>
@@ -262,13 +308,13 @@ export const CardEffectAppBuilder: React.FC = () => {
               <AnimatePresence>
                 {showAppIcon && (
                   <motion.div
-                    className="absolute bottom-16 left-1/2 -translate-x-1/2"
+                    className="absolute bottom-20 left-1/2 -translate-x-1/2"
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{
                       type: 'spring',
-                      stiffness: 400,
-                      damping: 15,
+                      stiffness: 200, // mais suave (era 400)
+                      damping: 12,
                     }}
                   >
                     {/* Glow circular */}
@@ -279,15 +325,15 @@ export const CardEffectAppBuilder: React.FC = () => {
                         scale: [1, 1.3, 1],
                       }}
                       transition={{
-                        duration: 2,
+                        duration: 3, // mais lento (era 2)
                         repeat: Infinity,
                         ease: 'easeInOut',
                       }}
                     />
 
-                    {/* Ícone do app */}
+                    {/* Ícone do app - maior */}
                     <motion.div
-                      className="relative w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl flex items-center justify-center shadow-xl"
+                      className="relative w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl flex items-center justify-center shadow-xl"
                       animate={{
                         boxShadow: [
                           '0 0 20px rgba(168, 85, 247, 0.5)',
@@ -295,9 +341,9 @@ export const CardEffectAppBuilder: React.FC = () => {
                           '0 0 20px rgba(168, 85, 247, 0.5)',
                         ],
                       }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      transition={{ duration: 3, repeat: Infinity }} // mais lento
                     >
-                      <Smartphone className="w-8 h-8 text-white" />
+                      <Smartphone className="w-10 h-10 text-white" />
 
                       {/* Checkmark de sucesso */}
                       <motion.div
@@ -331,15 +377,17 @@ export const CardEffectAppBuilder: React.FC = () => {
 
       {/* Label inferior */}
       <motion.div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center z-10"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center z-10"
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 2.5 }}
+        animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
+        transition={{ delay: isAnimating ? 2 : 0, duration: 0.5 }}
       >
-        <p className="text-sm font-medium text-purple-300/80">
-          {phase === 'complete' || phase === 'idle'
-            ? 'App pronto para validação'
-            : 'Construindo seu app...'
+        <p className="text-base font-medium text-purple-300/80">
+          {phase === 'waiting'
+            ? 'Aguardando...'
+            : phase === 'complete' || phase === 'idle'
+              ? 'App pronto para validação'
+              : 'Construindo seu app...'
           }
         </p>
       </motion.div>

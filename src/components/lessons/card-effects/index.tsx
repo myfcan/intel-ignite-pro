@@ -56,9 +56,18 @@ export type CardEffectType =
   | 'new-professions';
 
 /**
+ * Props para os componentes de Card Effect
+ * 🆕 isActive: controla quando a animação deve iniciar
+ */
+export interface CardEffectProps {
+  /** Se true, a animação inicia. Se false, fica em estado inicial/parado */
+  isActive?: boolean;
+}
+
+/**
  * Mapeamento de tipo → componente
  */
-const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC> = {
+const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> = {
   'app-builder': CardEffectAppBuilder,
   'digital-employee': CardEffectDigitalEmployee,
   'business-design': CardEffectBusinessDesign,
@@ -141,6 +150,8 @@ export function isValidCardEffectType(type: string): type is CardEffectType {
 export interface DynamicCardEffectProps {
   type: string;
   fallback?: React.ReactNode;
+  /** 🆕 Se true, a animação inicia. Se false, fica em estado inicial */
+  isActive?: boolean;
 }
 
 /**
@@ -148,7 +159,8 @@ export interface DynamicCardEffectProps {
  */
 export const DynamicCardEffect: React.FC<DynamicCardEffectProps> = ({
   type,
-  fallback = null
+  fallback = null,
+  isActive = false
 }) => {
   const Component = getCardEffectComponent(type);
 
@@ -157,7 +169,7 @@ export const DynamicCardEffect: React.FC<DynamicCardEffectProps> = ({
     return <>{fallback}</>;
   }
 
-  return <Component />;
+  return <Component isActive={isActive} />;
 };
 
 export default DynamicCardEffect;
