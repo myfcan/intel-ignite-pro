@@ -1768,11 +1768,11 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           className="relative group touch-manipulation"
           aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
         >
-          {/* Avatar circular recortado da imagem com moldura branca pulsante */}
+          {/* Avatar circular com efeitos combinados: moldura branca, breathing, glow */}
           <div 
             className={`w-[54px] h-[54px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'animate-[avatar-speaking-glow_1.5s_ease-in-out_infinite]' : 'liv-breathing-idle'}`}
+            } ${isPlaying && isAudioEnabled ? 'liv-speaking-combined' : 'liv-breathing-idle'}`}
           >
             <img 
               src="/liv-avatar-mobile.png" 
