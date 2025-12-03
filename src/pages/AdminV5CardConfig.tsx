@@ -1034,7 +1034,7 @@ export default function AdminV5CardConfig() {
                       }
                     </p>
                     {isValidCardEffectType(card.cardType) ? (
-                      <DynamicCardEffect type={card.cardType} />
+                      <DynamicCardEffect type={card.cardType} isActive={true} />
                     ) : (
                       <DynamicExperienceCard
                         type={card.cardType}
