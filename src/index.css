@@ -534,9 +534,17 @@ All colors MUST be HSL.
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 15px rgba(255, 255, 255, 0.5), 0 0 30px rgba(139, 92, 246, 0.3);
   }
   50% { 
-    transform: scale(1.04);
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 1), 0 0 25px rgba(255, 255, 255, 0.7), 0 0 45px rgba(139, 92, 246, 0.5);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8), 0 0 50px rgba(139, 92, 246, 0.6);
   }
+}
+
+.liv-breathing-active {
+  animation: liv-breathing 6s ease-in-out infinite;
+}
+
+.liv-breathing-idle {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 4px 15px rgba(139, 92, 246, 0.25);
 }
 
 /* Avatar hover micro-interactions */
