@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Calendar, Mail, CheckCircle2, User } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectAutomation - "Fluxos de automação com I.A."
@@ -14,11 +15,19 @@ import { MessageCircle, Calendar, Mail, CheckCircle2, User } from 'lucide-react'
  * 4. Linhas se acendem com luz percorrendo o caminho
  * 5. Ícones aparecem sobre as caixas com fade-in
  * 6. Caixa final "Consulta marcada" cresce com halo verde
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2-2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectAutomation: React.FC = () => {
+export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'active'>('waiting');
   const [visibleNodes, setVisibleNodes] = useState(0);
   const [activeConnection, setActiveConnection] = useState(-1);
   const [showFinalGlow, setShowFinalGlow] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const flowNodes = [
     { id: 0, label: 'Lead', icon: User, x: 10, y: 45, color: 'from-blue-500 to-cyan-500' },
@@ -38,32 +47,72 @@ export const CardEffectAutomation: React.FC = () => {
     { from: 4, to: 5 },
   ];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('active');
+    setVisibleNodes(0);
+    setActiveConnection(-1);
+    setShowFinalGlow(false);
+
+    // Durações mais lentas (2-2.5x)
+    const NODE_DELAY = 1000;        // era 400ms (2.5x)
+    const CONNECTION_DELAY = 875;   // era 350ms (2.5x)
+    const FINAL_GLOW_DELAY = 8750;  // era 3500ms (2.5x)
+    const LOOP_DELAY = 12000;       // tempo até reiniciar
 
     // Nós aparecem um a um
     flowNodes.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisibleNodes(i + 1), 400 + i * 400));
+      timersRef.current.push(setTimeout(() => setVisibleNodes(i + 1), NODE_DELAY + i * NODE_DELAY));
     });
 
     // Conexões se iluminam
     connections.forEach((_, i) => {
-      timers.push(setTimeout(() => setActiveConnection(i), 800 + i * 350));
+      timersRef.current.push(setTimeout(() => setActiveConnection(i), 2000 + i * CONNECTION_DELAY));
     });
 
     // Glow final
-    timers.push(setTimeout(() => setShowFinalGlow(true), 3500));
+    timersRef.current.push(setTimeout(() => setShowFinalGlow(true), FINAL_GLOW_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisibleNodes(0);
+      setActiveConnection(-1);
+      setShowFinalGlow(false);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
 
   const getNodePosition = (id: number) => {
     const node = flowNodes.find(n => n.id === id);
     return node ? { x: node.x, y: node.y } : { x: 0, y: 0 };
   };
 
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
+
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
       {/* Grid de fundo */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -123,14 +172,14 @@ export const CardEffectAutomation: React.FC = () => {
                 filter="url(#glow)"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{
-                  pathLength: isActive ? 1 : 0,
-                  opacity: isActive ? 1 : 0,
+                  pathLength: isActive && isAnimating ? 1 : 0,
+                  opacity: isActive && isAnimating ? 1 : 0,
                 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.75 }} // mais lento (era 0.3, 2.5x)
               />
 
               {/* Pulso de energia */}
-              {isActive && (
+              {isActive && isAnimating && (
                 <motion.circle
                   r="4"
                   fill="#10b981"
@@ -142,10 +191,10 @@ export const CardEffectAutomation: React.FC = () => {
                     cy: [`${from.y}%`, `${to.y}%`],
                   }}
                   transition={{
-                    duration: 1,
+                    duration: 2.5, // mais lento (era 1, 2.5x)
                     repeat: Infinity,
-                    repeatDelay: 2,
-                    delay: i * 0.2,
+                    repeatDelay: 5, // mais lento (era 2, 2.5x)
+                    delay: i * 0.5, // mais lento (era 0.2, 2.5x)
                   }}
                 />
               )}
@@ -182,7 +231,7 @@ export const CardEffectAutomation: React.FC = () => {
             }}
           >
             {/* Glow para nó final */}
-            {isFinal && showFinalGlow && (
+            {isFinal && showFinalGlow && isAnimating && (
               <motion.div
                 className="absolute inset-0 bg-green-500 rounded-xl blur-xl"
                 initial={{ opacity: 0, scale: 1 }}
@@ -190,7 +239,7 @@ export const CardEffectAutomation: React.FC = () => {
                   opacity: [0.3, 0.6, 0.3],
                   scale: [1, 1.3, 1],
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 5, repeat: Infinity }} // mais lento (era 2, 2.5x)
               />
             )}
 
@@ -199,27 +248,27 @@ export const CardEffectAutomation: React.FC = () => {
               className={`relative px-3 py-2 bg-gradient-to-br ${node.color} rounded-xl shadow-lg flex flex-col items-center gap-1 ${
                 isFinal ? 'scale-110' : ''
               }`}
-              animate={isVisible ? {
+              animate={isVisible && isAnimating ? {
                 boxShadow: isFinal && showFinalGlow
                   ? ['0 0 0 rgba(16, 185, 129, 0)', '0 0 20px rgba(16, 185, 129, 0.5)', '0 0 0 rgba(16, 185, 129, 0)']
                   : undefined,
               } : {}}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              transition={{ duration: 3.75, repeat: Infinity }} // mais lento (era 1.5, 2.5x)
             >
               {/* Efeito de preenchimento */}
               <motion.div
                 className="absolute inset-0 bg-white/20 rounded-xl"
                 initial={{ scaleX: 0 }}
-                animate={{ scaleX: isVisible ? 1 : 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
+                animate={{ scaleX: isVisible && isAnimating ? 1 : 0 }}
+                transition={{ delay: 0.5, duration: 0.75 }} // mais lento (era 0.2 delay e 0.3 duration, 2.5x)
                 style={{ originX: 0 }}
               />
 
               {/* Ícone */}
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: isVisible ? 1 : 0 }}
-                transition={{ delay: 0.3 }}
+                animate={{ opacity: isVisible && isAnimating ? 1 : 0 }}
+                transition={{ delay: 0.75 }} // mais lento (era 0.3, 2.5x)
               >
                 <Icon className="w-4 h-4 text-white" />
               </motion.div>
@@ -228,12 +277,12 @@ export const CardEffectAutomation: React.FC = () => {
               <span className="text-[9px] text-white font-medium whitespace-nowrap">{node.label}</span>
 
               {/* Badge para nó final */}
-              {isFinal && showFinalGlow && (
+              {isFinal && showFinalGlow && isAnimating && (
                 <motion.div
                   className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', delay: 0.3 }}
+                  transition={{ type: 'spring', delay: 0.75 }} // mais lento (era 0.3, 2.5x)
                 >
                   <CheckCircle2 className="w-3 h-3 text-green-500" />
                 </motion.div>
@@ -245,27 +294,31 @@ export const CardEffectAutomation: React.FC = () => {
 
       {/* Label inferior */}
       <motion.div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-emerald-300/70 font-medium"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 3.5 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center z-10"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
+        transition={{ delay: isAnimating ? 8.75 : 0, duration: 1.25 }} // mais lento (era 3.5 delay, 2.5x)
       >
-        Fluxo automatizado ativo
+        <p className="text-base font-medium text-emerald-300/80">
+          {phase === 'waiting' ? 'Aguardando...' : 'Fluxo automatizado ativo'}
+        </p>
       </motion.div>
 
       {/* Indicador de status */}
       <motion.div
         className="absolute top-4 right-4 flex items-center gap-2"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        animate={{ opacity: isAnimating ? 1 : 0.3 }}
+        transition={{ delay: isAnimating ? 2.5 : 0 }} // mais lento (era 1, 2.5x)
       >
         <motion.div
           className="w-2 h-2 bg-green-500 rounded-full"
-          animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 1, repeat: Infinity }}
+          animate={{ opacity: isAnimating ? [1, 0.5, 1] : 0.3 }}
+          transition={{ duration: 2.5, repeat: Infinity }} // mais lento (era 1, 2.5x)
         />
-        <span className="text-[10px] text-green-400">Automação ativa</span>
+        <span className="text-[10px] text-green-400">
+          {phase === 'waiting' ? 'Aguardando ativação' : 'Automação ativa'}
+        </span>
       </motion.div>
     </div>
   );

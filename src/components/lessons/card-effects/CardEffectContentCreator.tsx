@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Play, FileText, Highlighter } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectContentCreator - "A I.A. como coautora de livros e cursos"
@@ -14,13 +15,20 @@ import { BookOpen, Play, FileText, Highlighter } from 'lucide-react';
  * 4. Marcador neon roxo destaca trechos
  * 5. Páginas se unem em livro que "fecha" e vira de lado
  * 6. Player de vídeo miniatura aparece com botão play pulsando
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectContentCreator: React.FC = () => {
-  const [phase, setPhase] = useState<'falling' | 'stacking' | 'writing' | 'highlight' | 'book' | 'complete'>('falling');
+export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'falling' | 'stacking' | 'writing' | 'highlight' | 'book' | 'complete'>('waiting');
   const [fallenPages, setFallenPages] = useState(0);
   const [showHighlight, setShowHighlight] = useState(false);
   const [showBook, setShowBook] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const pageTypes = [
     { id: 1, label: 'Sumário', color: 'from-blue-500/80 to-cyan-500/80', keywords: ['Título', 'Introdução', 'Módulo 1'] },
@@ -28,43 +36,89 @@ export const CardEffectContentCreator: React.FC = () => {
     { id: 3, label: 'Exemplos', color: 'from-pink-500/80 to-rose-500/80', keywords: ['Exemplo', 'Exercício', 'Quiz'] },
   ];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('falling');
+    setFallenPages(0);
+    setShowHighlight(false);
+    setShowBook(false);
+    setShowPlayer(false);
+
+    // Durações mais lentas (2.5x)
+    const FALL_DELAY = 500;         // era 200ms
+    const FALL_INTERVAL = 500;      // era 200ms
+    const STACKING_DELAY = 4500;    // era 1800ms
+    const WRITING_DELAY = 5500;     // era 2200ms
+    const HIGHLIGHT_DELAY = 7500;   // era 3000ms
+    const BOOK_DELAY = 9500;        // era 3800ms
+    const COMPLETE_DELAY = 11250;   // era 4500ms
+    const LOOP_DELAY = 15000;       // tempo até reiniciar
 
     // Páginas caem
     for (let i = 0; i < 8; i++) {
-      timers.push(setTimeout(() => setFallenPages(i + 1), 200 + i * 200));
+      timersRef.current.push(setTimeout(() => setFallenPages(i + 1), FALL_DELAY + i * FALL_INTERVAL));
     }
 
     // Fase stacking
-    timers.push(setTimeout(() => setPhase('stacking'), 1800));
+    timersRef.current.push(setTimeout(() => setPhase('stacking'), STACKING_DELAY));
 
     // Fase writing
-    timers.push(setTimeout(() => setPhase('writing'), 2200));
+    timersRef.current.push(setTimeout(() => setPhase('writing'), WRITING_DELAY));
 
     // Marcador destaca
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('highlight');
       setShowHighlight(true);
-    }, 3000));
+    }, HIGHLIGHT_DELAY));
 
     // Livro se forma
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('book');
       setShowBook(true);
-    }, 3800));
+    }, BOOK_DELAY));
 
     // Player aparece
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('complete');
       setShowPlayer(true);
-    }, 4500));
+    }, COMPLETE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setFallenPages(0);
+      setShowHighlight(false);
+      setShowBook(false);
+      setShowPlayer(false);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
+
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/30">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/30">
       {/* Background */}
       <div className="absolute inset-0 opacity-20">
         <div
@@ -81,9 +135,9 @@ export const CardEffectContentCreator: React.FC = () => {
       {/* Páginas caindo */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(8)].map((_, i) => {
-          const isVisible = fallenPages > i;
+          const isVisible = isAnimating && fallenPages > i;
           const stackIndex = i % 3;
-          const isStacked = phase !== 'falling';
+          const isStacked = isAnimating && phase !== 'falling' && phase !== 'waiting';
 
           return (
             <motion.div
@@ -112,7 +166,7 @@ export const CardEffectContentCreator: React.FC = () => {
                 scale: isStacked ? 0.8 : 1,
               }}
               transition={{
-                duration: isStacked ? 0.5 : 1.2,
+                duration: isStacked ? 1.25 : 3.0, // 2.5x mais lento
                 ease: isStacked ? 'easeOut' : [0.25, 0.46, 0.45, 0.94],
               }}
             >
@@ -133,7 +187,7 @@ export const CardEffectContentCreator: React.FC = () => {
 
       {/* Três blocos empilhados com labels */}
       <AnimatePresence>
-        {phase !== 'falling' && !showBook && (
+        {isAnimating && phase !== 'falling' && phase !== 'waiting' && !showBook && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-8">
             {pageTypes.map((type, i) => (
               <motion.div
@@ -156,32 +210,32 @@ export const CardEffectContentCreator: React.FC = () => {
                         key={ki}
                         className="text-[8px] text-white/90 font-medium"
                         initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 2.2 + ki * 0.2 }}
+                        animate={{ opacity: isAnimating ? 1 : 0, x: 0 }}
+                        transition={{ delay: 5.5 + ki * 0.5 }} // 2.5x mais lento
                       >
                         {kw}
                         <motion.span
                           className="inline-block w-1 h-2 bg-white ml-0.5"
-                          animate={{ opacity: [1, 0, 1] }}
-                          transition={{ duration: 0.5, repeat: 3 }}
+                          animate={{ opacity: isAnimating ? [1, 0, 1] : 0 }}
+                          transition={{ duration: 1.25, repeat: 3 }} // 2.5x mais lento
                         />
                       </motion.div>
                     ))}
                   </div>
 
                   {/* Marcador neon passando */}
-                  {showHighlight && i === 1 && (
+                  {isAnimating && showHighlight && i === 1 && (
                     <motion.div
                       className="absolute top-3 left-1 w-16 h-3 bg-purple-400/40 rounded-sm"
                       initial={{ scaleX: 0, opacity: 0 }}
                       animate={{ scaleX: 1, opacity: 1 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.75 }} // 2.5x mais lento
                       style={{ originX: 0 }}
                     >
                       <motion.div
                         className="absolute inset-0 bg-purple-400/60 blur-sm"
                         animate={{ opacity: [0.4, 0.8, 0.4] }}
-                        transition={{ duration: 0.5, repeat: Infinity }}
+                        transition={{ duration: 1.25, repeat: Infinity }} // 2.5x mais lento
                       />
                     </motion.div>
                   )}
@@ -204,7 +258,7 @@ export const CardEffectContentCreator: React.FC = () => {
 
       {/* Livro fechado */}
       <AnimatePresence>
-        {showBook && (
+        {isAnimating && showBook && (
           <motion.div
             className="absolute left-1/3 top-1/2 -translate-y-1/2"
             initial={{ scale: 0, opacity: 0, rotateY: 90 }}
@@ -250,7 +304,7 @@ export const CardEffectContentCreator: React.FC = () => {
               <motion.div
                 className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-r-lg"
                 animate={{ opacity: [0.1, 0.3, 0.1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 5, repeat: Infinity }} // 2.5x mais lento
               />
             </div>
           </motion.div>
@@ -259,7 +313,7 @@ export const CardEffectContentCreator: React.FC = () => {
 
       {/* Player de vídeo miniatura */}
       <AnimatePresence>
-        {showPlayer && (
+        {isAnimating && showPlayer && (
           <motion.div
             className="absolute right-8 top-1/2 -translate-y-1/2"
             initial={{ scale: 0, opacity: 0, x: 50 }}
@@ -283,7 +337,7 @@ export const CardEffectContentCreator: React.FC = () => {
                 animate={{
                   scale: [1, 1.1, 1],
                 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                transition={{ duration: 3.75, repeat: Infinity }} // 2.5x mais lento
               >
                 <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
                   <Play className="w-5 h-5 text-purple-600 ml-0.5" fill="currentColor" />
@@ -296,7 +350,7 @@ export const CardEffectContentCreator: React.FC = () => {
                   className="h-full bg-purple-500"
                   initial={{ width: 0 }}
                   animate={{ width: '30%' }}
-                  transition={{ delay: 0.5, duration: 1 }}
+                  transition={{ delay: 1.25, duration: 2.5 }} // 2.5x mais lento
                 />
               </div>
             </div>
@@ -318,8 +372,8 @@ export const CardEffectContentCreator: React.FC = () => {
       <motion.div
         className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-purple-300/70 font-medium"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 4.5 }}
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ delay: 11.25 }} // 2.5x mais lento
       >
         Conteúdo pronto para publicar
       </motion.div>

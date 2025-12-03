@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, MessageSquare, Mail, Share2, Sparkles } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectPresenceAmplifier - "A I.A. que amplia a sua presença"
@@ -14,11 +15,68 @@ import { User, MessageSquare, Mail, Share2, Sparkles } from 'lucide-react';
  * 4. Cópias aparecem em: chat, email, rede social
  * 5. Todas mantêm o mesmo "estilo" visual
  * 6. Cópias se organizam em grade, orbe fica pulsando
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectPresenceAmplifier: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'beam' | 'clone' | 'spread' | 'complete'>('enter');
+export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'beam' | 'clone' | 'spread' | 'complete'>('waiting');
   const [visibleClones, setVisibleClones] = useState(0);
   const [showOrganized, setShowOrganized] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
+
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('enter');
+    setVisibleClones(0);
+    setShowOrganized(false);
+
+    // Durações mais lentas (2.5x)
+    const ENTER_DELAY = 0;         // entrada imediata
+    const BEAM_DELAY = 1500;       // era 600ms
+    const CLONE_DELAY = 3000;      // era 1200ms
+    const CLONE_START = 3500;      // era 1400ms
+    const CLONE_INTERVAL = 750;    // era 300ms
+    const SPREAD_DELAY = 8000;     // era 3200ms
+    const COMPLETE_DELAY = 10000;  // era 4000ms
+    const LOOP_DELAY = 15000;      // tempo até reiniciar
+
+    // Fase 1: Entrada
+    timersRef.current.push(setTimeout(() => setPhase('enter'), ENTER_DELAY));
+
+    // Fase 2: Feixe de luz
+    timersRef.current.push(setTimeout(() => setPhase('beam'), BEAM_DELAY));
+
+    // Fase 3: Clone
+    timersRef.current.push(setTimeout(() => setPhase('clone'), CLONE_DELAY));
+
+    // Clones aparecem um a um
+    cloneTargets.forEach((_, i) => {
+      timersRef.current.push(setTimeout(() => setVisibleClones(i + 1), CLONE_START + i * CLONE_INTERVAL));
+    });
+
+    // Fase 4: Organizar em grade
+    timersRef.current.push(setTimeout(() => {
+      setPhase('spread');
+      setShowOrganized(true);
+    }, SPREAD_DELAY));
+
+    // Fase 5: Complete
+    timersRef.current.push(setTimeout(() => setPhase('complete'), COMPLETE_DELAY));
+
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
 
   const cloneTargets = [
     { id: 1, icon: MessageSquare, label: 'Chat', position: { x: 20, y: 25 }, finalPosition: { x: 60, y: 20 } },
@@ -28,34 +86,29 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
     { id: 5, icon: Share2, label: 'LinkedIn', position: { x: 85, y: 55 }, finalPosition: { x: 75, y: 45 } },
   ];
 
+  // 🎯 Iniciar animação quando isActive mudar para true
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisibleClones(0);
+      setShowOrganized(false);
+    }
 
-    // Fase beam
-    timers.push(setTimeout(() => setPhase('beam'), 600));
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
 
-    // Fase clone
-    timers.push(setTimeout(() => setPhase('clone'), 1200));
-
-    // Clones aparecem
-    cloneTargets.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisibleClones(i + 1), 1400 + i * 300));
-    });
-
-    // Organizar em grade
-    timers.push(setTimeout(() => {
-      setPhase('spread');
-      setShowOrganized(true);
-    }, 3200));
-
-    // Fase complete
-    timers.push(setTimeout(() => setPhase('complete'), 4000));
-
-    return () => timers.forEach(clearTimeout);
-  }, []);
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/30">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/30">
       {/* Background */}
       <div className="absolute inset-0 opacity-20">
         <div
@@ -72,8 +125,11 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
       <motion.div
         className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-3"
         initial={{ x: -50, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
+        animate={{
+          x: isAnimating ? 0 : -50,
+          opacity: isAnimating ? 1 : 0,
+        }}
+        transition={{ duration: 1 }} // 2.5x mais lento (era 0.4)
       >
         {/* Silhueta */}
         <div className="w-12 h-16 bg-gradient-to-b from-indigo-500/50 to-indigo-700/50 rounded-t-full flex items-center justify-center">
@@ -83,10 +139,10 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
         {/* Texto original */}
         <motion.div
           className="relative w-24 p-2 bg-slate-800/80 rounded-lg border border-indigo-500/30"
-          animate={phase === 'beam' ? {
+          animate={isAnimating && phase === 'beam' ? {
             borderColor: ['rgba(99, 102, 241, 0.3)', 'rgba(99, 102, 241, 0.8)', 'rgba(99, 102, 241, 0.3)'],
           } : {}}
-          transition={{ duration: 0.5, repeat: phase === 'beam' ? 3 : 0 }}
+          transition={{ duration: 1.25, repeat: isAnimating && phase === 'beam' ? 3 : 0 }} // 2.5x mais lento (era 0.5)
         >
           {/* Linhas de texto */}
           <div className="space-y-1">
@@ -96,12 +152,12 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
           </div>
 
           {/* Feixe de luz saindo */}
-          {phase === 'beam' && (
+          {isAnimating && phase === 'beam' && (
             <motion.div
               className="absolute right-0 top-1/2 w-20 h-1 bg-gradient-to-r from-indigo-400 to-transparent"
               initial={{ scaleX: 0, opacity: 0 }}
               animate={{ scaleX: 1, opacity: [0, 1, 0] }}
-              transition={{ duration: 0.8, repeat: 2 }}
+              transition={{ duration: 2, repeat: 2 }} // 2.5x mais lento (era 0.8)
               style={{ originX: 0 }}
             />
           )}
@@ -112,27 +168,30 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
       <motion.div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.3, type: 'spring' }}
+        animate={{
+          scale: isAnimating ? 1 : 0,
+          opacity: isAnimating ? 1 : 0,
+        }}
+        transition={{ delay: 0.75, type: 'spring' }} // 2.5x mais lento (era 0.3)
       >
         {/* Glow externo */}
         <motion.div
           className="absolute inset-0 bg-indigo-500 rounded-full blur-2xl"
           animate={{
-            opacity: [0.3, 0.6, 0.3],
-            scale: [1, 1.3, 1],
+            opacity: isAnimating ? [0.3, 0.6, 0.3] : 0,
+            scale: isAnimating ? [1, 1.3, 1] : 1,
           }}
-          transition={{ duration: 2, repeat: Infinity }}
+          transition={{ duration: 5, repeat: Infinity }} // 2.5x mais lento (era 2)
         />
 
         {/* Orbe */}
         <motion.div
           className="relative w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl"
           animate={{
-            rotate: phase === 'clone' || phase === 'spread' ? 360 : 0,
+            rotate: isAnimating && (phase === 'clone' || phase === 'spread') ? 360 : 0,
           }}
           transition={{
-            duration: 3,
+            duration: 7.5, // 2.5x mais lento (era 3)
             repeat: Infinity,
             ease: 'linear',
           }}
@@ -142,19 +201,19 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
           {/* Anéis girando */}
           <motion.div
             className="absolute inset-0 border-2 border-white/30 rounded-full"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+            animate={{ rotate: isAnimating ? -360 : 0 }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} // 2.5x mais lento (era 4)
           />
           <motion.div
             className="absolute inset-1 border border-white/20 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            animate={{ rotate: isAnimating ? 360 : 0 }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }} // 2.5x mais lento (era 6)
           />
         </motion.div>
 
         {/* Partículas saindo do orbe */}
         <AnimatePresence>
-          {phase === 'clone' && cloneTargets.slice(0, visibleClones).map((target, i) => (
+          {isAnimating && phase === 'clone' && cloneTargets.slice(0, visibleClones).map((target, i) => (
             <motion.div
               key={`particle-${target.id}`}
               className="absolute top-1/2 left-1/2 w-2 h-2 bg-indigo-400 rounded-full"
@@ -165,7 +224,7 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
                 opacity: [1, 0],
                 scale: [1, 0.5],
               }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
+              transition={{ duration: 1.25, delay: i * 0.25 }} // 2.5x mais lento (era 0.5 e delay 0.1)
             />
           ))}
         </AnimatePresence>
@@ -174,7 +233,7 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
       {/* Clones de texto nos canais */}
       {cloneTargets.map((target, i) => {
         const Icon = target.icon;
-        const isVisible = visibleClones > i;
+        const isVisible = isAnimating && visibleClones > i;
         const pos = showOrganized ? target.finalPosition : target.position;
 
         return (
@@ -194,9 +253,9 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
               top: `${pos.y}%`,
             }}
             transition={{
-              scale: { type: 'spring', stiffness: 300 },
-              left: { duration: 0.5 },
-              top: { duration: 0.5 },
+              scale: { type: 'spring', stiffness: 120 }, // mais suave (era 300)
+              left: { duration: 1.25 }, // 2.5x mais lento (era 0.5)
+              top: { duration: 1.25 }, // 2.5x mais lento (era 0.5)
             }}
           >
             {/* Card de clone */}
@@ -206,7 +265,7 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
                 className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center"
                 initial={{ scale: 0 }}
                 animate={{ scale: isVisible ? 1 : 0 }}
-                transition={{ delay: 0.2, type: 'spring' }}
+                transition={{ delay: 0.5, type: 'spring' }} // 2.5x mais lento (era 0.2)
               >
                 <Icon className="w-3 h-3 text-white" />
               </motion.div>
@@ -223,7 +282,7 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
                 className="absolute inset-0 bg-indigo-400/30 rounded-lg"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.75 }} // 2.5x mais lento (era 0.3)
               />
 
               {/* Label */}
@@ -239,8 +298,8 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
       <motion.div
         className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-indigo-300/70 font-medium"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 4 }}
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ delay: isAnimating ? 10 : 0 }} // 2.5x mais lento (era 4)
       >
         Sua presença multiplicada
       </motion.div>
@@ -249,8 +308,8 @@ export const CardEffectPresenceAmplifier: React.FC = () => {
       <motion.div
         className="absolute top-4 right-4 px-2 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 3 }}
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ delay: isAnimating ? 7.5 : 0 }} // 2.5x mais lento (era 3)
       >
         <span className="text-[10px] text-indigo-300">
           {visibleClones} canais ativos

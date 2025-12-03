@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Image, Video, Instagram, Youtube, FileEdit } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectContentMachine - "Máquina de conteúdo com I.A."
@@ -14,10 +15,17 @@ import { FileText, Image, Video, Instagram, Youtube, FileEdit } from 'lucide-rea
  * 4. Labels: Ideias, Criação, Distribuição acendem em sequência
  * 5. Cards viram formatos diferentes: quadrado (feed), retângulo (YouTube), texto (blog)
  * 6. Após 3-4s, esteira desacelera para loop lento
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2-2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectContentMachine: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'active' | 'idle'>('enter');
+export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'active' | 'idle'>('waiting');
   const [activeLabel, setActiveLabel] = useState(0);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Tipos de conteúdo que passam na esteira
   const contentItems = [
@@ -30,32 +38,69 @@ export const CardEffectContentMachine: React.FC = () => {
 
   const labels = ['Ideias', 'Criação', 'Distribuição'];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('enter');
+    setActiveLabel(0);
+
+    // Durações mais lentas (2.5x)
+    const ENTER_DELAY = 1250;      // era 500ms
+    const LABEL_BASE_DELAY = 2000; // era 800ms
+    const LABEL_INTERVAL = 2000;   // era 800ms
+    const IDLE_DELAY = 10000;      // era 4000ms
+    const LOOP_DELAY = 15000;      // tempo até reiniciar
 
     // Entra fase ativa
-    timers.push(setTimeout(() => setPhase('active'), 500));
+    timersRef.current.push(setTimeout(() => setPhase('active'), ENTER_DELAY));
 
     // Labels acendem em sequência
     labels.forEach((_, i) => {
-      timers.push(setTimeout(() => setActiveLabel(i + 1), 800 + i * 800));
+      timersRef.current.push(setTimeout(() => setActiveLabel(i + 1), LABEL_BASE_DELAY + i * LABEL_INTERVAL));
     });
 
     // Fase idle (loop lento)
-    timers.push(setTimeout(() => setPhase('idle'), 4000));
+    timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setActiveLabel(0);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
+
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   // Componente de engrenagem
-  const Gear: React.FC<{ size: number; className?: string; speed?: number }> = ({ size, className, speed = 3 }) => (
+  const Gear: React.FC<{ size: number; className?: string; speed?: number }> = ({ size, className, speed = 7.5 }) => (
     <motion.svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       className={className}
-      animate={{ rotate: 360 }}
-      transition={{ duration: speed, repeat: Infinity, ease: 'linear' }}
+      animate={{ rotate: isAnimating ? 360 : 0 }}
+      transition={{ duration: speed, repeat: isAnimating ? Infinity : 0, ease: 'linear' }}
     >
       <path
         fill="currentColor"
@@ -65,7 +110,7 @@ export const CardEffectContentMachine: React.FC = () => {
   );
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
       {/* Background industrial */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -80,13 +125,13 @@ export const CardEffectContentMachine: React.FC = () => {
 
       {/* Engrenagens decorativas */}
       <div className="absolute top-4 left-4">
-        <Gear size={24} className="text-orange-500/30" speed={4} />
+        <Gear size={24} className="text-orange-500/30" speed={10} />
       </div>
       <div className="absolute top-8 left-10">
-        <Gear size={16} className="text-orange-400/20" speed={3} />
+        <Gear size={16} className="text-orange-400/20" speed={7.5} />
       </div>
       <div className="absolute bottom-4 right-4">
-        <Gear size={20} className="text-orange-500/30" speed={5} />
+        <Gear size={20} className="text-orange-500/30" speed={12.5} />
       </div>
 
       {/* Labels superiores */}
@@ -96,19 +141,19 @@ export const CardEffectContentMachine: React.FC = () => {
             key={label}
             className="relative"
             initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + i * 0.1 }}
+            animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
+            transition={{ delay: isAnimating ? 0.75 + i * 0.25 : 0 }}
           >
             <motion.div
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
-                activeLabel > i
+                activeLabel > i && isAnimating
                   ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
                   : 'bg-slate-800/50 text-slate-500 border border-slate-700/50'
               }`}
-              animate={activeLabel > i ? {
+              animate={activeLabel > i && isAnimating ? {
                 boxShadow: ['0 0 0 rgba(251, 146, 60, 0)', '0 0 15px rgba(251, 146, 60, 0.3)', '0 0 0 rgba(251, 146, 60, 0)'],
               } : {}}
-              transition={{ duration: 1, repeat: activeLabel > i ? 2 : 0 }}
+              transition={{ duration: 2.5, repeat: activeLabel > i && isAnimating ? 2 : 0 }}
             >
               {label}
             </motion.div>
@@ -118,9 +163,9 @@ export const CardEffectContentMachine: React.FC = () => {
               <motion.div
                 className="absolute top-1/2 -right-6 w-4 h-0.5 bg-slate-700"
                 animate={{
-                  backgroundColor: activeLabel > i ? '#fb923c' : '#334155',
+                  backgroundColor: activeLabel > i && isAnimating ? '#fb923c' : '#334155',
                 }}
-                transition={{ delay: 0.5 + i * 0.8 }}
+                transition={{ delay: isAnimating ? 1.25 + i * 2 : 0 }}
               />
             )}
           </motion.div>
@@ -131,8 +176,8 @@ export const CardEffectContentMachine: React.FC = () => {
       <motion.div
         className="absolute bottom-16 left-0 right-0 h-20"
         initial={{ x: '-100%' }}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        animate={{ x: isAnimating ? 0 : '-100%' }}
+        transition={{ duration: 1.25, ease: 'easeOut' }}
       >
         {/* Trilhos da esteira */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-slate-700/50 rounded-full" />
@@ -150,11 +195,11 @@ export const CardEffectContentMachine: React.FC = () => {
             )`,
           }}
           animate={{
-            backgroundPositionX: phase === 'idle' ? ['0px', '64px'] : ['0px', '64px'],
+            backgroundPositionX: isAnimating ? (phase === 'idle' ? ['0px', '64px'] : ['0px', '64px']) : '0px',
           }}
           transition={{
-            duration: phase === 'idle' ? 2 : 0.8,
-            repeat: Infinity,
+            duration: isAnimating ? (phase === 'idle' ? 5 : 2) : 0,
+            repeat: isAnimating ? Infinity : 0,
             ease: 'linear',
           }}
         />
@@ -163,20 +208,20 @@ export const CardEffectContentMachine: React.FC = () => {
         <motion.div
           className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-16 h-24"
           initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.3, type: 'spring' }}
+          animate={{ scale: isAnimating ? 1 : 0 }}
+          transition={{ delay: isAnimating ? 0.75 : 0, type: 'spring' }}
         >
           {/* Anel externo */}
           <motion.div
             className="absolute inset-0 rounded-full border-4 border-orange-500/60"
-            animate={{
+            animate={isAnimating ? {
               boxShadow: [
                 '0 0 10px rgba(251, 146, 60, 0.3), inset 0 0 10px rgba(251, 146, 60, 0.2)',
                 '0 0 30px rgba(251, 146, 60, 0.6), inset 0 0 20px rgba(251, 146, 60, 0.4)',
                 '0 0 10px rgba(251, 146, 60, 0.3), inset 0 0 10px rgba(251, 146, 60, 0.2)',
               ],
-            }}
-            transition={{ duration: 1.5, repeat: Infinity }}
+            } : {}}
+            transition={{ duration: 3.75, repeat: isAnimating ? Infinity : 0 }}
           />
 
           {/* Centro do portal */}
@@ -185,8 +230,8 @@ export const CardEffectContentMachine: React.FC = () => {
           {/* Label I.A. */}
           <motion.div
             className="absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-orange-500/20 border border-orange-500/40 rounded text-[8px] text-orange-300 font-bold"
-            animate={{ opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 1, repeat: Infinity }}
+            animate={isAnimating ? { opacity: [0.7, 1, 0.7] } : { opacity: 0.5 }}
+            transition={{ duration: 2.5, repeat: isAnimating ? Infinity : 0 }}
           >
             I.A.
           </motion.div>
@@ -195,7 +240,7 @@ export const CardEffectContentMachine: React.FC = () => {
         {/* Cards de conteúdo na esteira */}
         {contentItems.map((item, i) => {
           const Icon = item.icon;
-          const speed = phase === 'idle' ? 8 : 4;
+          const speed = isAnimating ? (phase === 'idle' ? 20 : 10) : 0;
 
           return (
             <motion.div
@@ -203,11 +248,11 @@ export const CardEffectContentMachine: React.FC = () => {
               className="absolute top-1/2 -translate-y-1/2"
               initial={{ x: -50 }}
               animate={{
-                x: ['calc(-50px)', 'calc(100vw + 50px)'],
+                x: isAnimating ? ['calc(-50px)', 'calc(100vw + 50px)'] : -50,
               }}
               transition={{
-                duration: speed,
-                repeat: Infinity,
+                duration: speed || 10,
+                repeat: isAnimating ? Infinity : 0,
                 delay: i * (speed / contentItems.length),
                 ease: 'linear',
               }}
@@ -227,12 +272,12 @@ export const CardEffectContentMachine: React.FC = () => {
                 <motion.div
                   className="absolute inset-0 bg-orange-300/50 rounded-lg"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.8, 0] }}
+                  animate={isAnimating ? { opacity: [0, 0.8, 0] } : { opacity: 0 }}
                   transition={{
-                    duration: 0.3,
+                    duration: 0.75,
                     delay: speed * 0.45, // Quando passa pelo centro
-                    repeat: Infinity,
-                    repeatDelay: speed - 0.3,
+                    repeat: isAnimating ? Infinity : 0,
+                    repeatDelay: speed - 0.75,
                   }}
                 />
 
@@ -240,11 +285,11 @@ export const CardEffectContentMachine: React.FC = () => {
                 <motion.div
                   className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center"
                   initial={{ scale: 0 }}
-                  animate={{ scale: [0, 1, 1, 0] }}
+                  animate={isAnimating ? { scale: [0, 1, 1, 0] } : { scale: 0 }}
                   transition={{
-                    duration: speed,
+                    duration: speed || 10,
                     delay: i * (speed / contentItems.length),
-                    repeat: Infinity,
+                    repeat: isAnimating ? Infinity : 0,
                     times: [0, 0.5, 0.9, 1],
                   }}
                 >
@@ -260,13 +305,13 @@ export const CardEffectContentMachine: React.FC = () => {
       <motion.div
         className="absolute bottom-4 right-4 flex items-center gap-2"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        animate={{ opacity: isAnimating ? 1 : 0.3 }}
+        transition={{ delay: isAnimating ? 2.5 : 0 }}
       >
         <motion.div
           className="w-2 h-2 bg-green-500 rounded-full"
-          animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
+          animate={isAnimating ? { opacity: [1, 0.5, 1] } : { opacity: 0.5 }}
+          transition={{ duration: 2, repeat: isAnimating ? Infinity : 0 }}
         />
         <span className="text-[10px] text-green-400">Produzindo</span>
       </motion.div>
@@ -275,13 +320,13 @@ export const CardEffectContentMachine: React.FC = () => {
       <motion.div
         className="absolute bottom-4 left-4 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
+        animate={{ opacity: isAnimating ? 1 : 0.3 }}
+        transition={{ delay: isAnimating ? 3.75 : 0 }}
       >
         <motion.span
           className="text-xs text-slate-300"
-          animate={{ opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          animate={isAnimating ? { opacity: [0.7, 1, 0.7] } : { opacity: 0.7 }}
+          transition={{ duration: 5, repeat: isAnimating ? Infinity : 0 }}
         >
           ∞ conteúdos/mês
         </motion.span>

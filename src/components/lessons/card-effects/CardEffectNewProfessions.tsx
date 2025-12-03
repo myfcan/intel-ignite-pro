@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Rocket, Sparkles, Settings, BookOpen, Cpu } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectNewProfessions - "Novas profissões com I.A."
@@ -14,13 +15,20 @@ import { User, Rocket, Sparkles, Settings, BookOpen, Cpu } from 'lucide-react';
  * 4. Foguete é desenhado com linha neon
  * 5. Foguete faz "ignite" e sobe com rastro de partículas
  * 6. Frase final aparece na parte inferior
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2-2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectNewProfessions: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'silhouettes' | 'rocket' | 'ignite' | 'complete'>('enter');
+export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'silhouettes' | 'rocket' | 'ignite' | 'complete'>('waiting');
   const [visibleProfessions, setVisibleProfessions] = useState(0);
   const [rocketDrawn, setRocketDrawn] = useState(false);
   const [rocketLaunched, setRocketLaunched] = useState(false);
   const [showQuote, setShowQuote] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const professions = [
     { id: 1, label: 'Configurador de Agentes', icon: Settings, side: 'left' },
@@ -29,46 +37,91 @@ export const CardEffectNewProfessions: React.FC = () => {
     { id: 4, label: 'Especialista em Prompt', icon: Sparkles, side: 'right' },
   ];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('enter');
+    setVisibleProfessions(0);
+    setRocketDrawn(false);
+    setRocketLaunched(false);
+    setShowQuote(false);
+
+    // Durações mais lentas (2-2.5x)
+    const SILHOUETTES_DELAY = 1250;  // era 500ms (2.5x)
+    const BASE_PROF_DELAY = 2000;    // era 800ms (2.5x)
+    const PROF_INCREMENT = 1000;     // era 400ms (2.5x)
+    const ROCKET_DELAY = 7000;       // era 2800ms (2.5x)
+    const IGNITE_DELAY = 8750;       // era 3500ms (2.5x)
+    const QUOTE_DELAY = 10500;       // era 4200ms (2.5x)
+    const LOOP_DELAY = 15000;        // tempo até reiniciar
 
     // Fase silhouettes
-    timers.push(setTimeout(() => setPhase('silhouettes'), 500));
+    timersRef.current.push(setTimeout(() => setPhase('silhouettes'), SILHOUETTES_DELAY));
 
     // Profissões aparecem
     professions.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisibleProfessions(i + 1), 800 + i * 400));
+      timersRef.current.push(setTimeout(() => setVisibleProfessions(i + 1), BASE_PROF_DELAY + i * PROF_INCREMENT));
     });
 
     // Foguete desenha
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('rocket');
       setRocketDrawn(true);
-    }, 2800));
+    }, ROCKET_DELAY));
 
     // Ignite
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('ignite');
       setRocketLaunched(true);
-    }, 3500));
+    }, IGNITE_DELAY));
 
     // Quote
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('complete');
       setShowQuote(true);
-    }, 4200));
+    }, QUOTE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisibleProfessions(0);
+      setRocketDrawn(false);
+      setRocketLaunched(false);
+      setShowQuote(false);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
+
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/20">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/20">
       {/* Background que escurece */}
       <motion.div
         className="absolute inset-0 bg-black"
         initial={{ opacity: 0 }}
-        animate={{ opacity: phase !== 'enter' ? 0.3 : 0 }}
-        transition={{ duration: 0.5 }}
+        animate={{ opacity: isAnimating && phase !== 'enter' ? 0.3 : 0 }}
+        transition={{ duration: 1.25 }} // mais lento (era 0.5, agora 2.5x)
       />
 
       {/* Estrelas de fundo */}
@@ -82,13 +135,13 @@ export const CardEffectNewProfessions: React.FC = () => {
               top: `${Math.random() * 100}%`,
             }}
             animate={{
-              opacity: [0.2, 0.8, 0.2],
-              scale: [0.8, 1.2, 0.8],
+              opacity: isAnimating ? [0.2, 0.8, 0.2] : 0.2,
+              scale: isAnimating ? [0.8, 1.2, 0.8] : 0.8,
             }}
             transition={{
-              duration: 1.5 + Math.random() * 2,
+              duration: 3.75 + Math.random() * 5, // mais lento (era 1.5 + 2, agora 2.5x)
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: Math.random() * 5, // mais lento (era 2, agora 2.5x)
             }}
           />
         ))}
@@ -98,8 +151,8 @@ export const CardEffectNewProfessions: React.FC = () => {
       <motion.div
         className="absolute left-1/2 -translate-x-1/2 bottom-0 w-24 h-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: phase !== 'enter' ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
+        animate={{ opacity: isAnimating && phase !== 'enter' ? 1 : 0 }}
+        transition={{ duration: 1.25 }} // mais lento (era 0.5, agora 2.5x)
       >
         <div
           className="w-full h-full"
@@ -113,7 +166,7 @@ export const CardEffectNewProfessions: React.FC = () => {
       <div className="absolute inset-x-0 bottom-16 flex justify-center items-end gap-2">
         {professions.map((prof, i) => {
           const Icon = prof.icon;
-          const isVisible = visibleProfessions > i;
+          const isVisible = isAnimating && visibleProfessions > i;
 
           return (
             <motion.div
@@ -124,7 +177,7 @@ export const CardEffectNewProfessions: React.FC = () => {
                 y: isVisible ? 0 : 20,
                 opacity: isVisible ? 1 : 0,
               }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ type: 'spring', stiffness: 100 }} // mais lento (era 200, agora 2x mais lento)
             >
               {/* Silhueta */}
               <div className="w-8 h-12 bg-gradient-to-b from-slate-600/80 to-slate-800/80 rounded-t-full flex items-center justify-center">
@@ -142,7 +195,7 @@ export const CardEffectNewProfessions: React.FC = () => {
                   x: isVisible ? 0 : (prof.side === 'left' ? -20 : 20),
                   opacity: isVisible ? 1 : 0,
                 }}
-                transition={{ delay: 0.2, type: 'spring' }}
+                transition={{ delay: 0.5, type: 'spring' }} // mais lento (era 0.2, agora 2.5x)
               >
                 <div className="flex items-center gap-1">
                   <Icon className="w-3 h-3 text-rose-400" />
@@ -159,10 +212,10 @@ export const CardEffectNewProfessions: React.FC = () => {
         className="absolute left-1/2 -translate-x-1/2"
         initial={{ bottom: '35%' }}
         animate={{
-          bottom: rocketLaunched ? '100%' : '35%',
+          bottom: isAnimating && rocketLaunched ? '100%' : '35%',
         }}
         transition={{
-          duration: rocketLaunched ? 1 : 0,
+          duration: isAnimating && rocketLaunched ? 2.5 : 0, // mais lento (era 1, agora 2.5x)
           ease: 'easeIn',
         }}
       >
@@ -171,19 +224,19 @@ export const CardEffectNewProfessions: React.FC = () => {
           className="relative"
           initial={{ opacity: 0, scale: 0 }}
           animate={{
-            opacity: rocketDrawn ? 1 : 0,
-            scale: rocketDrawn ? 1 : 0,
+            opacity: isAnimating && rocketDrawn ? 1 : 0,
+            scale: isAnimating && rocketDrawn ? 1 : 0,
           }}
-          transition={{ type: 'spring' }}
+          transition={{ type: 'spring', stiffness: 120 }} // mais lento (adicionado stiffness)
         >
           {/* Glow do foguete */}
           <motion.div
             className="absolute inset-0 bg-rose-500 rounded-full blur-xl"
-            animate={rocketLaunched ? {
+            animate={isAnimating && rocketLaunched ? {
               opacity: [0.5, 0.8, 0.5],
               scale: [1, 1.3, 1],
             } : { opacity: 0.3 }}
-            transition={{ duration: 0.3, repeat: Infinity }}
+            transition={{ duration: 0.75, repeat: Infinity }} // mais lento (era 0.3, agora 2.5x)
           />
 
           {/* Foguete SVG simplificado */}
@@ -204,12 +257,13 @@ export const CardEffectNewProfessions: React.FC = () => {
 
           {/* Chama/Ignite */}
           <AnimatePresence>
-            {rocketLaunched && (
+            {isAnimating && rocketLaunched && (
               <motion.div
                 className="absolute -bottom-8 left-1/2 -translate-x-1/2"
                 initial={{ opacity: 0, scaleY: 0 }}
                 animate={{ opacity: 1, scaleY: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }} // mais lento (adicionado duration)
               >
                 {/* Chama principal */}
                 <div className="w-6 h-12 bg-gradient-to-b from-yellow-400 via-orange-500 to-transparent rounded-b-full" />
@@ -229,9 +283,9 @@ export const CardEffectNewProfessions: React.FC = () => {
                       scale: [1, 0.5],
                     }}
                     transition={{
-                      duration: 0.3,
+                      duration: 0.75, // mais lento (era 0.3, agora 2.5x)
                       repeat: Infinity,
-                      delay: Math.random() * 0.2,
+                      delay: Math.random() * 0.5, // mais lento (era 0.2, agora 2.5x)
                     }}
                   />
                 ))}
@@ -243,7 +297,7 @@ export const CardEffectNewProfessions: React.FC = () => {
 
       {/* Rastro de partículas do foguete */}
       <AnimatePresence>
-        {rocketLaunched && [...Array(15)].map((_, i) => (
+        {isAnimating && rocketLaunched && [...Array(15)].map((_, i) => (
           <motion.div
             key={`trail-${i}`}
             className="absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-400 rounded-full"
@@ -255,8 +309,8 @@ export const CardEffectNewProfessions: React.FC = () => {
               x: (Math.random() - 0.5) * 30,
             }}
             transition={{
-              duration: 0.8,
-              delay: i * 0.05,
+              duration: 2, // mais lento (era 0.8, agora 2.5x)
+              delay: i * 0.125, // mais lento (era 0.05, agora 2.5x)
             }}
           />
         ))}
@@ -264,12 +318,12 @@ export const CardEffectNewProfessions: React.FC = () => {
 
       {/* Frase final */}
       <AnimatePresence>
-        {showQuote && (
+        {isAnimating && showQuote && (
           <motion.div
             className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[280px] text-center"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 1.25 }} // mais lento (era 0.5, agora 2.5x)
           >
             <p className="text-xs text-rose-300/80 font-medium">
               "Quem aprende agora escolhe onde quer estar nessa cena"
@@ -282,8 +336,8 @@ export const CardEffectNewProfessions: React.FC = () => {
       <motion.div
         className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-rose-500/20 border border-rose-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ delay: isAnimating ? 2.5 : 0 }} // mais lento (era 1, agora 2.5x)
       >
         <Rocket className="w-3 h-3 text-rose-400" />
         <span className="text-[9px] text-rose-300">Novas carreiras</span>
