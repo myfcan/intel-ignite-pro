@@ -14,6 +14,7 @@ import { CardEffectPresenceAmplifier } from './CardEffectPresenceAmplifier';
 import { CardEffectStrategicAdvisor } from './CardEffectStrategicAdvisor';
 import { CardEffectNewProfessions } from './CardEffectNewProfessions';
 import { CardEffectPlaygroundChat } from './CardEffectPlaygroundChat';
+import { CardEffectClosingMessage } from './CardEffectClosingMessage';
 
 // Re-exportar componentes
 export { CardEffectAppBuilder } from './CardEffectAppBuilder';
@@ -27,11 +28,12 @@ export { CardEffectPresenceAmplifier } from './CardEffectPresenceAmplifier';
 export { CardEffectStrategicAdvisor } from './CardEffectStrategicAdvisor';
 export { CardEffectNewProfessions } from './CardEffectNewProfessions';
 export { CardEffectPlaygroundChat } from './CardEffectPlaygroundChat';
+export { CardEffectClosingMessage } from './CardEffectClosingMessage';
 
 /**
  * Tipos de card effects disponíveis
  *
- * 🎬 11 CARD EFFECTS CINEMATOGRÁFICOS
+ * 🎬 12 CARD EFFECTS CINEMATOGRÁFICOS
  *
  * Cada tipo corresponde a um cenário visual específico:
  * 1. app-builder: Celular 3D com código sendo gerado pela IA
@@ -45,6 +47,7 @@ export { CardEffectPlaygroundChat } from './CardEffectPlaygroundChat';
  * 9. strategic-advisor: 3 cenários com gráficos comparativos
  * 10. new-professions: Palco do futuro com silhuetas e foguete
  * 11. playground-chat: Interface de chat com IA para demonstrar playground
+ * 12. closing-message: Texto motivacional de encerramento/transição
  */
 export type CardEffectType =
   | 'app-builder'
@@ -57,7 +60,8 @@ export type CardEffectType =
   | 'presence-amplifier'
   | 'strategic-advisor'
   | 'new-professions'
-  | 'playground-chat';
+  | 'playground-chat'
+  | 'closing-message';
 
 /**
  * Props para os componentes de Card Effect
@@ -83,6 +87,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'strategic-advisor': CardEffectStrategicAdvisor,
   'new-professions': CardEffectNewProfessions,
   'playground-chat': CardEffectPlaygroundChat,
+  'closing-message': CardEffectClosingMessage,
 };
 
 /**
@@ -100,6 +105,7 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'strategic-advisor': 'Conselho Estratégico',
   'new-professions': 'Novas Profissões',
   'playground-chat': 'Playground / Chat IA',
+  'closing-message': 'Mensagem de Encerramento',
 };
 
 /**
@@ -117,6 +123,7 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'strategic-advisor': '3 painéis com gráficos, prós/contras, destaque na melhor opção',
   'new-professions': 'Palco com silhuetas, rótulos flutuantes, foguete decolando',
   'playground-chat': 'Interface de chat interativo com IA, mensagens animadas',
+  'closing-message': 'Texto motivacional animado para conclusões e transições',
 };
 
 /**
@@ -134,6 +141,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   'strategic-advisor',
   'new-professions',
   'playground-chat',
+  'closing-message',
 ];
 
 /**
