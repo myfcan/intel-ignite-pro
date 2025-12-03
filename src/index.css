@@ -540,7 +540,7 @@ All colors MUST be HSL.
 }
 
 .liv-breathing-active {
-  animation: liv-breathing 4s ease-in-out infinite;
+  animation: liv-breathing 3s ease-in-out infinite;
 }
 
 .liv-breathing-idle {
