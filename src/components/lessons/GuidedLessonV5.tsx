@@ -1768,44 +1768,24 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           className="relative group touch-manipulation"
           aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
         >
-          {/* Pulse ring effect - só visível quando animando */}
-          {isPlaying && isAudioEnabled && (
-            <div 
-              className="absolute inset-0 rounded-full animate-[liv-pulse_2s_ease-in-out_infinite]"
-              style={{
-                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%)',
-                transform: 'scale(1.5)',
-              }}
-            />
-          )}
-          
-          {/* Avatar container - 10% maior no mobile (53px = 48px × 1.10) */}
-          <div 
-            className={`relative w-[53px] h-[53px] rounded-full overflow-hidden transition-all duration-500 ${
+          {/* Imagem já recortada com efeito - sem manipulações CSS */}
+          <img 
+            src="/liv-avatar-mobile.png" 
+            alt="Liv" 
+            className={`w-[70px] h-[70px] transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-transparent' : ''}`}
-            style={{
-              boxShadow: isAudioEnabled 
-                ? '0 4px 20px rgba(139, 92, 246, 0.4), 0 0 30px rgba(34, 211, 238, 0.2)' 
-                : '0 4px 12px rgba(0, 0, 0, 0.3)',
-            }}
+            } ${isPlaying && isAudioEnabled ? 'animate-[liv-pulse_2s_ease-in-out_infinite]' : ''}`}
+          />
+          
+          {/* Indicador de estado do áudio */}
+          <div 
+            className={`absolute bottom-1 right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-white ${
+              isAudioEnabled 
+                ? 'bg-cyan-500 text-white' 
+                : 'bg-slate-500 text-white'
+            }`}
           >
-            <img 
-              src="/liv-avatar-mobile.png" 
-              alt="Liv" 
-              className="w-full h-full object-cover object-top scale-150"
-            />
-            
-            {/* Indicador de estado do áudio */}
-            <div 
-              className={`absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-slate-900 ${
-                isAudioEnabled 
-                  ? 'bg-cyan-500 text-white' 
-                  : 'bg-slate-500 text-white'
-              }`}
-            >
-              {isAudioEnabled ? '🔊' : '🔇'}
-            </div>
+            {isAudioEnabled ? '🔊' : '🔇'}
           </div>
         </button>
       </div>
