@@ -1770,7 +1770,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         >
           {/* Avatar circular com efeitos combinados: moldura branca, breathing, glow */}
           <div 
-            className={`w-[54px] h-[54px] rounded-full overflow-hidden transition-all duration-500 ${
+            className={`w-[54px] h-[54px] md:w-[65px] md:h-[65px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
             } ${isPlaying && isAudioEnabled ? 'liv-speaking-combined' : 'liv-breathing-idle'}`}
           >
