@@ -78,12 +78,13 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
     }, LOOP_DELAY));
   };
 
+  // Posições ajustadas para melhor responsividade mobile
   const cloneTargets = [
-    { id: 1, icon: MessageSquare, label: 'Chat', position: { x: 20, y: 25 }, finalPosition: { x: 60, y: 20 } },
-    { id: 2, icon: Mail, label: 'Email', position: { x: 80, y: 30 }, finalPosition: { x: 75, y: 20 } },
-    { id: 3, icon: Share2, label: 'Social', position: { x: 75, y: 70 }, finalPosition: { x: 90, y: 20 } },
-    { id: 4, icon: MessageSquare, label: 'WhatsApp', position: { x: 25, y: 75 }, finalPosition: { x: 60, y: 45 } },
-    { id: 5, icon: Share2, label: 'LinkedIn', position: { x: 85, y: 55 }, finalPosition: { x: 75, y: 45 } },
+    { id: 1, icon: MessageSquare, label: 'Chat', position: { x: 65, y: 20 }, finalPosition: { x: 55, y: 15 } },
+    { id: 2, icon: Mail, label: 'Email', position: { x: 80, y: 35 }, finalPosition: { x: 75, y: 15 } },
+    { id: 3, icon: Share2, label: 'Social', position: { x: 70, y: 60 }, finalPosition: { x: 90, y: 15 } },
+    { id: 4, icon: MessageSquare, label: 'WhatsApp', position: { x: 60, y: 75 }, finalPosition: { x: 55, y: 40 } },
+    { id: 5, icon: Share2, label: 'LinkedIn', position: { x: 80, y: 70 }, finalPosition: { x: 75, y: 40 } },
   ];
 
   // 🎯 Iniciar animação quando isActive mudar para true
@@ -123,7 +124,7 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
 
       {/* Silhueta da pessoa + texto original */}
       <motion.div
-        className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-3"
+        className="absolute left-2 sm:left-6 top-1/3 sm:top-1/2 -translate-y-1/2 flex items-center gap-2 sm:gap-3"
         initial={{ x: -50, opacity: 0 }}
         animate={{
           x: isAnimating ? 0 : -50,
@@ -132,13 +133,13 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
         transition={{ duration: 1 }} // 2.5x mais lento (era 0.4)
       >
         {/* Silhueta */}
-        <div className="w-12 h-16 bg-gradient-to-b from-indigo-500/50 to-indigo-700/50 rounded-t-full flex items-center justify-center">
-          <User className="w-6 h-6 text-white/70" />
+        <div className="w-8 h-12 sm:w-12 sm:h-16 bg-gradient-to-b from-indigo-500/50 to-indigo-700/50 rounded-t-full flex items-center justify-center">
+          <User className="w-4 h-4 sm:w-6 sm:h-6 text-white/70" />
         </div>
 
         {/* Texto original */}
         <motion.div
-          className="relative w-24 p-2 bg-slate-800/80 rounded-lg border border-indigo-500/30"
+          className="relative w-16 sm:w-24 p-1.5 sm:p-2 bg-slate-800/80 rounded-lg border border-indigo-500/30"
           animate={isAnimating && phase === 'beam' ? {
             borderColor: ['rgba(99, 102, 241, 0.3)', 'rgba(99, 102, 241, 0.8)', 'rgba(99, 102, 241, 0.3)'],
           } : {}}
@@ -186,7 +187,7 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
 
         {/* Orbe */}
         <motion.div
-          className="relative w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl"
+          className="relative w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-2xl"
           animate={{
             rotate: isAnimating && (phase === 'clone' || phase === 'spread') ? 360 : 0,
           }}
@@ -196,7 +197,7 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
             ease: 'linear',
           }}
         >
-          <Sparkles className="w-8 h-8 text-white" />
+          <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
 
           {/* Anéis girando */}
           <motion.div
@@ -259,15 +260,15 @@ export const CardEffectPresenceAmplifier: React.FC<CardEffectProps> = ({ isActiv
             }}
           >
             {/* Card de clone */}
-            <div className="relative w-20 p-2 bg-slate-800/80 rounded-lg border border-indigo-500/30 backdrop-blur-sm">
+            <div className="relative w-14 sm:w-20 p-1.5 sm:p-2 bg-slate-800/80 rounded-lg border border-indigo-500/30 backdrop-blur-sm">
               {/* Ícone do canal */}
               <motion.div
-                className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-4 h-4 sm:w-5 sm:h-5 bg-indigo-500 rounded-full flex items-center justify-center"
                 initial={{ scale: 0 }}
                 animate={{ scale: isVisible ? 1 : 0 }}
                 transition={{ delay: 0.5, type: 'spring' }} // 2.5x mais lento (era 0.2)
               >
-                <Icon className="w-3 h-3 text-white" />
+                <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
               </motion.div>
 
               {/* Linhas de texto (mesmo estilo) */}

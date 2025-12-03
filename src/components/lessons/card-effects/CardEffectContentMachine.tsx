@@ -135,7 +135,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
       </div>
 
       {/* Labels superiores */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-8">
+      <div className="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-8">
         {labels.map((label, i) => (
           <motion.div
             key={label}
@@ -145,7 +145,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
             transition={{ delay: isAnimating ? 0.75 + i * 0.25 : 0 }}
           >
             <motion.div
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+              className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-all duration-300 ${
                 activeLabel > i && isAnimating
                   ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40'
                   : 'bg-slate-800/50 text-slate-500 border border-slate-700/50'
@@ -158,10 +158,10 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
               {label}
             </motion.div>
 
-            {/* Conector */}
+            {/* Conector - escondido em mobile */}
             {i < labels.length - 1 && (
               <motion.div
-                className="absolute top-1/2 -right-6 w-4 h-0.5 bg-slate-700"
+                className="hidden sm:block absolute top-1/2 -right-6 w-4 h-0.5 bg-slate-700"
                 animate={{
                   backgroundColor: activeLabel > i && isAnimating ? '#fb923c' : '#334155',
                 }}
@@ -174,7 +174,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
 
       {/* Esteira principal */}
       <motion.div
-        className="absolute bottom-16 left-0 right-0 h-20"
+        className="absolute bottom-1/3 sm:bottom-16 left-0 right-0 h-16 sm:h-20"
         initial={{ x: '-100%' }}
         animate={{ x: isAnimating ? 0 : '-100%' }}
         transition={{ duration: 1.25, ease: 'easeOut' }}
@@ -206,7 +206,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
 
         {/* Portal de I.A. */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-16 h-24"
+          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-12 h-18 sm:w-16 sm:h-24"
           initial={{ scale: 0 }}
           animate={{ scale: isAnimating ? 1 : 0 }}
           transition={{ delay: isAnimating ? 0.75 : 0, type: 'spring' }}
