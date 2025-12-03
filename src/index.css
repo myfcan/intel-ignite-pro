@@ -560,7 +560,7 @@ All colors MUST be HSL.
 }
 
 .speech-indicator {
-  animation: speech-indicator 1.5s ease-in-out infinite;
+  animation: speech-indicator 1s ease-in-out infinite;
 }
 
 /* Avatar hover micro-interactions */
