@@ -1761,8 +1761,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile - Flutuando 4px acima do player, centralizada sobre o botão play */}
-      <div className="md:hidden fixed bottom-[108px] left-[55px] z-[51] pointer-events-auto">
+      {/* Liv Mobile/Tablet - Flutuando acima do player */}
+      <div className="lg:hidden fixed bottom-[108px] left-[55px] z-[51] pointer-events-auto">
         <button
           onClick={toggleAudio}
           className="relative group touch-manipulation"
