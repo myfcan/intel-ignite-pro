@@ -991,7 +991,7 @@ export default function AdminV5CardConfig() {
                                   <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
                                     🎬 Animações Cinematográficas
                                   </div>
-                                  {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                  {cinematographicCardTypes.map(({ value, label }) => (
                                     <SelectItem key={value} value={value}>
                                       <span className="flex items-center gap-2">
                                         <span className="text-purple-400">▸</span>
@@ -1065,7 +1065,7 @@ export default function AdminV5CardConfig() {
                                   <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
                                     🎬 Animações Cinematográficas
                                   </div>
-                                  {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                  {cinematographicCardTypes.map(({ value, label }) => (
                                     <SelectItem key={value} value={value}>
                                       <span className="flex items-center gap-2">
                                         <span className="text-purple-400">▸</span>
