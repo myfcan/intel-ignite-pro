@@ -1761,6 +1761,59 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
+      {/* Liv Mobile - Flutuando acima do player, alinhada verticalmente com o botão play */}
+      <div className="md:hidden fixed bottom-[90px] left-3 z-[51] pointer-events-auto">
+        <button
+          onClick={toggleAudio}
+          className="relative group touch-manipulation"
+          aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
+        >
+          {/* Pulse ring effect - sutil */}
+          <div 
+            className={`absolute inset-0 rounded-full transition-all duration-700 ${
+              isPlaying && isAudioEnabled 
+                ? 'animate-[liv-pulse_2s_ease-in-out_infinite]' 
+                : ''
+            }`}
+            style={{
+              background: isAudioEnabled 
+                ? 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)' 
+                : 'radial-gradient(circle, rgba(100, 116, 139, 0.2) 0%, transparent 70%)',
+              transform: 'scale(1.4)',
+            }}
+          />
+          
+          {/* Avatar container - 10% maior no mobile (52px vs 48px) */}
+          <div 
+            className={`relative w-[52px] h-[52px] rounded-full overflow-hidden transition-all duration-500 ${
+              !isAudioEnabled ? 'grayscale opacity-60' : ''
+            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-background' : 'ring-1 ring-white/30'}`}
+            style={{
+              boxShadow: isAudioEnabled 
+                ? '0 4px 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(34, 211, 238, 0.25)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            <img 
+              src="/liv-avatar.png" 
+              alt="Liv" 
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Indicador de estado do áudio */}
+            <div 
+              className={`absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-background ${
+                isAudioEnabled 
+                  ? 'bg-cyan-500 text-white' 
+                  : 'bg-slate-500 text-white'
+              }`}
+            >
+              {isAudioEnabled ? '🔊' : '🔇'}
+            </div>
+          </div>
+        </button>
+      </div>
+
       {/* Player fixo no rodapé */}
       <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 safe-area-bottom ${
         !isAudioEnabled ? 'grayscale opacity-60' : ''
@@ -1875,57 +1928,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
               
               {/* Controles - Touch targets maiores */}
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {/* Liv Avatar Mobile - 10% maior que desktop (w-[52px] vs w-12) */}
-                  <button
-                    onClick={toggleAudio}
-                    className="relative group touch-manipulation flex-shrink-0"
-                    aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
-                  >
-                    {/* Pulse ring effect - sutil */}
-                    <div 
-                      className={`absolute inset-0 rounded-full transition-all duration-700 ${
-                        isPlaying && isAudioEnabled 
-                          ? 'animate-[liv-pulse_2s_ease-in-out_infinite]' 
-                          : ''
-                      }`}
-                      style={{
-                        background: isAudioEnabled 
-                          ? 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)' 
-                          : 'radial-gradient(circle, rgba(100, 116, 139, 0.2) 0%, transparent 70%)',
-                        transform: 'scale(1.4)',
-                      }}
-                    />
-                    
-                    {/* Avatar container - 10% maior no mobile */}
-                    <div 
-                      className={`relative w-[52px] h-[52px] rounded-full overflow-hidden transition-all duration-500 ${
-                        !isAudioEnabled ? 'grayscale opacity-60' : ''
-                      } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-1 ring-offset-slate-900' : 'ring-1 ring-white/20'}`}
-                      style={{
-                        boxShadow: isAudioEnabled 
-                          ? '0 4px 16px rgba(139, 92, 246, 0.4), 0 0 30px rgba(34, 211, 238, 0.2)' 
-                          : '0 2px 8px rgba(0, 0, 0, 0.3)',
-                      }}
-                    >
-                      <img 
-                        src="/liv-avatar.png" 
-                        alt="Liv" 
-                        className="w-full h-full object-cover"
-                      />
-                      
-                      {/* Indicador de estado do áudio */}
-                      <div 
-                        className={`absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-slate-900 ${
-                          isAudioEnabled 
-                            ? 'bg-cyan-500 text-white' 
-                            : 'bg-slate-600 text-white'
-                        }`}
-                      >
-                        {isAudioEnabled ? '🔊' : '🔇'}
-                      </div>
-                    </div>
-                  </button>
+                <div className="flex items-center gap-1.5">
                   <button 
                     onClick={skipBackward} 
                     className="w-10 h-10 bg-slate-700/50 active:bg-slate-600 rounded-xl flex items-center justify-center text-white touch-manipulation"
