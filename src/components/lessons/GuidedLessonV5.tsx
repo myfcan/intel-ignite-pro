@@ -281,15 +281,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
      */
 
     // Helper para renderizar um card baseado na config
-    const renderCard = (cardConfig: any, key: string) => {
+    const renderCard = (cardConfig: any, key: string, isActive: boolean = true) => {
       const cardType = cardConfig.type || cardConfig.effectType || '';
 
       // 🎬 PRIORIDADE 1: Card Effect Cinematográfico
       if (isValidCardEffectType(cardType)) {
-        console.log(`🎬 [V5] Renderizando card cinematográfico: ${cardType}`);
+        console.log(`🎬 [V5] Renderizando card cinematográfico: ${cardType} (isActive: ${isActive})`);
         return (
           <div key={key} className="my-6">
-            <DynamicCardEffect type={cardType} />
+            <DynamicCardEffect type={cardType} isActive={isActive} />
           </div>
         );
       }
@@ -1722,7 +1722,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
                             {/* Renderizar o card effect */}
                             {isValidCardEffectType(cardType) ? (
-                              <DynamicCardEffect type={cardType} />
+                              <DynamicCardEffect type={cardType} isActive={isThisCardActive} />
                             ) : cardType === 'ia-book' ? (
                               <IaBookExperienceCard />
                             ) : cardConfig?.props ? (
