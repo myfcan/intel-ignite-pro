@@ -1129,8 +1129,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           hasFinalPlayground: !!lessonData.finalPlaygroundConfig,
           currentPhaseBeforeChange: currentPhase
         });
-        setCurrentPhase('playground-real');
-        console.log('🎯 [V5-AUDIO-ENDED] Fase alterada para: playground-real');
+        // 🎯 V5 FIX: Mostrar card de parabéns ANTES do playground
+        setShowEndCard(true);
+        console.log('🎯 [V5-AUDIO-ENDED] Mostrando card de parabéns');
       } else {
         setShowEndCard(true);
         console.log('🎯 [V5-AUDIO-ENDED] Mostrando end card');
@@ -1182,16 +1183,10 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     });
 
     setShowEndCard(false);
-    // 🔄 Nova ordem: Playground Final ANTES dos Exercises
-    if (lessonData.finalPlaygroundConfig) {
-      console.log('🎯 [V5-DEBUG HANDLER] Indo para playground final');
-      setCurrentPhase('playground-final');
-    } else if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
-      console.log('🎯 [V5-DEBUG HANDLER] Indo para fase de exercícios');
-      setCurrentPhase('exercises');
-    } else {
-      onComplete({ audioProgress: maxAudioProgress });
-    }
+    // 🎯 V5 FIX: Fluxo correto - Card Parabéns → Playground Real → Exercícios
+    // Sempre ir para playground-real primeiro (chat com IA)
+    console.log('🎯 [V5-DEBUG HANDLER] Indo para playground-real (chat com IA)');
+    setCurrentPhase('playground-real');
   };
 
   const [exercisesCompleted, setExercisesCompleted] = useState(false);
@@ -1349,7 +1344,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             lessonId={lessonData.id}
             onComplete={() => {
               console.log('✅ [V5-PLAYGROUND-REAL] Usuário completou interação');
-              setCurrentPhase('transition');
+              // 🎯 V5 FIX: Após playground-real, ir para exercícios (ou completed se não tiver)
+              if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+                console.log('🎯 [V5-PLAYGROUND-REAL] Indo para exercícios');
+                setCurrentPhase('exercises');
+              } else {
+                console.log('🎯 [V5-PLAYGROUND-REAL] Sem exercícios, indo para completed');
+                setCurrentPhase('completed');
+              }
             }}
           />
         </div>
@@ -1957,20 +1959,20 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             </h2>
             
             <p className="text-slate-600 text-lg mb-8 leading-relaxed">
-              Você aprendeu sobre as três principais ferramentas de IA gratuitas!
+              Você concluiu todo o conteúdo!
               <br />
-              Agora vamos fixar esse conhecimento com exercícios práticos.
+              Agora vamos praticar com a IA e fixar o conhecimento.
             </p>
             
             <Button
               onClick={() => {
-                console.log('🎯 [V5-BUTTON] Botão "Ir para Exercícios" clicado!');
+                console.log('🎯 [V5-BUTTON] Botão "Continuar" clicado!');
                 handleGoToExercises();
               }}
               size="lg"
               className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-500 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all text-lg py-6"
             >
-              🎯 Ir para Exercícios
+              🚀 Continuar
             </Button>
           </Card>
         </div>
