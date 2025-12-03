@@ -1761,8 +1761,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile - Flutuando, centro alinhado com botão play (~50px do fundo) */}
-      <div className="md:hidden fixed bottom-[24px] left-3 z-[51] pointer-events-auto">
+      {/* Liv Mobile - Flutuando 4px acima do player, centralizada sobre o botão play */}
+      <div className="md:hidden fixed bottom-[108px] left-[55px] z-[51] pointer-events-auto">
         <button
           onClick={toggleAudio}
           className="relative group touch-manipulation"
@@ -1783,7 +1783,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             }}
           />
           
-          {/* Avatar container - 10% maior no mobile (53px = 48px * 1.10) */}
+          {/* Avatar container - 10% maior no mobile (53px = 48px × 1.10) */}
           <div 
             className={`relative w-[53px] h-[53px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
