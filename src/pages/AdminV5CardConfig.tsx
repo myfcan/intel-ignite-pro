@@ -16,14 +16,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
-import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, isValidCardEffectType } from '@/components/lessons/card-effects';
+import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, CARD_EFFECTS_BY_LESSON, isValidCardEffectType, CardEffectType } from '@/components/lessons/card-effects';
 
-// 🎬 Tipos de Card Effects Cinematográficos
-const CINEMATOGRAPHIC_CARD_TYPES = CARD_EFFECT_TYPES.map(type => ({
-  value: type,
-  label: CARD_EFFECT_LABELS[type] || type,
-  isCinematic: true
-}));
+// 🎓 Configuração das Aulas disponíveis
+const AVAILABLE_LESSONS = [
+  {
+    id: 'aula-1',
+    title: 'Aula 1 - O Furacão da I.A.',
+    description: '12 card effects cinematográficos',
+    icon: '🌪️'
+  },
+  {
+    id: 'aula-2',
+    title: 'Aula 2 - História da Maria',
+    description: '14 card effects cinematográficos',
+    icon: '👩‍💼'
+  },
+];
+
+// 🎬 Função para gerar tipos de Card Effects filtrados por aula
+const getCardTypesForLesson = (lessonId: string) => {
+  const lessonCards = CARD_EFFECTS_BY_LESSON[lessonId] || CARD_EFFECT_TYPES;
+  return lessonCards.map(type => ({
+    value: type,
+    label: CARD_EFFECT_LABELS[type] || type,
+    isCinematic: true
+  }));
+};
 
 // 📝 Tipos de Card com texto (legado)
 const TEXT_CARD_TYPES = [
@@ -129,6 +148,10 @@ export default function AdminV5CardConfig() {
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
   const [cardsQuantity, setCardsQuantity] = useState<1 | 2 | 3>(1);
+  const [selectedLesson, setSelectedLesson] = useState<string>('aula-1');
+
+  // Card types filtrados pela aula selecionada
+  const cinematographicCardTypes = getCardTypesForLesson(selectedLesson);
   // LocalStorage keys
   const CARD1_STORAGE_KEY = 'v5-card-config-card1';
   const CARD2_STORAGE_KEY = 'v5-card-config-card2';
@@ -726,9 +749,45 @@ export default function AdminV5CardConfig() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Seleção de Aula */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs">0</span>
+                        Selecione a Aula
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {AVAILABLE_LESSONS.map((lesson) => (
+                          <div
+                            key={lesson.id}
+                            onClick={() => setSelectedLesson(lesson.id)}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              selectedLesson === lesson.id
+                                ? 'border-purple-500 bg-purple-500/10'
+                                : 'border-muted hover:border-purple-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">{lesson.icon}</span>
+                              <span className="font-medium text-sm">{lesson.title.split(' - ')[0]}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{lesson.title.split(' - ')[1]}</p>
+                            <p className="text-[10px] text-purple-500 mt-1">{lesson.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Escolha a aula para filtrar os card effects disponíveis
+                      </p>
+                    </div>
+
+                    <Separator />
+
                     {/* Seleção de Seção */}
                     <div className="space-y-2">
-                      <Label>1. Selecione a Seção</Label>
+                      <Label className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
+                        Selecione a Seção
+                      </Label>
                       <Select 
                         value={selectedSectionIndex?.toString() || ''} 
                         onValueChange={(val) => setSelectedSectionIndex(parseInt(val))}
@@ -805,7 +864,7 @@ export default function AdminV5CardConfig() {
                                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
                                   🎬 Animações Cinematográficas
                                 </div>
-                                {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                {cinematographicCardTypes.map(({ value, label }) => (
                                   <SelectItem key={value} value={value}>
                                     <span className="flex items-center gap-2">
                                       <span className="text-purple-400">▸</span>
