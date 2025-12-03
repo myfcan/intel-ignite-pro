@@ -131,7 +131,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
 /**
  * Retorna o componente de card effect para um determinado tipo
  */
-export function getCardEffectComponent(type: string): React.FC | null {
+export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
   const normalizedType = type.toLowerCase().trim() as CardEffectType;
   return CARD_EFFECT_COMPONENTS[normalizedType] || null;
 }
