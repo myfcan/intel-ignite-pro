@@ -1772,7 +1772,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           <div 
             className={`w-[54px] h-[54px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'animate-[liv-glow-pulse_1.5s_ease-in-out_infinite]' : ''}`}
+            } ${isPlaying && isAudioEnabled ? 'animate-[liv-glow-pulse_3s_ease-in-out_infinite]' : ''}`}
             style={{
               boxShadow: isPlaying && isAudioEnabled
                 ? '0 0 0 3px rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(139, 92, 246, 0.4)'
