@@ -1484,33 +1484,35 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       data-current-section={currentSection}
       className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in"
     >
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
-        <div className="w-full px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
+      {/* Header - Mais compacto no mobile */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 shadow-md safe-area-top">
+        <div className="w-full px-3 sm:px-6 py-2 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-3 max-w-[1920px] mx-auto">
             <button 
               onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
-              className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-all flex-shrink-0 touch-manipulation"
               aria-label="Voltar para trilha"
             >
-              <ChevronLeft className="w-5 h-5 text-slate-700" />
+              <ChevronLeft className="w-5 h-5 sm:w-5 sm:h-5 text-slate-700" />
             </button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
-              <p className="text-xs text-slate-600 truncate">{lessonData.trackName}</p>
+              <h1 className="text-xs sm:text-base font-semibold text-slate-900 truncate leading-tight">{lessonData.title}</h1>
+              <p className="text-[10px] sm:text-xs text-slate-600 truncate hidden sm:block">{lessonData.trackName}</p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-semibold bg-clip-text text-transparent"
+            {/* Progresso - Mais compacto no mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <span className="text-[10px] sm:text-xs font-bold bg-clip-text text-transparent"
                     style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}>
                 {Math.round(progress)}%
               </span>
-              <div className="w-20 sm:w-24 h-1 bg-slate-200 rounded-full overflow-hidden">
+              <div className="w-12 sm:w-24 h-1.5 sm:h-1 bg-slate-200 rounded-full overflow-hidden">
                 <div className="h-full transition-all" style={{width: `${progress}%`, backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}} />
               </div>
             </div>
             <button 
               onClick={skipToExercises}
               disabled={!lessonData.exercisesConfig && !lessonData.finalPlaygroundConfig}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg transition-all flex-shrink-0 ${
+              className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium text-white shadow-md hover:shadow-lg active:scale-95 transition-all flex-shrink-0 touch-manipulation ${
                 lessonData.exercisesConfig || lessonData.finalPlaygroundConfig
                   ? 'cursor-pointer'
                   : 'bg-gray-300 cursor-not-allowed opacity-50'
@@ -1519,14 +1521,15 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                 ? {backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}
                 : undefined}
             >
-              <Sparkles className="w-3 h-3 inline mr-1" />
+              <Sparkles className="w-4 h-4 sm:w-3 sm:h-3 sm:inline sm:mr-1" />
               <span className="hidden sm:inline">Exercícios</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="w-full px-3 sm:px-6 pt-20 pb-32">
+      {/* Conteúdo principal - Padding ajustado para mobile */}
+      <div className="w-full px-3 sm:px-6 pt-14 sm:pt-20 pb-44 sm:pb-32">
         <div className="w-full max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-12">
             
@@ -1632,7 +1635,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                         transitionDelay: currentSection === originalIndex ? '0ms' : `${Math.abs(originalIndex - currentSection) * 50}ms`
                       }}
                     >
-                      <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border shadow-xl transition-all duration-700 ease-out relative overflow-hidden ${
+                      <div className={`bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-6 lg:p-8 border shadow-xl transition-all duration-700 ease-out relative overflow-hidden ${
                         isTextActive
                           ? 'border-cyan-300/60 ring-2 ring-cyan-400/30 shadow-2xl shadow-cyan-400/20 scale-[1.01]'
                           : currentSection === originalIndex
@@ -1645,8 +1648,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                             <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/5 to-purple-300/5 animate-pulse" />
                           </>
                         )}
-                        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/50 relative z-10">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base flex-shrink-0 shadow-md transition-all ${
+                        {/* Header da seção - Mais compacto no mobile */}
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5 pb-3 sm:pb-4 border-b border-slate-200/50 relative z-10">
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-sm sm:text-base flex-shrink-0 shadow-md transition-all ${
                             currentSection === originalIndex
                               ? 'text-white'
                               : 'bg-slate-100 text-slate-500'
@@ -1657,7 +1661,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                             {originalIndex + 1}
                           </div>
                           {isTextActive && (
-                            <span className={`text-xs font-medium text-cyan-600 flex items-center gap-1.5 transition-all ${
+                            <span className={`text-[10px] sm:text-xs font-medium text-cyan-600 flex items-center gap-1 sm:gap-1.5 transition-all ${
                               sectionJustChanged ? 'scale-110 font-bold' : 'scale-100'
                             }`}>
                               <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
@@ -1665,22 +1669,23 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                             </span>
                           )}
                         </div>
+                        {/* Conteúdo markdown - Tipografia responsiva */}
                         <div className={`prose prose-slate prose-sm max-w-none transition-all duration-500
-  [&_h1]:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-4 [&_h1]:!font-bold
-  [&_h2]:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-3 [&_h2]:!mt-6 [&_h2]:!font-bold
-  [&_h3]:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-4 [&_h3]:!font-bold
-  [&_p]:!text-base [&_p]:!leading-relaxed [&_p]:!mb-3 [&_p]:text-slate-700
-  [&_li]:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
-  [&_ul]:!my-3 [&_ul]:!space-y-2
-  [&_ol]:!my-3 [&_ol]:!space-y-2
+  [&_h1]:!text-lg [&_h1]:sm:!text-[25px] [&_h1]:!leading-tight [&_h1]:!mb-3 [&_h1]:sm:!mb-4 [&_h1]:!font-bold
+  [&_h2]:!text-base [&_h2]:sm:!text-[21px] [&_h2]:!leading-snug [&_h2]:!mb-2 [&_h2]:sm:!mb-3 [&_h2]:!mt-4 [&_h2]:sm:!mt-6 [&_h2]:!font-bold
+  [&_h3]:!text-sm [&_h3]:sm:!text-[17px] [&_h3]:!mb-2 [&_h3]:!mt-3 [&_h3]:sm:!mt-4 [&_h3]:!font-bold
+  [&_p]:!text-sm [&_p]:sm:!text-base [&_p]:!leading-relaxed [&_p]:!mb-2.5 [&_p]:sm:!mb-3 [&_p]:text-slate-700
+  [&_li]:!text-sm [&_li]:sm:!text-base [&_li]:!leading-relaxed [&_li]:text-slate-700
+  [&_ul]:!my-2 [&_ul]:sm:!my-3 [&_ul]:!space-y-1.5 [&_ul]:sm:!space-y-2
+  [&_ol]:!my-2 [&_ol]:sm:!my-3 [&_ol]:!space-y-1.5 [&_ol]:sm:!space-y-2
   [&_strong]:!font-semibold [&_strong]:!text-cyan-600 [&_strong]:bg-cyan-50/50 [&_strong]:px-0.5 [&_strong]:rounded
   [&_em]:!text-slate-600 [&_em]:!not-italic [&_em]:!font-medium
-  [&_code]:!text-purple-600 [&_code]:!bg-purple-100 [&_code]:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded [&_code]:!text-sm [&_code]:!font-mono
+  [&_code]:!text-purple-600 [&_code]:!bg-purple-100 [&_code]:!px-1 [&_code]:sm:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded [&_code]:!text-xs [&_code]:sm:!text-sm [&_code]:!font-mono
   [&_blockquote]:!border-l-4 [&_blockquote]:!border-l-cyan-400 [&_blockquote]:!bg-gradient-to-r [&_blockquote]:!from-cyan-50/60 [&_blockquote]:!to-blue-50/40
-  [&_blockquote]:!py-3 [&_blockquote]:!px-4 [&_blockquote]:!rounded-r-lg [&_blockquote]:!my-4 [&_blockquote]:!text-base
-  [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-4 [&_pre]:!text-sm
+  [&_blockquote]:!py-2 [&_blockquote]:sm:!py-3 [&_blockquote]:!px-3 [&_blockquote]:sm:!px-4 [&_blockquote]:!rounded-r-lg [&_blockquote]:!my-3 [&_blockquote]:sm:!my-4 [&_blockquote]:!text-sm [&_blockquote]:sm:!text-base
+  [&_pre]:!bg-slate-900 [&_pre]:!text-slate-100 [&_pre]:!p-3 [&_pre]:sm:!p-4 [&_pre]:!rounded-lg [&_pre]:!my-3 [&_pre]:sm:!my-4 [&_pre]:!text-xs [&_pre]:sm:!text-sm [&_pre]:!overflow-x-auto
   [&_a]:!text-cyan-600 [&_a]:!no-underline [&_a]:!font-medium hover:[&_a]:!underline
-  [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-6 ${
+  [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-4 [&_img]:sm:!my-6 [&_img]:!max-w-full ${
     isTextActive && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
                           <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
@@ -1756,9 +1761,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile */}
-      <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-primary/30 shadow-xl max-w-[290px] w-full">
+      {/* Liv Mobile - Posicionamento melhorado para evitar sobreposição com player */}
+      <div className="lg:hidden fixed bottom-[120px] sm:bottom-28 left-2 right-2 z-40 flex justify-center pointer-events-none">
+        <div className="bg-gradient-to-br from-white/98 to-white/95 backdrop-blur-xl rounded-xl p-2 border border-primary/20 shadow-lg max-w-[280px] w-full pointer-events-auto">
           <div className="flex items-center gap-2">
             <div className="relative flex-shrink-0">
               <LivAvatar 
@@ -1767,23 +1772,35 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                 showHalo={false}
                 state={isPlaying && isAudioEnabled ? 'speaking' : 'idle'}
                 theme="fundamentos"
-                className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''}`}
+                className={`${!isAudioEnabled ? 'grayscale opacity-50' : ''} scale-90`}
                 animate={false}
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-slate-700 leading-snug font-medium">
+              <p className="text-[10px] sm:text-[11px] text-slate-700 leading-tight font-medium line-clamp-2">
                 {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
               </p>
             </div>
+            {/* Botão de toggle áudio integrado no mobile */}
+            <button
+              onClick={toggleAudio}
+              className={`p-1.5 rounded-full text-[9px] font-medium transition-all touch-manipulation flex-shrink-0 ${
+                isAudioEnabled 
+                  ? 'bg-cyan-100 text-cyan-700' 
+                  : 'bg-green-100 text-green-700'
+              }`}
+            >
+              {isAudioEnabled ? '🔊' : '🔇'}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 ${
+      {/* Player fixo no rodapé */}
+      <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 safe-area-bottom ${
         !isAudioEnabled ? 'grayscale opacity-60' : ''
       }`}>
-        <div className="w-full px-4 sm:px-6 py-3">
+        <div className="w-full px-3 sm:px-6 py-2 sm:py-3">
           <div className="max-w-[1800px] mx-auto">
             
             {/* Desktop Player */}
@@ -1866,61 +1883,71 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
               </button>
             </div>
             
-            {/* Mobile Player */}
-            <div className="flex md:hidden flex-col gap-2.5">
+            {/* Mobile Player - Redesenhado para melhor UX */}
+            <div className="flex md:hidden flex-col gap-2">
+              {/* Barra de progresso */}
               <div className="flex items-center gap-2">
-                {!isV2 && (
+                {isV2 ? (
                   <>
-                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
-                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden" onClick={handleProgressBarClick}>
-                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(duration)}</span>
-                  </>
-                )}
-                
-                {isV2 && (
-                  <>
-                    <span className="text-xs text-slate-300 font-medium flex-shrink-0">
+                    <span className="text-[10px] text-slate-400 font-bold tabular-nums w-8 text-center">
                       {currentSection + 1}/{lessonData.sections.length}
                     </span>
-                    <div className="flex-1 h-2.5 bg-slate-700/40 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-slate-700/40 rounded-full overflow-hidden touch-manipulation" onClick={handleProgressBarClick}>
                       <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
                     </div>
-                    <span className="text-xs text-slate-400 font-medium tabular-nums">{formatTime(currentTime)}</span>
+                    <span className="text-[10px] text-slate-400 font-medium tabular-nums w-10 text-right">{formatTime(currentTime)}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[10px] text-slate-400 font-medium tabular-nums w-10">{formatTime(currentTime)}</span>
+                    <div className="flex-1 h-2 bg-slate-700/40 rounded-full overflow-hidden touch-manipulation" onClick={handleProgressBarClick}>
+                      <div className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium tabular-nums w-10 text-right">{formatTime(duration)}</span>
                   </>
                 )}
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button onClick={skipBackward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
-                    <SkipBack size={16} />
+              
+              {/* Controles - Touch targets maiores */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={skipBackward} 
+                    className="w-10 h-10 bg-slate-700/50 active:bg-slate-600 rounded-xl flex items-center justify-center text-white touch-manipulation"
+                  >
+                    <SkipBack size={18} />
                   </button>
                   <button 
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-lg ${
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg touch-manipulation active:scale-95 transition-transform ${
                       shouldShowPlayPulse && !isPlaying ? 'animate-pulse ring-4 ring-primary/50' : ''
                     }`}
                     style={{
                       backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)',
-                      boxShadow: '0 10px 30px rgba(34, 211, 238, 0.3)'
+                      boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3)'
                     }}
                     onClick={() => {
                       togglePlayPause();
                       if (shouldShowPlayPulse) setShouldShowPlayPulse(false);
                     }}
                   >
-                    {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                    {isPlaying ? <Pause size={22} /> : <Play size={22} className="ml-0.5" />}
                   </button>
-                  <button onClick={skipForward} className="w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center text-white">
-                    <SkipForward size={16} />
+                  <button 
+                    onClick={skipForward} 
+                    className="w-10 h-10 bg-slate-700/50 active:bg-slate-600 rounded-xl flex items-center justify-center text-white touch-manipulation"
+                  >
+                    <SkipForward size={18} />
                   </button>
-                  <button onClick={cycleSpeed} className="px-3 py-2 bg-slate-700/50 rounded-lg text-white font-bold text-xs min-w-[50px]">
+                  <button 
+                    onClick={cycleSpeed} 
+                    className="w-10 h-10 bg-slate-700/50 active:bg-slate-600 rounded-xl flex items-center justify-center text-white font-bold text-xs touch-manipulation"
+                  >
                     {playbackSpeed}x
                   </button>
                 </div>
                 <button 
                   onClick={handleContinueClick} 
-                  className="px-4 py-2 rounded-lg text-white font-semibold text-sm"
+                  className="px-4 py-2.5 rounded-xl text-white font-semibold text-sm shadow-lg touch-manipulation active:scale-95 transition-transform"
                   style={{backgroundImage: 'linear-gradient(90deg, #22D3EE 0%, #A78BFA 100%)'}}
                 >
                   Continuar
