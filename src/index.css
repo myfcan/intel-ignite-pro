@@ -531,16 +531,16 @@ All colors MUST be HSL.
 @keyframes liv-breathing {
   0%, 100% { 
     transform: scale(1);
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 15px rgba(255, 255, 255, 0.5), 0 0 30px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 12px rgba(255, 255, 255, 0.5), 0 0 25px rgba(139, 92, 246, 0.3);
   }
   50% { 
-    transform: scale(1.10);
-    box-shadow: 0 0 0 5px rgba(255, 255, 255, 1), 0 0 35px rgba(255, 255, 255, 0.9), 0 0 60px rgba(139, 92, 246, 0.7);
+    transform: scale(1.03);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 1), 0 0 18px rgba(255, 255, 255, 0.7), 0 0 35px rgba(139, 92, 246, 0.5);
   }
 }
 
 .liv-breathing-active {
-  animation: liv-breathing 3s ease-in-out infinite;
+  animation: liv-breathing 2s ease-in-out infinite;
 }
 
 .liv-breathing-idle {
