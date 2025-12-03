@@ -195,9 +195,10 @@ export interface CompleteSentenceSentence {
    * @see src/lib/exerciseConstants.ts para funções auxiliares
    */
   text: string;
-  correctAnswers: string[]; // Respostas aceitas (deve estar em options se options existir)
+  correctAnswers: string[]; // Respostas aceitas (pelo menos 1 deve estar em options se options existir; outros são sinônimos)
   options?: string[]; // 🆕 Se presente, exibe como múltipla escolha (RadioGroup)
                        //     Se ausente, exibe como texto livre (Input)
+                       //     Pelo menos 1 correctAnswer deve estar aqui
   hints?: string[]; // 💡 Dicas opcionais exibidas antes do input
 }
 

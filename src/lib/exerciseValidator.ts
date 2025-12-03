@@ -225,14 +225,15 @@ function validateCompleteSentence(data: any, result: ValidationResult): void {
       }
     }
     
-    // Validar que correctAnswers está em options (se options existir)
+    // Validar que PELO MENOS UMA correctAnswer está em options (se options existir)
+    // Permite sinônimos extras em correctAnswers para texto livre
     if (Array.isArray(sentence.options) && Array.isArray(sentence.correctAnswers)) {
-      const invalidAnswers = sentence.correctAnswers.filter(
-        (answer: string) => !sentence.options.includes(answer)
+      const hasAtLeastOneValidAnswer = sentence.correctAnswers.some(
+        (answer: string) => sentence.options.includes(answer)
       );
-      if (invalidAnswers.length > 0) {
+      if (!hasAtLeastOneValidAnswer) {
         result.errors.push(
-          `Sentença ${index + 1}: resposta(s) correta(s) [${invalidAnswers.join(', ')}] não está(ão) nas options`
+          `Sentença ${index + 1}: nenhuma das correctAnswers [${sentence.correctAnswers.join(', ')}] está nas options [${sentence.options.join(', ')}]`
         );
       }
     }
