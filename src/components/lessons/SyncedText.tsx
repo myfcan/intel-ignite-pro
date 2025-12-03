@@ -49,7 +49,7 @@ export const SyncedText = ({ content, isActive, isPast, isFuture }: SyncedTextPr
           </div>
         )}
         {isActive && (
-          <div className="w-8 h-8 rounded-full bg-cyan-400/20 border-2 border-cyan-400 flex items-center justify-center animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-cyan-400/20 border-2 border-cyan-400 flex items-center justify-center speech-indicator">
             <Volume2 className="w-4 h-4 text-cyan-400" />
           </div>
         )}
