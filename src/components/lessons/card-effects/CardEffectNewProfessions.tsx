@@ -163,7 +163,7 @@ export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive =
       </motion.div>
 
       {/* Silhuetas com rótulos */}
-      <div className="absolute inset-x-0 bottom-16 flex justify-center items-end gap-2">
+      <div className="absolute inset-x-0 bottom-20 sm:bottom-16 flex justify-center items-end gap-3 sm:gap-4 px-2">
         {professions.map((prof, i) => {
           const Icon = prof.icon;
           const isVisible = isAnimating && visibleProfessions > i;
@@ -180,26 +180,26 @@ export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive =
               transition={{ type: 'spring', stiffness: 100 }} // mais lento (era 200, agora 2x mais lento)
             >
               {/* Silhueta */}
-              <div className="w-8 h-12 bg-gradient-to-b from-slate-600/80 to-slate-800/80 rounded-t-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white/50" />
+              <div className="w-10 h-14 sm:w-12 sm:h-16 bg-gradient-to-b from-slate-600/80 to-slate-800/80 rounded-t-full flex items-center justify-center">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-white/50" />
               </div>
 
               {/* Rótulo flutuante */}
               <motion.div
-                className={`absolute -top-8 ${prof.side === 'left' ? '-left-2' : '-right-2'} px-2 py-1 bg-rose-500/20 border border-rose-500/40 rounded-lg backdrop-blur-sm whitespace-nowrap`}
+                className={`absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-rose-500/20 border border-rose-500/40 rounded-lg backdrop-blur-sm whitespace-nowrap`}
                 initial={{
-                  x: prof.side === 'left' ? -20 : 20,
+                  y: -10,
                   opacity: 0,
                 }}
                 animate={{
-                  x: isVisible ? 0 : (prof.side === 'left' ? -20 : 20),
+                  y: isVisible ? 0 : -10,
                   opacity: isVisible ? 1 : 0,
                 }}
                 transition={{ delay: 0.5, type: 'spring' }} // mais lento (era 0.2, agora 2.5x)
               >
-                <div className="flex items-center gap-1">
-                  <Icon className="w-3 h-3 text-rose-400" />
-                  <span className="text-[8px] text-rose-300 font-medium">{prof.label}</span>
+                <div className="flex items-center gap-0.5 sm:gap-1">
+                  <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-rose-400" />
+                  <span className="text-[6px] sm:text-[8px] text-rose-300 font-medium">{prof.label}</span>
                 </div>
               </motion.div>
             </motion.div>

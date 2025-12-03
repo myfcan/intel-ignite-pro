@@ -150,7 +150,7 @@ export const CardEffectVideoStudio: React.FC<CardEffectProps> = ({ isActive = fa
 
       {/* Player de vídeo principal */}
       <motion.div
-        className="absolute left-6 top-6 bottom-16 right-32 bg-slate-900 rounded-xl overflow-hidden border border-slate-700/50 shadow-2xl"
+        className="absolute left-4 sm:left-6 top-4 sm:top-6 bottom-20 sm:bottom-16 right-4 sm:right-32 bg-slate-900 rounded-xl overflow-hidden border border-slate-700/50 shadow-2xl"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{
           scale: isAnimating ? 1 : 0.8,
@@ -214,7 +214,7 @@ export const CardEffectVideoStudio: React.FC<CardEffectProps> = ({ isActive = fa
 
       {/* Timeline */}
       <motion.div
-        className="absolute bottom-4 left-6 right-32 h-10 bg-slate-800/80 rounded-lg border border-slate-700/50 overflow-hidden"
+        className="absolute bottom-2 sm:bottom-4 left-4 sm:left-6 right-4 sm:right-32 h-8 sm:h-10 bg-slate-800/80 rounded-lg border border-slate-700/50 overflow-hidden"
         initial={{ y: 20, opacity: 0 }}
         animate={{
           y: isAnimating ? 0 : 20,
@@ -257,11 +257,11 @@ export const CardEffectVideoStudio: React.FC<CardEffectProps> = ({ isActive = fa
         </div>
       </motion.div>
 
-      {/* Painel de parâmetros */}
+      {/* Painel de parâmetros - escondido em mobile, visível em sm+ */}
       <AnimatePresence>
         {showParams && (
           <motion.div
-            className="absolute right-4 top-6 bottom-16 w-24 bg-slate-800/90 rounded-lg border border-slate-700/50 p-2 space-y-2"
+            className="hidden sm:block absolute right-4 top-6 bottom-16 w-24 bg-slate-800/90 rounded-lg border border-slate-700/50 p-2 space-y-2"
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 120 }} // mais lento (era 200)
@@ -308,7 +308,7 @@ export const CardEffectVideoStudio: React.FC<CardEffectProps> = ({ isActive = fa
       <AnimatePresence>
         {showRender && (
           <motion.div
-            className="absolute right-4 bottom-4 w-24"
+            className="absolute right-4 bottom-12 sm:bottom-4 w-20 sm:w-24"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 150 }} // mais lento (era spring padrão)

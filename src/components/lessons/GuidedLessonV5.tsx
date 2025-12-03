@@ -1718,13 +1718,6 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                               ? 'ring-4 ring-purple-400/50 shadow-2xl shadow-purple-500/30'
                               : 'shadow-lg hover:shadow-xl'
                           }`}>
-                            {/* Indicador visual quando o card está ativo */}
-                            {isThisCardActive && (
-                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white text-xs font-bold shadow-lg animate-bounce">
-                                🎬 Efeito em foco
-                              </div>
-                            )}
-
                             {/* Renderizar o card effect */}
                             {isValidCardEffectType(cardType) ? (
                               <DynamicCardEffect type={cardType} isActive={isThisCardActive} />
