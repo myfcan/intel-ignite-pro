@@ -44,16 +44,17 @@ export function CompleteSentenceExercise({
   }
 
   // Validação de options (quando presente)
+  // Pelo menos UMA correctAnswer deve estar em options (outras são sinônimos para texto livre)
   sentences.forEach(sentence => {
     if (sentence.options) {
       if (sentence.options.length === 0) {
         console.warn(`⚠️ Sentença "${sentence.id}" tem options vazio. Remova o campo para usar texto livre.`);
       }
-      const allCorrectInOptions = sentence.correctAnswers.every(
+      const hasAtLeastOneCorrectInOptions = sentence.correctAnswers.some(
         correct => sentence.options!.includes(correct)
       );
-      if (!allCorrectInOptions) {
-        console.error(`❌ Sentença "${sentence.id}": correctAnswers deve estar em options!`, {
+      if (!hasAtLeastOneCorrectInOptions) {
+        console.error(`❌ Sentença "${sentence.id}": pelo menos uma correctAnswer deve estar em options!`, {
           correctAnswers: sentence.correctAnswers,
           options: sentence.options
         });
