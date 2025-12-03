@@ -137,7 +137,7 @@ export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive =
         {[...Array(8)].map((_, i) => {
           const isVisible = isAnimating && fallenPages > i;
           const stackIndex = i % 3;
-          const isStacked = isAnimating && phase !== 'falling' && phase !== 'waiting';
+          const isStacked = isAnimating && phase !== 'falling';
 
           return (
             <motion.div
@@ -187,7 +187,7 @@ export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive =
 
       {/* Três blocos empilhados com labels */}
       <AnimatePresence>
-        {isAnimating && phase !== 'falling' && phase !== 'waiting' && !showBook && (
+        {isAnimating && phase !== 'falling' && !showBook && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-8">
             {pageTypes.map((type, i) => (
               <motion.div
