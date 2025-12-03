@@ -356,7 +356,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Pontos */}
+          {/* Power Score */}
           <div className="rounded-lg sm:rounded-xl p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex flex-col items-center gap-2 sm:gap-3">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600">
@@ -364,10 +364,10 @@ const Dashboard = () => {
               </div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                  {user?.total_points || 0}
+                  {gamificationStats?.powerScore || 0}
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600 whitespace-normal">
-                  Pontos totais
+                  Power Score
                 </div>
               </div>
             </div>
