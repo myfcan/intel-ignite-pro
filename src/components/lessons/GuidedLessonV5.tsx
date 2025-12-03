@@ -1791,9 +1791,9 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             }}
           >
             <img 
-              src="/liv-avatar.png" 
+              src="/liv-avatar-mobile.png" 
               alt="Liv" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top scale-150"
             />
             
             {/* Indicador de estado do áudio */}
