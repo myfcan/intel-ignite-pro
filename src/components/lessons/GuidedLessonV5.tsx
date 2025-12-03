@@ -1768,24 +1768,20 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           className="relative group touch-manipulation"
           aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
         >
-          {/* Imagem já recortada com efeito - sem manipulações CSS */}
-          <img 
-            src="/liv-avatar-mobile.png" 
-            alt="Liv" 
-            className={`w-[70px] h-[70px] transition-all duration-500 ${
-              !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'animate-[liv-pulse_2s_ease-in-out_infinite]' : ''}`}
-          />
-          
-          {/* Indicador de estado do áudio */}
+          {/* Avatar circular recortado da imagem */}
           <div 
-            className={`absolute bottom-1 right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-white ${
-              isAudioEnabled 
-                ? 'bg-cyan-500 text-white' 
-                : 'bg-slate-500 text-white'
-            }`}
+            className={`w-[58px] h-[58px] rounded-full overflow-hidden transition-all duration-500 ${
+              !isAudioEnabled ? 'grayscale opacity-60' : ''
+            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-white' : 'ring-2 ring-white/80'}`}
+            style={{
+              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3), 0 0 30px rgba(34, 211, 238, 0.15)'
+            }}
           >
-            {isAudioEnabled ? '🔊' : '🔇'}
+            <img 
+              src="/liv-avatar-mobile.png" 
+              alt="Liv" 
+              className="w-full h-full object-cover object-top scale-[1.8] translate-y-[15%]"
+            />
           </div>
         </button>
       </div>
