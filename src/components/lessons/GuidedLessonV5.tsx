@@ -1768,30 +1768,26 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           className="relative group touch-manipulation"
           aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
         >
-          {/* Pulse ring effect - sutil */}
-          <div 
-            className={`absolute inset-0 rounded-full transition-all duration-700 ${
-              isPlaying && isAudioEnabled 
-                ? 'animate-[liv-pulse_2s_ease-in-out_infinite]' 
-                : ''
-            }`}
-            style={{
-              background: isAudioEnabled 
-                ? 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)' 
-                : 'radial-gradient(circle, rgba(100, 116, 139, 0.2) 0%, transparent 70%)',
-              transform: 'scale(1.4)',
-            }}
-          />
+          {/* Pulse ring effect - só visível quando animando */}
+          {isPlaying && isAudioEnabled && (
+            <div 
+              className="absolute inset-0 rounded-full animate-[liv-pulse_2s_ease-in-out_infinite]"
+              style={{
+                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%)',
+                transform: 'scale(1.5)',
+              }}
+            />
+          )}
           
           {/* Avatar container - 10% maior no mobile (53px = 48px × 1.10) */}
           <div 
             className={`relative w-[53px] h-[53px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-slate-900' : 'ring-1 ring-white/30'}`}
+            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-transparent' : ''}`}
             style={{
               boxShadow: isAudioEnabled 
-                ? '0 4px 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(34, 211, 238, 0.25)' 
-                : '0 4px 12px rgba(0, 0, 0, 0.4)',
+                ? '0 4px 20px rgba(139, 92, 246, 0.4), 0 0 30px rgba(34, 211, 238, 0.2)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.3)',
             }}
           >
             <img 
