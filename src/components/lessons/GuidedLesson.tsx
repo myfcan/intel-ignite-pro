@@ -1822,36 +1822,26 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         </div>
       </div>
 
-      {/* Liv Mobile - versão elegante */}
-      <div className="lg:hidden fixed bottom-24 sm:bottom-28 left-3 right-3 z-40 flex justify-center">
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-cyan-300/60 shadow-xl max-w-[290px] w-full">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-shrink-0">
-              <LivAvatar
-                size="small"
-                isPlaying={isPlaying && isAudioEnabled}
-                animate={false}
-                className={`
-                  animate-fly-in-rasante
-                  ${!isAudioEnabled ? 'grayscale opacity-50' : ''}
-                `}
-              />
-              {/* Indicadores de áudio para mobile */}
-              {isPlaying && isAudioEnabled && (
-                <div className="absolute -bottom-0.5 -right-0.5 flex gap-0.5">
-                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-audio-bounce shadow-sm shadow-cyan-400" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-audio-bounce shadow-sm" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-audio-bounce shadow-sm shadow-purple-400" style={{ animationDelay: '300ms' }} />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-slate-700 leading-snug font-medium">
-                {lessonData.sections[currentSection]?.speechBubbleText || "Vamos aprender!"}
-              </p>
-            </div>
+      {/* Liv Mobile/Tablet - Flutuando acima do player */}
+      <div className="lg:hidden fixed bottom-[108px] left-[55px] z-[51] pointer-events-auto">
+        <button
+          onClick={toggleAudio}
+          className="relative group touch-manipulation"
+          aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
+        >
+          {/* Avatar circular com efeitos combinados: moldura branca, breathing, glow */}
+          <div 
+            className={`w-[54px] h-[54px] md:w-[65px] md:h-[65px] rounded-full overflow-hidden transition-all duration-500 ${
+              !isAudioEnabled ? 'grayscale opacity-60' : ''
+            } ${isPlaying && isAudioEnabled ? 'liv-speaking-combined' : 'liv-breathing-idle'}`}
+          >
+            <img 
+              src="/liv-avatar-mobile.png" 
+              alt="Liv" 
+              className="w-full h-full object-cover object-top scale-[1.8] translate-y-[15%]"
+            />
           </div>
-        </div>
+        </button>
       </div>
 
       <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 ${
