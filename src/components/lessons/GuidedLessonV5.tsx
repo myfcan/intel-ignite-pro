@@ -1761,8 +1761,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile - Flutuando acima do player, alinhada verticalmente com o botão play */}
-      <div className="md:hidden fixed bottom-[90px] left-3 z-[51] pointer-events-auto">
+      {/* Liv Mobile - Flutuando, centro alinhado com botão play (~50px do fundo) */}
+      <div className="md:hidden fixed bottom-[24px] left-3 z-[51] pointer-events-auto">
         <button
           onClick={toggleAudio}
           className="relative group touch-manipulation"
@@ -1783,11 +1783,11 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             }}
           />
           
-          {/* Avatar container - 10% maior no mobile (52px vs 48px) */}
+          {/* Avatar container - 10% maior no mobile (53px = 48px * 1.10) */}
           <div 
-            className={`relative w-[52px] h-[52px] rounded-full overflow-hidden transition-all duration-500 ${
+            className={`relative w-[53px] h-[53px] rounded-full overflow-hidden transition-all duration-500 ${
               !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-background' : 'ring-1 ring-white/30'}`}
+            } ${isPlaying && isAudioEnabled ? 'ring-2 ring-cyan-400/60 ring-offset-2 ring-offset-slate-900' : 'ring-1 ring-white/30'}`}
             style={{
               boxShadow: isAudioEnabled 
                 ? '0 4px 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(34, 211, 238, 0.25)' 
@@ -1802,7 +1802,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             
             {/* Indicador de estado do áudio */}
             <div 
-              className={`absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-background ${
+              className={`absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] border-2 border-slate-900 ${
                 isAudioEnabled 
                   ? 'bg-cyan-500 text-white' 
                   : 'bg-slate-500 text-white'
