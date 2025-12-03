@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectBusinessDesign - "I.A. que ajuda a montar um negócio"
@@ -14,13 +15,20 @@ import { CheckCircle2 } from 'lucide-react';
  * 4. Setas conectam problema → solução → oferta
  * 5. Números 1, 2, 3 aparecem com micro animação
  * 6. Canvas se recolhe e badge "Plano inicial pronto" aparece
+ *
+ * 🆕 MELHORIAS V5:
+ * - isActive: animação só inicia quando card está em foco
+ * - Durações 2-2.5x mais lentas para melhor experiência
+ * - Loop contínuo enquanto ativo
  */
-export const CardEffectBusinessDesign: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'postits' | 'laser' | 'connect' | 'complete'>('enter');
+export const CardEffectBusinessDesign: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'postits' | 'laser' | 'connect' | 'complete'>('waiting');
   const [visiblePostits, setVisiblePostits] = useState(0);
   const [laserPosition, setLaserPosition] = useState(0);
   const [showArrows, setShowArrows] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const postits = [
     { id: 1, label: 'Problema', color: 'from-red-400 to-rose-500', finalX: 0, finalY: 0 },
@@ -30,19 +38,40 @@ export const CardEffectBusinessDesign: React.FC = () => {
     { id: 5, label: 'Diferencial', color: 'from-orange-400 to-amber-500', finalX: 2, finalY: 0 },
   ];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // 🎬 Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
 
-    // Canvas entra
-    timers.push(setTimeout(() => setPhase('postits'), 500));
+    // Reset estados
+    setPhase('enter');
+    setVisiblePostits(0);
+    setLaserPosition(0);
+    setShowArrows(false);
+    setShowBadge(false);
 
-    // Post-its caem um a um
+    // Durações mais lentas (2-2.5x)
+    const ENTER_DELAY = 1250;      // era 500ms (2.5x)
+    const POSTIT_DELAY = 750;      // era 300ms (2.5x)
+    const LASER_START = 6250;      // era 2500ms (2.5x)
+    const LASER_SPEED = 75;        // era 30ms (2.5x)
+    const ARROWS_DELAY = 8000;     // era 3200ms (2.5x)
+    const COMPLETE_DELAY = 10000;  // era 4000ms (2.5x)
+    const LOOP_DELAY = 15000;      // tempo total até reiniciar
+
+    // Fase 1: Canvas entra
+    timersRef.current.push(setTimeout(() => setPhase('postits'), ENTER_DELAY));
+
+    // Fase 2: Post-its caem um a um
     postits.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisiblePostits(i + 1), 700 + i * 300));
+      timersRef.current.push(
+        setTimeout(() => setVisiblePostits(i + 1), ENTER_DELAY + 200 + i * POSTIT_DELAY)
+      );
     });
 
-    // Laser passa
-    timers.push(setTimeout(() => {
+    // Fase 3: Laser passa
+    timersRef.current.push(setTimeout(() => {
       setPhase('laser');
       let pos = 0;
       const laserInterval = setInterval(() => {
@@ -52,23 +81,49 @@ export const CardEffectBusinessDesign: React.FC = () => {
           clearInterval(laserInterval);
           setPhase('connect');
         }
-      }, 30);
-    }, 2500));
+      }, LASER_SPEED);
+    }, LASER_START));
 
-    // Setas aparecem
-    timers.push(setTimeout(() => setShowArrows(true), 3200));
+    // Fase 4: Setas aparecem
+    timersRef.current.push(setTimeout(() => setShowArrows(true), ARROWS_DELAY));
 
-    // Badge aparece
-    timers.push(setTimeout(() => {
+    // Fase 5: Badge aparece
+    timersRef.current.push(setTimeout(() => {
       setPhase('complete');
       setShowBadge(true);
-    }, 4000));
+    }, COMPLETE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // 🔄 Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // 🎯 Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisiblePostits(0);
+      setLaserPosition(0);
+      setShowArrows(false);
+      setShowBadge(false);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
+
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30">
       {/* Background - mesa de estratégia */}
       <div className="absolute inset-0">
         <div
@@ -87,8 +142,11 @@ export const CardEffectBusinessDesign: React.FC = () => {
       <motion.div
         className="absolute inset-6 bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/50 overflow-hidden"
         initial={{ y: '100%', opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        animate={{
+          y: isAnimating ? 0 : '100%',
+          opacity: isAnimating ? 1 : 0,
+        }}
+        transition={{ duration: 1.25, ease: 'easeOut' }} // 2.5x slower (era 0.5)
       >
         {/* Header do canvas */}
         <div className="px-4 py-2 border-b border-slate-700/50 flex items-center gap-2">
@@ -101,7 +159,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
           {/* Grid guia (aparece após laser) */}
           <motion.div
             className="absolute inset-4 grid grid-cols-3 gap-2 opacity-0"
-            animate={{ opacity: phase === 'connect' || phase === 'complete' ? 0.3 : 0 }}
+            animate={{ opacity: isAnimating && (phase === 'connect' || phase === 'complete') ? 0.3 : 0 }}
           >
             {[...Array(6)].map((_, i) => (
               <div key={i} className="border border-dashed border-slate-600/30 rounded-lg" />
@@ -110,8 +168,8 @@ export const CardEffectBusinessDesign: React.FC = () => {
 
           {/* Post-its */}
           {postits.map((postit, i) => {
-            const isVisible = visiblePostits > i;
-            const isOrganized = phase === 'connect' || phase === 'complete';
+            const isVisible = isAnimating && visiblePostits > i;
+            const isOrganized = isAnimating && (phase === 'connect' || phase === 'complete');
 
             // Posição inicial (caindo de cima, posições aleatórias)
             const initialX = 20 + (i * 15) % 60;
@@ -147,9 +205,9 @@ export const CardEffectBusinessDesign: React.FC = () => {
                 }}
                 transition={{
                   type: 'spring',
-                  stiffness: isOrganized ? 200 : 150,
+                  stiffness: isOrganized ? 100 : 75, // 2x mais lento (era 200/150)
                   damping: isOrganized ? 20 : 12,
-                  duration: 0.5,
+                  duration: 1.25, // 2.5x mais lento (era 0.5)
                 }}
               >
                 <div className={`w-full h-full bg-gradient-to-br ${postit.color} rounded-lg shadow-lg p-2 flex flex-col`}>
@@ -178,7 +236,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
           })}
 
           {/* Laser azul */}
-          {phase === 'laser' && (
+          {isAnimating && phase === 'laser' && (
             <motion.div
               className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-transparent via-blue-400 to-transparent"
               style={{ left: `${laserPosition}%` }}
@@ -190,13 +248,13 @@ export const CardEffectBusinessDesign: React.FC = () => {
                   '0 0 10px rgba(59, 130, 246, 0.5)',
                 ],
               }}
-              transition={{ duration: 0.3, repeat: Infinity }}
+              transition={{ duration: 0.75, repeat: Infinity }} // 2.5x mais lento (era 0.3)
             />
           )}
 
           {/* Setas conectando */}
           <AnimatePresence>
-            {showArrows && (
+            {isAnimating && showArrows && (
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
                 {/* Problema → Solução */}
                 <motion.path
@@ -208,7 +266,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
                   markerEnd="url(#arrowhead)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 1.25 }} // 2.5x mais lento (era 0.5)
                 />
                 {/* Solução → Oferta */}
                 <motion.path
@@ -220,7 +278,7 @@ export const CardEffectBusinessDesign: React.FC = () => {
                   markerEnd="url(#arrowhead)"
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
+                  transition={{ duration: 1.25, delay: 0.5 }} // 2.5x mais lento (era 0.5 e 0.2)
                 />
 
                 <defs>
@@ -246,17 +304,17 @@ export const CardEffectBusinessDesign: React.FC = () => {
 
       {/* Badge "Plano inicial pronto" */}
       <AnimatePresence>
-        {showBadge && (
+        {isAnimating && showBadge && (
           <motion.div
             className="absolute bottom-8 right-8 flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-full backdrop-blur-sm"
             initial={{ scale: 0, opacity: 0, x: 20 }}
             animate={{ scale: 1, opacity: 1, x: 0 }}
-            transition={{ type: 'spring', stiffness: 300 }}
+            transition={{ type: 'spring', stiffness: 150 }} // 2x mais lento (era 300)
           >
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              transition={{ delay: 0.5, type: 'spring' }} // 2.5x mais lento (era 0.2)
             >
               <CheckCircle2 className="w-4 h-4 text-green-400" />
             </motion.div>
@@ -280,9 +338,9 @@ export const CardEffectBusinessDesign: React.FC = () => {
               scale: [0.8, 1.2, 0.8],
             }}
             transition={{
-              duration: 2 + Math.random() * 2,
+              duration: 5 + Math.random() * 5, // 2.5x mais lento (era 2 + Math.random() * 2)
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: Math.random() * 5, // 2.5x mais lento (era Math.random() * 2)
             }}
           />
         ))}

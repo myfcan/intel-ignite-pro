@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Check, X } from 'lucide-react';
+import { CardEffectProps } from './index';
 
 /**
  * CardEffectStrategicAdvisor - "Conselho estratégico de bolso"
@@ -14,12 +15,14 @@ import { TrendingUp, TrendingDown, Check, X } from 'lucide-react';
  * 4. Ícones de "Prós" e "Contras" surgem em linhas alternadas
  * 5. Um painel recebe destaque (melhor escolha) com brilho azul
  */
-export const CardEffectStrategicAdvisor: React.FC = () => {
-  const [phase, setPhase] = useState<'enter' | 'graphs' | 'metrics' | 'highlight' | 'complete'>('enter');
+export const CardEffectStrategicAdvisor: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [phase, setPhase] = useState<'waiting' | 'enter' | 'graphs' | 'metrics' | 'highlight' | 'complete'>('waiting');
   const [visiblePanels, setVisiblePanels] = useState(0);
   const [showGraphs, setShowGraphs] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
   const [highlightedPanel, setHighlightedPanel] = useState(-1);
+  const [loopCount, setLoopCount] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const scenarios = [
     {
@@ -58,40 +61,85 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+  // Função para iniciar a sequência de animação
+  const startAnimation = () => {
+    // Limpar timers anteriores
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    // Reset estados
+    setPhase('enter');
+    setVisiblePanels(0);
+    setShowGraphs(false);
+    setShowMetrics(false);
+    setHighlightedPanel(-1);
+
+    // Durações mais lentas (2.5x)
+    const PANEL_BASE_DELAY = 750;    // era 300ms
+    const PANEL_STEP_DELAY = 500;    // era 200ms
+    const GRAPHS_DELAY = 2500;       // era 1000ms
+    const METRICS_DELAY = 5500;      // era 2200ms
+    const HIGHLIGHT_DELAY = 8000;    // era 3200ms
+    const COMPLETE_DELAY = 10000;    // era 4000ms
+    const LOOP_DELAY = 15000;        // tempo até reiniciar
 
     // Painéis aparecem
     scenarios.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisiblePanels(i + 1), 300 + i * 200));
+      timersRef.current.push(setTimeout(() => setVisiblePanels(i + 1), PANEL_BASE_DELAY + i * PANEL_STEP_DELAY));
     });
 
     // Gráficos desenham
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('graphs');
       setShowGraphs(true);
-    }, 1000));
+    }, GRAPHS_DELAY));
 
     // Métricas aparecem
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('metrics');
       setShowMetrics(true);
-    }, 2200));
+    }, METRICS_DELAY));
 
     // Highlight no recomendado
-    timers.push(setTimeout(() => {
+    timersRef.current.push(setTimeout(() => {
       setPhase('highlight');
       setHighlightedPanel(1); // Realista (índice 1)
-    }, 3200));
+    }, HIGHLIGHT_DELAY));
 
     // Complete
-    timers.push(setTimeout(() => setPhase('complete'), 4000));
+    timersRef.current.push(setTimeout(() => setPhase('complete'), COMPLETE_DELAY));
 
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    // Loop: reiniciar animação após um tempo
+    timersRef.current.push(setTimeout(() => {
+      setLoopCount(prev => prev + 1);
+    }, LOOP_DELAY));
+  };
+
+  // Iniciar animação quando isActive mudar para true
+  useEffect(() => {
+    if (isActive) {
+      startAnimation();
+    } else {
+      // Parar e resetar quando não estiver ativo
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      setPhase('waiting');
+      setVisiblePanels(0);
+      setShowGraphs(false);
+      setShowMetrics(false);
+      setHighlightedPanel(-1);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, [isActive, loopCount]); // loopCount força reinício do loop
+
+  // Se não estiver ativo, mostrar estado inicial sutil
+  const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full h-72 overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/20">
+    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/20">
       {/* Background */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -108,7 +156,8 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
       <motion.div
         className="absolute top-4 left-1/2 -translate-x-1/2"
         initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: isAnimating ? 1 : 0, y: isAnimating ? 0 : -10 }}
+        transition={{ duration: 0.6 }}
       >
         <span className="text-xs text-slate-400 font-medium">Análise de Cenários</span>
       </motion.div>
@@ -131,7 +180,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                 x: isVisible ? 0 : (i === 0 ? '-100%' : i === 2 ? '100%' : 0),
                 opacity: isVisible ? 1 : 0,
               }}
-              transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+              transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             >
               {/* Highlight glow */}
               {isHighlighted && (
@@ -139,7 +188,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                   className="absolute inset-0 bg-purple-500/20 rounded-xl"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0.2, 0.4, 0.2] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
+                  transition={{ duration: 3.5, repeat: Infinity }}
                 />
               )}
 
@@ -149,7 +198,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                   className="absolute inset-0 rounded-xl border-2 border-purple-400/50"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.75 }}
                 />
               )}
 
@@ -175,7 +224,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                     className={`flex-1 bg-gradient-to-t ${scenario.color} rounded-t-sm`}
                     initial={{ height: 0 }}
                     animate={{ height: showGraphs ? `${height}%` : 0 }}
-                    transition={{ delay: barIdx * 0.1, duration: 0.4, ease: 'easeOut' }}
+                    transition={{ delay: barIdx * 0.25, duration: 1, ease: 'easeOut' }}
                   />
                 ))}
               </div>
@@ -185,6 +234,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                 className="px-2 flex items-center gap-1"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: showMetrics ? 1 : 0, x: showMetrics ? 0 : -10 }}
+                transition={{ duration: 0.6 }}
               >
                 <TrendingUp className="w-3 h-3 text-green-400" />
                 <motion.span
@@ -192,7 +242,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                   animate={showMetrics ? {
                     textShadow: ['0 0 0 transparent', '0 0 10px rgba(74, 222, 128, 0.5)', '0 0 0 transparent'],
                   } : {}}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 1.25 }}
                 >
                   {scenario.growth}
                 </motion.span>
@@ -206,7 +256,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                     className="flex items-center gap-1"
                     initial={{ opacity: 0, x: -5 }}
                     animate={{ opacity: showMetrics ? 1 : 0, x: showMetrics ? 0 : -5 }}
-                    transition={{ delay: 0.3 + idx * 0.1 }}
+                    transition={{ delay: 0.75 + idx * 0.25, duration: 0.5 }}
                   >
                     <Check className="w-2.5 h-2.5 text-green-400" />
                     <span className="text-[8px] text-green-400">{pro}</span>
@@ -218,7 +268,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                     className="flex items-center gap-1"
                     initial={{ opacity: 0, x: 5 }}
                     animate={{ opacity: showMetrics ? 1 : 0, x: showMetrics ? 0 : 5 }}
-                    transition={{ delay: 0.5 + idx * 0.1 }}
+                    transition={{ delay: 1.25 + idx * 0.25, duration: 0.5 }}
                   >
                     <X className="w-2.5 h-2.5 text-red-400" />
                     <span className="text-[8px] text-red-400">{con}</span>
@@ -232,7 +282,7 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
                   className="absolute bottom-1 right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', delay: 0.2 }}
+                  transition={{ type: 'spring', delay: 0.5, duration: 0.6 }}
                 >
                   <Check className="w-3 h-3 text-white" />
                 </motion.div>
@@ -246,8 +296,8 @@ export const CardEffectStrategicAdvisor: React.FC = () => {
       <motion.div
         className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-purple-300/60"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 3.5 }}
+        animate={{ opacity: isAnimating ? 1 : 0 }}
+        transition={{ delay: 8.75, duration: 0.75 }}
       >
         Baseado em seus objetivos e perfil de risco
       </motion.div>
