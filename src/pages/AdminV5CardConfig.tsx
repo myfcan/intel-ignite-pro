@@ -16,14 +16,68 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
-import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, isValidCardEffectType } from '@/components/lessons/card-effects';
+import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, CARD_EFFECTS_BY_LESSON, isValidCardEffectType, CardEffectType } from '@/components/lessons/card-effects';
 
-// 🎬 Tipos de Card Effects Cinematográficos
-const CINEMATOGRAPHIC_CARD_TYPES = CARD_EFFECT_TYPES.map(type => ({
-  value: type,
-  label: CARD_EFFECT_LABELS[type] || type,
-  isCinematic: true
-}));
+// 🎓 Configuração das Aulas disponíveis
+const AVAILABLE_LESSONS = [
+  {
+    id: 'aula-1',
+    title: 'Aula 1 - O Furacão da I.A.',
+    description: '12 card effects cinematográficos',
+    icon: '🌪️'
+  },
+  {
+    id: 'aula-2',
+    title: 'Aula 2 - História da Maria',
+    description: '14 card effects cinematográficos',
+    icon: '👩‍💼'
+  },
+];
+
+// 📋 Templates pré-configurados de Experience Cards por Aula
+const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
+  'aula-1': [
+    { sectionIndex: 1, cardIndex: 1, cardType: 'app-builder', anchorText: 'aplicativo funcional', title: 'Criador de Apps', subtitle: 'I.A. construindo aplicativos' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'digital-employee', anchorText: 'funcionário digital', title: 'Funcionário Digital', subtitle: 'Assistente que nunca para' },
+    { sectionIndex: 2, cardIndex: 1, cardType: 'business-design', anchorText: 'produtos reais', title: 'Design de Negócio', subtitle: 'Estruturando ideias em minutos' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'content-creator', anchorText: 'e-books, manuais, treinamentos internos', title: 'Coautor de Conteúdo', subtitle: 'Livros e cursos com I.A.' },
+    { sectionIndex: 3, cardIndex: 1, cardType: 'content-machine', anchorText: 'linha de produção de conteúdo', title: 'Máquina de Conteúdo', subtitle: 'Produção em escala' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'video-studio', anchorText: 'I.A. criando um vídeo inteiro', title: 'Estúdio de Vídeo I.A.', subtitle: 'Vídeos profissionais automatizados' },
+    { sectionIndex: 4, cardIndex: 1, cardType: 'automation', anchorText: 'fluxos e automações', title: 'Fluxos de Automação', subtitle: 'Processos inteligentes' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'presence-amplifier', anchorText: 'versão melhorada de você', title: 'Amplificador de Presença', subtitle: 'Multiplique seu alcance' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'playground-chat', anchorText: 'acessar o Playground', title: 'Playground I.A.', subtitle: 'Experimente agora' },
+    { sectionIndex: 5, cardIndex: 1, cardType: 'strategic-advisor', anchorText: 'conselho estratégico de bolso', title: 'Conselho Estratégico', subtitle: 'Análise de cenários com I.A.' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'new-professions', anchorText: 'cria novas profissões', title: 'Novas Profissões', subtitle: 'Carreiras do futuro' },
+    { sectionIndex: 5, cardIndex: 3, cardType: 'closing-message', anchorText: 'em cima dessas novas possibilidades', title: 'Próximos Passos', subtitle: 'Sua jornada começa agora' },
+  ],
+  'aula-2': [
+    { sectionIndex: 1, cardIndex: 1, cardType: 'profile-card', anchorText: 'Conheça a Maria', title: 'Perfil da Maria', subtitle: 'Conheça a protagonista' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'problem-identifier', anchorText: 'não sabia vender online', title: 'O Desafio', subtitle: 'Identificando barreiras' },
+    { sectionIndex: 1, cardIndex: 3, cardType: 'story-revealer', anchorText: 'mudou tudo', title: 'O Segredo', subtitle: 'A virada' },
+    { sectionIndex: 2, cardIndex: 1, cardType: 'stats-comparison', anchorText: 'falta de visibilidade', title: 'O Problema Real', subtitle: 'Visibilidade vs Invisibilidade' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'generic-detector', anchorText: 'eram genéricos', title: 'Scanner de Genérico', subtitle: 'Detectando o problema' },
+    { sectionIndex: 2, cardIndex: 3, cardType: 'prompt-magic', anchorText: 'segredo', title: 'A Mágica do Prompt', subtitle: 'Transformação do texto' },
+    { sectionIndex: 3, cardIndex: 1, cardType: 'amplifier-concept', anchorText: 'amplificadora', title: 'Conceito Amplificador', subtitle: 'IA como multiplicadora' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'emotion-connector', anchorText: 'prompts com emoção', title: 'Conexão Emocional', subtitle: 'Histórias que conectam' },
+    { sectionIndex: 3, cardIndex: 3, cardType: 'object-transformer', anchorText: 'Posts que conectam', title: 'Transformação', subtitle: 'De genérico para único' },
+    { sectionIndex: 4, cardIndex: 1, cardType: 'transformation-viewer', anchorText: '47 vendas', title: 'Resultados Reais', subtitle: 'A transformação em números' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'prompt-builder', anchorText: 'contar histórias', title: 'Construtor de Prompts', subtitle: 'Passo a passo' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'variation-multiplier', anchorText: 'dezenas de variações', title: 'Multiplicador', subtitle: '1 ideia → muitas versões' },
+    { sectionIndex: 4, cardIndex: 4, cardType: 'time-saver', anchorText: '10 posts em 10 minutos', title: 'Economia de Tempo', subtitle: 'Produtividade real' },
+    { sectionIndex: 5, cardIndex: 1, cardType: 'next-steps', anchorText: 'Próximos passos', title: 'Ação!', subtitle: 'Comece agora' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'closing-message', anchorText: 'possibilidades reais', title: 'Mensagem Final', subtitle: 'Sua jornada começa' },
+  ],
+};
+
+// 🎬 Função para gerar tipos de Card Effects filtrados por aula
+const getCardTypesForLesson = (lessonId: string) => {
+  const lessonCards = CARD_EFFECTS_BY_LESSON[lessonId] || CARD_EFFECT_TYPES;
+  return lessonCards.map(type => ({
+    value: type,
+    label: CARD_EFFECT_LABELS[type] || type,
+    isCinematic: true
+  }));
+};
 
 // 📝 Tipos de Card com texto (legado)
 const TEXT_CARD_TYPES = [
@@ -129,6 +183,10 @@ export default function AdminV5CardConfig() {
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
   const [cardsQuantity, setCardsQuantity] = useState<1 | 2 | 3>(1);
+  const [selectedLesson, setSelectedLesson] = useState<string>('aula-1');
+
+  // Card types filtrados pela aula selecionada
+  const cinematographicCardTypes = getCardTypesForLesson(selectedLesson);
   // LocalStorage keys
   const CARD1_STORAGE_KEY = 'v5-card-config-card1';
   const CARD2_STORAGE_KEY = 'v5-card-config-card2';
@@ -726,9 +784,64 @@ export default function AdminV5CardConfig() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Seleção de Aula */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs">0</span>
+                        Selecione a Aula
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {AVAILABLE_LESSONS.map((lesson) => (
+                          <div
+                            key={lesson.id}
+                            onClick={() => setSelectedLesson(lesson.id)}
+                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              selectedLesson === lesson.id
+                                ? 'border-purple-500 bg-purple-500/10'
+                                : 'border-muted hover:border-purple-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-lg">{lesson.icon}</span>
+                              <span className="font-medium text-sm">{lesson.title.split(' - ')[0]}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{lesson.title.split(' - ')[1]}</p>
+                            <p className="text-[10px] text-purple-500 mt-1">{lesson.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Escolha a aula para filtrar os card effects disponíveis
+                      </p>
+
+                      {/* Botão Carregar Template */}
+                      <Button
+                        variant="default"
+                        className="w-full mt-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                        onClick={() => {
+                          const template = LESSON_CARD_TEMPLATES[selectedLesson];
+                          if (template) {
+                            setExperienceCards(template);
+                            toast({
+                              title: "📋 Template carregado!",
+                              description: `${template.length} cards pré-configurados para ${AVAILABLE_LESSONS.find(l => l.id === selectedLesson)?.title}`,
+                            });
+                          }
+                        }}
+                      >
+                        <Wand2 className="w-4 h-4 mr-2" />
+                        Carregar Template ({LESSON_CARD_TEMPLATES[selectedLesson]?.length || 0} cards)
+                      </Button>
+                    </div>
+
+                    <Separator />
+
                     {/* Seleção de Seção */}
                     <div className="space-y-2">
-                      <Label>1. Selecione a Seção</Label>
+                      <Label className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
+                        Selecione a Seção
+                      </Label>
                       <Select 
                         value={selectedSectionIndex?.toString() || ''} 
                         onValueChange={(val) => setSelectedSectionIndex(parseInt(val))}
@@ -805,7 +918,7 @@ export default function AdminV5CardConfig() {
                                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
                                   🎬 Animações Cinematográficas
                                 </div>
-                                {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                {cinematographicCardTypes.map(({ value, label }) => (
                                   <SelectItem key={value} value={value}>
                                     <span className="flex items-center gap-2">
                                       <span className="text-purple-400">▸</span>
