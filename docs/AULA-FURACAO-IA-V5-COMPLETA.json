@@ -1,0 +1,198 @@
+{
+  "title": "O Furacão da I.A.",
+  "trackId": "TRILHA_ID_AQUI",
+  "trackName": "Fundamentos da I.A.",
+  "orderIndex": 1,
+  "model": "v5",
+  "estimatedTimeMinutes": 12,
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "A Revolução Silenciosa",
+      "visualContent": "# A Revolução Silenciosa\n\nEnquanto você lê isso, milhares de pessoas estão usando I.A. para criar **aplicativos funcionais** em minutos.\n\nNão são programadores.\n\nSão pessoas comuns que descobriram como transformar ideias em produtos reais — sem escrever uma linha de código.\n\nIsso não é ficção científica. É o presente.\n\nE a velocidade com que isso está acontecendo deveria fazer você prestar atenção.\n\n---\n\nNesta lição, vou te mostrar **10 coisas que a I.A. já faz hoje** — e que a maioria das pessoas ainda não percebeu.\n\nNão são promessas. São fatos.\n\nE quando você entender o que já é possível, vai perceber que estamos vivendo um momento único na história.\n\nVamos começar."
+    },
+    {
+      "id": "section-2",
+      "title": "O Funcionário que Nunca Dorme",
+      "visualContent": "## 1. Criar um aplicativo funcional\n\nVocê pode descrever uma ideia crua para a I.A. — e ela transforma isso em um **app funcional**.\n\nNão estou falando de protótipos. Estou falando de aplicativos que funcionam de verdade.\n\nUm exemplo real: um empreendedor descreveu seu negócio para o ChatGPT e, em 3 horas, tinha um sistema de agendamento funcionando.\n\nSem contratar desenvolvedor. Sem gastar milhares de reais.\n\n---\n\n## 2. Ter um funcionário digital 24/7\n\nImagine ter um assistente que:\n- Nunca dorme\n- Nunca reclama\n- Responde em segundos\n- Trabalha em qualquer fuso horário\n\nIsso já existe. Empresas estão usando **agentes de I.A.** para responder clientes, processar pedidos e resolver problemas — tudo automaticamente.\n\nO custo? Uma fração do que custaria uma equipe humana."
+    },
+    {
+      "id": "section-3",
+      "title": "Criação em Escala",
+      "visualContent": "## 3. Transformar sua expertise em produtos\n\nVocê pode descrever uma ideia crua de negócio para a I.A. — e ela ajuda a estruturar um **modelo de negócio completo**.\n\nCanvas de proposta de valor. Análise de concorrentes. Estratégia de preços.\n\nTudo isso em minutos, não semanas.\n\n---\n\n## 4. Ser coautor de livros e cursos\n\nA I.A. pode ajudar você a:\n- Estruturar o conteúdo\n- Escrever capítulos\n- Revisar e melhorar o texto\n- Criar exercícios e materiais complementares\n\nUm curso que levaria meses para criar pode ficar pronto em dias.\n\n---\n\n## 5. Produzir conteúdo em escala industrial\n\nO conteúdo que aparece para o mundo não precisa mais ser criado do zero.\n\nA I.A. pode gerar:\n- Posts para redes sociais\n- Roteiros de vídeo\n- E-mails de marketing\n- Artigos de blog\n\nTudo isso mantendo seu tom de voz e estilo único."
+    },
+    {
+      "id": "section-4",
+      "title": "Automação e Presença",
+      "visualContent": "## 6. Criar vídeos sem aparecer\n\nVocê pode criar vídeos profissionais usando:\n- Avatares de I.A.\n- Vozes sintéticas realistas\n- Edição automática\n\nCanais inteiros no YouTube são operados assim. E a maioria das pessoas nem percebe.\n\n---\n\n## 7. Automatizar fluxos complexos\n\nProcessos que antes exigiam uma equipe inteira agora podem ser automatizados.\n\nUm exemplo: uma empresa de e-commerce configurou um fluxo onde a I.A.:\n1. Recebe o pedido\n2. Verifica o estoque\n3. Gera a nota fiscal\n4. Atualiza o cliente\n5. Aciona a logística\n\nTudo sem intervenção humana.\n\n---\n\n## 8. Multiplicar sua presença online\n\nA I.A. pode criar múltiplas versões de você:\n- Adaptar seu conteúdo para diferentes plataformas\n- Responder comentários no seu estilo\n- Manter presença consistente em vários canais\n\nÉ como ter um amplificador de presença que trabalha 24 horas por dia.\n\n---\n\n💡 **Experimente agora**: você vai acessar o Playground e testar como a I.A. pode ajudar no seu contexto específico.",
+      "showPlaygroundCall": true,
+      "playgroundConfig": {
+        "type": "real-playground",
+        "title": "Playground: Teste a I.A. no seu contexto",
+        "description": "Experimente criar algo usando I.A. para o seu negócio ou projeto pessoal."
+      }
+    },
+    {
+      "id": "section-5",
+      "title": "O Futuro é Agora",
+      "visualContent": "## 9. Ter um conselho estratégico pessoal\n\nA I.A. pode analisar cenários, comparar opções e dar recomendações estratégicas.\n\nÉ como ter acesso a um consultor sênior — mas disponível a qualquer momento e por uma fração do custo.\n\n---\n\n## 10. A I.A. que cria novas profissões\n\nEnquanto algumas pessoas temem perder empregos, outras estão criando carreiras inteiramente novas:\n\n- **Configurador de Agentes de I.A.**\n- **Consultor de Automações**\n- **Criador de Cursos com I.A.**\n- **Especialista em Prompt Engineering**\n\nO mercado está se dividindo em dois grupos: quem usa I.A. como ferramenta e quem vai ser substituído por quem usa.\n\n---\n\nVocê chegou até aqui, em cima dessas novas possibilidades.\n\n---\n\nVocê está aqui para estar nesse segundo grupo.\n\nNesta lição, a intenção não foi ensinar o como fazer em detalhes, e sim abrir o seu radar para tudo o que já é possível.\n\nA partir das próximas aulas, vamos descer para a prática: prompts, ferramentas e passo a passo para você **usar a I.A. na sua vida real**."
+    }
+  ],
+  "experienceCards": [
+    {
+      "type": "app-builder",
+      "sectionIndex": 1,
+      "anchorText": "aplicativos funcionais",
+      "props": {
+        "title": "Criador de Apps",
+        "subtitle": "I.A. construindo aplicativos"
+      }
+    },
+    {
+      "type": "digital-employee",
+      "sectionIndex": 2,
+      "anchorText": "funcionário digital 24/7",
+      "props": {
+        "title": "Funcionário Digital",
+        "subtitle": "Assistente que nunca para"
+      }
+    },
+    {
+      "type": "business-design",
+      "sectionIndex": 3,
+      "anchorText": "modelo de negócio completo",
+      "props": {
+        "title": "Design de Negócio",
+        "subtitle": "Estruturando ideias em minutos"
+      }
+    },
+    {
+      "type": "content-creator",
+      "sectionIndex": 3,
+      "anchorText": "Ser coautor de livros e cursos",
+      "props": {
+        "title": "Coautor de Conteúdo",
+        "subtitle": "Livros e cursos com I.A."
+      }
+    },
+    {
+      "type": "content-machine",
+      "sectionIndex": 3,
+      "anchorText": "conteúdo que aparece para o mundo",
+      "props": {
+        "title": "Máquina de Conteúdo",
+        "subtitle": "Produção em escala"
+      }
+    },
+    {
+      "type": "video-studio",
+      "sectionIndex": 4,
+      "anchorText": "Criar vídeos sem aparecer",
+      "props": {
+        "title": "Estúdio de Vídeo I.A.",
+        "subtitle": "Vídeos profissionais automatizados"
+      }
+    },
+    {
+      "type": "automation",
+      "sectionIndex": 4,
+      "anchorText": "Automatizar fluxos complexos",
+      "props": {
+        "title": "Fluxos de Automação",
+        "subtitle": "Processos inteligentes"
+      }
+    },
+    {
+      "type": "presence-amplifier",
+      "sectionIndex": 4,
+      "anchorText": "amplificador de presença",
+      "props": {
+        "title": "Amplificador de Presença",
+        "subtitle": "Multiplique seu alcance"
+      }
+    },
+    {
+      "type": "playground-chat",
+      "sectionIndex": 4,
+      "anchorText": "você vai acessar o Playground",
+      "props": {
+        "title": "Playground I.A.",
+        "subtitle": "Experimente agora"
+      }
+    },
+    {
+      "type": "strategic-advisor",
+      "sectionIndex": 5,
+      "anchorText": "conselho estratégico pessoal",
+      "props": {
+        "title": "Conselho Estratégico",
+        "subtitle": "Análise de cenários com I.A."
+      }
+    },
+    {
+      "type": "new-professions",
+      "sectionIndex": 5,
+      "anchorText": "cria novas profissões",
+      "props": {
+        "title": "Novas Profissões",
+        "subtitle": "Carreiras do futuro"
+      }
+    },
+    {
+      "type": "closing-message",
+      "sectionIndex": 5,
+      "anchorText": "em cima dessas novas possibilidades",
+      "props": {
+        "title": "Próximos Passos",
+        "subtitle": "Sua jornada começa agora"
+      }
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex-final-complete-sentence",
+      "type": "complete-sentence",
+      "title": "Complete o que Você Aprendeu",
+      "instruction": "Complete as frases abaixo com base no que você aprendeu nesta aula:",
+      "data": {
+        "sentences": [
+          {
+            "id": "sent-1",
+            "text": "Pessoas comuns estão criando _______ funcionais em minutos, sem saber programar.",
+            "correctAnswers": ["aplicativos", "apps", "aplicativo", "app"],
+            "options": ["aplicativos", "documentos", "planilhas", "apresentações"],
+            "hints": ["Pense no que a I.A. pode construir para você usar no celular ou computador", "É algo que antes só programadores conseguiam criar"]
+          },
+          {
+            "id": "sent-2",
+            "text": "Um _______ digital pode trabalhar 24 horas por dia, 7 dias por semana.",
+            "correctAnswers": ["funcionário", "assistente", "agente"],
+            "options": ["funcionário", "computador", "programa", "robô"],
+            "hints": ["É como ter alguém da equipe que nunca precisa descansar", "A aula fala sobre agentes de I.A. que fazem esse papel"]
+          },
+          {
+            "id": "sent-3",
+            "text": "A I.A. pode ajudar a criar um modelo de _______ completo em minutos.",
+            "correctAnswers": ["negócio", "negócios", "negocios", "negocio"],
+            "options": ["negócio", "apresentação", "documento", "aplicativo"],
+            "hints": ["Canvas, proposta de valor, análise de concorrentes...", "É sobre estruturar uma ideia para ganhar dinheiro"]
+          },
+          {
+            "id": "sent-4",
+            "text": "É possível criar vídeos profissionais usando avatares e vozes _______ realistas.",
+            "correctAnswers": ["sintéticas", "sinteticas", "artificiais", "de I.A.", "de IA"],
+            "options": ["sintéticas", "gravadas", "naturais", "editadas"],
+            "hints": ["Não são vozes de pessoas reais, são geradas por I.A.", "A aula menciona canais inteiros no YouTube operados assim"]
+          },
+          {
+            "id": "sent-5",
+            "text": "O mercado está se dividindo entre quem usa I.A. como _______ e quem vai ser substituído.",
+            "correctAnswers": ["ferramenta", "aliada", "aliado", "parceira"],
+            "options": ["ferramenta", "brinquedo", "passatempo", "curiosidade"],
+            "hints": ["A I.A. é um instrumento para realizar tarefas", "Quem aprende a usar ganha vantagem competitiva"]
+          }
+        ]
+      }
+    }
+  ]
+}
