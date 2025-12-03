@@ -128,10 +128,11 @@ export default function AdminV5CardConfig() {
   
   // Novos estados para o fluxo correto
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<number | null>(null);
-  const [cardsQuantity, setCardsQuantity] = useState<1 | 2>(1);
+  const [cardsQuantity, setCardsQuantity] = useState<1 | 2 | 3>(1);
   // LocalStorage keys
   const CARD1_STORAGE_KEY = 'v5-card-config-card1';
   const CARD2_STORAGE_KEY = 'v5-card-config-card2';
+  const CARD3_STORAGE_KEY = 'v5-card-config-card3';
 
   // Inicializar com dados salvos ou valores padrão
   const [card1, setCard1] = useState<Partial<ExperienceCard>>(() => {
@@ -194,6 +195,36 @@ export default function AdminV5CardConfig() {
     };
   });
 
+  const [card3, setCard3] = useState<Partial<ExperienceCard>>(() => {
+    const saved = localStorage.getItem(CARD3_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          cardType: '',
+          anchorText: '',
+          title: '',
+          subtitle: '',
+          icon: '',
+          colorScheme: '',
+          effectDescription: '',
+          chapters: []
+        };
+      }
+    }
+    return {
+      cardType: '',
+      anchorText: '',
+      title: '',
+      subtitle: '',
+      icon: '',
+      colorScheme: '',
+      effectDescription: '',
+      chapters: []
+    };
+  });
+
   // Auto-save card1 no localStorage
   useEffect(() => {
     localStorage.setItem(CARD1_STORAGE_KEY, JSON.stringify(card1));
@@ -203,6 +234,11 @@ export default function AdminV5CardConfig() {
   useEffect(() => {
     localStorage.setItem(CARD2_STORAGE_KEY, JSON.stringify(card2));
   }, [card2]);
+
+  // Auto-save card3 no localStorage
+  useEffect(() => {
+    localStorage.setItem(CARD3_STORAGE_KEY, JSON.stringify(card3));
+  }, [card3]);
 
   // Estado do preview modal
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -288,8 +324,8 @@ export default function AdminV5CardConfig() {
       chapters: card1.chapters || []
     });
 
-    // Se quantidade for 2, validar e adicionar Card 2
-    if (cardsQuantity === 2) {
+    // Se quantidade for 2 ou 3, validar e adicionar Card 2
+    if (cardsQuantity >= 2) {
       if (!card2.cardType || !card2.anchorText) {
         toast({
           title: "❌ Erro no Card 2",
@@ -310,6 +346,31 @@ export default function AdminV5CardConfig() {
         colorScheme: card2.colorScheme,
         effectDescription: card2.effectDescription,
         chapters: card2.chapters || []
+      });
+    }
+
+    // Se quantidade for 3, validar e adicionar Card 3
+    if (cardsQuantity === 3) {
+      if (!card3.cardType || !card3.anchorText) {
+        toast({
+          title: "❌ Erro no Card 3",
+          description: "CardType e AnchorText são obrigatórios para o Card 3",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      newCards.push({
+        sectionIndex: selectedSectionIndex,
+        cardIndex: 3,
+        cardType: card3.cardType!,
+        anchorText: card3.anchorText!,
+        title: card3.title!,
+        subtitle: card3.subtitle || '',
+        icon: card3.icon,
+        colorScheme: card3.colorScheme,
+        effectDescription: card3.effectDescription,
+        chapters: card3.chapters || []
       });
     }
 
@@ -342,8 +403,10 @@ export default function AdminV5CardConfig() {
     
     setCard1(emptyCard);
     setCard2(emptyCard);
+    setCard3(emptyCard);
     localStorage.removeItem(CARD1_STORAGE_KEY);
     localStorage.removeItem(CARD2_STORAGE_KEY);
+    localStorage.removeItem(CARD3_STORAGE_KEY);
 
     // Fechar modal
     setShowPreviewModal(false);
@@ -366,12 +429,14 @@ export default function AdminV5CardConfig() {
       effectDescription: '',
       chapters: []
     };
-    
+
     setCard1(emptyCard);
     setCard2(emptyCard);
+    setCard3(emptyCard);
     localStorage.removeItem(CARD1_STORAGE_KEY);
     localStorage.removeItem(CARD2_STORAGE_KEY);
-    
+    localStorage.removeItem(CARD3_STORAGE_KEY);
+
     toast({
       title: "🧹 Formulário limpo",
       description: "Dados dos cards foram apagados",
@@ -657,7 +722,7 @@ export default function AdminV5CardConfig() {
                   <CardHeader>
                     <CardTitle>➕ Configurar Experience Cards</CardTitle>
                     <CardDescription>
-                      Cada seção pode ter até 2 cards. Use anchorText do markdown como gatilho.
+                      Cada seção pode ter até 3 cards. Use anchorText do markdown como gatilho.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -685,9 +750,9 @@ export default function AdminV5CardConfig() {
                     {selectedSectionIndex !== null && (
                       <div className="space-y-2">
                         <Label>2. Quantidade de Cards nesta Seção</Label>
-                        <RadioGroup 
-                          value={String(cardsQuantity)} 
-                          onValueChange={(val) => setCardsQuantity(parseInt(val) as 1 | 2)}
+                        <RadioGroup
+                          value={String(cardsQuantity)}
+                          onValueChange={(val) => setCardsQuantity(parseInt(val) as 1 | 2 | 3)}
                           className="flex gap-4"
                         >
                           <div className="flex items-center space-x-2">
@@ -697,6 +762,10 @@ export default function AdminV5CardConfig() {
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="2" id="qty-2" />
                             <Label htmlFor="qty-2">2 cards</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="3" id="qty-3" />
+                            <Label htmlFor="qty-3">3 cards</Label>
                           </div>
                         </RadioGroup>
                       </div>
@@ -789,7 +858,7 @@ export default function AdminV5CardConfig() {
                         </div>
 
                         {/* Card 2 (condicional) */}
-                        {cardsQuantity === 2 && (
+                        {cardsQuantity >= 2 && (
                           <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
                             <h4 className="font-semibold flex items-center gap-2">
                               <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">2</span>
@@ -856,6 +925,80 @@ export default function AdminV5CardConfig() {
                               <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                                 <p className="text-xs text-purple-300">
                                   <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card2.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Card 3 (condicional) */}
+                        {cardsQuantity === 3 && (
+                          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                            <h4 className="font-semibold flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">3</span>
+                              Card 3
+                            </h4>
+
+                            <div className="space-y-2">
+                              <Label>Tipo de Card Effect *</Label>
+                              <Select
+                                value={card3.cardType}
+                                onValueChange={(value) => setCard3({ ...card3, cardType: value })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Escolha o tipo de animação" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                    🎬 Animações Cinematográficas
+                                  </div>
+                                  {CINEMATOGRAPHIC_CARD_TYPES.map(({ value, label }) => (
+                                    <SelectItem key={value} value={value}>
+                                      <span className="flex items-center gap-2">
+                                        <span className="text-purple-400">▸</span>
+                                        {label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                  <Separator className="my-2" />
+                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+                                    📝 Cards de Texto (Legado)
+                                  </div>
+                                  {TEXT_CARD_TYPES.map(({ value, label }) => (
+                                    <SelectItem key={value} value={value}>
+                                      <span className="flex items-center gap-2">
+                                        <span className="text-blue-400">▹</span>
+                                        {label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-muted-foreground">
+                                {isValidCardEffectType(card3.cardType || '')
+                                  ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
+                                  : 'Escolha o tipo de card effect para esta seção'
+                                }
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>AnchorText (trecho do markdown) *</Label>
+                              <Input
+                                placeholder='Ex: "terceiro trecho importante"'
+                                value={card3.anchorText}
+                                onChange={(e) => setCard3({ ...card3, anchorText: e.target.value })}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Cole o trecho exato do markdown que será o gatilho para exibir o card
+                              </p>
+                            </div>
+
+                            {/* Descrição do efeito selecionado */}
+                            {card3.cardType && isValidCardEffectType(card3.cardType) && (
+                              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                                <p className="text-xs text-purple-300">
+                                  <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card3.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
                                 </p>
                               </div>
                             )}
@@ -945,7 +1088,7 @@ export default function AdminV5CardConfig() {
                 </div>
                 <Separator className="my-2" />
                 <p className="text-xs text-muted-foreground">
-                  Cada seção pode ter até 2 cards ancorados em trechos do markdown.
+                  Cada seção pode ter até 3 cards ancorados em trechos do markdown.
                 </p>
               </CardContent>
             </Card>
