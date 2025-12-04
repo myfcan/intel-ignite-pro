@@ -63,7 +63,7 @@ export default function AdminDebugTimestamps() {
               Visualize os timestamps de cada seção e validação do áudio
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/admin')}>
+          <Button variant="outline" onClick={() => navigate('/admin/manual')}>
             Voltar ao Admin
           </Button>
         </div>

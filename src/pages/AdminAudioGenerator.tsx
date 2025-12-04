@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Download, Copy, Play, Pause, Volume2 } from 'lucide-react';
+import { Loader2, Download, Copy, Play, Pause, Volume2, ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 import { fundamentos02, fundamentos02AudioText } from '@/data/lessons/fundamentos-02';
 
 interface SectionMarker {
@@ -20,6 +21,7 @@ interface Lesson {
 }
 
 export default function AdminAudioGenerator() {
+  const navigate = useNavigate();
   const [text, setText] = useState('');
   const [markers, setMarkers] = useState<SectionMarker[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -403,8 +405,11 @@ export default function AdminAudioGenerator() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">🎙️ Gerador de Áudio com Timestamps</h1>
+      <div className="mb-6 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/manual')}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-3xl font-bold">🎙️ Gerador de Áudio com Timestamps</h1>
       </div>
 
       <div className="space-y-6">

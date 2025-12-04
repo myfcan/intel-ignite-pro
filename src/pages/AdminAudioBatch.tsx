@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp, AlertTriangle, Eye } from 'lucide-react';
+import { Loader2, Play, Pause, CheckCircle, RefreshCw, Upload, FileUp, AlertTriangle, Eye, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import AudioSyncPreview from '@/components/admin/AudioSyncPreview';
@@ -558,11 +558,16 @@ export default function AdminAudioBatch() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Gerador de Áudio em Lote</h1>
-          <p className="text-muted-foreground">
-            Sistema automatizado para gerar múltiplos áudios de uma vez
-          </p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/manual')}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold">Gerador de Áudio em Lote</h1>
+            <p className="text-muted-foreground">
+              Sistema automatizado para gerar múltiplos áudios de uma vez
+            </p>
+          </div>
         </div>
 
         <Card>
