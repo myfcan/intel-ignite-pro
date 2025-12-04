@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Sparkles } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -82,8 +82,59 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Cards adicionais em grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Cards de acesso rápido */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="border-2 border-primary/20 bg-primary/5 hover:border-primary/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-6 h-6 text-primary" />
+                Monitoramento
+              </CardTitle>
+              <CardDescription>
+                Acompanhe execuções do pipeline em tempo real
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>📊 Progresso detalhado por etapa</p>
+                <p>📝 Logs em tempo real</p>
+                <p>🔄 Repetir etapas que falharam</p>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => navigate('/admin/pipeline/monitor')}
+              >
+                Abrir Monitor
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-destructive/20 bg-destructive/5 hover:border-destructive/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="w-6 h-6 text-destructive" />
+                Gerenciar Lições
+              </CardTitle>
+              <CardDescription>
+                Visualizar, filtrar e deletar lições existentes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>📋 Lista completa de lições</p>
+                <p>🔍 Filtros por trilha e status</p>
+                <p>🗑️ Exclusão segura com confirmação</p>
+              </div>
+              <Button
+                className="w-full"
+                variant="destructive"
+                onClick={() => navigate('/admin/pipeline/manage-lessons')}
+              >
+                Gerenciar
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:border-blue-500/40 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -105,55 +156,6 @@ export default function Admin() {
                 onClick={() => navigate('/admin/playground-sessions')}
               >
                 Ver Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-green-500/20 bg-green-500/5 hover:border-green-500/40 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                🖼️ Teste de Geração de Imagens
-              </CardTitle>
-              <CardDescription>
-                Testar a edge function generate-slide-images com OpenAI DALL-E 3
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-2 mb-4">
-                <p>🎨 Geração de imagens com DALL-E 3</p>
-                <p>📊 Estatísticas em tempo real</p>
-                <p>🖼️ Preview visual das imagens geradas</p>
-              </div>
-              <Button
-                className="w-full"
-                onClick={() => navigate('/admin/test-images')}
-              >
-                Testar Geração de Imagens
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-amber-600" />
-                Teste de Card de Experiência
-              </CardTitle>
-              <CardDescription>
-                Preview do card animado IaBookExperienceCard
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-2 mb-4">
-                <p>✨ Card visual animado com Framer Motion</p>
-                <p>📚 Simula criação de livro com I.A.</p>
-                <p>🎨 Totalmente estilizado com design system</p>
-              </div>
-              <Button
-                className="w-full"
-                onClick={() => navigate('/admin/test-card')}
-              >
-                Ver Preview do Card
               </Button>
             </CardContent>
           </Card>
