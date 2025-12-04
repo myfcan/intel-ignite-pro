@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical,
-  Volume2, ArrowLeft, Wrench, Image, Wand2
+  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,233 +27,269 @@ export default function AdminManualHub() {
           </div>
         </div>
 
-        {/* NOVO: Criação Aula V3 com Upload Manual */}
+        {/* Card: Criação de Aulas */}
         <Card className="border-2 border-purple-500/20 bg-purple-500/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Image className="w-5 h-5 text-purple-600" />
-              Criação Aula V3
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <FolderPlus className="w-6 h-6 text-purple-600" />
+              Criação de Aulas
             </CardTitle>
             <CardDescription>
-              Crie aulas V3 com upload manual de imagens - Sem geração via API (mais rápido e confiável)
+              Ferramentas para criar novas aulas V3 e V5
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/create-lesson-v3')}
-              size="lg"
-              className="w-full bg-purple-600 hover:bg-purple-700"
-            >
-              <Image className="w-4 h-4 mr-2" />
-              Criar Aula V3
-            </Button>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            {/* Criação Aula V3 */}
+            <Card className="border border-purple-500/30 hover:border-purple-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Image className="w-5 h-5 text-purple-600" />
+                  Criação Aula V3
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Crie aulas V3 com upload manual de imagens - Sem geração via API (mais rápido e confiável)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/create-lesson-v3')}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  size="sm"
+                >
+                  <Image className="w-4 h-4 mr-2" />
+                  Criar Aula V3
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Configurador V5 */}
+            <Card className="border border-cyan-500/30 hover:border-cyan-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Wand2 className="w-5 h-5 text-cyan-600" />
+                  Configurador V5 - Experience Cards
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Configure experience cards interativos para aulas V5 (IaBookExperienceCard, etc.)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/v5-card-config')}
+                  className="w-full bg-cyan-600 hover:bg-cyan-700"
+                  size="sm"
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Configurar V5 Cards
+                </Button>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
 
-        {/* NOVO: Configurador V5 Experience Cards */}
-        <Card className="border-2 border-cyan-500/20 bg-cyan-500/5">
+        {/* Card: Ferramentas */}
+        <Card className="border-2 border-muted-foreground/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-cyan-600" />
-              Configurador V5 - Experience Cards
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Settings className="w-6 h-6" />
+              Ferramentas
             </CardTitle>
             <CardDescription>
-              Configure experience cards interativos para aulas V5 (IaBookExperienceCard, etc.)
+              Áudio, sincronização, debug e validação
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/v5-card-config')}
-              size="lg"
-              className="w-full bg-cyan-600 hover:bg-cyan-700"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Configurar V5 Cards
-            </Button>
-          </CardContent>
-        </Card>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            {/* Gerador de Áudio Manual */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Clock className="w-5 h-5" />
+                  Gerador de Áudio Manual
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Gere áudios com timestamps precisos usando ElevenLabs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/audio-generator')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Abrir Gerador
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Gerador de Áudio Manual
-            </CardTitle>
-            <CardDescription>
-              Gere áudios com timestamps precisos para uma aula específica usando ElevenLabs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/audio-generator')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              Abrir Gerador Manual
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Gerador de Áudio em Lote */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Zap className="w-5 h-5" />
+                  Gerador de Áudio em Lote
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Gere múltiplos áudios de uma vez com revisão
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/audio-batch')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Abrir Lote
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Gerador de Áudio em Lote
-            </CardTitle>
-            <CardDescription>
-              Sistema automatizado para gerar múltiplos áudios de uma vez, com revisão e aprovação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/audio-batch')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Abrir Gerador em Lote
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Sincronizar Lições */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <RefreshCw className="w-5 h-5" />
+                  Sincronizar Lições
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Sincroniza lições do código TypeScript para o banco
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/sync-lessons')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Sincronizar
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="w-5 h-5" />
-              Sincronizar Lições Existentes
-            </CardTitle>
-            <CardDescription>
-              Sincroniza as 4 lições existentes do código TypeScript para o banco
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/sync-lessons')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Abrir Sincronização
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Análise de Entonação */}
+            <Card className="border border-green-500/30 hover:border-green-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Volume2 className="w-5 h-5 text-green-600" />
+                  Análise de Entonação TTS
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Detecta problemas de entonação antes de gerar áudio
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/intonation-test')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Testar Entonação
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card className="border-2 border-green-500/20 bg-green-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Volume2 className="w-5 h-5 text-green-600" />
-              Análise de Entonação TTS
-            </CardTitle>
-            <CardDescription>
-              Sistema automático que detecta problemas de entonação antes de gerar áudio
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/intonation-test')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Volume2 className="w-4 h-4 mr-2" />
-              Testar Análise de Entonação
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Testar Sincronização */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TestTube className="w-5 h-5" />
+                  Testar Sincronização
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Teste sincronização áudio/texto com interface interativa
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/sync-tester')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Testar Sync
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="w-5 h-5" />
-              Testar Sincronização
-            </CardTitle>
-            <CardDescription>
-              Teste a sincronização entre áudio e texto das aulas com interface interativa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/sync-tester')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <TestTube className="w-4 h-4 mr-2" />
-              Abrir Testador de Sincronização
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Debug de Timestamps */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Bug className="w-5 h-5" />
+                  Debug de Timestamps
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Visualize timestamps salvos e valide sincronização
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/debug-timestamps')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Bug className="w-4 h-4 mr-2" />
+                  Debug
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bug className="w-5 h-5" />
-              Debug de Timestamps
-            </CardTitle>
-            <CardDescription>
-              Visualize os timestamps salvos de cada seção e valide a sincronização
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/debug-timestamps')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <Bug className="w-4 h-4 mr-2" />
-              Abrir Debug de Timestamps
-            </Button>
-          </CardContent>
-        </Card>
+            {/* Testador de Aulas */}
+            <Card className="border hover:border-primary/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FlaskConical className="w-5 h-5" />
+                  Testador de Aulas
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Validação completa: áudio → playground → exercícios
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/lesson-tester')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <FlaskConical className="w-4 h-4 mr-2" />
+                  Testar Aulas
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FlaskConical className="w-5 h-5" />
-              Testador de Aulas
-            </CardTitle>
-            <CardDescription>
-              Validação automatizada completa do fluxo: áudio → playground → exercícios
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/lesson-tester')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <FlaskConical className="w-4 h-4 mr-2" />
-              Abrir Testador de Aulas
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-blue-500/20 bg-blue-500/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="w-5 h-5 text-blue-600" />
-              Sistema de Validação
-            </CardTitle>
-            <CardDescription>
-              Dashboard completo com testes automatizados das 4 garantias do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => navigate('/admin/validation-system')}
-              size="lg"
-              className="w-full"
-              variant="default"
-            >
-              <TestTube className="w-4 h-4 mr-2" />
-              Abrir Sistema de Validação
-            </Button>
+            {/* Sistema de Validação */}
+            <Card className="border border-blue-500/30 hover:border-blue-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TestTube className="w-5 h-5 text-blue-600" />
+                  Sistema de Validação
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Dashboard com testes das 4 garantias do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/validation-system')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Validação
+                </Button>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </div>
