@@ -73,27 +73,21 @@ export const LessonResultCard: React.FC<LessonResultCardProps> = ({
   const animatedTotalCoins = useCountUp(newCoins, 1500);
 
   useEffect(() => {
-    // ✅ CORREÇÃO: Só disparar confete se performance foi boa (média >= 70%)
-    // Ou se subiu de patente (sempre celebra patente nova)
-    const shouldCelebrate = avgScore >= 70 || isNewPatent;
+    // Sempre disparar confete na conclusão de aula
+    const confettiTimer = setTimeout(() => {
+      setShowConfetti(true);
+    }, 300);
     
-    if (shouldCelebrate) {
-      // Trigger confetti após um pequeno delay
-      const confettiTimer = setTimeout(() => {
-        setShowConfetti(true);
-      }, 300);
-      
-      // Trigger moedas caindo após delay
-      const coinsTimer = setTimeout(() => {
-        setShowCoins(true);
-      }, 500);
-      
-      return () => {
-        clearTimeout(confettiTimer);
-        clearTimeout(coinsTimer);
-      };
-    }
-  }, [avgScore, isNewPatent]);
+    // Trigger moedas caindo após delay
+    const coinsTimer = setTimeout(() => {
+      setShowCoins(true);
+    }, 500);
+    
+    return () => {
+      clearTimeout(confettiTimer);
+      clearTimeout(coinsTimer);
+    };
+  }, []);
 
   const progressData = nextPatentThreshold ? {
     progress: Math.min((newPowerScore / nextPatentThreshold) * 100, 100),
