@@ -141,8 +141,8 @@ export default function Admin() {
                 <MessageSquare className="w-6 h-6 text-blue-600" />
                 Playground Sessions
               </CardTitle>
-              <CardDescription>
-                Analytics e histórico de uso do playground
+            <CardDescription>
+                Gestão de tokens LLM
               </CardDescription>
             </CardHeader>
             <CardContent>
