@@ -224,7 +224,7 @@ export function TrueFalseExercise({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -30 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 20 }}
-            className="text-center p-6 sm:p-8 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border-2 border-primary/30 shadow-lg"
+            className="text-center p-4 sm:p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border-2 border-primary/30 shadow-lg max-w-sm mx-auto"
           >
             <motion.div
               animate={{
