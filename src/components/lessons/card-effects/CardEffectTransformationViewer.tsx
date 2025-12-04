@@ -2,41 +2,47 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Star, Zap } from 'lucide-react';
+import { Sparkles, Star, Zap, TrendingUp, Award } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectTransformationViewer - Visualização de transformação impactante
+ *
+ * 5 Cenas progressivas (~10s total):
+ * 1. Número "0" inicial (0-2s)
+ * 2. Contador animando até 47 (2-4s)
+ * 3. "Vendas em um mês" contexto (4-6s)
+ * 4. Comparação Antes/Depois (6-8s)
+ * 5. "+1.567% de aumento" celebração (8-10s)
  */
 export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'number' | 'context' | 'celebration' | 'complete'>('waiting');
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [displayNumber, setDisplayNumber] = useState(0);
-  const [loopCount, setLoopCount] = useState(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const startAnimation = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-    setPhase('number');
     setDisplayNumber(0);
 
-    // Animate counter
-    const targetNumber = 47;
-    const duration = 2000;
-    const steps = 30;
-    const increment = targetNumber / steps;
-    const stepTime = duration / steps;
+    setScene(1); // Número 0
 
-    for (let i = 1; i <= steps; i++) {
-      timersRef.current.push(setTimeout(() => {
-        setDisplayNumber(Math.round(increment * i));
-      }, stepTime * i));
-    }
+    // Scene 2: Animate counter
+    timersRef.current.push(setTimeout(() => {
+      setScene(2);
+      const targetNumber = 47;
+      const steps = 25;
+      const stepTime = 60;
+      for (let i = 1; i <= steps; i++) {
+        timersRef.current.push(setTimeout(() => {
+          setDisplayNumber(Math.round((targetNumber / steps) * i));
+        }, stepTime * i));
+      }
+    }, 2000));
 
-    timersRef.current.push(setTimeout(() => setPhase('context'), 2500));
-    timersRef.current.push(setTimeout(() => setPhase('celebration'), 3500));
-    timersRef.current.push(setTimeout(() => setPhase('complete'), 5000));
-    timersRef.current.push(setTimeout(() => setLoopCount(prev => prev + 1), 12000));
+    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Contexto
+    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Comparação
+    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Celebração
   };
 
   useEffect(() => {
@@ -44,43 +50,50 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
       startAnimation();
     } else {
       timersRef.current.forEach(clearTimeout);
-      setPhase('waiting');
+      setScene(0);
       setDisplayNumber(0);
     }
     return () => timersRef.current.forEach(clearTimeout);
-  }, [isActive, loopCount]);
-
-  const isAnimating = phase !== 'waiting';
-  const showCelebration = ['celebration', 'complete'].includes(phase);
+  }, [isActive]);
 
   return (
     <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-violet-950 via-purple-950 to-fuchsia-950">
+      {/* Background glow */}
+      <motion.div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%)' }}
+        animate={scene > 0 ? { scale: [1, 1.3, 1], opacity: [0.2, 0.5, 0.2] } : { opacity: 0 }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+
       {/* Celebration particles */}
       <AnimatePresence>
-        {showCelebration && [...Array(20)].map((_, i) => (
+        {scene >= 5 && [...Array(25)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-2 h-2 rounded-full"
             style={{
               left: '50%',
-              top: '40%',
+              top: '35%',
               backgroundColor: ['#fbbf24', '#a855f7', '#ec4899', '#22c55e'][i % 4],
             }}
             initial={{ scale: 0, x: 0, y: 0 }}
             animate={{
               scale: [0, 1, 0],
-              x: (Math.random() - 0.5) * 200,
-              y: (Math.random() - 0.5) * 200,
+              x: (Math.random() - 0.5) * 250,
+              y: (Math.random() - 0.5) * 250,
+              opacity: [0, 1, 0]
             }}
-            transition={{ duration: 1.5, delay: i * 0.05 }}
+            transition={{ duration: 2, delay: i * 0.05 }}
           />
         ))}
       </AnimatePresence>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-        {/* Big Number */}
+
+        {/* ========== CENA 1-2: Big Number ========== */}
         <AnimatePresence>
-          {isAnimating && (
+          {scene >= 1 && (
             <motion.div
               className="text-center"
               initial={{ scale: 0.5, opacity: 0 }}
@@ -89,70 +102,120 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
             >
               <motion.div
                 className="text-7xl sm:text-8xl font-black bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent"
-                animate={showCelebration ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.5, repeat: showCelebration ? 2 : 0 }}
+                animate={scene >= 5 ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.5, repeat: scene >= 5 ? 3 : 0 }}
               >
                 {displayNumber}
               </motion.div>
-              <motion.p
-                className="text-xl text-white/80 mt-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                vendas em um mês
-              </motion.p>
+
+              {/* ========== CENA 3: Contexto ========== */}
+              <AnimatePresence>
+                {scene >= 3 && (
+                  <motion.p
+                    className="text-xl text-white/80 mt-2"
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                  >
+                    vendas em um mês
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Context */}
+        {/* ========== CENA 4: Comparação ========== */}
         <AnimatePresence>
-          {['context', 'celebration', 'complete'].includes(phase) && (
+          {scene >= 4 && (
             <motion.div
-              className="mt-8 flex items-center gap-4"
+              className="mt-6 flex items-center gap-4"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             >
-              <div className="text-center px-4 py-2 bg-white/5 rounded-lg">
+              <div className="text-center px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg">
                 <p className="text-xs text-white/50">Antes</p>
-                <p className="text-lg font-bold text-red-400">2-3</p>
+                <p className="text-xl font-bold text-red-400">2-3</p>
               </div>
-              <Zap className="w-6 h-6 text-yellow-400" />
-              <div className="text-center px-4 py-2 bg-white/5 rounded-lg">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              >
+                <Zap className="w-6 h-6 text-yellow-400" />
+              </motion.div>
+              <div className="text-center px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
                 <p className="text-xs text-white/50">Depois</p>
-                <p className="text-lg font-bold text-emerald-400">47</p>
+                <p className="text-xl font-bold text-emerald-400">47</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Growth indicator */}
+        {/* ========== CENA 5: Growth indicator ========== */}
         <AnimatePresence>
-          {phase === 'complete' && (
+          {scene >= 5 && (
             <motion.div
-              className="mt-6 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
+              className="mt-6"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring' }}
+              transition={{ type: 'spring', stiffness: 200 }}
             >
-              <p className="text-sm font-bold text-emerald-400">
-                +1.567% de aumento
-              </p>
+              <motion.div
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-yellow-500/20 rounded-full border border-emerald-500/40"
+                animate={{
+                  boxShadow: ['0 0 15px rgba(16, 185, 129, 0.2)', '0 0 30px rgba(16, 185, 129, 0.5)', '0 0 15px rgba(16, 185, 129, 0.2)']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm font-bold text-emerald-300">+1.567% de aumento</span>
+                <Award className="w-5 h-5 text-yellow-400" />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Stars decoration */}
+        {scene >= 4 && [...Array(4)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{
+              top: `${25 + i * 15}%`,
+              left: i % 2 === 0 ? '15%' : '80%',
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+            transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
+          >
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+          </motion.div>
+        ))}
       </div>
 
       {/* Badge */}
       <motion.div
-        className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full"
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
       >
-        <Sparkles className="w-3 h-3 text-purple-400" />
-        <span className="text-[9px] text-purple-300">Transformação</span>
+        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+        <span className="text-[10px] text-purple-300 font-medium">Transformação</span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <motion.div
+            key={s}
+            className="w-2 h-2 rounded-full"
+            animate={{
+              backgroundColor: scene >= s ? '#a855f7' : 'rgba(255,255,255,0.2)',
+              scale: scene === s ? 1.3 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
     </div>
   );
 };

@@ -2,26 +2,32 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Volume2, Waves } from 'lucide-react';
+import { Zap, Volume2, Waves, Radio, Sparkles } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectAmplifierConcept - Visualiza o conceito de amplificação
+ *
+ * 5 Cenas progressivas (~10s total):
+ * 1. Input - "Sua voz" pequena (0-2s)
+ * 2. Amplificador I.A. aparece (2-4s)
+ * 3. Ondas de amplificação (4-6s)
+ * 4. Output - "Voz amplificada" (6-8s)
+ * 5. Mensagem: "I.A. não substitui, amplifica" (8-10s)
  */
 export const CardEffectAmplifierConcept: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'input' | 'amplify' | 'output' | 'complete'>('waiting');
-  const [loopCount, setLoopCount] = useState(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const startAnimation = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-    setPhase('input');
 
-    timersRef.current.push(setTimeout(() => setPhase('amplify'), 1500));
-    timersRef.current.push(setTimeout(() => setPhase('output'), 3000));
-    timersRef.current.push(setTimeout(() => setPhase('complete'), 4500));
-    timersRef.current.push(setTimeout(() => setLoopCount(prev => prev + 1), 12000));
+    setScene(1); // Input
+    timersRef.current.push(setTimeout(() => setScene(2), 2000)); // Amplificador
+    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Ondas
+    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Output
+    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Mensagem
   };
 
   useEffect(() => {
@@ -29,99 +35,188 @@ export const CardEffectAmplifierConcept: React.FC<CardEffectProps> = ({ isActive
       startAnimation();
     } else {
       timersRef.current.forEach(clearTimeout);
-      setPhase('waiting');
+      setScene(0);
     }
     return () => timersRef.current.forEach(clearTimeout);
-  }, [isActive, loopCount]);
-
-  const isAnimating = phase !== 'waiting';
-  const showAmplify = ['amplify', 'output', 'complete'].includes(phase);
-  const showOutput = ['output', 'complete'].includes(phase);
+  }, [isActive]);
 
   return (
     <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950 via-blue-950 to-indigo-950">
-      {/* Wave animations */}
-      {showAmplify && [...Array(3)].map((_, i) => (
+      {/* Background waves */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"
+            style={{ top: `${20 + i * 15}%` }}
+            animate={scene >= 3 ? {
+              x: ['-100%', '100%'],
+              opacity: [0, 0.5, 0],
+            } : { opacity: 0 }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              delay: i * 0.3,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Wave animations during scene 3+ */}
+      {scene >= 3 && [...Array(3)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-400/30"
-          initial={{ width: 50, height: 50, opacity: 0 }}
-          animate={{ width: 300 + i * 50, height: 300 + i * 50, opacity: [0, 0.5, 0] }}
-          transition={{ duration: 2, delay: i * 0.3, repeat: Infinity }}
+          initial={{ width: 80, height: 80, opacity: 0 }}
+          animate={{ width: 300 + i * 60, height: 300 + i * 60, opacity: [0, 0.5, 0] }}
+          transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
         />
       ))}
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-        <div className="flex items-center gap-6">
-          {/* Input */}
+
+        {/* Title */}
+        <AnimatePresence>
+          {scene >= 1 && (
+            <motion.h3
+              className="text-xl sm:text-2xl font-bold text-white mb-6 text-center"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              O Conceito de Amplificação
+            </motion.h3>
+          )}
+        </AnimatePresence>
+
+        {/* Main visualization */}
+        <div className="flex items-center gap-4 sm:gap-8">
+
+          {/* ========== CENA 1: Input ========== */}
           <AnimatePresence>
-            {isAnimating && (
+            {scene >= 1 && (
               <motion.div
                 className="text-center"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-2">
-                  <Volume2 className="w-7 h-7 text-white/60" />
-                </div>
-                <p className="text-xs text-white/50">Sua voz</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Amplifier */}
-          <AnimatePresence>
-            {showAmplify && (
-              <motion.div
-                className="text-center"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
                 transition={{ type: 'spring' }}
               >
                 <motion.div
-                  className="w-20 h-20 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center mb-2"
-                  animate={{ boxShadow: ['0 0 20px rgba(6, 182, 212, 0.3)', '0 0 40px rgba(6, 182, 212, 0.6)', '0 0 20px rgba(6, 182, 212, 0.3)'] }}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-2"
+                  animate={scene >= 2 ? { scale: [1, 0.9, 1] } : {}}
                   transition={{ duration: 1, repeat: Infinity }}
                 >
-                  <Zap className="w-10 h-10 text-white" />
+                  <Volume2 className="w-6 h-6 sm:w-7 sm:h-7 text-white/60" />
                 </motion.div>
-                <p className="text-xs text-cyan-300 font-medium">I.A.</p>
+                <p className="text-xs text-white/50">Sua voz</p>
+                <p className="text-[10px] text-white/30 mt-0.5">pequena</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Output */}
+          {/* ========== CENA 2: Amplificador ========== */}
           <AnimatePresence>
-            {showOutput && (
+            {scene >= 2 && (
+              <motion.div
+                className="text-center"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+              >
+                <motion.div
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg"
+                  animate={{
+                    boxShadow: scene >= 3
+                      ? ['0 0 20px rgba(6, 182, 212, 0.3)', '0 0 50px rgba(6, 182, 212, 0.6)', '0 0 20px rgba(6, 182, 212, 0.3)']
+                      : '0 0 10px rgba(6, 182, 212, 0.2)'
+                  }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <Zap className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                </motion.div>
+                <motion.p
+                  className="text-sm text-cyan-300 font-bold mt-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  I.A.
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ========== CENA 4: Output ========== */}
+          <AnimatePresence>
+            {scene >= 4 && (
               <motion.div
                 className="text-center"
                 initial={{ x: 30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring' }}
               >
                 <motion.div
-                  className="w-24 h-24 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400 flex items-center justify-center mb-2"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400 flex items-center justify-center mb-2"
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 1, repeat: Infinity }}
                 >
-                  <Waves className="w-12 h-12 text-cyan-400" />
+                  <Waves className="w-10 h-10 sm:w-12 sm:h-12 text-cyan-400" />
                 </motion.div>
-                <p className="text-xs text-cyan-300 font-medium">Amplificada</p>
+                <p className="text-xs text-cyan-300 font-bold">Amplificada</p>
+                <p className="text-[10px] text-cyan-400/70 mt-0.5">alcança mais</p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Explanation */}
+        {/* ========== CENA 3: Connection lines ========== */}
         <AnimatePresence>
-          {phase === 'complete' && (
+          {scene >= 3 && scene < 5 && (
             <motion.div
-              className="mt-8 text-center max-w-xs"
+              className="flex items-center justify-center gap-2 mt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <Radio className="w-4 h-4 text-cyan-400/60" />
+              <motion.div
+                className="flex gap-1"
+                animate={{ x: [0, 10, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 bg-cyan-400 rounded-full"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 0.5, delay: i * 0.1, repeat: Infinity }}
+                  />
+                ))}
+              </motion.div>
+              <Radio className="w-4 h-4 text-cyan-400/60" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 5: Mensagem Final ========== */}
+        <AnimatePresence>
+          {scene >= 5 && (
+            <motion.div
+              className="mt-6 max-w-sm text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <p className="text-sm text-white/80">
-                A I.A. não substitui você, ela <span className="text-cyan-400 font-bold">amplifica</span> sua capacidade
-              </p>
+              <motion.div
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full border border-cyan-500/40"
+                animate={{
+                  boxShadow: ['0 0 15px rgba(6, 182, 212, 0.2)', '0 0 30px rgba(6, 182, 212, 0.4)', '0 0 15px rgba(6, 182, 212, 0.2)']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <span className="text-cyan-200 font-medium text-sm">
+                  A I.A. não substitui você, ela <span className="font-bold text-white">amplifica</span>!
+                </span>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -129,13 +224,28 @@ export const CardEffectAmplifierConcept: React.FC<CardEffectProps> = ({ isActive
 
       {/* Badge */}
       <motion.div
-        className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
       >
-        <Zap className="w-3 h-3 text-cyan-400" />
-        <span className="text-[9px] text-cyan-300">Amplificador</span>
+        <Zap className="w-3.5 h-3.5 text-cyan-400" />
+        <span className="text-[10px] text-cyan-300 font-medium">Amplificador</span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <motion.div
+            key={s}
+            className="w-2 h-2 rounded-full"
+            animate={{
+              backgroundColor: scene >= s ? '#06b6d4' : 'rgba(255,255,255,0.2)',
+              scale: scene === s ? 1.3 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
     </div>
   );
 };
