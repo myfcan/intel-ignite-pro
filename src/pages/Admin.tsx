@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2 } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -10,6 +10,15 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
       <div className="max-w-4xl mx-auto space-y-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/dashboard')}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar ao Dashboard
+        </Button>
+
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Painel Administrativo</h1>
           <p className="text-muted-foreground">
@@ -161,14 +170,6 @@ export default function Admin() {
           </Card>
         </div>
 
-        <div className="flex justify-center pt-4">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/dashboard')}
-          >
-            Voltar ao Dashboard
-          </Button>
-        </div>
       </div>
     </div>
   );
