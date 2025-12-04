@@ -29,7 +29,7 @@ const AVAILABLE_LESSONS = [
   {
     id: 'aula-2',
     title: 'Aula 2 - História da Maria',
-    description: '15 card effects cinematográficos',
+    description: '14 card effects cinematográficos',
     icon: '👩‍💼'
   },
 ];
@@ -51,7 +51,7 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 5, cardIndex: 3, cardType: 'closing-message', anchorText: 'em cima dessas novas possibilidades', title: 'Próximos Passos', subtitle: 'Sua jornada começa agora' },
   ],
   'aula-2': [
-    { sectionIndex: 1, cardIndex: 1, cardType: 'profile-card', anchorText: 'Conheça a Maria', title: 'Perfil da Maria', subtitle: 'Conheça a protagonista' },
+    { sectionIndex: 1, cardIndex: 1, cardType: 'profile-card', anchorText: 'dona de uma pequena loja', title: 'Perfil da Maria', subtitle: 'Conheça a protagonista' },
     { sectionIndex: 1, cardIndex: 2, cardType: 'problem-identifier', anchorText: 'não sabia vender online', title: 'O Desafio', subtitle: 'Identificando barreiras' },
     { sectionIndex: 1, cardIndex: 3, cardType: 'story-revealer', anchorText: 'mudou tudo', title: 'O Segredo', subtitle: 'A virada' },
     { sectionIndex: 2, cardIndex: 1, cardType: 'stats-comparison', anchorText: 'falta de visibilidade', title: 'O Problema Real', subtitle: 'Visibilidade vs Invisibilidade' },
@@ -63,7 +63,6 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 4, cardIndex: 1, cardType: 'transformation-viewer', anchorText: '47 vendas', title: 'Resultados Reais', subtitle: 'A transformação em números' },
     { sectionIndex: 4, cardIndex: 2, cardType: 'prompt-builder', anchorText: 'contar histórias', title: 'Construtor de Prompts', subtitle: 'Passo a passo' },
     { sectionIndex: 4, cardIndex: 3, cardType: 'variation-multiplier', anchorText: 'dezenas de variações', title: 'Multiplicador', subtitle: '1 ideia → muitas versões' },
-    { sectionIndex: 4, cardIndex: 4, cardType: 'time-saver', anchorText: '10 posts em 10 minutos', title: 'Economia de Tempo', subtitle: 'Produtividade real' },
     { sectionIndex: 5, cardIndex: 1, cardType: 'next-steps', anchorText: 'Próximos passos', title: 'Ação!', subtitle: 'Comece agora' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'closing-message', anchorText: 'possibilidades reais', title: 'Mensagem Final', subtitle: 'Sua jornada começa' },
   ],
