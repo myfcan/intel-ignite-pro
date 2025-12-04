@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Clock, Zap, TestTube, RefreshCw, Bug, FlaskConical,
+  Clock, Zap, TestTube, Bug, FlaskConical,
   Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -147,30 +147,6 @@ export default function AdminManualHub() {
               </CardContent>
             </Card>
 
-            {/* Sincronizar Lições */}
-            <Card className="border hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <RefreshCw className="w-5 h-5" />
-                  Sincronizar Lições
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Sincroniza lições do código TypeScript para o banco
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button
-                  onClick={() => navigate('/admin/sync-lessons')}
-                  className="w-full"
-                  size="sm"
-                  variant="outline"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Sincronizar
-                </Button>
-              </CardContent>
-            </Card>
-
             {/* Análise de Entonação */}
             <Card className="border border-green-500/30 hover:border-green-500/50 transition-colors">
               <CardHeader className="pb-2">
@@ -263,30 +239,6 @@ export default function AdminManualHub() {
                 >
                   <FlaskConical className="w-4 h-4 mr-2" />
                   Testar Aulas
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Sistema de Validação */}
-            <Card className="border border-blue-500/30 hover:border-blue-500/50 transition-colors">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TestTube className="w-5 h-5 text-blue-600" />
-                  Sistema de Validação
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Dashboard com testes das 4 garantias do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button
-                  onClick={() => navigate('/admin/validation-system')}
-                  className="w-full"
-                  size="sm"
-                  variant="outline"
-                >
-                  <TestTube className="w-4 h-4 mr-2" />
-                  Validação
                 </Button>
               </CardContent>
             </Card>

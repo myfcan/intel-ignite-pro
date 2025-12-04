@@ -179,7 +179,7 @@ export default function AdminLessonTester() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/admin/manual')}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
