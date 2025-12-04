@@ -2,15 +2,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Code2, Plus, CheckCircle } from 'lucide-react';
+import { Code2, Plus, CheckCircle, Sparkles, Terminal } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectPromptBuilder - Construtor de prompts passo a passo
+ *
+ * 5 Cenas progressivas (~10s total):
+ * 1. Título e template vazio (0-2s)
+ * 2. Passo 1: [SEU PRODUTO] (2-4s)
+ * 3. Passo 2: [SEU PÚBLICO] (4-6s)
+ * 4. Passo 3: história pessoal (6-8s)
+ * 5. "Prompt pronto para usar!" (8-10s)
  */
 export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'step1' | 'step2' | 'step3' | 'complete'>('waiting');
-  const [loopCount, setLoopCount] = useState(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const steps = [
@@ -22,12 +28,12 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
   const startAnimation = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-    setPhase('step1');
 
-    timersRef.current.push(setTimeout(() => setPhase('step2'), 1500));
-    timersRef.current.push(setTimeout(() => setPhase('step3'), 3000));
-    timersRef.current.push(setTimeout(() => setPhase('complete'), 4500));
-    timersRef.current.push(setTimeout(() => setLoopCount(prev => prev + 1), 12000));
+    setScene(1); // Template vazio
+    timersRef.current.push(setTimeout(() => setScene(2), 2000)); // Passo 1
+    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Passo 2
+    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Passo 3
+    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Pronto
   };
 
   useEffect(() => {
@@ -35,129 +41,151 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
       startAnimation();
     } else {
       timersRef.current.forEach(clearTimeout);
-      setPhase('waiting');
+      setScene(0);
     }
     return () => timersRef.current.forEach(clearTimeout);
-  }, [isActive, loopCount]);
+  }, [isActive]);
 
-  const isAnimating = phase !== 'waiting';
-  const visibleSteps = phase === 'step1' ? 1 : phase === 'step2' ? 2 : phase === 'step3' || phase === 'complete' ? 3 : 0;
+  const visibleSteps = scene === 2 ? 1 : scene === 3 ? 2 : scene >= 4 ? 3 : 0;
 
   return (
     <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30">
+      {/* Background grid */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '25px 25px'
+        }} />
+      </div>
+
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-        <motion.h3
-          className="text-lg font-bold text-white mb-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isAnimating ? 1 : 0 }}
-        >
-          Construtor de Prompts
-        </motion.h3>
-        <motion.p
-          className="text-sm text-white/50 mb-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isAnimating ? 1 : 0 }}
-        >
-          A fórmula que funciona
-        </motion.p>
+
+        {/* ========== CENA 1: Title ========== */}
+        <AnimatePresence>
+          {scene >= 1 && (
+            <motion.div
+              className="text-center mb-4"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Terminal className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg sm:text-xl font-bold text-white">Construtor de Prompts</h3>
+              </div>
+              <p className="text-sm text-white/50">A fórmula que funciona</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Prompt template */}
-        <motion.div
-          className="w-full max-w-md p-4 bg-slate-800/50 border border-slate-700 rounded-lg font-mono text-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isAnimating ? 1 : 0 }}
-        >
-          <p className="text-white/70">
-            <span className="text-slate-500">Crie um texto sobre </span>
-            <AnimatePresence>
-              {visibleSteps >= 1 && (
-                <motion.span
-                  className="text-cyan-400 font-bold"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  {steps[0].value}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </p>
-          <p className="text-white/70 mt-1">
-            <span className="text-slate-500">para </span>
-            <AnimatePresence>
-              {visibleSteps >= 2 && (
-                <motion.span
-                  className="text-purple-400 font-bold"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  {steps[1].value}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </p>
-          <p className="text-white/70 mt-1">
-            <span className="text-slate-500">Tom: </span>
-            <AnimatePresence>
-              {visibleSteps >= 3 && (
-                <motion.span
-                  className="text-pink-400 font-bold"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  {steps[2].value}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </p>
-        </motion.div>
+        <AnimatePresence>
+          {scene >= 1 && (
+            <motion.div
+              className="w-full max-w-md p-4 bg-slate-800/50 border border-slate-700 rounded-lg font-mono text-sm"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <p className="text-white/70">
+                <span className="text-slate-500">Crie um texto sobre </span>
+                <AnimatePresence>
+                  {visibleSteps >= 1 && (
+                    <motion.span
+                      className="text-cyan-400 font-bold"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {steps[0].value}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </p>
+              <p className="text-white/70 mt-1">
+                <span className="text-slate-500">para </span>
+                <AnimatePresence>
+                  {visibleSteps >= 2 && (
+                    <motion.span
+                      className="text-purple-400 font-bold"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {steps[1].value}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </p>
+              <p className="text-white/70 mt-1">
+                <span className="text-slate-500">Tom: </span>
+                <AnimatePresence>
+                  {visibleSteps >= 3 && (
+                    <motion.span
+                      className="text-pink-400 font-bold"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {steps[2].value}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Step indicators */}
         <div className="flex gap-3 mt-6">
-          {steps.map((step, i) => (
-            <motion.div
-              key={i}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-                visibleSteps > i
-                  ? i === 0 ? 'bg-cyan-500/20 border-cyan-500/40' :
-                    i === 1 ? 'bg-purple-500/20 border-purple-500/40' :
-                    'bg-pink-500/20 border-pink-500/40'
-                  : 'bg-white/5 border-white/10'
-              } border`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: isAnimating ? 1 : 0, scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-            >
-              {visibleSteps > i ? (
-                <CheckCircle className={`w-4 h-4 ${
-                  i === 0 ? 'text-cyan-400' : i === 1 ? 'text-purple-400' : 'text-pink-400'
-                }`} />
-              ) : (
-                <Plus className="w-4 h-4 text-white/30" />
-              )}
-              <span className={`text-xs ${
-                visibleSteps > i
-                  ? i === 0 ? 'text-cyan-300' : i === 1 ? 'text-purple-300' : 'text-pink-300'
-                  : 'text-white/30'
-              }`}>
-                {step.label}
-              </span>
-            </motion.div>
-          ))}
+          {steps.map((step, i) => {
+            const isVisible = visibleSteps > i;
+            const colorClasses = {
+              cyan: { active: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400', icon: 'text-cyan-400', text: 'text-cyan-300' },
+              purple: { active: 'bg-purple-500/20 border-purple-500/40 text-purple-400', icon: 'text-purple-400', text: 'text-purple-300' },
+              pink: { active: 'bg-pink-500/20 border-pink-500/40 text-pink-400', icon: 'text-pink-400', text: 'text-pink-300' },
+            };
+            const colors = colorClasses[step.color as keyof typeof colorClasses];
+
+            return (
+              <motion.div
+                key={i}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                  isVisible ? colors.active : 'bg-white/5 border-white/10'
+                }`}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: scene >= 1 ? 1 : 0, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                {isVisible ? (
+                  <CheckCircle className={`w-4 h-4 ${colors.icon}`} />
+                ) : (
+                  <Plus className="w-4 h-4 text-white/30" />
+                )}
+                <span className={`text-xs ${isVisible ? colors.text : 'text-white/30'}`}>
+                  {step.label}
+                </span>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Complete message */}
+        {/* ========== CENA 5: Complete message ========== */}
         <AnimatePresence>
-          {phase === 'complete' && (
+          {scene >= 5 && (
             <motion.div
-              className="mt-6 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
+              className="mt-6"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring' }}
+              transition={{ type: 'spring', stiffness: 200 }}
             >
-              <p className="text-sm text-emerald-300 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                Prompt pronto para usar!
-              </p>
+              <motion.div
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/40"
+                animate={{
+                  boxShadow: ['0 0 15px rgba(16, 185, 129, 0.2)', '0 0 30px rgba(16, 185, 129, 0.4)', '0 0 15px rgba(16, 185, 129, 0.2)']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm font-bold text-emerald-300">Prompt pronto para usar!</span>
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -165,13 +193,28 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
 
       {/* Badge */}
       <motion.div
-        className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
       >
-        <Code2 className="w-3 h-3 text-cyan-400" />
-        <span className="text-[9px] text-cyan-300">Fórmula</span>
+        <Code2 className="w-3.5 h-3.5 text-cyan-400" />
+        <span className="text-[10px] text-cyan-300 font-medium">Fórmula</span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <motion.div
+            key={s}
+            className="w-2 h-2 rounded-full"
+            animate={{
+              backgroundColor: scene >= s ? '#06b6d4' : 'rgba(255,255,255,0.2)',
+              scale: scene === s ? 1.3 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
     </div>
   );
 };

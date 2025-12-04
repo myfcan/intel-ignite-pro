@@ -2,26 +2,32 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Zap, Target } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
- * CardEffectStatsComparison - Comparação de estatísticas Antes/Depois
+ * CardEffectStatsComparison - A Transformação em Números
+ *
+ * 5 Cenas progressivas (~10s total):
+ * 1. Ícone de análise aparecendo (0-2s)
+ * 2. Números ANTES (30 posts, 2-3 vendas) (2-4s)
+ * 3. Transição/seta (4-6s)
+ * 4. Números DEPOIS (8 posts, 47 vendas) (6-8s)
+ * 5. Conclusão: "-73% posts, +1.467% vendas" (8-10s)
  */
 export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'before' | 'arrow' | 'after' | 'complete'>('waiting');
-  const [loopCount, setLoopCount] = useState(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   const startAnimation = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-    setPhase('before');
 
-    timersRef.current.push(setTimeout(() => setPhase('arrow'), 1500));
-    timersRef.current.push(setTimeout(() => setPhase('after'), 2500));
-    timersRef.current.push(setTimeout(() => setPhase('complete'), 4000));
-    timersRef.current.push(setTimeout(() => setLoopCount(prev => prev + 1), 12000));
+    setScene(1); // Ícone de análise
+    timersRef.current.push(setTimeout(() => setScene(2), 2000)); // Números ANTES
+    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Transição
+    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Números DEPOIS
+    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Conclusão
   };
 
   useEffect(() => {
@@ -29,40 +35,92 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
       startAnimation();
     } else {
       timersRef.current.forEach(clearTimeout);
-      setPhase('waiting');
+      setScene(0);
     }
     return () => timersRef.current.forEach(clearTimeout);
-  }, [isActive, loopCount]);
-
-  const isAnimating = phase !== 'waiting';
-  const showBefore = ['before', 'arrow', 'after', 'complete'].includes(phase);
-  const showArrow = ['arrow', 'after', 'complete'].includes(phase);
-  const showAfter = ['after', 'complete'].includes(phase);
+  }, [isActive]);
 
   return (
     <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
-        <motion.h3
-          className="text-lg font-bold text-white mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isAnimating ? 1 : 0 }}
-        >
-          A Transformação em Números
-        </motion.h3>
+      {/* Background grid */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '30px 30px'
+        }} />
+      </div>
 
-        <div className="flex items-center gap-4 sm:gap-8">
-          {/* BEFORE */}
-          <AnimatePresence>
-            {showBefore && (
+      {/* Central glow */}
+      <motion.div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)' }}
+        animate={scene > 0 ? { scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] } : { opacity: 0 }}
+        transition={{ duration: 3, repeat: Infinity }}
+      />
+
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+
+        {/* ========== CENA 1: Ícone de Análise ========== */}
+        <AnimatePresence>
+          {scene >= 1 && (
+            <motion.div
+              className="mb-4"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
               <motion.div
-                className="text-center p-4 sm:p-6 bg-red-500/10 border border-red-500/30 rounded-xl min-w-[120px]"
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center border border-emerald-500/30"
+                animate={{
+                  boxShadow: scene >= 2
+                    ? ['0 0 20px rgba(16, 185, 129, 0.2)', '0 0 40px rgba(16, 185, 129, 0.4)', '0 0 20px rgba(16, 185, 129, 0.2)']
+                    : '0 0 10px rgba(16, 185, 129, 0.1)'
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <BarChart3 className="w-8 h-8 text-emerald-400" />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Title */}
+        <AnimatePresence>
+          {scene >= 1 && (
+            <motion.h3
+              className="text-xl sm:text-2xl font-bold text-white mb-6 text-center"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              A Transformação em Números
+            </motion.h3>
+          )}
+        </AnimatePresence>
+
+        {/* Comparison container */}
+        <div className="flex items-center gap-4 sm:gap-8">
+
+          {/* ========== CENA 2: Números ANTES ========== */}
+          <AnimatePresence>
+            {scene >= 2 && (
+              <motion.div
+                className="text-center p-4 sm:p-5 bg-red-500/10 border border-red-500/30 rounded-xl min-w-[110px]"
                 initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ type: 'spring' }}
+                animate={{ x: 0, opacity: scene >= 4 ? 0.6 : 1 }}
+                transition={{ type: 'spring', stiffness: 100 }}
               >
                 <TrendingDown className="w-6 h-6 text-red-400 mx-auto mb-2" />
-                <p className="text-xs text-red-300 mb-1">ANTES</p>
-                <p className="text-3xl font-bold text-red-400">30</p>
+                <p className="text-xs text-red-300 mb-1 font-semibold">ANTES</p>
+                <motion.p
+                  className="text-3xl font-bold text-red-400"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring' }}
+                >
+                  30
+                </motion.p>
                 <p className="text-xs text-white/60">posts/mês</p>
                 <div className="mt-3 pt-3 border-t border-red-500/20">
                   <p className="text-xl font-bold text-red-400">2-3</p>
@@ -72,39 +130,63 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
             )}
           </AnimatePresence>
 
-          {/* ARROW */}
+          {/* ========== CENA 3: Transição ========== */}
           <AnimatePresence>
-            {showArrow && (
+            {scene >= 3 && (
               <motion.div
+                className="flex flex-col items-center"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring' }}
               >
                 <motion.div
-                  animate={{ x: [0, 10, 0] }}
-                  transition={{ duration: 1, repeat: Infinity }}
+                  className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 flex items-center justify-center"
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 >
-                  <ArrowRight className="w-8 h-8 text-white/50" />
+                  <Zap className="w-6 h-6 text-white" />
                 </motion.div>
+                <motion.p
+                  className="text-xs text-white/50 mt-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  I.A.
+                </motion.p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* AFTER */}
+          {/* ========== CENA 4: Números DEPOIS ========== */}
           <AnimatePresence>
-            {showAfter && (
+            {scene >= 4 && (
               <motion.div
-                className="text-center p-4 sm:p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl min-w-[120px]"
+                className="text-center p-4 sm:p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl min-w-[110px]"
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ type: 'spring' }}
+                transition={{ type: 'spring', stiffness: 100 }}
               >
                 <TrendingUp className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
-                <p className="text-xs text-emerald-300 mb-1">DEPOIS</p>
-                <p className="text-3xl font-bold text-emerald-400">8</p>
+                <p className="text-xs text-emerald-300 mb-1 font-semibold">DEPOIS</p>
+                <motion.p
+                  className="text-3xl font-bold text-emerald-400"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring' }}
+                >
+                  8
+                </motion.p>
                 <p className="text-xs text-white/60">posts/mês</p>
                 <div className="mt-3 pt-3 border-t border-emerald-500/20">
-                  <p className="text-xl font-bold text-emerald-400">47</p>
+                  <motion.p
+                    className="text-xl font-bold text-emerald-400"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, type: 'spring' }}
+                  >
+                    47
+                  </motion.p>
                   <p className="text-xs text-white/60">vendas</p>
                 </div>
               </motion.div>
@@ -112,17 +194,27 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
           </AnimatePresence>
         </div>
 
-        {/* Conclusion */}
+        {/* ========== CENA 5: Conclusão ========== */}
         <AnimatePresence>
-          {phase === 'complete' && (
+          {scene >= 5 && (
             <motion.div
-              className="mt-8 text-center"
+              className="mt-6 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <p className="text-sm text-emerald-300 font-medium">
-                -73% posts, +1.467% vendas
-              </p>
+              <motion.div
+                className="inline-flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/40"
+                animate={{
+                  boxShadow: ['0 0 15px rgba(16, 185, 129, 0.2)', '0 0 30px rgba(16, 185, 129, 0.4)', '0 0 15px rgba(16, 185, 129, 0.2)']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Target className="w-5 h-5 text-emerald-400" />
+                <span className="text-emerald-200 font-bold">-73% posts</span>
+                <span className="text-white/40">•</span>
+                <span className="text-cyan-200 font-bold">+1.467% vendas</span>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -130,13 +222,28 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
 
       {/* Badge */}
       <motion.div
-        className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
         initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
       >
-        <TrendingUp className="w-3 h-3 text-emerald-400" />
-        <span className="text-[9px] text-emerald-300">Resultados Reais</span>
+        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="text-[10px] text-emerald-300 font-medium">Resultados Reais</span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <motion.div
+            key={s}
+            className="w-2 h-2 rounded-full"
+            animate={{
+              backgroundColor: scene >= s ? '#10b981' : 'rgba(255,255,255,0.2)',
+              scale: scene === s ? 1.3 : 1
+            }}
+            transition={{ duration: 0.3 }}
+          />
+        ))}
+      </div>
     </div>
   );
 };
