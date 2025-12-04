@@ -29,7 +29,7 @@ const AVAILABLE_LESSONS = [
   {
     id: 'aula-2',
     title: 'Aula 2 - História da Maria',
-    description: '14 card effects cinematográficos',
+    description: '15 card effects cinematográficos',
     icon: '👩‍💼'
   },
 ];
