@@ -40,6 +40,7 @@ import AdminLessonDebug from "./pages/AdminLessonDebug";
 import AdminFixLessonExercises from "./pages/AdminFixLessonExercises";
 import AdminPlaygroundSessions from "./pages/AdminPlaygroundSessions";
 import AdminV5CardConfig from "./pages/AdminV5CardConfig";
+import AdminTestCardSync from "./pages/AdminTestCardSync";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
 import AIDirectory from "./pages/AIDirectory";
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/admin/playground-sessions" element={<ProtectedRoute><AdminPlaygroundSessions /></ProtectedRoute>} />
           <Route path="/admin/v5-card-config" element={<ProtectedRoute><AdminV5CardConfig /></ProtectedRoute>} />
           <Route path="/admin/test-card" element={<ProtectedRoute><TestCard /></ProtectedRoute>} />
+          <Route path="/admin/test-card-sync" element={<ProtectedRoute><AdminTestCardSync /></ProtectedRoute>} />
           {/* NEW FEATURES ROUTES */}
           <Route path="/guides" element={<Guides />} />
           <Route path="/guides/:guideId" element={<GuideDetail />} />
