@@ -66,9 +66,11 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
     // Fase idle (loop lento)
     timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
 
-    // 🔄 Loop: reiniciar animação após um tempo
+    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
     timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
     }, LOOP_DELAY));
   };
 
@@ -110,7 +112,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
   );
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
       {/* Background industrial */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -318,7 +320,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
 
       {/* Contador de conteúdo */}
       <motion.div
-        className="absolute bottom-4 left-4 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50"
+        className="absolute bottom-12 left-4 px-2 py-1 bg-slate-800/50 rounded border border-slate-700/50"
         initial={{ opacity: 0 }}
         animate={{ opacity: isAnimating ? 1 : 0.3 }}
         transition={{ delay: isAnimating ? 3.75 : 0 }}
@@ -331,6 +333,24 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
           ∞ conteúdos/mês
         </motion.span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              (phase === 'enter' && i === 0) ||
+              (activeLabel >= 1 && i <= 1) ||
+              (activeLabel >= 2 && i <= 2) ||
+              (activeLabel >= 3 && i <= 3) ||
+              (phase === 'idle' && i <= 4)
+                ? 'bg-orange-400'
+                : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

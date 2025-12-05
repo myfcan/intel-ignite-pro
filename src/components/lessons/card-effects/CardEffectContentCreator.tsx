@@ -88,9 +88,11 @@ export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive =
       setShowPlayer(true);
     }, COMPLETE_DELAY));
 
-    // 🔄 Loop: reiniciar animação após um tempo
+    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
     timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
     }, LOOP_DELAY));
   };
 
@@ -118,7 +120,7 @@ export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive =
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/30">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/30">
       {/* Background */}
       <div className="absolute inset-0 opacity-20">
         <div
@@ -370,13 +372,31 @@ export const CardEffectContentCreator: React.FC<CardEffectProps> = ({ isActive =
 
       {/* Label inferior */}
       <motion.div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-purple-300/70 font-medium"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-sm text-purple-300/70 font-medium"
         initial={{ opacity: 0 }}
         animate={{ opacity: isAnimating ? 1 : 0 }}
-        transition={{ delay: 11.25 }} // 2.5x mais lento
+        transition={{ delay: 11.25 }}
       >
         Conteúdo pronto para publicar
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              (phase === 'falling' && i === 0) ||
+              (phase === 'stacking' && i <= 1) ||
+              (phase === 'writing' && i <= 2) ||
+              ((phase === 'highlight' || phase === 'book') && i <= 3) ||
+              (phase === 'complete' && i <= 4)
+                ? 'bg-purple-400'
+                : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

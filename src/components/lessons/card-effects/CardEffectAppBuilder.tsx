@@ -64,11 +64,13 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
     // Fase 4: Idle state
     timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
 
-    // 🔄 Loop: reiniciar animação após um tempo
-    timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
-    }, LOOP_DELAY));
-  };
+        // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
+        timersRef.current.push(setTimeout(() => {
+          if (loopCount < 1) {
+            setLoopCount(prev => prev + 1);
+          }
+        }, LOOP_DELAY));
+      };
 
   // 🎯 Iniciar animação quando isActive mudar para true
   useEffect(() => {
@@ -104,7 +106,7 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-2xl">
       {/* Fundo que escurece */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
@@ -377,7 +379,7 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
 
       {/* Label inferior */}
       <motion.div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center z-10"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center z-10"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
         transition={{ delay: isAnimating ? 2 : 0, duration: 0.5 }}
@@ -391,6 +393,22 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
           }
         </p>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              (phase === 'enter' && i === 0) ||
+              (phase === 'building' && i <= 2) ||
+              ((phase === 'complete' || phase === 'idle') && i <= 4)
+                ? 'bg-purple-400'
+                : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

@@ -78,9 +78,11 @@ export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = fal
     // Glow final
     timersRef.current.push(setTimeout(() => setShowFinalGlow(true), FINAL_GLOW_DELAY));
 
-    // 🔄 Loop: reiniciar animação após um tempo
+    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
     timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
     }, LOOP_DELAY));
   };
 
@@ -112,7 +114,7 @@ export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = fal
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
       {/* Grid de fundo */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -309,17 +311,29 @@ export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = fal
         className="absolute top-4 right-4 flex items-center gap-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: isAnimating ? 1 : 0.3 }}
-        transition={{ delay: isAnimating ? 2.5 : 0 }} // mais lento (era 1, 2.5x)
+        transition={{ delay: isAnimating ? 2.5 : 0 }}
       >
         <motion.div
           className="w-2 h-2 bg-green-500 rounded-full"
           animate={{ opacity: isAnimating ? [1, 0.5, 1] : 0.3 }}
-          transition={{ duration: 2.5, repeat: Infinity }} // mais lento (era 1, 2.5x)
+          transition={{ duration: 2.5, repeat: Infinity }}
         />
         <span className="text-[10px] text-green-400">
           {phase === 'waiting' ? 'Aguardando ativação' : 'Automação ativa'}
         </span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              visibleNodes > i ? 'bg-emerald-400' : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
