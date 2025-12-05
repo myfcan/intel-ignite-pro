@@ -38,6 +38,12 @@ const AVAILABLE_LESSONS = [
     description: '15 card effects cinematográficos',
     icon: '💰'
   },
+  {
+    id: 'aula-4',
+    title: 'Aula 4 - O Dia em que a Padaria Mudou de Nível',
+    description: '16 card effects cinematográficos',
+    icon: '🥖'
+  },
 ];
 
 // 📋 Templates pré-configurados de Experience Cards por Aula
@@ -93,6 +99,29 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 5, cardIndex: 1, cardType: 'timeline-tracker', anchorText: 'Semana 1-2', title: 'Linha do Tempo', subtitle: 'Seu progresso mapeado' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'growth-visualizer', anchorText: 'confiança para cobrar', title: 'Visualizador de Crescimento', subtitle: 'De zero a profissional' },
     { sectionIndex: 5, cardIndex: 3, cardType: 'success-roadmap', anchorText: 'Hoje mesmo', title: 'Mapa do Sucesso', subtitle: 'Comece agora' },
+  ],
+  'aula-4': [
+    // Seção 1 - O dia em que a padaria mudou de nível (3 cards)
+    { sectionIndex: 1, cardIndex: 1, cardType: 'bakery-transformation', anchorText: 'cartaz novo, bonito', title: 'Transformação da Padaria', subtitle: 'De comum para profissional' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'teenage-designer', anchorText: 'filha de quatorze anos fez isso', title: 'Designer de 14 Anos', subtitle: 'Criando com I.A.' },
+    { sectionIndex: 1, cardIndex: 3, cardType: 'first-mover-advantage', anchorText: 'Quem testou primeiro saiu na frente', title: 'Vantagem do Pioneiro', subtitle: 'Quem age primeiro ganha' },
+    // Seção 2 - Os três tipos de pessoa diante da I.A. (3 cards)
+    { sectionIndex: 2, cardIndex: 1, cardType: 'three-persona-types', anchorText: 'três tipos de pessoa', title: 'Os Três Perfis', subtitle: 'Medroso, Planejador, Fazedor' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'fear-vs-action', anchorText: 'Isso é complicado demais', title: 'Medo vs Ação', subtitle: 'Duas escolhas, dois destinos' },
+    { sectionIndex: 2, cardIndex: 3, cardType: 'silent-doer', anchorText: 'O Fazedor Silencioso', title: 'O Fazedor Silencioso', subtitle: 'Testa, erra, ajusta, lucra' },
+    // Seção 3 - O que dá para fazer com I.A. no mundo real (4 cards)
+    { sectionIndex: 3, cardIndex: 1, cardType: 'real-world-uses', anchorText: 'possibilidades concretas', title: 'Usos no Mundo Real', subtitle: 'Cardápios, descrições, roteiros' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'resume-builder', anchorText: 'rapaz que sempre ajudou amigos com currículo', title: 'O Rapaz do Currículo', subtitle: 'Transformou ajuda em serviço' },
+    { sectionIndex: 3, cardIndex: 3, cardType: 'spreadsheet-master', anchorText: 'moça que gosta de organização', title: 'A Moça das Planilhas', subtitle: 'Organização virou negócio' },
+    { sectionIndex: 3, cardIndex: 4, cardType: 'script-writer', anchorText: 'roteirista de apoio', title: 'Roteirista de Apoio', subtitle: 'I.A. estrutura, você grava' },
+    // Seção 4 - Trazendo isso para a sua realidade (3 cards)
+    { sectionIndex: 4, cardIndex: 1, cardType: 'your-reality', anchorText: 'sua vez de olhar para o seu mundo', title: 'Sua Realidade', subtitle: 'Olhe ao seu redor' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'help-network', anchorText: 'pessoas próximas sempre pedem ajuda', title: 'Sua Rede de Ajuda', subtitle: 'Quem você pode ajudar?' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'small-experiment', anchorText: 'pequeno experimento bem-feito', title: 'Pequeno Experimento', subtitle: 'É assim que começa' },
+    // Seção 5 - A verdade que ninguém conta (3 cards)
+    { sectionIndex: 5, cardIndex: 1, cardType: 'history-parallel', anchorText: 'internet começou a crescer', title: 'Paralelo Histórico', subtitle: 'Internet → I.A.' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'balanced-approach', anchorText: 'Quem entende o equilíbrio', title: 'O Equilíbrio Certo', subtitle: 'Nem ignora, nem exagera' },
+    { sectionIndex: 5, cardIndex: 3, cardType: 'practice-preview', anchorText: 'próximas aulas', title: 'Preview da Prática', subtitle: 'Prompts, estruturas, exercícios' },
   ],
 };
 
