@@ -230,6 +230,21 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Progress indicator - inside content flow */}
+        <div className="flex gap-2 mt-4">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <motion.div
+              key={s}
+              className="w-2.5 h-2.5 rounded-full"
+              animate={{
+                backgroundColor: scene >= s ? '#f97316' : 'rgba(255,255,255,0.2)',
+                scale: scene === s ? 1.3 : 1
+              }}
+              transition={{ duration: 0.4 }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Badge - História Real */}
@@ -242,21 +257,6 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         <Heart className="w-3.5 h-3.5 text-orange-400" fill="currentColor" />
         <span className="text-[10px] text-orange-300 font-medium">História Real</span>
       </motion.div>
-
-      {/* Progress indicator */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <motion.div
-            key={s}
-            className="w-2.5 h-2.5 rounded-full"
-            animate={{
-              backgroundColor: scene >= s ? '#f97316' : 'rgba(255,255,255,0.2)',
-              scale: scene === s ? 1.3 : 1
-            }}
-            transition={{ duration: 0.4 }}
-          />
-        ))}
-      </div>
     </div>
   );
 };
