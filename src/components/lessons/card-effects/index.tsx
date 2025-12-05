@@ -55,6 +55,26 @@ import { CardEffectTimelineTracker } from './CardEffectTimelineTracker';
 import { CardEffectGrowthVisualizer } from './CardEffectGrowthVisualizer';
 import { CardEffectSuccessRoadmap } from './CardEffectSuccessRoadmap';
 
+// ============================================================
+// AULA 4 - O Dia em que a Padaria Mudou de Nível
+// ============================================================
+import { CardEffectBakeryTransformation } from './CardEffectBakeryTransformation';
+import { CardEffectTeenageDesigner } from './CardEffectTeenageDesigner';
+import { CardEffectFirstMoverAdvantage } from './CardEffectFirstMoverAdvantage';
+import { CardEffectThreePersonaTypes } from './CardEffectThreePersonaTypes';
+import { CardEffectFearVsAction } from './CardEffectFearVsAction';
+import { CardEffectSilentDoer } from './CardEffectSilentDoer';
+import { CardEffectRealWorldUses } from './CardEffectRealWorldUses';
+import { CardEffectResumeBuilder } from './CardEffectResumeBuilder';
+import { CardEffectSpreadsheetMaster } from './CardEffectSpreadsheetMaster';
+import { CardEffectScriptWriter } from './CardEffectScriptWriter';
+import { CardEffectYourReality } from './CardEffectYourReality';
+import { CardEffectHelpNetwork } from './CardEffectHelpNetwork';
+import { CardEffectSmallExperiment } from './CardEffectSmallExperiment';
+import { CardEffectHistoryParallel } from './CardEffectHistoryParallel';
+import { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
+import { CardEffectPracticePreview } from './CardEffectPracticePreview';
+
 // Re-exportar componentes - AULA 1
 export { CardEffectAppBuilder } from './CardEffectAppBuilder';
 export { CardEffectDigitalEmployee } from './CardEffectDigitalEmployee';
@@ -101,6 +121,24 @@ export { CardEffectPlaygroundCreator } from './CardEffectPlaygroundCreator';
 export { CardEffectTimelineTracker } from './CardEffectTimelineTracker';
 export { CardEffectGrowthVisualizer } from './CardEffectGrowthVisualizer';
 export { CardEffectSuccessRoadmap } from './CardEffectSuccessRoadmap';
+
+// Re-exportar componentes - AULA 4
+export { CardEffectBakeryTransformation } from './CardEffectBakeryTransformation';
+export { CardEffectTeenageDesigner } from './CardEffectTeenageDesigner';
+export { CardEffectFirstMoverAdvantage } from './CardEffectFirstMoverAdvantage';
+export { CardEffectThreePersonaTypes } from './CardEffectThreePersonaTypes';
+export { CardEffectFearVsAction } from './CardEffectFearVsAction';
+export { CardEffectSilentDoer } from './CardEffectSilentDoer';
+export { CardEffectRealWorldUses } from './CardEffectRealWorldUses';
+export { CardEffectResumeBuilder } from './CardEffectResumeBuilder';
+export { CardEffectSpreadsheetMaster } from './CardEffectSpreadsheetMaster';
+export { CardEffectScriptWriter } from './CardEffectScriptWriter';
+export { CardEffectYourReality } from './CardEffectYourReality';
+export { CardEffectHelpNetwork } from './CardEffectHelpNetwork';
+export { CardEffectSmallExperiment } from './CardEffectSmallExperiment';
+export { CardEffectHistoryParallel } from './CardEffectHistoryParallel';
+export { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
+export { CardEffectPracticePreview } from './CardEffectPracticePreview';
 
 export type CardEffectType =
   // AULA 1
