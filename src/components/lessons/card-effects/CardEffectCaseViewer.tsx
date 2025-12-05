@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Store, Cpu, ArrowRight, CheckCircle, ShoppingCart } from 'lucide-react';
+import { User, Store, Cpu, CheckCircle, ShoppingCart } from 'lucide-react';
+import { CardEffectProps } from './index';
 
-interface CardEffectCaseViewerProps {
-  isActive?: boolean;
-}
-
-export const CardEffectCaseViewer: React.FC<CardEffectCaseViewerProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState(1);
+export const CardEffectCaseViewer: React.FC<CardEffectProps> = ({ isActive = false }) => {
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [step, setStep] = useState(0);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const loopCountRef = useRef(0);
+  const maxLoops = 2;
 
   const steps = [
     { label: 'Cliente conta o que vende', icon: User },
@@ -18,22 +18,47 @@ export const CardEffectCaseViewer: React.FC<CardEffectCaseViewerProps> = ({ isAc
     { label: 'João ajusta e entrega', icon: Store },
   ];
 
-  useEffect(() => {
-    if (!isActive) return;
-    
-    const timers = [
-      setTimeout(() => { setScene(2); setStep(1); }, 1500),
-      setTimeout(() => setStep(2), 2500),
-      setTimeout(() => setStep(3), 3500),
-      setTimeout(() => setScene(3), 5000),
-    ];
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
 
-    return () => timers.forEach(clearTimeout);
+  const startAnimation = () => {
+    clearTimers();
+    setStep(0);
+    
+    setScene(1);
+    
+    timersRef.current.push(setTimeout(() => { setScene(2); setStep(1); }, 2000));
+    timersRef.current.push(setTimeout(() => setStep(2), 3500));
+    timersRef.current.push(setTimeout(() => setStep(3), 5000));
+    timersRef.current.push(setTimeout(() => setScene(3), 7000));
+    timersRef.current.push(setTimeout(() => setScene(4), 9500));
+    
+    timersRef.current.push(setTimeout(() => {
+      loopCountRef.current += 1;
+      if (loopCountRef.current < maxLoops) {
+        setScene(0);
+        setTimeout(() => startAnimation(), 500);
+      }
+    }, 12000));
+  };
+
+  useEffect(() => {
+    if (isActive) {
+      loopCountRef.current = 0;
+      startAnimation();
+    } else {
+      clearTimers();
+      setScene(0);
+      setStep(0);
+      loopCountRef.current = 0;
+    }
+    return () => clearTimers();
   }, [isActive]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/30 to-slate-900 border border-blue-500/30">
-      {/* Background grid */}
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-blue-900/30 to-indigo-950">
       <div className="absolute inset-0 opacity-10">
         <div className="w-full h-full" style={{
           backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.2) 1px, transparent 1px)',
@@ -41,158 +66,146 @@ export const CardEffectCaseViewer: React.FC<CardEffectCaseViewerProps> = ({ isAc
         }} />
       </div>
 
-      {/* Conteúdo principal */}
-      <div className="relative z-10 flex flex-col items-center justify-start pt-4 pb-12 h-full px-4">
-        {/* Header com foto do João */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 mb-3"
-        >
-          <div className="w-10 h-10 rounded-full bg-blue-500/30 border border-blue-400 flex items-center justify-center">
-            <User className="w-5 h-5 text-blue-300" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white">Caso: João</h3>
-            <p className="text-[9px] text-blue-300">Criador de E-commerces</p>
-          </div>
-        </motion.div>
+      <motion.div
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%)' }}
+        animate={scene > 0 ? { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] } : { opacity: 0 }}
+        transition={{ duration: 4, repeat: Infinity }}
+      />
 
-        {/* Timeline do processo */}
-        <div className="w-full max-w-xs mb-4">
-          <div className="flex items-center justify-between mb-2">
-            {steps.map((s, index) => {
-              const isActive = step > index;
-              const isCurrent = step === index + 1;
-              const Icon = s.icon;
-              
-              return (
-                <React.Fragment key={index}>
-                  <motion.div
-                    className="flex flex-col items-center"
-                    animate={{
-                      scale: isCurrent ? 1.1 : 1,
-                    }}
-                  >
-                    <motion.div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
-                        isActive || isCurrent
-                          ? 'bg-blue-500/30 border border-blue-400'
-                          : 'bg-slate-700/30 border border-slate-600'
-                      }`}
-                      animate={{
-                        boxShadow: isCurrent ? '0 0 15px rgba(59, 130, 246, 0.5)' : 'none'
-                      }}
-                    >
-                      <Icon className={`w-4 h-4 ${isActive || isCurrent ? 'text-blue-300' : 'text-slate-500'}`} />
-                    </motion.div>
-                    <span className={`text-[7px] text-center max-w-[60px] ${
-                      isActive || isCurrent ? 'text-blue-300' : 'text-slate-500'
-                    }`}>
-                      {s.label}
-                    </span>
-                  </motion.div>
-
-                  {index < steps.length - 1 && (
-                    <motion.div
-                      className={`flex-1 h-0.5 mx-1 ${
-                        step > index + 1 ? 'bg-blue-400' : 'bg-slate-700'
-                      }`}
-                      style={{ marginTop: '-20px' }}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Visualização da loja */}
-        <motion.div
-          className="w-full max-w-xs bg-slate-800/50 border border-blue-400/30 rounded-xl p-3"
-          animate={{
-            opacity: scene >= 2 ? 1 : 0.5,
-            scale: scene >= 2 ? 1 : 0.95,
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <ShoppingCart className="w-4 h-4 text-blue-400" />
-            <span className="text-[10px] text-blue-300 font-medium">Loja Pronta</span>
-          </div>
-
-          {/* Miniatura de e-commerce */}
-          <div className="grid grid-cols-3 gap-1">
-            {[1, 2, 3].map((item) => (
-              <motion.div
-                key={item}
-                className="aspect-square bg-blue-500/10 border border-blue-400/20 rounded-lg flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: scene >= 2 ? 1 : 0.3,
-                  scale: scene >= 2 ? 1 : 0.8
-                }}
-                transition={{ delay: item * 0.2 }}
-              >
-                <Store className="w-4 h-4 text-blue-400/50" />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Preço */}
-          <AnimatePresence>
-            {scene >= 2 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 flex items-center justify-between"
-              >
-                <span className="text-[9px] text-slate-400">Valor cobrado:</span>
-                <span className="text-sm font-bold text-emerald-400">R$ 100</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Resultado final */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-6 pt-8 pb-16">
         <AnimatePresence>
-          {scene === 3 && (
+          {scene >= 1 && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-3 flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 rounded-lg px-3 py-1.5"
+              className="flex items-center gap-3 mb-6"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
             >
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs text-emerald-300 font-medium">
-                Loja entregue + R$100 ganhos!
-              </span>
+              <div className="w-14 h-14 rounded-full bg-blue-500/30 border-2 border-blue-400 flex items-center justify-center">
+                <User className="w-7 h-7 text-blue-300" />
+              </div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white">Caso: João</h3>
+                <p className="text-blue-300 text-sm">Criador de E-commerces</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Progress indicator */}
-        <div className="flex gap-2 mt-3">
-          {[1, 2, 3].map((s) => (
+        <AnimatePresence>
+          {scene >= 2 && (
+            <motion.div
+              className="w-full max-w-sm mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between">
+                {steps.map((s, index) => {
+                  const isActiveStep = step > index;
+                  const isCurrent = step === index + 1;
+                  const Icon = s.icon;
+                  
+                  return (
+                    <React.Fragment key={index}>
+                      <motion.div className="flex flex-col items-center" animate={{ scale: isCurrent ? 1.1 : 1 }}>
+                        <motion.div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                            isActiveStep || isCurrent ? 'bg-blue-500/30 border-2 border-blue-400' : 'bg-slate-700/30 border border-slate-600'
+                          }`}
+                          animate={{ boxShadow: isCurrent ? '0 0 20px rgba(59, 130, 246, 0.5)' : 'none' }}
+                        >
+                          <Icon className={`w-6 h-6 ${isActiveStep || isCurrent ? 'text-blue-300' : 'text-slate-500'}`} />
+                        </motion.div>
+                        <span className={`text-[10px] text-center max-w-[70px] ${isActiveStep || isCurrent ? 'text-blue-300' : 'text-slate-500'}`}>
+                          {s.label}
+                        </span>
+                      </motion.div>
+                      {index < steps.length - 1 && (
+                        <motion.div
+                          className={`flex-1 h-1 mx-2 rounded ${step > index + 1 ? 'bg-blue-400' : 'bg-slate-700'}`}
+                          style={{ marginTop: '-30px' }}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {scene >= 3 && (
+            <motion.div
+              className="w-full max-w-sm bg-slate-800/50 border border-blue-400/30 rounded-xl p-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <ShoppingCart className="w-5 h-5 text-blue-400" />
+                <span className="text-sm text-blue-300 font-medium">Loja Pronta</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {[1, 2, 3].map((item) => (
+                  <motion.div
+                    key={item}
+                    className="aspect-square bg-blue-500/10 border border-blue-400/20 rounded-lg flex items-center justify-center"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: item * 0.15 }}
+                  >
+                    <Store className="w-6 h-6 text-blue-400/50" />
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-blue-400/20">
+                <span className="text-xs text-slate-400">Valor cobrado:</span>
+                <span className="text-lg font-bold text-emerald-400">R$ 100</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {scene >= 4 && (
+            <motion.div
+              className="mt-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            >
+              <motion.div
+                className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-xl border border-emerald-500/30"
+                animate={{ boxShadow: ['0 0 15px rgba(16,185,129,0.2)', '0 0 30px rgba(16,185,129,0.4)', '0 0 15px rgba(16,185,129,0.2)'] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span className="text-white font-semibold text-sm">Loja entregue + R$100 ganhos!</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex gap-2 mt-auto pt-4">
+          {[1, 2, 3, 4].map((s) => (
             <motion.div
               key={s}
-              className="w-2 h-2 rounded-full"
-              animate={{
-                backgroundColor: scene >= s ? '#3b82f6' : 'rgba(255,255,255,0.2)',
-                scale: scene === s ? 1.3 : 1
-              }}
+              className="w-2.5 h-2.5 rounded-full"
+              animate={{ backgroundColor: scene >= s ? '#3b82f6' : 'rgba(255,255,255,0.2)', scale: scene === s ? 1.3 : 1 }}
               transition={{ duration: 0.4 }}
             />
           ))}
         </div>
       </div>
 
-      {/* Badge */}
       <motion.div
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-full"
         initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="absolute top-3 right-3 flex items-center gap-1 bg-blue-500/20 border border-blue-400/30 rounded-full px-2 py-0.5"
+        animate={{ opacity: scene > 0 ? 1 : 0, x: scene > 0 ? 0 : 20 }}
       >
-        <Store className="w-3 h-3 text-blue-400" />
-        <span className="text-[9px] text-blue-300 font-medium">Caso Real</span>
+        <Store className="w-3.5 h-3.5 text-blue-400" />
+        <span className="text-[10px] text-blue-300 font-medium">Caso Real</span>
       </motion.div>
     </div>
   );
