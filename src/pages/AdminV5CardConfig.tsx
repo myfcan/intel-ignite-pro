@@ -715,146 +715,101 @@ export default function AdminV5CardConfig() {
     });
   };
 
-  const handleCreateLesson = async () => {
-    if (!parsedLesson) {
-      toast({
-        title: "JSON não analisado",
-        description: "Cole o JSON e clique em 'Analisar JSON' primeiro.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  // 🆕 NOVO: handleActivateLesson - Apenas ATIVA a aula que já passou pelo pipeline
+  const handleActivateLesson = async () => {
     if (experienceCards.length === 0) {
       toast({
-        title: "Nenhum card configurado",
-        description: "Adicione pelo menos um experience card.",
+        title: "Nenhum card carregado",
+        description: "Carregue os templates da aula primeiro.",
         variant: "destructive",
       });
       return;
     }
 
     setIsSaving(true);
-    setGeneratingProgress("Preparando lição V5...");
+    setGeneratingProgress("Buscando aula V5 no banco...");
 
     try {
-      // ✨ NOVO: Não precisa mais de edge function!
-      // O DynamicExperienceCard recebe as props diretamente
-      console.log('🎨 [V5-CONFIG] Preparando experienceCards (sem IA)...');
-
-      // PASSO 1: Buscar próximo order_index disponível na trilha
-      const { data: existingLessons, error: fetchError } = await supabase
+      // PASSO 1: Buscar a aula V5 mais recente que ainda não está ativa
+      const { data: lesson, error: fetchError } = await supabase
         .from('lessons')
-        .select('order_index')
-        .eq('trail_id', parsedLesson.trackId)
-        .order('order_index', { ascending: false })
-        .limit(1);
-
-      if (fetchError) {
-        console.warn('⚠️ [V5-CONFIG] Erro ao buscar order_index:', fetchError);
-      }
-
-      const nextOrderIndex = existingLessons && existingLessons.length > 0
-        ? existingLessons[0].order_index + 1
-        : parsedLesson.orderIndex || 1;
-
-      console.log(`📊 [V5-CONFIG] Próximo order_index disponível: ${nextOrderIndex}`);
-
-      // PASSO 2: Criar execução do PIPELINE
-      setGeneratingProgress("Criando execução do pipeline...");
-
-      // 🔧 NORMALIZAÇÃO CRÍTICA: Converter campos ANTES de salvar no banco
-      const rawSections = parsedLesson.sections || parsedLesson.content?.sections || [];
-      const normalizedSections = rawSections.map((section: any, index: number) => ({
-        id: section.id || `section-${index + 1}`,
-        visualContent: section.visualContent || section.markdown || section.content || '',
-        ...(section.title && { title: section.title }),
-        ...(section.speechBubbleText || section.speechBubble
-          ? { speechBubbleText: section.speechBubbleText || section.speechBubble }
-          : {}),
-        ...(section.showPlaygroundCall !== undefined && { showPlaygroundCall: section.showPlaygroundCall }),
-        ...(section.playgroundConfig && { playgroundConfig: section.playgroundConfig })
-      }));
-
-      console.log('🔧 [V5-CONFIG] ✅ Seções normalizadas:', normalizedSections.length);
-
-      // ✨ NOVO: Converter para o formato que o GuidedLessonV5 espera
-      // Usa DynamicExperienceCard com props ao invés de componentCode
-      const formattedExperienceCards = experienceCards.map((card) => ({
-        type: card.cardType,
-        sectionIndex: card.sectionIndex,
-        anchorText: card.anchorText,
-        props: {
-          title: card.title,
-          subtitle: card.subtitle,
-          icon: card.icon || 'sparkles',
-          colorScheme: card.colorScheme || 'purple',
-          chapters: card.chapters || [],
-          effectDescription: card.effectDescription,
-        }
-      }));
-
-      console.log('✅ [V5-CONFIG] Experience cards formatados:', formattedExperienceCards.length);
-
-      const pipelineInput = {
-        title: parsedLesson.title,
-        trackId: parsedLesson.trackId,
-        trackName: parsedLesson.trackName || "Trilha Desconhecida",
-        orderIndex: nextOrderIndex,
-        model: 'v5',
-        estimatedTime: parsedLesson.estimatedTimeMinutes || 5,
-        sections: normalizedSections,
-        exercises: parsedLesson.exercises || [],
-        experienceCards: formattedExperienceCards,
-      };
-
-      const { data, error } = await supabase
-        .from('pipeline_executions')
-        .insert({
-          lesson_title: parsedLesson.title,
-          model: 'v5',
-          track_id: parsedLesson.trackId,
-          track_name: parsedLesson.trackName || "Trilha Desconhecida",
-          order_index: nextOrderIndex,
-          status: 'pending',
-          input_data: pipelineInput,
-          current_step: 1,
-          total_steps: 8
-        })
-        .select()
+        .select('id, title, is_active, content')
+        .eq('model', 'v5')
+        .eq('is_active', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
 
-      if (error) throw error;
+      if (fetchError || !lesson) {
+        // Tentar buscar qualquer aula V5 mais recente
+        const { data: anyLesson, error: anyError } = await supabase
+          .from('lessons')
+          .select('id, title, is_active, content')
+          .eq('model', 'v5')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (anyError || !anyLesson) {
+          throw new Error('Nenhuma aula V5 encontrada. Envie para o pipeline primeiro na aba "Colar JSON".');
+        }
+
+        if (anyLesson.is_active) {
+          toast({
+            title: "✅ Aula já está ativa!",
+            description: `"${anyLesson.title}" já está ativa e disponível para os usuários.`,
+          });
+          setIsSaving(false);
+          setGeneratingProgress(null);
+          return;
+        }
+      }
+
+      const targetLesson = lesson;
+      console.log('📚 [V5-ACTIVATE] Aula encontrada:', targetLesson.title);
+
+      // PASSO 2: Verificar se todos os cardTypes têm componentes
+      const lessonContent = targetLesson.content as any;
+      const lessonCards = lessonContent?.sections?.flatMap((s: any) => s.experienceCards || []) || [];
+      
+      const missingComponents = lessonCards
+        .map((c: any) => c.type)
+        .filter((t: string) => !isValidCardEffectType(t));
+
+      if (missingComponents.length > 0) {
+        const uniqueMissing = [...new Set(missingComponents)];
+        throw new Error(`Componentes faltando: ${uniqueMissing.join(', ')}. Peça para criar esses componentes primeiro.`);
+      }
+
+      setGeneratingProgress("Ativando aula...");
+
+      // PASSO 3: Ativar a aula (is_active = true)
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({ is_active: true })
+        .eq('id', targetLesson.id);
+
+      if (updateError) throw updateError;
 
       setGeneratingProgress(null);
 
       toast({
-        title: "✅ Pipeline iniciado!",
-        description: `Lição "${parsedLesson.title}" com ${experienceCards.length} Experience Cards criada!`,
+        title: "🎉 Aula Ativada!",
+        description: `"${targetLesson.title}" com ${lessonCards.length} Experience Cards está disponível!`,
       });
 
-      console.log('🎉 [V5-CONFIG] Pipeline execution criada:', data);
+      console.log('✅ [V5-ACTIVATE] Aula ativada:', targetLesson.id);
 
-      // Limpar auto-save após sucesso
-      localStorage.removeItem('v5-card-config-autosave');
-
-      setLessonJson('');
-      setParsedLesson(null);
-      setSections([]);
+      // Limpar estado
       setExperienceCards([]);
 
-      // Redirecionar para o monitor após 2s
-      setTimeout(() => {
-        navigate('/admin/pipeline/monitor');
-      }, 2000);
-
     } catch (error: any) {
-      console.error('❌ [V5-CONFIG] Erro ao criar lição:', error);
+      console.error('❌ [V5-ACTIVATE] Erro:', error);
       setGeneratingProgress(null);
 
       toast({
-        title: "Erro ao criar lição",
-        description: error.message || "Não foi possível criar a lição V5.",
+        title: "Erro ao ativar",
+        description: error.message || "Não foi possível ativar a aula.",
         variant: "destructive",
       });
     } finally {
@@ -935,7 +890,7 @@ export default function AdminV5CardConfig() {
             <Tabs defaultValue="paste" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="paste">1️⃣ Colar JSON</TabsTrigger>
-                <TabsTrigger value="manual" disabled={!parsedLesson}>2️⃣ Configurar Cards</TabsTrigger>
+                <TabsTrigger value="manual">2️⃣ Ativar Cards</TabsTrigger>
               </TabsList>
 
               {/* TAB 1: COLAR JSON */}
@@ -1488,17 +1443,16 @@ export default function AdminV5CardConfig() {
                   </Card>
                 )}
 
-                {/* Botão Criar Lição */}
+                {/* Botão Ativar Aula */}
                 {experienceCards.length > 0 && (
                   <Button
-                    onClick={handleCreateLesson}
+                    onClick={handleActivateLesson}
                     disabled={isSaving || experienceCards.length === 0}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                     size="lg"
-                    variant="default"
                   >
-                    <Save className="w-4 h-4 mr-2" />
-                    {generatingProgress || (isSaving ? 'Salvando...' : `Criar Lição V5 com ${experienceCards.length} Cards`)}
+                    <Rocket className="w-4 h-4 mr-2" />
+                    {generatingProgress || (isSaving ? 'Ativando...' : `Ativar Aula V5 com ${experienceCards.length} Cards`)}
                   </Button>
                 )}
               </TabsContent>
