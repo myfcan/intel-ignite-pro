@@ -76,19 +76,19 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         transition={{ duration: 4, repeat: Infinity }}
       />
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8">
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-4 pt-12 pb-16 overflow-y-auto">
 
         {/* ========== CENA 1: Silhueta ========== */}
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
-              className="relative mb-5"
+              className="relative mb-3"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 150, duration: 0.8 }}
             >
               <motion.div
-                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center shadow-2xl overflow-hidden"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center shadow-2xl overflow-hidden"
                 animate={{
                   background: scene === 1
                     ? 'linear-gradient(135deg, #1a1a1a 0%, #333 100%)'
@@ -96,7 +96,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
                 }}
                 transition={{ duration: 1.2 }}
               >
-                <User className="w-14 h-14 sm:w-16 sm:h-16 text-white" />
+                <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </motion.div>
 
               {/* Ring animation */}
@@ -113,12 +113,12 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         <AnimatePresence>
           {scene >= 2 && (
             <motion.div
-              className="text-center mb-4"
+              className="text-center mb-2"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
             >
-              <h3 className="text-3xl sm:text-4xl font-bold text-white mb-1">Maria</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">Maria</h3>
               <motion.p
                 className="text-orange-300 font-semibold text-lg"
                 initial={{ opacity: 0 }}
@@ -135,7 +135,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         <AnimatePresence>
           {scene >= 3 && (
             <motion.div
-              className="flex flex-wrap justify-center gap-3 mb-5"
+              className="flex flex-wrap justify-center gap-2 mb-3"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
@@ -172,18 +172,18 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
               transition={{ duration: 0.8 }}
             >
               <motion.div
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/30 mb-4"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/30 mb-2"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <Home className="w-5 h-5 text-amber-400" />
-                <span className="text-white font-semibold">Dona de loja de artesanato</span>
+                <Home className="w-4 h-4 text-amber-400" />
+                <span className="text-white font-semibold text-sm">Dona de loja de artesanato</span>
               </motion.div>
 
               {/* Ícones de artesanato */}
               <motion.div
-                className="flex justify-center gap-5 mt-4"
+                className="flex justify-center gap-4 mt-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
@@ -191,15 +191,15 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
                 {['Tricô', 'Bordado', 'Macramê'].map((item, i) => (
                   <motion.div
                     key={item}
-                    className="flex flex-col items-center gap-2"
+                    className="flex flex-col items-center gap-1"
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8 + i * 0.2 }}
                   >
-                    <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center">
-                      <Scissors className="w-5 h-5 text-orange-300" />
+                    <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                      <Scissors className="w-4 h-4 text-orange-300" />
                     </div>
-                    <span className="text-xs text-orange-200/80">{item}</span>
+                    <span className="text-[10px] text-orange-200/80">{item}</span>
                   </motion.div>
                 ))}
               </motion.div>
@@ -211,13 +211,13 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         <AnimatePresence>
           {scene >= 5 && (
             <motion.div
-              className="mt-6 max-w-sm text-center"
+              className="mt-3 max-w-xs text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
             >
               <motion.div
-                className="px-5 py-3 bg-gradient-to-r from-rose-500/20 to-orange-500/20 rounded-xl border border-rose-500/30"
+                className="px-4 py-2.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 rounded-xl border border-rose-500/30"
                 animate={{
                   boxShadow: ['0 0 20px rgba(244,63,94,0.2)', '0 0 40px rgba(244,63,94,0.3)', '0 0 20px rgba(244,63,94,0.2)']
                 }}
