@@ -30,7 +30,12 @@ export const CardEffectTimeSaver: React.FC<CardEffectProps> = ({ isActive = fals
 
     timersRef.current.push(setTimeout(() => setPhase('after'), 4000));
     timersRef.current.push(setTimeout(() => setPhase('complete'), 5500));
-    timersRef.current.push(setTimeout(() => setLoopCount(prev => prev + 1), 12000));
+    // Loop 2x
+    timersRef.current.push(setTimeout(() => {
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
+    }, 12000));
   };
 
   useEffect(() => {
@@ -47,7 +52,7 @@ export const CardEffectTimeSaver: React.FC<CardEffectProps> = ({ isActive = fals
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950">
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
         {/* Clock animation */}
         <AnimatePresence>
@@ -147,6 +152,23 @@ export const CardEffectTimeSaver: React.FC<CardEffectProps> = ({ isActive = fals
         <Clock className="w-3 h-3 text-emerald-400" />
         <span className="text-[9px] text-emerald-300">Economia</span>
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              (phase === 'before' && i === 0) ||
+              (phase === 'process' && i <= 2) ||
+              (phase === 'after' && i <= 3) ||
+              (phase === 'complete' && i <= 4)
+                ? 'bg-emerald-400'
+                : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

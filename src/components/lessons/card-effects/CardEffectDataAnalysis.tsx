@@ -38,9 +38,11 @@ export const CardEffectDataAnalysis: React.FC<CardEffectProps> = ({ isActive = f
     // Durações mais lentas (2-2.5x)
     const LOOP_DELAY = 8000; // tempo total da animação antes de reiniciar
 
-    // 🔄 Loop: reiniciar animação após um tempo
+    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
     timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
     }, LOOP_DELAY));
   };
 
@@ -146,7 +148,7 @@ export const CardEffectDataAnalysis: React.FC<CardEffectProps> = ({ isActive = f
   const trendPath = `M${trendPoints.map(p => `${p.x},${p.y}`).join(' L')}`;
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 rounded-xl">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 rounded-xl">
       {/* Data stream background */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(15)].map((_, i) => (
@@ -335,13 +337,27 @@ export const CardEffectDataAnalysis: React.FC<CardEffectProps> = ({ isActive = f
 
       {/* Bottom label */}
       <motion.div
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-sm text-cyan-300/70 font-medium"
+        className="absolute bottom-12 left-1/2 transform -translate-x-1/2 text-sm text-cyan-300/70 font-medium"
         initial={{ opacity: 0, y: 10 }}
         animate={isAnimating ? { opacity: 1, y: 0 } : { opacity: 0.3, y: 0 }}
-        transition={{ delay: isAnimating ? 5 : 0, duration: 1.0 }} // era delay: 2, duration: 0.4, 2.5x mais lento
+        transition={{ delay: isAnimating ? 5 : 0, duration: 1.0 }}
       >
         {isAnimating ? 'Analisando dados...' : 'Aguardando...'}
       </motion.div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              isAnimating && i <= Math.floor((loopCount + 1) * 2.5)
+                ? 'bg-cyan-400'
+                : 'bg-slate-600'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };

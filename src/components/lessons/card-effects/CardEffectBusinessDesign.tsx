@@ -93,9 +93,11 @@ export const CardEffectBusinessDesign: React.FC<CardEffectProps> = ({ isActive =
       setShowBadge(true);
     }, COMPLETE_DELAY));
 
-    // 🔄 Loop: reiniciar animação após um tempo
+    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
     timersRef.current.push(setTimeout(() => {
-      setLoopCount(prev => prev + 1);
+      if (loopCount < 1) {
+        setLoopCount(prev => prev + 1);
+      }
     }, LOOP_DELAY));
   };
 
@@ -123,7 +125,7 @@ export const CardEffectBusinessDesign: React.FC<CardEffectProps> = ({ isActive =
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[500px] h-[60vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30">
       {/* Background - mesa de estratégia */}
       <div className="absolute inset-0">
         <div
@@ -338,10 +340,28 @@ export const CardEffectBusinessDesign: React.FC<CardEffectProps> = ({ isActive =
               scale: [0.8, 1.2, 0.8],
             }}
             transition={{
-              duration: 5 + Math.random() * 5, // 2.5x mais lento (era 2 + Math.random() * 2)
+              duration: 5 + Math.random() * 5,
               repeat: Infinity,
-              delay: Math.random() * 5, // 2.5x mais lento (era Math.random() * 2)
+              delay: Math.random() * 5,
             }}
+          />
+        ))}
+      </div>
+
+      {/* Progress indicator */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
+              (phase === 'enter' && i === 0) ||
+              (phase === 'postits' && i <= 1) ||
+              (phase === 'laser' && i <= 2) ||
+              (phase === 'connect' && i <= 3) ||
+              (phase === 'complete' && i <= 4)
+                ? 'bg-amber-400'
+                : 'bg-slate-600'
+            }`}
           />
         ))}
       </div>
