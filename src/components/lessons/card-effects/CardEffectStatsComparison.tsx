@@ -8,40 +8,58 @@ import { CardEffectProps } from './index';
 /**
  * CardEffectStatsComparison - A Transformação em Números
  *
- * 5 Cenas progressivas (~10s total):
- * 1. Ícone de análise aparecendo (0-2s)
- * 2. Números ANTES (30 posts, 2-3 vendas) (2-4s)
- * 3. Transição/seta (4-6s)
- * 4. Números DEPOIS (8 posts, 47 vendas) (6-8s)
- * 5. Conclusão: "-73% posts, +1.467% vendas" (8-10s)
+ * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 1. Ícone de análise aparecendo
+ * 2. Números ANTES (30 posts, 2-3 vendas)
+ * 3. Transição/seta
+ * 4. Números DEPOIS (8 posts, 47 vendas)
+ * 5. Conclusão: "-73% posts, +1.467% vendas"
+ *
+ * Roda 2x automaticamente
  */
 export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive = false }) => {
   const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const loopCountRef = useRef(0);
+  const maxLoops = 2;
 
-  const startAnimation = () => {
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+  };
 
+  const startAnimation = () => {
+    clearTimers();
     setScene(1); // Ícone de análise
-    timersRef.current.push(setTimeout(() => setScene(2), 2000)); // Números ANTES
-    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Transição
-    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Números DEPOIS
-    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Conclusão
+    timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Números ANTES
+    timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Transição
+    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Números DEPOIS
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Conclusão
+
+    // Loop logic
+    timersRef.current.push(setTimeout(() => {
+      loopCountRef.current += 1;
+      if (loopCountRef.current < maxLoops) {
+        setScene(0);
+        setTimeout(() => startAnimation(), 500);
+      }
+    }, 15000));
   };
 
   useEffect(() => {
     if (isActive) {
+      loopCountRef.current = 0;
       startAnimation();
     } else {
-      timersRef.current.forEach(clearTimeout);
+      clearTimers();
       setScene(0);
+      loopCountRef.current = 0;
     }
-    return () => timersRef.current.forEach(clearTimeout);
+    return () => clearTimers();
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -55,20 +73,20 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full"
         style={{ background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)' }}
         animate={scene > 0 ? { scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] } : { opacity: 0 }}
-        transition={{ duration: 3, repeat: Infinity }}
+        transition={{ duration: 4, repeat: Infinity }}
       />
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8">
 
         {/* ========== CENA 1: Ícone de Análise ========== */}
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
-              className="mb-4"
+              className="mb-5"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ type: 'spring', stiffness: 150 }}
             >
               <motion.div
                 className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center border border-emerald-500/30"
@@ -77,7 +95,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                     ? ['0 0 20px rgba(16, 185, 129, 0.2)', '0 0 40px rgba(16, 185, 129, 0.4)', '0 0 20px rgba(16, 185, 129, 0.2)']
                     : '0 0 10px rgba(16, 185, 129, 0.1)'
                 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
                 <BarChart3 className="w-8 h-8 text-emerald-400" />
               </motion.div>
@@ -92,7 +110,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
               className="text-xl sm:text-2xl font-bold text-white mb-6 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
             >
               A Transformação em Números
             </motion.h3>
@@ -117,7 +135,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                   className="text-3xl font-bold text-red-400"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: 'spring' }}
+                  transition={{ delay: 0.3, type: 'spring' }}
                 >
                   30
                 </motion.p>
@@ -137,12 +155,12 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                 className="flex flex-col items-center"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring' }}
+                transition={{ type: 'spring', duration: 0.8 }}
               >
                 <motion.div
                   className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 flex items-center justify-center"
                   animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 >
                   <Zap className="w-6 h-6 text-white" />
                 </motion.div>
@@ -150,7 +168,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                   className="text-xs text-white/50 mt-2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.4 }}
                 >
                   I.A.
                 </motion.p>
@@ -173,7 +191,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                   className="text-3xl font-bold text-emerald-400"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: 'spring' }}
+                  transition={{ delay: 0.3, type: 'spring' }}
                 >
                   8
                 </motion.p>
@@ -183,7 +201,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
                     className="text-xl font-bold text-emerald-400"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.4, type: 'spring' }}
+                    transition={{ delay: 0.5, type: 'spring' }}
                   >
                     47
                   </motion.p>
@@ -201,14 +219,14 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
               className="mt-6 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.8 }}
             >
               <motion.div
                 className="inline-flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/40"
                 animate={{
                   boxShadow: ['0 0 15px rgba(16, 185, 129, 0.2)', '0 0 30px rgba(16, 185, 129, 0.4)', '0 0 15px rgba(16, 185, 129, 0.2)']
                 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
                 <Target className="w-5 h-5 text-emerald-400" />
                 <span className="text-emerald-200 font-bold">-73% posts</span>
@@ -225,22 +243,23 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: scene > 0 ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
       >
         <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
         <span className="text-[10px] text-emerald-300 font-medium">Resultados Reais</span>
       </motion.div>
 
       {/* Progress indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
         {[1, 2, 3, 4, 5].map((s) => (
           <motion.div
             key={s}
-            className="w-2 h-2 rounded-full"
+            className="w-2.5 h-2.5 rounded-full"
             animate={{
               backgroundColor: scene >= s ? '#10b981' : 'rgba(255,255,255,0.2)',
               scale: scene === s ? 1.3 : 1
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4 }}
           />
         ))}
       </div>

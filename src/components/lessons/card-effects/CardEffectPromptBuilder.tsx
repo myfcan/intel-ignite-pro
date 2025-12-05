@@ -8,16 +8,20 @@ import { CardEffectProps } from './index';
 /**
  * CardEffectPromptBuilder - Construtor de prompts passo a passo
  *
- * 5 Cenas progressivas (~10s total):
- * 1. Título e template vazio (0-2s)
- * 2. Passo 1: [SEU PRODUTO] (2-4s)
- * 3. Passo 2: [SEU PÚBLICO] (4-6s)
- * 4. Passo 3: história pessoal (6-8s)
- * 5. "Prompt pronto para usar!" (8-10s)
+ * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 1. Título e template vazio
+ * 2. Passo 1: [SEU PRODUTO]
+ * 3. Passo 2: [SEU PÚBLICO]
+ * 4. Passo 3: história pessoal
+ * 5. "Prompt pronto para usar!"
+ *
+ * Roda 2x automaticamente
  */
 export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = false }) => {
   const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const loopCountRef = useRef(0);
+  const maxLoops = 2;
 
   const steps = [
     { label: 'Produto', value: '[SEU PRODUTO]', color: 'cyan' },
@@ -25,31 +29,45 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
     { label: 'Tom', value: 'história pessoal', color: 'pink' },
   ];
 
-  const startAnimation = () => {
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+  };
 
+  const startAnimation = () => {
+    clearTimers();
     setScene(1); // Template vazio
-    timersRef.current.push(setTimeout(() => setScene(2), 2000)); // Passo 1
-    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Passo 2
-    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // Passo 3
-    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Pronto
+    timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Passo 1
+    timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Passo 2
+    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Passo 3
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Pronto
+
+    // Loop logic
+    timersRef.current.push(setTimeout(() => {
+      loopCountRef.current += 1;
+      if (loopCountRef.current < maxLoops) {
+        setScene(0);
+        setTimeout(() => startAnimation(), 500);
+      }
+    }, 15000));
   };
 
   useEffect(() => {
     if (isActive) {
+      loopCountRef.current = 0;
       startAnimation();
     } else {
-      timersRef.current.forEach(clearTimeout);
+      clearTimers();
       setScene(0);
+      loopCountRef.current = 0;
     }
-    return () => timersRef.current.forEach(clearTimeout);
+    return () => clearTimers();
   }, [isActive]);
 
   const visibleSteps = scene === 2 ? 1 : scene === 3 ? 2 : scene >= 4 ? 3 : 0;
 
   return (
-    <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30">
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -58,7 +76,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
         }} />
       </div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8">
 
         {/* ========== CENA 1: Title ========== */}
         <AnimatePresence>
@@ -67,6 +85,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
               className="text-center mb-4"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
             >
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Terminal className="w-5 h-5 text-cyan-400" />
@@ -84,7 +103,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
               className="w-full max-w-md p-4 bg-slate-800/50 border border-slate-700 rounded-lg font-mono text-sm"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
             >
               <p className="text-white/70">
                 <span className="text-slate-500">Crie um texto sobre </span>
@@ -94,6 +113,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
                       className="text-cyan-400 font-bold"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
                     >
                       {steps[0].value}
                     </motion.span>
@@ -108,6 +128,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
                       className="text-purple-400 font-bold"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
                     >
                       {steps[1].value}
                     </motion.span>
@@ -122,6 +143,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
                       className="text-pink-400 font-bold"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
                     >
                       {steps[2].value}
                     </motion.span>
@@ -151,7 +173,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
                 }`}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: scene >= 1 ? 1 : 0, scale: 1 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.15, duration: 0.5 }}
               >
                 {isVisible ? (
                   <CheckCircle className={`w-4 h-4 ${colors.icon}`} />
@@ -173,14 +195,14 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
               className="mt-6"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ type: 'spring', stiffness: 150 }}
             >
               <motion.div
                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-full border border-emerald-500/40"
                 animate={{
                   boxShadow: ['0 0 15px rgba(16, 185, 129, 0.2)', '0 0 30px rgba(16, 185, 129, 0.4)', '0 0 15px rgba(16, 185, 129, 0.2)']
                 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
                 <Sparkles className="w-5 h-5 text-emerald-400" />
                 <span className="text-sm font-bold text-emerald-300">Prompt pronto para usar!</span>
@@ -196,22 +218,23 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: scene > 0 ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
       >
         <Code2 className="w-3.5 h-3.5 text-cyan-400" />
         <span className="text-[10px] text-cyan-300 font-medium">Fórmula</span>
       </motion.div>
 
       {/* Progress indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
         {[1, 2, 3, 4, 5].map((s) => (
           <motion.div
             key={s}
-            className="w-2 h-2 rounded-full"
+            className="w-2.5 h-2.5 rounded-full"
             animate={{
               backgroundColor: scene >= s ? '#06b6d4' : 'rgba(255,255,255,0.2)',
               scale: scene === s ? 1.3 : 1
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4 }}
           />
         ))}
       </div>

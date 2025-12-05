@@ -8,54 +8,73 @@ import { CardEffectProps } from './index';
 /**
  * CardEffectGenericDetector - Identifica texto genérico vs específico
  *
- * 5 Cenas progressivas (~10s total):
- * 1. Ícone de scanner aparecendo (0-2s)
- * 2. Texto genérico sendo escaneado (2-4s)
- * 3. Problemas detectados: Genérico, Sem emoção (4-6s)
- * 4. X vermelho sobre o texto (6-8s)
- * 5. Veredito: "Poderia ser qualquer pessoa vendendo qualquer coisa" (8-10s)
+ * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 1. Ícone de scanner aparecendo
+ * 2. Texto genérico sendo escaneado
+ * 3. Problemas detectados: Genérico, Sem emoção
+ * 4. X vermelho sobre o texto
+ * 5. Veredito: "Poderia ser qualquer pessoa vendendo qualquer coisa"
+ *
+ * Roda 2x automaticamente
  */
 export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive = false }) => {
   const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [scanLine, setScanLine] = useState(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const loopCountRef = useRef(0);
+  const maxLoops = 2;
 
   const genericText = "Vendo produtos de qualidade. Ótimo preço. Interessados chamar privado.";
   const problems = ["Genérico", "Sem emoção", "Impessoal"];
 
-  const startAnimation = () => {
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-    setScanLine(0);
+  };
 
+  const startAnimation = () => {
+    clearTimers();
+    setScanLine(0);
     setScene(1); // Scanner aparece
 
     // Animate scan line during scene 2
     timersRef.current.push(setTimeout(() => {
       setScene(2);
-      for (let i = 0; i <= 100; i += 5) {
-        timersRef.current.push(setTimeout(() => setScanLine(i), i * 15));
+      for (let i = 0; i <= 100; i += 3) {
+        timersRef.current.push(setTimeout(() => setScanLine(i), i * 25));
       }
-    }, 2000));
+    }, 3000));
 
-    timersRef.current.push(setTimeout(() => setScene(3), 4000)); // Problemas detectados
-    timersRef.current.push(setTimeout(() => setScene(4), 6000)); // X vermelho
-    timersRef.current.push(setTimeout(() => setScene(5), 8000)); // Veredito
+    timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Problemas detectados
+    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // X vermelho
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Veredito
+
+    // Loop logic
+    timersRef.current.push(setTimeout(() => {
+      loopCountRef.current += 1;
+      if (loopCountRef.current < maxLoops) {
+        setScene(0);
+        setScanLine(0);
+        setTimeout(() => startAnimation(), 500);
+      }
+    }, 15000));
   };
 
   useEffect(() => {
     if (isActive) {
+      loopCountRef.current = 0;
       startAnimation();
     } else {
-      timersRef.current.forEach(clearTimeout);
+      clearTimers();
       setScene(0);
       setScanLine(0);
+      loopCountRef.current = 0;
     }
-    return () => timersRef.current.forEach(clearTimeout);
+    return () => clearTimers();
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[400px] h-[50vh] max-h-[500px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-red-950/30">
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-red-950/30">
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -69,26 +88,26 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full"
         style={{ background: 'radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%)' }}
         animate={scene >= 3 ? { scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] } : { opacity: 0 }}
-        transition={{ duration: 2, repeat: Infinity }}
+        transition={{ duration: 3, repeat: Infinity }}
       />
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8">
 
         {/* ========== CENA 1: Scanner Icon ========== */}
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
-              className="mb-4"
+              className="mb-5"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ type: 'spring', stiffness: 150, duration: 0.8 }}
             >
               <motion.div
-                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-slate-600"
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-slate-600"
                 animate={scene === 2 ? { rotate: 360 } : {}}
-                transition={{ duration: 2, ease: 'linear' }}
+                transition={{ duration: 3, ease: 'linear' }}
               >
-                <Search className={`w-7 h-7 transition-colors duration-500 ${scene >= 3 ? 'text-red-400' : 'text-slate-400'}`} />
+                <Search className={`w-8 h-8 transition-colors duration-700 ${scene >= 3 ? 'text-red-400' : 'text-slate-400'}`} />
               </motion.div>
             </motion.div>
           )}
@@ -98,10 +117,10 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         <AnimatePresence>
           {scene >= 1 && (
             <motion.h3
-              className="text-lg sm:text-xl font-bold text-white mb-4 text-center"
+              className="text-lg sm:text-xl font-bold text-white mb-5 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
             >
               Análise de Texto
             </motion.h3>
@@ -112,9 +131,10 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         <AnimatePresence>
           {scene >= 2 && (
             <motion.div
-              className="relative w-full max-w-sm p-4 bg-white/5 border border-white/10 rounded-lg overflow-hidden"
+              className="relative w-full max-w-sm p-4 bg-white/5 border border-white/10 rounded-xl overflow-hidden"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
             >
               <p className="text-sm text-white/70 font-mono leading-relaxed">
                 {genericText}
@@ -135,11 +155,12 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
                     className="absolute inset-0 bg-red-500/20 flex items-center justify-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
                   >
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: 'spring', stiffness: 200 }}
+                      transition={{ type: 'spring', stiffness: 150 }}
                     >
                       <XCircle className="w-16 h-16 text-red-500" />
                     </motion.div>
@@ -154,9 +175,10 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         <AnimatePresence>
           {scene >= 3 && scene < 5 && (
             <motion.div
-              className="mt-4 flex flex-wrap justify-center gap-2"
+              className="mt-5 flex flex-wrap justify-center gap-2"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
             >
               {problems.map((problem, i) => (
                 <motion.div
@@ -164,7 +186,7 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-full"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.15 }}
+                  transition={{ delay: i * 0.2, duration: 0.4 }}
                 >
                   <AlertCircle className="w-3.5 h-3.5 text-red-400" />
                   <span className="text-xs text-red-300 font-medium">{problem}</span>
@@ -178,10 +200,10 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         <AnimatePresence>
           {scene >= 5 && (
             <motion.div
-              className="mt-5 max-w-sm text-center"
+              className="mt-6 max-w-sm text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.8 }}
             >
               <motion.div
                 className="flex items-center justify-center gap-2 mb-3"
@@ -195,7 +217,7 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
                 className="text-sm text-red-200/80 leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.5 }}
               >
                 Por que não funciona? Poderia ser <span className="font-bold text-white">qualquer pessoa</span> vendendo <span className="font-bold text-white">qualquer coisa</span>.
               </motion.p>
@@ -209,22 +231,23 @@ export const CardEffectGenericDetector: React.FC<CardEffectProps> = ({ isActive 
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: scene > 0 ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
       >
         <Eye className="w-3.5 h-3.5 text-red-400" />
         <span className="text-[10px] text-red-300 font-medium">Análise</span>
       </motion.div>
 
       {/* Progress indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
         {[1, 2, 3, 4, 5].map((s) => (
           <motion.div
             key={s}
-            className="w-2 h-2 rounded-full"
+            className="w-2.5 h-2.5 rounded-full"
             animate={{
               backgroundColor: scene >= s ? '#ef4444' : 'rgba(255,255,255,0.2)',
               scale: scene === s ? 1.3 : 1
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4 }}
           />
         ))}
       </div>
