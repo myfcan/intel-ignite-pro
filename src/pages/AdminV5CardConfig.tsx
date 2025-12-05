@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Wand2, Eye, Download, Book, Brain, Sparkles, Zap, Star, Rocket, Target, Lightbulb, Trophy, Heart, Crown, Flame, Send, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DynamicExperienceCard } from '@/components/lessons/DynamicExperienceCard';
 import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_DESCRIPTIONS, CARD_EFFECTS_BY_LESSON, isValidCardEffectType, CardEffectType } from '@/components/lessons/card-effects';
@@ -358,6 +358,10 @@ export default function AdminV5CardConfig() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewCards, setPreviewCards] = useState<ExperienceCard[]>([]);
 
+  // Estado para cards detectados do JSON
+  const [detectedCards, setDetectedCards] = useState<ExperienceCard[]>([]);
+  const [sendingToPipeline, setSendingToPipeline] = useState(false);
+
   const handleAnalyzeJson = () => {
     try {
       let parsed = JSON.parse(lessonJson);
@@ -379,18 +383,30 @@ export default function AdminV5CardConfig() {
         throw new Error('JSON precisa ter "sections" ou "content.sections" como array');
       }
 
+      // 🔍 NOVO: Detectar experienceCards do JSON
+      const jsonCards = parsed.experienceCards || [];
+      
       setParsedLesson(parsed);
       setSections(sections);
+      setDetectedCards(jsonCards);
+      
+      // Se tem cards no JSON, preencher experienceCards automaticamente
+      if (jsonCards.length > 0) {
+        setExperienceCards(jsonCards);
+      }
       
       toast({
         title: "✅ JSON analisado!",
-        description: `Detectadas ${sections.length} seções na lição "${parsed.title}"`,
+        description: jsonCards.length > 0
+          ? `${sections.length} seções + ${jsonCards.length} experience cards detectados!`
+          : `${sections.length} seções detectadas. Nenhum experienceCard no JSON.`,
       });
       
       console.log('📊 [V5-CONFIG] JSON analisado:', {
         title: parsed.title,
         sectionsCount: sections.length,
         model: parsed.model,
+        experienceCardsCount: jsonCards.length,
       });
       
     } catch (error: any) {
@@ -400,6 +416,127 @@ export default function AdminV5CardConfig() {
         description: error.message || "JSON inválido. Verifique a sintaxe.",
         variant: "destructive",
       });
+    }
+  };
+
+  // 🚀 NOVO: Enviar direto para pipeline (sem passar pela aba manual)
+  const handleSendToPipeline = async () => {
+    if (!parsedLesson) {
+      toast({
+        title: "JSON não analisado",
+        description: "Cole o JSON e clique em 'Analisar JSON' primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (detectedCards.length === 0) {
+      toast({
+        title: "Nenhum card no JSON",
+        description: "O JSON não contém experienceCards. Use a aba 'Configurar Cards' para adicionar manualmente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingToPipeline(true);
+
+    try {
+      // Buscar próximo order_index
+      const { data: existingLessons } = await supabase
+        .from('lessons')
+        .select('order_index')
+        .eq('trail_id', parsedLesson.trackId)
+        .order('order_index', { ascending: false })
+        .limit(1);
+
+      const nextOrderIndex = existingLessons && existingLessons.length > 0
+        ? existingLessons[0].order_index + 1
+        : parsedLesson.orderIndex || 1;
+
+      // Normalizar seções
+      const rawSections = parsedLesson.sections || parsedLesson.content?.sections || [];
+      const normalizedSections = rawSections.map((section: any, index: number) => ({
+        id: section.id || `section-${index + 1}`,
+        visualContent: section.visualContent || section.markdown || section.content || '',
+        ...(section.title && { title: section.title }),
+        ...(section.speechBubbleText || section.speechBubble
+          ? { speechBubbleText: section.speechBubbleText || section.speechBubble }
+          : {}),
+        ...(section.showPlaygroundCall !== undefined && { showPlaygroundCall: section.showPlaygroundCall }),
+        ...(section.playgroundConfig && { playgroundConfig: section.playgroundConfig })
+      }));
+
+      // Formatar cards para o pipeline
+      const formattedCards = detectedCards.map((card) => ({
+        type: card.cardType,
+        sectionIndex: card.sectionIndex,
+        anchorText: card.anchorText,
+        props: {
+          title: card.title,
+          subtitle: card.subtitle,
+          icon: card.icon || 'sparkles',
+          colorScheme: card.colorScheme || 'purple',
+          chapters: card.chapters || [],
+          effectDescription: card.effectDescription,
+        }
+      }));
+
+      const pipelineInput = {
+        title: parsedLesson.title,
+        trackId: parsedLesson.trackId,
+        trackName: parsedLesson.trackName || "Trilha Desconhecida",
+        orderIndex: nextOrderIndex,
+        model: 'v5',
+        estimatedTime: parsedLesson.estimatedTimeMinutes || 5,
+        sections: normalizedSections,
+        exercises: parsedLesson.exercises || [],
+        experienceCards: formattedCards,
+      };
+
+      const { data, error } = await supabase
+        .from('pipeline_executions')
+        .insert({
+          lesson_title: parsedLesson.title,
+          model: 'v5',
+          track_id: parsedLesson.trackId,
+          track_name: parsedLesson.trackName || "Trilha Desconhecida",
+          order_index: nextOrderIndex,
+          status: 'pending',
+          input_data: pipelineInput,
+          current_step: 1,
+          total_steps: 8
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "🚀 Enviado para Pipeline!",
+        description: `"${parsedLesson.title}" com ${detectedCards.length} cards. Redirecionando...`,
+      });
+
+      // Limpar estado
+      localStorage.removeItem('v5-card-config-autosave');
+      setLessonJson('');
+      setParsedLesson(null);
+      setSections([]);
+      setExperienceCards([]);
+      setDetectedCards([]);
+
+      // Redirecionar para monitor
+      setTimeout(() => navigate('/admin/pipeline/monitor'), 1500);
+
+    } catch (error: any) {
+      console.error('❌ [V5-CONFIG] Erro ao enviar:', error);
+      toast({
+        title: "Erro ao enviar",
+        description: error.message || "Não foi possível enviar para o pipeline.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingToPipeline(false);
     }
   };
 
@@ -795,16 +932,16 @@ export default function AdminV5CardConfig() {
               <TabsContent value="paste" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>📋 Cole o JSON da Lição</CardTitle>
+                    <CardTitle>📋 Cole o JSON da Lição V5</CardTitle>
                     <CardDescription>
-                      JSON completo da lição V5 (gerado pelo pipeline)
+                      JSON completo com seções e experienceCards (incluindo anchorText)
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Textarea
                       value={lessonJson}
                       onChange={(e) => setLessonJson(e.target.value)}
-                      placeholder='{"title": "...", "trackId": "...", "sections": [...]}'
+                      placeholder='{"title": "...", "trackId": "...", "sections": [...], "experienceCards": [...]}'
                       className="font-mono text-xs min-h-[300px]"
                     />
                     
@@ -818,12 +955,66 @@ export default function AdminV5CardConfig() {
                       Analisar JSON
                     </Button>
 
+                    {/* 📊 Resumo do JSON Analisado */}
                     {parsedLesson && (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="font-semibold text-green-900">{parsedLesson.title}</p>
-                        <p className="text-sm text-green-700">
-                          {sections.length} seções detectadas
-                        </p>
+                      <div className="space-y-4">
+                        {/* Info da Lição */}
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <span className="font-semibold text-green-900">{parsedLesson.title}</span>
+                          </div>
+                          <div className="flex gap-4 text-sm text-green-700">
+                            <span>📑 {sections.length} seções</span>
+                            <span>🎬 {detectedCards.length} cards detectados</span>
+                          </div>
+                        </div>
+
+                        {/* Lista de Cards Detectados */}
+                        {detectedCards.length > 0 && (
+                          <div className="border rounded-lg overflow-hidden">
+                            <div className="bg-purple-50 px-4 py-2 border-b">
+                              <h4 className="font-medium text-purple-900 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4" />
+                                Experience Cards no JSON ({detectedCards.length})
+                              </h4>
+                            </div>
+                            <div className="max-h-[200px] overflow-y-auto divide-y">
+                              {detectedCards.map((card, idx) => (
+                                <div key={idx} className="px-4 py-2 flex items-center gap-2 text-sm">
+                                  <Badge variant="outline" className="shrink-0">S{card.sectionIndex}</Badge>
+                                  <Badge className="shrink-0">{card.cardType}</Badge>
+                                  <span className="text-muted-foreground truncate">"{card.anchorText}"</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Aviso se não tem cards */}
+                        {detectedCards.length === 0 && (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm text-amber-800">
+                              ⚠️ <strong>Nenhum experienceCard no JSON.</strong> Use a aba "Configurar Cards" para adicionar manualmente.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 🚀 Botão Enviar para Pipeline */}
+                        {detectedCards.length > 0 && (
+                          <Button
+                            onClick={handleSendToPipeline}
+                            disabled={sendingToPipeline}
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                            size="lg"
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            {sendingToPipeline
+                              ? 'Enviando...'
+                              : `Enviar para Pipeline (${detectedCards.length} cards)`
+                            }
+                          </Button>
+                        )}
                       </div>
                     )}
                   </CardContent>
