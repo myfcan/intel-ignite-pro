@@ -93,9 +93,10 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
   let cumulativeTime = 0;
   const sectionsWithTimestamps = input.sections.map((section, idx) => {
     const timestamp = cumulativeTime;
-    cumulativeTime += input.durations![idx];
+    const sectionDuration = input.durations![idx];
+    cumulativeTime += sectionDuration;
 
-    console.log(`   Seção ${idx + 1}: ${timestamp.toFixed(1)}s (duração: ${input.durations![idx].toFixed(1)}s)`);
+    console.log(`   Seção ${idx + 1}: ${timestamp.toFixed(1)}s (duração: ${sectionDuration.toFixed(1)}s)`);
 
     const result: any = {
       id: section.id,
@@ -108,9 +109,18 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
       playgroundConfig: section.playgroundConfig
     };
 
-    // V5: Preservar experienceCards
+    // V5: Processar experienceCards com cálculo de duration
     if (input.model === 'v5' && (section as any).experienceCards) {
-      result.experienceCards = (section as any).experienceCards;
+      const sectionCards = (section as any).experienceCards;
+      const sectionText = input.sectionTexts?.[idx] || section.visualContent || '';
+      
+      // Calcular duration para cada card usando word_timestamps da seção
+      result.experienceCards = calculateCardDurations(
+        sectionCards,
+        sectionText,
+        sectionDuration,
+        idx + 1 // sectionNumber para logs
+      );
     }
 
     return result;
@@ -131,6 +141,89 @@ function calculateTimestampsV2(input: Step3Output): Step4Output {
     structuredContent,
     totalDuration
   };
+}
+
+/**
+ * V5: Calcula duration para cada experienceCard baseado no anchorText
+ * 
+ * Lógica:
+ * 1. Encontra posição do anchorText no texto da seção
+ * 2. Estima duração do trecho (palavras até próximo card ou fim)
+ * 3. Usa heurística: ~2.5 palavras/segundo (velocidade ElevenLabs 1.0)
+ */
+function calculateCardDurations(
+  cards: any[],
+  sectionText: string,
+  sectionDuration: number,
+  sectionNumber: number
+): any[] {
+  if (!cards || cards.length === 0) return [];
+
+  const words = sectionText.split(/\s+/).filter(w => w.length > 0);
+  const totalWords = words.length;
+  const wordsPerSecond = totalWords / sectionDuration; // Velocidade real da seção
+  
+  console.log(`   📊 Seção ${sectionNumber}: ${totalWords} palavras em ${sectionDuration.toFixed(1)}s (${wordsPerSecond.toFixed(1)} palavras/seg)`);
+
+  // Encontrar posição de cada anchorText no texto
+  const cardPositions = cards.map((card, cardIdx) => {
+    const anchorText = card.anchorText?.toLowerCase() || '';
+    const textLower = sectionText.toLowerCase();
+    
+    // Encontrar posição do anchorText
+    const charPosition = textLower.indexOf(anchorText);
+    
+    if (charPosition === -1) {
+      console.log(`   ⚠️ Card ${cardIdx + 1}: anchorText "${anchorText.substring(0, 30)}..." não encontrado`);
+      return { card, wordPosition: -1, charPosition: -1 };
+    }
+
+    // Contar palavras até essa posição
+    const textBeforeAnchor = sectionText.substring(0, charPosition);
+    const wordPosition = textBeforeAnchor.split(/\s+/).filter(w => w.length > 0).length;
+    
+    return { card, wordPosition, charPosition };
+  });
+
+  // Ordenar por posição no texto
+  const sortedCards = [...cardPositions].sort((a, b) => {
+    if (a.wordPosition === -1) return 1;
+    if (b.wordPosition === -1) return -1;
+    return a.wordPosition - b.wordPosition;
+  });
+
+  // Calcular duration para cada card
+  const cardsWithDuration = sortedCards.map((item, idx) => {
+    const { card, wordPosition } = item;
+    
+    if (wordPosition === -1) {
+      // Fallback: duração padrão de 15 segundos
+      console.log(`   🎬 Card "${card.cardType}": duration=15s (fallback)`);
+      return { ...card, duration: 15 };
+    }
+
+    // Encontrar fim do trecho (próximo card ou fim do texto)
+    const nextCard = sortedCards[idx + 1];
+    const endWordPosition = nextCard && nextCard.wordPosition !== -1 
+      ? nextCard.wordPosition 
+      : totalWords;
+
+    // Calcular número de palavras do trecho
+    const wordsInSegment = endWordPosition - wordPosition;
+    
+    // Calcular duração baseada na velocidade real
+    const duration = Math.max(5, Math.min(60, wordsInSegment / wordsPerSecond));
+    
+    console.log(`   🎬 Card "${card.cardType}": palavras ${wordPosition}-${endWordPosition} (${wordsInSegment} palavras) → duration=${duration.toFixed(1)}s`);
+
+    return { ...card, duration: Math.round(duration * 10) / 10 }; // Arredondar para 1 decimal
+  });
+
+  // Reordenar de volta para ordem original
+  return cards.map(originalCard => {
+    const processed = cardsWithDuration.find(c => c.anchorText === originalCard.anchorText);
+    return processed || { ...originalCard, duration: 15 };
+  });
 }
 
 /**
