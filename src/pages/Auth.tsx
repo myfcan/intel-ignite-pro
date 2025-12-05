@@ -14,6 +14,7 @@ const Auth = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
 
   // Login state
@@ -32,11 +33,27 @@ const Auth = () => {
     }
 
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/dashboard');
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('[Auth] Session check error:', error.message);
+          // Clear potentially corrupted session
+          await supabase.auth.signOut();
+        } else if (session) {
+          // Valid session exists, redirect to dashboard
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('[Auth] Unexpected error:', err);
+      } finally {
+        setCheckingSession(false);
       }
-    });
+    };
+
+    checkSession();
   }, [navigate, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -150,6 +167,15 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session to prevent flash
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-primary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 gradient-primary">
