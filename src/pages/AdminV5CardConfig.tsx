@@ -383,8 +383,17 @@ export default function AdminV5CardConfig() {
         throw new Error('JSON precisa ter "sections" ou "content.sections" como array');
       }
 
-      // 🔍 NOVO: Detectar experienceCards do JSON
-      const jsonCards = parsed.experienceCards || [];
+      // 🔍 NOVO: Detectar experienceCards do JSON (suporta ambos formatos)
+      const rawCards = parsed.experienceCards || [];
+      
+      // Normalizar cards para ter sempre 'type' e outros campos consistentes
+      const jsonCards = rawCards.map((card: any) => ({
+        ...card,
+        type: card.type || card.cardType, // Garantir que 'type' exista
+        cardType: card.cardType || card.type, // Manter cardType para UI
+        title: card.title || card.props?.title || '',
+        subtitle: card.subtitle || card.props?.subtitle || '',
+      }));
       
       setParsedLesson(parsed);
       setSections(sections);
@@ -468,17 +477,18 @@ export default function AdminV5CardConfig() {
       }));
 
       // Formatar cards para o pipeline
-      const formattedCards = detectedCards.map((card) => ({
-        type: card.cardType,
+      // CRÍTICO: Garantir que cada card tenha 'type' (não 'cardType')
+      const formattedCards = detectedCards.map((card: any) => ({
+        type: card.type || card.cardType, // Suporta ambos os formatos
         sectionIndex: card.sectionIndex,
         anchorText: card.anchorText,
         props: {
-          title: card.title,
-          subtitle: card.subtitle,
-          icon: card.icon || 'sparkles',
-          colorScheme: card.colorScheme || 'purple',
-          chapters: card.chapters || [],
-          effectDescription: card.effectDescription,
+          title: card.title || card.props?.title || '',
+          subtitle: card.subtitle || card.props?.subtitle || '',
+          icon: card.icon || card.props?.icon || 'sparkles',
+          colorScheme: card.colorScheme || card.props?.colorScheme || 'purple',
+          chapters: card.chapters || card.props?.chapters || [],
+          effectDescription: card.effectDescription || card.props?.effectDescription,
         }
       }));
 
