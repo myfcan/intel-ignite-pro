@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -165,6 +165,31 @@ export default function Admin() {
                 onClick={() => navigate('/admin/playground-sessions')}
               >
                 Ver Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Timer className="w-6 h-6 text-amber-600" />
+                Teste Sincronização
+              </CardTitle>
+              <CardDescription>
+                Validação de timing dos Card Effects
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>⏱️ Timer visual com segundos</p>
+                <p>🎬 Cards rodando sincronizados</p>
+                <p>📝 Texto + anchorText destacado</p>
+              </div>
+              <Button
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                onClick={() => navigate('/admin/test-card-sync')}
+              >
+                Testar Sincronização
               </Button>
             </CardContent>
           </Card>
