@@ -1576,15 +1576,12 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         onScoreUpdate={(scores) => setExerciseScores(scores)}
         exerciseMetadata={exerciseMetadata}
         onBack={() => {
-          console.log('⬅️ [EXERCISES] Voltando para aula');
-          
-          const targetSection = jumpedToExercises 
-            ? 0
-            : Math.max(0, lessonData.sections.filter(s => !s.type || s.type === 'text').length - 1);
-          
-          resetLessonToBeginning(targetSection);
-          setJumpedToExercises(false);
-          setCurrentPhase('audio');
+          console.log('⬅️ [EXERCISES] Voltando para trilha');
+          if (trailId) {
+            navigate(`/trail/${trailId}`);
+          } else {
+            navigate('/dashboard');
+          }
         }}
       />
     );

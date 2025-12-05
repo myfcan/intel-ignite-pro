@@ -120,7 +120,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
       <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Voltar para a aula?</AlertDialogTitle>
+            <AlertDialogTitle>Voltar para a trilha?</AlertDialogTitle>
             <AlertDialogDescription>
               Você já completou {scores.length} de {exercises.length} exercícios. 
               Seu progresso não será salvo se voltar agora.
@@ -128,7 +128,7 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continuar exercícios</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmBack}>Voltar para aula</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmBack}>Voltar para trilha</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
