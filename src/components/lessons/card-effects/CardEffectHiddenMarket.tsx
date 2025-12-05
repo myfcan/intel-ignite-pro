@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, DollarSign, Users, Store, Coffee, GraduationCap, Building } from 'lucide-react';
 import { CardEffectProps } from './index';
 
-export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = false }) => {
+const BASE_DURATION = 10; // Duração base em segundos
+
+export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
   const [scene, setScene] = useState<0 | 1 | 2 | 3>(0);
   const [revealedOpportunities, setRevealedOpportunities] = useState<number[]>([]);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
-  const loopCountRef = useRef(0);
-  const maxLoops = 2;
 
   const opportunities = [
     { icon: Store, label: 'Padaria', need: 'Posts para redes' },
@@ -19,6 +19,12 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
     { icon: Coffee, label: 'Café', need: 'Cardápio semanal' },
     { icon: Users, label: 'Família', need: 'Planejamento' },
   ];
+
+  // Fator de escala baseado na duration
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -30,36 +36,27 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
     setRevealedOpportunities([]);
     setScene(1);
     
-    timersRef.current.push(setTimeout(() => setScene(2), 2000));
-    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0]), 2500));
-    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1]), 3200));
-    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2]), 3900));
-    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2, 3]), 4600));
-    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2, 3, 4]), 5300));
-    timersRef.current.push(setTimeout(() => setScene(3), 7000));
-
-    timersRef.current.push(setTimeout(() => {
-      loopCountRef.current += 1;
-      if (loopCountRef.current < maxLoops) {
-        setScene(0);
-        setRevealedOpportunities([]);
-        setTimeout(() => startAnimation(), 500);
-      }
-    }, 10000));
+    // Tempos escalados proporcionalmente
+    timersRef.current.push(setTimeout(() => setScene(2), 2000 * scale));
+    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0]), 2500 * scale));
+    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1]), 3200 * scale));
+    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2]), 3900 * scale));
+    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2, 3]), 4600 * scale));
+    timersRef.current.push(setTimeout(() => setRevealedOpportunities([0, 1, 2, 3, 4]), 5300 * scale));
+    timersRef.current.push(setTimeout(() => setScene(3), 7000 * scale));
+    // Sem loop - animação única
   };
 
   useEffect(() => {
     if (isActive) {
-      loopCountRef.current = 0;
       startAnimation();
     } else {
       clearTimers();
       setScene(0);
       setRevealedOpportunities([]);
-      loopCountRef.current = 0;
     }
     return () => clearTimers();
-  }, [isActive]);
+  }, [isActive, scale]);
 
   return (
     <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-amber-950 via-orange-950 to-rose-950">
@@ -76,7 +73,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
         style={{ background: 'radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, transparent 70%)' }}
         animate={scene > 0 ? { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] } : { opacity: 0 }}
-        transition={{ duration: 4, repeat: Infinity }}
+        transition={{ duration: 4 * scale, repeat: 0 }}
       />
 
       <div className="relative z-10 h-full flex flex-col items-center justify-start px-6 pt-8 pb-16">
@@ -86,6 +83,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 * scale }}
               className="text-center mb-6"
             >
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">Mercado Oculto</h3>
@@ -101,13 +99,14 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
               className="mb-6"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 150 }}
+              transition={{ type: 'spring', stiffness: 150 / scale }}
             >
               <motion.div
                 className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-orange-500/30 to-amber-500/30 border-2 border-orange-400/50 flex items-center justify-center"
                 animate={{ 
                   boxShadow: scene >= 2 ? '0 0 30px rgba(251, 146, 60, 0.5)' : '0 0 10px rgba(251, 146, 60, 0.2)'
                 }}
+                transition={{ duration: 0.5 * scale }}
               >
                 <AnimatePresence mode="wait">
                   {scene === 1 ? (
@@ -143,10 +142,10 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
                     className="flex flex-col items-center"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.1 * scale, duration: 0.4 * scale }}
                   >
                     <motion.div
-                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-500 ${
+                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all ${
                         isRevealed 
                           ? 'bg-orange-500/30 border border-orange-400/50' 
                           : 'bg-white/5 border border-white/10'
@@ -154,6 +153,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
                       animate={{
                         boxShadow: isRevealed ? '0 0 15px rgba(251, 146, 60, 0.4)' : 'none'
                       }}
+                      transition={{ duration: 0.5 * scale }}
                     >
                       <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isRevealed ? 'text-orange-300' : 'text-white/30'}`} />
                     </motion.div>
@@ -164,6 +164,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
                       <motion.span
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 * scale }}
                         className="text-[8px] text-green-400 mt-0.5"
                       >
                         {opp.need}
@@ -182,6 +183,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 * scale }}
               className="mt-6"
             >
               <motion.div
@@ -189,7 +191,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
                 animate={{
                   boxShadow: ['0 0 15px rgba(34,197,94,0.2)', '0 0 30px rgba(34,197,94,0.4)', '0 0 15px rgba(34,197,94,0.2)']
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 2 * scale, repeat: 0 }}
               >
                 <DollarSign className="w-5 h-5 text-green-400" />
                 <span className="text-white font-semibold text-sm">5 oportunidades reveladas!</span>
@@ -208,7 +210,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
                 backgroundColor: scene >= s ? '#f97316' : 'rgba(255,255,255,0.2)',
                 scale: scene === s ? 1.3 : 1
               }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.4 * scale }}
             />
           ))}
         </div>
@@ -219,7 +221,7 @@ export const CardEffectHiddenMarket: React.FC<CardEffectProps> = ({ isActive = f
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-full"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: scene > 0 ? 1 : 0, x: scene > 0 ? 0 : 20 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6 * scale }}
       >
         <Eye className="w-3.5 h-3.5 text-orange-400" />
         <span className="text-[10px] text-orange-300 font-medium">Visão</span>
