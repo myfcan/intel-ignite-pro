@@ -154,7 +154,13 @@ export type CardEffectType =
   | 'hidden-market' | 'need-detector' | 'bridge-builder' | 'level-system'
   | 'value-calculator' | 'reference-builder' | 'case-viewer' | 'profit-calculator'
   | 'opportunity-identifier' | 'problem-solver' | 'template-gallery' | 'playground-creator'
-  | 'timeline-tracker' | 'growth-visualizer' | 'success-roadmap';
+  | 'timeline-tracker' | 'growth-visualizer' | 'success-roadmap'
+  // AULA 4
+  | 'bakery-transformation' | 'teenage-designer' | 'first-mover-advantage'
+  | 'three-persona-types' | 'fear-vs-action' | 'silent-doer'
+  | 'real-world-uses' | 'resume-builder' | 'spreadsheet-master' | 'script-writer'
+  | 'your-reality' | 'help-network' | 'small-experiment'
+  | 'history-parallel' | 'balanced-approach' | 'practice-preview';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -205,6 +211,23 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'timeline-tracker': CardEffectTimelineTracker,
   'growth-visualizer': CardEffectGrowthVisualizer,
   'success-roadmap': CardEffectSuccessRoadmap,
+  // AULA 4
+  'bakery-transformation': CardEffectBakeryTransformation,
+  'teenage-designer': CardEffectTeenageDesigner,
+  'first-mover-advantage': CardEffectFirstMoverAdvantage,
+  'three-persona-types': CardEffectThreePersonaTypes,
+  'fear-vs-action': CardEffectFearVsAction,
+  'silent-doer': CardEffectSilentDoer,
+  'real-world-uses': CardEffectRealWorldUses,
+  'resume-builder': CardEffectResumeBuilder,
+  'spreadsheet-master': CardEffectSpreadsheetMaster,
+  'script-writer': CardEffectScriptWriter,
+  'your-reality': CardEffectYourReality,
+  'help-network': CardEffectHelpNetwork,
+  'small-experiment': CardEffectSmallExperiment,
+  'history-parallel': CardEffectHistoryParallel,
+  'balanced-approach': CardEffectBalancedApproach,
+  'practice-preview': CardEffectPracticePreview,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -232,6 +255,15 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'template-gallery': 'Galeria de Templates', 'playground-creator': 'Criador de Soluções',
   'timeline-tracker': 'Linha do Tempo', 'growth-visualizer': 'Visualizador de Crescimento',
   'success-roadmap': 'Mapa do Sucesso',
+  // AULA 4
+  'bakery-transformation': 'Transformação da Padaria', 'teenage-designer': 'Designer Adolescente',
+  'first-mover-advantage': 'Vantagem do Pioneiro', 'three-persona-types': 'Três Tipos de Pessoa',
+  'fear-vs-action': 'Medo vs Ação', 'silent-doer': 'Fazedor Silencioso',
+  'real-world-uses': 'Usos no Mundo Real', 'resume-builder': 'Construtor de Currículo',
+  'spreadsheet-master': 'Mestre das Planilhas', 'script-writer': 'Roteirista de Apoio',
+  'your-reality': 'Sua Realidade', 'help-network': 'Rede de Ajuda',
+  'small-experiment': 'Pequeno Experimento', 'history-parallel': 'Paralelo Histórico',
+  'balanced-approach': 'Abordagem Equilibrada', 'practice-preview': 'Prévia da Prática',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -259,6 +291,15 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'template-gallery': 'Galeria de modelos prontos', 'playground-creator': 'Simulação do Playground',
   'timeline-tracker': 'Timeline de 4 meses', 'growth-visualizer': 'Gráfico de crescimento',
   'success-roadmap': 'Mapa para o sucesso',
+  // AULA 4
+  'bakery-transformation': 'Padaria do Zé com cartaz de I.A.', 'teenage-designer': 'Adolescente criando design',
+  'first-mover-advantage': 'Corrida de vantagem competitiva', 'three-persona-types': 'Silhuetas dos três tipos',
+  'fear-vs-action': 'Balanço entre medo e ação', 'silent-doer': 'Pessoa testando em silêncio',
+  'real-world-uses': 'Grid de possibilidades reais', 'resume-builder': 'Currículo sendo criado por I.A.',
+  'spreadsheet-master': 'Planilhas organizadas automaticamente', 'script-writer': 'Roteiro de vídeo estruturado',
+  'your-reality': 'Espelho refletindo sua vida', 'help-network': 'Rede de pessoas ao redor',
+  'small-experiment': 'Tubo de ensaio com experimento', 'history-parallel': 'Timeline internet vs I.A.',
+  'balanced-approach': 'Escala de equilíbrio', 'practice-preview': 'Prévia das próximas práticas',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -279,12 +320,20 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'opportunity-identifier', 'problem-solver', 'template-gallery', 'playground-creator',
     'timeline-tracker', 'growth-visualizer', 'success-roadmap',
   ],
+  'aula-4': [
+    'bakery-transformation', 'teenage-designer', 'first-mover-advantage',
+    'three-persona-types', 'fear-vs-action', 'silent-doer',
+    'real-world-uses', 'resume-builder', 'spreadsheet-master', 'script-writer',
+    'your-reality', 'help-network', 'small-experiment',
+    'history-parallel', 'balanced-approach', 'practice-preview',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-1'],
   ...CARD_EFFECTS_BY_LESSON['aula-2'],
   ...CARD_EFFECTS_BY_LESSON['aula-3'],
+  ...CARD_EFFECTS_BY_LESSON['aula-4'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
