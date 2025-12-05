@@ -35,7 +35,7 @@ const AVAILABLE_LESSONS = [
   {
     id: 'aula-3',
     title: 'Aula 3 - Oportunidades Reais com I.A.',
-    description: '15 card effects cinematográficos',
+    description: '16 card effects cinematográficos',
     icon: '💰'
   },
   {
@@ -95,10 +95,11 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 4, cardIndex: 1, cardType: 'problem-solver', anchorText: 'sempre pedem ajuda', title: 'Solucionador', subtitle: 'Transforme problemas em renda' },
     { sectionIndex: 4, cardIndex: 2, cardType: 'template-gallery', anchorText: 'Exemplos para Começar', title: 'Galeria de Templates', subtitle: 'Modelos prontos para usar' },
     { sectionIndex: 4, cardIndex: 3, cardType: 'playground-creator', anchorText: 'Teste agora', title: 'Criador de Soluções', subtitle: 'Pratique no Playground' },
-    // Seção 5 - O Caminho Sustentável (3 cards)
+    // Seção 5 - O Caminho Sustentável (4 cards)
     { sectionIndex: 5, cardIndex: 1, cardType: 'timeline-tracker', anchorText: 'Semana 1-2', title: 'Linha do Tempo', subtitle: 'Seu progresso mapeado' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'growth-visualizer', anchorText: 'confiança para cobrar', title: 'Visualizador de Crescimento', subtitle: 'De zero a profissional' },
     { sectionIndex: 5, cardIndex: 3, cardType: 'success-roadmap', anchorText: 'Hoje mesmo', title: 'Mapa do Sucesso', subtitle: 'Comece agora' },
+    { sectionIndex: 5, cardIndex: 4, cardType: 'stability-map', anchorText: 'estabilidade', title: 'Mapa da Estabilidade', subtitle: 'Construa bases sólidas' },
   ],
   'aula-4': [
     // Seção 1 - O dia em que a padaria mudou de nível (3 cards)

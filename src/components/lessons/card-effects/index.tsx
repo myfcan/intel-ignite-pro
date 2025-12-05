@@ -40,6 +40,7 @@ import { CardEffectNextSteps } from './CardEffectNextSteps';
 // AULA 3 - Oportunidades Reais com I.A.
 // ============================================================
 import { CardEffectHiddenMarket } from './CardEffectHiddenMarket';
+import { CardEffectStabilityMap } from './CardEffectStabilityMap';
 import { CardEffectNeedDetector } from './CardEffectNeedDetector';
 import { CardEffectBridgeBuilder } from './CardEffectBridgeBuilder';
 import { CardEffectLevelSystem } from './CardEffectLevelSystem';
@@ -121,6 +122,7 @@ export { CardEffectPlaygroundCreator } from './CardEffectPlaygroundCreator';
 export { CardEffectTimelineTracker } from './CardEffectTimelineTracker';
 export { CardEffectGrowthVisualizer } from './CardEffectGrowthVisualizer';
 export { CardEffectSuccessRoadmap } from './CardEffectSuccessRoadmap';
+export { CardEffectStabilityMap } from './CardEffectStabilityMap';
 
 // Re-exportar componentes - AULA 4
 export { CardEffectBakeryTransformation } from './CardEffectBakeryTransformation';
@@ -154,7 +156,7 @@ export type CardEffectType =
   | 'hidden-market' | 'need-detector' | 'bridge-builder' | 'level-system'
   | 'value-calculator' | 'reference-builder' | 'case-viewer' | 'profit-calculator'
   | 'opportunity-identifier' | 'problem-solver' | 'template-gallery' | 'playground-creator'
-  | 'timeline-tracker' | 'growth-visualizer' | 'success-roadmap'
+  | 'timeline-tracker' | 'growth-visualizer' | 'success-roadmap' | 'stability-map'
   // AULA 4
   | 'bakery-transformation' | 'teenage-designer' | 'first-mover-advantage'
   | 'three-persona-types' | 'fear-vs-action' | 'silent-doer'
@@ -211,6 +213,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'timeline-tracker': CardEffectTimelineTracker,
   'growth-visualizer': CardEffectGrowthVisualizer,
   'success-roadmap': CardEffectSuccessRoadmap,
+  'stability-map': CardEffectStabilityMap,
   // AULA 4
   'bakery-transformation': CardEffectBakeryTransformation,
   'teenage-designer': CardEffectTeenageDesigner,
@@ -254,7 +257,7 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'opportunity-identifier': 'Identificador de Oportunidades', 'problem-solver': 'Solucionador',
   'template-gallery': 'Galeria de Templates', 'playground-creator': 'Criador de Soluções',
   'timeline-tracker': 'Linha do Tempo', 'growth-visualizer': 'Visualizador de Crescimento',
-  'success-roadmap': 'Mapa do Sucesso',
+  'success-roadmap': 'Mapa do Sucesso', 'stability-map': 'Mapa da Estabilidade',
   // AULA 4
   'bakery-transformation': 'Transformação da Padaria', 'teenage-designer': 'Designer Adolescente',
   'first-mover-advantage': 'Vantagem do Pioneiro', 'three-persona-types': 'Três Tipos de Pessoa',
@@ -290,7 +293,7 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'opportunity-identifier': 'Busca de oportunidades ao redor', 'problem-solver': 'Transformação problema→renda',
   'template-gallery': 'Galeria de modelos prontos', 'playground-creator': 'Simulação do Playground',
   'timeline-tracker': 'Timeline de 4 meses', 'growth-visualizer': 'Gráfico de crescimento',
-  'success-roadmap': 'Mapa para o sucesso',
+  'success-roadmap': 'Mapa para o sucesso', 'stability-map': 'Pilares da estabilidade conectados',
   // AULA 4
   'bakery-transformation': 'Padaria do Zé com cartaz de I.A.', 'teenage-designer': 'Adolescente criando design',
   'first-mover-advantage': 'Corrida de vantagem competitiva', 'three-persona-types': 'Silhuetas dos três tipos',
@@ -318,7 +321,7 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'hidden-market', 'need-detector', 'bridge-builder', 'level-system',
     'value-calculator', 'reference-builder', 'case-viewer', 'profit-calculator',
     'opportunity-identifier', 'problem-solver', 'template-gallery', 'playground-creator',
-    'timeline-tracker', 'growth-visualizer', 'success-roadmap',
+    'timeline-tracker', 'growth-visualizer', 'success-roadmap', 'stability-map',
   ],
   'aula-4': [
     'bakery-transformation', 'teenage-designer', 'first-mover-advantage',
