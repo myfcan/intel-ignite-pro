@@ -76,7 +76,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         transition={{ duration: 4, repeat: Infinity }}
       />
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8">
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-6 pt-6 pb-16">
 
         {/* ========== CENA 1: Silhueta ========== */}
         <AnimatePresence>
@@ -244,7 +244,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
       </motion.div>
 
       {/* Progress indicator */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
         {[1, 2, 3, 4, 5].map((s) => (
           <motion.div
             key={s}
