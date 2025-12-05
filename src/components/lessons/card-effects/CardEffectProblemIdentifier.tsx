@@ -82,7 +82,7 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
-              className="flex gap-4 mb-6"
+              className="flex gap-3 mb-4"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -93,17 +93,17 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.3, type: 'spring', stiffness: 150 }}
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shadow-lg">
-                  <Instagram className="w-8 h-8 text-white" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shadow-lg">
+                  <Instagram className="w-6 h-6 text-white" />
                 </div>
                 {scene >= 2 && (
                   <motion.div
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <XCircle className="w-4 h-4 text-white" />
+                    <XCircle className="w-3 h-3 text-white" />
                   </motion.div>
                 )}
               </motion.div>
@@ -114,17 +114,17 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.5, type: 'spring', stiffness: 150 }}
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center shadow-lg">
-                  <Facebook className="w-8 h-8 text-white" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center shadow-lg">
+                  <Facebook className="w-6 h-6 text-white" />
                 </div>
                 {scene >= 2 && (
                   <motion.div
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.3, duration: 0.4 }}
                   >
-                    <XCircle className="w-4 h-4 text-white" />
+                    <XCircle className="w-3 h-3 text-white" />
                   </motion.div>
                 )}
               </motion.div>
@@ -136,7 +136,7 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
         <AnimatePresence>
           {scene >= 1 && (
             <motion.h3
-              className="text-xl sm:text-2xl font-bold text-white mb-5 text-center"
+              className="text-lg sm:text-xl font-bold text-white mb-3 text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.6 }}
@@ -147,22 +147,22 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
         </AnimatePresence>
 
         {/* ========== CENAS 2-5: Problem Cards ========== */}
-        <div className="space-y-3 w-full max-w-sm">
+        <div className="space-y-2 w-full max-w-xs">
           {/* Cena 2: Não sabia o que postar */}
           <AnimatePresence>
             {scene >= 2 && (
               <motion.div
-                className="flex items-center gap-3 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl"
+                className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg"
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 100, duration: 0.8 }}
               >
-                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <HelpCircle className="w-5 h-5 text-red-400" />
+                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <HelpCircle className="w-4 h-4 text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium text-sm">Não sabia o que postar</p>
-                  <p className="text-red-300/60 text-xs">Sem ideias de conteúdo</p>
+                  <p className="text-white font-medium text-xs">Não sabia o que postar</p>
+                  <p className="text-red-300/60 text-[10px]">Sem ideias de conteúdo</p>
                 </div>
               </motion.div>
             )}
@@ -172,17 +172,17 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
           <AnimatePresence>
             {scene >= 3 && (
               <motion.div
-                className="flex items-center gap-3 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl"
+                className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg"
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 100, duration: 0.8 }}
               >
-                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <PenOff className="w-5 h-5 text-red-400" />
+                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <PenOff className="w-4 h-4 text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium text-sm">Não sabia como escrever</p>
-                  <p className="text-red-300/60 text-xs">Textos não chamavam atenção</p>
+                  <p className="text-white font-medium text-xs">Não sabia como escrever</p>
+                  <p className="text-red-300/60 text-[10px]">Textos não chamavam atenção</p>
                 </div>
               </motion.div>
             )}
@@ -192,17 +192,17 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
           <AnimatePresence>
             {scene >= 4 && (
               <motion.div
-                className="flex items-center gap-3 p-3.5 bg-orange-500/10 border border-orange-500/30 rounded-xl"
+                className="flex items-center gap-2 p-2.5 bg-orange-500/10 border border-orange-500/30 rounded-lg"
                 initial={{ x: -50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 100, duration: 0.8 }}
               >
-                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-orange-400" />
+                <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 text-orange-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium text-sm">Vendas só de vizinhos</p>
-                  <p className="text-orange-300/60 text-xs">Dependia do boca a boca</p>
+                  <p className="text-white font-medium text-xs">Vendas só de vizinhos</p>
+                  <p className="text-orange-300/60 text-[10px]">Dependia do boca a boca</p>
                 </div>
               </motion.div>
             )}
@@ -213,20 +213,20 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
         <AnimatePresence>
           {scene >= 5 && (
             <motion.div
-              className="mt-6 text-center"
+              className="mt-3 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
             >
               <motion.div
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600/30 to-rose-600/30 rounded-full border border-red-500/40"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-red-600/30 to-rose-600/30 rounded-full border border-red-500/40"
                 animate={{
                   boxShadow: ['0 0 10px rgba(239,68,68,0.2)', '0 0 25px rgba(239,68,68,0.4)', '0 0 10px rgba(239,68,68,0.2)']
                 }}
                 transition={{ duration: 2.5, repeat: Infinity }}
               >
-                <TrendingDown className="w-5 h-5 text-red-400" />
-                <span className="text-red-200 font-bold">Loja estagnada há 3 anos</span>
+                <TrendingDown className="w-4 h-4 text-red-400" />
+                <span className="text-red-200 font-bold text-sm">Loja estagnada há 3 anos</span>
               </motion.div>
             </motion.div>
           )}
