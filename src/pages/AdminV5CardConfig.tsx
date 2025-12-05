@@ -32,6 +32,12 @@ const AVAILABLE_LESSONS = [
     description: '14 card effects cinematográficos',
     icon: '👩‍💼'
   },
+  {
+    id: 'aula-3',
+    title: 'Aula 3 - Oportunidades Reais com I.A.',
+    description: '15 card effects cinematográficos',
+    icon: '💰'
+  },
 ];
 
 // 📋 Templates pré-configurados de Experience Cards por Aula
@@ -65,6 +71,28 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 4, cardIndex: 3, cardType: 'variation-multiplier', anchorText: 'dezenas de variações', title: 'Multiplicador', subtitle: '1 ideia → muitas versões' },
     { sectionIndex: 5, cardIndex: 1, cardType: 'next-steps', anchorText: 'Próximos passos', title: 'Ação!', subtitle: 'Comece agora' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'closing-message', anchorText: 'possibilidades reais', title: 'Mensagem Final', subtitle: 'Sua jornada começa' },
+  ],
+  'aula-3': [
+    // Seção 1 - O Mercado Invisível (3 cards)
+    { sectionIndex: 1, cardIndex: 1, cardType: 'hidden-market', anchorText: 'mercado gigantesco', title: 'Mercado Oculto', subtitle: 'Oportunidades invisíveis' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'need-detector', anchorText: 'milhares de pequenas necessidades', title: 'Detector de Necessidades', subtitle: 'Problemas = oportunidades' },
+    { sectionIndex: 1, cardIndex: 3, cardType: 'bridge-builder', anchorText: 'ponte', title: 'Construtor de Pontes', subtitle: 'Conecte problemas a soluções' },
+    // Seção 2 - Três Níveis de Oportunidade (3 cards)
+    { sectionIndex: 2, cardIndex: 1, cardType: 'level-system', anchorText: 'Nível 1', title: 'Sistema de Níveis', subtitle: 'Evolua passo a passo' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'value-calculator', anchorText: 'Currículos personalizados', title: 'Calculadora de Valor', subtitle: 'Quanto cobrar por serviço' },
+    { sectionIndex: 2, cardIndex: 3, cardType: 'reference-builder', anchorText: 'referência', title: 'Construtor de Autoridade', subtitle: 'Vire referência no mercado' },
+    // Seção 3 - Casos Reais e Simples (3 cards)
+    { sectionIndex: 3, cardIndex: 1, cardType: 'case-viewer', anchorText: 'João cria lojas de e-commerce do zero', title: 'Visualizador de Casos', subtitle: 'João e as lojas online' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'profit-calculator', anchorText: '100 reais por loja', title: 'Calculadora de Ganhos', subtitle: 'Projete sua renda' },
+    { sectionIndex: 3, cardIndex: 3, cardType: 'opportunity-identifier', anchorText: 'identificaram oportunidades simples ao redor', title: 'Identificador', subtitle: 'Encontre sua oportunidade' },
+    // Seção 4 - Seu Primeiro Teste (3 cards)
+    { sectionIndex: 4, cardIndex: 1, cardType: 'problem-solver', anchorText: 'sempre pedem ajuda', title: 'Solucionador', subtitle: 'Transforme problemas em renda' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'template-gallery', anchorText: 'Exemplos para Começar', title: 'Galeria de Templates', subtitle: 'Modelos prontos para usar' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'playground-creator', anchorText: 'Teste agora', title: 'Criador de Soluções', subtitle: 'Pratique no Playground' },
+    // Seção 5 - O Caminho Sustentável (3 cards)
+    { sectionIndex: 5, cardIndex: 1, cardType: 'timeline-tracker', anchorText: 'Semana 1-2', title: 'Linha do Tempo', subtitle: 'Seu progresso mapeado' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'growth-visualizer', anchorText: 'confiança para cobrar', title: 'Visualizador de Crescimento', subtitle: 'De zero a profissional' },
+    { sectionIndex: 5, cardIndex: 3, cardType: 'success-roadmap', anchorText: 'Hoje mesmo', title: 'Mapa do Sucesso', subtitle: 'Comece agora' },
   ],
 };
 
