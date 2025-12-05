@@ -1,22 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, Users, Globe, Crown, Star, ArrowUp } from 'lucide-react';
 import { CardEffectProps } from './index';
 
-export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = false }) => {
+const BASE_DURATION = 11;
+
+export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
   const [scene, setScene] = useState<0 | 1 | 2 | 3>(0);
   const [activeLevel, setActiveLevel] = useState(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
-  const loopCountRef = useRef(0);
-  const maxLoops = 2;
 
   const levels = [
     { level: 1, title: 'Círculo Próximo', icon: Users, value: 'Grátis - R$100', color: 'amber' },
     { level: 2, title: 'Serviços Online', icon: Globe, value: '~R$100/serviço', color: 'orange' },
     { level: 3, title: 'Seu Sistema', icon: Crown, value: 'R$300-500/mês', color: 'rose' },
   ];
+
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
@@ -28,33 +33,22 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
     setActiveLevel(0);
     setScene(1);
     
-    timersRef.current.push(setTimeout(() => { setScene(2); setActiveLevel(1); }, 2000));
-    timersRef.current.push(setTimeout(() => setActiveLevel(2), 4000));
-    timersRef.current.push(setTimeout(() => setActiveLevel(3), 6000));
-    timersRef.current.push(setTimeout(() => setScene(3), 8000));
-
-    timersRef.current.push(setTimeout(() => {
-      loopCountRef.current += 1;
-      if (loopCountRef.current < maxLoops) {
-        setScene(0);
-        setActiveLevel(0);
-        setTimeout(() => startAnimation(), 500);
-      }
-    }, 11000));
+    timersRef.current.push(setTimeout(() => { setScene(2); setActiveLevel(1); }, 2000 * scale));
+    timersRef.current.push(setTimeout(() => setActiveLevel(2), 4000 * scale));
+    timersRef.current.push(setTimeout(() => setActiveLevel(3), 6000 * scale));
+    timersRef.current.push(setTimeout(() => setScene(3), 8000 * scale));
   };
 
   useEffect(() => {
     if (isActive) {
-      loopCountRef.current = 0;
       startAnimation();
     } else {
       clearTimers();
       setScene(0);
       setActiveLevel(0);
-      loopCountRef.current = 0;
     }
     return () => clearTimers();
-  }, [isActive]);
+  }, [isActive, scale]);
 
   const getColor = (color: string, type: 'bg' | 'border' | 'text') => {
     const colors: Record<string, Record<string, string>> = {
@@ -67,24 +61,22 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
 
   return (
     <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-amber-950 via-orange-950 to-rose-950">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent" />
 
-      {/* Glow effect */}
       <motion.div
         className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
         style={{ background: 'radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, transparent 70%)' }}
         animate={scene > 0 ? { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] } : { opacity: 0 }}
-        transition={{ duration: 4, repeat: Infinity }}
+        transition={{ duration: 4 * scale, repeat: 0 }}
       />
 
       <div className="relative z-10 h-full flex flex-col items-center justify-start px-6 pt-8 pb-16">
-        {/* Título */}
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 * scale }}
               className="text-center mb-6"
             >
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">Sistema de Níveis</h3>
@@ -93,13 +85,13 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
           )}
         </AnimatePresence>
 
-        {/* Escada de níveis */}
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
               className="flex flex-col-reverse gap-3 w-full max-w-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 * scale }}
             >
               {levels.map((lvl, index) => {
                 const isActiveLevel = activeLevel >= lvl.level;
@@ -111,7 +103,7 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                     key={lvl.level}
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0, marginLeft: `${(3 - lvl.level) * 16}px` }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.1 * scale, duration: 0.5 * scale }}
                   >
                     <motion.div
                       className={`flex items-center gap-3 p-3 rounded-xl border ${
@@ -123,6 +115,7 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                         scale: isCurrent ? 1.02 : 1,
                         boxShadow: isCurrent ? '0 0 25px rgba(251, 146, 60, 0.3)' : 'none'
                       }}
+                      transition={{ duration: 0.4 * scale }}
                     >
                       <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
                         isActiveLevel ? getColor(lvl.color, 'bg') : 'bg-white/5'
@@ -139,6 +132,7 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                             <motion.span
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
+                              transition={{ duration: 0.3 * scale }}
                               className="text-[10px] bg-orange-500/30 text-orange-300 px-2 py-0.5 rounded"
                             >
                               ATUAL
@@ -155,7 +149,11 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                       </div>
 
                       {isActiveLevel && !isCurrent && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                        <motion.div 
+                          initial={{ scale: 0 }} 
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.3 * scale }}
+                        >
                           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                         </motion.div>
                       )}
@@ -167,12 +165,12 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
           )}
         </AnimatePresence>
 
-        {/* Conclusão */}
         <AnimatePresence>
           {scene === 3 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 * scale }}
               className="mt-6"
             >
               <motion.div
@@ -180,7 +178,7 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                 animate={{
                   boxShadow: ['0 0 15px rgba(34,197,94,0.2)', '0 0 30px rgba(34,197,94,0.4)', '0 0 15px rgba(34,197,94,0.2)']
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 2 * scale, repeat: 0 }}
               >
                 <ArrowUp className="w-5 h-5 text-green-400" />
                 <span className="text-white font-semibold text-sm">Suba de nível com consistência!</span>
@@ -189,7 +187,6 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
           )}
         </AnimatePresence>
 
-        {/* Progress indicator */}
         <div className="flex gap-2 mt-auto pt-4">
           {[1, 2, 3].map((s) => (
             <motion.div
@@ -199,18 +196,17 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
                 backgroundColor: scene >= s ? '#f97316' : 'rgba(255,255,255,0.2)',
                 scale: scene === s ? 1.3 : 1
               }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.4 * scale }}
             />
           ))}
         </div>
       </div>
 
-      {/* Badge */}
       <motion.div
         className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-full"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: scene > 0 ? 1 : 0, x: scene > 0 ? 0 : 20 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6 * scale }}
       >
         <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
         <span className="text-[10px] text-orange-300 font-medium">Evolução</span>

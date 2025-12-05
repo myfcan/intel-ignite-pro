@@ -166,6 +166,7 @@ export type CardEffectType =
 
 export interface CardEffectProps {
   isActive?: boolean;
+  duration?: number; // Duração total em segundos (para animações proporcionais)
 }
 
 const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> = {
