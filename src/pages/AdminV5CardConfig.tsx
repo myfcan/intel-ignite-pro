@@ -1025,6 +1025,70 @@ export default function AdminV5CardConfig() {
                             }
                           </Button>
                         )}
+
+                        {/* 🔧 FASE 3: Verificar Componentes React */}
+                        {detectedCards.length > 0 && (
+                          <div className="border-2 border-dashed border-orange-300 rounded-lg p-4 bg-orange-50">
+                            <h4 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
+                              <Zap className="w-5 h-5" />
+                              Fase 3: Verificar Componentes React
+                            </h4>
+                            
+                            {/* Verificar cada cardType */}
+                            <div className="space-y-2">
+                              {(() => {
+                                const uniqueTypes = [...new Set(detectedCards.map(c => c.cardType))];
+                                const existing = uniqueTypes.filter(t => isValidCardEffectType(t));
+                                const missing = uniqueTypes.filter(t => !isValidCardEffectType(t));
+                                
+                                return (
+                                  <>
+                                    {/* Existentes */}
+                                    {existing.length > 0 && (
+                                      <div className="p-3 bg-green-100 rounded-lg">
+                                        <p className="text-sm font-medium text-green-800 mb-2">
+                                          ✅ {existing.length} componente(s) já existem:
+                                        </p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {existing.map(t => (
+                                            <Badge key={t} className="bg-green-600 text-white text-xs">{t}</Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Faltando */}
+                                    {missing.length > 0 && (
+                                      <div className="p-3 bg-red-100 rounded-lg">
+                                        <p className="text-sm font-medium text-red-800 mb-2">
+                                          ❌ {missing.length} componente(s) precisam ser criados:
+                                        </p>
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                          {missing.map(t => (
+                                            <Badge key={t} variant="destructive" className="text-xs">{t}</Badge>
+                                          ))}
+                                        </div>
+                                        <p className="text-xs text-red-700 bg-red-50 p-2 rounded">
+                                          💡 <strong>Próximo passo:</strong> Me envie uma mensagem pedindo para criar os componentes 
+                                          React para os cardTypes faltantes. Exemplo: "Crie os componentes para {missing.slice(0,2).join(', ')}{missing.length > 2 ? '...' : ''}"
+                                        </p>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Tudo OK */}
+                                    {missing.length === 0 && existing.length > 0 && (
+                                      <div className="p-3 bg-green-100 rounded-lg">
+                                        <p className="text-sm font-medium text-green-800">
+                                          🎉 Todos os componentes já existem! A aula está pronta para uso.
+                                        </p>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
