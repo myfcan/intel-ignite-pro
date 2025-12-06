@@ -3,7 +3,26 @@
 import React from 'react';
 
 // ============================================================
-// AULA 1 - O Furacão da I.A.
+// AULA 1 - Fundamentos da Inteligência Artificial
+// ============================================================
+import { CardEffectHypeDetector } from './CardEffectHypeDetector';
+import { CardEffectGameChangers } from './CardEffectGameChangers';
+import { CardEffectTrendVsChange } from './CardEffectTrendVsChange';
+import { CardEffectPatternVsMagic } from './CardEffectPatternVsMagic';
+import { CardEffectDataLearner } from './CardEffectDataLearner';
+import { CardEffectPatternMachine } from './CardEffectPatternMachine';
+import { CardEffectEverydayAi } from './CardEffectEverydayAi';
+import { CardEffectRecommendationEngine } from './CardEffectRecommendationEngine';
+import { CardEffectStrategicShift } from './CardEffectStrategicShift';
+import { CardEffectGenaiIntro } from './CardEffectGenaiIntro';
+import { CardEffectMediaGenerator } from './CardEffectMediaGenerator';
+import { CardEffectRecombinationEngine } from './CardEffectRecombinationEngine';
+import { CardEffectAiStrengths } from './CardEffectAiStrengths';
+import { CardEffectAiWeaknesses } from './CardEffectAiWeaknesses';
+import { CardEffectHumanDirector } from './CardEffectHumanDirector';
+
+// ============================================================
+// AULA 2 - O Furacão da I.A.
 // ============================================================
 import { CardEffectAppBuilder } from './CardEffectAppBuilder';
 import { CardEffectDigitalEmployee } from './CardEffectDigitalEmployee';
@@ -19,7 +38,7 @@ import { CardEffectPlaygroundChat } from './CardEffectPlaygroundChat';
 import { CardEffectClosingMessage } from './CardEffectClosingMessage';
 
 // ============================================================
-// AULA 2 - História da Maria
+// AULA 3 - História da Maria
 // ============================================================
 import { CardEffectProfileCard } from './CardEffectProfileCard';
 import { CardEffectProblemIdentifier } from './CardEffectProblemIdentifier';
@@ -37,7 +56,7 @@ import { CardEffectTimeSaver } from './CardEffectTimeSaver';
 import { CardEffectNextSteps } from './CardEffectNextSteps';
 
 // ============================================================
-// AULA 3 - Oportunidades Reais com I.A.
+// AULA 4 - Oportunidades Reais com I.A.
 // ============================================================
 import { CardEffectHiddenMarket } from './CardEffectHiddenMarket';
 import { CardEffectStabilityMap } from './CardEffectStabilityMap';
@@ -57,7 +76,7 @@ import { CardEffectGrowthVisualizer } from './CardEffectGrowthVisualizer';
 import { CardEffectSuccessRoadmap } from './CardEffectSuccessRoadmap';
 
 // ============================================================
-// AULA 4 - O Dia em que a Padaria Mudou de Nível
+// AULA 5 - O Dia em que a Padaria Mudou de Nível
 // ============================================================
 import { CardEffectBakeryTransformation } from './CardEffectBakeryTransformation';
 import { CardEffectTeenageDesigner } from './CardEffectTeenageDesigner';
@@ -76,7 +95,24 @@ import { CardEffectHistoryParallel } from './CardEffectHistoryParallel';
 import { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
 import { CardEffectPracticePreview } from './CardEffectPracticePreview';
 
-// Re-exportar componentes - AULA 1
+// Re-exportar componentes - AULA 1 (Fundamentos)
+export { CardEffectHypeDetector } from './CardEffectHypeDetector';
+export { CardEffectGameChangers } from './CardEffectGameChangers';
+export { CardEffectTrendVsChange } from './CardEffectTrendVsChange';
+export { CardEffectPatternVsMagic } from './CardEffectPatternVsMagic';
+export { CardEffectDataLearner } from './CardEffectDataLearner';
+export { CardEffectPatternMachine } from './CardEffectPatternMachine';
+export { CardEffectEverydayAi } from './CardEffectEverydayAi';
+export { CardEffectRecommendationEngine } from './CardEffectRecommendationEngine';
+export { CardEffectStrategicShift } from './CardEffectStrategicShift';
+export { CardEffectGenaiIntro } from './CardEffectGenaiIntro';
+export { CardEffectMediaGenerator } from './CardEffectMediaGenerator';
+export { CardEffectRecombinationEngine } from './CardEffectRecombinationEngine';
+export { CardEffectAiStrengths } from './CardEffectAiStrengths';
+export { CardEffectAiWeaknesses } from './CardEffectAiWeaknesses';
+export { CardEffectHumanDirector } from './CardEffectHumanDirector';
+
+// Re-exportar componentes - AULA 2 (Furacão)
 export { CardEffectAppBuilder } from './CardEffectAppBuilder';
 export { CardEffectDigitalEmployee } from './CardEffectDigitalEmployee';
 export { CardEffectBusinessDesign } from './CardEffectBusinessDesign';
@@ -90,7 +126,7 @@ export { CardEffectNewProfessions } from './CardEffectNewProfessions';
 export { CardEffectPlaygroundChat } from './CardEffectPlaygroundChat';
 export { CardEffectClosingMessage } from './CardEffectClosingMessage';
 
-// Re-exportar componentes - AULA 2
+// Re-exportar componentes - AULA 3 (História Maria)
 export { CardEffectProfileCard } from './CardEffectProfileCard';
 export { CardEffectProblemIdentifier } from './CardEffectProblemIdentifier';
 export { CardEffectStoryRevealer } from './CardEffectStoryRevealer';
@@ -106,7 +142,7 @@ export { CardEffectVariationMultiplier } from './CardEffectVariationMultiplier';
 export { CardEffectTimeSaver } from './CardEffectTimeSaver';
 export { CardEffectNextSteps } from './CardEffectNextSteps';
 
-// Re-exportar componentes - AULA 3
+// Re-exportar componentes - AULA 4 (Oportunidades)
 export { CardEffectHiddenMarket } from './CardEffectHiddenMarket';
 export { CardEffectNeedDetector } from './CardEffectNeedDetector';
 export { CardEffectBridgeBuilder } from './CardEffectBridgeBuilder';
@@ -124,7 +160,7 @@ export { CardEffectGrowthVisualizer } from './CardEffectGrowthVisualizer';
 export { CardEffectSuccessRoadmap } from './CardEffectSuccessRoadmap';
 export { CardEffectStabilityMap } from './CardEffectStabilityMap';
 
-// Re-exportar componentes - AULA 4
+// Re-exportar componentes - AULA 5 (Padaria)
 export { CardEffectBakeryTransformation } from './CardEffectBakeryTransformation';
 export { CardEffectTeenageDesigner } from './CardEffectTeenageDesigner';
 export { CardEffectFirstMoverAdvantage } from './CardEffectFirstMoverAdvantage';
@@ -143,21 +179,26 @@ export { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
 export { CardEffectPracticePreview } from './CardEffectPracticePreview';
 
 export type CardEffectType =
-  // AULA 1
+  // AULA 1 - Fundamentos
+  | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
+  | 'data-learner' | 'pattern-machine' | 'everyday-ai' | 'recommendation-engine'
+  | 'strategic-shift' | 'genai-intro' | 'media-generator' | 'recombination-engine'
+  | 'ai-strengths' | 'ai-weaknesses' | 'human-director'
+  // AULA 2 - Furacão
   | 'app-builder' | 'digital-employee' | 'business-design' | 'content-creator'
   | 'content-machine' | 'video-studio' | 'automation' | 'presence-amplifier'
   | 'strategic-advisor' | 'new-professions' | 'playground-chat' | 'closing-message'
-  // AULA 2
+  // AULA 3 - História Maria
   | 'profile-card' | 'problem-identifier' | 'story-revealer' | 'stats-comparison'
   | 'transformation-viewer' | 'amplifier-concept' | 'generic-detector' | 'prompt-magic'
   | 'emotion-connector' | 'object-transformer' | 'prompt-builder' | 'variation-multiplier'
   | 'time-saver' | 'next-steps'
-  // AULA 3
+  // AULA 4 - Oportunidades
   | 'hidden-market' | 'need-detector' | 'bridge-builder' | 'level-system'
   | 'value-calculator' | 'reference-builder' | 'case-viewer' | 'profit-calculator'
   | 'opportunity-identifier' | 'problem-solver' | 'template-gallery' | 'playground-creator'
   | 'timeline-tracker' | 'growth-visualizer' | 'success-roadmap' | 'stability-map'
-  // AULA 4
+  // AULA 5 - Padaria
   | 'bakery-transformation' | 'teenage-designer' | 'first-mover-advantage'
   | 'three-persona-types' | 'fear-vs-action' | 'silent-doer'
   | 'real-world-uses' | 'resume-builder' | 'spreadsheet-master' | 'script-writer'
@@ -170,7 +211,23 @@ export interface CardEffectProps {
 }
 
 const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> = {
-  // AULA 1
+  // AULA 1 - Fundamentos
+  'hype-detector': CardEffectHypeDetector,
+  'game-changers': CardEffectGameChangers,
+  'trend-vs-change': CardEffectTrendVsChange,
+  'pattern-vs-magic': CardEffectPatternVsMagic,
+  'data-learner': CardEffectDataLearner,
+  'pattern-machine': CardEffectPatternMachine,
+  'everyday-ai': CardEffectEverydayAi,
+  'recommendation-engine': CardEffectRecommendationEngine,
+  'strategic-shift': CardEffectStrategicShift,
+  'genai-intro': CardEffectGenaiIntro,
+  'media-generator': CardEffectMediaGenerator,
+  'recombination-engine': CardEffectRecombinationEngine,
+  'ai-strengths': CardEffectAiStrengths,
+  'ai-weaknesses': CardEffectAiWeaknesses,
+  'human-director': CardEffectHumanDirector,
+  // AULA 2 - Furacão
   'app-builder': CardEffectAppBuilder,
   'digital-employee': CardEffectDigitalEmployee,
   'business-design': CardEffectBusinessDesign,
@@ -183,7 +240,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'new-professions': CardEffectNewProfessions,
   'playground-chat': CardEffectPlaygroundChat,
   'closing-message': CardEffectClosingMessage,
-  // AULA 2
+  // AULA 3 - História Maria
   'profile-card': CardEffectProfileCard,
   'problem-identifier': CardEffectProblemIdentifier,
   'story-revealer': CardEffectStoryRevealer,
@@ -198,7 +255,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'variation-multiplier': CardEffectVariationMultiplier,
   'time-saver': CardEffectTimeSaver,
   'next-steps': CardEffectNextSteps,
-  // AULA 3
+  // AULA 4 - Oportunidades
   'hidden-market': CardEffectHiddenMarket,
   'need-detector': CardEffectNeedDetector,
   'bridge-builder': CardEffectBridgeBuilder,
@@ -215,7 +272,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'growth-visualizer': CardEffectGrowthVisualizer,
   'success-roadmap': CardEffectSuccessRoadmap,
   'stability-map': CardEffectStabilityMap,
-  // AULA 4
+  // AULA 5 - Padaria
   'bakery-transformation': CardEffectBakeryTransformation,
   'teenage-designer': CardEffectTeenageDesigner,
   'first-mover-advantage': CardEffectFirstMoverAdvantage,
@@ -235,14 +292,23 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
-  // AULA 1
+  // AULA 1 - Fundamentos
+  'hype-detector': 'Detector de Hype', 'game-changers': 'Mudanças Revolucionárias',
+  'trend-vs-change': 'Tendência vs Mudança', 'pattern-vs-magic': 'Padrão vs Mágica',
+  'data-learner': 'Aprendizado de Dados', 'pattern-machine': 'Máquina de Padrões',
+  'everyday-ai': 'IA no Dia a Dia', 'recommendation-engine': 'Motor de Recomendações',
+  'strategic-shift': 'Mudança Estratégica', 'genai-intro': 'Introdução à IA Generativa',
+  'media-generator': 'Gerador de Mídia', 'recombination-engine': 'Motor de Recombinação',
+  'ai-strengths': 'Pontos Fortes da IA', 'ai-weaknesses': 'Limitações da IA',
+  'human-director': 'Diretor Humano',
+  // AULA 2 - Furacão
   'app-builder': 'IA Construindo App', 'digital-employee': 'Funcionário Digital',
   'business-design': 'Design de Negócio', 'content-creator': 'Coautor de Livros/Cursos',
   'content-machine': 'Máquina de Conteúdo', 'video-studio': 'Estúdio de Vídeo',
   'automation': 'Fluxos de Automação', 'presence-amplifier': 'Amplificador de Presença',
   'strategic-advisor': 'Conselho Estratégico', 'new-professions': 'Novas Profissões',
   'playground-chat': 'Playground / Chat IA', 'closing-message': 'Mensagem de Encerramento',
-  // AULA 2
+  // AULA 3 - História Maria
   'profile-card': 'Card de Perfil', 'problem-identifier': 'Identificador de Problema',
   'story-revealer': 'Revelador de História', 'stats-comparison': 'Comparação de Stats',
   'transformation-viewer': 'Visualizador de Transformação', 'amplifier-concept': 'Conceito Amplificador',
@@ -250,7 +316,7 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'emotion-connector': 'Conector Emocional', 'object-transformer': 'Transformador de Objeto',
   'prompt-builder': 'Construtor de Prompt', 'variation-multiplier': 'Multiplicador de Variações',
   'time-saver': 'Economia de Tempo', 'next-steps': 'Próximos Passos',
-  // AULA 3
+  // AULA 4 - Oportunidades
   'hidden-market': 'Mercado Oculto', 'need-detector': 'Detector de Necessidades',
   'bridge-builder': 'Construtor de Pontes', 'level-system': 'Sistema de Níveis',
   'value-calculator': 'Calculadora de Valor', 'reference-builder': 'Construtor de Autoridade',
@@ -259,7 +325,7 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'template-gallery': 'Galeria de Templates', 'playground-creator': 'Criador de Soluções',
   'timeline-tracker': 'Linha do Tempo', 'growth-visualizer': 'Visualizador de Crescimento',
   'success-roadmap': 'Mapa do Sucesso', 'stability-map': 'Mapa da Estabilidade',
-  // AULA 4
+  // AULA 5 - Padaria
   'bakery-transformation': 'Transformação da Padaria', 'teenage-designer': 'Designer Adolescente',
   'first-mover-advantage': 'Vantagem do Pioneiro', 'three-persona-types': 'Três Tipos de Pessoa',
   'fear-vs-action': 'Medo vs Ação', 'silent-doer': 'Fazedor Silencioso',
@@ -271,14 +337,30 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
-  // AULA 1
+  // AULA 1 - Fundamentos
+  'hype-detector': 'Radar diferenciando hype de realidade',
+  'game-changers': 'Timeline de marcos tecnológicos',
+  'trend-vs-change': 'Comparação visual tendência vs mudança',
+  'pattern-vs-magic': 'Cérebro digital processando padrões',
+  'data-learner': 'Fluxo de dados sendo absorvido',
+  'pattern-machine': 'Engrenagens reconhecendo padrões',
+  'everyday-ai': 'Cenário doméstico com IA presente',
+  'recommendation-engine': 'Interface de recomendações personalizadas',
+  'strategic-shift': 'Diagrama de mudança estratégica',
+  'genai-intro': 'Portal para IA generativa',
+  'media-generator': 'Tela criando imagens e textos',
+  'recombination-engine': 'Elementos sendo recombinados',
+  'ai-strengths': 'Lista visual de pontos fortes',
+  'ai-weaknesses': 'Limitações da IA ilustradas',
+  'human-director': 'Humano dirigindo orquestra de IAs',
+  // AULA 2 - Furacão
   'app-builder': 'Celular 3D com código surgindo', 'digital-employee': 'Central de operações com robô',
   'business-design': 'Canvas com post-its', 'content-creator': 'Páginas flutuando em livro',
   'content-machine': 'Esteira de fábrica com portal', 'video-studio': 'Editor com timeline',
   'automation': 'Fluxograma com pulsos', 'presence-amplifier': 'Orbe clonando texto',
   'strategic-advisor': 'Painéis com gráficos', 'new-professions': 'Palco com silhuetas',
   'playground-chat': 'Chat interativo', 'closing-message': 'Texto motivacional',
-  // AULA 2
+  // AULA 3 - História Maria
   'profile-card': 'Card de perfil animado', 'problem-identifier': 'Indicadores vermelhos',
   'story-revealer': 'Lâmpada reveladora', 'stats-comparison': 'Antes vs Depois',
   'transformation-viewer': 'Contador de resultados', 'amplifier-concept': 'Amplificação visual',
@@ -286,7 +368,7 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'emotion-connector': 'Corações flutuantes', 'object-transformer': 'Produto vendável',
   'prompt-builder': 'Construtor passo a passo', 'variation-multiplier': 'Múltiplas variações',
   'time-saver': 'Economia de tempo', 'next-steps': 'Call-to-action',
-  // AULA 3
+  // AULA 4 - Oportunidades
   'hidden-market': 'Olho revelando oportunidades ocultas', 'need-detector': 'Radar escaneando necessidades',
   'bridge-builder': 'Ponte conectando problemas a soluções', 'level-system': 'Escada de níveis evolutivos',
   'value-calculator': 'Calculadora de preços por serviço', 'reference-builder': 'Construção de autoridade',
@@ -295,7 +377,7 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'template-gallery': 'Galeria de modelos prontos', 'playground-creator': 'Simulação do Playground',
   'timeline-tracker': 'Timeline de 4 meses', 'growth-visualizer': 'Gráfico de crescimento',
   'success-roadmap': 'Mapa para o sucesso', 'stability-map': 'Pilares da estabilidade conectados',
-  // AULA 4
+  // AULA 5 - Padaria
   'bakery-transformation': 'Padaria do Zé com cartaz de I.A.', 'teenage-designer': 'Adolescente criando design',
   'first-mover-advantage': 'Corrida de vantagem competitiva', 'three-persona-types': 'Silhuetas dos três tipos',
   'fear-vs-action': 'Balanço entre medo e ação', 'silent-doer': 'Pessoa testando em silêncio',
@@ -308,23 +390,29 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
   'aula-1': [
+    'hype-detector', 'game-changers', 'trend-vs-change', 'pattern-vs-magic',
+    'data-learner', 'pattern-machine', 'everyday-ai', 'recommendation-engine',
+    'strategic-shift', 'genai-intro', 'media-generator', 'recombination-engine',
+    'ai-strengths', 'ai-weaknesses', 'human-director',
+  ],
+  'aula-2': [
     'app-builder', 'digital-employee', 'business-design', 'content-creator',
     'content-machine', 'video-studio', 'automation', 'presence-amplifier',
     'strategic-advisor', 'new-professions', 'playground-chat', 'closing-message',
   ],
-  'aula-2': [
+  'aula-3': [
     'profile-card', 'problem-identifier', 'story-revealer', 'stats-comparison',
     'transformation-viewer', 'amplifier-concept', 'generic-detector', 'prompt-magic',
     'emotion-connector', 'object-transformer', 'prompt-builder', 'variation-multiplier',
     'time-saver', 'next-steps',
   ],
-  'aula-3': [
+  'aula-4': [
     'hidden-market', 'need-detector', 'bridge-builder', 'level-system',
     'value-calculator', 'reference-builder', 'case-viewer', 'profit-calculator',
     'opportunity-identifier', 'problem-solver', 'template-gallery', 'playground-creator',
     'timeline-tracker', 'growth-visualizer', 'success-roadmap', 'stability-map',
   ],
-  'aula-4': [
+  'aula-5': [
     'bakery-transformation', 'teenage-designer', 'first-mover-advantage',
     'three-persona-types', 'fear-vs-action', 'silent-doer',
     'real-world-uses', 'resume-builder', 'spreadsheet-master', 'script-writer',
@@ -338,6 +426,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-2'],
   ...CARD_EFFECTS_BY_LESSON['aula-3'],
   ...CARD_EFFECTS_BY_LESSON['aula-4'],
+  ...CARD_EFFECTS_BY_LESSON['aula-5'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
