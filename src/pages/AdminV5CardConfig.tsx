@@ -219,6 +219,8 @@ function ActivateCardsTab({
   const [isCreating, setIsCreating] = useState(false);
   const [cardsCreated, setCardsCreated] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(true);
+  const [generatedCode, setGeneratedCode] = useState<{ components: any[]; indexAdditions: any } | null>(null);
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
 
   // Buscar aulas V5 do banco ao montar
   useEffect(() => {
@@ -301,21 +303,10 @@ function ActivateCardsTab({
     setIsCreating(true);
     
     try {
-      // Verificar quais cardTypes já existem
+      // Verificar quais cardTypes já existem vs faltam
       const missing = detectedCardTypes.filter(t => !isValidCardEffectType(t));
-      const existing = detectedCardTypes.filter(t => isValidCardEffectType(t));
-
-      if (missing.length > 0) {
-        toast({
-          title: `⚠️ ${missing.length} componente(s) precisam ser criados`,
-          description: `CardTypes faltando: ${missing.join(', ')}. Peça para criar esses componentes.`,
-          variant: "destructive"
-        });
-        setIsCreating(false);
-        return;
-      }
-
-      // Todos os componentes existem - carregar os cards
+      
+      // Extrair cards do content
       const content = selectedLesson.content as any;
       let cards: any[] = content?.experienceCards || [];
       
@@ -325,6 +316,48 @@ function ActivateCardsTab({
         });
       }
 
+      // Se há componentes faltando, gerar código para eles
+      if (missing.length > 0) {
+        const cardsToGenerate = cards
+          .filter((c: any) => missing.includes(c.type || c.cardType))
+          .map((c: any) => ({
+            cardType: c.type || c.cardType,
+            title: c.title || c.props?.title || '',
+            subtitle: c.subtitle || c.props?.subtitle || '',
+            sectionIndex: c.sectionIndex || 1,
+            cardIndex: c.cardIndex || 1
+          }));
+
+        // Chamar edge function para gerar código
+        const { data, error } = await supabase.functions.invoke('generate-card-effects-v2', {
+          body: {
+            cards: cardsToGenerate,
+            lessonTitle: selectedLesson.title
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.success) {
+          setGeneratedCode({
+            components: data.components,
+            indexAdditions: data.indexAdditions
+          });
+          setShowCodeDialog(true);
+          
+          toast({
+            title: "🎨 Código gerado!",
+            description: `${data.generatedCount} componentes prontos. Copie o código e cole no chat para eu criar.`,
+          });
+        } else {
+          throw new Error(data.error || 'Erro ao gerar código');
+        }
+        
+        setIsCreating(false);
+        return;
+      }
+
+      // Todos os componentes existem - carregar os cards
       const formattedCards: ExperienceCard[] = cards.map((card: any, idx: number) => ({
         sectionIndex: card.sectionIndex || 1,
         cardIndex: card.cardIndex || idx + 1,
@@ -504,12 +537,12 @@ function ActivateCardsTab({
                   const missing = detectedCardTypes.filter(t => !isValidCardEffectType(t));
                   if (missing.length > 0) {
                     return (
-                      <div className="p-3 bg-red-50 border-t border-red-200">
-                        <p className="text-sm text-red-800">
-                          ❌ <strong>{missing.length} componente(s) precisam ser criados:</strong> {missing.join(', ')}
+                      <div className="p-3 bg-amber-50 border-t border-amber-200">
+                        <p className="text-sm text-amber-800">
+                          ⚠️ <strong>{missing.length} componente(s) a serem criados:</strong>
                         </p>
-                        <p className="text-xs text-red-600 mt-1">
-                          💡 Peça para eu criar esses componentes antes de ativar.
+                        <p className="text-xs text-amber-700 mt-1">
+                          Clique no botão abaixo para gerar o código dos componentes.
                         </p>
                       </div>
                     );
@@ -517,7 +550,7 @@ function ActivateCardsTab({
                   return (
                     <div className="p-3 bg-green-50 border-t border-green-200">
                       <p className="text-sm text-green-800">
-                        ✅ Todos os componentes existem! Pronto para criar cards.
+                        ✅ Todos os componentes existem! Pronto para ativar cards.
                       </p>
                     </div>
                   );
@@ -525,17 +558,23 @@ function ActivateCardsTab({
               </div>
             )}
 
-            {/* Botão Criar Cards */}
+            {/* Botão Criar Cards - SEMPRE HABILITADO se há cardTypes */}
             <Button
               onClick={handleCreateCardEffects}
-              disabled={isCreating || detectedCardTypes.length === 0 || detectedCardTypes.some(t => !isValidCardEffectType(t))}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              disabled={isCreating || detectedCardTypes.length === 0}
+              className={`w-full ${
+                detectedCardTypes.some(t => !isValidCardEffectType(t))
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700'
+              }`}
               size="lg"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               {isCreating 
-                ? 'Criando...' 
-                : `Criar ${detectedCardTypes.length} Cards`
+                ? 'Gerando código...' 
+                : detectedCardTypes.some(t => !isValidCardEffectType(t))
+                  ? `🔨 Criar ${detectedCardTypes.filter(t => !isValidCardEffectType(t)).length} Componentes`
+                  : `✅ Carregar ${detectedCardTypes.length} Cards`
               }
             </Button>
           </div>
@@ -593,6 +632,98 @@ function ActivateCardsTab({
                 : 'Crie os cards primeiro'
           }
         </Button>
+
+        {/* Dialog para mostrar código gerado */}
+        <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-purple-600" />
+                Código Gerado - {generatedCode?.components?.length || 0} Componentes
+              </DialogTitle>
+              <DialogDescription>
+                Copie o código abaixo e cole no chat para que eu crie os componentes React.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
+              {/* Lista de componentes */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Componentes a criar:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {generatedCode?.components?.map((comp: any, idx: number) => (
+                    <Badge key={idx} className="bg-purple-100 text-purple-800">
+                      {comp.componentName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Instruções */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800 font-medium mb-2">📋 Instruções:</p>
+                <ol className="text-sm text-amber-700 space-y-1 list-decimal list-inside">
+                  <li>Clique em "Copiar Instrução" abaixo</li>
+                  <li>Cole no chat do Lovable</li>
+                  <li>Aguarde a criação dos componentes</li>
+                  <li>Volte aqui e clique novamente em "Carregar Cards"</li>
+                </ol>
+              </div>
+
+              {/* Instrução para copiar */}
+              <div className="space-y-2">
+                <Label>Instrução para o Lovable:</Label>
+                <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-green-400 max-h-40 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap">
+{`Crie os seguintes ${generatedCode?.components?.length || 0} componentes React para a Aula selecionada:
+
+${generatedCode?.components?.map((comp: any) => `- ${comp.componentName} (${comp.cardType})`).join('\n')}
+
+Cada componente deve:
+- Seguir padrão visual V5 (min-h-[480px] h-[60vh] max-h-[600px])
+- Ter 5 cenas com animações 3s cada (~15s total)
+- Loop 2x antes de parar
+- Progress indicator inline com mt-4
+- Aceitar props: isActive e duration
+
+Após criar, atualize o index.tsx para registrá-los.`}
+                  </pre>
+                </div>
+                <Button
+                  onClick={() => {
+                    const instruction = `Crie os seguintes ${generatedCode?.components?.length || 0} componentes React para a Aula selecionada:
+
+${generatedCode?.components?.map((comp: any) => `- ${comp.componentName} (${comp.cardType})`).join('\n')}
+
+Cada componente deve:
+- Seguir padrão visual V5 (min-h-[480px] h-[60vh] max-h-[600px])
+- Ter 5 cenas com animações 3s cada (~15s total)
+- Loop 2x antes de parar
+- Progress indicator inline com mt-4
+- Aceitar props: isActive e duration
+
+Após criar, atualize o index.tsx para registrá-los.`;
+                    navigator.clipboard.writeText(instruction);
+                    toast({
+                      title: "📋 Copiado!",
+                      description: "Cole no chat para criar os componentes.",
+                    });
+                  }}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Copiar Instrução
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCodeDialog(false)}>
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
