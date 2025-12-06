@@ -372,14 +372,47 @@ export default function AdminV5CardConfig() {
         throw new Error('JSON precisa ter "sections" ou "content.sections" como array');
       }
 
-      // 🔍 NOVO: Detectar experienceCards do JSON (suporta ambos formatos)
-      const rawCards = parsed.experienceCards || [];
+      // 🔍 Detectar experienceCards do JSON (suporta ambos formatos)
+      let rawCards = parsed.experienceCards || [];
+      
+      // 🆕 Se não encontrou experienceCards, extrair dos comentários HTML do markdown
+      if (rawCards.length === 0) {
+        const extractedCards: any[] = [];
+        
+        sections.forEach((section: any, sectionIdx: number) => {
+          const markdown = section.markdown || section.visualContent || section.content || '';
+          
+          // Regex para capturar <!-- archortext: TEXTO --> ou <!-- anchortext: TEXTO -->
+          const anchorRegex = /<!--\s*a[rn]chortext:\s*(.+?)\s*-->/gi;
+          let match;
+          let cardIndex = 1;
+          
+          while ((match = anchorRegex.exec(markdown)) !== null) {
+            const anchorText = match[1].trim();
+            extractedCards.push({
+              sectionIndex: sectionIdx + 1,
+              cardIndex: cardIndex++,
+              type: `card-section${sectionIdx + 1}-${cardIndex}`, // Placeholder type
+              cardType: `card-section${sectionIdx + 1}-${cardIndex}`,
+              anchorText: anchorText,
+              title: anchorText.substring(0, 30) + (anchorText.length > 30 ? '...' : ''),
+              subtitle: `Seção ${sectionIdx + 1}`,
+            });
+          }
+        });
+        
+        rawCards = extractedCards;
+        
+        if (extractedCards.length > 0) {
+          console.log('📍 [V5-CONFIG] AnchorTexts extraídos do markdown:', extractedCards.length);
+        }
+      }
       
       // Normalizar cards para ter sempre 'type' e outros campos consistentes
       const jsonCards = rawCards.map((card: any) => ({
         ...card,
-        type: card.type || card.cardType, // Garantir que 'type' exista
-        cardType: card.cardType || card.type, // Manter cardType para UI
+        type: card.type || card.cardType,
+        cardType: card.cardType || card.type,
         title: card.title || card.props?.title || '',
         subtitle: card.subtitle || card.props?.subtitle || '',
       }));
@@ -396,8 +429,8 @@ export default function AdminV5CardConfig() {
       toast({
         title: "✅ JSON analisado!",
         description: jsonCards.length > 0
-          ? `${sections.length} seções + ${jsonCards.length} experience cards detectados!`
-          : `${sections.length} seções detectadas. Nenhum experienceCard no JSON.`,
+          ? `${sections.length} seções + ${jsonCards.length} anchorTexts detectados!`
+          : `${sections.length} seções detectadas. Nenhum anchorText encontrado.`,
       });
       
       console.log('📊 [V5-CONFIG] JSON analisado:', {
