@@ -1691,7 +1691,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   [&_img]:!rounded-lg [&_img]:!shadow-md [&_img]:!my-4 [&_img]:sm:!my-6 [&_img]:!max-w-full ${
     isTextActive && sectionJustChanged ? 'animate-scale-in' : ''
   }`}>
-                          <ReactMarkdown>{section.visualContent || section.content}</ReactMarkdown>
+                          <ReactMarkdown>{(section.visualContent || section.content || '').replace(/<!--[\s\S]*?-->/g, '')}</ReactMarkdown>
                         </div>
                       </div>
                     </div>
