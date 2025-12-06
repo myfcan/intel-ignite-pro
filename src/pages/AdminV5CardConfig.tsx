@@ -21,22 +21,10 @@ import { DynamicCardEffect, CARD_EFFECT_TYPES, CARD_EFFECT_LABELS, CARD_EFFECT_D
 // 🎓 Configuração das Aulas disponíveis
 const AVAILABLE_LESSONS = [
   {
-    id: 'aula-1',
-    title: 'Aula 1 - O Furacão da I.A.',
-    description: '12 card effects cinematográficos',
-    icon: '🌪️'
-  },
-  {
     id: 'aula-2',
     title: 'Aula 2 - História da Maria',
     description: '14 card effects cinematográficos',
     icon: '👩‍💼'
-  },
-  {
-    id: 'aula-3',
-    title: 'Aula 3 - Oportunidades Reais com I.A.',
-    description: '16 card effects cinematográficos',
-    icon: '💰'
   },
   {
     id: 'aula-4',
