@@ -168,15 +168,434 @@ interface Section {
 
 interface ExperienceCard {
   sectionIndex: number;
-  cardIndex: number; // 1 ou 2
-  cardType: string; // texto livre (ex: "ia-digital-employee", "ia-image-gen")
-  anchorText: string; // Trecho do markdown que serve como gatilho
+  cardIndex: number;
+  cardType: string;
+  anchorText: string;
   title: string;
   subtitle: string;
-  icon?: string; // emoji ou nome do ícone
-  colorScheme?: string; // cor de destaque (hex ou css)
-  effectDescription?: string; // descrição técnica das animações
-  chapters?: string[]; // páginas/capítulos internos do card
+  icon?: string;
+  colorScheme?: string;
+  effectDescription?: string;
+  chapters?: string[];
+}
+
+interface V5LessonFromDB {
+  id: string;
+  title: string;
+  is_active: boolean;
+  content: any;
+  created_at: string;
+}
+
+// ============================================
+// 🎯 COMPONENTE: Aba "Ativar Cards"
+// ============================================
+interface ActivateCardsTabProps {
+  onCardsCreated: (cards: ExperienceCard[]) => void;
+  experienceCards: ExperienceCard[];
+  isSaving: boolean;
+  setIsSaving: (v: boolean) => void;
+  generatingProgress: string | null;
+  setGeneratingProgress: (v: string | null) => void;
+}
+
+function ActivateCardsTab({
+  onCardsCreated,
+  experienceCards,
+  isSaving,
+  setIsSaving,
+  generatingProgress,
+  setGeneratingProgress
+}: ActivateCardsTabProps) {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Estados
+  const [v5Lessons, setV5Lessons] = useState<V5LessonFromDB[]>([]);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>('');
+  const [selectedLesson, setSelectedLesson] = useState<V5LessonFromDB | null>(null);
+  const [detectedCardTypes, setDetectedCardTypes] = useState<string[]>([]);
+  const [createdCards, setCreatedCards] = useState<ExperienceCard[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [cardsCreated, setCardsCreated] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(true);
+
+  // Buscar aulas V5 do banco ao montar
+  useEffect(() => {
+    const fetchV5Lessons = async () => {
+      setLoadingLessons(true);
+      try {
+        const { data, error } = await supabase
+          .from('lessons')
+          .select('id, title, is_active, content, created_at')
+          .eq('model', 'v5')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        setV5Lessons(data || []);
+        console.log('📚 [ACTIVATE-TAB] Aulas V5 carregadas:', data?.length);
+      } catch (err: any) {
+        console.error('❌ Erro ao buscar aulas V5:', err);
+        toast({
+          title: "Erro ao carregar aulas",
+          description: err.message,
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingLessons(false);
+      }
+    };
+
+    fetchV5Lessons();
+  }, [toast]);
+
+  // Quando seleciona uma aula, extrair cardTypes
+  useEffect(() => {
+    if (!selectedLessonId) {
+      setSelectedLesson(null);
+      setDetectedCardTypes([]);
+      return;
+    }
+
+    const lesson = v5Lessons.find(l => l.id === selectedLessonId);
+    if (!lesson) return;
+
+    setSelectedLesson(lesson);
+    
+    // Extrair cardTypes do content.experienceCards
+    const content = lesson.content as any;
+    let cards: any[] = [];
+    
+    // Tentar múltiplos locais onde experienceCards podem estar
+    if (content?.experienceCards) {
+      cards = content.experienceCards;
+    } else if (content?.sections) {
+      // Pode estar dentro das seções
+      content.sections.forEach((s: any) => {
+        if (s.experienceCards) cards.push(...s.experienceCards);
+      });
+    }
+
+    const types = cards.map((c: any) => c.type || c.cardType).filter(Boolean);
+    setDetectedCardTypes(types);
+    
+    console.log('📊 [ACTIVATE-TAB] Aula selecionada:', {
+      title: lesson.title,
+      cardsCount: types.length,
+      cardTypes: types
+    });
+  }, [selectedLessonId, v5Lessons]);
+
+  // Criar componentes React para os cardTypes
+  const handleCreateCardEffects = async () => {
+    if (!selectedLesson || detectedCardTypes.length === 0) {
+      toast({
+        title: "Nenhum card para criar",
+        description: "Selecione uma aula com experienceCards primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    
+    try {
+      // Verificar quais cardTypes já existem
+      const missing = detectedCardTypes.filter(t => !isValidCardEffectType(t));
+      const existing = detectedCardTypes.filter(t => isValidCardEffectType(t));
+
+      if (missing.length > 0) {
+        toast({
+          title: `⚠️ ${missing.length} componente(s) precisam ser criados`,
+          description: `CardTypes faltando: ${missing.join(', ')}. Peça para criar esses componentes.`,
+          variant: "destructive"
+        });
+        setIsCreating(false);
+        return;
+      }
+
+      // Todos os componentes existem - carregar os cards
+      const content = selectedLesson.content as any;
+      let cards: any[] = content?.experienceCards || [];
+      
+      if (cards.length === 0 && content?.sections) {
+        content.sections.forEach((s: any) => {
+          if (s.experienceCards) cards.push(...s.experienceCards);
+        });
+      }
+
+      const formattedCards: ExperienceCard[] = cards.map((card: any, idx: number) => ({
+        sectionIndex: card.sectionIndex || 1,
+        cardIndex: card.cardIndex || idx + 1,
+        cardType: card.type || card.cardType,
+        anchorText: card.anchorText || '',
+        title: card.title || card.props?.title || '',
+        subtitle: card.subtitle || card.props?.subtitle || '',
+        icon: card.icon || card.props?.icon,
+        colorScheme: card.colorScheme || card.props?.colorScheme,
+        effectDescription: card.effectDescription,
+        chapters: card.chapters || card.props?.chapters || []
+      }));
+
+      setCreatedCards(formattedCards);
+      onCardsCreated(formattedCards);
+      setCardsCreated(true);
+
+      toast({
+        title: "✅ Cards carregados!",
+        description: `${formattedCards.length} cards prontos para ativar.`,
+      });
+
+    } catch (err: any) {
+      console.error('❌ Erro ao criar cards:', err);
+      toast({
+        title: "Erro ao criar cards",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Ativar a aula
+  const handleActivateLesson = async () => {
+    if (!selectedLesson) return;
+
+    setIsSaving(true);
+    setGeneratingProgress("Ativando aula...");
+
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .update({ is_active: true })
+        .eq('id', selectedLesson.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "🎉 Aula Ativada!",
+        description: `"${selectedLesson.title}" está disponível para os usuários!`,
+      });
+
+      // Reset
+      setCardsCreated(false);
+      setCreatedCards([]);
+      setSelectedLessonId('');
+      setSelectedLesson(null);
+      onCardsCreated([]);
+
+      // Atualizar lista
+      const updatedLessons = v5Lessons.map(l => 
+        l.id === selectedLesson.id ? { ...l, is_active: true } : l
+      );
+      setV5Lessons(updatedLessons);
+
+    } catch (err: any) {
+      console.error('❌ Erro ao ativar:', err);
+      toast({
+        title: "Erro ao ativar",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+      setGeneratingProgress(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Rocket className="w-5 h-5 text-green-600" />
+          Ativar Experience Cards
+        </CardTitle>
+        <CardDescription>
+          Selecione uma aula V5 que já passou pelo pipeline e ative os cards.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Seleção de Aula */}
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs">1</span>
+            Selecione a Aula V5
+          </Label>
+
+          {loadingLessons ? (
+            <div className="p-4 border rounded-lg bg-muted/30 text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"
+              />
+              <p className="text-sm text-muted-foreground">Carregando aulas V5...</p>
+            </div>
+          ) : v5Lessons.length === 0 ? (
+            <div className="p-4 border border-amber-300 rounded-lg bg-amber-50">
+              <p className="text-sm text-amber-800">
+                ⚠️ Nenhuma aula V5 encontrada no banco. Envie uma aula pelo pipeline primeiro na aba "Colar JSON".
+              </p>
+            </div>
+          ) : (
+            <Select value={selectedLessonId} onValueChange={setSelectedLessonId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha uma aula V5..." />
+              </SelectTrigger>
+              <SelectContent>
+                {v5Lessons.map((lesson) => (
+                  <SelectItem key={lesson.id} value={lesson.id}>
+                    <span className="flex items-center gap-2">
+                      {lesson.is_active ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
+                      )}
+                      {lesson.title}
+                      {lesson.is_active && (
+                        <Badge variant="outline" className="text-xs ml-2">Ativa</Badge>
+                      )}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        {/* Info da Aula Selecionada */}
+        {selectedLesson && (
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                <span className="font-semibold text-purple-900">{selectedLesson.title}</span>
+                {selectedLesson.is_active && (
+                  <Badge className="bg-green-500">Ativa</Badge>
+                )}
+              </div>
+              <div className="flex gap-4 text-sm text-purple-700">
+                <span>🎬 {detectedCardTypes.length} cards detectados</span>
+              </div>
+            </div>
+
+            {/* Lista de CardTypes */}
+            {detectedCardTypes.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-slate-100 px-4 py-2 border-b">
+                  <h4 className="font-medium text-slate-800">CardTypes nesta aula:</h4>
+                </div>
+                <div className="p-3 flex flex-wrap gap-2">
+                  {detectedCardTypes.map((type, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant={isValidCardEffectType(type) ? "default" : "destructive"}
+                      className="text-xs"
+                    >
+                      {isValidCardEffectType(type) ? '✅' : '❌'} {type}
+                    </Badge>
+                  ))}
+                </div>
+                
+                {/* Resumo de status */}
+                {(() => {
+                  const missing = detectedCardTypes.filter(t => !isValidCardEffectType(t));
+                  if (missing.length > 0) {
+                    return (
+                      <div className="p-3 bg-red-50 border-t border-red-200">
+                        <p className="text-sm text-red-800">
+                          ❌ <strong>{missing.length} componente(s) precisam ser criados:</strong> {missing.join(', ')}
+                        </p>
+                        <p className="text-xs text-red-600 mt-1">
+                          💡 Peça para eu criar esses componentes antes de ativar.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="p-3 bg-green-50 border-t border-green-200">
+                      <p className="text-sm text-green-800">
+                        ✅ Todos os componentes existem! Pronto para criar cards.
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Botão Criar Cards */}
+            <Button
+              onClick={handleCreateCardEffects}
+              disabled={isCreating || detectedCardTypes.length === 0 || detectedCardTypes.some(t => !isValidCardEffectType(t))}
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              size="lg"
+            >
+              <Wand2 className="w-4 h-4 mr-2" />
+              {isCreating 
+                ? 'Criando...' 
+                : `Criar ${detectedCardTypes.length} Cards`
+              }
+            </Button>
+          </div>
+        )}
+
+        {/* Lista de Cards Criados */}
+        {createdCards.length > 0 && (
+          <div className="space-y-4">
+            <Separator />
+            <h4 className="font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Cards Criados ({createdCards.length})
+            </h4>
+            <div className="max-h-[300px] overflow-y-auto space-y-2">
+              {createdCards
+                .sort((a, b) => a.sectionIndex - b.sectionIndex || a.cardIndex - b.cardIndex)
+                .map((card, idx) => (
+                <div 
+                  key={idx}
+                  className="p-3 border rounded-lg bg-green-50/50 hover:bg-green-50"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline">S{card.sectionIndex}</Badge>
+                    <Badge variant="secondary">C{card.cardIndex}</Badge>
+                    <Badge className="bg-green-600">{card.cardType}</Badge>
+                  </div>
+                  <p className="text-sm font-medium">{card.title || '(sem título)'}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    AnchorText: "{card.anchorText}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Botão Ativar Aula (verde, desabilitado até criar cards) */}
+        <Button
+          onClick={handleActivateLesson}
+          disabled={!cardsCreated || isSaving || selectedLesson?.is_active}
+          className={`w-full ${
+            cardsCreated && !selectedLesson?.is_active
+              ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+              : 'bg-muted text-muted-foreground cursor-not-allowed'
+          }`}
+          size="lg"
+        >
+          <Rocket className="w-4 h-4 mr-2" />
+          {generatingProgress 
+            ? generatingProgress 
+            : selectedLesson?.is_active 
+              ? 'Aula já está ativa' 
+              : cardsCreated 
+                ? `Ativar "${selectedLesson?.title || 'Aula'}"` 
+                : 'Crie os cards primeiro'
+          }
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function AdminV5CardConfig() {
@@ -1072,411 +1491,16 @@ export default function AdminV5CardConfig() {
                 </Card>
               </TabsContent>
 
-              {/* TAB 2: CONFIGURAR CARDS MANUALMENTE */}
+              {/* TAB 2: ATIVAR CARDS - Buscar aulas do banco */}
               <TabsContent value="manual" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>➕ Configurar Experience Cards</CardTitle>
-                    <CardDescription>
-                      Cada seção pode ter até 3 cards. Use anchorText do markdown como gatilho.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Seleção de Aula */}
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs">0</span>
-                        Selecione a Aula
-                      </Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {AVAILABLE_LESSONS.map((lesson) => (
-                          <div
-                            key={lesson.id}
-                            onClick={() => setSelectedLesson(lesson.id)}
-                            className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                              selectedLesson === lesson.id
-                                ? 'border-purple-500 bg-purple-500/10'
-                                : 'border-muted hover:border-purple-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-lg">{lesson.icon}</span>
-                              <span className="font-medium text-sm">{lesson.title.split(' - ')[0]}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{lesson.title.split(' - ')[1]}</p>
-                            <p className="text-[10px] text-purple-500 mt-1">{lesson.description}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Escolha a aula para filtrar os card effects disponíveis
-                      </p>
-
-                      {/* Botão Carregar Template */}
-                      <Button
-                        variant="default"
-                        className="w-full mt-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                        onClick={() => {
-                          const template = LESSON_CARD_TEMPLATES[selectedLesson];
-                          if (template) {
-                            setExperienceCards(template);
-                            toast({
-                              title: "📋 Template carregado!",
-                              description: `${template.length} cards pré-configurados para ${AVAILABLE_LESSONS.find(l => l.id === selectedLesson)?.title}`,
-                            });
-                          }
-                        }}
-                      >
-                        <Wand2 className="w-4 h-4 mr-2" />
-                        Carregar Template ({LESSON_CARD_TEMPLATES[selectedLesson]?.length || 0} cards)
-                      </Button>
-                    </div>
-
-                    <Separator />
-
-                    {/* Seleção de Seção */}
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
-                        Selecione a Seção
-                      </Label>
-                      <Select 
-                        value={selectedSectionIndex?.toString() || ''} 
-                        onValueChange={(val) => setSelectedSectionIndex(parseInt(val))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Escolha uma seção..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sections.map((_, idx) => (
-                            <SelectItem key={idx} value={String(idx + 1)}>
-                              Seção {idx + 1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Quantidade de Cards */}
-                    {selectedSectionIndex !== null && (
-                      <div className="space-y-2">
-                        <Label>2. Quantidade de Cards nesta Seção</Label>
-                        <RadioGroup
-                          value={String(cardsQuantity)}
-                          onValueChange={(val) => setCardsQuantity(parseInt(val) as 1 | 2 | 3)}
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="1" id="qty-1" />
-                            <Label htmlFor="qty-1">1 card</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="2" id="qty-2" />
-                            <Label htmlFor="qty-2">2 cards</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="3" id="qty-3" />
-                            <Label htmlFor="qty-3">3 cards</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    )}
-
-                    {/* Configuração dos Cards */}
-                    {selectedSectionIndex !== null && (
-                      <div className="space-y-6 border-t pt-6">
-                        {/* Card 1 */}
-                        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                          <h4 className="font-semibold flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
-                              Card 1
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleClearCards}
-                              className="h-7 text-xs"
-                            >
-                              <Trash2 className="w-3 h-3 mr-1" />
-                              Limpar tudo
-                            </Button>
-                          </h4>
-                          
-                          <div className="space-y-2">
-                            <Label>Tipo de Card Effect *</Label>
-                            <Select
-                              value={card1.cardType}
-                              onValueChange={(value) => setCard1({ ...card1, cardType: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Escolha o tipo de animação" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                  🎬 Animações Cinematográficas
-                                </div>
-                                {cinematographicCardTypes.map(({ value, label }) => (
-                                  <SelectItem key={value} value={value}>
-                                    <span className="flex items-center gap-2">
-                                      <span className="text-purple-400">▸</span>
-                                      {label}
-                                    </span>
-                                  </SelectItem>
-                                ))}
-                                <Separator className="my-2" />
-                                <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                  📝 Cards de Texto (Legado)
-                                </div>
-                                {TEXT_CARD_TYPES.map(({ value, label }) => (
-                                  <SelectItem key={value} value={value}>
-                                    <span className="flex items-center gap-2">
-                                      <span className="text-blue-400">▹</span>
-                                      {label}
-                                    </span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                              {isValidCardEffectType(card1.cardType || '')
-                                ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
-                                : 'Escolha o tipo de card effect para esta seção'
-                              }
-                            </p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>AnchorText (trecho do markdown) *</Label>
-                            <Input
-                              placeholder='Ex: "aplicativo funcional" ou "funcionário digital"'
-                              value={card1.anchorText}
-                              onChange={(e) => setCard1({ ...card1, anchorText: e.target.value })}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Cole o trecho exato do markdown que será o gatilho para exibir o card
-                            </p>
-                          </div>
-
-                          {/* Descrição do efeito selecionado */}
-                          {card1.cardType && isValidCardEffectType(card1.cardType) && (
-                            <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                              <p className="text-xs text-purple-300">
-                                <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card1.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Card 2 (condicional) */}
-                        {cardsQuantity >= 2 && (
-                          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                            <h4 className="font-semibold flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">2</span>
-                              Card 2
-                            </h4>
-
-                            <div className="space-y-2">
-                              <Label>Tipo de Card Effect *</Label>
-                              <Select
-                                value={card2.cardType}
-                                onValueChange={(value) => setCard2({ ...card2, cardType: value })}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Escolha o tipo de animação" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                    🎬 Animações Cinematográficas
-                                  </div>
-                                  {cinematographicCardTypes.map(({ value, label }) => (
-                                    <SelectItem key={value} value={value}>
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-purple-400">▸</span>
-                                        {label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                  <Separator className="my-2" />
-                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                    📝 Cards de Texto (Legado)
-                                  </div>
-                                  {TEXT_CARD_TYPES.map(({ value, label }) => (
-                                    <SelectItem key={value} value={value}>
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-blue-400">▹</span>
-                                        {label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <p className="text-xs text-muted-foreground">
-                                {isValidCardEffectType(card2.cardType || '')
-                                  ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
-                                  : 'Escolha o tipo de card effect para esta seção'
-                                }
-                              </p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>AnchorText (trecho do markdown) *</Label>
-                              <Input
-                                placeholder='Ex: "outro trecho importante"'
-                                value={card2.anchorText}
-                                onChange={(e) => setCard2({ ...card2, anchorText: e.target.value })}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                Cole o trecho exato do markdown que será o gatilho para exibir o card
-                              </p>
-                            </div>
-
-                            {/* Descrição do efeito selecionado */}
-                            {card2.cardType && isValidCardEffectType(card2.cardType) && (
-                              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                                <p className="text-xs text-purple-300">
-                                  <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card2.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Card 3 (condicional) */}
-                        {cardsQuantity === 3 && (
-                          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                            <h4 className="font-semibold flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">3</span>
-                              Card 3
-                            </h4>
-
-                            <div className="space-y-2">
-                              <Label>Tipo de Card Effect *</Label>
-                              <Select
-                                value={card3.cardType}
-                                onValueChange={(value) => setCard3({ ...card3, cardType: value })}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Escolha o tipo de animação" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                    🎬 Animações Cinematográficas
-                                  </div>
-                                  {cinematographicCardTypes.map(({ value, label }) => (
-                                    <SelectItem key={value} value={value}>
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-purple-400">▸</span>
-                                        {label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                  <Separator className="my-2" />
-                                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-                                    📝 Cards de Texto (Legado)
-                                  </div>
-                                  {TEXT_CARD_TYPES.map(({ value, label }) => (
-                                    <SelectItem key={value} value={value}>
-                                      <span className="flex items-center gap-2">
-                                        <span className="text-blue-400">▹</span>
-                                        {label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <p className="text-xs text-muted-foreground">
-                                {isValidCardEffectType(card3.cardType || '')
-                                  ? '🎬 Este tipo exibirá uma animação cinematográfica temática'
-                                  : 'Escolha o tipo de card effect para esta seção'
-                                }
-                              </p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>AnchorText (trecho do markdown) *</Label>
-                              <Input
-                                placeholder='Ex: "terceiro trecho importante"'
-                                value={card3.anchorText}
-                                onChange={(e) => setCard3({ ...card3, anchorText: e.target.value })}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                Cole o trecho exato do markdown que será o gatilho para exibir o card
-                              </p>
-                            </div>
-
-                            {/* Descrição do efeito selecionado */}
-                            {card3.cardType && isValidCardEffectType(card3.cardType) && (
-                              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                                <p className="text-xs text-purple-300">
-                                  <strong>Animação:</strong> {CARD_EFFECT_DESCRIPTIONS[card3.cardType as keyof typeof CARD_EFFECT_DESCRIPTIONS]}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <Button onClick={handleAddCardsToSection} className="w-full" size="lg">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview e Adicionar {cardsQuantity} Card(s) à Seção {selectedSectionIndex}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Lista de Cards Configurados */}
-                {experienceCards.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>📋 Cards Configurados ({experienceCards.length})</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {experienceCards
-                          .sort((a, b) => a.sectionIndex - b.sectionIndex || a.cardIndex - b.cardIndex)
-                          .map((card, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline">Seção {card.sectionIndex}</Badge>
-                                <Badge variant="secondary">Card {card.cardIndex}</Badge>
-                                <Badge>{card.cardType}</Badge>
-                              </div>
-                              <p className="text-sm font-medium">{card.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                AnchorText: "{card.anchorText}"
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveCard(card.sectionIndex, card.cardIndex)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Botão Ativar Aula */}
-                {experienceCards.length > 0 && (
-                  <Button
-                    onClick={handleActivateLesson}
-                    disabled={isSaving || experienceCards.length === 0}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                    size="lg"
-                  >
-                    <Rocket className="w-4 h-4 mr-2" />
-                    {generatingProgress || (isSaving ? 'Ativando...' : `Ativar Aula V5 com ${experienceCards.length} Cards`)}
-                  </Button>
-                )}
+                <ActivateCardsTab 
+                  onCardsCreated={(cards) => setExperienceCards(cards)}
+                  experienceCards={experienceCards}
+                  isSaving={isSaving}
+                  setIsSaving={setIsSaving}
+                  generatingProgress={generatingProgress}
+                  setGeneratingProgress={setGeneratingProgress}
+                />
               </TabsContent>
             </Tabs>
           </div>
