@@ -149,12 +149,12 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
   console.log('🎙️ [V2] Gerando múltiplos áudios...');
   console.log(`   ${input.sectionTexts.length} seções`);
 
-  // Timeout configurável (5 minutos para múltiplos áudios)
-  const TIMEOUT_MS = 300000; // 5 minutos
+  // Timeout estendido para múltiplos áudios (5 seções podem demorar)
+  const TIMEOUT_MS = 600000; // 10 minutos
   
   const invokeWithTimeout = async () => {
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Timeout ao gerar áudios (5min)')), TIMEOUT_MS)
+      setTimeout(() => reject(new Error('Timeout ao gerar áudios (10min)')), TIMEOUT_MS)
     );
     
     const invokePromise = supabase.functions.invoke('generate-multiple-audios', {
@@ -173,7 +173,7 @@ async function generateAudioV2(input: Step2Output): Promise<Step3Output> {
     error = result.error;
   } catch (timeoutError: any) {
     console.error('❌ [V2] Timeout ao gerar áudios:', timeoutError);
-    throw new Error(`Timeout ao gerar áudios (5min). Reduza o número de seções ou o tamanho dos textos.`);
+    throw new Error(`Timeout ao gerar áudios (10min). Reduza o número de seções ou o tamanho dos textos.`);
   }
 
   if (error) {
