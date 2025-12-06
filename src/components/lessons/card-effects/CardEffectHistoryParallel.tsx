@@ -1,13 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Cpu, ArrowRight, Clock, Sparkles, TrendingUp } from "lucide-react";
+import { Globe, Cpu, ArrowRight, Clock, Sparkles, Wifi, Smartphone, Users, AppWindow, Brain } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface CardEffectHistoryParallelProps {
   isActive?: boolean;
 }
 
+const timelineData = [
+  { year: "1990", label: "Internet", icon: Globe, color: "from-blue-500 to-cyan-500" },
+  { year: "2000", label: "Banda Larga", icon: Wifi, color: "from-green-500 to-emerald-500" },
+  { year: "2007", label: "Smartphones", icon: Smartphone, color: "from-orange-500 to-amber-500" },
+  { year: "2011", label: "Redes Sociais", icon: Users, color: "from-pink-500 to-rose-500" },
+  { year: "2015", label: "Apps", icon: AppWindow, color: "from-purple-500 to-violet-500" },
+  { year: "2025", label: "I.A.", icon: Brain, color: "from-fuchsia-500 to-purple-600" },
+];
+
 export const CardEffectHistoryParallel = ({ isActive = false }: CardEffectHistoryParallelProps) => {
-  const [scene, setScene] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [showInsight, setShowInsight] = useState(false);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
 
@@ -19,16 +29,20 @@ export const CardEffectHistoryParallel = ({ isActive = false }: CardEffectHistor
   const startAnimation = () => {
     clearTimers();
     loopCountRef.current++;
-    setScene(0);
+    setActiveIndex(-1);
+    setShowInsight(false);
 
-    timersRef.current.push(setTimeout(() => setScene(1), 500));
-    timersRef.current.push(setTimeout(() => setScene(2), 3000));
-    timersRef.current.push(setTimeout(() => setScene(3), 6000));
-    timersRef.current.push(setTimeout(() => setScene(4), 9000));
-    timersRef.current.push(setTimeout(() => setScene(5), 12000));
+    // Animate each timeline item sequentially
+    timelineData.forEach((_, index) => {
+      timersRef.current.push(setTimeout(() => setActiveIndex(index), 500 + index * 1500));
+    });
 
+    // Show insight after all items
+    timersRef.current.push(setTimeout(() => setShowInsight(true), 500 + timelineData.length * 1500 + 500));
+
+    // Loop twice
     if (loopCountRef.current < 2) {
-      timersRef.current.push(setTimeout(() => startAnimation(), 15000));
+      timersRef.current.push(setTimeout(() => startAnimation(), 500 + timelineData.length * 1500 + 3000));
     }
   };
 
@@ -38,145 +52,164 @@ export const CardEffectHistoryParallel = ({ isActive = false }: CardEffectHistor
       startAnimation();
     } else {
       clearTimers();
-      setScene(0);
+      setActiveIndex(-1);
+      setShowInsight(false);
     }
     return () => clearTimers();
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-violet-950 via-purple-950 to-fuchsia-950">
-      {/* Timeline effect */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: scene >= 1 ? 1 : 0 }}
-        className="absolute top-1/2 left-8 right-8 h-1 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-600 rounded-full origin-left"
-      />
+    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full p-6">
-        <AnimatePresence mode="wait">
-          {/* Scene 1: Title */}
-          {scene >= 1 && (
-            <motion.div
-              key="title"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-10 text-center"
-            >
-              <h3 className="text-violet-300 text-xl font-bold flex items-center gap-2 justify-center">
-                <Clock className="w-5 h-5" />
-                A História Se Repete
-              </h3>
-            </motion.div>
-          )}
+      <div className="relative z-10 flex flex-col h-full p-4 sm:p-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-4"
+        >
+          <div className="inline-flex items-center gap-2 bg-violet-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-violet-400/30 mb-3">
+            <Clock className="w-4 h-4 text-violet-300" />
+            <span className="text-violet-300 text-sm font-medium">A História Se Repete</span>
+          </div>
+          <h3 className="text-white text-lg sm:text-xl font-bold">
+            Tecnologias que{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
+              Transformaram
+            </span>{" "}
+            o Mundo
+          </h3>
+        </motion.div>
 
-          {/* Scene 2: Internet era */}
-          {scene >= 2 && (
+        {/* Timeline */}
+        <div className="flex-1 flex items-center justify-center overflow-x-auto">
+          <div className="relative flex items-center gap-2 sm:gap-4 px-2">
+            {/* Timeline line */}
             <motion.div
-              key="internet"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: scene >= 3 ? 0.5 : 1, x: 0 }}
-              className="absolute left-8 top-1/2 -translate-y-1/2"
-            >
-              <div className="flex flex-col items-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                  scene >= 3 ? 'bg-gray-700' : 'bg-gradient-to-br from-blue-500 to-cyan-600'
-                }`}>
-                  <Globe className={`w-8 h-8 ${scene >= 3 ? 'text-gray-400' : 'text-white'}`} />
-                </div>
-                <p className={`text-sm font-medium mt-2 ${scene >= 3 ? 'text-gray-500' : 'text-blue-300'}`}>Internet</p>
-                <p className={`text-xs ${scene >= 3 ? 'text-gray-600' : 'text-blue-400/70'}`}>~1995</p>
-                
-                <div className={`mt-3 text-xs text-center max-w-24 ${scene >= 3 ? 'text-gray-500' : 'text-gray-300'}`}>
-                  "É modinha"
-                </div>
-                <div className={`mt-1 text-xs text-center max-w-24 ${scene >= 3 ? 'text-gray-600' : 'text-gray-400'}`}>
-                  → Negócios construídos
-                </div>
-              </div>
-            </motion.div>
-          )}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: activeIndex >= 0 ? 1 : 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-fuchsia-500 rounded-full origin-left -translate-y-1/2 z-0"
+            />
 
-          {/* Center arrow */}
-          {scene >= 2 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            >
-              <motion.div
-                animate={{ x: [0, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              >
-                <ArrowRight className="w-8 h-8 text-purple-400" />
-              </motion.div>
-            </motion.div>
-          )}
+            {timelineData.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = activeIndex >= index;
+              const isCurrent = activeIndex === index;
+              const isLast = index === timelineData.length - 1;
 
-          {/* Scene 3: AI era */}
-          {scene >= 3 && (
-            <motion.div
-              key="ai"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="absolute right-8 top-1/2 -translate-y-1/2"
-            >
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
-                  <Cpu className="w-8 h-8 text-white" />
-                </div>
-                <p className="text-fuchsia-300 text-sm font-medium mt-2">I.A.</p>
-                <p className="text-fuchsia-400/70 text-xs">Agora</p>
-                
-                <div className="mt-3 text-xs text-center max-w-24 text-fuchsia-200">
-                  Acesso simples
-                </div>
-                <div className="mt-1 text-xs text-center max-w-24 text-fuchsia-300/70">
-                  Não precisa programar
-                </div>
-              </div>
-            </motion.div>
-          )}
+              return (
+                <motion.div
+                  key={item.year}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ 
+                    opacity: isActive ? 1 : 0.3, 
+                    scale: isCurrent ? 1.1 : 1,
+                  }}
+                  transition={{ duration: 0.4 }}
+                  className="relative z-10 flex flex-col items-center"
+                >
+                  {/* Card */}
+                  <motion.div
+                    animate={{ 
+                      boxShadow: isCurrent 
+                        ? `0 0 30px 5px rgba(168, 85, 247, 0.4)` 
+                        : 'none'
+                    }}
+                    className={`
+                      relative p-2 sm:p-3 rounded-xl border transition-all duration-300
+                      ${isLast 
+                        ? 'bg-gradient-to-br from-fuchsia-900/80 to-purple-900/80 border-fuchsia-400/50' 
+                        : 'bg-slate-800/80 border-slate-600/50'}
+                      ${isCurrent ? 'border-violet-400' : ''}
+                    `}
+                  >
+                    {/* Icon container */}
+                    <div className={`
+                      w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-1
+                      bg-gradient-to-br ${item.color}
+                    `}>
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    
+                    {/* Label */}
+                    <p className={`text-xs sm:text-sm font-semibold text-center ${isLast ? 'text-fuchsia-200' : 'text-white'}`}>
+                      {item.label}
+                    </p>
+                    
+                    {/* Year */}
+                    <p className={`text-[10px] sm:text-xs text-center ${isLast ? 'text-fuchsia-300/70' : 'text-slate-400'}`}>
+                      {item.year}
+                    </p>
 
-          {/* Scene 4: Key difference */}
-          {scene >= 4 && (
+                    {/* Pulse effect for current */}
+                    {isCurrent && (
+                      <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                        className="absolute inset-0 rounded-xl border-2 border-violet-400"
+                      />
+                    )}
+
+                    {/* Star for last item */}
+                    {isLast && isActive && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1, rotate: 360 }}
+                        className="absolute -top-2 -right-2"
+                      >
+                        <Sparkles className="w-5 h-5 text-yellow-400" />
+                      </motion.div>
+                    )}
+                  </motion.div>
+
+                  {/* Connection dot */}
+                  <motion.div
+                    animate={{ 
+                      scale: isActive ? 1 : 0,
+                      backgroundColor: isCurrent ? '#a855f7' : '#6366f1'
+                    }}
+                    className="absolute -bottom-3 w-3 h-3 rounded-full"
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Insight */}
+        <AnimatePresence>
+          {showInsight && (
             <motion.div
-              key="difference"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-28 bg-fuchsia-900/40 backdrop-blur-sm px-6 py-3 rounded-xl border border-fuchsia-500/30"
+              exit={{ opacity: 0, y: 20 }}
+              className="text-center mt-4"
             >
-              <div className="flex items-center gap-3">
-                <TrendingUp className="w-5 h-5 text-fuchsia-400" />
-                <p className="text-fuchsia-300 font-medium">
-                  Diferença: acesso muito mais simples
+              <div className="inline-flex items-center gap-2 bg-fuchsia-900/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-fuchsia-500/30">
+                <ArrowRight className="w-4 h-4 text-fuchsia-400" />
+                <p className="text-fuchsia-200 text-sm font-medium">
+                  Cada revolução trouxe quem agiu primeiro
                 </p>
               </div>
-            </motion.div>
-          )}
-
-          {/* Scene 5: Insight */}
-          {scene >= 5 && (
-            <motion.div
-              key="insight"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute bottom-8"
-            >
-              <p className="text-violet-400/70 text-sm flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Precisa aprender a pedir e usar
-              </p>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Progress indicator */}
-        <div className="flex gap-2 mt-4 absolute bottom-5">
-          {[1, 2, 3, 4, 5].map((s) => (
+        <div className="flex gap-2 justify-center mt-4">
+          {timelineData.map((_, index) => (
             <motion.div
-              key={s}
-              className={`w-2.5 h-2.5 rounded-full ${scene >= s ? 'bg-violet-400' : 'bg-violet-900'}`}
-              animate={{ scale: scene === s ? 1.3 : 1 }}
+              key={index}
+              className={`w-2 h-2 rounded-full ${activeIndex >= index ? 'bg-violet-400' : 'bg-violet-900'}`}
+              animate={{ scale: activeIndex === index ? 1.3 : 1 }}
             />
           ))}
         </div>
