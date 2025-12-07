@@ -28,7 +28,7 @@ export const CardEffectHumanDirector = ({ isActive = true, duration = 15 }: Card
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 p-8 flex flex-col"
+      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-yellow-950 to-orange-950 p-4 sm:p-6 md:p-8 flex flex-col"
     >
       {/* Header */}
       <motion.div 
