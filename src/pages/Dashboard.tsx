@@ -341,7 +341,7 @@ const Dashboard = () => {
         {/* Stats Cards - DESIGN SOFISTICADO COM SPARKLES */}
         <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
           <AnimatedStatCard
-            value={user?.streak_days || 0}
+            value={gamificationStats?.streakDays || 0}
             label="Dias de sequência"
             icon={Flame}
             gradientFrom="#ec4899"
@@ -357,7 +357,7 @@ const Dashboard = () => {
             delay={0.35}
           />
           <AnimatedStatCard
-            value={user?.total_lessons_completed || 0}
+            value={gamificationStats?.lessonsCompleted || 0}
             label="Aulas completas"
             icon={BookOpen}
             gradientFrom="#10b981"

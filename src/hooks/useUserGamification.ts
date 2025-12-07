@@ -7,6 +7,8 @@ export type UserGamificationStats = {
   coins: number;
   patentLevel: number;
   patentName: string;
+  streakDays: number;
+  lessonsCompleted: number;
 };
 
 const PATENT_NAMES: Record<number, string> = {
@@ -29,7 +31,7 @@ export function useUserGamification() {
 
       const { data } = await supabase
         .from('users')
-        .select('power_score, coins, patent_level')
+        .select('power_score, coins, patent_level, streak_days, total_lessons_completed')
         .eq('id', user.id)
         .single();
 
@@ -39,6 +41,8 @@ export function useUserGamification() {
           coins: data.coins || 0,
           patentLevel: data.patent_level || 0,
           patentName: PATENT_NAMES[data.patent_level || 0],
+          streakDays: data.streak_days || 0,
+          lessonsCompleted: data.total_lessons_completed || 0,
         };
 
         // Detectar subida de patente
