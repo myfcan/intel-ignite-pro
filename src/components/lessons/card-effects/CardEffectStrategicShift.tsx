@@ -34,7 +34,7 @@ export const CardEffectStrategicShift = ({ isActive = true, duration = 21 }: Car
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[480px] sm:min-h-[520px] h-[65vh] max-h-[650px] rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-950 to-purple-950 p-4 sm:p-6 md:p-8 flex flex-col"
+      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-950 to-purple-950 p-4 sm:p-6 md:p-8 flex flex-col"
     >
       {/* Header */}
       <motion.div 

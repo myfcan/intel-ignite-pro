@@ -36,7 +36,7 @@ export const CardEffectAiStrengths = ({ isActive = true, duration = 18 }: CardEf
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[480px] sm:min-h-[520px] h-[65vh] max-h-[650px] rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-950 via-green-950 to-teal-950 p-4 sm:p-6 md:p-8 flex flex-col"
+      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-950 via-green-950 to-teal-950 p-4 sm:p-6 md:p-8 flex flex-col"
     >
       {/* Header */}
       <motion.div 

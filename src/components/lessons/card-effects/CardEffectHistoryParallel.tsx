@@ -59,7 +59,7 @@ export const CardEffectHistoryParallel = ({ isActive = false }: CardEffectHistor
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950">
+    <div className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
