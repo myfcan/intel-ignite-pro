@@ -804,7 +804,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         setTimeout(() => {
           const sectionElement = document.getElementById(`section-${currentSection}`);
           if (sectionElement) {
-            const headerHeight = 180; // Aumentado para cards ficarem mais para cima
+            const headerHeight = 60; // Reduzido para cards ficarem mais para cima na tela
             const elementTop = sectionElement.getBoundingClientRect().top;
             const offsetTop = elementTop + window.pageYOffset;
             const targetPosition = offsetTop - headerHeight;
@@ -841,7 +841,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       setTimeout(() => {
         const targetElement = segmentRefs.current[activeSegment.id];
         if (targetElement) {
-          const headerHeight = 180; // Aumentado para cards ficarem mais para cima
+          const headerHeight = 60; // Reduzido para cards ficarem mais para cima na tela
           const elementTop = targetElement.getBoundingClientRect().top;
           const offsetTop = elementTop + window.pageYOffset;
           const targetPosition = offsetTop - headerHeight;
@@ -1011,7 +1011,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     setTimeout(() => {
       const sectionElement = document.getElementById(`section-${index}`);
       if (sectionElement) {
-        const headerHeight = 180; // Aumentado para cards ficarem mais para cima
+        const headerHeight = 60; // Reduzido para cards ficarem mais para cima na tela
         const elementTop = sectionElement.getBoundingClientRect().top;
         const offsetTop = elementTop + window.pageYOffset;
         const targetPosition = offsetTop - headerHeight;
@@ -1040,7 +1040,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       
       const sectionElement = document.getElementById(`section-${sectionWhenMuted}`);
       if (sectionElement) {
-        const yOffset = -180; // Aumentado para cards ficarem mais para cima
+        const yOffset = -60; // Reduzido para cards ficarem mais para cima na tela
         const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
