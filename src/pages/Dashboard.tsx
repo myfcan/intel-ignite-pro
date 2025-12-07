@@ -13,6 +13,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { motion } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 import { useUserGamification } from "@/hooks/useUserGamification";
+import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 
 interface User {
   id: string;
@@ -337,112 +338,32 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Stats Cards - DESIGN SOFISTICADO */}
+        {/* Stats Cards - DESIGN SOFISTICADO COM SPARKLES */}
         <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
-          {/* Sequência */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
-            className="group relative rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-          >
-            {/* Glow background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-transparent to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative flex flex-col items-center gap-3 sm:gap-4">
-              {/* Icon with glow */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
-                  <Flame className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-sm" />
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <motion.div 
-                  className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-1"
-                  initial={{ scale: 0.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-                >
-                  {user?.streak_days || 0}
-                </motion.div>
-                <div className="text-xs sm:text-sm font-medium text-gray-500">
-                  Dias de sequência
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Power Score */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
-            className="group relative rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-          >
-            {/* Glow background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative flex flex-col items-center gap-3 sm:gap-4">
-              {/* Icon with glow */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
-                  <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-sm" />
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <motion.div 
-                  className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-1"
-                  initial={{ scale: 0.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.55, type: "spring", stiffness: 200 }}
-                >
-                  {gamificationStats?.powerScore || 0}
-                </motion.div>
-                <div className="text-xs sm:text-sm font-medium text-gray-500">
-                  Power Score
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Aulas */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.5, duration: 0.5, ease: "easeOut" }}
-            className="group relative rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-          >
-            {/* Glow background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative flex flex-col items-center gap-3 sm:gap-4">
-              {/* Icon with glow */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-cyan-600 shadow-lg">
-                  <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-sm" />
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <motion.div 
-                  className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent mb-1"
-                  initial={{ scale: 0.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
-                >
-                  {user?.total_lessons_completed || 0}
-                </motion.div>
-                <div className="text-xs sm:text-sm font-medium text-gray-500">
-                  Aulas completas
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          <AnimatedStatCard
+            value={user?.streak_days || 0}
+            label="Dias de sequência"
+            icon={Flame}
+            gradientFrom="#ec4899"
+            gradientTo="#e11d48"
+            delay={0.2}
+          />
+          <AnimatedStatCard
+            value={gamificationStats?.powerScore || 0}
+            label="Power Score"
+            icon={Trophy}
+            gradientFrom="#6366f1"
+            gradientTo="#9333ea"
+            delay={0.35}
+          />
+          <AnimatedStatCard
+            value={user?.total_lessons_completed || 0}
+            label="Aulas completas"
+            icon={BookOpen}
+            gradientFrom="#10b981"
+            gradientTo="#0891b2"
+            delay={0.5}
+          />
         </div>
 
         {/* Trilhas Section - SCROLL HORIZONTAL NO MOBILE */}
