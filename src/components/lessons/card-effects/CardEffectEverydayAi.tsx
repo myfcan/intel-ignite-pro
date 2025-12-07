@@ -41,7 +41,7 @@ export const CardEffectEverydayAi = ({ isActive = true, duration = 28 }: CardEff
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-950 to-violet-950 p-4 sm:p-6 md:p-8 flex flex-col"
+      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-slate-900 p-4 sm:p-6 md:p-8 flex flex-col"
     >
       {/* Header */}
       <motion.div 
