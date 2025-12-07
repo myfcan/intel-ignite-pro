@@ -630,7 +630,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
         const sectionElement = document.getElementById(`section-${currentSection}`);
         if (sectionElement) {
           // Calcular posição com offset para compensar header fixo
-          const headerHeight = 120; // altura aumentada para melhor visualização
+          const headerHeight = 180; // Aumentado para cards ficarem mais para cima
           const elementTop = sectionElement.getBoundingClientRect().top;
           const offsetTop = elementTop + window.pageYOffset;
           const targetPosition = offsetTop - headerHeight;
@@ -1089,7 +1089,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
     setTimeout(() => {
       const sectionElement = document.getElementById(`section-${index}`);
       if (sectionElement) {
-        const headerHeight = 120;
+        const headerHeight = 180; // Aumentado para cards ficarem mais para cima
         const elementTop = sectionElement.getBoundingClientRect().top;
         const offsetTop = elementTop + window.pageYOffset;
         const targetPosition = offsetTop - headerHeight;
@@ -1121,7 +1121,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
       // Fazer scroll de volta para a seção onde o áudio estava
       const sectionElement = document.getElementById(`section-${sectionWhenMuted}`);
       if (sectionElement) {
-        const yOffset = -80;
+        const yOffset = -180; // Aumentado para cards ficarem mais para cima
         const y = sectionElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
