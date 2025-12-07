@@ -46,8 +46,8 @@ export const CardEffectHumanDirector = ({ isActive = true, duration = 28 }: Card
       </motion.div>
 
       {/* Director Visualization */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="relative w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center overflow-hidden">
+        <div className="relative w-full max-w-md px-2">
           {/* Human Director */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -126,7 +126,7 @@ export const CardEffectHumanDirector = ({ isActive = true, duration = 28 }: Card
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-6 grid grid-cols-2 gap-2"
+              className="mt-4 grid grid-cols-2 gap-2"
             >
               {[
                 { human: "Define objetivos", ai: "Executa tarefas" },
@@ -158,16 +158,16 @@ export const CardEffectHumanDirector = ({ isActive = true, duration = 28 }: Card
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-cyan-500/10 border border-amber-500/20 text-center"
+          className="mt-2 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-cyan-500/10 border border-amber-500/20 text-center"
         >
-          <Sparkles className="w-6 h-6 text-amber-400 mx-auto mb-2" />
-          <p className="text-white font-semibold">Humano + I.A. = Superpoder</p>
-          <p className="text-amber-300 text-sm">Você dirige, a I.A. executa em escala</p>
+          <Sparkles className="w-5 h-5 text-amber-400 mx-auto mb-1" />
+          <p className="text-white font-medium text-sm">Humano + I.A. = Superpoder</p>
+          <p className="text-amber-300 text-xs">Você dirige, a I.A. executa</p>
         </motion.div>
       )}
 
       {/* Progress */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center gap-2 mt-2 pb-2">
         {Array.from({ length: totalPhases }).map((_, i) => (
           <motion.div
             key={i}
