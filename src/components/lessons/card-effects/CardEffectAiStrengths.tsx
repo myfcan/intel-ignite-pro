@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { Zap, Clock, Scale, RefreshCw, CheckCircle, TrendingUp, Sparkles } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectAiStrengths = ({ isActive = true, duration = 18 }: CardEffectProps) => {
+export const CardEffectAiStrengths = ({ isActive = true, duration = 28 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const [activeStrength, setActiveStrength] = useState(0);
   const maxLoops = 2;
-  const totalPhases = 6;
+  const totalPhases = 7;
   const phaseTime = (duration * 1000) / totalPhases;
 
   useEffect(() => {

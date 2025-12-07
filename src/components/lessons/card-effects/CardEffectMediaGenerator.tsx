@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import { Image, Film, Music, FileText, Wand2, Sparkles, Zap } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectMediaGenerator = ({ isActive = true, duration = 18 }: CardEffectProps) => {
+export const CardEffectMediaGenerator = ({ isActive = true, duration = 28 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const [generatingType, setGeneratingType] = useState(0);
   const maxLoops = 2;
-  const totalPhases = 6;
+  const totalPhases = 7;
   const phaseTime = (duration * 1000) / totalPhases;
 
   useEffect(() => {

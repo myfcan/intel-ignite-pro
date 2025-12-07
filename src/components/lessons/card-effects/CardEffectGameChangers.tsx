@@ -12,13 +12,13 @@ const timelineData = [
   { year: "2025", label: "Inteligência Artificial", icon: Brain, color: "#06b6d4", bg: "from-cyan-500/20 to-blue-600/20" },
 ];
 
-export const CardEffectGameChangers = ({ isActive = true, duration = 18 }: CardEffectProps) => {
+export const CardEffectGameChangers = ({ isActive = true, duration = 32 }: CardEffectProps) => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [showInsight, setShowInsight] = useState(false);
   const [loopCount, setLoopCount] = useState(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const maxLoops = 2;
-  const itemDuration = 2000;
+  const itemDuration = 3500;
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
