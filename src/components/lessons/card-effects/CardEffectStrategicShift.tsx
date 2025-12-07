@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { TrendingUp, Target, Compass, ArrowRight, CheckCircle, Sparkles, Zap, Users, Brain } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectStrategicShift = ({ isActive = true, duration = 21 }: CardEffectProps) => {
+export const CardEffectStrategicShift = ({ isActive = true, duration = 27 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const maxLoops = 2;
-  const totalPhases = 7;
+  const totalPhases = 9;
   const phaseTime = (duration * 1000) / totalPhases;
 
   useEffect(() => {
@@ -182,8 +182,98 @@ export const CardEffectStrategicShift = ({ isActive = true, duration = 21 }: Car
             </motion.div>
           )}
 
-          {/* Phase 6: Final Call */}
+          {/* Phase 6: Vantagem Competitiva */}
           {phase === 6 && (
+            <motion.div
+              key="competitive"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col items-center text-center px-4 w-full max-w-sm"
+            >
+              <motion.div 
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center mb-4"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  boxShadow: ['0 0 0px #10b981', '0 0 30px #10b981', '0 0 0px #10b981']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Target className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
+              </motion.div>
+              
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-3">
+                Sua <span className="text-emerald-400">Vantagem</span> Competitiva
+              </h3>
+
+              <div className="space-y-2 w-full">
+                {[
+                  { text: "Entregar mais em menos tempo", icon: Zap },
+                  { text: "Resolver problemas complexos", icon: Brain },
+                  { text: "Se destacar no mercado", icon: TrendingUp },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.2 }}
+                    className="flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+                  >
+                    <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 flex-shrink-0" />
+                    <span className="text-emerald-300 text-xs sm:text-sm">{item.text}</span>
+                    <CheckCircle className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Phase 7: O Momento é Agora */}
+          {phase === 7 && (
+            <motion.div
+              key="moment"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center text-center px-4"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: 360,
+                }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-dashed border-amber-500/40 flex items-center justify-center mb-4"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/30 flex items-center justify-center"
+                >
+                  <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400" />
+                </motion.div>
+              </motion.div>
+
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                O <span className="text-amber-400">Momento</span> é Agora
+              </h3>
+              
+              <p className="text-gray-300 text-xs sm:text-sm max-w-xs mb-4">
+                Quem domina I.A. hoje será líder amanhã
+              </p>
+
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 2 }}
+                className="h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-full max-w-[200px]"
+              />
+              
+              <p className="text-amber-400/80 text-xs mt-2">Não fique para trás</p>
+            </motion.div>
+          )}
+
+          {/* Phase 8: Final Call */}
+          {phase === 8 && (
             <motion.div
               key="final"
               initial={{ opacity: 0, y: 20 }}
