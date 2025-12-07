@@ -824,10 +824,6 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   }, [currentSection]);
 
   // 🎬 V5 SEGMENTOS: Sincronizar segmento ativo com tempo do áudio
-  // 🔧 FIX: Considerar duração mínima do card effect antes de fazer scroll para próximo
-  const [cardStartTime, setCardStartTime] = useState<number | null>(null);
-  const CARD_MINIMUM_DURATION = 28; // Duração mínima do card effect em segundos
-
   useEffect(() => {
     if (!isV2 || currentSectionSegments.length === 0) return;
 
@@ -836,32 +832,10 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
     // Só fazer scroll se o segmento mudou
     if (activeSegment.id !== lastSegmentIdRef.current) {
-      // 🔧 FIX: Se estamos em um card e o card ainda não terminou sua animação, ignorar transição
-      if (lastSegmentIdRef.current) {
-        const lastSegment = currentSectionSegments.find(s => s.id === lastSegmentIdRef.current);
-        if (lastSegment?.type === 'card' && cardStartTime !== null) {
-          const cardElapsedTime = currentTime - cardStartTime;
-          const cardDuration = lastSegment.cardConfig?.duration || CARD_MINIMUM_DURATION;
-          
-          if (cardElapsedTime < cardDuration) {
-            // Card ainda está animando, não fazer scroll
-            console.log(`🛡️ [V5-SEGMENT-LOCK] Card ainda animando: ${cardElapsedTime.toFixed(1)}s / ${cardDuration}s`);
-            return;
-          }
-        }
-      }
-
       console.log(`🎬 [V5-SEGMENT-CHANGE] ${lastSegmentIdRef.current} → ${activeSegment.id} (at ${currentTime.toFixed(1)}s)`);
 
       lastSegmentIdRef.current = activeSegment.id;
       setActiveSegmentId(activeSegment.id);
-
-      // Registrar início do card para controle de duração
-      if (activeSegment.type === 'card') {
-        setCardStartTime(currentTime);
-      } else {
-        setCardStartTime(null);
-      }
 
       // Fazer scroll para o elemento do segmento
       setTimeout(() => {
@@ -883,7 +857,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         }
       }, 50);
     }
-  }, [currentTime, currentSectionSegments, cardStartTime]);
+  }, [currentTime, currentSectionSegments]);
   
   const togglePlayPause = () => {
     const audio = audioRef.current;
