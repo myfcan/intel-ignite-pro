@@ -53,7 +53,7 @@ export const CardEffectRecommendationEngine = ({ isActive = true, duration = 28 
       </motion.div>
 
       {/* Recommendation Flow */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 overflow-hidden">
         {/* User Profile */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -148,16 +148,16 @@ export const CardEffectRecommendationEngine = ({ isActive = true, duration = 28 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 text-center"
+          className="mt-2 p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 text-center"
         >
-          <ThumbsUp className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-          <p className="text-white font-semibold">Personalização em tempo real!</p>
-          <p className="text-pink-300 text-sm">I.A. aprende suas preferências continuamente</p>
+          <ThumbsUp className="w-5 h-5 text-pink-400 mx-auto mb-1" />
+          <p className="text-white font-medium text-sm">Personalização em tempo real!</p>
+          <p className="text-pink-300 text-xs">I.A. aprende suas preferências</p>
         </motion.div>
       )}
 
       {/* Progress */}
-      <div className="flex justify-center gap-2 mt-4">
+      <div className="flex justify-center gap-2 mt-2 pb-2">
         {Array.from({ length: totalPhases }).map((_, i) => (
           <motion.div
             key={i}
