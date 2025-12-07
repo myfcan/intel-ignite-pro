@@ -231,23 +231,6 @@ const TrailCard = ({
           : '0 4px 20px rgba(131, 123, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
       }}
     >
-      {/* Subtle Shine Overlay */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.08) 100%)',
-        }}
-      />
-      
-      {/* Textura de Pontos */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          backgroundPosition: '0 0'
-        }}
-      />
 
       {/* Badge de Status */}
       <div className="absolute top-2 xs:top-3 right-2 xs:right-3 z-10">
