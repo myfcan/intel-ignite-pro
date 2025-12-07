@@ -396,11 +396,11 @@ const Dashboard = () => {
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Suas Trilhas</h2>
           
           {/* Mobile: Scroll Horizontal com Snap e Indicadores */}
-          <div className="md:hidden relative">
+          <div className="md:hidden relative px-4">
             {/* Container com scroll */}
             <div 
               ref={scrollRef}
-              className="overflow-x-auto hide-scrollbar snap-x snap-mandatory px-2"
+              className="overflow-x-auto hide-scrollbar snap-x snap-mandatory -mx-4 px-4"
               onScroll={(e) => {
                 const element = e.currentTarget;
                 const scrollLeft = element.scrollLeft;
@@ -409,7 +409,7 @@ const Dashboard = () => {
                 setActiveTrailIndex(newIndex);
               }}
             >
-              <div className="flex gap-3 pb-2">
+              <div className="flex gap-4 pb-2">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
@@ -422,7 +422,7 @@ const Dashboard = () => {
                   const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
 
                   return (
-                    <div key={trail.id} className="snap-center flex-shrink-0 w-[85vw] max-w-[340px]">
+                    <div key={trail.id} className="snap-center flex-shrink-0 w-[calc(100vw-48px)] max-w-[380px]">
                       <TrailCard
                         trail={trail}
                         Icon={Icon}
