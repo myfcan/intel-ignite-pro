@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { Smartphone, Music, ShoppingCart, Navigation, MessageCircle, Heart } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectEverydayAi = ({ isActive = true, duration = 15 }: CardEffectProps) => {
+export const CardEffectEverydayAi = ({ isActive = true, duration = 28 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const maxLoops = 2;
-  const totalPhases = 5;
+  const totalPhases = 7;
   const phaseTime = (duration * 1000) / totalPhases;
 
   useEffect(() => {

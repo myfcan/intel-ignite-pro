@@ -32,17 +32,17 @@ export const CardEffectHistoryParallel = ({ isActive = false }: CardEffectHistor
     setActiveIndex(-1);
     setShowInsight(false);
 
-    // Animate each timeline item sequentially
+    // Animate each timeline item sequentially - increased to 2500ms for better readability
     timelineData.forEach((_, index) => {
-      timersRef.current.push(setTimeout(() => setActiveIndex(index), 500 + index * 1500));
+      timersRef.current.push(setTimeout(() => setActiveIndex(index), 500 + index * 2500));
     });
 
-    // Show insight after all items
-    timersRef.current.push(setTimeout(() => setShowInsight(true), 500 + timelineData.length * 1500 + 500));
+    // Show insight after all items - increased timing
+    timersRef.current.push(setTimeout(() => setShowInsight(true), 500 + timelineData.length * 2500 + 500));
 
-    // Loop twice
+    // Loop twice - increased timing
     if (loopCountRef.current < 2) {
-      timersRef.current.push(setTimeout(() => startAnimation(), 500 + timelineData.length * 1500 + 3000));
+      timersRef.current.push(setTimeout(() => startAnimation(), 500 + timelineData.length * 2500 + 4000));
     }
   };
 

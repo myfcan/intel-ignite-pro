@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Database, Brain, TrendingUp, Sparkles, FileText } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectDataLearner = ({ isActive = true, duration = 21 }: CardEffectProps) => {
+export const CardEffectDataLearner = ({ isActive = true, duration = 28 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const maxLoops = 2;

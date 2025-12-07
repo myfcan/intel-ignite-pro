@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Cpu, Grid3X3, Eye, CheckCircle, Layers, Sparkles, Brain, Target, Zap } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectPatternMachine = ({ isActive = true, duration = 21 }: CardEffectProps) => {
+export const CardEffectPatternMachine = ({ isActive = true, duration = 28 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const [highlightedCells, setHighlightedCells] = useState<number[]>([]);

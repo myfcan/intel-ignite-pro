@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, Target, Compass, ArrowRight, CheckCircle, Sparkles, Zap, Users, Brain } from "lucide-react";
 import { CardEffectProps } from "./index";
 
-export const CardEffectStrategicShift = ({ isActive = true, duration = 27 }: CardEffectProps) => {
+export const CardEffectStrategicShift = ({ isActive = true, duration = 36 }: CardEffectProps) => {
   const [phase, setPhase] = useState(0);
   const [loopCount, setLoopCount] = useState(0);
   const maxLoops = 2;
