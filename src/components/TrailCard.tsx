@@ -286,32 +286,54 @@ const TrailCard = ({
       onMouseLeave={() => setIsHovered(false)}
       className="group relative rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 border cursor-pointer min-h-[260px] xs:min-h-[280px] sm:h-[320px] flex flex-col w-full overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #5AA0FF 0%, #7162FF 100%)',
-        borderColor: isPulsing ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.3)',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 50%, #FCE7F3 100%)',
+        borderColor: isPulsing ? 'rgba(236, 72, 153, 0.4)' : 'rgba(236, 72, 153, 0.2)',
         boxShadow: isPulsing 
-          ? '0 8px 30px rgba(131, 123, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)' 
-          : '0 4px 20px rgba(131, 123, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          ? '0 8px 30px rgba(236, 72, 153, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' 
+          : '0 4px 20px rgba(236, 72, 153, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
       }}
     >
-      {/* Sparkles on hover */}
+      {/* Sparkles on hover - now pink */}
       {isHovered && sparkles.map((sparkle, i) => (
-        <Sparkle key={i} {...sparkle} />
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: sparkle.size,
+            height: sparkle.size,
+            left: `${sparkle.x}%`,
+            top: `${sparkle.y}%`,
+            background: 'linear-gradient(135deg, #ec4899, #f472b6)',
+          }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0, 1, 0],
+          }}
+          transition={{
+            duration: 1.2,
+            delay: sparkle.delay,
+            repeat: Infinity,
+            repeatDelay: 0.3,
+          }}
+        />
       ))}
 
-      {/* Glow effect on hover */}
+      {/* Glow effect on hover - pink tint */}
       <motion.div 
         className="absolute inset-0 pointer-events-none rounded-2xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: isHovered ? 1 : 0 }}
         style={{
-          background: 'radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)',
+          background: 'radial-gradient(circle at 50% 30%, rgba(236, 72, 153, 0.1) 0%, transparent 60%)',
         }}
       />
 
-      {/* Pulsing ring for PRÓXIMA */}
+      {/* Pulsing ring for PRÓXIMA - pink */}
       {isPulsing && (
         <motion.div 
-          className="absolute inset-0 rounded-lg xs:rounded-xl sm:rounded-2xl border-2 border-white/40 pointer-events-none"
+          className="absolute inset-0 rounded-lg xs:rounded-xl sm:rounded-2xl border-2 pointer-events-none"
+          style={{ borderColor: 'rgba(236, 72, 153, 0.4)' }}
           animate={{ 
             scale: [1, 1.02, 1],
             opacity: [0.5, 0.8, 0.5]
@@ -320,13 +342,16 @@ const TrailCard = ({
         />
       )}
 
-      {/* Badge de Status */}
+      {/* Badge de Status - gradient rosa */}
       <div className="absolute top-2 xs:top-3 right-2 xs:right-3 z-10">
         <motion.span 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}
-          className="px-2 xs:px-2.5 py-0.5 xs:py-1 bg-white/20 text-white text-[9px] xs:text-[10px] sm:text-xs font-bold rounded-full flex items-center gap-1 backdrop-blur-sm whitespace-nowrap"
+          className="px-2 xs:px-2.5 py-0.5 xs:py-1 text-white text-[9px] xs:text-[10px] sm:text-xs font-bold rounded-full flex items-center gap-1 whitespace-nowrap"
+          style={{
+            background: 'linear-gradient(135deg, #ec4899, #f43f5e)',
+          }}
         >
           {isPulsing ? (
             'PRÓXIMA'
@@ -343,13 +368,13 @@ const TrailCard = ({
         </motion.span>
       </div>
       
-      {/* Ícone Central com glow */}
+      {/* Ícone Central com glow rosa */}
       <div className="flex justify-center mb-2 xs:mb-3 relative z-10 flex-shrink-0">
         <div className="relative">
           {/* Icon glow */}
           <motion.div 
             className="absolute inset-0 rounded-lg xs:rounded-xl sm:rounded-2xl blur-lg"
-            style={{ background: 'rgba(255, 255, 255, 0.4)' }}
+            style={{ background: 'rgba(236, 72, 153, 0.3)' }}
             animate={{ 
               opacity: isHovered ? [0.4, 0.7, 0.4] : 0.3,
               scale: isHovered ? [1, 1.15, 1] : 1
@@ -357,7 +382,11 @@ const TrailCard = ({
             transition={{ duration: 1.5, repeat: Infinity }}
           />
           <motion.div 
-            className="relative w-12 h-12 xs:w-14 xs:h-14 sm:w-20 sm:h-20 rounded-lg xs:rounded-xl sm:rounded-2xl flex items-center justify-center bg-white/20 backdrop-blur-sm border border-white/30"
+            className="relative w-12 h-12 xs:w-14 xs:h-14 sm:w-20 sm:h-20 rounded-lg xs:rounded-xl sm:rounded-2xl flex items-center justify-center border"
+            style={{
+              background: 'linear-gradient(135deg, #ec4899, #f43f5e)',
+              borderColor: 'rgba(255, 255, 255, 0.5)',
+            }}
             animate={isHovered ? { rotate: [0, -5, 5, 0] } : {}}
             transition={{ duration: 0.5 }}
           >
@@ -366,28 +395,30 @@ const TrailCard = ({
         </div>
       </div>
       
-      {/* Título */}
-      <h3 className="text-white font-bold text-xs xs:text-sm sm:text-lg text-center mb-1 leading-tight relative z-10 px-1 break-words">
+      {/* Título - azul */}
+      <h3 className="font-bold text-xs xs:text-sm sm:text-lg text-center mb-1 leading-tight relative z-10 px-1 break-words" style={{ color: '#1e40af' }}>
         {trail.title}
       </h3>
       
-      {/* Subtítulo */}
-      <p className="text-white/90 font-semibold text-[10px] xs:text-xs text-center mb-2 xs:mb-3 uppercase tracking-wide relative z-10">
+      {/* Subtítulo - azul mais claro */}
+      <p className="font-semibold text-[10px] xs:text-xs text-center mb-2 xs:mb-3 uppercase tracking-wide relative z-10" style={{ color: '#3b82f6' }}>
         {isPulsing ? 'Próxima trilha' : 'Em andamento'}
       </p>
       
-      {/* Progress Bar Animada */}
+      {/* Progress Bar Animada - gradient rosa */}
       <div className="mb-2 xs:mb-3 flex-grow relative z-10 min-h-[40px] flex flex-col justify-center">
-        <div className="bg-white/20 backdrop-blur-sm rounded-full h-1.5 xs:h-2 overflow-hidden border border-white/30">
+        <div className="rounded-full h-1.5 xs:h-2 overflow-hidden border" style={{ background: 'rgba(236, 72, 153, 0.15)', borderColor: 'rgba(236, 72, 153, 0.2)' }}>
           <motion.div 
-            className="h-full rounded-full bg-white"
+            className="h-full rounded-full"
+            style={{ background: 'linear-gradient(90deg, #ec4899, #f43f5e)' }}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
           />
         </div>
         <motion.p 
-          className="text-center text-white font-bold mt-1.5 xs:mt-2 text-[10px] xs:text-xs sm:text-sm"
+          className="text-center font-bold mt-1.5 xs:mt-2 text-[10px] xs:text-xs sm:text-sm"
+          style={{ color: '#1e40af' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -396,8 +427,8 @@ const TrailCard = ({
         </motion.p>
       </div>
       
-      {/* Métricas */}
-      <div className="flex justify-center gap-3 xs:gap-4 mb-2 xs:mb-3 text-white/90 text-[10px] xs:text-xs sm:text-sm relative z-10 flex-shrink-0">
+      {/* Métricas - azul */}
+      <div className="flex justify-center gap-3 xs:gap-4 mb-2 xs:mb-3 text-[10px] xs:text-xs sm:text-sm relative z-10 flex-shrink-0" style={{ color: '#3b82f6' }}>
         <span className="flex items-center gap-1 whitespace-nowrap">
           <BookOpen className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span>{completedLessons}/{totalLessons} aulas</span>
@@ -408,12 +439,13 @@ const TrailCard = ({
         </span>
       </div>
       
-      {/* Botão CTA */}
+      {/* Botão CTA - Gradiente Rosa */}
       <motion.button 
-        className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl relative z-10 flex-shrink-0 overflow-hidden bg-white/95 text-indigo-600 border border-indigo-100"
-        whileHover={{ y: -2 }}
+        className="w-full py-2 xs:py-2.5 sm:py-3 text-[11px] xs:text-xs sm:text-base font-semibold rounded-lg xs:rounded-xl relative z-10 flex-shrink-0 overflow-hidden text-white border-0"
+        whileHover={{ y: -2, scale: 1.02 }}
         style={{
-          boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)',
+          background: 'linear-gradient(135deg, #ec4899, #f43f5e)',
+          boxShadow: '0 4px 15px rgba(236, 72, 153, 0.4)',
         }}
       >
         Continuar
