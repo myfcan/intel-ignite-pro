@@ -15,7 +15,7 @@ export const SyncedText = ({ content, isActive, isPast, isFuture }: SyncedTextPr
   // Scroll automático quando a seção fica ativa
   useEffect(() => {
     if (isActive && containerRef.current) {
-      const yOffset = -180; // Aumentado para cards ficarem mais para cima
+      const yOffset = -60; // Reduzido para cards ficarem mais para cima na tela
       const y = containerRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
       
       window.scrollTo({
