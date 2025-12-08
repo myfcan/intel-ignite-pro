@@ -250,6 +250,7 @@ export function PlaygroundBridge({
               config={playgroundConfig}
               onComplete={handlePlaygroundComplete}
               lessonId={lessonId}
+              playgroundExample={playgroundExample}
             />
           </motion.div>
         )}

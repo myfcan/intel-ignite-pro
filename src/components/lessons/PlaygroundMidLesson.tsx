@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, Check, ChevronRight, ArrowUp } from 'lucide-react';
+import { Loader2, Copy, Check, ChevronRight, ArrowUp, Target, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Tipo para dados estruturados do exemplo
@@ -334,30 +334,29 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId, playgroundEx
           
           {/* Conteúdo com scroll */}
           <div className="flex-1 p-6 overflow-y-auto">
-            {/* Box Complete o Desafio - mostra apenas os inputs se disponível */}
-            <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-4">
-              <h4 className="font-semibold text-foreground mb-2">
-                Complete o Desafio:
-              </h4>
+            {/* Box - Substitua os colchetes usando: */}
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
+                  Substitua os colchetes usando:
+                </span>
+              </div>
               
               {playgroundExample && playgroundExample.inputs.length > 0 ? (
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    🤖 Insira no prompt os dados abaixo:
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {playgroundExample.inputs.map((input, idx) => (
-                      <span 
-                        key={idx} 
-                        className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm px-2.5 py-1.5 rounded-full border border-yellow-300 dark:border-yellow-700"
-                      >
-                        <span className="font-bold">[{idx + 1}]</span> {input}
-                      </span>
-                    ))}
-                  </div>
+                  {playgroundExample.inputs.map((input, idx) => (
+                    <div 
+                      key={idx} 
+                      className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-orange-100 dark:border-orange-900/30"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-sm text-foreground">{input}</span>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-balance">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   🤖 {config.realConfig.maiaMessage}
                 </p>
               )}
