@@ -146,9 +146,9 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
                 variant="ghost"
                 size="icon"
                 onClick={handleBackClick}
-                className="flex-shrink-0"
+                className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all duration-200 shadow-sm"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               </Button>
             )}
             <div className="flex-1">
