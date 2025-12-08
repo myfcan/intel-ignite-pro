@@ -291,7 +291,7 @@ export function PlaygroundBridgeV2({
                   </div>
                 </div>
 
-                {/* REQUISITOS - Um card por vez com animação */}
+                {/* REQUISITOS - Stack Cards que voam ao clicar */}
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-3">
                   {/* Header com progresso */}
                   <div className="flex items-center justify-between mb-3">
@@ -301,65 +301,90 @@ export function PlaygroundBridgeV2({
                         Clique para aplicar ao prompt
                       </span>
                     </div>
-                    {/* Progress dots */}
-                    <div className="flex items-center gap-1">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div 
-                          key={i}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            completedSteps[i] 
-                              ? 'bg-emerald-400' 
-                              : i === activeStep 
-                                ? 'bg-amber-400 animate-pulse' 
-                                : 'bg-slate-600'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    {/* Progress indicator */}
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {Math.min(activeStep + 1, 4)} de 4
+                    </span>
                   </div>
                   
-                  {/* Card único animado */}
-                  <div className="relative min-h-[48px] overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      {activeStep < 4 && (
+                  {/* Stack de cards */}
+                  <div className="relative h-[56px]">
+                    {/* Cards empilhados (mostrados atrás) */}
+                    {[3, 2, 1, 0].map((idx) => {
+                      const isCompleted = completedSteps[idx];
+                      const isActive = idx === activeStep;
+                      const stackPosition = idx - activeStep;
+                      
+                      // Não mostrar cards já completados ou cards muito à frente
+                      if (isCompleted || stackPosition < 0 || stackPosition > 2) return null;
+                      
+                      return (
                         <motion.button
-                          key={activeStep}
-                          initial={{ opacity: 0, x: 50, scale: 0.95 }}
-                          animate={{ opacity: 1, x: 0, scale: 1 }}
-                          exit={{ opacity: 0, x: -50, scale: 0.95 }}
-                          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                          onClick={() => handleStepClick(activeStep)}
-                          className="w-full text-left bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400 rounded-lg px-4 py-3 text-white cursor-pointer hover:from-amber-500/30 hover:to-orange-500/30 transition-colors"
+                          key={idx}
+                          onClick={() => isActive && handleStepClick(idx)}
+                          disabled={!isActive}
+                          initial={false}
+                          animate={{
+                            y: stackPosition * 4,
+                            scale: 1 - stackPosition * 0.03,
+                            opacity: 1 - stackPosition * 0.25,
+                            zIndex: 10 - stackPosition,
+                          }}
+                          exit={{
+                            x: -300,
+                            y: -50,
+                            rotate: -15,
+                            opacity: 0,
+                            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+                          }}
+                          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                          className={`absolute inset-x-0 top-0 text-left rounded-lg px-3 py-2.5 border-2 transition-colors ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-amber-500/30 to-orange-500/25 border-amber-400 cursor-pointer hover:from-amber-500/40 hover:to-orange-500/35' 
+                              : 'bg-slate-700/50 border-slate-600 cursor-default'
+                          }`}
+                          style={{ 
+                            transformOrigin: 'center top',
+                          }}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5">
                             {/* Número */}
-                            <span className="w-7 h-7 rounded-full bg-amber-400 text-amber-900 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                              {activeStep + 1}
+                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                              isActive ? 'bg-amber-400 text-amber-900' : 'bg-slate-600 text-slate-300'
+                            }`}>
+                              {idx + 1}
                             </span>
                             {/* Conteúdo */}
-                            <span className="text-[13px] leading-snug flex-1">
-                              {highlightBrackets(orderedRequirements[activeStep] || '')}
+                            <span className={`text-[12px] leading-snug flex-1 ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                              {highlightBrackets(orderedRequirements[idx] || '')}
                             </span>
-                            {/* Ícone de ação */}
-                            <ArrowRight className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                            {/* Ícone de ação só no ativo */}
+                            {isActive && (
+                              <motion.div
+                                animate={{ x: [0, 4, 0] }}
+                                transition={{ duration: 1, repeat: Infinity }}
+                              >
+                                <ArrowRight className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                              </motion.div>
+                            )}
                           </div>
                         </motion.button>
-                      )}
-                      
-                      {/* Mensagem de conclusão */}
-                      {activeStep >= 4 && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="w-full bg-emerald-500/20 border-2 border-emerald-400 rounded-lg px-4 py-3 text-center"
-                        >
-                          <div className="flex items-center justify-center gap-2 text-emerald-400">
-                            <Check className="w-5 h-5" />
-                            <span className="text-sm font-semibold">Prompt completo!</span>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                      );
+                    })}
+                    
+                    {/* Mensagem de conclusão */}
+                    {activeStep >= 4 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="absolute inset-x-0 top-0 bg-emerald-500/20 border-2 border-emerald-400 rounded-lg px-3 py-2.5 text-center"
+                      >
+                        <div className="flex items-center justify-center gap-2 text-emerald-400">
+                          <Check className="w-5 h-5" />
+                          <span className="text-sm font-semibold">Prompt completo!</span>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
 
