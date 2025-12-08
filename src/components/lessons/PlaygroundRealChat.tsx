@@ -227,19 +227,30 @@ export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: Play
                 placeholder="Digite seu prompt aqui... Ex: 'Crie 3 ideias de posts sobre...'"
                 rows={3}
               />
-              <button
+              <motion.button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isTyping}
-                className={`absolute bottom-3 right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg disabled:shadow-none ${
-                  inputValue.trim().length > 7 && !isTyping ? 'animate-pulse' : ''
-                }`}
+                animate={inputValue.trim().length > 7 && !isTyping ? {
+                  scale: [1, 1.1, 1],
+                  boxShadow: [
+                    '0 0 0 0 rgba(147, 51, 234, 0)',
+                    '0 0 20px 8px rgba(147, 51, 234, 0.5)',
+                    '0 0 0 0 rgba(147, 51, 234, 0)'
+                  ]
+                } : {}}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute bottom-3 right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg disabled:shadow-none"
               >
                 {isTyping ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <Send className="w-5 h-5" />
                 )}
-              </button>
+              </motion.button>
             </div>
 
             {/* Sugestões de Prompt */}
