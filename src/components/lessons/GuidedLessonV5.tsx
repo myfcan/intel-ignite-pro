@@ -2020,19 +2020,23 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
         const config = playgroundSection.playgroundConfig;
         
-        // Pegar o exemplo prático da seção 4 (index 3) ou da própria seção
-        const section4 = lessonData.sections[3] as any;
-        const practicalExample = section4?.visualContent || section4?.content || 
-          playgroundSection.visualContent || playgroundSection.content || '';
+        // 🎯 EXEMPLO MANUAL para esta aula (será substituído por JSON no futuro)
+        const manualPlaygroundExample = {
+          title: "Post simples para Instagram",
+          context: "João tem uma padaria de bairro e quer divulgar um novo pão de fermentação natural.",
+          inputs: [
+            "Público: clientes da padaria do bairro",
+            "Objetivo: convidar para experimentar o pão nesta semana",
+            "Tom: simples, próximo, nada técnico"
+          ],
+          examplePrompt: "Crie um post curto para Instagram sobre meu novo pão de fermentação natural, em tom simples e próximo, convidando os clientes do bairro para experimentar nesta semana."
+        };
 
-        console.log('🌉 [V5] Renderizando PlaygroundBridge:', { 
-          hasExample: !!practicalExample, 
-          exampleLength: practicalExample.length 
-        });
+        console.log('🌉 [V5] Renderizando PlaygroundBridge com exemplo estruturado');
 
         return (
           <PlaygroundBridge
-            practicalExample={practicalExample}
+            playgroundExample={manualPlaygroundExample}
             playgroundConfig={{
               type: config.type || 'real-playground',
               instruction: config.instruction,
@@ -2057,7 +2061,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             onSkip={handleSkipPlayground}
             lessonId={lessonData.id}
             contextTitle="Veja um exemplo prático!"
-            contextDescription="Antes de praticar, observe como funciona na vida real:"
+            contextDescription="Antes de praticar, observe como funciona:"
           />
         );
       })()}
