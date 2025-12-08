@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, BarChart3, Zap, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Zap, Target, ArrowRight, Sparkles } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectStatsComparison - A Transformação em Números
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. Ícone de análise aparecendo
  * 2. Números ANTES (30 posts, 2-3 vendas)
  * 3. Transição/seta
  * 4. Números DEPOIS (8 posts, 47 vendas)
- * 5. Conclusão: "-73% posts, +1.467% vendas"
+ * 5. Comparação lado a lado
+ * 6. Insight "Menos esforço, mais resultado"
+ * 7. Conclusão: "-73% posts, +1.467% vendas"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -34,7 +36,9 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
     timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Números ANTES
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Transição
     timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Números DEPOIS
-    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Conclusão
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Comparação
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Insight
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // Conclusão
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -43,7 +47,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -212,11 +216,48 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
           </AnimatePresence>
         </div>
 
-        {/* ========== CENA 5: Conclusão ========== */}
+        {/* ========== CENA 5: Comparação visual ========== */}
         <AnimatePresence>
           {scene >= 5 && (
             <motion.div
-              className="mt-6 text-center"
+              className="mt-4 flex items-center gap-3"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="text-center px-3 py-1.5 bg-red-500/10 rounded-lg">
+                <p className="text-xs text-red-300">Esforço alto</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-white/50" />
+              <div className="text-center px-3 py-1.5 bg-emerald-500/10 rounded-lg">
+                <p className="text-xs text-emerald-300">Esforço inteligente</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 6: Insight ========== */}
+        <AnimatePresence>
+          {scene >= 6 && (
+            <motion.div
+              className="mt-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 rounded-full border border-cyan-500/30">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs text-cyan-200">Menos esforço, mais resultado</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 7: Conclusão ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div
+              className="mt-4 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
@@ -251,7 +292,7 @@ export const CardEffectStatsComparison: React.FC<CardEffectProps> = ({ isActive 
 
       {/* Progress indicator */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7].map((s) => (
           <motion.div
             key={s}
             className="w-2.5 h-2.5 rounded-full"

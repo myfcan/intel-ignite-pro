@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Star, Zap, TrendingUp, Award } from 'lucide-react';
+import { Sparkles, Star, Zap, TrendingUp, Award, Users, ShoppingCart } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectTransformationViewer - Visualização de transformação impactante
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. Número "0" inicial
  * 2. Contador animando até 47
  * 3. "Vendas em um mês" contexto
  * 4. Comparação Antes/Depois
- * 5. "+1.567% de aumento" celebração
+ * 5. Alcance expandido
+ * 6. Novos clientes chegando
+ * 7. "+1.567% de aumento" celebração
  *
  * Roda 2x automaticamente
  */
 export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const [displayNumber, setDisplayNumber] = useState(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
@@ -49,7 +51,9 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
 
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Contexto
     timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Comparação
-    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Celebração
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Alcance
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Novos clientes
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // Celebração
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -59,7 +63,7 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
         setDisplayNumber(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -87,7 +91,7 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
 
       {/* Celebration particles */}
       <AnimatePresence>
-        {scene >= 5 && [...Array(25)].map((_, i) => (
+        {scene >= 7 && [...Array(25)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-2 h-2 rounded-full"
@@ -121,8 +125,8 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
             >
               <motion.div
                 className="text-7xl sm:text-8xl font-black bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent"
-                animate={scene >= 5 ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.6, repeat: scene >= 5 ? 3 : 0 }}
+                animate={scene >= 7 ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.6, repeat: scene >= 7 ? 3 : 0 }}
               >
                 {displayNumber}
               </motion.div>
@@ -171,9 +175,43 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
           )}
         </AnimatePresence>
 
-        {/* ========== CENA 5: Growth indicator ========== */}
+        {/* ========== CENA 5: Alcance expandido ========== */}
         <AnimatePresence>
           {scene >= 5 && (
+            <motion.div
+              className="mt-4 flex items-center gap-3"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30">
+                <Users className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs text-cyan-300">Alcance 10x maior</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 6: Novos clientes ========== */}
+        <AnimatePresence>
+          {scene >= 6 && (
+            <motion.div
+              className="mt-3 flex items-center gap-3"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-500/20 rounded-full border border-pink-500/30">
+                <ShoppingCart className="w-4 h-4 text-pink-400" />
+                <span className="text-xs text-pink-300">Clientes de todo Brasil</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 7: Growth indicator ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
             <motion.div
               className="mt-6"
               initial={{ scale: 0 }}
@@ -226,7 +264,7 @@ export const CardEffectTransformationViewer: React.FC<CardEffectProps> = ({ isAc
 
       {/* Progress indicator */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7].map((s) => (
           <motion.div
             key={s}
             className="w-2.5 h-2.5 rounded-full"

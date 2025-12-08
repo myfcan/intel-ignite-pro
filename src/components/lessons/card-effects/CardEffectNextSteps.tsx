@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Rocket, Sparkles, CheckCircle, Target, Lightbulb } from 'lucide-react';
+import { ArrowRight, Rocket, Sparkles, CheckCircle, Target, Lightbulb, Zap, Play } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectNextSteps - Mostra próximos passos / call-to-action
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. Título "Próximos Passos"
  * 2. Passo 1: Encontrar oportunidades
  * 3. Passo 2: Começar pequeno
  * 4. Passo 3: Aplicar hoje
- * 5. CTA "Começando hoje"
+ * 5. Resumo visual
+ * 6. Motivação extra
+ * 7. CTA "Começando hoje"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -40,7 +42,9 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
     timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Passo 1
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Passo 2
     timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Passo 3
-    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // CTA
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Resumo
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Motivação
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // CTA
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -49,7 +53,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
         <AnimatePresence>
           {scene >= 1 && (
             <motion.div
-              className="text-center mb-8"
+              className="text-center mb-6"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
@@ -100,7 +104,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
         </AnimatePresence>
 
         {/* Steps list */}
-        <div className="space-y-4 w-full max-w-xs">
+        <div className="space-y-3 w-full max-w-xs">
           {steps.map((step, i) => {
             const isVisible = visibleSteps > i;
             const Icon = step.icon;
@@ -108,7 +112,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
             return (
               <motion.div
                 key={i}
-                className="flex items-center gap-3 p-4 bg-white/5 border border-purple-500/30 rounded-xl"
+                className="flex items-center gap-3 p-3 bg-white/5 border border-purple-500/30 rounded-xl"
                 initial={{ x: -30, opacity: 0 }}
                 animate={isVisible ? { x: 0, opacity: 1 } : { x: -30, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 100, delay: i * 0.15 }}
@@ -129,11 +133,45 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
           })}
         </div>
 
-        {/* ========== CENA 5: CTA ========== */}
+        {/* ========== CENA 5: Resumo visual ========== */}
         <AnimatePresence>
           {scene >= 5 && (
             <motion.div
-              className="mt-8"
+              className="mt-4 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30">
+                <Zap className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs text-cyan-300">Testar → Medir → Ajustar → Repetir</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 6: Motivação ========== */}
+        <AnimatePresence>
+          {scene >= 6 && (
+            <motion.div
+              className="mt-3 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                <Play className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs text-emerald-300">Sistema simples e repetível</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 7: CTA ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div
+              className="mt-6"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
@@ -156,7 +194,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
               </motion.div>
 
               <motion.p
-                className="mt-5 text-xs text-purple-300/70 text-center"
+                className="mt-4 text-xs text-purple-300/70 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
@@ -181,7 +219,7 @@ export const CardEffectNextSteps: React.FC<CardEffectProps> = ({ isActive = fals
 
       {/* Progress indicator */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7].map((s) => (
           <motion.div
             key={s}
             className="w-2.5 h-2.5 rounded-full"

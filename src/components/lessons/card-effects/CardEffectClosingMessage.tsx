@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowRight, Star, Rocket, Heart } from 'lucide-react';
+import { Sparkles, ArrowRight, Star, Rocket, Heart, Lightbulb, Target } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectClosingMessage - Mensagem de encerramento motivacional
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. "Você está aqui..."
  * 2. "...nesse segundo grupo"
  * 3. "Abrir o seu radar"
  * 4. "Próximas aulas = prática"
- * 5. "Usar I.A. na vida real"
+ * 5. Ferramentas e prompts
+ * 6. Passo a passo garantido
+ * 7. "Usar I.A. na vida real"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -35,6 +37,8 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
     timersRef.current.push(setTimeout(() => setScene(3), 6000));
     timersRef.current.push(setTimeout(() => setScene(4), 9000));
     timersRef.current.push(setTimeout(() => setScene(5), 12000));
+    timersRef.current.push(setTimeout(() => setScene(6), 15000));
+    timersRef.current.push(setTimeout(() => setScene(7), 18000));
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -43,7 +47,7 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -95,7 +99,7 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
       </div>
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 sm:px-8 md:px-12 py-8">
-        <div className="max-w-2xl w-full space-y-5">
+        <div className="max-w-2xl w-full space-y-4">
 
           {/* ========== CENA 1-2: "Você está aqui nesse segundo grupo" ========== */}
           <AnimatePresence>
@@ -133,7 +137,7 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
           <AnimatePresence>
             {scene >= 2 && (
               <motion.div
-                className="flex justify-center py-3"
+                className="flex justify-center py-2"
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 transition={{ duration: 0.8 }}
@@ -188,11 +192,45 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
             )}
           </AnimatePresence>
 
-          {/* ========== CENA 5: Highlighted final text ========== */}
+          {/* ========== CENA 5: Ferramentas ========== */}
           <AnimatePresence>
             {scene >= 5 && (
               <motion.div
-                className="relative mt-6"
+                className="flex justify-center gap-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30">
+                  <Lightbulb className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-cyan-300">Ferramentas práticas</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ========== CENA 6: Passo a passo ========== */}
+          <AnimatePresence>
+            {scene >= 6 && (
+              <motion.div
+                className="flex justify-center gap-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                  <Target className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs text-emerald-300">Passo a passo no seu contexto</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ========== CENA 7: Highlighted final text ========== */}
+          <AnimatePresence>
+            {scene >= 7 && (
+              <motion.div
+                className="relative mt-4"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, type: 'spring' }}
@@ -254,7 +292,7 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
 
       {/* Progress indicator */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7].map((s) => (
           <motion.div
             key={s}
             className="w-2.5 h-2.5 rounded-full"
