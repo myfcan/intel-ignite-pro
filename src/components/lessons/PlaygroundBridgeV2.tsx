@@ -623,11 +623,11 @@ export function PlaygroundBridgeV2({
               </div>
 
               {/* Footer CTA com botão Voltar */}
-              <div className="px-3 pb-3 pt-1 flex gap-2">
+              <div className="px-3 pb-3 pt-1 flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleBackToExample}
                   variant="outline"
-                  className="flex-shrink-0 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="sm:flex-shrink-0 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Voltar
@@ -637,8 +637,8 @@ export function PlaygroundBridgeV2({
                   disabled={!userPrompt.trim()}
                   className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 text-sm disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Testar no Playground
+                  <Send className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Testar no Playground</span>
                 </Button>
               </div>
             </Card>
