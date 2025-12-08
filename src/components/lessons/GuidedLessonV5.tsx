@@ -1697,11 +1697,13 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                     </div>
 
                     {/* 🎬 V5 SEGMENTOS: Renderizar Experience Cards como segmentos separados */}
-                    {sectionCards.map((cardSegment, cardIdx) => {
+                    {sectionCards.map((cardSegment) => {
                       const cardId = cardSegment.id;
                       const cardConfig = cardSegment.cardConfig;
                       const cardType = cardConfig?.type || cardConfig?.effectType || '';
-                      const isThisCardActive = isCardActive(cardIdx);
+                      // Usar o cardIndex do segmento (índice original) em vez do índice do map (ordem temporal)
+                      const originalCardIndex = cardSegment.cardIndex ?? 0;
+                      const isThisCardActive = isCardActive(originalCardIndex);
 
                       return (
                         <div
