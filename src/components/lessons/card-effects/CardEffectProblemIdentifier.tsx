@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Instagram, Facebook, HelpCircle, PenOff, Users, TrendingDown, XCircle } from 'lucide-react';
+import { Instagram, Facebook, HelpCircle, PenOff, Users, TrendingDown, XCircle, Eye, ThumbsDown } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectProblemIdentifier - O problema da Maria com vendas online
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. Instagram e Facebook aparecendo
  * 2. "Não sabia o que postar"
  * 3. "Não sabia como escrever"
- * 4. "Vendas só de vizinhos"
- * 5. "Estagnada há 3 anos"
+ * 4. "Poucos likes e engajamento"
+ * 5. "Vendas só de vizinhos"
+ * 6. "Ciclo de desistência"
+ * 7. "Estagnada há 3 anos"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -33,8 +35,10 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
     setScene(1); // Social media icons
     timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Não sabia postar
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Não sabia escrever
-    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Vendas vizinhos
-    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Estagnada
+    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Poucos likes
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Vendas vizinhos
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Ciclo desistência
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // Estagnada
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -43,7 +47,7 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -146,7 +150,7 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
           )}
         </AnimatePresence>
 
-        {/* ========== CENAS 2-5: Problem Cards ========== */}
+        {/* ========== CENAS 2-6: Problem Cards ========== */}
         <div className="space-y-2 w-full max-w-xs">
           {/* Cena 2: Não sabia o que postar */}
           <AnimatePresence>
@@ -188,9 +192,29 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
             )}
           </AnimatePresence>
 
-          {/* Cena 4: Vendas só de vizinhos */}
+          {/* Cena 4: Poucos likes */}
           <AnimatePresence>
             {scene >= 4 && (
+              <motion.div
+                className="flex items-center gap-2 p-2.5 bg-orange-500/10 border border-orange-500/30 rounded-lg"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 100, duration: 0.8 }}
+              >
+                <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                  <ThumbsDown className="w-4 h-4 text-orange-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium text-xs">Poucos likes e engajamento</p>
+                  <p className="text-orange-300/60 text-[10px]">Ninguém comentava</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Cena 5: Vendas só de vizinhos */}
+          <AnimatePresence>
+            {scene >= 5 && (
               <motion.div
                 className="flex items-center gap-2 p-2.5 bg-orange-500/10 border border-orange-500/30 rounded-lg"
                 initial={{ x: -50, opacity: 0 }}
@@ -207,11 +231,31 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Cena 6: Ciclo de desistência */}
+          <AnimatePresence>
+            {scene >= 6 && (
+              <motion.div
+                className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 100, duration: 0.8 }}
+              >
+                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <Eye className="w-4 h-4 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium text-xs">Ciclo de desistência</p>
+                  <p className="text-red-300/60 text-[10px]">Criar → postar → ninguém ver → desistir</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* ========== CENA 5: Conclusão - Estagnada ========== */}
+        {/* ========== CENA 7: Conclusão - Estagnada ========== */}
         <AnimatePresence>
-          {scene >= 5 && (
+          {scene >= 7 && (
             <motion.div
               className="mt-3 text-center"
               initial={{ y: 20, opacity: 0 }}
@@ -234,7 +278,7 @@ export const CardEffectProblemIdentifier: React.FC<CardEffectProps> = ({ isActiv
 
         {/* Progress indicator - inside content flow */}
         <div className="flex gap-2 mt-4">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((s) => (
             <motion.div
               key={s}
               className="w-2.5 h-2.5 rounded-full"

@@ -2,23 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, MapPin, Heart, Scissors, Home, Users } from 'lucide-react';
+import { User, MapPin, Heart, Scissors, Home, Users, Palette, Clock } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectProfileCard - Apresentação de perfil da Maria
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 7 Cenas progressivas (~21s total, 3s por cena):
  * 1. Silhueta aparecendo
  * 2. Foto + Nome + Idade
  * 3. Mãe de 2 filhos + São Paulo
  * 4. Artesã com ícones de trabalho
- * 5. "Talentosa, mas invisível online"
+ * 5. Anos de experiência
+ * 6. Qualidade reconhecida
+ * 7. "Talentosa, mas invisível online"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -34,7 +36,9 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
     timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Nome + Idade
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // Família + Local
     timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Artesanato
-    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Conclusão
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Experiência
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Qualidade
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // Conclusão
 
     // Loop logic - restart after full cycle
     timersRef.current.push(setTimeout(() => {
@@ -43,7 +47,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 21000));
   };
 
   useEffect(() => {
@@ -207,9 +211,51 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
           )}
         </AnimatePresence>
 
-        {/* ========== CENA 5: Conclusão ========== */}
+        {/* ========== CENA 5: Anos de Experiência ========== */}
         <AnimatePresence>
           {scene >= 5 && (
+            <motion.div
+              className="mt-3 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.div
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 rounded-full border border-purple-500/30"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                <Clock className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-xs text-purple-200 font-medium">20+ anos de experiência</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 6: Qualidade Reconhecida ========== */}
+        <AnimatePresence>
+          {scene >= 6 && (
+            <motion.div
+              className="mt-2 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.div
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                <Palette className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-xs text-emerald-200 font-medium">Peças únicas e personalizadas</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 7: Conclusão ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
             <motion.div
               className="mt-3 max-w-xs text-center"
               initial={{ y: 20, opacity: 0 }}
@@ -233,7 +279,7 @@ export const CardEffectProfileCard: React.FC<CardEffectProps> = ({ isActive = fa
 
         {/* Progress indicator - inside content flow */}
         <div className="flex gap-2 mt-4">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((s) => (
             <motion.div
               key={s}
               className="w-2.5 h-2.5 rounded-full"

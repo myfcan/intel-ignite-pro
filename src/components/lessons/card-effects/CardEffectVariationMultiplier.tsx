@@ -2,23 +2,26 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Layers, Target, Sparkles, ArrowDown } from 'lucide-react';
+import { Copy, Layers, Target, Sparkles, ArrowDown, Clock, Zap, CheckCircle } from 'lucide-react';
 import { CardEffectProps } from './index';
 
 /**
  * CardEffectVariationMultiplier - Mostra multiplicação de variações de conteúdo
  *
- * 5 Cenas progressivas (~15s total, 3s por cena):
+ * 8 Cenas progressivas (~24s total, 3s por cena):
  * 1. Produto único aparecendo
  * 2. Seta de multiplicação
  * 3. Primeira variação aparece
  * 4. Mais variações aparecem
- * 5. "1 produto → 20+ abordagens"
+ * 5. Grid completo de variações
+ * 6. Tempo economizado
+ * 7. Eficiência destacada
+ * 8. "1 produto → 20+ abordagens"
  *
  * Roda 2x automaticamente
  */
 export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [scene, setScene] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const loopCountRef = useRef(0);
   const maxLoops = 2;
@@ -28,6 +31,8 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
     { label: 'Para economizar', color: 'emerald' },
     { label: 'Para presente', color: 'purple' },
     { label: 'Promoção urgente', color: 'orange' },
+    { label: 'Dia das Mães', color: 'rose' },
+    { label: 'Recomeço', color: 'cyan' },
   ];
 
   const clearTimers = () => {
@@ -40,8 +45,11 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
     setScene(1); // Produto
     timersRef.current.push(setTimeout(() => setScene(2), 3000)); // Seta
     timersRef.current.push(setTimeout(() => setScene(3), 6000)); // 1ª variação
-    timersRef.current.push(setTimeout(() => setScene(4), 8000)); // Mais variações
-    timersRef.current.push(setTimeout(() => setScene(5), 11000)); // Conclusão
+    timersRef.current.push(setTimeout(() => setScene(4), 9000)); // Mais variações
+    timersRef.current.push(setTimeout(() => setScene(5), 12000)); // Grid completo
+    timersRef.current.push(setTimeout(() => setScene(6), 15000)); // Tempo economizado
+    timersRef.current.push(setTimeout(() => setScene(7), 18000)); // Eficiência
+    timersRef.current.push(setTimeout(() => setScene(8), 21000)); // Conclusão
 
     // Loop logic
     timersRef.current.push(setTimeout(() => {
@@ -50,7 +58,7 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
         setScene(0);
         setTimeout(() => startAnimation(), 500);
       }
-    }, 15000));
+    }, 24000));
   };
 
   useEffect(() => {
@@ -66,7 +74,7 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
   }, [isActive]);
 
   // How many variations to show
-  const visibleVariations = scene === 3 ? 1 : scene >= 4 ? 4 : 0;
+  const visibleVariations = scene === 3 ? 1 : scene === 4 ? 4 : scene >= 5 ? 6 : 0;
 
   return (
     <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950">
@@ -137,8 +145,8 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
           )}
         </AnimatePresence>
 
-        {/* ========== CENA 3-4: Variations grid ========== */}
-        <div className="grid grid-cols-2 gap-3 max-w-xs">
+        {/* ========== CENA 3-5: Variations grid ========== */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-md">
           {variations.map((variation, i) => {
             const isVisible = visibleVariations > i;
             const colorClasses = {
@@ -146,6 +154,8 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
               emerald: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
               purple: 'bg-purple-500/20 border-purple-500/40 text-purple-300',
               orange: 'bg-orange-500/20 border-orange-500/40 text-orange-300',
+              rose: 'bg-rose-500/20 border-rose-500/40 text-rose-300',
+              cyan: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300',
             };
 
             return (
@@ -154,7 +164,7 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${colorClasses[variation.color as keyof typeof colorClasses]}`}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={isVisible ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
-                transition={{ type: 'spring', delay: i * 0.15 }}
+                transition={{ type: 'spring', delay: i * 0.1 }}
               >
                 <Copy className="w-4 h-4" />
                 <span className="text-xs font-medium">{variation.label}</span>
@@ -163,11 +173,45 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
           })}
         </div>
 
-        {/* ========== CENA 5: Complete message ========== */}
+        {/* ========== CENA 6: Tempo economizado ========== */}
         <AnimatePresence>
-          {scene >= 5 && (
+          {scene >= 6 && (
             <motion.div
-              className="mt-6 text-center"
+              className="mt-4 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30">
+                <Clock className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs text-cyan-300">10 posts em 10 minutos</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 7: Eficiência ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div
+              className="mt-3 flex items-center gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs text-emerald-300">Mesma essência, múltiplos públicos</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== CENA 8: Complete message ========== */}
+        <AnimatePresence>
+          {scene >= 8 && (
+            <motion.div
+              className="mt-4 text-center"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
@@ -202,10 +246,10 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
 
       {/* Progress indicator */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
           <motion.div
             key={s}
-            className="w-2.5 h-2.5 rounded-full"
+            className="w-2 h-2 rounded-full"
             animate={{
               backgroundColor: scene >= s ? '#a855f7' : 'rgba(255,255,255,0.2)',
               scale: scene === s ? 1.3 : 1
