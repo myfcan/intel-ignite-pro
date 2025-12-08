@@ -226,11 +226,11 @@ export function PlaygroundBridgeV2({
                   </div>
                 </div>
 
-                {/* REQUISITOS - grid 2 colunas */}
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg p-2.5">
+                {/* REQUISITOS - grid 2 colunas com fundo escuro */}
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-2.5">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <ListChecks className="w-3.5 h-3.5 text-orange-600" />
-                    <span className="text-[11px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
+                    <ListChecks className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
                       Requisitos (toque para destacar)
                     </span>
                   </div>
@@ -240,10 +240,10 @@ export function PlaygroundBridgeV2({
                       <button 
                         key={idx}
                         onClick={() => setHighlightedReq(highlightedReq === idx ? null : idx)}
-                        className={`text-left bg-white/80 dark:bg-slate-900/50 rounded-md px-2.5 py-1.5 border transition-all text-[13px] leading-snug ${
+                        className={`text-left bg-slate-700/80 rounded-md px-2.5 py-1.5 border transition-all text-[13px] leading-snug text-white ${
                           highlightedReq === idx 
-                            ? 'border-cyan-400 ring-1 ring-cyan-400/30 bg-cyan-50 dark:bg-cyan-950/30' 
-                            : 'border-orange-100 dark:border-orange-900/30 hover:border-orange-300'
+                            ? 'border-cyan-400 ring-1 ring-cyan-400/50 bg-slate-600' 
+                            : 'border-slate-600 hover:border-slate-500'
                         }`}
                       >
                         {highlightBrackets(req)}
