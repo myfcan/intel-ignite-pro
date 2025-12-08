@@ -52,7 +52,7 @@ export const CardEffectTimeSaver: React.FC<CardEffectProps> = ({ isActive = fals
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950">
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
         {/* Clock animation */}
         <AnimatePresence>

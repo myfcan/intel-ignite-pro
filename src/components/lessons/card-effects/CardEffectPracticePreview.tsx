@@ -55,7 +55,7 @@ export const CardEffectPracticePreview = ({ isActive = false }: CardEffectPracti
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-950 via-sky-950 to-blue-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-950 via-sky-950 to-blue-950">
       {/* Forward-moving particles */}
       <div className="absolute inset-0">
         {[...Array(15)].map((_, i) => (

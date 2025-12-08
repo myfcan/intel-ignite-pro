@@ -59,7 +59,7 @@ export const CardEffectEmotionConnector: React.FC<CardEffectProps> = ({ isActive
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-pink-950 via-rose-950 to-red-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-pink-950 via-rose-950 to-red-950">
       {/* Background glow */}
       <motion.div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full"

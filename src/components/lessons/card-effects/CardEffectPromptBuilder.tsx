@@ -67,7 +67,7 @@ export const CardEffectPromptBuilder: React.FC<CardEffectProps> = ({ isActive = 
   const visibleSteps = scene === 2 ? 1 : scene === 3 ? 2 : scene >= 4 ? 3 : 0;
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30">
       {/* Background grid */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{

@@ -64,7 +64,7 @@ export const CardEffectSpreadsheetMaster = ({ isActive = false }: CardEffectSpre
   };
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-violet-950 to-fuchsia-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-violet-950 to-fuchsia-950">
       {/* Grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{

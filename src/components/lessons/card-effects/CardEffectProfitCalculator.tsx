@@ -65,7 +65,7 @@ export const CardEffectProfitCalculator: React.FC<CardEffectProps> = ({ isActive
   }, [isActive, scale]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-emerald-900/30 to-teal-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-emerald-900/30 to-teal-950">
       <div className="absolute inset-0 opacity-10">
         {[...Array(5)].map((_, i) => (
           <motion.div

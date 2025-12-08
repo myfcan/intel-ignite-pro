@@ -59,7 +59,7 @@ export const CardEffectAmplifierConcept: React.FC<CardEffectProps> = ({ isActive
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950 via-blue-950 to-indigo-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950 via-blue-950 to-indigo-950">
       {/* Background waves */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(5)].map((_, i) => (
