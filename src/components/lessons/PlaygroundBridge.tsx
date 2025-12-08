@@ -175,33 +175,38 @@ export function PlaygroundBridge({
                       </div>
                     </div>
 
-                    {/* Exemplo de Prompt - Destaque com borda */}
-                    <div 
-                      onClick={handleCopyPrompt}
-                      className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 cursor-pointer hover:border-primary/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-slate-500" />
-                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Exemplo de Prompt</span>
-                        </div>
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
-                          {copied ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-green-500" />
-                              <span className="text-green-500">Copiado!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Copiar</span>
-                            </>
-                          )}
-                        </span>
+                    {/* Exemplo de Prompt - Com CTA de copiar explícito */}
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border-2 border-purple-200 dark:border-purple-800/50 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Exemplo de Prompt</span>
                       </div>
-                      <p className="text-sm text-foreground italic leading-relaxed">
-                        &ldquo;{playgroundExample.examplePrompt}&rdquo;
+                      
+                      <p className="text-sm text-foreground leading-relaxed mb-3 bg-white/60 dark:bg-slate-900/50 rounded-lg p-2.5 border border-purple-100 dark:border-purple-900/30">
+                        <span className="italic">&ldquo;{playgroundExample.examplePrompt}&rdquo;</span>
                       </p>
+
+                      {/* Botão CTA explícito */}
+                      <button
+                        onClick={handleCopyPrompt}
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-semibold text-sm transition-all ${
+                          copied 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg'
+                        }`}
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>Copiado! Cole no playground</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copiar este prompt</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </>
                 ) : practicalExample ? (
