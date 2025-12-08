@@ -352,7 +352,7 @@ export function PlaygroundBridgeV2({
   return (
     <div 
       data-testid="playground-bridge-v2"
-      className="fixed inset-0 z-[100] bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-800/95 backdrop-blur-xl flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
     >
       <AnimatePresence mode="wait">
         {/* ==================== MODAL 1: EXEMPLO ==================== */}
@@ -543,9 +543,9 @@ export function PlaygroundBridgeV2({
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="w-full max-w-md"
           >
-            <Card className="shadow-2xl border-2 border-cyan-400/50">
-              {/* Header compacto */}
-              <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 py-2 px-3">
+            <Card className="shadow-2xl border-2 border-cyan-400/50 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 py-2.5 px-4">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
                     <Edit3 className="w-4 h-4 text-white" />
@@ -603,7 +603,7 @@ export function PlaygroundBridgeV2({
                     value={userPrompt}
                     onChange={(e) => setUserPrompt(e.target.value)}
                     placeholder="Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
-                    className="w-full h-36 bg-white dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-cyan-200 dark:border-cyan-900/30 text-[13px] font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    className="w-full h-44 bg-white dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-cyan-200 dark:border-cyan-900/30 text-[13px] font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   />
                   
                   <p className="text-[11px] text-cyan-700/70 dark:text-cyan-400/70 mt-2">
