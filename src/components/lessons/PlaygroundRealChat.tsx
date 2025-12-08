@@ -230,7 +230,9 @@ export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: Play
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isTyping}
-                className="absolute bottom-3 right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg disabled:shadow-none"
+                className={`absolute bottom-3 right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg disabled:shadow-none ${
+                  inputValue.trim().length > 7 && !isTyping ? 'animate-pulse' : ''
+                }`}
               >
                 {isTyping ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
