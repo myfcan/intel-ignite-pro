@@ -430,8 +430,8 @@ export function PlaygroundBridgeV2({
                     </span>
                   </div>
                   
-                  {/* Flip Card Container - altura aumentada levemente */}
-                  <div className="relative h-[60px]" style={{ perspective: '1000px' }}>
+                  {/* Flip Card Container - altura aumentada para textos longos */}
+                  <div className="relative h-[72px]" style={{ perspective: '1000px' }}>
                     <AnimatePresence mode="wait">
                       {activeStep < 4 && (
                         <motion.button
