@@ -27,13 +27,22 @@ export function useUserGamification() {
   const fetchStats = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('power_score, coins, patent_level, streak_days, total_lessons_completed')
         .eq('id', user.id)
         .single();
+
+      if (error) {
+        console.error('[useUserGamification] Query error:', error);
+        setIsLoading(false);
+        return;
+      }
 
       if (data) {
         const newStats = {
@@ -45,21 +54,23 @@ export function useUserGamification() {
           lessonsCompleted: data.total_lessons_completed || 0,
         };
 
-        // Detectar subida de patente
-        if (prevPatentLevel !== null && data.patent_level > prevPatentLevel) {
-          setShowPatentCelebration(true);
-          setTimeout(() => setShowPatentCelebration(false), 3500);
-        }
-        
-        setPrevPatentLevel(data.patent_level || 0);
         setStats(newStats);
+        
+        // Detectar subida de patente (usando ref para evitar re-render loop)
+        setPrevPatentLevel(prev => {
+          if (prev !== null && data.patent_level > prev) {
+            setShowPatentCelebration(true);
+            setTimeout(() => setShowPatentCelebration(false), 3500);
+          }
+          return data.patent_level || 0;
+        });
       }
     } catch (err) {
       console.error('[useUserGamification] Error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [prevPatentLevel]);
+  }, []);
 
   useEffect(() => {
     fetchStats();
