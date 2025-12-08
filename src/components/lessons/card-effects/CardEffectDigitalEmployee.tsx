@@ -1,129 +1,57 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Mail, FileText, CheckCircle, Bot, Send } from 'lucide-react';
+import { MessageCircle, Mail, FileText, CheckCircle, Bot, Clock, Zap, Users, TrendingUp, Heart } from 'lucide-react';
 import { CardEffectProps } from './index';
+
+const BASE_DURATION = 36;
 
 /**
  * CardEffectDigitalEmployee - "I.A. como funcionário digital"
- *
- * Efeito cinematográfico:
- * 1. Dashboard surge do rodapé com subida + fade-in
- * 2. Três colunas: Entrada, Processando, Resolvido
- * 3. Ícones de mensagens/emails caem em queda suave
- * 4. Ao tocar "agente digital", são encaminhados para "resolvido" com flash verde
- * 5. Avatar de robô clean digita em teclado (teclas piscam)
- * 6. Notificações "Resolvido", "Respondido" sobem em bolhas
- * 7. Após 3-4s, desacelera para loop suave
- *
- * 🆕 MELHORIAS V5:
- * - isActive: animação só inicia quando card está em foco
- * - Durações 2.5x mais lentas para melhor experiência
- * - Loop contínuo enquanto ativo
+ * 
+ * AJUSTE X APLICADO - 12 Cenas (~36s total, 3s por cena)
+ * 
+ * FASE 1 (Cenas 1-6): Elementos empilhados - dashboard e processamento
+ * FASE 2 (Cenas 7-12): Efeitos em tela limpa - resultados
  */
-export const CardEffectDigitalEmployee: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'enter' | 'active' | 'idle'>('waiting');
-  const [processedItems, setProcessedItems] = useState<number[]>([]);
-  const [notifications, setNotifications] = useState<{ id: number; text: string; x: number }[]>([]);
-  const [loopCount, setLoopCount] = useState(0);
+export const CardEffectDigitalEmployee: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
+  const [scene, setScene] = useState<number>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Itens que serão processados
-  const incomingItems = [
-    { id: 1, icon: MessageCircle, type: 'Chat', color: 'bg-blue-500' },
-    { id: 2, icon: Mail, type: 'Email', color: 'bg-pink-500' },
-    { id: 3, icon: FileText, type: 'Formulário', color: 'bg-purple-500' },
-    { id: 4, icon: MessageCircle, type: 'Chat', color: 'bg-cyan-500' },
-    { id: 5, icon: Mail, type: 'Email', color: 'bg-orange-500' },
-  ];
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
 
-  const notificationTexts = ['Resolvido ✓', 'Respondido', 'Atualizado', 'Enviado ✓', 'Processado'];
-
-  // 🎬 Função para iniciar a sequência de animação
-  const startAnimation = () => {
-    // Limpar timers anteriores
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-
-    // Reset estados
-    setPhase('enter');
-    setProcessedItems([]);
-    setNotifications([]);
-
-    // Durações mais lentas (2.5x)
-    const ENTER_DELAY = 1500;       // era 600ms
-    const ITEM_DELAY = 1500;        // era 600ms
-    const IDLE_DELAY = 11000;       // era 4500ms
-    const LOOP_DELAY = 15000;       // tempo até reiniciar
-
-    // Fase entrada
-    timersRef.current.push(setTimeout(() => setPhase('active'), ENTER_DELAY));
-
-    // Processar itens um a um (mais lento)
-    incomingItems.forEach((item, i) => {
-      timersRef.current.push(setTimeout(() => {
-        setProcessedItems(prev => [...prev, item.id]);
-        // Adicionar notificação
-        setNotifications(prev => [
-          ...prev,
-          { id: Date.now() + i, text: notificationTexts[i % notificationTexts.length], x: 30 + Math.random() * 40 }
-        ]);
-      }, 3000 + i * ITEM_DELAY)); // era 1200 + i * 600
-    });
-
-    // Fase idle
-    timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
-
-    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
-    timersRef.current.push(setTimeout(() => {
-      if (loopCount < 1) {
-        setLoopCount(prev => prev + 1);
-      }
-    }, LOOP_DELAY));
   };
 
-  // 🎯 Iniciar animação quando isActive mudar para true
+  const startAnimation = () => {
+    clearTimers();
+    setScene(1);
+    for (let i = 2; i <= 12; i++) {
+      timersRef.current.push(setTimeout(() => setScene(i), (i - 1) * 3000 * scale));
+    }
+  };
+
   useEffect(() => {
     if (isActive) {
       startAnimation();
     } else {
-      // Parar e resetar quando não estiver ativo
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      setPhase('waiting');
-      setProcessedItems([]);
-      setNotifications([]);
+      clearTimers();
+      setScene(0);
     }
+    return () => clearTimers();
+  }, [isActive, scale]);
 
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-    };
-  }, [isActive, loopCount]); // loopCount força reinício do loop
-
-  // Loop de notificações no idle
-  useEffect(() => {
-    if (phase !== 'idle' || !isActive) return;
-
-    const interval = setInterval(() => {
-      setNotifications(prev => [
-        ...prev.slice(-3),
-        { id: Date.now(), text: notificationTexts[Math.floor(Math.random() * notificationTexts.length)], x: 30 + Math.random() * 40 }
-      ]);
-    }, 4000); // mais lento (era 3000)
-
-    return () => clearInterval(interval);
-  }, [phase, isActive]);
-
-  // Teclas do teclado que vão piscar
-  const keyboardRows = [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  const incomingItems = [
+    { id: 1, icon: MessageCircle, type: 'Chat', color: 'bg-blue-500' },
+    { id: 2, icon: Mail, type: 'Email', color: 'bg-pink-500' },
+    { id: 3, icon: FileText, type: 'Formulário', color: 'bg-purple-500' },
   ];
-
-  // Se não estiver ativo, mostrar estado inicial sutil
-  const isAnimating = phase !== 'waiting';
 
   return (
     <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950">
@@ -141,210 +69,260 @@ export const CardEffectDigitalEmployee: React.FC<CardEffectProps> = ({ isActive 
         />
       </div>
 
-      {/* Dashboard Panel - surge do rodapé */}
-      <motion.div
-        className="absolute inset-x-6 bottom-6 top-6 bg-slate-900/90 backdrop-blur-sm rounded-2xl border border-cyan-500/20 overflow-hidden"
-        initial={{ y: '100%', opacity: 0 }}
-        animate={{
-          y: isAnimating ? 0 : '100%',
-          opacity: isAnimating ? 1 : 0
-        }}
-        transition={{ duration: 1.2, ease: 'easeOut' }} // mais lento (era 0.5)
-      >
-        {/* Header do dashboard */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm text-slate-400 font-medium">Central de Operações</span>
-          </div>
-          <div className="flex gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
-          </div>
-        </div>
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-4 sm:px-6 pt-8 pb-16">
 
-        {/* Conteúdo - 3 colunas + robô - MAIOR */}
-        <div className="flex h-[calc(100%-52px)]">
-          {/* Coluna 1: Entrada */}
-          <div className="flex-1 border-r border-slate-700/30 p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-4 text-center">Entrada</div>
-            <div className="space-y-3 relative h-64 overflow-hidden">
-              {incomingItems.map((item, i) => {
-                const Icon = item.icon;
-                const isProcessed = processedItems.includes(item.id);
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl ${item.color}/20 border border-slate-600/30`}
-                    initial={{ y: -50, opacity: 0 }}
-                    animate={{
-                      y: isProcessed ? 100 : 0,
-                      opacity: isProcessed ? 0 : (isAnimating ? 1 : 0),
-                      x: isProcessed ? 50 : 0,
-                    }}
-                    transition={{
-                      y: { delay: i * 0.3, duration: 0.8, ease: 'easeOut' }, // mais lento
-                      opacity: { duration: 0.4 },
-                      x: { duration: 0.6 },
-                    }}
-                  >
-                    <Icon className="w-5 h-5 text-slate-400" />
-                    <span className="text-sm text-slate-400">{item.type}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Coluna 2: Robô processando - MAIOR */}
-          <div className="w-40 border-r border-slate-700/30 p-4 flex flex-col items-center justify-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-4">Agente IA</div>
-
-            {/* Avatar do robô - maior */}
-            <motion.div
-              className="relative"
-              animate={phase === 'active' ? { y: [0, -4, 0] } : {}}
-              transition={{ duration: 1, repeat: Infinity }} // mais lento
+        {/* ========== FASE 1: ELEMENTOS EMPILHADOS (Cenas 1-6) ========== */}
+        <AnimatePresence>
+          {scene >= 1 && scene <= 6 && (
+            <motion.div 
+              className="flex flex-col items-center gap-4 w-full max-w-md"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
             >
-              {/* Glow */}
+              {/* Cena 1: Robô Avatar */}
               <motion.div
-                className="absolute inset-0 bg-cyan-500 rounded-2xl blur-xl"
-                animate={{ opacity: isAnimating ? [0.2, 0.5, 0.2] : 0.1 }}
-                transition={{ duration: 3, repeat: Infinity }} // mais lento
-              />
-
-              {/* Robô - maior */}
-              <div className="relative w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
-                <Bot className="w-10 h-10 text-white" />
-
-                {/* Olhinhos */}
+                className="relative"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring' }}
+              >
                 <motion.div
-                  className="absolute top-4 left-4 flex gap-2"
-                  animate={isAnimating ? { scaleY: [1, 0.1, 1] } : {}}
-                  transition={{ duration: 0.3, repeat: Infinity, repeatDelay: 4 }} // mais lento
-                >
-                  <div className="w-2 h-3 bg-white rounded-full" />
-                  <div className="w-2 h-3 bg-white rounded-full" />
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Mini teclado - maior */}
-            <div className="mt-4 space-y-1">
-              {keyboardRows.map((row, rowIdx) => (
-                <div key={rowIdx} className="flex justify-center gap-1">
-                  {row.map((key, keyIdx) => (
-                    <motion.div
-                      key={key}
-                      className="w-3 h-3 bg-slate-700 rounded-[3px] flex items-center justify-center"
-                      animate={phase === 'active' ? {
-                        backgroundColor: ['#334155', '#06b6d4', '#334155'],
-                      } : {}}
-                      transition={{
-                        duration: 0.3, // mais lento (era 0.15)
-                        delay: (rowIdx * 10 + keyIdx) * 0.08 % 1.2,
-                        repeat: phase === 'active' ? Infinity : 0,
-                        repeatDelay: 0.5,
-                      }}
-                    />
-                  ))}
+                  className="absolute inset-0 bg-cyan-500 rounded-2xl blur-xl"
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <div className="relative w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                  <Bot className="w-10 h-10 text-white" />
                 </div>
-              ))}
-            </div>
-          </div>
+              </motion.div>
 
-          {/* Coluna 3: Resolvido */}
-          <div className="flex-1 p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-4 text-center">Resolvido</div>
-            <div className="space-y-3 h-64 overflow-hidden">
-              <AnimatePresence>
-                {processedItems.map((id, i) => {
-                  const item = incomingItems.find(it => it.id === id);
-                  if (!item) return null;
-                  const Icon = item.icon;
+              {/* Cena 2: Dashboard Panel */}
+              {scene >= 2 && (
+                <motion.div
+                  className="w-full bg-slate-900/80 rounded-xl border border-cyan-500/20 overflow-hidden"
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8 * scale }}
+                >
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/50">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-xs text-slate-400">Central de Operações</span>
+                    </div>
+                    <span className="text-[10px] text-cyan-400">Online 24/7</span>
+                  </div>
 
-                  return (
-                    <motion.div
-                      key={`resolved-${id}`}
-                      className="flex items-center gap-3 px-4 py-2 rounded-xl bg-green-500/20 border border-green-500/30"
-                      initial={{ x: -30, opacity: 0, scale: 0.8 }}
-                      animate={{ x: 0, opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.6, type: 'spring' }} // mais lento
-                    >
+                  {/* Cena 3-5: Items sendo processados */}
+                  <div className="p-4 space-y-2">
+                    {incomingItems.slice(0, Math.max(0, scene - 2)).map((item, i) => {
+                      const Icon = item.icon;
+                      return (
+                        <motion.div
+                          key={item.id}
+                          className="flex items-center justify-between px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-lg"
+                          initial={{ x: -30, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: i * 0.2 * scale }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-400" />
+                            <Icon className="w-4 h-4 text-slate-400" />
+                            <span className="text-sm text-green-400">{item.type}</span>
+                          </div>
+                          <span className="text-[10px] text-green-400/60">Resolvido</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Cena 6: Badges */}
+              {scene >= 6 && (
+                <motion.div
+                  className="flex flex-wrap justify-center gap-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30">
+                    <Clock className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs text-cyan-300">24/7</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 rounded-full border border-green-500/30">
+                    <Zap className="w-4 h-4 text-green-400" />
+                    <span className="text-xs text-green-300">Automático</span>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== FASE 2: TELA LIMPA (Cenas 7-12) ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div 
+              className="flex flex-col items-center justify-center h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 * scale }}
+            >
+              {/* Cena 7: Grande ícone Bot */}
+              {scene === 7 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-28 h-28 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl flex items-center justify-center shadow-2xl mx-auto"
+                    animate={{ boxShadow: ['0 0 30px rgba(6,182,212,0.3)', '0 0 60px rgba(6,182,212,0.6)', '0 0 30px rgba(6,182,212,0.3)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Bot className="w-14 h-14 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-white mt-4">Funcionário Digital</p>
+                </motion.div>
+              )}
+
+              {/* Cena 8: Stats de produtividade */}
+              {scene === 8 && (
+                <motion.div
+                  className="grid grid-cols-2 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  {[
+                    { icon: MessageCircle, label: 'Mensagens/dia', value: '500+' },
+                    { icon: Mail, label: 'Emails/dia', value: '200+' },
+                    { icon: FileText, label: 'Formulários', value: '100+' },
+                    { icon: Clock, label: 'Horas salvas', value: '8h/dia' },
+                  ].map((stat, i) => {
+                    const Icon = stat.icon;
+                    return (
                       <motion.div
+                        key={stat.label}
+                        className="p-4 bg-cyan-500/10 rounded-xl border border-cyan-500/30 text-center"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: 'spring' }}
+                        transition={{ delay: i * 0.15 * scale, type: 'spring' }}
                       >
-                        <CheckCircle className="w-5 h-5 text-green-400" />
+                        <Icon className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
+                        <p className="text-lg font-bold text-white">{stat.value}</p>
+                        <p className="text-[10px] text-slate-400">{stat.label}</p>
                       </motion.div>
-                      <Icon className="w-5 h-5 text-slate-400" />
-                      <span className="text-sm text-green-400">{item.type}</span>
+                    );
+                  })}
+                </motion.div>
+              )}
 
-                      {/* Flash verde */}
-                      <motion.div
-                        className="absolute inset-0 bg-green-400/30 rounded-xl"
-                        initial={{ opacity: 1 }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: 1 }} // mais lento
-                      />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
+              {/* Cena 9: Usuários felizes */}
+              {scene === 9 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <motion.div
+                    className="flex justify-center gap-3 mb-4"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Users className="w-16 h-16 text-cyan-400" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white">Atendimento Escalável</p>
+                  <p className="text-sm text-slate-400 mt-2">Sem contratar mais pessoas</p>
+                </motion.div>
+              )}
 
-        {/* Notificações subindo */}
-        <AnimatePresence>
-          {notifications.map((notif) => (
-            <motion.div
-              key={notif.id}
-              className="absolute px-3 py-1 bg-slate-800/80 backdrop-blur-sm rounded-full border border-cyan-500/30 text-sm text-cyan-300"
-              style={{ left: `${notif.x}%` }}
-              initial={{ bottom: 30, opacity: 0, scale: 0.8 }}
-              animate={{ bottom: 280, opacity: [0, 1, 1, 0], scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 4, ease: 'easeOut' }} // mais lento (era 2)
-            >
-              {notif.text}
+              {/* Cena 10: Tendência de crescimento */}
+              {scene === 10 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <TrendingUp className="w-20 h-20 text-green-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white mt-4">Produtividade 10x</p>
+                </motion.div>
+              )}
+
+              {/* Cena 11: Coração */}
+              {scene === 11 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-500 rounded-full flex items-center justify-center mx-auto"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Heart className="w-10 h-10 text-white fill-white" />
+                  </motion.div>
+                  <p className="text-white/80 mt-4 text-lg">Clientes Satisfeitos</p>
+                </motion.div>
+              )}
+
+              {/* Cena 12: Mensagem Final */}
+              {scene === 12 && (
+                <motion.div
+                  className="text-center max-w-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 * scale }}
+                >
+                  <motion.div
+                    className="p-6 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 border border-cyan-500/30 rounded-2xl"
+                    animate={{ boxShadow: ['0 0 20px rgba(6,182,212,0.2)', '0 0 40px rgba(6,182,212,0.4)', '0 0 20px rgba(6,182,212,0.2)'] }}
+                    transition={{ duration: 2 * scale, repeat: Infinity }}
+                  >
+                    <p className="text-lg font-medium text-white">
+                      Tem gente ganhando dinheiro só configurando esses <span className="text-cyan-400 font-bold">funcionários digitais</span>.
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
             </motion.div>
-          ))}
+          )}
         </AnimatePresence>
-      </motion.div>
 
-      {/* Status indicator */}
-      <motion.div
-        className="absolute top-4 right-6 flex items-center gap-3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0.3 }}
-        transition={{ delay: isAnimating ? 1.5 : 0 }}
-      >
-        <motion.div
-          className="w-3 h-3 bg-green-500 rounded-full"
-          animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-        <span className="text-sm text-green-400">Online 24/7</span>
-      </motion.div>
-
-      {/* Progress indicator */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
-              (phase === 'enter' && i === 0) ||
-              (phase === 'active' && i <= processedItems.length && i <= 3) ||
-              (phase === 'idle' && i <= 4)
-                ? 'bg-cyan-400'
-                : 'bg-slate-600'
-            }`}
-          />
-        ))}
+        {/* Progress indicator */}
+        <div className="flex gap-1.5 mt-auto pt-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((s) => (
+            <motion.div
+              key={s}
+              className="w-2 h-2 rounded-full"
+              animate={{
+                backgroundColor: scene >= s ? '#06b6d4' : 'rgba(255,255,255,0.2)',
+                scale: scene === s ? 1.3 : 1
+              }}
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* Badge */}
+      <motion.div
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/30 rounded-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
+      >
+        <Bot className="w-3.5 h-3.5 text-cyan-400" />
+        <span className="text-[10px] text-cyan-300 font-medium">Funcionário Digital</span>
+      </motion.div>
     </div>
   );
 };
