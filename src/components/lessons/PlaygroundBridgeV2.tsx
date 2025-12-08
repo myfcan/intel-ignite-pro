@@ -392,10 +392,10 @@ export function PlaygroundBridgeV2({
               </div>
 
               {/* Conteúdo */}
-              <div className="p-3.5 space-y-2.5">
+              <div className="p-4 space-y-3">
                 
                 {/* CONTEXTO */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5">
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
                     <p className="text-[13px] text-foreground leading-snug">
@@ -405,7 +405,7 @@ export function PlaygroundBridgeV2({
                 </div>
 
                 {/* REQUISITOS - Flip Cards 3D */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-3">
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-3.5">
                   {/* Header com progresso */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
@@ -420,8 +420,8 @@ export function PlaygroundBridgeV2({
                     </span>
                   </div>
                   
-                  {/* Flip Card Container */}
-                  <div className="relative h-[52px]" style={{ perspective: '1000px' }}>
+                  {/* Flip Card Container - altura aumentada levemente */}
+                  <div className="relative h-[60px]" style={{ perspective: '1000px' }}>
                     <AnimatePresence mode="wait">
                       {activeStep < 4 && (
                         <motion.button
