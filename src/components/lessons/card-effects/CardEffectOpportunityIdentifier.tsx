@@ -52,7 +52,7 @@ export const CardEffectOpportunityIdentifier: React.FC<CardEffectProps> = ({ isA
   }, [isActive, scale]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-amber-900/20 to-slate-900">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-amber-900/20 to-slate-900">
       <div className="absolute inset-0 flex items-center justify-center opacity-20">
         <motion.div
           className="w-40 h-40 border border-amber-400 rounded-full"

@@ -112,7 +112,7 @@ export const CardEffectContentMachine: React.FC<CardEffectProps> = ({ isActive =
   );
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950/20">
       {/* Background industrial */}
       <div className="absolute inset-0 opacity-10">
         <div

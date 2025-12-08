@@ -124,7 +124,7 @@ export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive =
   const isAnimating = phase !== 'waiting';
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/20">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/20">
       {/* Background que escurece */}
       <motion.div
         className="absolute inset-0 bg-black"

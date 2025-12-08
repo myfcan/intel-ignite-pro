@@ -55,7 +55,7 @@ export const CardEffectSmallExperiment = ({ isActive = false }: CardEffectSmallE
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-lime-950 via-green-950 to-emerald-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-lime-950 via-green-950 to-emerald-950">
       {/* Bubbling effect */}
       <div className="absolute inset-0">
         {[...Array(10)].map((_, i) => (

@@ -58,7 +58,7 @@ export const CardEffectResumeBuilder = ({ isActive = false }: CardEffectResumeBu
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-950 to-violet-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-950 to-violet-950">
       {/* Background effect */}
       <div className="absolute inset-0">
         {[...Array(6)].map((_, i) => (

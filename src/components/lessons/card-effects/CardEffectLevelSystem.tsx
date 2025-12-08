@@ -60,7 +60,7 @@ export const CardEffectLevelSystem: React.FC<CardEffectProps> = ({ isActive = fa
   };
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-amber-950 via-orange-950 to-rose-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-amber-950 via-orange-950 to-rose-950">
       <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent" />
 
       <motion.div

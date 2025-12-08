@@ -56,7 +56,7 @@ export const CardEffectStabilityMap: React.FC<CardEffectProps> = ({ isActive = f
   }, [isActive, scale]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
       <motion.div 
         className="absolute inset-0"
         animate={{ background: ['radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)', 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.25) 0%, transparent 60%)', 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)'] }}

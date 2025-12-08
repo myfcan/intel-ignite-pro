@@ -148,7 +148,7 @@ export const CardEffectDataAnalysis: React.FC<CardEffectProps> = ({ isActive = f
   const trendPath = `M${trendPoints.map(p => `${p.x},${p.y}`).join(' L')}`;
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 rounded-xl">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 rounded-xl">
       {/* Data stream background */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(15)].map((_, i) => (

@@ -63,7 +63,7 @@ export const CardEffectClosingMessage: React.FC<CardEffectProps> = ({ isActive =
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-indigo-950/50 to-purple-950/30">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-indigo-950/50 to-purple-950/30">
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />

@@ -79,7 +79,7 @@ export const CardEffectBalancedApproach = ({ isActive = false }: CardEffectBalan
   };
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-zinc-950 to-neutral-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-zinc-950 to-neutral-950">
       {/* Balance animation */}
       <motion.div
         className="absolute top-20 left-1/2 -translate-x-1/2"

@@ -77,7 +77,7 @@ export const CardEffectVariationMultiplier: React.FC<CardEffectProps> = ({ isAct
   const visibleVariations = scene === 3 ? 1 : scene === 4 ? 4 : scene >= 5 ? 6 : 0;
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] overflow-hidden rounded-xl bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950">
       {/* Background glow */}
       <motion.div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full"

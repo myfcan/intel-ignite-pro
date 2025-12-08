@@ -60,7 +60,7 @@ export const CardEffectScriptWriter = ({ isActive = false }: CardEffectScriptWri
   }, [isActive]);
 
   return (
-    <div className="relative w-full min-h-[480px] h-[60vh] max-h-[600px] rounded-2xl overflow-hidden bg-gradient-to-br from-rose-950 via-red-950 to-orange-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-rose-950 via-red-950 to-orange-950">
       {/* Video frame background */}
       <div className="absolute inset-0 flex items-center justify-center opacity-10">
         <div className="w-64 h-40 border-4 border-white rounded-lg" />
