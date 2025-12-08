@@ -63,12 +63,37 @@ const TestCard = lazy(() => import("./pages/TestCard"));
 
 const queryClient = new QueryClient();
 
-// Loading fallback component
+// Loading fallback component with elegant animations
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-muted-foreground text-sm">Carregando...</p>
+  <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+    {/* Subtle gradient background animation */}
+    <div className="absolute inset-0 opacity-30">
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+    </div>
+    
+    <div className="flex flex-col items-center gap-6 animate-fade-in relative z-10">
+      {/* Elegant spinner with multiple rings */}
+      <div className="relative w-16 h-16">
+        {/* Outer ring */}
+        <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+        {/* Spinning ring */}
+        <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+        {/* Inner pulse dot */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+        </div>
+      </div>
+      
+      {/* Loading text with shimmer effect */}
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-foreground font-medium text-sm">Carregando</p>
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
     </div>
   </div>
 );
