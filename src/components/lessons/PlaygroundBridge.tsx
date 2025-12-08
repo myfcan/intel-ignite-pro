@@ -145,43 +145,45 @@ export function PlaygroundBridge({
               </div>
 
               {/* Conteúdo estruturado - SEM SCROLL */}
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-3">
                 {playgroundExample ? (
                   <>
-                    {/* Situação - Compacto */}
-                    <div className="flex items-start gap-2">
-                      <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-muted-foreground leading-snug">{playgroundExample.context}</p>
+                    {/* Situação - Com destaque suave */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                      <div className="flex items-start gap-2.5">
+                        <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-foreground leading-snug">{playgroundExample.context}</p>
+                      </div>
                     </div>
 
                     {/* Inputs/Requisitos - DESTAQUE VISUAL */}
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-200 dark:border-orange-800/50 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Target className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Requisitos</span>
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-200 dark:border-orange-800/50 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-orange-600" />
+                        <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Requisitos</span>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {playgroundExample.inputs.map((input, idx) => (
                           <div 
                             key={idx} 
-                            className="flex items-center gap-2.5 bg-white/70 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-orange-100 dark:border-orange-900/30"
+                            className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/50 rounded-lg px-2.5 py-1.5 border border-orange-100 dark:border-orange-900/30"
                           >
-                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            <span className="text-sm text-foreground font-medium">{input}</span>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">{input}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Exemplo de Prompt - Clicável para copiar */}
+                    {/* Exemplo de Prompt - Destaque com borda */}
                     <div 
                       onClick={handleCopyPrompt}
-                      className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 cursor-pointer hover:border-primary/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 cursor-pointer hover:border-primary/50 transition-colors"
                     >
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-primary" />
-                          <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Exemplo de Prompt</span>
+                          <MessageSquare className="w-4 h-4 text-slate-500" />
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Exemplo de Prompt</span>
                         </div>
                         <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
                           {copied ? (
