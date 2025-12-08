@@ -151,7 +151,7 @@ const TrailCard = ({
         onMouseLeave={() => setIsHovered(false)}
         className="group relative rounded-lg xs:rounded-xl sm:rounded-2xl p-3 xs:p-4 sm:p-5 border cursor-pointer min-h-[260px] xs:min-h-[280px] sm:h-[320px] flex flex-col w-full overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #C084FC 100%)',
+          background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)',
           borderColor: 'rgba(255, 255, 255, 0.3)',
           boxShadow: '0 4px 20px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
         }}
