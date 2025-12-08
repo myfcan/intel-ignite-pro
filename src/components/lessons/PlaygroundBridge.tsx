@@ -219,8 +219,48 @@ export function PlaygroundBridge({
                 ) : null}
               </div>
 
-              {/* Botões */}
-              <div className="px-4 pb-4 pt-1 flex gap-2">
+              {/* Box Azul - Complete o Desafio */}
+              {playgroundExample && (
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border-2 border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Complete o Desafio</span>
+                  </div>
+                  
+                  {/* Prompt template com colchetes destacados */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 rounded-lg px-2.5 py-2 border border-blue-200 dark:border-blue-800 mb-2">
+                    <p className="text-sm text-foreground leading-snug">
+                      {playgroundExample.examplePrompt.split(/(\[[^\]]+\])/).map((part, idx) => 
+                        part.startsWith('[') && part.endsWith(']') ? (
+                          <span key={idx} className="bg-yellow-200 dark:bg-yellow-700/50 text-yellow-800 dark:text-yellow-200 px-1 rounded font-semibold">
+                            {part}
+                          </span>
+                        ) : (
+                          <span key={idx}>{part}</span>
+                        )
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Dados para substituir */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">📝 Substitua com seus dados:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {playgroundExample.inputs.map((input, idx) => (
+                        <span 
+                          key={idx} 
+                          className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-1 rounded-full border border-yellow-300 dark:border-yellow-700"
+                        >
+                          <span className="font-semibold">[{idx + 1}]</span> {input}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botão */}
+              <div className="pt-1 flex gap-2">
                 <Button
                   onClick={handleStartPlayground}
                   className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-5 shadow-lg"
