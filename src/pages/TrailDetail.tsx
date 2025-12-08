@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Lock, CheckCircle, CheckCircle2, PlayCircle, Clock, Play, Trophy } from 'lucide-react';
 import { LivWelcomeModal } from '@/components/LivWelcomeModal';
 import { motion } from 'framer-motion';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface Lesson {
   id: string;
@@ -36,6 +37,8 @@ const TrailDetail = () => {
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showLivModal, setShowLivModal] = useState(true);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+  const { isAdmin } = useIsAdmin(userId);
 
   useEffect(() => {
     fetchTrailData();
@@ -48,6 +51,9 @@ const TrailDetail = () => {
         navigate('/auth');
         return;
       }
+      
+      // Guardar userId para o hook useIsAdmin
+      setUserId(session.user.id);
 
       // Fetch trail
       const { data: trailData, error: trailError } = await supabase
@@ -95,6 +101,8 @@ const TrailDetail = () => {
 
   const getLessonStatus = (lesson: Lesson, index: number) => {
     if (completedLessons.includes(lesson.id)) return 'completed';
+    // Admins têm acesso a todas as aulas
+    if (isAdmin) return 'unlocked';
     if (index === 0 || completedLessons.includes(lessons[index - 1]?.id)) return 'unlocked';
     return 'locked';
   };
