@@ -8,7 +8,7 @@ import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { PlaygroundBridge } from './PlaygroundBridge';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
-import { PlaygroundRealChat } from './PlaygroundRealChat';
+// PlaygroundRealChat removido - PlaygroundBridge agora é o único playground
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
 import { LessonCompletionSummary } from './LessonCompletionSummary';
@@ -543,26 +543,35 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
   const handleSkipPlayground = () => {
     console.log('🎮 [V5] Pulando playground mid-lesson...');
     setShowPlaygroundCall(false);
-    // Avançar para próxima seção
+    setShowPlaygroundMid(false);
+    // Avançar para próxima seção ou exercícios
     const isLastSection = currentSection >= lessonData.sections.length - 1;
     if (!isLastSection) {
       setCurrentSection(prev => prev + 1);
     } else {
-      // Se era a última seção, ir para exercícios
-      setCurrentPhase('playground-real');
+      // Se era a última seção, ir direto para exercícios
+      if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+        setCurrentPhase('exercises');
+      } else {
+        setCurrentPhase('completed');
+      }
     }
   };
 
   const handlePlaygroundComplete = () => {
     console.log('🎮 [V5] Playground mid-lesson completo!');
     setShowPlaygroundMid(false);
-    // Avançar para próxima seção
+    // Avançar para próxima seção ou exercícios
     const isLastSection = currentSection >= lessonData.sections.length - 1;
     if (!isLastSection) {
       setCurrentSection(prev => prev + 1);
     } else {
-      // Se era a última seção, ir para exercícios
-      setCurrentPhase('playground-real');
+      // Se era a última seção, ir direto para exercícios
+      if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+        setCurrentPhase('exercises');
+      } else {
+        setCurrentPhase('completed');
+      }
     }
   };
 
@@ -1187,10 +1196,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     });
 
     setShowEndCard(false);
-    // 🎯 V5 FIX: Fluxo correto - Card Parabéns → Playground Real → Exercícios
-    // Sempre ir para playground-real primeiro (chat com IA)
-    console.log('🎯 [V5-DEBUG HANDLER] Indo para playground-real (chat com IA)');
-    setCurrentPhase('playground-real');
+    // 🎯 V5 FIX: Ir direto para exercícios (PlaygroundBridge já cuidou do playground)
+    if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
+      console.log('🎯 [V5-DEBUG HANDLER] Indo para exercícios');
+      setCurrentPhase('exercises');
+    } else {
+      console.log('🎯 [V5-DEBUG HANDLER] Sem exercícios, indo para completed');
+      setCurrentPhase('completed');
+    }
   };
 
   const [exercisesCompleted, setExercisesCompleted] = useState(false);
@@ -1323,45 +1336,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     totalSections: lessonData.sections.length
   });
 
-  // 🚀 Renderizar playground real interativo
-  if (currentPhase === 'playground-real') {
-    console.log('🎮 [V5-RENDER] Renderizando fase playground-real');
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {lessonData.sections.map((section, idx) => {
-            const sectionContent = section.visualContent || section.content;
-            if (!sectionContent) return null;
-
-            return (
-              <Card key={idx} className="p-6">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <ReactMarkdown>
-                    {sectionContent}
-                  </ReactMarkdown>
-                </div>
-              </Card>
-            );
-          })}
-
-          <PlaygroundRealChat
-            lessonId={lessonData.id}
-            onComplete={() => {
-              console.log('✅ [V5-PLAYGROUND-REAL] Usuário completou interação');
-              // 🎯 V5 FIX: Após playground-real, ir para exercícios (ou completed se não tiver)
-              if (lessonData.exercisesConfig && lessonData.exercisesConfig.length > 0) {
-                console.log('🎯 [V5-PLAYGROUND-REAL] Indo para exercícios');
-                setCurrentPhase('exercises');
-              } else {
-                console.log('🎯 [V5-PLAYGROUND-REAL] Sem exercícios, indo para completed');
-                setCurrentPhase('completed');
-              }
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
+  // 🚀 NOTA: playground-real foi removido - PlaygroundBridge agora é o único playground
+  // e vai direto para exercícios após completar
 
   // Renderizar transição para exercícios
   if (currentPhase === 'transition') {
