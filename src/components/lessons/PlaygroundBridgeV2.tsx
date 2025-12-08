@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { PlaygroundRealChat } from './PlaygroundRealChat';
 import { PlaygroundConfig } from '@/types/guidedLesson';
 import { 
   Sparkles, 
@@ -15,7 +15,8 @@ import {
   Check,
   X,
   Edit3,
-  Send
+  Send,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import confetti from 'canvas-confetti';
@@ -106,14 +107,23 @@ export function PlaygroundBridgeV2({
   if (!playgroundExample) {
     console.warn('⚠️ [BRIDGE-V2] playgroundExample ausente, pulando modais');
     return (
-      <PlaygroundMidLesson
-        config={playgroundConfig}
-        onComplete={onComplete}
+      <PlaygroundRealChat
         lessonId={lessonId}
-        playgroundExample={undefined}
+        onComplete={() => onComplete(null)}
       />
     );
   }
+
+  // Volta ao modal de exemplo (mantendo o texto editado)
+  const handleBackToExample = useCallback(() => {
+    console.log('🌉 [BRIDGE-V2] Transição: Prática → Exemplo (mantendo texto)');
+    setIsFlipping(true);
+    
+    setTimeout(() => {
+      setPhase('example');
+      setIsFlipping(false);
+    }, 400);
+  }, []);
 
   // Inicializa o userPrompt VAZIO quando entra na fase de prática
   const handleStartPractice = useCallback(() => {
@@ -612,12 +622,20 @@ export function PlaygroundBridgeV2({
                 </div>
               </div>
 
-              {/* Footer CTA */}
-              <div className="px-3 pb-3 pt-1">
+              {/* Footer CTA com botão Voltar */}
+              <div className="px-3 pb-3 pt-1 flex gap-2">
+                <Button
+                  onClick={handleBackToExample}
+                  variant="outline"
+                  className="flex-shrink-0 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1.5" />
+                  Voltar
+                </Button>
                 <Button
                   onClick={handleSendToPlayground}
                   disabled={!userPrompt.trim()}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 text-sm disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 text-sm disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Testar no Playground
@@ -636,20 +654,10 @@ export function PlaygroundBridgeV2({
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="w-full h-full"
           >
-            <PlaygroundMidLesson
-              config={{
-                ...playgroundConfig,
-                // Injeta o prompt editado pelo aluno como instrução inicial
-                instruction: userPrompt || playgroundConfig.instruction,
-              }}
-              onComplete={onComplete}
+            <PlaygroundRealChat
               lessonId={lessonId}
-              playgroundExample={{
-                title: playgroundExample.title,
-                context: playgroundExample.context,
-                inputs: playgroundExample.requirements,
-                examplePrompt: userPrompt, // Usa o prompt editado
-              }}
+              onComplete={() => onComplete(null)}
+              initialPrompt={userPrompt}
             />
           </motion.div>
         )}
