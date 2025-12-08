@@ -1,96 +1,52 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Smartphone } from 'lucide-react';
+import { Sparkles, Smartphone, Code, Layers, Rocket, CheckCircle, Zap, Monitor } from 'lucide-react';
 import { CardEffectProps } from './index';
+
+const BASE_DURATION = 36;
 
 /**
  * CardEffectAppBuilder - "A I.A. que monta um app do zero"
- *
- * Efeito cinematográfico:
- * 1. Smartphone 3D desliza da esquerda para o centro
- * 2. Fundo escurece criando foco
- * 3. Tela começa vazia, linhas de código/UI surgem de baixo para cima
- * 4. Cada bloco tem efeito de "digitação"
- * 5. Ícone de IA envia "pulsos de energia" para os blocos
- * 6. Ícone de app se forma no final com "pop" e glow
- * 7. Loop: animação repete enquanto card estiver ativo
- *
- * 🆕 MELHORIAS V5:
- * - isActive: animação só inicia quando card está em foco
- * - Durações 2.5x mais lentas para melhor experiência
- * - Loop contínuo enquanto ativo
+ * 
+ * AJUSTE X APLICADO - 12 Cenas (~36s total, 3s por cena)
+ * 
+ * FASE 1 (Cenas 1-6): Elementos empilhados - construção do app
+ * FASE 2 (Cenas 7-12): Efeitos em tela limpa - resultado final
  */
-export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'enter' | 'building' | 'complete' | 'idle'>('waiting');
-  const [visibleBlocks, setVisibleBlocks] = useState(0);
-  const [showAppIcon, setShowAppIcon] = useState(false);
-  const [loopCount, setLoopCount] = useState(0);
+export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
+  const [scene, setScene] = useState<number>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // 🎬 Função para iniciar a sequência de animação
-  const startAnimation = () => {
-    // Limpar timers anteriores
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
+
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+  };
 
-    // Reset estados
-    setPhase('enter');
-    setVisibleBlocks(0);
-    setShowAppIcon(false);
-
-    // Durações mais lentas (2.5x)
-    const ENTER_DELAY = 1000;      // era 400ms
-    const BLOCK_DELAY = 450;       // era 180ms
-    const COMPLETE_DELAY = 5500;   // era 2200ms
-    const IDLE_DELAY = 7500;       // era 3000ms
-    const LOOP_DELAY = 12000;      // tempo até reiniciar
-
-    // Fase 1: Entrada
-    timersRef.current.push(setTimeout(() => setPhase('building'), ENTER_DELAY));
-
-    // Fase 2: Blocos aparecem um a um
-    for (let i = 1; i <= 8; i++) {
-      timersRef.current.push(setTimeout(() => setVisibleBlocks(i), ENTER_DELAY + i * BLOCK_DELAY));
+  const startAnimation = () => {
+    clearTimers();
+    setScene(1);
+    for (let i = 2; i <= 12; i++) {
+      timersRef.current.push(setTimeout(() => setScene(i), (i - 1) * 3000 * scale));
     }
+  };
 
-    // Fase 3: App icon aparece
-    timersRef.current.push(setTimeout(() => {
-      setShowAppIcon(true);
-      setPhase('complete');
-    }, COMPLETE_DELAY));
-
-    // Fase 4: Idle state
-    timersRef.current.push(setTimeout(() => setPhase('idle'), IDLE_DELAY));
-
-        // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
-        timersRef.current.push(setTimeout(() => {
-          if (loopCount < 1) {
-            setLoopCount(prev => prev + 1);
-          }
-        }, LOOP_DELAY));
-      };
-
-  // 🎯 Iniciar animação quando isActive mudar para true
   useEffect(() => {
     if (isActive) {
       startAnimation();
     } else {
-      // Parar e resetar quando não estiver ativo
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      setPhase('waiting');
-      setVisibleBlocks(0);
-      setShowAppIcon(false);
+      clearTimers();
+      setScene(0);
     }
+    return () => clearTimers();
+  }, [isActive, scale]);
 
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-    };
-  }, [isActive, loopCount]); // loopCount força reinício do loop
-
-  // Blocos de código/UI que serão "construídos"
   const codeBlocks = [
     { type: 'header', width: '90%', color: 'from-purple-500 to-indigo-500' },
     { type: 'nav', width: '60%', color: 'from-blue-400 to-cyan-400' },
@@ -102,18 +58,13 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
     { type: 'footer', width: '65%', color: 'from-indigo-500 to-purple-500' },
   ];
 
-  // Se não estiver ativo, mostrar estado inicial sutil
-  const isAnimating = phase !== 'waiting';
-
   return (
-    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl">
-      {/* Fundo que escurece */}
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      {/* Background */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
-        animate={{
-          opacity: isAnimating ? (phase === 'enter' ? 0.7 : 1) : 0.5,
-        }}
-        transition={{ duration: 0.8 }} // mais lento
+        className="absolute inset-0"
+        animate={{ opacity: scene > 0 ? 1 : 0.5 }}
+        transition={{ duration: 0.8 }}
       />
 
       {/* Grid de fundo tech */}
@@ -141,11 +92,11 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
               left: `${10 + Math.random() * 80}%`,
               top: `${10 + Math.random() * 80}%`,
             }}
-            animate={{
+            animate={scene > 0 ? {
               opacity: [0, 0.8, 0],
               scale: [0, 1.5, 0],
               y: [0, -30],
-            }}
+            } : { opacity: 0 }}
             transition={{
               duration: 2 + Math.random() * 2,
               repeat: Infinity,
@@ -156,259 +107,267 @@ export const CardEffectAppBuilder: React.FC<CardEffectProps> = ({ isActive = fal
         ))}
       </div>
 
-      {/* Ícone de IA com pulsos de energia */}
-      <motion.div
-        className="absolute top-8 right-10 z-30"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{
-          opacity: isAnimating && phase !== 'enter' ? 1 : 0,
-          scale: isAnimating && phase !== 'enter' ? 1 : 0,
-        }}
-        transition={{ duration: 0.6, type: 'spring' }} // mais lento
-      >
-        <div className="relative">
-          {/* Glow pulsante */}
-          <motion.div
-            className="absolute inset-0 bg-purple-500 rounded-full blur-xl"
-            animate={{
-              opacity: phase === 'idle' ? [0.3, 0.6, 0.3] : [0.5, 0.8, 0.5],
-              scale: phase === 'idle' ? [1, 1.2, 1] : [1, 1.4, 1],
-            }}
-            transition={{
-              duration: phase === 'idle' ? 6 : 2.5, // mais lento
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-4 sm:px-6 pt-8 pb-16">
 
-          {/* Ícone */}
-          <motion.div
-            className="relative w-16 h-16 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/50"
-            animate={{
-              rotate: phase === 'building' ? [0, 5, -5, 0] : 0,
-            }}
-            transition={{ duration: 1.2, repeat: phase === 'building' ? Infinity : 0 }} // mais lento
-          >
-            <Sparkles className="w-7 h-7 text-white" />
-          </motion.div>
-
-          {/* Pulsos de energia saindo do ícone */}
-          <AnimatePresence>
-            {phase === 'building' && (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute top-1/2 left-1/2 w-3 h-3 bg-purple-400 rounded-full"
-                    initial={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
-                    animate={{
-                      x: ['-50%', '-200%'],
-                      y: ['-50%', `${50 + i * 30}%`],
-                      opacity: [1, 0],
-                      scale: [1, 0.5],
-                    }}
-                    transition={{
-                      duration: 1.6, // mais lento
-                      delay: i * 0.4,
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                    }}
-                  />
-                ))}
-              </>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* Smartphone 3D - maior para o novo tamanho do card */}
-      <motion.div
-        className="absolute left-1/2 top-1/2 z-20"
-        initial={{ x: '-150%', y: '-50%', rotateY: -30, opacity: 0 }}
-        animate={{
-          x: isAnimating ? '-50%' : '-150%',
-          y: '-50%',
-          rotateY: isAnimating ? 0 : -30,
-          opacity: isAnimating ? 1 : 0,
-        }}
-        transition={{
-          duration: 1, // mais lento (era 0.4)
-          ease: [0.25, 0.46, 0.45, 0.94], // ease-out
-        }}
-        style={{ perspective: 1000 }}
-      >
-        {/* Sombra do celular */}
-        <motion.div
-          className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-6 bg-black/40 rounded-full blur-xl"
-          animate={{
-            scale: phase === 'complete' ? [1, 1.1, 1] : 1,
-          }}
-          transition={{ duration: 3, repeat: Infinity }} // mais lento
-        />
-
-        {/* Frame do celular - MAIOR para novo tamanho do card */}
-        <div className="relative w-56 h-96 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 rounded-[3rem] p-2.5 shadow-2xl shadow-purple-900/30">
-          {/* Borda interna brilhante */}
-          <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-slate-600 to-transparent opacity-30" />
-
-          {/* Notch */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-6 bg-black rounded-full z-10">
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-700 rounded-full" />
-          </div>
-
-          {/* Tela */}
-          <div className="relative w-full h-full bg-slate-950 rounded-[2rem] overflow-hidden">
-            {/* Gradiente da tela */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-950" />
-
-            {/* Área de código/UI sendo construída */}
-            <div className="relative pt-12 px-4 space-y-3 h-full">
-              {codeBlocks.map((block, i) => (
+        {/* ========== FASE 1: ELEMENTOS EMPILHADOS (Cenas 1-6) ========== */}
+        <AnimatePresence>
+          {scene >= 1 && scene <= 6 && (
+            <motion.div 
+              className="flex flex-col items-center gap-4 w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              {/* Cena 1: Título e ícone de IA */}
+              <motion.div
+                className="flex items-center gap-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 * scale }}
+              >
                 <motion.div
-                  key={i}
-                  className="relative overflow-hidden"
-                  initial={{ opacity: 0, y: 20, scaleX: 0 }}
-                  animate={{
-                    opacity: visibleBlocks > i ? 1 : 0,
-                    y: visibleBlocks > i ? 0 : 20,
-                    scaleX: visibleBlocks > i ? 1 : 0,
-                  }}
-                  transition={{
-                    duration: 0.5, // mais lento (era 0.2)
-                    ease: 'easeOut',
-                  }}
-                  style={{ width: block.width, originX: 0 }}
+                  className="w-12 h-12 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/50"
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
                 >
-                  {/* Bloco de código - maior */}
-                  <div className={`h-5 bg-gradient-to-r ${block.color} rounded-sm relative`}>
-                    {/* Efeito de digitação - mais lento */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent"
-                      initial={{ x: '-100%' }}
-                      animate={{ x: visibleBlocks > i ? '200%' : '-100%' }}
-                      transition={{ duration: 0.8, delay: 0.2 }} // mais lento
-                    />
+                  <Sparkles className="w-6 h-6 text-white" />
+                </motion.div>
+                <span className="text-lg font-bold text-white">I.A. + Código</span>
+              </motion.div>
 
-                    {/* "Código" dentro do bloco */}
-                    <div className="absolute inset-0 flex items-center px-1.5 gap-1.5">
-                      {[...Array(Math.floor(Math.random() * 4) + 2)].map((_, j) => (
-                        <motion.div
-                          key={j}
-                          className="h-2 bg-white/40 rounded-full"
-                          style={{ width: `${10 + Math.random() * 20}%` }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: visibleBlocks > i ? 0.6 : 0 }}
-                          transition={{ delay: j * 0.1 }} // mais lento
-                        />
-                      ))}
+              {/* Cena 2: Smartphone aparece */}
+              {scene >= 2 && (
+                <motion.div
+                  className="relative"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', duration: 0.8 * scale }}
+                >
+                  <div className="relative w-48 h-80 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 rounded-[2.5rem] p-2 shadow-2xl shadow-purple-900/30">
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-5 bg-black rounded-full z-10" />
+                    <div className="relative w-full h-full bg-slate-950 rounded-[2rem] overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-950" />
+                      
+                      {/* Blocos de código sendo construídos */}
+                      <div className="relative pt-10 px-3 space-y-2">
+                        {codeBlocks.slice(0, Math.min(scene, 6)).map((block, i) => (
+                          <motion.div
+                            key={i}
+                            className={`h-4 bg-gradient-to-r ${block.color} rounded-sm`}
+                            initial={{ scaleX: 0, opacity: 0 }}
+                            animate={{ scaleX: 1, opacity: 1 }}
+                            transition={{ duration: 0.5 * scale, delay: i * 0.1 * scale }}
+                            style={{ width: block.width, originX: 0 }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              )}
 
-              {/* App Icon final */}
-              <AnimatePresence>
-                {showAppIcon && (
-                  <motion.div
-                    className="absolute bottom-20 left-1/2 -translate-x-1/2"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 200, // mais suave (era 400)
-                      damping: 12,
-                    }}
-                  >
-                    {/* Glow circular */}
+              {/* Cena 4-6: Descrições */}
+              {scene >= 4 && (
+                <motion.div
+                  className="flex flex-wrap justify-center gap-2 mt-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 rounded-full border border-purple-500/30">
+                    <Code className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs text-purple-300">Estrutura</span>
+                  </div>
+                  {scene >= 5 && (
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur-xl"
-                      animate={{
-                        opacity: [0.5, 0.8, 0.5],
-                        scale: [1, 1.3, 1],
-                      }}
-                      transition={{
-                        duration: 3, // mais lento (era 2)
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    />
-
-                    {/* Ícone do app - maior */}
-                    <motion.div
-                      className="relative w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl flex items-center justify-center shadow-xl"
-                      animate={{
-                        boxShadow: [
-                          '0 0 20px rgba(168, 85, 247, 0.5)',
-                          '0 0 40px rgba(168, 85, 247, 0.8)',
-                          '0 0 20px rgba(168, 85, 247, 0.5)',
-                        ],
-                      }}
-                      transition={{ duration: 3, repeat: Infinity }} // mais lento
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 rounded-full border border-blue-500/30"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring' }}
                     >
-                      <Smartphone className="w-10 h-10 text-white" />
-
-                      {/* Checkmark de sucesso */}
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: 'spring' }}
-                      >
-                        <span className="text-white text-xs">✓</span>
-                      </motion.div>
+                      <Layers className="w-4 h-4 text-blue-400" />
+                      <span className="text-xs text-blue-300">Interface</span>
                     </motion.div>
+                  )}
+                  {scene >= 6 && (
+                    <motion.div
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 rounded-full border border-cyan-500/30"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring' }}
+                    >
+                      <Monitor className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs text-cyan-300">Código</span>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ========== FASE 2: TELA LIMPA (Cenas 7-12) ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div 
+              className="flex flex-col items-center justify-center h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 * scale }}
+            >
+              {/* Cena 7: App Icon Grande */}
+              {scene === 7 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', duration: 0.8 * scale }}
+                >
+                  <motion.div
+                    className="w-28 h-28 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-3xl flex items-center justify-center shadow-2xl mx-auto"
+                    animate={{ boxShadow: ['0 0 30px rgba(168,85,247,0.3)', '0 0 60px rgba(168,85,247,0.6)', '0 0 30px rgba(168,85,247,0.3)'] }}
+                    transition={{ duration: 2 * scale, repeat: Infinity }}
+                  >
+                    <Smartphone className="w-14 h-14 text-white" />
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  <p className="text-xl font-bold text-white mt-4">Seu App Pronto</p>
+                </motion.div>
+              )}
 
-            {/* Reflexo na tela */}
+              {/* Cena 8: Pulsos de energia */}
+              {scene === 8 && (
+                <motion.div
+                  className="relative"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <motion.div
+                    className="w-32 h-32 rounded-full border-2 border-purple-500/50"
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Zap className="w-16 h-16 text-purple-400" />
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* Cena 9: Stats */}
+              {scene === 9 && (
+                <motion.div
+                  className="grid grid-cols-3 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  {[
+                    { label: 'Telas', value: '8+' },
+                    { label: 'Funções', value: '15+' },
+                    { label: 'Horas', value: '-80%' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      className="text-center p-4 bg-purple-500/10 rounded-xl border border-purple-500/30"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.2 * scale }}
+                    >
+                      <p className="text-2xl font-bold text-purple-400">{stat.value}</p>
+                      <p className="text-xs text-slate-400">{stat.label}</p>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Cena 10: Foguete */}
+              {scene === 10 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Rocket className="w-20 h-20 text-purple-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white mt-4">Pronto para Lançar</p>
+                </motion.div>
+              )}
+
+              {/* Cena 11: Checkmark */}
+              {scene === 11 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto"
+                    animate={{ boxShadow: ['0 0 20px rgba(34,197,94,0.3)', '0 0 40px rgba(34,197,94,0.6)', '0 0 20px rgba(34,197,94,0.3)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <CheckCircle className="w-12 h-12 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-green-400 mt-4">App Validado</p>
+                </motion.div>
+              )}
+
+              {/* Cena 12: Mensagem Final */}
+              {scene === 12 && (
+                <motion.div
+                  className="text-center max-w-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 * scale }}
+                >
+                  <motion.div
+                    className="p-6 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl"
+                    animate={{ boxShadow: ['0 0 20px rgba(139,92,246,0.2)', '0 0 40px rgba(139,92,246,0.4)', '0 0 20px rgba(139,92,246,0.2)'] }}
+                    transition={{ duration: 2 * scale, repeat: Infinity }}
+                  >
+                    <p className="text-lg font-medium text-white">
+                      O que antes exigia uma equipe técnica inteira, agora começa com um <span className="text-purple-400 font-bold">bom prompt</span>.
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Progress indicator */}
+        <div className="flex gap-1.5 mt-auto pt-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((s) => (
             <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none"
+              key={s}
+              className="w-2 h-2 rounded-full"
               animate={{
-                opacity: [0.05, 0.1, 0.05],
+                backgroundColor: scene >= s ? '#a855f7' : 'rgba(255,255,255,0.2)',
+                scale: scene === s ? 1.3 : 1
               }}
-              transition={{ duration: 3, repeat: Infinity }}
+              transition={{ duration: 0.3 }}
             />
-          </div>
-
-          {/* Home indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-20 h-1 bg-white/30 rounded-full" />
+          ))}
         </div>
-      </motion.div>
-
-      {/* Label inferior */}
-      <motion.div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center z-10"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
-        transition={{ delay: isAnimating ? 2 : 0, duration: 0.5 }}
-      >
-        <p className="text-base font-medium text-purple-300/80">
-          {phase === 'waiting'
-            ? 'Aguardando...'
-            : phase === 'complete' || phase === 'idle'
-              ? 'App pronto para validação'
-              : 'Construindo seu app...'
-          }
-        </p>
-      </motion.div>
-
-      {/* Progress indicator */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
-              (phase === 'enter' && i === 0) ||
-              (phase === 'building' && i <= 2) ||
-              ((phase === 'complete' || phase === 'idle') && i <= 4)
-                ? 'bg-purple-400'
-                : 'bg-slate-600'
-            }`}
-          />
-        ))}
       </div>
+
+      {/* Badge */}
+      <motion.div
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
+      >
+        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+        <span className="text-[10px] text-purple-300 font-medium">Criador de Apps</span>
+      </motion.div>
     </div>
   );
 };
