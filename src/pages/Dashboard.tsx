@@ -339,32 +339,34 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Stats Cards - DESIGN SOFISTICADO COM SPARKLES */}
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
-          <AnimatedStatCard
-            value={gamificationStats?.streakDays || 0}
-            label="Dias de sequência"
-            icon={Flame}
-            gradientFrom="#ec4899"
-            gradientTo="#e11d48"
-            delay={0.2}
-          />
-          <AnimatedStatCard
-            value={gamificationStats?.powerScore || 0}
-            label="Power Score"
-            icon={Trophy}
-            gradientFrom="#6366f1"
-            gradientTo="#9333ea"
-            delay={0.35}
-          />
-          <AnimatedStatCard
-            value={gamificationStats?.lessonsCompleted || 0}
-            label="Aulas completas"
-            icon={BookOpen}
-            gradientFrom="#10b981"
-            gradientTo="#0891b2"
-            delay={0.5}
-          />
-        </div>
+        {!gamificationLoading && gamificationStats && (
+          <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
+            <AnimatedStatCard
+              value={gamificationStats.streakDays}
+              label="Dias de sequência"
+              icon={Flame}
+              gradientFrom="#ec4899"
+              gradientTo="#e11d48"
+              delay={0.2}
+            />
+            <AnimatedStatCard
+              value={gamificationStats.powerScore}
+              label="Power Score"
+              icon={Trophy}
+              gradientFrom="#6366f1"
+              gradientTo="#9333ea"
+              delay={0.35}
+            />
+            <AnimatedStatCard
+              value={gamificationStats.lessonsCompleted}
+              label="Aulas completas"
+              icon={BookOpen}
+              gradientFrom="#10b981"
+              gradientTo="#0891b2"
+              delay={0.5}
+            />
+          </div>
+        )}
 
         {/* Trilhas Section - SCROLL HORIZONTAL NO MOBILE */}
         <div className="mb-4 sm:mb-6 md:mb-8">
