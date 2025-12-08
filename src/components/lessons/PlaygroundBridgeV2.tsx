@@ -291,61 +291,75 @@ export function PlaygroundBridgeV2({
                   </div>
                 </div>
 
-                {/* REQUISITOS - Sistema Sequencial */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-2.5">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <ListChecks className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                      Selecione e preencha os colchetes do prompt
-                    </span>
+                {/* REQUISITOS - Um card por vez com animação */}
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-3">
+                  {/* Header com progresso */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <ListChecks className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
+                        Clique para aplicar ao prompt
+                      </span>
+                    </div>
+                    {/* Progress dots */}
+                    <div className="flex items-center gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div 
+                          key={i}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            completedSteps[i] 
+                              ? 'bg-emerald-400' 
+                              : i === activeStep 
+                                ? 'bg-amber-400 animate-pulse' 
+                                : 'bg-slate-600'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {orderedRequirements.map((req, idx) => {
-                      const isCompleted = completedSteps[idx];
-                      const isActive = activeStep === idx && !isCompleted;
-                      const isDisabled = idx > activeStep && !isCompleted;
-                      
-                      return (
-                        <motion.button 
-                          key={idx}
-                          onClick={() => handleStepClick(idx)}
-                          disabled={isDisabled}
-                          animate={isActive ? {
-                            boxShadow: [
-                              '0 0 0 0 rgba(251, 191, 36, 0)',
-                              '0 0 0 4px rgba(251, 191, 36, 0.3)',
-                              '0 0 0 0 rgba(251, 191, 36, 0)',
-                            ],
-                          } : {}}
-                          transition={isActive ? {
-                            duration: 1.2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          } : {}}
-                          className={`relative text-left rounded-md px-2 py-1 border-2 transition-all text-[12px] leading-snug ${
-                            isCompleted 
-                              ? 'bg-emerald-600/90 border-emerald-400 text-white cursor-default' 
-                              : isActive
-                                ? 'bg-amber-500/20 border-amber-400 text-white cursor-pointer hover:bg-amber-500/30'
-                                : 'bg-slate-700/30 border-slate-600/40 text-slate-500 cursor-not-allowed'
-                          }`}
+                  {/* Card único animado */}
+                  <div className="relative min-h-[48px] overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {activeStep < 4 && (
+                        <motion.button
+                          key={activeStep}
+                          initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                          onClick={() => handleStepClick(activeStep)}
+                          className="w-full text-left bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400 rounded-lg px-4 py-3 text-white cursor-pointer hover:from-amber-500/30 hover:to-orange-500/30 transition-colors"
                         >
-                          {/* Badge de numeração */}
-                          <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
-                            isCompleted 
-                              ? 'bg-emerald-400 text-emerald-900' 
-                              : isActive
-                                ? 'bg-amber-400 text-amber-900 animate-pulse'
-                                : 'bg-slate-600 text-slate-400'
-                          }`}>
-                            {isCompleted ? <Check className="w-3 h-3" /> : idx + 1}
-                          </span>
-                          
-                          <span className="pl-2 block">{highlightBrackets(req || '')}</span>
+                          <div className="flex items-center gap-3">
+                            {/* Número */}
+                            <span className="w-7 h-7 rounded-full bg-amber-400 text-amber-900 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                              {activeStep + 1}
+                            </span>
+                            {/* Conteúdo */}
+                            <span className="text-[13px] leading-snug flex-1">
+                              {highlightBrackets(orderedRequirements[activeStep] || '')}
+                            </span>
+                            {/* Ícone de ação */}
+                            <ArrowRight className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                          </div>
                         </motion.button>
-                      );
-                    })}
+                      )}
+                      
+                      {/* Mensagem de conclusão */}
+                      {activeStep >= 4 && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="w-full bg-emerald-500/20 border-2 border-emerald-400 rounded-lg px-4 py-3 text-center"
+                        >
+                          <div className="flex items-center justify-center gap-2 text-emerald-400">
+                            <Check className="w-5 h-5" />
+                            <span className="text-sm font-semibold">Prompt completo!</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
