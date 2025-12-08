@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import confetti from 'canvas-confetti';
 
 // ============================================================================
 // CONTRATO DE DADOS V2
@@ -186,6 +187,9 @@ export function PlaygroundBridgeV2({
       setBuiltPrompt(prev => prev.replace(mapping.bracket, value));
       // Adiciona o valor à lista de valores inseridos para destacar visualmente
       setInsertedValues(prev => [...prev, value]);
+      // Marca este valor como "recém inserido" para animação
+      setLastInsertedValue(value);
+      setTimeout(() => setLastInsertedValue(null), 1000); // Remove após animação
     }
     
     // Marca como completado
@@ -202,91 +206,147 @@ export function PlaygroundBridgeV2({
         setActiveStep(stepIndex + 1);
         setHighlightedReq(stepIndex + 1);
       }, 500);
+    } else {
+      // Último step completado - dispara confetti!
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6, x: 0.5 },
+          colors: ['#f59e0b', '#d97706', '#92400e', '#fbbf24', '#fcd34d'],
+        });
+      }, 300);
     }
   };
 
   // Rastreia os valores que foram inseridos no prompt (para destacar visualmente)
   const [insertedValues, setInsertedValues] = useState<string[]>([]);
+  // Valor recém-inserido para animação pulse/glow
+  const [lastInsertedValue, setLastInsertedValue] = useState<string | null>(null);
 
   // Destaca colchetes no prompt, com highlight especial se requisito selecionado
-  // E mostra valores já inseridos com cor verde e colchetes
+  // E mostra valores já inseridos com cor marrom e colchetes DURANTE o processo
   const highlightBrackets = (text: string, activeReqIndex?: number | null) => {
     const bracketMap = getReqBracketMap();
     
-    // Primeiro, verifica se há valores já inseridos no texto
-    let processedText = text;
+    // Encontra posições dos valores já inseridos no texto atual
     let insertedMarkers: { value: string; start: number; end: number }[] = [];
     
-    // Encontra posições dos valores já inseridos
+    // Busca cada valor inserido no texto
     insertedValues.forEach(value => {
-      const index = processedText.indexOf(value);
+      let searchStart = 0;
+      let index = text.indexOf(value, searchStart);
       if (index !== -1) {
-        insertedMarkers.push({ value, start: index, end: index + value.length });
+        // Verifica se não está dentro de colchetes
+        const beforeText = text.slice(0, index);
+        const afterText = text.slice(index + value.length);
+        const isInsideBracket = beforeText.endsWith('[') && afterText.startsWith(']');
+        
+        if (!isInsideBracket) {
+          insertedMarkers.push({ value, start: index, end: index + value.length });
+        }
       }
     });
     
-    // Se não há colchetes E há valores inseridos, renderiza com destaques verdes
-    if (!text.includes('[') && insertedMarkers.length > 0) {
-      // Ordena por posição
-      insertedMarkers.sort((a, b) => a.start - b.start);
-      
-      const result: React.ReactNode[] = [];
-      let lastEnd = 0;
-      
-      insertedMarkers.forEach((marker, idx) => {
-        // Texto antes do valor inserido
-        if (marker.start > lastEnd) {
-          result.push(text.slice(lastEnd, marker.start));
-        }
-        // Valor inserido com destaque verde e colchetes
-        result.push(
-          <span 
-            key={`inserted-${idx}`} 
-            className="px-1 rounded font-semibold bg-emerald-200 dark:bg-emerald-700/60 text-emerald-800 dark:text-emerald-100 transition-all duration-300"
-          >
-            [{marker.value}]
-          </span>
-        );
-        lastEnd = marker.end;
+    // Ordena por posição
+    insertedMarkers.sort((a, b) => a.start - b.start);
+    
+    // Divide o texto em partes: texto normal, valores inseridos, e colchetes
+    const result: React.ReactNode[] = [];
+    let lastEnd = 0;
+    let remainingText = text;
+    let textOffset = 0;
+    
+    // Primeiro, processa valores inseridos e colchetes juntos
+    const allParts: { type: 'text' | 'inserted' | 'bracket'; content: string; start: number; end: number; isActive?: boolean; isNew?: boolean }[] = [];
+    
+    // Adiciona valores inseridos
+    insertedMarkers.forEach(marker => {
+      allParts.push({
+        type: 'inserted',
+        content: marker.value,
+        start: marker.start,
+        end: marker.end,
+        isNew: marker.value === lastInsertedValue,
       });
-      
-      // Texto restante
-      if (lastEnd < text.length) {
-        result.push(text.slice(lastEnd));
+    });
+    
+    // Encontra colchetes no texto
+    const bracketRegex = /\[([^\]]+)\]/g;
+    let match;
+    while ((match = bracketRegex.exec(text)) !== null) {
+      const bracketContent = match[0].toLowerCase();
+      let isActive = false;
+      if (activeReqIndex !== null && activeReqIndex !== undefined) {
+        const keywords = bracketMap[activeReqIndex] || [];
+        isActive = keywords.some(kw => bracketContent.includes(kw));
       }
       
-      return result;
+      allParts.push({
+        type: 'bracket',
+        content: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+        isActive,
+      });
     }
     
-    // Fallback: renderiza colchetes normais (placeholders ainda não preenchidos)
-    const parts = text.split(/(\[[^\]]+\])/g);
+    // Ordena todas as partes por posição
+    allParts.sort((a, b) => a.start - b.start);
     
-    return parts.map((part, idx) => {
-      if (part.startsWith('[') && part.endsWith(']')) {
-        const bracketContent = part.toLowerCase();
-        
-        // Verifica se este colchete corresponde ao requisito selecionado
-        let isActive = false;
-        if (activeReqIndex !== null && activeReqIndex !== undefined) {
-          const keywords = bracketMap[activeReqIndex] || [];
-          isActive = keywords.some(kw => bracketContent.includes(kw));
-        }
-        
-        return (
-          <span 
-            key={idx} 
+    // Renderiza
+    lastEnd = 0;
+    allParts.forEach((part, idx) => {
+      // Texto antes
+      if (part.start > lastEnd) {
+        result.push(text.slice(lastEnd, part.start));
+      }
+      
+      if (part.type === 'inserted') {
+        // Valor inserido com destaque marrom e colchetes + animação se recém-inserido
+        result.push(
+          <motion.span 
+            key={`inserted-${idx}`}
+            initial={part.isNew ? { scale: 1.2, opacity: 0 } : false}
+            animate={part.isNew ? { 
+              scale: [1.2, 1], 
+              opacity: 1,
+            } : {}}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className={`px-1 rounded font-semibold transition-all duration-300 ${
-              isActive 
-                ? 'bg-cyan-400 dark:bg-cyan-500 text-cyan-900 dark:text-white ring-2 ring-cyan-400 ring-offset-1 scale-105 inline-block' 
-                : 'bg-amber-200 dark:bg-amber-800/60 text-amber-900 dark:text-amber-100'
+              part.isNew 
+                ? 'bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-100 ring-2 ring-amber-400 ring-offset-1 animate-pulse' 
+                : 'bg-amber-200 dark:bg-amber-700/60 text-amber-900 dark:text-amber-100'
             }`}
           >
-            {part}
+            [{part.content}]
+          </motion.span>
+        );
+      } else if (part.type === 'bracket') {
+        // Colchete placeholder ainda não preenchido
+        result.push(
+          <span 
+            key={`bracket-${idx}`} 
+            className={`px-1 rounded font-semibold transition-all duration-300 ${
+              part.isActive 
+                ? 'bg-cyan-400 dark:bg-cyan-500 text-cyan-900 dark:text-white ring-2 ring-cyan-400 ring-offset-1 scale-105 inline-block' 
+                : 'bg-slate-200 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            {part.content}
           </span>
         );
       }
-      return part;
+      
+      lastEnd = part.end;
     });
+    
+    // Texto restante
+    if (lastEnd < text.length) {
+      result.push(text.slice(lastEnd));
+    }
+    
+    return result.length > 0 ? result : text;
   };
 
   return (
