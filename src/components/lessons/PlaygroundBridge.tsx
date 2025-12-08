@@ -120,26 +120,23 @@ export function PlaygroundBridge({
             style={{ perspective: 1000 }}
           >
             <Card className="overflow-hidden shadow-2xl border-2 border-primary/30">
-              {/* Header compacto */}
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-3 px-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Lightbulb className="w-5 h-5 text-white" />
+              {/* Header compacto e menor */}
+              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-2.5 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Lightbulb className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-bold text-lg">
+                    <h3 className="text-white font-bold text-base">
                       {playgroundExample?.title || contextTitle}
                     </h3>
-                    <p className="text-white/80 text-xs">
-                      {contextDescription}
-                    </p>
                   </div>
                   <button
                     onClick={handleSkip}
-                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
                     aria-label="Fechar"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -148,31 +145,31 @@ export function PlaygroundBridge({
               </div>
 
               {/* Conteúdo estruturado - SEM SCROLL */}
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-4">
                 {playgroundExample ? (
                   <>
-                    {/* Situação */}
-                    <div className="flex items-start gap-2.5">
-                      <User className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Situação</span>
-                        <p className="text-sm text-foreground leading-snug">{playgroundExample.context}</p>
-                      </div>
+                    {/* Situação - Compacto */}
+                    <div className="flex items-start gap-2">
+                      <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground leading-snug">{playgroundExample.context}</p>
                     </div>
 
-                    {/* Inputs/Requisitos */}
-                    <div className="flex items-start gap-2.5">
-                      <Target className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <span className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wider">Requisitos</span>
-                        <ul className="mt-1 space-y-0.5">
-                          {playgroundExample.inputs.map((input, idx) => (
-                            <li key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
-                              <span>{input}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    {/* Inputs/Requisitos - DESTAQUE VISUAL */}
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-200 dark:border-orange-800/50 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Target className="w-5 h-5 text-orange-600" />
+                        <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Requisitos</span>
+                      </div>
+                      <div className="space-y-2">
+                        {playgroundExample.inputs.map((input, idx) => (
+                          <div 
+                            key={idx} 
+                            className="flex items-center gap-2.5 bg-white/70 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-orange-100 dark:border-orange-900/30"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground font-medium">{input}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
