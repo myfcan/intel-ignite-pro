@@ -98,7 +98,7 @@ export function PlaygroundBridge({
   return (
     <div 
       data-testid="playground-bridge"
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
     >
       <AnimatePresence mode="wait">
         {/* ==================== FASE 1: CARD DE CONTEXTO ==================== */}
@@ -119,7 +119,7 @@ export function PlaygroundBridge({
             className="w-full max-w-lg"
             style={{ perspective: 1000 }}
           >
-            <Card className="overflow-hidden shadow-2xl border-2 border-primary/30">
+            <Card className="overflow-hidden shadow-2xl border-2 border-primary/30 max-h-[85vh] overflow-y-auto">
               {/* Header compacto e menor */}
               <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-2.5 px-4">
                 <div className="flex items-center gap-2">
