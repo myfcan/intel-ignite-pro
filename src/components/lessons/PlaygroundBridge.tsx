@@ -144,52 +144,52 @@ export function PlaygroundBridge({
                 </div>
               </div>
 
-              {/* Conteúdo estruturado - COMPACTO */}
-              <div className="p-3 space-y-2">
+              {/* Conteúdo estruturado */}
+              <div className="p-4 space-y-2.5">
                 {playgroundExample ? (
                   <>
-                    {/* Situação - Compacto */}
-                    <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-2">
-                      <div className="flex items-start gap-2">
-                        <User className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-foreground leading-snug">{playgroundExample.context}</p>
+                    {/* Situação */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-foreground leading-snug">{playgroundExample.context}</p>
                       </div>
                     </div>
 
-                    {/* Inputs/Requisitos - Compacto */}
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg px-2.5 py-2">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Target className="w-3.5 h-3.5 text-orange-600" />
-                        <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Requisitos</span>
+                    {/* Requisitos */}
+                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg px-3 py-2.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-orange-600" />
+                        <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">Requisitos</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {playgroundExample.inputs.map((input, idx) => (
                           <div 
                             key={idx} 
-                            className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/50 rounded px-2 py-1 border border-orange-100 dark:border-orange-900/30"
+                            className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/50 rounded-lg px-2.5 py-1.5 border border-orange-100 dark:border-orange-900/30"
                           >
-                            <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
-                            <span className="text-xs text-foreground">{input}</span>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                            <span className="text-sm text-foreground">{input}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Exemplo de Prompt - Com CTA compacto */}
-                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg px-2.5 py-2">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
-                        <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Exemplo de Prompt</span>
+                    {/* Exemplo de Prompt */}
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg px-3 py-2.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">Exemplo de Prompt</span>
                       </div>
                       
-                      <p className="text-xs text-foreground leading-snug mb-2 bg-white/60 dark:bg-slate-900/50 rounded px-2 py-1.5 border border-purple-100 dark:border-purple-900/30 italic">
+                      <p className="text-sm text-foreground leading-snug mb-2.5 bg-white/60 dark:bg-slate-900/50 rounded-lg px-2.5 py-2 border border-purple-100 dark:border-purple-900/30 italic">
                         &ldquo;{playgroundExample.examplePrompt}&rdquo;
                       </p>
 
-                      {/* Botão CTA compacto */}
+                      {/* Botão CTA */}
                       <button
                         onClick={handleCopyPrompt}
-                        className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg font-semibold text-xs transition-all ${
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-semibold text-sm transition-all ${
                           copied 
                             ? 'bg-green-500 text-white' 
                             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-md'
@@ -197,12 +197,12 @@ export function PlaygroundBridge({
                       >
                         {copied ? (
                           <>
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-4 h-4" />
                             <span>Copiado! Cole no playground</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-4 h-4" />
                             <span>Copiar este prompt</span>
                           </>
                         )}
