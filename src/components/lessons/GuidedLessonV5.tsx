@@ -2001,11 +2001,11 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           title: "Post simples para Instagram",
           context: "João tem uma padaria de bairro e quer divulgar um novo pão de fermentação natural.",
           inputs: [
-            "Público: clientes da padaria do bairro",
-            "Objetivo: convidar para experimentar o pão nesta semana",
-            "Tom: simples, próximo, nada técnico"
+            "Público: [clientes da padaria do bairro]",
+            "Objetivo: [convidar para experimentar o pão nesta semana]",
+            "Tom: [simples, próximo, nada técnico]"
           ],
-          examplePrompt: "Crie um post curto para Instagram sobre meu novo pão de fermentação natural, em tom simples e próximo, convidando os clientes do bairro para experimentar nesta semana."
+          examplePrompt: "Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
         };
 
         console.log('🌉 [V5] Renderizando PlaygroundBridge com exemplo estruturado');
