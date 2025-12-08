@@ -441,17 +441,23 @@ export function PlaygroundBridgeV2({
                           animate={{ 
                             rotateX: 0, 
                             opacity: 1,
-                            // Pulse sutil apenas no primeiro step (antes de clicar)
-                            boxShadow: activeStep === 0 && completedSteps[0] === false
-                              ? ['0 0 0 0 rgba(251, 191, 36, 0)', '0 0 0 8px rgba(251, 191, 36, 0.3)', '0 0 0 0 rgba(251, 191, 36, 0)']
-                              : '0 0 0 0 rgba(251, 191, 36, 0)'
+                            // Pulse na borda inteira apenas no primeiro step (antes de clicar)
+                            scale: activeStep === 0 && completedSteps[0] === false
+                              ? [1, 1.02, 1]
+                              : 1,
+                            borderColor: activeStep === 0 && completedSteps[0] === false
+                              ? ['rgb(251, 191, 36)', 'rgb(253, 224, 71)', 'rgb(251, 191, 36)']
+                              : 'rgb(251, 191, 36)'
                           }}
                           exit={{ rotateX: 90, opacity: 0 }}
                           transition={{ 
                             duration: 0.4, 
                             ease: [0.4, 0, 0.2, 1],
-                            boxShadow: activeStep === 0 && completedSteps[0] === false 
-                              ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+                            scale: activeStep === 0 && completedSteps[0] === false 
+                              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+                              : { duration: 0 },
+                            borderColor: activeStep === 0 && completedSteps[0] === false 
+                              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
                               : { duration: 0 }
                           }}
                           className="absolute inset-0 w-full text-left bg-gradient-to-r from-amber-500/30 to-orange-500/25 border-2 border-amber-400 rounded-lg px-3 py-2.5 cursor-pointer hover:from-amber-500/40 hover:to-orange-500/35 transition-colors"
