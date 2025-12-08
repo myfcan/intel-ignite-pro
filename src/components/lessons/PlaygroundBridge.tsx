@@ -77,17 +77,23 @@ export function PlaygroundBridge({
     onSkip();
   }, [onSkip]);
 
-  // Extrair um resumo curto do exemplo (primeiros 2 parágrafos ou 400 chars)
+  // Extrair o conteúdo mais relevante do exemplo prático
+  // Remove o título principal (primeira linha com #) e pega o conteúdo significativo
   const getExamplePreview = (text: string): string => {
     if (!text) return '';
     
-    // Dividir por parágrafos e pegar os primeiros 2
+    // Dividir por parágrafos e filtrar vazios
     const paragraphs = text.split('\n\n').filter(p => p.trim());
-    const preview = paragraphs.slice(0, 2).join('\n\n');
     
-    // Limitar a 400 caracteres
-    if (preview.length > 400) {
-      return preview.substring(0, 400) + '...';
+    // Remover o título principal (linha que começa com ##)
+    const contentParagraphs = paragraphs.filter(p => !p.trim().startsWith('##'));
+    
+    // Pegar os primeiros 4-5 elementos para ter conteúdo substancial
+    const preview = contentParagraphs.slice(0, 5).join('\n\n');
+    
+    // Limitar a 600 caracteres para mais contexto
+    if (preview.length > 600) {
+      return preview.substring(0, 600) + '...';
     }
     
     return preview;
@@ -118,11 +124,11 @@ export function PlaygroundBridge({
             style={{ perspective: 1000 }}
           >
             <Card className="overflow-hidden shadow-2xl border-2 border-primary/30">
-              {/* Header com gradiente */}
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-5 px-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Lightbulb className="w-7 h-7 text-white" />
+              {/* Header com gradiente - mais compacto */}
+              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-4 px-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Lightbulb className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-white font-bold text-xl flex items-center gap-2">
@@ -146,10 +152,10 @@ export function PlaygroundBridge({
                 </div>
               </div>
 
-              {/* Conteúdo do exemplo */}
-              <div className="p-6 max-h-[50vh] overflow-y-auto">
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-5">
-                  <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-amber-800 dark:prose-headings:text-amber-200 prose-strong:text-amber-700 dark:prose-strong:text-amber-300">
+              {/* Conteúdo do exemplo prático */}
+              <div className="p-4 max-h-[35vh] overflow-y-auto">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-amber-800 dark:prose-headings:text-amber-200 prose-strong:text-amber-700 dark:prose-strong:text-amber-300 prose-li:my-1 prose-ul:my-2 prose-p:my-2">
                     <ReactMarkdown>
                       {getExamplePreview(practicalExample)}
                     </ReactMarkdown>
@@ -157,7 +163,7 @@ export function PlaygroundBridge({
                 </div>
 
                 {/* Dica visual */}
-                <div className="mt-4 flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                <div className="mt-3 flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                   <Target className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-muted-foreground">
                     <strong className="text-foreground">Sua vez!</strong> Agora você vai criar algo similar usando o que aprendeu.
