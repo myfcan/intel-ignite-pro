@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Lightbulb, Sparkles, Brain, Zap, RefreshCw, Infinity } from "lucide-react";
+import { Lightbulb, Sparkles, Brain, Zap, RefreshCw, Infinity as InfinityIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface CardEffectIdeaGeneratorProps {
@@ -248,7 +248,7 @@ export const CardEffectIdeaGenerator = ({ isActive = false, duration }: CardEffe
                 animate={{ scale: [0, 1.2, 1] }}
                 className="w-32 h-32 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-6"
               >
-                <Infinity className="w-16 h-16 text-white" />
+                <InfinityIcon className="w-16 h-16 text-white" />
               </motion.div>
               <h3 className="text-2xl font-bold text-purple-400">Sem limites</h3>
             </motion.div>
