@@ -4,7 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { PlaygroundConfig } from '@/types/guidedLesson';
-import { Sparkles, ArrowRight, Lightbulb, User, Target, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Lightbulb, User, Target, MessageSquare, CheckCircle2, Copy, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Tipo para o exemplo estruturado do playground
 export interface PlaygroundExampleData {
@@ -52,6 +53,8 @@ export function PlaygroundBridge({
 }: PlaygroundBridgeProps) {
   const [phase, setPhase] = useState<'context' | 'playground'>('context');
   const [isFlipping, setIsFlipping] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   console.log('🌉 [PLAYGROUND-BRIDGE] Renderizando:', { 
     phase, 
@@ -78,6 +81,19 @@ export function PlaygroundBridge({
     console.log('🌉 [PLAYGROUND-BRIDGE] Usuário pulou');
     onSkip();
   }, [onSkip]);
+
+  const handleCopyPrompt = useCallback(() => {
+    if (!playgroundExample?.examplePrompt) return;
+    
+    navigator.clipboard.writeText(playgroundExample.examplePrompt);
+    setCopied(true);
+    toast({
+      title: "Copiado!",
+      description: "Prompt copiado para a área de transferência",
+    });
+    
+    setTimeout(() => setCopied(false), 2000);
+  }, [playgroundExample?.examplePrompt, toast]);
 
   return (
     <div 
@@ -160,14 +176,32 @@ export function PlaygroundBridge({
                       </div>
                     </div>
 
-                    {/* Exemplo de Prompt */}
-                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="w-4 h-4 text-primary" />
-                        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Exemplo de Prompt</span>
+                    {/* Exemplo de Prompt - Clicável para copiar */}
+                    <div 
+                      onClick={handleCopyPrompt}
+                      className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 cursor-pointer hover:border-primary/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Exemplo de Prompt</span>
+                        </div>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/10">
+                          {copied ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-green-500" />
+                              <span className="text-green-500">Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Copiar</span>
+                            </>
+                          )}
+                        </span>
                       </div>
                       <p className="text-sm text-foreground italic leading-relaxed">
-                        "{playgroundExample.examplePrompt}"
+                        &ldquo;{playgroundExample.examplePrompt}&rdquo;
                       </p>
                     </div>
                   </>
