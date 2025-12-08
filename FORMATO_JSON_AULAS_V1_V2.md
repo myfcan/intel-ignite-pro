@@ -69,7 +69,7 @@ O Pipeline aceita **dois formatos** para os campos:
 
 ---
 
-## 🎮 Playgrounds (apenas V1)
+## 🎮 Playgrounds (V1 e V5)
 
 ### Playground Automático (Recomendado)
 
@@ -85,19 +85,31 @@ Se você **não especificar** playground na seção 4, o Pipeline adiciona autom
 }
 ```
 
-### Playground Customizado (Opcional)
+### Playground Customizado com PlaygroundBridgeV2 (V5)
 
-Para customizar o playground:
+Para usar o novo fluxo interativo com flip cards:
 
 ```json
 {
   "id": "section-4",
   "index": 4,
-  "markdown": "## Conteúdo...",
-  "speechBubble": "Texto...",
+  "markdown": "## Hora da Prática...",
+  "speechBubble": "Vamos praticar!",
+  "showPlaygroundCall": true,
   "playgroundConfig": {
     "type": "real-playground",
-    "instruction": "Vamos praticar!",
+    "instruction": "Vamos criar um post!",
+    "playgroundExampleV2": {
+      "title": "Post simples para Instagram",
+      "context": "João tem uma padaria de bairro e quer divulgar um novo pão.",
+      "requirements": [
+        "Produto: [pão de fermentação natural]",
+        "Público: [clientes da padaria do bairro]",
+        "Objetivo: [convidar para experimentar o pão]",
+        "Tom: [simples, próximo, nada técnico]"
+      ],
+      "examplePrompt": "Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
+    },
     "realConfig": {
       "title": "Hora da Prática! 🚀",
       "maiaMessage": "Agora é sua vez!",
@@ -106,7 +118,7 @@ Para customizar o playground:
         "description": "Use o que aprendeu..."
       },
       "prefilledText": "",
-      "userPlaceholder": "Digite seu prompt aqui... 💭",
+      "userPlaceholder": "Cole ou digite seu prompt... 💭",
       "validation": {
         "minLength": 20,
         "requiredKeywords": [],
@@ -121,9 +133,24 @@ Para customizar o playground:
 }
 ```
 
+### 🎯 Estrutura do playgroundExampleV2
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `title` | string | Título curto do modal (ex: "Post para Instagram") |
+| `context` | string | Situação do caso em 1-2 frases |
+| `requirements` | string[] | **4 itens** com formato `"Label: [valor exemplo]"` |
+| `examplePrompt` | string | Template do prompt com `[placeholders]` |
+
+**Ordem fixa dos requirements:**
+1. Produto
+2. Público
+3. Objetivo
+4. Tom
+
 ### Tipos de Playground
 
-1. **real-playground**: Integração com IA real (ChatGPT/Claude)
+1. **real-playground**: Integração com IA real (Lovable AI Gateway)
 2. **interactive-simulation**: Simulação interativa (exemplo: Netflix)
 
 ---

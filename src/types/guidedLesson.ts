@@ -79,6 +79,14 @@ export interface InteractiveSimulationConfig {
   };
 }
 
+// 🎯 V2: Dados estruturados para PlaygroundBridgeV2
+export interface PlaygroundExampleDataV2 {
+  title: string;              // título curto do modal
+  context: string;            // 1 ou 2 frases no máximo
+  requirements: string[];     // sempre 4 itens, já com [colchetes]
+  examplePrompt: string;      // modelo de prompt com [placeholders]
+}
+
 export interface PlaygroundConfig {
   instruction?: string;  // 🆕 Opcional para compatibilidade com diferentes formatos
   type: PlaygroundType;
@@ -89,6 +97,7 @@ export interface PlaygroundConfig {
   feedback?: Record<string, string>;
   realConfig?: RealPlaygroundConfig;
   simulationConfig?: InteractiveSimulationConfig;
+  playgroundExampleV2?: PlaygroundExampleDataV2; // 🆕 V2: Dados do exemplo para PlaygroundBridgeV2
 }
 
 export interface ExerciseConfig {
