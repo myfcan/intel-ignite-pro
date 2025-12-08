@@ -569,18 +569,18 @@ export function PlaygroundBridgeV2({
               <div className="p-4 space-y-3">
                 
                 {/* INSTRUÇÃO - texto atualizado */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <ListChecks className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <ListChecks className="w-5 h-5 text-slate-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-[12px] text-foreground leading-snug">
+                      <p className="text-sm text-foreground leading-snug">
                         Cole seu prompt abaixo ou digite os dados dos colchetes:
                       </p>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-2.5">
                         {['Produto', 'Público', 'Objetivo', 'Tom'].map((label, idx) => (
                           <span 
                             key={idx} 
-                            className="text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded font-medium"
+                            className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2.5 py-1 rounded font-medium"
                           >
                             {label}
                           </span>
