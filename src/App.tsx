@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, ReactNode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AvatarStateProvider } from "@/contexts/AvatarStateContext";
 import { URLFixer } from "@/components/URLFixer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DashboardSkeleton, TrailDetailSkeleton } from "@/components/skeletons";
 
 // Critical pages - loaded immediately
 import Index from "./pages/Index";
@@ -98,6 +99,11 @@ const PageLoader = () => (
   </div>
 );
 
+// Wrapper for Suspense with custom fallback
+const SuspenseWithFallback = ({ children, fallback }: { children: ReactNode; fallback: ReactNode }) => (
+  <Suspense fallback={fallback}>{children}</Suspense>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AvatarStateProvider>
@@ -111,12 +117,24 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={
+                <SuspenseWithFallback fallback={<DashboardSkeleton />}>
+                  <Dashboard />
+                </SuspenseWithFallback>
+              } />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="/gamification" element={<AchievementsPage />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/trail/:id" element={<TrailDetail />} />
-              <Route path="/trails/:id" element={<TrailDetail />} />
+              <Route path="/trail/:id" element={
+                <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
+                  <TrailDetail />
+                </SuspenseWithFallback>
+              } />
+              <Route path="/trails/:id" element={
+                <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
+                  <TrailDetail />
+                </SuspenseWithFallback>
+              } />
               <Route path="/lessons/:id" element={<Lesson />} />
               <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
