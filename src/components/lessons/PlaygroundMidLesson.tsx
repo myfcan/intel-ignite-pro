@@ -337,7 +337,7 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
             {/* Playground */}
             <div className="mb-4">
               <h4 className="font-semibold text-foreground mb-3">
-                ✍️ Digite seu prompt:
+                ✍️ Cole ou digite seu prompt:
               </h4>
               
               {/* Parte editável */}
