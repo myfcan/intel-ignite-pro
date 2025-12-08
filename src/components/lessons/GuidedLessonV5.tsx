@@ -5,12 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
+import { PlaygroundBridge } from './PlaygroundBridge';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 import { PlaygroundRealChat } from './PlaygroundRealChat';
 import { GuidedPlayground } from './GuidedPlayground';
 import InteractiveSimulationPlayground from './InteractiveSimulationPlayground';
-import { PlaygroundCallCard } from './PlaygroundCallCard';
 import { LessonCompletionSummary } from './LessonCompletionSummary';
 import { AchievementBadge } from './AchievementBadge';
 import { PointsNotification } from '@/components/gamification/PointsNotification';
@@ -2007,41 +2007,33 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         onHide={() => setPointsNotification(prev => ({ ...prev, show: false }))}
       />
 
-      {/* 🎮 V5: Card de Convite do Playground Mid-Lesson */}
-      {showPlaygroundCall && (() => {
-        const playgroundSection = lessonData.sections.find(
-          (s: any) => s.showPlaygroundCall && s.playgroundConfig
-        );
-        return playgroundSection ? (
-          <PlaygroundCallCard
-            title="Hora da Prática!"
-            description={
-              (playgroundSection as any).playgroundConfig?.instruction ||
-              "Que tal praticar o que você aprendeu? É rápido e vai fixar o conhecimento!"
-            }
-            onOpen={handleOpenPlayground}
-            onSkip={handleSkipPlayground}
-          />
-        ) : null;
-      })()}
-
-      {/* 🎮 V5: Overlay do Playground Mid-Lesson */}
-      {showPlaygroundMid && (() => {
+      {/* 🌉 V5: PlaygroundBridge - Card de Contexto + Playground com flip */}
+      {(showPlaygroundCall || showPlaygroundMid) && (() => {
         const playgroundSection = lessonData.sections.find(
           (s: any) => s.showPlaygroundCall && s.playgroundConfig
         ) as any;
 
         if (!playgroundSection?.playgroundConfig) {
-          console.warn('🎮 [V5] Playground config não encontrado!');
+          console.warn('🌉 [V5] Playground config não encontrado!');
           return null;
         }
 
         const config = playgroundSection.playgroundConfig;
-        console.log('🎮 [V5] Renderizando PlaygroundMidLesson:', config);
+        
+        // Pegar o exemplo prático da seção 4 (index 3) ou da própria seção
+        const section4 = lessonData.sections[3] as any;
+        const practicalExample = section4?.visualContent || section4?.content || 
+          playgroundSection.visualContent || playgroundSection.content || '';
+
+        console.log('🌉 [V5] Renderizando PlaygroundBridge:', { 
+          hasExample: !!practicalExample, 
+          exampleLength: practicalExample.length 
+        });
 
         return (
-          <PlaygroundMidLesson
-            config={{
+          <PlaygroundBridge
+            practicalExample={practicalExample}
+            playgroundConfig={{
               type: config.type || 'real-playground',
               instruction: config.instruction,
               realConfig: config.realConfig || {
@@ -2062,7 +2054,10 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
               }
             }}
             onComplete={handlePlaygroundComplete}
+            onSkip={handleSkipPlayground}
             lessonId={lessonData.id}
+            contextTitle="Veja um exemplo prático!"
+            contextDescription="Antes de praticar, observe como funciona na vida real:"
           />
         );
       })()}
