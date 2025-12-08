@@ -292,15 +292,15 @@ export function PlaygroundBridgeV2({
                 </div>
 
                 {/* REQUISITOS - Sistema Sequencial */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ListChecks className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-2.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <ListChecks className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
                       Selecione e preencha os colchetes do prompt
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {orderedRequirements.map((req, idx) => {
                       const isCompleted = completedSteps[idx];
                       const isActive = activeStep === idx && !isCompleted;
@@ -314,7 +314,7 @@ export function PlaygroundBridgeV2({
                           animate={isActive ? {
                             boxShadow: [
                               '0 0 0 0 rgba(251, 191, 36, 0)',
-                              '0 0 0 6px rgba(251, 191, 36, 0.3)',
+                              '0 0 0 4px rgba(251, 191, 36, 0.3)',
                               '0 0 0 0 rgba(251, 191, 36, 0)',
                             ],
                           } : {}}
@@ -323,26 +323,26 @@ export function PlaygroundBridgeV2({
                             repeat: Infinity,
                             ease: 'easeInOut',
                           } : {}}
-                          className={`relative text-left rounded-lg px-3 py-2.5 border-2 transition-all text-[12px] leading-snug min-h-[52px] ${
+                          className={`relative text-left rounded-md px-2 py-1.5 border-2 transition-all text-[11px] leading-tight ${
                             isCompleted 
-                              ? 'bg-emerald-600/90 border-emerald-400 text-white cursor-default shadow-lg shadow-emerald-500/20' 
+                              ? 'bg-emerald-600/90 border-emerald-400 text-white cursor-default' 
                               : isActive
                                 ? 'bg-amber-500/20 border-amber-400 text-white cursor-pointer hover:bg-amber-500/30'
                                 : 'bg-slate-700/30 border-slate-600/40 text-slate-500 cursor-not-allowed'
                           }`}
                         >
                           {/* Badge de numeração */}
-                          <span className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
+                          <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${
                             isCompleted 
                               ? 'bg-emerald-400 text-emerald-900' 
                               : isActive
                                 ? 'bg-amber-400 text-amber-900 animate-pulse'
                                 : 'bg-slate-600 text-slate-400'
                           }`}>
-                            {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                            {isCompleted ? <Check className="w-3 h-3" /> : idx + 1}
                           </span>
                           
-                          <span className="pl-3 block">{highlightBrackets(req || '')}</span>
+                          <span className="pl-2 block">{highlightBrackets(req || '')}</span>
                         </motion.button>
                       );
                     })}
