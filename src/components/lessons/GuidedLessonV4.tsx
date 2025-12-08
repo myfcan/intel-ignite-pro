@@ -1618,10 +1618,10 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
           <div className="flex items-center gap-3 max-w-[1920px] mx-auto">
             <button 
               onClick={() => navigate(`/trail/${trailId || lessonData.trackId}`)} 
-              className="p-2 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+              className="w-10 h-10 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full transition-all duration-200 flex-shrink-0 shadow-sm"
               aria-label="Voltar para trilha"
             >
-              <ChevronLeft className="w-5 h-5 text-slate-700" />
+              <ChevronLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
             </button>
             <div className="flex-1 min-w-0">
               <h1 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{lessonData.title}</h1>
