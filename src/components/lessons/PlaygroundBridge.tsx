@@ -2,15 +2,23 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LivAvatar } from '@/components/LivAvatar';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { PlaygroundConfig } from '@/types/guidedLesson';
-import { Sparkles, ArrowRight, Lightbulb, Target } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { Sparkles, ArrowRight, Lightbulb, User, Target, MessageSquare, CheckCircle2 } from 'lucide-react';
+
+// Tipo para o exemplo estruturado do playground
+export interface PlaygroundExampleData {
+  title: string;
+  context: string;
+  inputs: string[];
+  examplePrompt: string;
+}
 
 interface PlaygroundBridgeProps {
-  /** Conteúdo do exemplo prático (visualContent da seção 4 ou texto custom) */
-  practicalExample: string;
+  /** Exemplo estruturado com context, inputs e prompt */
+  playgroundExample?: PlaygroundExampleData;
+  /** Fallback: conteúdo markdown antigo */
+  practicalExample?: string;
   /** Configuração do playground */
   playgroundConfig: PlaygroundConfig;
   /** Callback quando completa o playground */
@@ -29,16 +37,11 @@ interface PlaygroundBridgeProps {
  * 🌉 PLAYGROUND BRIDGE
  * 
  * Componente que cria uma ponte entre o conteúdo e o playground,
- * mostrando primeiro um exemplo prático (card de contexto) e depois
+ * mostrando primeiro um exemplo prático estruturado e depois
  * transicionando com animação flip para o playground real.
- * 
- * Fluxo:
- * 1. Card de Contexto (exemplo prático) → Usuário lê
- * 2. Clica em "Agora é sua vez!" 
- * 3. Animação flip/slide
- * 4. Playground abre para prática
  */
 export function PlaygroundBridge({
+  playgroundExample,
   practicalExample,
   playgroundConfig,
   onComplete,
@@ -52,15 +55,14 @@ export function PlaygroundBridge({
 
   console.log('🌉 [PLAYGROUND-BRIDGE] Renderizando:', { 
     phase, 
-    hasExample: !!practicalExample, 
-    exampleLength: practicalExample?.length 
+    hasStructuredExample: !!playgroundExample,
+    hasFallback: !!practicalExample
   });
 
   const handleStartPlayground = useCallback(() => {
     console.log('🌉 [PLAYGROUND-BRIDGE] Iniciando transição para playground');
     setIsFlipping(true);
     
-    // Pequeno delay para a animação de saída
     setTimeout(() => {
       setPhase('playground');
       setIsFlipping(false);
@@ -76,28 +78,6 @@ export function PlaygroundBridge({
     console.log('🌉 [PLAYGROUND-BRIDGE] Usuário pulou');
     onSkip();
   }, [onSkip]);
-
-  // Extrair o conteúdo mais relevante do exemplo prático
-  // Remove o título principal (primeira linha com #) e pega o conteúdo significativo
-  const getExamplePreview = (text: string): string => {
-    if (!text) return '';
-    
-    // Dividir por parágrafos e filtrar vazios
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
-    
-    // Remover o título principal (linha que começa com ##)
-    const contentParagraphs = paragraphs.filter(p => !p.trim().startsWith('##'));
-    
-    // Pegar os primeiros 4-5 elementos para ter conteúdo substancial
-    const preview = contentParagraphs.slice(0, 5).join('\n\n');
-    
-    // Limitar a 600 caracteres para mais contexto
-    if (preview.length > 600) {
-      return preview.substring(0, 600) + '...';
-    }
-    
-    return preview;
-  };
 
   return (
     <div 
@@ -120,22 +100,21 @@ export function PlaygroundBridge({
               duration: 0.4, 
               ease: [0.4, 0, 0.2, 1]
             }}
-            className="w-full max-w-2xl"
+            className="w-full max-w-lg"
             style={{ perspective: 1000 }}
           >
             <Card className="overflow-hidden shadow-2xl border-2 border-primary/30">
-              {/* Header com gradiente - mais compacto */}
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-4 px-5">
+              {/* Header compacto */}
+              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-3 px-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Lightbulb className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-white font-bold text-xl flex items-center gap-2">
-                      <Sparkles className="w-5 h-5" />
-                      {contextTitle}
+                    <h3 className="text-white font-bold text-lg">
+                      {playgroundExample?.title || contextTitle}
                     </h3>
-                    <p className="text-white/90 text-sm mt-1">
+                    <p className="text-white/80 text-xs">
                       {contextDescription}
                     </p>
                   </div>
@@ -144,7 +123,7 @@ export function PlaygroundBridge({
                     className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2 transition-colors"
                     aria-label="Fechar"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -152,44 +131,65 @@ export function PlaygroundBridge({
                 </div>
               </div>
 
-              {/* Conteúdo do exemplo prático */}
-              <div className="p-4 max-h-[35vh] overflow-y-auto">
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4">
-                  <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-amber-800 dark:prose-headings:text-amber-200 prose-strong:text-amber-700 dark:prose-strong:text-amber-300 prose-li:my-1 prose-ul:my-2 prose-p:my-2">
-                    <ReactMarkdown>
-                      {getExamplePreview(practicalExample)}
-                    </ReactMarkdown>
-                  </div>
-                </div>
+              {/* Conteúdo estruturado - SEM SCROLL */}
+              <div className="p-4 space-y-3">
+                {playgroundExample ? (
+                  <>
+                    {/* Situação */}
+                    <div className="flex items-start gap-2.5">
+                      <User className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Situação</span>
+                        <p className="text-sm text-foreground leading-snug">{playgroundExample.context}</p>
+                      </div>
+                    </div>
 
-                {/* Dica visual */}
-                <div className="mt-3 flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Target className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Sua vez!</strong> Agora você vai criar algo similar usando o que aprendeu.
-                  </p>
-                </div>
+                    {/* Inputs/Requisitos */}
+                    <div className="flex items-start gap-2.5">
+                      <Target className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <span className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wider">Requisitos</span>
+                        <ul className="mt-1 space-y-0.5">
+                          {playgroundExample.inputs.map((input, idx) => (
+                            <li key={idx} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
+                              <span>{input}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Exemplo de Prompt */}
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MessageSquare className="w-4 h-4 text-primary" />
+                        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">Exemplo de Prompt</span>
+                      </div>
+                      <p className="text-sm text-foreground italic leading-relaxed">
+                        "{playgroundExample.examplePrompt}"
+                      </p>
+                    </div>
+                  </>
+                ) : practicalExample ? (
+                  // Fallback para conteúdo markdown antigo
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground line-clamp-4">
+                      {practicalExample.substring(0, 200)}...
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               {/* Botões */}
-              <div className="p-6 pt-0 space-y-3">
+              <div className="px-4 pb-4 pt-1 flex gap-2">
                 <Button
                   onClick={handleStartPlayground}
-                  size="lg"
-                  className="w-full py-6 text-lg font-bold shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700"
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-5 shadow-lg"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Agora é sua vez!
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-
-                <Button
-                  onClick={handleSkip}
-                  variant="ghost"
-                  className="w-full text-sm hover:bg-muted/50"
-                  size="sm"
-                >
-                  ⏭️ Pular por enquanto
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </Card>
@@ -210,7 +210,6 @@ export function PlaygroundBridge({
             className="w-full max-w-3xl"
             style={{ perspective: 1000 }}
           >
-            {/* Renderiza o PlaygroundMidLesson existente */}
             <PlaygroundMidLesson
               config={playgroundConfig}
               onComplete={handlePlaygroundComplete}
