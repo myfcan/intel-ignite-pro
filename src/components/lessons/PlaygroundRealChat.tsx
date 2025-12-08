@@ -25,7 +25,14 @@ export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: Play
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  console.log('🎮 [PLAYGROUND-REAL-CHAT] Componente renderizado');
+  console.log('🎮 [PLAYGROUND-REAL-CHAT] Componente renderizado, initialPrompt:', initialPrompt);
+
+  // Atualiza o input quando initialPrompt mudar
+  useEffect(() => {
+    if (initialPrompt && inputValue === '') {
+      setInputValue(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
