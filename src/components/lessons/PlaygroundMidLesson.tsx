@@ -335,28 +335,28 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId, playgroundEx
           {/* Conteúdo com scroll */}
           <div className="flex-1 p-6 overflow-y-auto">
             {/* Box - Substitua os colchetes usando: */}
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-xl p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg px-3 py-2.5 mb-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Target className="w-3.5 h-3.5 text-orange-600" />
+                <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
                   Substitua os colchetes usando:
                 </span>
               </div>
               
               {playgroundExample && playgroundExample.inputs.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {playgroundExample.inputs.map((input, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/50 rounded-lg px-3 py-2 border border-orange-100 dark:border-orange-900/30"
+                      className="flex items-start gap-2 bg-white/70 dark:bg-slate-900/50 rounded px-2 py-1.5 border border-orange-100 dark:border-orange-900/30"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-sm text-foreground">{input}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs text-foreground leading-snug">{input}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   🤖 {config.realConfig.maiaMessage}
                 </p>
               )}
