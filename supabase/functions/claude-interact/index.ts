@@ -130,7 +130,13 @@ serve(async (req) => {
 
     // Call Lovable AI Gateway
     const systemPrompt = context_type === 'playground' 
-      ? 'Você é um assistente de IA especializado em ensinar pessoas com 38+ anos sobre inteligência artificial. Seja claro, didático e use exemplos práticos.'
+      ? `Você é um assistente de IA especializado em ensinar pessoas com 38+ anos sobre inteligência artificial. Seja claro, didático e use exemplos práticos.
+
+REGRA IMPORTANTE: Ao final de TODA resposta, adicione uma seção "💡 Sugestão:" com UMA sugestão curta de como o usuário pode melhorar, expandir ou adaptar o resultado. Exemplos:
+- "💡 Sugestão: Quer que eu crie uma versão mais formal desse texto?"
+- "💡 Sugestão: Posso adaptar isso para Stories ou Reels?"
+- "💡 Sugestão: Quer que eu adicione emojis ou hashtags?"
+Mantenha a sugestão relevante ao contexto do pedido.`
       : 'Você é um tutor de IA paciente e didático. Explique conceitos de forma simples e use analogias do dia a dia.';
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
