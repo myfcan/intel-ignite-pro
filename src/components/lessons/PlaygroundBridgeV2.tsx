@@ -352,7 +352,7 @@ export function PlaygroundBridgeV2({
   return (
     <div 
       data-testid="playground-bridge-v2"
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-2"
+      className="fixed inset-0 z-[100] bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-800/95 backdrop-blur-xl flex items-center justify-center p-4"
     >
       <AnimatePresence mode="wait">
         {/* ==================== MODAL 1: EXEMPLO ==================== */}
