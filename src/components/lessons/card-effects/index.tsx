@@ -391,6 +391,15 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'your-reality': 'Sua Realidade', 'help-network': 'Rede de Ajuda',
   'small-experiment': 'Pequeno Experimento', 'history-parallel': 'Paralelo Histórico',
   'balanced-approach': 'Abordagem Equilibrada', 'practice-preview': 'Prévia da Prática',
+  // AULA 6 - Substituição Silenciosa
+  'wake-up-call': 'Chamado de Alerta', 'new-players': 'Novos Jogadores',
+  'take-position': 'Tome Posição', 'job-shifter': 'Mudança de Trabalho',
+  'vulnerability-alert': 'Alerta de Vulnerabilidade', 'value-booster': 'Amplificador de Valor',
+  'blank-page-breaker': 'Quebrador de Página em Branco', 'template-starter': 'Iniciador de Templates',
+  'shortcut-engine': 'Motor de Atalhos', 'real-problem-loader': 'Carregador de Problemas Reais',
+  'context-mapper': 'Mapeador de Contexto', 'specificity-coach': 'Coach de Especificidade',
+  'impact-summary': 'Resumo de Impacto', 'control-shift': 'Mudança de Controle',
+  'guiding-question': 'Pergunta Guia',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -443,6 +452,15 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'your-reality': 'Espelho refletindo sua vida', 'help-network': 'Rede de pessoas ao redor',
   'small-experiment': 'Tubo de ensaio com experimento', 'history-parallel': 'Timeline internet vs I.A.',
   'balanced-approach': 'Escala de equilíbrio', 'practice-preview': 'Prévia das próximas práticas',
+  // AULA 6 - Substituição Silenciosa
+  'wake-up-call': 'Sino de alerta sobre substituição', 'new-players': 'Novos competidores entrando',
+  'take-position': 'Escolha de posicionamento', 'job-shifter': 'Tarefas sendo redistribuídas',
+  'vulnerability-alert': 'Scanner de vulnerabilidades', 'value-booster': 'Amplificador de valor pessoal',
+  'blank-page-breaker': 'Quebrando a página em branco', 'template-starter': 'Templates prontos para usar',
+  'shortcut-engine': 'Motor de atalhos com I.A.', 'real-problem-loader': 'Carregando problemas reais',
+  'context-mapper': 'Mapeando contexto do usuário', 'specificity-coach': 'Treinador de especificidade',
+  'impact-summary': 'Resumo visual do impacto', 'control-shift': 'Quem controla a mudança',
+  'guiding-question': 'Pergunta para reflexão final',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
