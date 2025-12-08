@@ -8,8 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Brain } from "lucide-react";
+import { usePrefetchMainPages } from "@/hooks/usePrefetch";
 
 const Auth = () => {
+  // Prefetch Dashboard and Onboarding while user fills login form
+  usePrefetchMainPages();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();

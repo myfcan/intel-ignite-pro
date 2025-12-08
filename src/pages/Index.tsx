@@ -18,11 +18,14 @@ import designMockup from "@/assets/design-mockup.jpg";
 import botMockup from "@/assets/bot-mockup.jpg";
 import iphoneChatMockup from "@/assets/iphone-chat-mockup.jpg";
 import iphoneChatHero from "@/assets/iphone-chat-hero.jpg";
+import { usePrefetchMainPages } from "@/hooks/usePrefetch";
 
 const Index = () => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState("pro");
-
+  
+  // Prefetch Dashboard, Onboarding and TrailDetail in background
+  usePrefetchMainPages();
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
