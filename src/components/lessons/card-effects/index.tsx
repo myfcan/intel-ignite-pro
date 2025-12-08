@@ -95,6 +95,25 @@ import { CardEffectHistoryParallel } from './CardEffectHistoryParallel';
 import { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
 import { CardEffectPracticePreview } from './CardEffectPracticePreview';
 
+// ============================================================
+// AULA 6 - A I.A. já substituiu alguém que você conhece
+// ============================================================
+import { CardEffectWakeUpCall } from './CardEffectWakeUpCall';
+import { CardEffectNewPlayers } from './CardEffectNewPlayers';
+import { CardEffectTakePosition } from './CardEffectTakePosition';
+import { CardEffectJobShifter } from './CardEffectJobShifter';
+import { CardEffectVulnerabilityAlert } from './CardEffectVulnerabilityAlert';
+import { CardEffectValueBooster } from './CardEffectValueBooster';
+import { CardEffectBlankPageBreaker } from './CardEffectBlankPageBreaker';
+import { CardEffectTemplateStarter } from './CardEffectTemplateStarter';
+import { CardEffectShortcutEngine } from './CardEffectShortcutEngine';
+import { CardEffectRealProblemLoader } from './CardEffectRealProblemLoader';
+import { CardEffectContextMapper } from './CardEffectContextMapper';
+import { CardEffectSpecificityCoach } from './CardEffectSpecificityCoach';
+import { CardEffectImpactSummary } from './CardEffectImpactSummary';
+import { CardEffectControlShift } from './CardEffectControlShift';
+import { CardEffectGuidingQuestion } from './CardEffectGuidingQuestion';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -178,6 +197,23 @@ export { CardEffectHistoryParallel } from './CardEffectHistoryParallel';
 export { CardEffectBalancedApproach } from './CardEffectBalancedApproach';
 export { CardEffectPracticePreview } from './CardEffectPracticePreview';
 
+// Re-exportar componentes - AULA 6 (Substituição)
+export { CardEffectWakeUpCall } from './CardEffectWakeUpCall';
+export { CardEffectNewPlayers } from './CardEffectNewPlayers';
+export { CardEffectTakePosition } from './CardEffectTakePosition';
+export { CardEffectJobShifter } from './CardEffectJobShifter';
+export { CardEffectVulnerabilityAlert } from './CardEffectVulnerabilityAlert';
+export { CardEffectValueBooster } from './CardEffectValueBooster';
+export { CardEffectBlankPageBreaker } from './CardEffectBlankPageBreaker';
+export { CardEffectTemplateStarter } from './CardEffectTemplateStarter';
+export { CardEffectShortcutEngine } from './CardEffectShortcutEngine';
+export { CardEffectRealProblemLoader } from './CardEffectRealProblemLoader';
+export { CardEffectContextMapper } from './CardEffectContextMapper';
+export { CardEffectSpecificityCoach } from './CardEffectSpecificityCoach';
+export { CardEffectImpactSummary } from './CardEffectImpactSummary';
+export { CardEffectControlShift } from './CardEffectControlShift';
+export { CardEffectGuidingQuestion } from './CardEffectGuidingQuestion';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -203,7 +239,12 @@ export type CardEffectType =
   | 'three-persona-types' | 'fear-vs-action' | 'silent-doer'
   | 'real-world-uses' | 'resume-builder' | 'spreadsheet-master' | 'script-writer'
   | 'your-reality' | 'help-network' | 'small-experiment'
-  | 'history-parallel' | 'balanced-approach' | 'practice-preview';
+  | 'history-parallel' | 'balanced-approach' | 'practice-preview'
+  // AULA 6 - Substituição
+  | 'wake-up-call' | 'new-players' | 'take-position' | 'job-shifter'
+  | 'vulnerability-alert' | 'value-booster' | 'blank-page-breaker' | 'template-starter'
+  | 'shortcut-engine' | 'real-problem-loader' | 'context-mapper' | 'specificity-coach'
+  | 'impact-summary' | 'control-shift' | 'guiding-question';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -289,6 +330,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'history-parallel': CardEffectHistoryParallel,
   'balanced-approach': CardEffectBalancedApproach,
   'practice-preview': CardEffectPracticePreview,
+  // AULA 6 - Substituição
+  'wake-up-call': CardEffectWakeUpCall,
+  'new-players': CardEffectNewPlayers,
+  'take-position': CardEffectTakePosition,
+  'job-shifter': CardEffectJobShifter,
+  'vulnerability-alert': CardEffectVulnerabilityAlert,
+  'value-booster': CardEffectValueBooster,
+  'blank-page-breaker': CardEffectBlankPageBreaker,
+  'template-starter': CardEffectTemplateStarter,
+  'shortcut-engine': CardEffectShortcutEngine,
+  'real-problem-loader': CardEffectRealProblemLoader,
+  'context-mapper': CardEffectContextMapper,
+  'specificity-coach': CardEffectSpecificityCoach,
+  'impact-summary': CardEffectImpactSummary,
+  'control-shift': CardEffectControlShift,
+  'guiding-question': CardEffectGuidingQuestion,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
