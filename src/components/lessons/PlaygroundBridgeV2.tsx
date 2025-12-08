@@ -181,9 +181,11 @@ export function PlaygroundBridgeV2({
     const requirement = orderedRequirements[stepIndex];
     const value = extractBracketValue(requirement || '');
     
-    // Substitui o colchete no prompt pelo valor
+    // Substitui o colchete no prompt pelo valor e rastreia o valor inserido
     if (mapping && value) {
       setBuiltPrompt(prev => prev.replace(mapping.bracket, value));
+      // Adiciona o valor à lista de valores inseridos para destacar visualmente
+      setInsertedValues(prev => [...prev, value]);
     }
     
     // Marca como completado
@@ -203,9 +205,60 @@ export function PlaygroundBridgeV2({
     }
   };
 
+  // Rastreia os valores que foram inseridos no prompt (para destacar visualmente)
+  const [insertedValues, setInsertedValues] = useState<string[]>([]);
+
   // Destaca colchetes no prompt, com highlight especial se requisito selecionado
+  // E mostra valores já inseridos com cor verde e colchetes
   const highlightBrackets = (text: string, activeReqIndex?: number | null) => {
     const bracketMap = getReqBracketMap();
+    
+    // Primeiro, verifica se há valores já inseridos no texto
+    let processedText = text;
+    let insertedMarkers: { value: string; start: number; end: number }[] = [];
+    
+    // Encontra posições dos valores já inseridos
+    insertedValues.forEach(value => {
+      const index = processedText.indexOf(value);
+      if (index !== -1) {
+        insertedMarkers.push({ value, start: index, end: index + value.length });
+      }
+    });
+    
+    // Se não há colchetes E há valores inseridos, renderiza com destaques verdes
+    if (!text.includes('[') && insertedMarkers.length > 0) {
+      // Ordena por posição
+      insertedMarkers.sort((a, b) => a.start - b.start);
+      
+      const result: React.ReactNode[] = [];
+      let lastEnd = 0;
+      
+      insertedMarkers.forEach((marker, idx) => {
+        // Texto antes do valor inserido
+        if (marker.start > lastEnd) {
+          result.push(text.slice(lastEnd, marker.start));
+        }
+        // Valor inserido com destaque verde e colchetes
+        result.push(
+          <span 
+            key={`inserted-${idx}`} 
+            className="px-1 rounded font-semibold bg-emerald-200 dark:bg-emerald-700/60 text-emerald-800 dark:text-emerald-100 transition-all duration-300"
+          >
+            [{marker.value}]
+          </span>
+        );
+        lastEnd = marker.end;
+      });
+      
+      // Texto restante
+      if (lastEnd < text.length) {
+        result.push(text.slice(lastEnd));
+      }
+      
+      return result;
+    }
+    
+    // Fallback: renderiza colchetes normais (placeholders ainda não preenchidos)
     const parts = text.split(/(\[[^\]]+\])/g);
     
     return parts.map((part, idx) => {
