@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
-import { PlaygroundBridge } from './PlaygroundBridge';
+import { PlaygroundBridgeV2 } from './PlaygroundBridgeV2';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 // PlaygroundRealChat removido - PlaygroundBridge agora é o único playground
@@ -1996,11 +1996,12 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
         const config = playgroundSection.playgroundConfig;
         
-        // 🎯 EXEMPLO MANUAL para esta aula (será substituído por JSON no futuro)
-        const manualPlaygroundExample = {
+        // 🎯 V2: Exemplo com estrutura requirements (4 itens com colchetes)
+        const manualPlaygroundExampleV2 = {
           title: "Post simples para Instagram",
           context: "João tem uma padaria de bairro e quer divulgar um novo pão de fermentação natural.",
-          inputs: [
+          requirements: [
+            "Produto: [pão de fermentação natural]",
             "Público: [clientes da padaria do bairro]",
             "Objetivo: [convidar para experimentar o pão nesta semana]",
             "Tom: [simples, próximo, nada técnico]"
@@ -2008,11 +2009,11 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           examplePrompt: "Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
         };
 
-        console.log('🌉 [V5] Renderizando PlaygroundBridge com exemplo estruturado');
+        console.log('🌉 [V5] Renderizando PlaygroundBridgeV2 com exemplo estruturado');
 
         return (
-          <PlaygroundBridge
-            playgroundExample={manualPlaygroundExample}
+          <PlaygroundBridgeV2
+            playgroundExample={manualPlaygroundExampleV2}
             playgroundConfig={{
               type: config.type || 'real-playground',
               instruction: config.instruction,
@@ -2036,8 +2037,6 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
             onComplete={handlePlaygroundComplete}
             onSkip={handleSkipPlayground}
             lessonId={lessonData.id}
-            contextTitle="Veja um exemplo prático!"
-            contextDescription="Antes de praticar, observe como funciona:"
           />
         );
       })()}
