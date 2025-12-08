@@ -191,59 +191,59 @@ export function PlaygroundBridgeV2({
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="w-full max-w-md"
           >
-            <Card className="shadow-2xl border-2 border-primary/30">
-              {/* Header compacto */}
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-2 px-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Lightbulb className="w-4 h-4 text-white" />
+            <Card className="shadow-2xl border-2 border-primary/30 rounded-2xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-3 px-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-bold text-sm leading-tight truncate">
+                    <h3 className="text-white font-bold text-base leading-tight truncate">
                       {playgroundExample.title}
                     </h3>
                   </div>
                   <button
                     onClick={onSkip}
-                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
                     aria-label="Fechar"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
-              {/* Conteúdo compacto sem scroll */}
-              <div className="p-3 space-y-2">
+              {/* Conteúdo */}
+              <div className="p-4 space-y-3">
                 
                 {/* CONTEXTO */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2">
-                  <div className="flex items-start gap-2">
-                    <User className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-foreground leading-snug">
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+                  <div className="flex items-start gap-2.5">
+                    <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-foreground leading-relaxed">
                       {playgroundExample.context}
                     </p>
                   </div>
                 </div>
 
-                {/* REQUISITOS - compacto em 2 colunas */}
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <ListChecks className="w-3.5 h-3.5 text-orange-600" />
-                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
+                {/* REQUISITOS - grid 2 colunas */}
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ListChecks className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
                       Requisitos (toque para destacar)
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="grid grid-cols-2 gap-2">
                     {playgroundExample.requirements.map((req, idx) => (
                       <button 
                         key={idx}
                         onClick={() => setHighlightedReq(highlightedReq === idx ? null : idx)}
-                        className={`text-left bg-white/80 dark:bg-slate-900/50 rounded px-2 py-1 border transition-all text-[11px] ${
+                        className={`text-left bg-white/80 dark:bg-slate-900/50 rounded-lg px-3 py-2 border transition-all text-sm leading-snug ${
                           highlightedReq === idx 
-                            ? 'border-cyan-400 ring-1 ring-cyan-400/30 bg-cyan-50 dark:bg-cyan-950/30' 
-                            : 'border-orange-100 dark:border-orange-900/30'
+                            ? 'border-cyan-400 ring-2 ring-cyan-400/30 bg-cyan-50 dark:bg-cyan-950/30' 
+                            : 'border-orange-100 dark:border-orange-900/30 hover:border-orange-300'
                         }`}
                       >
                         {highlightBrackets(req)}
@@ -252,44 +252,44 @@ export function PlaygroundBridgeV2({
                   </div>
                 </div>
 
-                {/* MODELO DE PROMPT - compacto */}
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
-                    <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+                {/* MODELO DE PROMPT */}
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
                       Modelo de Prompt
                     </span>
                   </div>
                   
-                  <div className="bg-white/80 dark:bg-slate-900/60 rounded px-2 py-1.5 border border-purple-100 dark:border-purple-900/30 mb-2">
-                    <p className="text-xs text-foreground leading-snug font-mono">
+                  <div className="bg-white/80 dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-purple-100 dark:border-purple-900/30 mb-3">
+                    <p className="text-sm text-foreground leading-relaxed font-mono">
                       {highlightBrackets(playgroundExample.examplePrompt, highlightedReq)}
                     </p>
                   </div>
 
                   <button
                     onClick={handleCopyPrompt}
-                    className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded font-semibold text-xs transition-all ${
+                    className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
                       copied 
                         ? 'bg-green-500 text-white' 
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow'
                     }`}
                   >
-                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copied ? 'Copiado!' : 'Copiar modelo'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Footer CTA */}
-              <div className="px-3 pb-3 pt-1">
+              <div className="px-4 pb-4 pt-1">
                 <Button
                   onClick={handleStartPractice}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-3 text-sm"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-4 text-base rounded-xl shadow-lg"
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-5 h-5 mr-2" />
                   Hora da prática!
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </Card>
