@@ -473,7 +473,7 @@ export function PlaygroundBridgeV2({
                               {activeStep + 1}
                             </span>
                             {/* Conteúdo */}
-                            <span className="text-[12px] leading-snug flex-1 text-white">
+                            <span className="text-[13px] leading-snug flex-1 text-white">
                               {highlightBrackets(orderedRequirements[activeStep] || '')}
                             </span>
                             {/* Ícone de ação */}

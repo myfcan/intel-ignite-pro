@@ -1996,8 +1996,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
         const config = playgroundSection.playgroundConfig;
         
-        // 🎯 V2: Exemplo com estrutura requirements (4 itens com colchetes)
-        const manualPlaygroundExampleV2 = {
+        // 🎯 V2: Usa dados do JSON se disponível, senão usa fallback
+        const playgroundExampleV2 = config.playgroundExampleV2 || {
           title: "Post simples para Instagram",
           context: "João tem uma padaria de bairro e quer divulgar um novo pão de fermentação natural.",
           requirements: [
@@ -2009,11 +2009,14 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           examplePrompt: "Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
         };
 
-        console.log('🌉 [V5] Renderizando PlaygroundBridgeV2 com exemplo estruturado');
+        console.log('🌉 [V5] Renderizando PlaygroundBridgeV2:', {
+          hasCustomExample: !!config.playgroundExampleV2,
+          title: playgroundExampleV2.title
+        });
 
         return (
           <PlaygroundBridgeV2
-            playgroundExample={manualPlaygroundExampleV2}
+            playgroundExample={playgroundExampleV2}
             playgroundConfig={{
               type: config.type || 'real-playground',
               instruction: config.instruction,
