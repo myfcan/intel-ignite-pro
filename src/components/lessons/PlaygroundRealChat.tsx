@@ -13,11 +13,13 @@ interface Message {
 interface PlaygroundRealChatProps {
   lessonId?: string;
   onComplete?: () => void;
+  /** Prompt inicial a ser pré-preenchido no textarea */
+  initialPrompt?: string;
 }
 
-export function PlaygroundRealChat({ lessonId, onComplete }: PlaygroundRealChatProps) {
+export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: PlaygroundRealChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(initialPrompt || '');
   const [isTyping, setIsTyping] = useState(false);
   const [interactionsRemaining, setInteractionsRemaining] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
