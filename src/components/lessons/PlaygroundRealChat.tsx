@@ -113,7 +113,6 @@ export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: Play
 
   const promptSuggestions = [
     "💡 Reescreva de forma profissional",
-    "📝 Crie 3 variações",
     "🎯 Adicione contexto específico"
   ];
 
