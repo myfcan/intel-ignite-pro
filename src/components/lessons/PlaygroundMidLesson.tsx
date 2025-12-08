@@ -11,13 +11,23 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Copy, Check, ChevronRight, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Tipo para dados estruturados do exemplo
+interface PlaygroundExampleData {
+  title: string;
+  context: string;
+  inputs: string[];
+  examplePrompt: string;
+}
+
 interface PlaygroundMidLessonProps {
   config: PlaygroundConfig;
   onComplete: (answer: string | null) => void;
   lessonId?: string; // Necessário para salvar sessão
+  /** Dados estruturados do exemplo (prompt template + inputs) */
+  playgroundExample?: PlaygroundExampleData;
 }
 
-export function PlaygroundMidLesson({ config, onComplete, lessonId }: PlaygroundMidLessonProps) {
+export function PlaygroundMidLesson({ config, onComplete, lessonId, playgroundExample }: PlaygroundMidLessonProps) {
   const { toast } = useToast();
 
   // 🔍 DEBUG: Log detalhado do que foi recebido
@@ -324,14 +334,49 @@ export function PlaygroundMidLesson({ config, onComplete, lessonId }: Playground
           
           {/* Conteúdo com scroll */}
           <div className="flex-1 p-6 overflow-y-auto">
-            {/* Mensagem da Liv */}
+            {/* Mensagem da Liv - Com prompt template e inputs se disponível */}
             <div className="bg-cyan-50 dark:bg-cyan-950/30 border-2 border-cyan-200 dark:border-cyan-800 rounded-xl p-5 mb-4">
               <h4 className="font-semibold text-foreground mb-3">
                 Complete o Desafio:
               </h4>
-              <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-balance">
-                🤖 {config.realConfig.maiaMessage}
-              </p>
+              
+              {playgroundExample ? (
+                <>
+                  {/* Prompt template com colchetes destacados */}
+                  <div className="bg-white/80 dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-cyan-200 dark:border-cyan-700 mb-3">
+                    <p className="text-sm sm:text-base text-foreground leading-relaxed">
+                      {playgroundExample.examplePrompt.split(/(\[[^\]]+\])/).map((part, idx) => 
+                        part.startsWith('[') && part.endsWith(']') ? (
+                          <span key={idx} className="bg-yellow-200 dark:bg-yellow-700/50 text-yellow-800 dark:text-yellow-200 px-1 rounded font-semibold">
+                            {part}
+                          </span>
+                        ) : (
+                          <span key={idx}>{part}</span>
+                        )
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Dados para substituir */}
+                  <div className="space-y-1.5">
+                    <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium">📝 Substitua com seus dados:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {playgroundExample.inputs.map((input, idx) => (
+                        <span 
+                          key={idx} 
+                          className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-1 rounded-full border border-yellow-300 dark:border-yellow-700"
+                        >
+                          <span className="font-bold">[{idx + 1}]</span> {input}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 font-normal leading-relaxed text-balance">
+                  🤖 {config.realConfig.maiaMessage}
+                </p>
+              )}
             </div>
             
             {/* Playground */}
