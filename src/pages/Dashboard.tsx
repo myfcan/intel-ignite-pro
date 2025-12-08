@@ -172,6 +172,9 @@ const Dashboard = () => {
         let status: 'active' | 'completed' | 'locked';
         if (progress === 100) {
           status = 'completed';
+        } else if (isAdmin) {
+          // Admins têm acesso a todas as trilhas
+          status = 'active';
         } else if (trail.order_index === 1) {
           // A primeira trilha sempre está desbloqueada
           status = 'active';
