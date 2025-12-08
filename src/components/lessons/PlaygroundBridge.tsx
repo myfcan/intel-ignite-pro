@@ -234,15 +234,13 @@ export function PlaygroundBridge({
         {phase === 'playground' && (
           <motion.div
             key="playground"
-            initial={{ opacity: 0, scale: 0.9, rotateY: -90 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ 
-              duration: 0.4, 
-              ease: [0.4, 0, 0.2, 1],
-              delay: 0.1
+              duration: 0.3, 
+              ease: [0.4, 0, 0.2, 1]
             }}
-            className="w-full max-w-3xl"
-            style={{ perspective: 1000 }}
+            className="w-full h-full"
           >
             <PlaygroundMidLesson
               config={playgroundConfig}
