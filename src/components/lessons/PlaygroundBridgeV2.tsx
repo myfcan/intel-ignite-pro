@@ -295,7 +295,7 @@ export function PlaygroundBridgeV2({
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-2.5">
                   <div className="flex items-center gap-1.5 mb-2">
                     <ListChecks className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
+                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
                       Selecione e preencha os colchetes do prompt
                     </span>
                   </div>
@@ -323,7 +323,7 @@ export function PlaygroundBridgeV2({
                             repeat: Infinity,
                             ease: 'easeInOut',
                           } : {}}
-                          className={`relative text-left rounded-md px-2 py-1.5 border-2 transition-all text-[11px] leading-tight ${
+                          className={`relative text-left rounded-md px-2 py-1 border-2 transition-all text-[12px] leading-snug ${
                             isCompleted 
                               ? 'bg-emerald-600/90 border-emerald-400 text-white cursor-default' 
                               : isActive
