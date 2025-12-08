@@ -174,7 +174,7 @@ export function PlaygroundBridgeV2({
   return (
     <div 
       data-testid="playground-bridge-v2"
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-2"
     >
       <AnimatePresence mode="wait">
         {/* ==================== MODAL 1: EXEMPLO ==================== */}
@@ -189,121 +189,103 @@ export function PlaygroundBridgeV2({
             }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-md max-h-[90vh] overflow-hidden"
+            className="w-full max-w-md"
           >
-            <Card className="overflow-hidden shadow-2xl border-2 border-primary/30 flex flex-col max-h-[90vh]">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-3 px-4 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Lightbulb className="w-5 h-5 text-white" />
+            <Card className="shadow-2xl border-2 border-primary/30">
+              {/* Header compacto */}
+              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Lightbulb className="w-4 h-4 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-bold text-lg leading-tight">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-bold text-sm leading-tight truncate">
                       {playgroundExample.title}
                     </h3>
-                    <p className="text-white/80 text-xs">Veja o exemplo antes de praticar</p>
                   </div>
                   <button
                     onClick={onSkip}
-                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
+                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1 transition-colors"
                     aria-label="Fechar"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Conteúdo com scroll */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Conteúdo compacto sem scroll */}
+              <div className="p-3 space-y-2">
                 
-                {/* ========== BLOCO 1: CONTEXTO ========== */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                  <div className="flex items-start gap-2.5">
-                    <User className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-foreground leading-relaxed">
+                {/* CONTEXTO */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2">
+                  <div className="flex items-start gap-2">
+                    <User className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-foreground leading-snug">
                       {playgroundExample.context}
                     </p>
                   </div>
                 </div>
 
-                {/* ========== BLOCO 2: REQUISITOS (interativos) ========== */}
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ListChecks className="w-4 h-4 text-orange-600" />
-                    <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
-                      Requisitos
+                {/* REQUISITOS - compacto em 2 colunas */}
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/40 dark:to-amber-950/30 border border-orange-200 dark:border-orange-800/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ListChecks className="w-3.5 h-3.5 text-orange-600" />
+                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
+                      Requisitos (toque para destacar)
                     </span>
                   </div>
                   
-                  <p className="text-xs text-orange-800/80 dark:text-orange-300/80 mb-2.5 leading-snug">
-                    Toque em cada requisito para ver o colchete correspondente:
-                  </p>
-                  
-                  <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1">
                     {playgroundExample.requirements.map((req, idx) => (
                       <button 
                         key={idx}
                         onClick={() => setHighlightedReq(highlightedReq === idx ? null : idx)}
-                        className={`w-full text-left bg-white/80 dark:bg-slate-900/50 rounded-lg px-2.5 py-2 border transition-all duration-200 ${
+                        className={`text-left bg-white/80 dark:bg-slate-900/50 rounded px-2 py-1 border transition-all text-[11px] ${
                           highlightedReq === idx 
-                            ? 'border-cyan-400 ring-2 ring-cyan-400/30 bg-cyan-50 dark:bg-cyan-950/30' 
-                            : 'border-orange-100 dark:border-orange-900/30 hover:border-orange-300'
+                            ? 'border-cyan-400 ring-1 ring-cyan-400/30 bg-cyan-50 dark:bg-cyan-950/30' 
+                            : 'border-orange-100 dark:border-orange-900/30'
                         }`}
                       >
-                        <span className="text-sm text-foreground leading-snug">
-                          {highlightBrackets(req)}
-                        </span>
+                        {highlightBrackets(req)}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* ========== BLOCO 3: EXEMPLO DE PROMPT ========== */}
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+                {/* MODELO DE PROMPT - compacto */}
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
                       Modelo de Prompt
                     </span>
                   </div>
                   
-                  {/* Caixa do prompt com highlight dinâmico */}
-                  <div className="bg-white/80 dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-purple-100 dark:border-purple-900/30 mb-3">
-                    <p className="text-sm text-foreground leading-relaxed font-mono">
+                  <div className="bg-white/80 dark:bg-slate-900/60 rounded px-2 py-1.5 border border-purple-100 dark:border-purple-900/30 mb-2">
+                    <p className="text-xs text-foreground leading-snug font-mono">
                       {highlightBrackets(playgroundExample.examplePrompt, highlightedReq)}
                     </p>
                   </div>
 
-                  {/* Botão Copiar */}
                   <button
                     onClick={handleCopyPrompt}
-                    className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                    className={`w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded font-semibold text-xs transition-all ${
                       copied 
                         ? 'bg-green-500 text-white' 
-                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-md'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
                     }`}
                   >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Copiado!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span>Copiar modelo</span>
-                      </>
-                    )}
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'Copiado!' : 'Copiar modelo'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Footer com CTA */}
-              <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-border/50 bg-background">
+              {/* Footer CTA */}
+              <div className="px-3 pb-3 pt-1">
                 <Button
                   onClick={handleStartPractice}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-5 shadow-lg"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white font-semibold py-3 text-sm"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Hora da prática!
@@ -326,62 +308,62 @@ export function PlaygroundBridgeV2({
             }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-md max-h-[90vh] overflow-hidden"
+            className="w-full max-w-md"
           >
-            <Card className="overflow-hidden shadow-2xl border-2 border-cyan-400/50 flex flex-col max-h-[90vh]">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 py-3 px-4 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <Edit3 className="w-5 h-5 text-white" />
+            <Card className="shadow-2xl border-2 border-cyan-400/50">
+              {/* Header compacto */}
+              <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Edit3 className="w-4 h-4 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-bold text-lg leading-tight">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-bold text-sm leading-tight">
                       Hora da prática!
                     </h3>
-                    <p className="text-white/80 text-xs">Adapte o modelo para o seu caso</p>
                   </div>
                   <button
                     onClick={onSkip}
-                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
+                    className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1 transition-colors"
                     aria-label="Fechar"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Conteúdo */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Conteúdo compacto */}
+              <div className="p-3 space-y-2">
                 
-                {/* ========== REFERÊNCIA: REQUISITOS ========== */}
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ListChecks className="w-4 h-4 text-slate-500" />
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                      Substitua os colchetes usando:
+                {/* REFERÊNCIA - compacto horizontal */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <ListChecks className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">
+                      Substitua os colchetes:
                     </span>
                   </div>
                   
-                  <div className="space-y-1">
-                    {playgroundExample.requirements.map((req, idx) => (
-                      <div 
-                        key={idx} 
-                        className="flex items-center gap-2 text-sm text-muted-foreground"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0" />
-                        <span>{highlightBrackets(req)}</span>
-                        <span className="text-xs text-muted-foreground/60 ml-auto">(exemplo)</span>
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap gap-1">
+                    {playgroundExample.requirements.map((req, idx) => {
+                      const label = req.split(':')[0];
+                      return (
+                        <span 
+                          key={idx} 
+                          className="text-[10px] bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200 px-1.5 py-0.5 rounded"
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* ========== CAMPO DE EDIÇÃO DO PROMPT ========== */}
-                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/40 dark:to-blue-950/30 border border-cyan-200 dark:border-cyan-800/50 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="w-4 h-4 text-cyan-600" />
-                    <span className="text-xs font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wide">
+                {/* CAMPO DE EDIÇÃO */}
+                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/40 dark:to-blue-950/30 border border-cyan-200 dark:border-cyan-800/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />
+                    <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase">
                       Seu Prompt
                     </span>
                   </div>
@@ -389,26 +371,25 @@ export function PlaygroundBridgeV2({
                   <textarea
                     value={userPrompt}
                     onChange={(e) => setUserPrompt(e.target.value)}
-                    placeholder="Cole ou digite seu prompt aqui..."
-                    className="w-full min-h-[120px] bg-white dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-cyan-200 dark:border-cyan-900/30 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                    placeholder="Cole ou digite seu prompt..."
+                    className="w-full h-24 bg-white dark:bg-slate-900/60 rounded px-2 py-2 border border-cyan-200 dark:border-cyan-900/30 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   />
                   
-                  <p className="text-xs text-cyan-700/70 dark:text-cyan-400/70 mt-2 leading-snug">
-                    💡 Substitua o que está entre <span className="bg-amber-200 dark:bg-amber-800/60 px-1 rounded font-semibold">[colchetes]</span> pelo seu caso real.
+                  <p className="text-[10px] text-cyan-700/70 dark:text-cyan-400/70 mt-1">
+                    💡 Troque os <span className="bg-amber-200 dark:bg-amber-800/60 px-0.5 rounded font-semibold">[colchetes]</span> pelo seu caso.
                   </p>
                 </div>
               </div>
 
-              {/* Footer com CTA */}
-              <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-border/50 bg-background">
+              {/* Footer CTA */}
+              <div className="px-3 pb-3 pt-1">
                 <Button
                   onClick={handleSendToPlayground}
                   disabled={!userPrompt.trim()}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 text-sm disabled:opacity-50"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Testar no Playground
-                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </Card>
