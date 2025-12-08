@@ -114,6 +114,25 @@ import { CardEffectImpactSummary } from './CardEffectImpactSummary';
 import { CardEffectControlShift } from './CardEffectControlShift';
 import { CardEffectGuidingQuestion } from './CardEffectGuidingQuestion';
 
+// ============================================================
+// AULA 7 - Conteúdo rápido: redes sociais, posts e textos do dia a dia!
+// ============================================================
+import { CardEffectBlankScreen } from './CardEffectBlankScreen';
+import { CardEffectLowEffortPost } from './CardEffectLowEffortPost';
+import { CardEffectContentPartner } from './CardEffectContentPartner';
+import { CardEffectRelatableMoments } from './CardEffectRelatableMoments';
+import { CardEffectContentMistakes } from './CardEffectContentMistakes';
+import { CardEffectAlwaysLate } from './CardEffectAlwaysLate';
+import { CardEffectIdeaGenerator } from './CardEffectIdeaGenerator';
+import { CardEffectCaptionBuilder } from './CardEffectCaptionBuilder';
+import { CardEffectToneAdapter } from './CardEffectToneAdapter';
+import { CardEffectRealProblem } from './CardEffectRealProblem';
+import { CardEffectFillTheBrackets } from './CardEffectFillTheBrackets';
+import { CardEffectFirstDraft } from './CardEffectFirstDraft';
+import { CardEffectWeeklyRoutine } from './CardEffectWeeklyRoutine';
+import { CardEffectPostChecklist } from './CardEffectPostChecklist';
+import { CardEffectProcessOverInspiration } from './CardEffectProcessOverInspiration';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -214,6 +233,23 @@ export { CardEffectImpactSummary } from './CardEffectImpactSummary';
 export { CardEffectControlShift } from './CardEffectControlShift';
 export { CardEffectGuidingQuestion } from './CardEffectGuidingQuestion';
 
+// Re-exportar componentes - AULA 7 (Conteúdo Rápido)
+export { CardEffectBlankScreen } from './CardEffectBlankScreen';
+export { CardEffectLowEffortPost } from './CardEffectLowEffortPost';
+export { CardEffectContentPartner } from './CardEffectContentPartner';
+export { CardEffectRelatableMoments } from './CardEffectRelatableMoments';
+export { CardEffectContentMistakes } from './CardEffectContentMistakes';
+export { CardEffectAlwaysLate } from './CardEffectAlwaysLate';
+export { CardEffectIdeaGenerator } from './CardEffectIdeaGenerator';
+export { CardEffectCaptionBuilder } from './CardEffectCaptionBuilder';
+export { CardEffectToneAdapter } from './CardEffectToneAdapter';
+export { CardEffectRealProblem } from './CardEffectRealProblem';
+export { CardEffectFillTheBrackets } from './CardEffectFillTheBrackets';
+export { CardEffectFirstDraft } from './CardEffectFirstDraft';
+export { CardEffectWeeklyRoutine } from './CardEffectWeeklyRoutine';
+export { CardEffectPostChecklist } from './CardEffectPostChecklist';
+export { CardEffectProcessOverInspiration } from './CardEffectProcessOverInspiration';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -244,7 +280,12 @@ export type CardEffectType =
   | 'wake-up-call' | 'new-players' | 'take-position' | 'job-shifter'
   | 'vulnerability-alert' | 'value-booster' | 'blank-page-breaker' | 'template-starter'
   | 'shortcut-engine' | 'real-problem-loader' | 'context-mapper' | 'specificity-coach'
-  | 'impact-summary' | 'control-shift' | 'guiding-question';
+  | 'impact-summary' | 'control-shift' | 'guiding-question'
+  // AULA 7 - Conteúdo Rápido
+  | 'blank-screen' | 'low-effort-post' | 'content-partner' | 'relatable-moments'
+  | 'content-mistakes' | 'always-late' | 'idea-generator' | 'caption-builder'
+  | 'tone-adapter' | 'real-problem' | 'fill-the-brackets' | 'first-draft'
+  | 'weekly-routine' | 'post-checklist' | 'process-over-inspiration';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -346,6 +387,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'impact-summary': CardEffectImpactSummary,
   'control-shift': CardEffectControlShift,
   'guiding-question': CardEffectGuidingQuestion,
+  // AULA 7 - Conteúdo Rápido
+  'blank-screen': CardEffectBlankScreen,
+  'low-effort-post': CardEffectLowEffortPost,
+  'content-partner': CardEffectContentPartner,
+  'relatable-moments': CardEffectRelatableMoments,
+  'content-mistakes': CardEffectContentMistakes,
+  'always-late': CardEffectAlwaysLate,
+  'idea-generator': CardEffectIdeaGenerator,
+  'caption-builder': CardEffectCaptionBuilder,
+  'tone-adapter': CardEffectToneAdapter,
+  'real-problem': CardEffectRealProblem,
+  'fill-the-brackets': CardEffectFillTheBrackets,
+  'first-draft': CardEffectFirstDraft,
+  'weekly-routine': CardEffectWeeklyRoutine,
+  'post-checklist': CardEffectPostChecklist,
+  'process-over-inspiration': CardEffectProcessOverInspiration,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -400,6 +457,15 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'context-mapper': 'Mapeador de Contexto', 'specificity-coach': 'Coach de Especificidade',
   'impact-summary': 'Resumo de Impacto', 'control-shift': 'Mudança de Controle',
   'guiding-question': 'Pergunta Guia',
+  // AULA 7 - Conteúdo Rápido
+  'blank-screen': 'Tela em Branco', 'low-effort-post': 'Post Sem Esforço',
+  'content-partner': 'Parceiro de Conteúdo', 'relatable-moments': 'Momentos Relacionáveis',
+  'content-mistakes': 'Erros de Conteúdo', 'always-late': 'Sempre Atrasado',
+  'idea-generator': 'Gerador de Ideias', 'caption-builder': 'Construtor de Legendas',
+  'tone-adapter': 'Adaptador de Tom', 'real-problem': 'Problema Real',
+  'fill-the-brackets': 'Preencha os Colchetes', 'first-draft': 'Primeiro Rascunho',
+  'weekly-routine': 'Rotina Semanal', 'post-checklist': 'Checklist de Post',
+  'process-over-inspiration': 'Processo Sobre Inspiração',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -461,6 +527,15 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'context-mapper': 'Mapeando contexto do usuário', 'specificity-coach': 'Treinador de especificidade',
   'impact-summary': 'Resumo visual do impacto', 'control-shift': 'Quem controla a mudança',
   'guiding-question': 'Pergunta para reflexão final',
+  // AULA 7 - Conteúdo Rápido
+  'blank-screen': 'Tela em branco esperando conteúdo', 'low-effort-post': 'Post com baixo esforço',
+  'content-partner': 'I.A. como parceira de conteúdo', 'relatable-moments': 'Momentos que conectam',
+  'content-mistakes': 'Erros comuns de conteúdo', 'always-late': 'Sempre atrasado com posts',
+  'idea-generator': 'Gerador de ideias infinitas', 'caption-builder': 'Construtor de legendas',
+  'tone-adapter': 'Adaptador de tom e voz', 'real-problem': 'Problema real do usuário',
+  'fill-the-brackets': 'Preencha os colchetes', 'first-draft': 'Primeiro rascunho rápido',
+  'weekly-routine': 'Rotina semanal de posts', 'post-checklist': 'Checklist antes de publicar',
+  'process-over-inspiration': 'Processo vence inspiração',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -494,6 +569,18 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'your-reality', 'help-network', 'small-experiment',
     'history-parallel', 'balanced-approach', 'practice-preview',
   ],
+  'aula-6': [
+    'wake-up-call', 'new-players', 'take-position', 'job-shifter',
+    'vulnerability-alert', 'value-booster', 'blank-page-breaker', 'template-starter',
+    'shortcut-engine', 'real-problem-loader', 'context-mapper', 'specificity-coach',
+    'impact-summary', 'control-shift', 'guiding-question',
+  ],
+  'aula-7': [
+    'blank-screen', 'low-effort-post', 'content-partner', 'relatable-moments',
+    'content-mistakes', 'always-late', 'idea-generator', 'caption-builder',
+    'tone-adapter', 'real-problem', 'fill-the-brackets', 'first-draft',
+    'weekly-routine', 'post-checklist', 'process-over-inspiration',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -502,6 +589,8 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-3'],
   ...CARD_EFFECTS_BY_LESSON['aula-4'],
   ...CARD_EFFECTS_BY_LESSON['aula-5'],
+  ...CARD_EFFECTS_BY_LESSON['aula-6'],
+  ...CARD_EFFECTS_BY_LESSON['aula-7'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
