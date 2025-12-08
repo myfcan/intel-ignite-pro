@@ -62,6 +62,20 @@ export function PlaygroundBridgeV2({
   const [userPrompt, setUserPrompt] = useState('');
   const [highlightedReq, setHighlightedReq] = useState<number | null>(null);
   const { toast } = useToast();
+  
+  // ===== SISTEMA SEQUENCIAL =====
+  // Qual requisito está ativo para preenchimento (0-3)
+  const [activeStep, setActiveStep] = useState(0);
+  // Quais requisitos já foram preenchidos/ativados
+  const [completedSteps, setCompletedSteps] = useState<boolean[]>([false, false, false, false]);
+  
+  // Ordem fixa: Produto (1), Público (2), Tom (3), Objetivo (4)
+  const orderedRequirements = playgroundExample?.requirements ? [
+    playgroundExample.requirements[0], // Produto
+    playgroundExample.requirements[1], // Público
+    playgroundExample.requirements[3], // Tom (era índice 3)
+    playgroundExample.requirements[2], // Objetivo (era índice 2)
+  ] : [];
 
   console.log('🌉 [BRIDGE-V2] Renderizando:', { 
     phase, 
@@ -127,15 +141,36 @@ export function PlaygroundBridgeV2({
   }, [playgroundExample?.examplePrompt, toast]);
 
   // Mapeia requisitos para os colchetes correspondentes no prompt
+  // Nova ordem: Produto (0), Público (1), Tom (2), Objetivo (3)
   const getReqBracketMap = () => {
-    // Extrai labels dos requisitos (ex: "Produto", "Público", etc)
     const bracketKeywords: Record<number, string[]> = {
       0: ['produto', 'principal'],      // Produto → [produto principal]
       1: ['público'],                    // Público → [público]
-      2: ['objetivo'],                   // Objetivo → [objetivo do post]
-      3: ['tom'],                        // Tom → [tom de voz]
+      2: ['tom'],                        // Tom → [tom de voz]
+      3: ['objetivo'],                   // Objetivo → [objetivo do post]
     };
     return bracketKeywords;
+  };
+
+  // Handler para clicar em uma caixinha sequencial
+  const handleStepClick = (stepIndex: number) => {
+    // Só pode clicar no step ativo atual
+    if (stepIndex !== activeStep) return;
+    
+    // Marca como completado
+    const newCompleted = [...completedSteps];
+    newCompleted[stepIndex] = true;
+    setCompletedSteps(newCompleted);
+    
+    // Destaca o colchete correspondente
+    setHighlightedReq(stepIndex);
+    
+    // Avança para o próximo step (se houver)
+    if (stepIndex < 3) {
+      setTimeout(() => {
+        setActiveStep(stepIndex + 1);
+      }, 600);
+    }
   };
 
   // Destaca colchetes no prompt, com highlight especial se requisito selecionado
@@ -226,29 +261,61 @@ export function PlaygroundBridgeV2({
                   </div>
                 </div>
 
-                {/* REQUISITOS - grid 2 colunas com fundo escuro */}
+                {/* REQUISITOS - Sistema Sequencial */}
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-2.5">
                   <div className="flex items-center gap-1.5 mb-2">
                     <ListChecks className="w-3.5 h-3.5 text-amber-400" />
                     <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">
-                      Requisitos (toque para destacar)
+                      Selecione e preencha os colchetes do prompt
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-1.5">
-                    {playgroundExample.requirements.map((req, idx) => (
-                      <button 
-                        key={idx}
-                        onClick={() => setHighlightedReq(highlightedReq === idx ? null : idx)}
-                        className={`text-left bg-slate-700/80 rounded-md px-2.5 py-1.5 border transition-all text-[13px] leading-snug text-white ${
-                          highlightedReq === idx 
-                            ? 'border-cyan-400 ring-1 ring-cyan-400/50 bg-slate-600' 
-                            : 'border-slate-600 hover:border-slate-500'
-                        }`}
-                      >
-                        {highlightBrackets(req)}
-                      </button>
-                    ))}
+                    {orderedRequirements.map((req, idx) => {
+                      const isCompleted = completedSteps[idx];
+                      const isActive = activeStep === idx && !isCompleted;
+                      const isDisabled = idx > activeStep && !isCompleted;
+                      
+                      return (
+                        <motion.button 
+                          key={idx}
+                          onClick={() => handleStepClick(idx)}
+                          disabled={isDisabled}
+                          animate={isActive ? {
+                            boxShadow: [
+                              '0 0 0 0 rgba(251, 191, 36, 0)',
+                              '0 0 0 4px rgba(251, 191, 36, 0.4)',
+                              '0 0 0 0 rgba(251, 191, 36, 0)',
+                            ],
+                          } : {}}
+                          transition={isActive ? {
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          } : {}}
+                          className={`relative text-left rounded-md px-2.5 py-1.5 border transition-all text-[12px] leading-snug ${
+                            isCompleted 
+                              ? 'bg-emerald-600/90 border-emerald-500 text-white cursor-default' 
+                              : isActive
+                                ? 'bg-amber-500/20 border-amber-400 text-white cursor-pointer hover:bg-amber-500/30'
+                                : 'bg-slate-700/40 border-slate-600/50 text-slate-400 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          {/* Numeração */}
+                          <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            isCompleted 
+                              ? 'bg-emerald-500 text-white' 
+                              : isActive
+                                ? 'bg-amber-500 text-white animate-pulse'
+                                : 'bg-slate-600 text-slate-300'
+                          }`}>
+                            {isCompleted ? <Check className="w-3 h-3" /> : idx + 1}
+                          </span>
+                          
+                          <span className="pl-2">{highlightBrackets(req || '')}</span>
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
 
