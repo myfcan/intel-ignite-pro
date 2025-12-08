@@ -115,17 +115,17 @@ export function PlaygroundBridgeV2({
     );
   }
 
-  // Inicializa o userPrompt com o modelo quando entra na fase de prática
+  // Inicializa o userPrompt VAZIO quando entra na fase de prática
   const handleStartPractice = useCallback(() => {
     console.log('🌉 [BRIDGE-V2] Transição: Exemplo → Prática');
     setIsFlipping(true);
-    setUserPrompt(playgroundExample.examplePrompt);
+    setUserPrompt(''); // Deixa vazio para o usuário colar/digitar
     
     setTimeout(() => {
       setPhase('practice');
       setIsFlipping(false);
     }, 400);
-  }, [playgroundExample.examplePrompt]);
+  }, []);
 
   // Envia o prompt editado para o playground real
   const handleSendToPlayground = useCallback(() => {
@@ -565,38 +565,36 @@ export function PlaygroundBridgeV2({
                 </div>
               </div>
 
-              {/* Conteúdo compacto */}
-              <div className="p-3 space-y-2">
+              {/* Conteúdo - altura aumentada */}
+              <div className="p-4 space-y-3">
                 
-                {/* REFERÊNCIA - compacto horizontal */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <ListChecks className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">
-                      Substitua os colchetes:
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-1">
-                    {playgroundExample.requirements.map((req, idx) => {
-                      const label = req.split(':')[0];
-                      return (
-                        <span 
-                          key={idx} 
-                          className="text-[10px] bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200 px-1.5 py-0.5 rounded"
-                        >
-                          {label}
-                        </span>
-                      );
-                    })}
+                {/* INSTRUÇÃO - texto atualizado */}
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <ListChecks className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[12px] text-foreground leading-snug">
+                        Cole seu prompt abaixo ou digite os dados dos colchetes:
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {['Produto', 'Público', 'Objetivo', 'Tom'].map((label, idx) => (
+                          <span 
+                            key={idx} 
+                            className="text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded font-medium"
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* CAMPO DE EDIÇÃO */}
-                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/40 dark:to-blue-950/30 border border-cyan-200 dark:border-cyan-800/50 rounded-lg p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />
-                    <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase">
+                {/* CAMPO DE EDIÇÃO - altura aumentada */}
+                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/40 dark:to-blue-950/30 border border-cyan-200 dark:border-cyan-800/50 rounded-lg p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <MessageSquare className="w-4 h-4 text-cyan-600" />
+                    <span className="text-[11px] font-bold text-cyan-700 dark:text-cyan-400 uppercase">
                       Seu Prompt
                     </span>
                   </div>
@@ -604,12 +602,12 @@ export function PlaygroundBridgeV2({
                   <textarea
                     value={userPrompt}
                     onChange={(e) => setUserPrompt(e.target.value)}
-                    placeholder="Cole ou digite seu prompt..."
-                    className="w-full h-24 bg-white dark:bg-slate-900/60 rounded px-2 py-2 border border-cyan-200 dark:border-cyan-900/30 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    placeholder="Crie um post curto para Instagram sobre [produto principal], falando com [público] em tom [tom de voz]. Objetivo: [objetivo do post]."
+                    className="w-full h-36 bg-white dark:bg-slate-900/60 rounded-lg px-3 py-2.5 border border-cyan-200 dark:border-cyan-900/30 text-[13px] font-mono text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   />
                   
-                  <p className="text-[10px] text-cyan-700/70 dark:text-cyan-400/70 mt-1">
-                    💡 Troque os <span className="bg-amber-200 dark:bg-amber-800/60 px-0.5 rounded font-semibold">[colchetes]</span> pelo seu caso.
+                  <p className="text-[11px] text-cyan-700/70 dark:text-cyan-400/70 mt-2">
+                    💡 Troque os <span className="bg-amber-200 dark:bg-amber-800/60 px-1 rounded font-semibold">[colchetes]</span> pelo seu caso.
                   </p>
                 </div>
               </div>
