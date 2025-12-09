@@ -74,11 +74,11 @@ export function MobileSectionDrawer({
                 theme="fundamentos"
               />
             </div>
-            {/* Badge de progresso */}
-            <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg border-2 border-white">
+            {/* Badge de progresso - no topo direito */}
+            <span className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg border-2 border-white">
               {currentSection + 1}
             </span>
-            {/* Indicador de playing */}
+            {/* Indicador de playing - no topo esquerdo */}
             {isPlaying && (
               <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full animate-pulse border-2 border-white" />
             )}
