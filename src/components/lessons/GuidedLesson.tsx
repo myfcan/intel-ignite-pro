@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileSectionDrawer } from './MobileSectionDrawer';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -27,6 +29,7 @@ import { registerGamificationEvent, GamificationResult } from '@/services/gamifi
 
 export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { setState: setAvatarState } = useAvatarState();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1647,6 +1650,16 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
           </div>
         </div>
       </header>
+
+      {/* 📱 Mobile Section Navigation Drawer */}
+      {isMobile && currentPhase === 'audio' && (
+        <MobileSectionDrawer
+          sections={lessonData.sections}
+          currentSection={currentSection}
+          onSectionChange={jumpToSection}
+          isPlaying={isPlaying}
+        />
+      )}
 
       <div className="w-full px-3 sm:px-6 pt-20 pb-32">
         <div className="w-full max-w-6xl mx-auto">
