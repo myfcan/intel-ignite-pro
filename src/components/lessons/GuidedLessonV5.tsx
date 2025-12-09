@@ -1517,6 +1517,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           currentSection={currentSection}
           onSectionChange={jumpToSection}
           isPlaying={isPlaying}
+          onTogglePlay={toggleAudio}
         />
       )}
 
