@@ -64,32 +64,29 @@ export function MobileSectionDrawer({
 
   return (
     <>
-      {/* Liv Avatar - separado, faz play/pause */}
+      {/* Liv Avatar - clicável para play/pause */}
       <div 
-        className="fixed z-[9999] touch-manipulation"
+        className="fixed z-[9999] touch-manipulation cursor-pointer active:scale-95 transition-transform"
         style={{ 
-          bottom: 'calc(200px + env(safe-area-inset-bottom, 0px))',
+          bottom: 'calc(220px + env(safe-area-inset-bottom, 0px))',
           right: '16px'
         }}
         onClick={onTogglePlay}
       >
-        <div className="relative active:scale-95 transition-transform cursor-pointer">
-          {/* Avatar com tamanho fixo para garantir visibilidade */}
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 shadow-xl flex items-center justify-center border-2 border-cyan-400/50">
-            <LivAvatar 
-              size="small"
-              isPlaying={isPlaying}
-              showHalo={false}
-              animate={false}
-              enableHover={false}
-              state={isPlaying ? 'speaking' : 'idle'}
-              theme="fundamentos"
-              className={`w-10 h-10 sm:w-12 sm:h-12 ${isPlaying ? '' : 'grayscale-[30%]'}`}
-            />
-          </div>
-          {/* Indicador discreto de status - posicionado próximo à orelha */}
+        <div className="relative">
+          <LivAvatar 
+            size="small"
+            isPlaying={isPlaying}
+            showHalo={false}
+            animate={false}
+            enableHover={false}
+            state={isPlaying ? 'speaking' : 'idle'}
+            theme="fundamentos"
+            className={`w-14 h-14 ${isPlaying ? '' : 'grayscale-[30%]'}`}
+          />
+          {/* Indicador de status */}
           <div 
-            className={`absolute top-0 left-0 w-3 h-3 rounded-full shadow-md border border-white transition-all duration-300 ${
+            className={`absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full shadow-md border border-white transition-all duration-300 ${
               isPlaying 
                 ? 'bg-green-500 animate-pulse' 
                 : 'bg-slate-400'
