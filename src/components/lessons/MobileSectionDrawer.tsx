@@ -102,15 +102,16 @@ export function MobileSectionDrawer({
       <DrawerContent className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-cyan-500/30 max-h-[70vh]">
         <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-slate-600 mb-4" />
         
-        <DrawerHeader className="pb-2 relative">
-          <DrawerClose asChild>
-            <button 
-              className="absolute top-0 right-4 p-2 rounded-full bg-slate-700/50 hover:bg-slate-600 transition-colors"
-              aria-label="Fechar"
-            >
-              <X className="w-4 h-4 text-slate-400" />
-            </button>
-          </DrawerClose>
+        <DrawerClose asChild>
+          <button 
+            className="absolute top-3 right-3 p-2 rounded-full bg-slate-700/50 hover:bg-slate-600 transition-colors z-10"
+            aria-label="Fechar"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </DrawerClose>
+        
+        <DrawerHeader className="pb-2">
           <DrawerTitle className="text-white text-lg font-bold flex items-center justify-between pr-10">
             <span>Seções da Aula</span>
             <span className="text-sm font-normal text-cyan-400">
