@@ -74,25 +74,27 @@ export function MobileSectionDrawer({
                 theme="fundamentos"
               />
             </div>
-            {/* Badge de progresso - no topo direito */}
-            <span className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg border-2 border-white">
-              {currentSection + 1}
-            </span>
             {/* Indicador de playing - no topo esquerdo */}
             {isPlaying && (
               <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full animate-pulse border-2 border-white" />
             )}
           </div>
           
-          {/* Botão de lista embaixo */}
-          <button 
-            className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-            style={{
-              boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
-            }}
-          >
-            <List className="w-5 h-5" />
-          </button>
+          {/* Botão de lista com badge de seção */}
+          <div className="relative">
+            <button 
+              className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+              style={{
+                boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
+              }}
+            >
+              <List className="w-5 h-5" />
+            </button>
+            {/* Badge de progresso no botão */}
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
+              {currentSection + 1}
+            </span>
+          </div>
         </div>
       </DrawerTrigger>
 
