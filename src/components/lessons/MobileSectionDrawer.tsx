@@ -22,6 +22,7 @@ interface MobileSectionDrawerProps {
   currentSection: number;
   onSectionChange: (index: number) => void;
   isPlaying?: boolean;
+  onTogglePlay?: () => void;
 }
 
 export function MobileSectionDrawer({
@@ -29,6 +30,7 @@ export function MobileSectionDrawer({
   currentSection,
   onSectionChange,
   isPlaying = false,
+  onTogglePlay,
 }: MobileSectionDrawerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -53,50 +55,49 @@ export function MobileSectionDrawer({
   const totalRenderableSections = sections.filter((s) => isSectionRenderable(s)).length;
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
-        <div
-          className="fixed bottom-32 right-4 z-[60] flex flex-col items-center gap-3 touch-manipulation"
-          aria-label="Navegação de seções"
-        >
-          {/* Liv Avatar em cima - com espaço do botão */}
-          <div className="relative active:scale-95 transition-transform cursor-pointer">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-100 to-purple-100 flex items-center justify-center shadow-xl border-2 border-white overflow-hidden"
-              style={{
-                boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3), 0 4px 12px rgba(139, 92, 246, 0.2)',
-              }}
-            >
-              <LivAvatar 
-                size="small"
-                isPlaying={isPlaying}
-                showHalo={false}
-                state={isPlaying ? 'speaking' : 'idle'}
-                theme="fundamentos"
-              />
-            </div>
-            {/* Indicador de playing - no topo esquerdo */}
-            {isPlaying && (
-              <span className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full animate-pulse border-2 border-white" />
-            )}
-          </div>
-          
-          {/* Botão de lista com badge de seção */}
-          <div className="relative">
-            <button 
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-              style={{
-                boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
-              }}
-            >
-              <List className="w-5 h-5" />
-            </button>
-            {/* Badge de progresso no botão */}
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
-              {currentSection + 1}
-            </span>
+    <>
+      {/* Liv Avatar - separado, faz play/pause */}
+      <div 
+        className="fixed bottom-[180px] right-4 z-[60] touch-manipulation"
+        onClick={onTogglePlay}
+      >
+        <div className="relative active:scale-95 transition-transform cursor-pointer">
+          <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-cyan-100 to-purple-100 flex items-center justify-center shadow-xl border-2 border-white overflow-hidden transition-all duration-300 ${!isPlaying ? 'grayscale-[30%]' : ''}`}
+            style={{
+              boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3), 0 4px 12px rgba(139, 92, 246, 0.2)',
+            }}
+          >
+            <LivAvatar 
+              size="small"
+              isPlaying={isPlaying}
+              showHalo={false}
+              state={isPlaying ? 'speaking' : 'idle'}
+              theme="fundamentos"
+            />
           </div>
         </div>
-      </DrawerTrigger>
+      </div>
+
+      {/* Botão de menu das seções - separado */}
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>
+          <div className="fixed bottom-32 right-4 z-[60] touch-manipulation">
+            <div className="relative">
+              <button 
+                className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                style={{
+                  boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
+                }}
+              >
+                <List className="w-5 h-5" />
+              </button>
+              {/* Badge de progresso no botão */}
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
+                {currentSection + 1}
+              </span>
+            </div>
+          </div>
+        </DrawerTrigger>
 
       <DrawerContent className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-t border-cyan-500/30 max-h-[70vh]">
         <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-slate-600 mb-4" />
@@ -208,5 +209,6 @@ export function MobileSectionDrawer({
         </div>
       </DrawerContent>
     </Drawer>
+    </>
   );
 }

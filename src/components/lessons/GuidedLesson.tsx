@@ -1658,6 +1658,7 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
           currentSection={currentSection}
           onSectionChange={jumpToSection}
           isPlaying={isPlaying}
+          onTogglePlay={toggleAudio}
         />
       )}
 
