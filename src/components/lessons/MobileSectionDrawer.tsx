@@ -61,7 +61,7 @@ export function MobileSectionDrawer({
       {/* Liv Avatar - separado, faz play/pause */}
       <div 
         className="fixed right-[38px] sm:right-[48px] z-[70] touch-manipulation"
-        style={{ bottom: 'calc(240px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'calc(238px + env(safe-area-inset-bottom, 0px))' }}
         onClick={onTogglePlay}
       >
         <div className="relative active:scale-95 transition-transform cursor-pointer">
@@ -94,7 +94,7 @@ export function MobileSectionDrawer({
         <DrawerTrigger asChild>
           <div 
             className="fixed right-[30px] sm:right-[38px] z-[70] touch-manipulation"
-            style={{ bottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}
+            style={{ bottom: 'calc(158px + env(safe-area-inset-bottom, 0px))' }}
           >
             <div className="relative">
               <button 
