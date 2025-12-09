@@ -101,8 +101,8 @@ export function MobileSectionDrawer({
           <div 
             className="fixed z-[9999] touch-manipulation"
             style={{ 
-              bottom: 'calc(138px + env(safe-area-inset-bottom, 0px))',
-              right: '24px'
+              bottom: 'calc(136px + env(safe-area-inset-bottom, 0px))',
+              right: '30px'
             }}
           >
             <div className="relative">
