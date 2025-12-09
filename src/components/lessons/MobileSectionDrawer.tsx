@@ -54,11 +54,14 @@ export function MobileSectionDrawer({
 
   const totalRenderableSections = sections.filter((s) => isSectionRenderable(s)).length;
 
+  console.log('📱 [MobileSectionDrawer] Renderizando:', { currentSection, isPlaying, sectionsCount: sections.length });
+
   return (
     <>
       {/* Liv Avatar - separado, faz play/pause */}
       <div 
-        className="fixed bottom-[180px] right-4 z-[60] touch-manipulation"
+        className="fixed right-4 z-[70] touch-manipulation"
+        style={{ bottom: 'calc(180px + env(safe-area-inset-bottom, 0px))' }}
         onClick={onTogglePlay}
       >
         <div className="relative active:scale-95 transition-transform cursor-pointer">
@@ -83,7 +86,10 @@ export function MobileSectionDrawer({
       {/* Botão de menu das seções - separado */}
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>
-          <div className="fixed bottom-32 right-4 z-[60] touch-manipulation">
+          <div 
+            className="fixed right-4 z-[70] touch-manipulation"
+            style={{ bottom: 'calc(128px + env(safe-area-inset-bottom, 0px))' }}
+          >
             <div className="relative">
               <button 
                 className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
