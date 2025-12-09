@@ -75,20 +75,14 @@ export function MobileSectionDrawer({
             theme="fundamentos"
             className={`${isPlaying ? '' : 'grayscale-[30%]'}`}
           />
-          {/* Botão verde de status ativo/inativo */}
+          {/* Indicador discreto de status - posicionado próximo à orelha */}
           <div 
-            className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all duration-300 ${
+            className={`absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
               isPlaying 
-                ? 'bg-green-500' 
-                : 'bg-slate-400'
+                ? 'bg-green-500 animate-pulse' 
+                : 'bg-slate-400/70'
             }`}
-          >
-            {isPlaying ? (
-              <Play className="w-2.5 h-2.5 text-white fill-white ml-0.5" />
-            ) : (
-              <div className="w-1.5 h-1.5 bg-white rounded-full" />
-            )}
-          </div>
+          />
         </div>
       </div>
 
