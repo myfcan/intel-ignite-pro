@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LivAvatar } from '@/components/LivAvatar';
+import { X } from 'lucide-react';
 
 interface PlaygroundCallCardProps {
   title: string;
@@ -17,7 +18,18 @@ export function PlaygroundCallCard({ title, description, onOpen, onSkip }: Playg
       data-testid="playground-call"
       className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500"
     >
-      <Card className="max-w-lg w-full p-8 animate-in zoom-in-95 duration-500 shadow-2xl">
+      <Card className="max-w-lg w-full p-8 animate-in zoom-in-95 duration-500 shadow-2xl relative">
+        <button
+          onClick={() => {
+            console.log('🎮 [PLAYGROUND-CARD] Botão X clicado');
+            onSkip();
+          }}
+          className="absolute top-4 right-4 p-2 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+          aria-label="Fechar"
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+        </button>
+        
         <div className="flex justify-center mb-6">
           <LivAvatar 
             size="medium"
