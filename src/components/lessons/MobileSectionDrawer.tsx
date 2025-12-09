@@ -60,7 +60,7 @@ export function MobileSectionDrawer({
     <>
       {/* Liv Avatar - separado, faz play/pause */}
       <div 
-        className="fixed right-[50px] sm:right-[60px] z-[70] touch-manipulation"
+        className="fixed right-[38px] sm:right-[48px] z-[70] touch-manipulation"
         style={{ bottom: 'calc(240px + env(safe-area-inset-bottom, 0px))' }}
         onClick={onTogglePlay}
       >
