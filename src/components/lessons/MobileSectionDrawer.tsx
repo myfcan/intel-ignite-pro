@@ -1,6 +1,7 @@
 import React from 'react';
 import { List, Check, Play, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LivAvatar } from '@/components/LivAvatar';
 import {
   Drawer,
   DrawerClose,
@@ -55,17 +56,33 @@ export function MobileSectionDrawer({
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <button
-          className="fixed bottom-28 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-xl flex items-center justify-center touch-manipulation active:scale-95 transition-transform"
-          style={{
-            boxShadow: '0 8px 32px rgba(34, 211, 238, 0.4), 0 4px 16px rgba(139, 92, 246, 0.3)',
-          }}
+          className="fixed bottom-28 right-4 z-40 flex flex-col items-center gap-1 touch-manipulation active:scale-95 transition-transform"
           aria-label="Navegação de seções"
         >
-          <List className="w-6 h-6" />
-          {/* Badge de progresso */}
-          <span className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full text-[10px] font-bold text-slate-800 flex items-center justify-center shadow-md">
-            {currentSection + 1}
-          </span>
+          {/* Liv Avatar */}
+          <div className="relative">
+            <LivAvatar 
+              size="small"
+              isPlaying={isPlaying}
+              showHalo={isPlaying}
+              state={isPlaying ? 'speaking' : 'idle'}
+              theme="fundamentos"
+            />
+            {/* Badge de progresso */}
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-md border-2 border-white">
+              {currentSection + 1}
+            </span>
+          </div>
+          
+          {/* Botão de lista */}
+          <div 
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center"
+            style={{
+              boxShadow: '0 4px 16px rgba(34, 211, 238, 0.3), 0 2px 8px rgba(139, 92, 246, 0.2)',
+            }}
+          >
+            <List className="w-5 h-5" />
+          </div>
         </button>
       </DrawerTrigger>
 
