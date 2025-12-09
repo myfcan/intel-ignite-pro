@@ -65,21 +65,16 @@ export function MobileSectionDrawer({
         onClick={onTogglePlay}
       >
         <div className="relative active:scale-95 transition-transform cursor-pointer">
-          <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-cyan-100 to-purple-100 flex items-center justify-center shadow-xl border-2 border-white overflow-hidden transition-all duration-300 ${!isPlaying ? 'grayscale-[30%]' : ''}`}
-            style={{
-              boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3), 0 4px 12px rgba(139, 92, 246, 0.2)',
-            }}
-          >
-            <LivAvatar 
-              size="small"
-              isPlaying={isPlaying}
-              showHalo={false}
-              animate={false}
-              enableHover={false}
-              state={isPlaying ? 'speaking' : 'idle'}
-              theme="fundamentos"
-            />
-          </div>
+          <LivAvatar 
+            size="small"
+            isPlaying={isPlaying}
+            showHalo={false}
+            animate={false}
+            enableHover={false}
+            state={isPlaying ? 'speaking' : 'idle'}
+            theme="fundamentos"
+            className={`${isPlaying ? '' : 'grayscale-[30%]'}`}
+          />
         </div>
       </div>
 
