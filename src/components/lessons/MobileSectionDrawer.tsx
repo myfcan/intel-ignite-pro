@@ -60,24 +60,27 @@ export function MobileSectionDrawer({
     <>
       {/* Liv Avatar - separado, faz play/pause */}
       <div 
-        className="fixed right-6 z-[70] touch-manipulation"
-        style={{ bottom: 'calc(200px + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed right-4 sm:right-6 z-[70] touch-manipulation"
+        style={{ bottom: 'calc(180px + env(safe-area-inset-bottom, 0px))' }}
         onClick={onTogglePlay}
       >
         <div className="relative active:scale-95 transition-transform cursor-pointer">
-          <LivAvatar 
-            size="small"
-            isPlaying={isPlaying}
-            showHalo={false}
-            animate={false}
-            enableHover={false}
-            state={isPlaying ? 'speaking' : 'idle'}
-            theme="fundamentos"
-            className={`${isPlaying ? '' : 'grayscale-[30%]'}`}
-          />
+          {/* Avatar com tamanho responsivo via CSS */}
+          <div className="w-10 h-10 sm:w-12 sm:h-12">
+            <LivAvatar 
+              size="small"
+              isPlaying={isPlaying}
+              showHalo={false}
+              animate={false}
+              enableHover={false}
+              state={isPlaying ? 'speaking' : 'idle'}
+              theme="fundamentos"
+              className={`w-full h-full ${isPlaying ? '' : 'grayscale-[30%]'}`}
+            />
+          </div>
           {/* Indicador discreto de status - posicionado próximo à orelha */}
           <div 
-            className={`absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-300 ${
+            className={`absolute -top-0.5 -left-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-sm transition-all duration-300 ${
               isPlaying 
                 ? 'bg-green-500 animate-pulse' 
                 : 'bg-slate-400/70'
@@ -90,20 +93,20 @@ export function MobileSectionDrawer({
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>
           <div 
-            className="fixed right-6 z-[70] touch-manipulation"
-            style={{ bottom: 'calc(148px + env(safe-area-inset-bottom, 0px))' }}
+            className="fixed right-4 sm:right-6 z-[70] touch-manipulation"
+            style={{ bottom: 'calc(130px + env(safe-area-inset-bottom, 0px))' }}
           >
             <div className="relative">
               <button 
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
                 style={{
                   boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
                 }}
               >
-                <List className="w-5 h-5" />
+                <List className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               {/* Badge de progresso no botão */}
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
+              <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full text-[9px] sm:text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
                 {currentSection + 1}
               </span>
             </div>
