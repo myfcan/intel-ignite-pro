@@ -71,6 +71,8 @@ export function MobileSectionDrawer({
               size="small"
               isPlaying={isPlaying}
               showHalo={false}
+              animate={false}
+              enableHover={false}
               state={isPlaying ? 'speaking' : 'idle'}
               theme="fundamentos"
             />
