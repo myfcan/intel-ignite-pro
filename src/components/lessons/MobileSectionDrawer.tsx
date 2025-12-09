@@ -56,11 +56,11 @@ export function MobileSectionDrawer({
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <div
-          className="fixed bottom-32 right-4 z-[60] flex flex-col items-center gap-1.5 touch-manipulation"
+          className="fixed bottom-32 right-4 z-[60] flex flex-col items-center gap-3 touch-manipulation"
           aria-label="Navegação de seções"
         >
-          {/* Liv Avatar em cima - subido 3px */}
-          <div className="relative active:scale-95 transition-transform cursor-pointer mb-1">
+          {/* Liv Avatar em cima - com espaço do botão */}
+          <div className="relative active:scale-95 transition-transform cursor-pointer">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-100 to-purple-100 flex items-center justify-center shadow-xl border-2 border-white overflow-hidden"
               style={{
                 boxShadow: '0 8px 24px rgba(34, 211, 238, 0.3), 0 4px 12px rgba(139, 92, 246, 0.2)',
