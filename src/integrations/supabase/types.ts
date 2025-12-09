@@ -1235,6 +1235,16 @@ export type Database = {
       create_lesson_draft:
         | {
             Args: {
+              p_content: Json
+              p_estimated_time: number
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_audio_url?: string
               p_content: Json
               p_estimated_time: number
@@ -1243,16 +1253,6 @@ export type Database = {
               p_title: string
               p_trail_id: string
               p_word_timestamps?: Json
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_content: Json
-              p_estimated_time: number
-              p_order_index: number
-              p_title: string
-              p_trail_id: string
             }
             Returns: string
           }
