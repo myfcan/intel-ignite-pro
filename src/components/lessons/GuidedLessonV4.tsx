@@ -1820,27 +1820,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </div>
 
-      {/* Liv Mobile/Tablet - Flutuando acima do player */}
-      <div className="lg:hidden fixed bottom-[108px] left-[55px] z-[51] pointer-events-auto">
-        <button
-          onClick={toggleAudio}
-          className="relative group touch-manipulation"
-          aria-label={isAudioEnabled ? 'Desativar áudio' : 'Ativar áudio'}
-        >
-          {/* Avatar circular com efeitos combinados: moldura branca, breathing, glow */}
-          <div 
-            className={`w-[54px] h-[54px] md:w-[65px] md:h-[65px] rounded-full overflow-hidden transition-all duration-500 ${
-              !isAudioEnabled ? 'grayscale opacity-60' : ''
-            } ${isPlaying && isAudioEnabled ? 'liv-speaking-combined' : 'liv-breathing-idle'}`}
-          >
-            <img 
-              src="/liv-avatar-mobile.png" 
-              alt="Liv" 
-              className="w-full h-full object-cover object-top scale-[1.8] translate-y-[15%]"
-            />
-          </div>
-        </button>
-      </div>
+      {/* Liv Mobile/Tablet - Agora integrada no MobileSectionDrawer */}
 
       <div className={`fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-50 shadow-2xl transition-all duration-300 ${
         !isAudioEnabled ? 'grayscale opacity-60' : ''
