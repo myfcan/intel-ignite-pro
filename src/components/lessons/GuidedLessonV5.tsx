@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileSectionDrawer } from './MobileSectionDrawer';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -69,6 +71,7 @@ interface Segment {
  */
 export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -1506,6 +1509,16 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
           </div>
         </div>
       </header>
+
+      {/* 📱 Mobile Section Navigation Drawer */}
+      {isMobile && currentPhase === 'audio' && (
+        <MobileSectionDrawer
+          sections={lessonData.sections}
+          currentSection={currentSection}
+          onSectionChange={jumpToSection}
+          isPlaying={isPlaying}
+        />
+      )}
 
       {/* Conteúdo principal - Padding ajustado para mobile */}
       <div className="w-full px-3 sm:px-6 pt-14 sm:pt-20 pb-44 sm:pb-32">
