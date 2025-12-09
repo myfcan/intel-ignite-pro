@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Sparkles, ChevronLeft } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsMobileOrTablet } from '@/hooks/use-mobile';
 import { MobileSectionDrawer } from './MobileSectionDrawer';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
@@ -72,6 +72,7 @@ interface Segment {
 export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUrl, wordTimestamps, nextLessonId, nextLessonType, trailId }: GuidedLessonProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const isMobileOrTablet = useIsMobileOrTablet();
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -1510,8 +1511,8 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         </div>
       </header>
 
-      {/* 📱 Mobile Section Navigation Drawer */}
-      {isMobile && currentPhase === 'audio' && (
+      {/* 📱 Mobile/Tablet Section Navigation Drawer */}
+      {isMobileOrTablet && currentPhase === 'audio' && (
         <MobileSectionDrawer
           sections={lessonData.sections}
           currentSection={currentSection}
