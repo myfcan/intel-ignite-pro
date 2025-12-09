@@ -251,6 +251,16 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     });
   }, [lessonData]);
   
+  // 🔍 DEBUG: Condições do MobileSectionDrawer
+  useEffect(() => {
+    console.log('📱 [V5-MOBILE] MobileSectionDrawer conditions:', {
+      isMobileOrTablet,
+      currentPhase,
+      shouldRender: isMobileOrTablet && currentPhase === 'audio',
+      windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A'
+    });
+  }, [isMobileOrTablet, currentPhase]);
+  
   /**
    * 🎨 HELPER: Renderizar Experience Cards
    *

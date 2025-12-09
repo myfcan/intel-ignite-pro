@@ -56,17 +56,26 @@ export function MobileSectionDrawer({
 
   console.log('📱 [MobileSectionDrawer] Renderizando:', { currentSection, isPlaying, sectionsCount: sections.length });
 
+  // 🔧 POSICIONAMENTO CRÍTICO:
+  // O player mobile tem altura ~120px + safe-area
+  // Botão de seções: 140px acima da base (acima do player)
+  // Liv Avatar: 200px acima da base (acima do botão)
+  // Espaçamento entre eles: 60px
+
   return (
     <>
       {/* Liv Avatar - separado, faz play/pause */}
       <div 
-        className="fixed right-4 sm:right-6 z-[70] touch-manipulation"
-        style={{ bottom: 'calc(180px + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed z-[9999] touch-manipulation"
+        style={{ 
+          bottom: 'calc(200px + env(safe-area-inset-bottom, 0px))',
+          right: '16px'
+        }}
         onClick={onTogglePlay}
       >
         <div className="relative active:scale-95 transition-transform cursor-pointer">
-          {/* Avatar com tamanho responsivo via CSS */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12">
+          {/* Avatar com tamanho fixo para garantir visibilidade */}
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 shadow-xl flex items-center justify-center border-2 border-cyan-400/50">
             <LivAvatar 
               size="small"
               isPlaying={isPlaying}
@@ -75,15 +84,15 @@ export function MobileSectionDrawer({
               enableHover={false}
               state={isPlaying ? 'speaking' : 'idle'}
               theme="fundamentos"
-              className={`w-full h-full ${isPlaying ? '' : 'grayscale-[30%]'}`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 ${isPlaying ? '' : 'grayscale-[30%]'}`}
             />
           </div>
           {/* Indicador discreto de status - posicionado próximo à orelha */}
           <div 
-            className={`absolute -top-0.5 -left-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-sm transition-all duration-300 ${
+            className={`absolute top-0 left-0 w-3 h-3 rounded-full shadow-md border border-white transition-all duration-300 ${
               isPlaying 
                 ? 'bg-green-500 animate-pulse' 
-                : 'bg-slate-400/70'
+                : 'bg-slate-400'
             }`}
           />
         </div>
@@ -93,20 +102,23 @@ export function MobileSectionDrawer({
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>
           <div 
-            className="fixed right-4 sm:right-6 z-[70] touch-manipulation"
-            style={{ bottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}
+            className="fixed z-[9999] touch-manipulation"
+            style={{ 
+              bottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
+              right: '16px'
+            }}
           >
             <div className="relative">
               <button 
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform border-2 border-white/30"
                 style={{
-                  boxShadow: '0 4px 16px rgba(34, 211, 238, 0.4), 0 2px 8px rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 4px 20px rgba(34, 211, 238, 0.5), 0 2px 10px rgba(139, 92, 246, 0.4)',
                 }}
               >
-                <List className="w-4 h-4 sm:w-5 sm:h-5" />
+                <List className="w-5 h-5" />
               </button>
               {/* Badge de progresso no botão */}
-              <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full text-[9px] sm:text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border border-purple-200">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full text-[10px] font-bold text-purple-600 flex items-center justify-center shadow-lg border-2 border-purple-300">
                 {currentSection + 1}
               </span>
             </div>
