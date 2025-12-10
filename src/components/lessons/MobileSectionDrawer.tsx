@@ -25,6 +25,62 @@ interface MobileSectionDrawerProps {
   onTogglePlay?: () => void;
 }
 
+// Hook para detectar breakpoints responsivos
+function useResponsivePosition() {
+  const [position, setPosition] = React.useState({
+    avatarRight: 41,
+    buttonRight: 48,
+    avatarBottom: 185,
+    buttonBottom: 134,
+  });
+
+  React.useEffect(() => {
+    const updatePosition = () => {
+      const width = window.innerWidth;
+      
+      if (width >= 1024) {
+        // Desktop/Large tablet - mais afastado da borda
+        setPosition({
+          avatarRight: 60,
+          buttonRight: 67,
+          avatarBottom: 185,
+          buttonBottom: 134,
+        });
+      } else if (width >= 768) {
+        // Tablet (iPad) - posição intermediária
+        setPosition({
+          avatarRight: 48,
+          buttonRight: 55,
+          avatarBottom: 185,
+          buttonBottom: 134,
+        });
+      } else if (width >= 480) {
+        // Mobile grande - posição padrão
+        setPosition({
+          avatarRight: 36,
+          buttonRight: 43,
+          avatarBottom: 185,
+          buttonBottom: 134,
+        });
+      } else {
+        // Mobile pequeno - mais próximo da borda
+        setPosition({
+          avatarRight: 24,
+          buttonRight: 31,
+          avatarBottom: 180,
+          buttonBottom: 129,
+        });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, []);
+
+  return position;
+}
+
 export function MobileSectionDrawer({
   sections,
   currentSection,
@@ -33,6 +89,7 @@ export function MobileSectionDrawer({
   onTogglePlay,
 }: MobileSectionDrawerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const { avatarRight, buttonRight, avatarBottom, buttonBottom } = useResponsivePosition();
 
   const handleSectionClick = (index: number, isRenderable: boolean) => {
     if (!isRenderable) return;
@@ -54,22 +111,22 @@ export function MobileSectionDrawer({
 
   const totalRenderableSections = sections.filter((s) => isSectionRenderable(s)).length;
 
-  console.log('📱 [MobileSectionDrawer] Renderizando:', { currentSection, isPlaying, sectionsCount: sections.length });
+  console.log('📱 [MobileSectionDrawer] Renderizando:', { currentSection, isPlaying, sectionsCount: sections.length, avatarRight, buttonRight });
 
-  // 🔧 POSICIONAMENTO CRÍTICO:
-  // O player mobile tem altura ~120px + safe-area
-  // Botão de seções: 140px acima da base (acima do player)
-  // Liv Avatar: 200px acima da base (acima do botão)
-  // Espaçamento entre eles: 60px
+  // 🔧 POSICIONAMENTO RESPONSIVO:
+  // Mobile pequeno (<480px): mais próximo da borda
+  // Mobile grande (480-767px): posição padrão  
+  // Tablet (768-1023px): posição intermediária
+  // Desktop (1024px+): mais afastado da borda
 
   return (
     <>
       {/* Liv Avatar - clicável para play/pause */}
       <div 
-        className="fixed z-[9999] touch-manipulation cursor-pointer active:scale-95 transition-transform"
+        className="fixed z-[9999] touch-manipulation cursor-pointer active:scale-95 transition-all duration-300"
         style={{ 
-          bottom: 'calc(185px + env(safe-area-inset-bottom, 0px))',
-          right: '41px'
+          bottom: `calc(${avatarBottom}px + env(safe-area-inset-bottom, 0px))`,
+          right: `${avatarRight}px`
         }}
         onClick={onTogglePlay}
       >
@@ -99,10 +156,10 @@ export function MobileSectionDrawer({
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerTrigger asChild>
           <div 
-            className="fixed z-[9999] touch-manipulation"
+            className="fixed z-[9999] touch-manipulation transition-all duration-300"
             style={{ 
-              bottom: 'calc(134px + env(safe-area-inset-bottom, 0px))',
-              right: '48px'
+              bottom: `calc(${buttonBottom}px + env(safe-area-inset-bottom, 0px))`,
+              right: `${buttonRight}px`
             }}
           >
             <div className="relative">
