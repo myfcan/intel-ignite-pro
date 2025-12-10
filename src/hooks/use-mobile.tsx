@@ -3,8 +3,19 @@ import * as React from "react";
 const MOBILE_BREAKPOINT = 768;
 const TABLET_BREAKPOINT = 1024;
 
+// Helper para obter valor inicial sem causar hydration mismatch
+const getInitialMobile = () => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < MOBILE_BREAKPOINT;
+};
+
+const getInitialMobileOrTablet = () => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < TABLET_BREAKPOINT;
+};
+
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = React.useState<boolean>(getInitialMobile);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -16,12 +27,12 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }
 
 // Hook para mobile OU tablet (até 1024px)
 export function useIsMobileOrTablet() {
-  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState<boolean | undefined>(undefined);
+  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState<boolean>(getInitialMobileOrTablet);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${TABLET_BREAKPOINT - 1}px)`);
@@ -33,5 +44,5 @@ export function useIsMobileOrTablet() {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobileOrTablet;
+  return isMobileOrTablet;
 }
