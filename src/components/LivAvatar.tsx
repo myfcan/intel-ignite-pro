@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useAvatarState } from '@/contexts/AvatarStateContext';
+import livAvatarImg from '@/assets/liv-avatar.png';
 
 interface LivAvatarProps {
   size?: 'small' | 'medium' | 'large' | 'xl';
@@ -242,8 +243,10 @@ export function LivAvatar({
         }}
       >
         <img 
-          src="/liv-avatar.png" 
+          src={livAvatarImg} 
           alt="Liv - Assistente de IA" 
+          loading="eager"
+          decoding="async"
           className={cn(
             "w-full h-full object-cover transition-all duration-700",
             enableHover && "group-hover:scale-105",
