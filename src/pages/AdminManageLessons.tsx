@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug, Wrench } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug, Wrench, FolderInput, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +57,14 @@ export default function AdminManageLessons() {
   // Filtros
   const [filterTrail, setFilterTrail] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  // Estados para mover lição
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [targetTrailId, setTargetTrailId] = useState<string>('');
+  const [targetOrderIndex, setTargetOrderIndex] = useState<number>(1);
+  const [createNewTrail, setCreateNewTrail] = useState(false);
+  const [newTrailName, setNewTrailName] = useState('');
 
   useEffect(() => {
     loadData();
@@ -179,6 +188,110 @@ export default function AdminManageLessons() {
     }
   }
 
+  // Função para abrir modal de mover lição
+  function openMoveModal() {
+    if (selectedLessons.size !== 1) {
+      toast({
+        title: 'Selecione apenas uma lição',
+        description: 'Para mover, selecione exatamente uma lição',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setTargetTrailId('');
+    setTargetOrderIndex(1);
+    setCreateNewTrail(false);
+    setNewTrailName('');
+    setShowMoveModal(true);
+  }
+
+  // Função para mover lição para trilha
+  async function handleMoveLesson() {
+    const lessonId = Array.from(selectedLessons)[0];
+    
+    if (!createNewTrail && !targetTrailId) {
+      toast({
+        title: 'Selecione uma trilha',
+        description: 'Escolha uma trilha existente ou crie uma nova',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (createNewTrail && !newTrailName.trim()) {
+      toast({
+        title: 'Nome obrigatório',
+        description: 'Informe o nome da nova trilha',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMoving(true);
+    try {
+      let finalTrailId = targetTrailId;
+
+      // Criar nova trilha se necessário
+      if (createNewTrail) {
+        const maxOrderIndex = trails.length > 0 
+          ? Math.max(...trails.map((_, i) => i + 1)) 
+          : 0;
+
+        const { data: newTrail, error: trailError } = await supabase
+          .from('trails')
+          .insert({
+            title: newTrailName.trim(),
+            order_index: maxOrderIndex + 1,
+            is_active: true,
+          })
+          .select('id')
+          .single();
+
+        if (trailError) {
+          throw trailError;
+        }
+
+        finalTrailId = newTrail.id;
+        toast({
+          title: 'Trilha criada',
+          description: `Nova trilha "${newTrailName.trim()}" criada com sucesso`,
+        });
+      }
+
+      // Atualizar a lição com nova trilha e ordem
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({
+          trail_id: finalTrailId,
+          order_index: targetOrderIndex,
+        })
+        .eq('id', lessonId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      const lesson = lessons.find(l => l.id === lessonId);
+      toast({
+        title: 'Lição movida com sucesso',
+        description: `"${lesson?.title}" agora está na posição ${targetOrderIndex}`,
+      });
+
+      setSelectedLessons(new Set());
+      setShowMoveModal(false);
+      await loadData();
+    } catch (error: any) {
+      console.error('Erro ao mover lição:', error);
+      toast({
+        title: 'Erro ao mover lição',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setMoving(false);
+    }
+  }
+
   const filteredLessons = lessons.filter(lesson => {
     if (filterTrail !== 'all' && lesson.trail_id !== filterTrail) {
       return false;
@@ -219,6 +332,12 @@ export default function AdminManageLessons() {
             <Wrench className="w-4 h-4" />
             Corrigir Exercícios
           </Button>
+          {selectedLessons.size === 1 && (
+            <Button variant="outline" onClick={openMoveModal} className="border-primary text-primary hover:bg-primary/10">
+              <FolderInput className="w-4 h-4 mr-2" />
+              Mover para Trilha
+            </Button>
+          )}
           {selectedLessons.size > 0 && (
             <Button variant="destructive" onClick={openDeleteModal}>
               <Trash2 className="w-4 h-4 mr-2" />
@@ -382,6 +501,102 @@ export default function AdminManageLessons() {
               </Button>
               <Button variant="destructive" onClick={handleDelete} disabled={!confirmDelete || deleting}>
                 {deleting ? 'Deletando...' : 'Confirmar Exclusão'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Mover Lição */}
+        <Dialog open={showMoveModal} onOpenChange={setShowMoveModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderInput className="w-5 h-5 text-primary" />
+                Mover Lição para Trilha
+              </DialogTitle>
+              <DialogDescription>
+                Selecione a trilha de destino e defina a posição da lição
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Info da lição selecionada */}
+            {selectedLessons.size === 1 && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Lição selecionada:</p>
+                <p className="text-sm text-muted-foreground">
+                  {lessons.find(l => l.id === Array.from(selectedLessons)[0])?.title}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Toggle criar nova trilha */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={createNewTrail}
+                  onCheckedChange={(checked) => {
+                    setCreateNewTrail(checked as boolean);
+                    if (checked) setTargetTrailId('');
+                  }}
+                />
+                <label className="text-sm font-medium cursor-pointer">
+                  Criar nova trilha
+                </label>
+              </div>
+
+              {/* Select trilha existente ou input nova trilha */}
+              {createNewTrail ? (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Nome da nova trilha</label>
+                  <div className="flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={newTrailName}
+                      onChange={(e) => setNewTrailName(e.target.value)}
+                      placeholder="Ex: Trilha Avançada de IA"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Trilha de destino</label>
+                  <Select value={targetTrailId} onValueChange={setTargetTrailId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma trilha" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trails.map(trail => (
+                        <SelectItem key={trail.id} value={trail.id}>
+                          {trail.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Input ordem */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Posição na trilha (order_index)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={targetOrderIndex}
+                  onChange={(e) => setTargetOrderIndex(parseInt(e.target.value) || 1)}
+                  placeholder="1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Define a ordem de exibição da lição dentro da trilha
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowMoveModal(false)} disabled={moving}>
+                Cancelar
+              </Button>
+              <Button onClick={handleMoveLesson} disabled={moving}>
+                {moving ? 'Movendo...' : 'Confirmar'}
               </Button>
             </DialogFooter>
           </DialogContent>
