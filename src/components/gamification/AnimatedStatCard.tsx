@@ -39,15 +39,20 @@ const Sparkle = ({ delay, size, x, y }: { delay: number; size: number; x: number
 // Counter hook
 const useCounter = (end: number, duration: number = 1.5, startDelay: number = 0) => {
   const [count, setCount] = useState(0);
-  const hasAnimated = useRef(false);
+  const prevEndRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (hasAnimated.current) return;
-    hasAnimated.current = true;
+    // Só anima se o valor end mudou e é maior que 0
+    if (prevEndRef.current === end) return;
+    prevEndRef.current = end;
+    
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
 
     const timeout = setTimeout(() => {
       const startTime = Date.now();
-      const endTime = startTime + duration * 1000;
 
       const updateCount = () => {
         const now = Date.now();
