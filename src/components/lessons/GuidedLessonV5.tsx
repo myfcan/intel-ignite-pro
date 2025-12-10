@@ -1522,7 +1522,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       </header>
 
       {/* 📱 Mobile/Tablet Section Navigation Drawer */}
-      {isMobileOrTablet && currentPhase === 'audio' && (
+      {isMobileOrTablet && ['audio', 'playground-mid', 'transition'].includes(currentPhase) && (
         <MobileSectionDrawer
           sections={lessonData.sections}
           currentSection={currentSection}
