@@ -9,6 +9,7 @@ interface AnimatedStatCardProps {
   gradientFrom: string;
   gradientTo: string;
   delay?: number;
+  isLoading?: boolean;
 }
 
 // Sparkle component
@@ -79,9 +80,10 @@ export const AnimatedStatCard = ({
   gradientFrom,
   gradientTo,
   delay = 0,
+  isLoading = false,
 }: AnimatedStatCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const animatedValue = useCounter(value, 1.5, delay + 0.3);
+  const animatedValue = useCounter(isLoading ? 0 : value, 1.5, delay + 0.3);
 
   // Generate sparkle positions
   const sparkles = [
@@ -190,7 +192,11 @@ export const AnimatedStatCard = ({
             animate={{ scale: 1 }}
             transition={{ delay: delay + 0.2, type: "spring", stiffness: 200 }}
           >
-            {animatedValue}
+            {isLoading ? (
+              <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse" />
+            ) : (
+              animatedValue
+            )}
           </motion.div>
           <div className="text-xs sm:text-sm font-medium text-gray-500">
             {label}
