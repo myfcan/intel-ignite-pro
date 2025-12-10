@@ -69,7 +69,7 @@ export function MobileSectionDrawer({
         className="fixed z-[9999] touch-manipulation cursor-pointer active:scale-95 transition-transform"
         style={{ 
           bottom: 'calc(185px + env(safe-area-inset-bottom, 0px))',
-          right: '21px'
+          right: '41px'
         }}
         onClick={onTogglePlay}
       >
@@ -102,7 +102,7 @@ export function MobileSectionDrawer({
             className="fixed z-[9999] touch-manipulation"
             style={{ 
               bottom: 'calc(134px + env(safe-area-inset-bottom, 0px))',
-              right: '28px'
+              right: '48px'
             }}
           >
             <div className="relative">
