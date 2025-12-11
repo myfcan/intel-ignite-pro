@@ -79,13 +79,16 @@ export interface InteractiveSimulationConfig {
   };
 }
 
-// 🎯 V2: Dados estruturados para PlaygroundBridgeV2
+// 🎯 V2/V3: Dados estruturados para PlaygroundBridge (mesmo formato)
 export interface PlaygroundExampleDataV2 {
-  title: string;              // título curto do modal
-  context: string;            // 1 ou 2 frases no máximo
-  requirements: string[];     // sempre 4 itens, já com [colchetes]
-  examplePrompt: string;      // modelo de prompt com [placeholders]
+  title: string;              // título curto do modal (~60 chars)
+  context: string;            // I DO: 1-2 frases (20-35 palavras)
+  requirements: string[];     // WE DO: 4 itens curtos (10-14 palavras cada)
+  examplePrompt: string;      // YOU DO: 1 prompt com [colchetes]
 }
+
+// V3 usa mesmo formato do V2
+export type PlaygroundExampleDataV3 = PlaygroundExampleDataV2;
 
 export interface PlaygroundConfig {
   instruction?: string;  // 🆕 Opcional para compatibilidade com diferentes formatos
@@ -97,7 +100,9 @@ export interface PlaygroundConfig {
   feedback?: Record<string, string>;
   realConfig?: RealPlaygroundConfig;
   simulationConfig?: InteractiveSimulationConfig;
-  playgroundExampleV2?: PlaygroundExampleDataV2; // 🆕 V2: Dados do exemplo para PlaygroundBridgeV2
+  playgroundExampleV2?: PlaygroundExampleDataV2; // V2: 2 modais com wizard
+  playgroundExampleV3?: PlaygroundExampleDataV3; // V3: 1 modal único com 3 blocos (I DO / WE DO / YOU DO)
+  useBridgeVersion?: 'v2' | 'v3'; // Qual versão usar (default: v2 para retrocompatibilidade)
 }
 
 export interface ExerciseConfig {

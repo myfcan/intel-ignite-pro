@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { GuidedLessonProps, FinalPlaygroundConfig } from '@/types/guidedLesson';
 import { PlaygroundMidLesson } from './PlaygroundMidLesson';
 import { PlaygroundBridgeV2 } from './PlaygroundBridgeV2';
+import { PlaygroundBridgeV3 } from './PlaygroundBridgeV3';
 import { TransitionCard } from './TransitionCard';
 import { ExercisesSection } from './ExercisesSection';
 // PlaygroundRealChat removido - PlaygroundBridge agora é o único playground
@@ -2000,6 +2001,38 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
         }
 
         const config = playgroundSection.playgroundConfig;
+        
+        // 🎯 V3: Verifica qual versão do Bridge usar
+        const useV3 = config.useBridgeVersion === 'v3' || config.playgroundExampleV3;
+        
+        if (useV3) {
+          // 🚀 V3: Modal único com 3 blocos (I DO / WE DO / YOU DO)
+          const playgroundExampleV3 = config.playgroundExampleV3 || config.playgroundExampleV2 || {
+            title: "Simulador rápido",
+            context: "Veja como funciona e adapte para seu caso.",
+            requirements: [
+              "Tema: [seu tema principal]",
+              "Público: [quem você quer atingir]",
+              "Formato: [tipo de conteúdo]",
+              "Resultado: [o que deve acontecer]"
+            ],
+            examplePrompt: "Crie um [tipo de conteúdo] sobre [seu tema principal] para [quem você quer atingir]. Foque em [o que deve acontecer]."
+          };
+
+          console.log('🚀 [V5] Renderizando PlaygroundBridgeV3:', {
+            hasCustomExample: !!config.playgroundExampleV3,
+            title: playgroundExampleV3.title
+          });
+
+          return (
+            <PlaygroundBridgeV3
+              playgroundExample={playgroundExampleV3}
+              onComplete={handlePlaygroundComplete}
+              onSkip={handleSkipPlayground}
+              lessonId={lessonData.id}
+            />
+          );
+        }
         
         // 🎯 V2: Usa dados do JSON se disponível, senão usa fallback
         const playgroundExampleV2 = config.playgroundExampleV2 || {
