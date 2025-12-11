@@ -133,6 +133,25 @@ import { CardEffectWeeklyRoutine } from './CardEffectWeeklyRoutine';
 import { CardEffectPostChecklist } from './CardEffectPostChecklist';
 import { CardEffectProcessOverInspiration } from './CardEffectProcessOverInspiration';
 
+// ============================================================
+// AULA 8 - Conteúdo Profundo: Transforme sua Experiência em Curso
+// ============================================================
+import { CardEffectCourseReveal } from './CardEffectCourseReveal';
+import { CardEffectOverwhelmBreaker } from './CardEffectOverwhelmBreaker';
+import { CardEffectClarityMap } from './CardEffectClarityMap';
+import { CardEffectThreeBlocks } from './CardEffectThreeBlocks';
+import { CardEffectOpeningFocus } from './CardEffectOpeningFocus';
+import { CardEffectClosingFocus } from './CardEffectClosingFocus';
+import { CardEffectAiWriter } from './CardEffectAiWriter';
+import { CardEffectDraftMachine } from './CardEffectDraftMachine';
+import { CardEffectStructureDraft } from './CardEffectStructureDraft';
+import { CardEffectSkeletonBuilder } from './CardEffectSkeletonBuilder';
+import { CardEffectTopicBrackets } from './CardEffectTopicBrackets';
+import { CardEffectResultBrackets } from './CardEffectResultBrackets';
+import { CardEffectBoundaryLine } from './CardEffectBoundaryLine';
+import { CardEffectDirectorRule } from './CardEffectDirectorRule';
+import { CardEffectDirectorMindset } from './CardEffectDirectorMindset';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -250,6 +269,23 @@ export { CardEffectWeeklyRoutine } from './CardEffectWeeklyRoutine';
 export { CardEffectPostChecklist } from './CardEffectPostChecklist';
 export { CardEffectProcessOverInspiration } from './CardEffectProcessOverInspiration';
 
+// Re-exportar componentes - AULA 8 (Conteúdo Profundo)
+export { CardEffectCourseReveal } from './CardEffectCourseReveal';
+export { CardEffectOverwhelmBreaker } from './CardEffectOverwhelmBreaker';
+export { CardEffectClarityMap } from './CardEffectClarityMap';
+export { CardEffectThreeBlocks } from './CardEffectThreeBlocks';
+export { CardEffectOpeningFocus } from './CardEffectOpeningFocus';
+export { CardEffectClosingFocus } from './CardEffectClosingFocus';
+export { CardEffectAiWriter } from './CardEffectAiWriter';
+export { CardEffectDraftMachine } from './CardEffectDraftMachine';
+export { CardEffectStructureDraft } from './CardEffectStructureDraft';
+export { CardEffectSkeletonBuilder } from './CardEffectSkeletonBuilder';
+export { CardEffectTopicBrackets } from './CardEffectTopicBrackets';
+export { CardEffectResultBrackets } from './CardEffectResultBrackets';
+export { CardEffectBoundaryLine } from './CardEffectBoundaryLine';
+export { CardEffectDirectorRule } from './CardEffectDirectorRule';
+export { CardEffectDirectorMindset } from './CardEffectDirectorMindset';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -285,7 +321,12 @@ export type CardEffectType =
   | 'blank-screen' | 'low-effort-post' | 'content-partner' | 'relatable-moments'
   | 'content-mistakes' | 'always-late' | 'idea-generator' | 'caption-builder'
   | 'tone-adapter' | 'real-problem' | 'fill-the-brackets' | 'first-draft'
-  | 'weekly-routine' | 'post-checklist' | 'process-over-inspiration';
+  | 'weekly-routine' | 'post-checklist' | 'process-over-inspiration'
+  // AULA 8 - Conteúdo Profundo
+  | 'course-reveal' | 'overwhelm-breaker' | 'clarity-map' | 'three-blocks'
+  | 'opening-focus' | 'closing-focus' | 'ai-writer' | 'draft-machine'
+  | 'structure-draft' | 'skeleton-builder' | 'topic-brackets' | 'result-brackets'
+  | 'boundary-line' | 'director-rule' | 'director-mindset';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -403,6 +444,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'weekly-routine': CardEffectWeeklyRoutine,
   'post-checklist': CardEffectPostChecklist,
   'process-over-inspiration': CardEffectProcessOverInspiration,
+  // AULA 8 - Conteúdo Profundo
+  'course-reveal': CardEffectCourseReveal,
+  'overwhelm-breaker': CardEffectOverwhelmBreaker,
+  'clarity-map': CardEffectClarityMap,
+  'three-blocks': CardEffectThreeBlocks,
+  'opening-focus': CardEffectOpeningFocus,
+  'closing-focus': CardEffectClosingFocus,
+  'ai-writer': CardEffectAiWriter,
+  'draft-machine': CardEffectDraftMachine,
+  'structure-draft': CardEffectStructureDraft,
+  'skeleton-builder': CardEffectSkeletonBuilder,
+  'topic-brackets': CardEffectTopicBrackets,
+  'result-brackets': CardEffectResultBrackets,
+  'boundary-line': CardEffectBoundaryLine,
+  'director-rule': CardEffectDirectorRule,
+  'director-mindset': CardEffectDirectorMindset,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -466,6 +523,15 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'fill-the-brackets': 'Preencha os Colchetes', 'first-draft': 'Primeiro Rascunho',
   'weekly-routine': 'Rotina Semanal', 'post-checklist': 'Checklist de Post',
   'process-over-inspiration': 'Processo Sobre Inspiração',
+  // AULA 8 - Conteúdo Profundo
+  'course-reveal': 'Revelação do Curso', 'overwhelm-breaker': 'Quebrador de Sobrecarga',
+  'clarity-map': 'Mapa da Clareza', 'three-blocks': 'Os 3 Blocos',
+  'opening-focus': 'Foco na Abertura', 'closing-focus': 'Foco no Fechamento',
+  'ai-writer': 'Escritor com IA', 'draft-machine': 'Máquina de Rascunhos',
+  'structure-draft': 'Estrutura do Rascunho', 'skeleton-builder': 'Construtor de Esqueleto',
+  'topic-brackets': 'Tópicos Entre Colchetes', 'result-brackets': 'Resultados Entre Colchetes',
+  'boundary-line': 'Linha de Limite', 'director-rule': 'Regra do Diretor',
+  'director-mindset': 'Mentalidade de Diretor',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -536,6 +602,22 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'fill-the-brackets': 'Preencha os colchetes', 'first-draft': 'Primeiro rascunho rápido',
   'weekly-routine': 'Rotina semanal de posts', 'post-checklist': 'Checklist antes de publicar',
   'process-over-inspiration': 'Processo vence inspiração',
+  // AULA 8 - Conteúdo Profundo
+  'course-reveal': 'Revelando curso escondido na experiência',
+  'overwhelm-breaker': 'Quebrando a ideia de curso gigante',
+  'clarity-map': 'Mapa de clareza de estrutura',
+  'three-blocks': 'Os 3 blocos essenciais de um curso',
+  'opening-focus': 'Foco na abertura impactante',
+  'closing-focus': 'Foco no fechamento memorável',
+  'ai-writer': 'IA como assistente de escrita',
+  'draft-machine': 'Máquina geradora de rascunhos',
+  'structure-draft': 'Estruturando o rascunho base',
+  'skeleton-builder': 'Construindo esqueleto do curso',
+  'topic-brackets': 'Organizando tópicos entre colchetes',
+  'result-brackets': 'Definindo resultados prometidos',
+  'boundary-line': 'Linha de limite do escopo',
+  'director-rule': 'Regra do diretor no controle',
+  'director-mindset': 'Mentalidade de diretor ativada',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -581,6 +663,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'tone-adapter', 'real-problem', 'fill-the-brackets', 'first-draft',
     'weekly-routine', 'post-checklist', 'process-over-inspiration',
   ],
+  'aula-8': [
+    'course-reveal', 'overwhelm-breaker', 'clarity-map', 'three-blocks',
+    'opening-focus', 'closing-focus', 'ai-writer', 'draft-machine',
+    'structure-draft', 'skeleton-builder', 'topic-brackets', 'result-brackets',
+    'boundary-line', 'director-rule', 'director-mindset',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -591,6 +679,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-5'],
   ...CARD_EFFECTS_BY_LESSON['aula-6'],
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
+  ...CARD_EFFECTS_BY_LESSON['aula-8'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
