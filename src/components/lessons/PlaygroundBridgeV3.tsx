@@ -114,9 +114,9 @@ export function PlaygroundBridgeV3({
   }
 
   const stepConfig = {
-    1: { color: 'emerald', icon: Eye, title: 'VEJA O EXEMPLO' },
-    2: { color: 'blue', icon: ListChecks, title: 'ESCOLHA SEU CASO REAL' },
-    3: { color: 'purple', icon: Rocket, title: 'ADAPTE E TESTE' }
+    1: { color: 'emerald', icon: Eye, title: '👀 VEJA O EXEMPLO' },
+    2: { color: 'blue', icon: ListChecks, title: '🧩 ESCOLHA SEU CASO REAL' },
+    3: { color: 'purple', icon: Rocket, title: '🚀 ADAPTE E TESTE' }
   };
 
   const current = stepConfig[step];
@@ -183,18 +183,13 @@ export function PlaygroundBridgeV3({
                 }`}>
                   {step}
                 </span>
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${
-                    step === 1 ? 'text-emerald-600' : step === 2 ? 'text-blue-600' : 'text-purple-600'
-                  }`} />
-                  <span className={`text-sm font-bold uppercase tracking-wide ${
-                    step === 1 ? 'text-emerald-700 dark:text-emerald-400' : 
-                    step === 2 ? 'text-blue-700 dark:text-blue-400' : 
-                    'text-purple-700 dark:text-purple-400'
-                  }`}>
-                    {current.title}
-                  </span>
-                </div>
+                <span className={`text-sm font-bold uppercase tracking-wide ${
+                  step === 1 ? 'text-emerald-700 dark:text-emerald-400' : 
+                  step === 2 ? 'text-blue-700 dark:text-blue-400' : 
+                  'text-purple-700 dark:text-purple-400'
+                }`}>
+                  {current.title}
+                </span>
               </div>
 
               {/* STEP 1: I DO */}
@@ -219,31 +214,36 @@ export function PlaygroundBridgeV3({
 
               {/* STEP 2: WE DO */}
               {step === 2 && (
-                <div className="space-y-2">
-                  {playgroundExample.requirements.map((req, idx) => {
-                    const { label, placeholder } = parseRequirement(req);
-                    const isSelected = highlightedReq === idx;
-                    
-                    return (
-                      <button 
-                        key={idx}
-                        type="button"
-                        onClick={() => setHighlightedReq(isSelected ? null : idx)}
-                        className={`w-full text-left text-sm py-2.5 px-3 rounded-lg transition-all duration-150 flex items-start gap-2 ${
-                          isSelected 
-                            ? 'bg-cyan-100 dark:bg-cyan-900/50 ring-2 ring-cyan-400' 
-                            : 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40'
-                        }`}
-                      >
-                        <span className="text-foreground/70 font-medium">{label}</span>
-                        <span className={`font-semibold ${
-                          isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-amber-600 dark:text-amber-400'
-                        }`}>
-                          {placeholder}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div className="space-y-3">
+                  <p className="text-sm text-foreground/70 mb-3">
+                    Pense em um curso ou eBook que você gostaria de criar. Use os exemplos entre parênteses só como inspiração.
+                  </p>
+                  <div className="space-y-2">
+                    {playgroundExample.requirements.map((req, idx) => {
+                      const { label, placeholder } = parseRequirement(req);
+                      const isSelected = highlightedReq === idx;
+                      
+                      return (
+                        <button 
+                          key={idx}
+                          type="button"
+                          onClick={() => setHighlightedReq(isSelected ? null : idx)}
+                          className={`w-full text-left text-sm py-2.5 px-3 rounded-lg transition-all duration-150 flex items-start gap-2 ${
+                            isSelected 
+                              ? 'bg-cyan-100 dark:bg-cyan-900/50 ring-2 ring-cyan-400' 
+                              : 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                          }`}
+                        >
+                          <span className="text-foreground/70 font-medium">{label}</span>
+                          <span className={`font-semibold ${
+                            isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-amber-600 dark:text-amber-400'
+                          }`}>
+                            {placeholder}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -251,8 +251,24 @@ export function PlaygroundBridgeV3({
               {step === 3 && (
                 <div className="space-y-3">
                   <p className="text-sm text-foreground/70">
-                    Substitua os <span className="bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300 px-1 rounded font-medium">[colchetes]</span> pelo seu caso real:
+                    Substitua os <span className="bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300 px-1 rounded font-medium">[colchetes]</span> pelo seu caso real. Antes de testar, confira se o prompt está claro:
                   </p>
+                  
+                  {/* Checklist de qualidade */}
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 space-y-1.5">
+                    <div className="flex items-start gap-2 text-xs text-foreground/70">
+                      <span className="text-purple-500">✓</span>
+                      <span>Tema está específico (não só "finanças", mas "finanças para autônomos")?</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-foreground/70">
+                      <span className="text-purple-500">✓</span>
+                      <span>Público está bem definido (quem vai assistir/ler)?</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-foreground/70">
+                      <span className="text-purple-500">✓</span>
+                      <span>Resultado final é uma ação concreta (ex.: "dar a primeira aula")?</span>
+                    </div>
+                  </div>
                   
                   <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
                     <p className="text-sm text-foreground leading-relaxed">
