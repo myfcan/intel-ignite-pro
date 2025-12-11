@@ -115,7 +115,7 @@ export function PlaygroundBridgeV3({
 
   const stepConfig = {
     1: { color: 'emerald', icon: Eye, title: 'VEJA O EXEMPLO' },
-    2: { color: 'blue', icon: ListChecks, title: 'PREENCHA NA CABEÇA' },
+    2: { color: 'blue', icon: ListChecks, title: 'ESCOLHA SEU CASO REAL' },
     3: { color: 'purple', icon: Rocket, title: 'ADAPTE E TESTE' }
   };
 
