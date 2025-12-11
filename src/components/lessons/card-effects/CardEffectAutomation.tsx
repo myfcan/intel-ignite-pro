@@ -1,339 +1,328 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Calendar, Mail, CheckCircle2, User } from 'lucide-react';
+import { MessageCircle, Calendar, Mail, CheckCircle, User, Zap, TrendingUp, Sparkles, Settings } from 'lucide-react';
 import { CardEffectProps } from './index';
+
+const BASE_DURATION = 36;
 
 /**
  * CardEffectAutomation - "Fluxos de automação com I.A."
- *
- * Efeito cinematográfico:
- * 1. Fluxograma desenhado ao vivo a partir do ponto "Lead"
- * 2. Linhas se desdobram para: Mensagem, Qualificação, Agenda, Confirmação, Follow-up
- * 3. Cada caixa surge com "drop-in" e é preenchida pela I.A.
- * 4. Linhas se acendem com luz percorrendo o caminho
- * 5. Ícones aparecem sobre as caixas com fade-in
- * 6. Caixa final "Consulta marcada" cresce com halo verde
- *
- * 🆕 MELHORIAS V5:
- * - isActive: animação só inicia quando card está em foco
- * - Durações 2-2.5x mais lentas para melhor experiência
- * - Loop contínuo enquanto ativo
+ * 
+ * AJUSTE X APLICADO - 12 Cenas (~36s total, 3s por cena)
+ * 
+ * FASE 1 (Cenas 1-6): Elementos empilhados - fluxograma
+ * FASE 2 (Cenas 7-12): Efeitos em tela limpa - resultado
  */
-export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'active'>('waiting');
-  const [visibleNodes, setVisibleNodes] = useState(0);
-  const [activeConnection, setActiveConnection] = useState(-1);
-  const [showFinalGlow, setShowFinalGlow] = useState(false);
-  const [loopCount, setLoopCount] = useState(0);
+export const CardEffectAutomation: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
+  const [scene, setScene] = useState<number>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  const flowNodes = [
-    { id: 0, label: 'Lead', icon: User, x: 10, y: 45, color: 'from-blue-500 to-cyan-500' },
-    { id: 1, label: 'Mensagem', icon: MessageCircle, x: 28, y: 25, color: 'from-purple-500 to-indigo-500' },
-    { id: 2, label: 'Qualificação', icon: CheckCircle2, x: 28, y: 65, color: 'from-pink-500 to-rose-500' },
-    { id: 3, label: 'Agenda', icon: Calendar, x: 50, y: 45, color: 'from-orange-500 to-amber-500' },
-    { id: 4, label: 'Confirmação', icon: Mail, x: 72, y: 45, color: 'from-cyan-500 to-blue-500' },
-    { id: 5, label: 'Consulta', icon: CheckCircle2, x: 90, y: 45, color: 'from-green-500 to-emerald-500', isFinal: true },
-  ];
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
 
-  const connections = [
-    { from: 0, to: 1 },
-    { from: 0, to: 2 },
-    { from: 1, to: 3 },
-    { from: 2, to: 3 },
-    { from: 3, to: 4 },
-    { from: 4, to: 5 },
-  ];
-
-  // 🎬 Função para iniciar a sequência de animação
-  const startAnimation = () => {
-    // Limpar timers anteriores
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-
-    // Reset estados
-    setPhase('active');
-    setVisibleNodes(0);
-    setActiveConnection(-1);
-    setShowFinalGlow(false);
-
-    // Durações mais lentas (2-2.5x)
-    const NODE_DELAY = 1000;        // era 400ms (2.5x)
-    const CONNECTION_DELAY = 875;   // era 350ms (2.5x)
-    const FINAL_GLOW_DELAY = 8750;  // era 3500ms (2.5x)
-    const LOOP_DELAY = 12000;       // tempo até reiniciar
-
-    // Nós aparecem um a um
-    flowNodes.forEach((_, i) => {
-      timersRef.current.push(setTimeout(() => setVisibleNodes(i + 1), NODE_DELAY + i * NODE_DELAY));
-    });
-
-    // Conexões se iluminam
-    connections.forEach((_, i) => {
-      timersRef.current.push(setTimeout(() => setActiveConnection(i), 2000 + i * CONNECTION_DELAY));
-    });
-
-    // Glow final
-    timersRef.current.push(setTimeout(() => setShowFinalGlow(true), FINAL_GLOW_DELAY));
-
-    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
-    timersRef.current.push(setTimeout(() => {
-      if (loopCount < 1) {
-        setLoopCount(prev => prev + 1);
-      }
-    }, LOOP_DELAY));
   };
 
-  // 🎯 Iniciar animação quando isActive mudar para true
+  const startAnimation = () => {
+    clearTimers();
+    setScene(1);
+    for (let i = 2; i <= 12; i++) {
+      timersRef.current.push(setTimeout(() => setScene(i), (i - 1) * 3000 * scale));
+    }
+  };
+
   useEffect(() => {
     if (isActive) {
       startAnimation();
     } else {
-      // Parar e resetar quando não estiver ativo
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      setPhase('waiting');
-      setVisibleNodes(0);
-      setActiveConnection(-1);
-      setShowFinalGlow(false);
+      clearTimers();
+      setScene(0);
     }
+    return () => clearTimers();
+  }, [isActive, scale]);
 
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-    };
-  }, [isActive, loopCount]); // loopCount força reinício do loop
-
-  const getNodePosition = (id: number) => {
-    const node = flowNodes.find(n => n.id === id);
-    return node ? { x: node.x, y: node.y } : { x: 0, y: 0 };
-  };
-
-  // Se não estiver ativo, mostrar estado inicial sutil
-  const isAnimating = phase !== 'waiting';
+  const flowNodes = [
+    { id: 1, label: 'Lead', icon: User, color: 'from-blue-500 to-cyan-500' },
+    { id: 2, label: 'Mensagem', icon: MessageCircle, color: 'from-purple-500 to-indigo-500' },
+    { id: 3, label: 'Qualifica', icon: CheckCircle, color: 'from-pink-500 to-rose-500' },
+    { id: 4, label: 'Agenda', icon: Calendar, color: 'from-orange-500 to-amber-500' },
+    { id: 5, label: 'Confirma', icon: Mail, color: 'from-green-500 to-emerald-500' },
+  ];
 
   return (
-    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/20">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
       {/* Grid de fundo */}
       <div className="absolute inset-0 opacity-10">
         <div
           className="w-full h-full"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(16, 185, 129, 0.2) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(16, 185, 129, 0.2) 1px, transparent 1px)
+              radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.2) 0%, transparent 50%),
+              linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)
             `,
-            backgroundSize: '30px 30px',
+            backgroundSize: '100% 100%, 30px 30px, 30px 30px',
           }}
         />
       </div>
 
-      {/* SVG para conexões */}
-      <svg className="absolute inset-0 w-full h-full">
-        <defs>
-          <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-            <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
-          </linearGradient>
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-4 sm:px-6 pt-8 pb-16">
 
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Linhas de conexão */}
-        {connections.map((conn, i) => {
-          const from = getNodePosition(conn.from);
-          const to = getNodePosition(conn.to);
-          const isActive = activeConnection >= i;
-
-          return (
-            <g key={i}>
-              {/* Linha base */}
-              <motion.path
-                d={`M ${from.x}% ${from.y}% L ${to.x}% ${to.y}%`}
-                stroke="rgba(100, 116, 139, 0.3)"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-              />
-
-              {/* Linha ativa */}
-              <motion.path
-                d={`M ${from.x}% ${from.y}% L ${to.x}% ${to.y}%`}
-                stroke="#10b981"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-                filter="url(#glow)"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{
-                  pathLength: isActive && isAnimating ? 1 : 0,
-                  opacity: isActive && isAnimating ? 1 : 0,
-                }}
-                transition={{ duration: 0.75 }} // mais lento (era 0.3, 2.5x)
-              />
-
-              {/* Pulso de energia */}
-              {isActive && isAnimating && (
-                <motion.circle
-                  r="4"
-                  fill="#10b981"
-                  filter="url(#glow)"
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    cx: [`${from.x}%`, `${to.x}%`],
-                    cy: [`${from.y}%`, `${to.y}%`],
-                  }}
-                  transition={{
-                    duration: 2.5, // mais lento (era 1, 2.5x)
-                    repeat: Infinity,
-                    repeatDelay: 5, // mais lento (era 2, 2.5x)
-                    delay: i * 0.5, // mais lento (era 0.2, 2.5x)
-                  }}
-                />
-              )}
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Nós do fluxograma */}
-      {flowNodes.map((node, i) => {
-        const Icon = node.icon;
-        const isVisible = visibleNodes > i;
-        const isFinal = node.isFinal;
-
-        return (
-          <motion.div
-            key={node.id}
-            className="absolute"
-            style={{
-              left: `${node.x}%`,
-              top: `${node.y}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
-            initial={{ scale: 0, opacity: 0, y: -20 }}
-            animate={{
-              scale: isVisible ? 1 : 0,
-              opacity: isVisible ? 1 : 0,
-              y: isVisible ? 0 : -20,
-            }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 20,
-            }}
-          >
-            {/* Glow para nó final */}
-            {isFinal && showFinalGlow && isAnimating && (
-              <motion.div
-                className="absolute inset-0 bg-green-500 rounded-xl blur-xl"
-                initial={{ opacity: 0, scale: 1 }}
-                animate={{
-                  opacity: [0.3, 0.6, 0.3],
-                  scale: [1, 1.3, 1],
-                }}
-                transition={{ duration: 5, repeat: Infinity }} // mais lento (era 2, 2.5x)
-              />
-            )}
-
-            {/* Caixa do nó */}
-            <motion.div
-              className={`relative px-3 py-2 bg-gradient-to-br ${node.color} rounded-xl shadow-lg flex flex-col items-center gap-1 ${
-                isFinal ? 'scale-110' : ''
-              }`}
-              animate={isVisible && isAnimating ? {
-                boxShadow: isFinal && showFinalGlow
-                  ? ['0 0 0 rgba(16, 185, 129, 0)', '0 0 20px rgba(16, 185, 129, 0.5)', '0 0 0 rgba(16, 185, 129, 0)']
-                  : undefined,
-              } : {}}
-              transition={{ duration: 3.75, repeat: Infinity }} // mais lento (era 1.5, 2.5x)
+        {/* ========== FASE 1: ELEMENTOS EMPILHADOS (Cenas 1-6) ========== */}
+        <AnimatePresence>
+          {scene >= 1 && scene <= 6 && (
+            <motion.div 
+              className="flex flex-col items-center gap-4 w-full max-w-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
             >
-              {/* Efeito de preenchimento */}
+              {/* Cena 1: Título */}
               <motion.div
-                className="absolute inset-0 bg-white/20 rounded-xl"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: isVisible && isAnimating ? 1 : 0 }}
-                transition={{ delay: 0.5, duration: 0.75 }} // mais lento (era 0.2 delay e 0.3 duration, 2.5x)
-                style={{ originX: 0 }}
-              />
-
-              {/* Ícone */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: isVisible && isAnimating ? 1 : 0 }}
-                transition={{ delay: 0.75 }} // mais lento (era 0.3, 2.5x)
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 * scale }}
               >
-                <Icon className="w-4 h-4 text-white" />
+                <div className="flex items-center gap-2 justify-center mb-2">
+                  <motion.div
+                    className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center"
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Settings className="w-5 h-5 text-white" />
+                  </motion.div>
+                  <span className="text-lg font-bold text-emerald-300">Fluxo de Automação</span>
+                </div>
+                <p className="text-sm text-slate-400">Processos inteligentes com I.A.</p>
               </motion.div>
 
-              {/* Label */}
-              <span className="text-[9px] text-white font-medium whitespace-nowrap">{node.label}</span>
+              {/* Cena 2-6: Nós do fluxo aparecem */}
+              <motion.div
+                className="flex flex-wrap justify-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 * scale }}
+              >
+                {flowNodes.slice(0, Math.min(scene, 5)).map((node, i) => {
+                  const Icon = node.icon;
+                  return (
+                    <motion.div
+                      key={node.id}
+                      className="relative"
+                      initial={{ scale: 0, y: -20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      transition={{ type: 'spring', delay: i * 0.15 * scale }}
+                    >
+                      <motion.div
+                        className={`px-3 py-2 bg-gradient-to-br ${node.color} rounded-xl shadow-lg flex flex-col items-center gap-1`}
+                        animate={scene > node.id ? {
+                          boxShadow: ['0 0 0 rgba(16, 185, 129, 0)', '0 0 15px rgba(16, 185, 129, 0.4)', '0 0 0 rgba(16, 185, 129, 0)'],
+                        } : {}}
+                        transition={{ duration: 1.5, repeat: scene > node.id ? Infinity : 0 }}
+                      >
+                        <Icon className="w-4 h-4 text-white" />
+                        <span className="text-[9px] text-white font-medium">{node.label}</span>
+                      </motion.div>
+                      
+                      {/* Seta conectora */}
+                      {i < Math.min(scene, 5) - 1 && (
+                        <motion.div
+                          className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-0.5 bg-emerald-500"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={{ duration: 0.3 * scale, delay: 0.3 * scale }}
+                          style={{ originX: 0 }}
+                        />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
 
-              {/* Badge para nó final */}
-              {isFinal && showFinalGlow && isAnimating && (
+              {/* Cena 6: Status */}
+              {scene >= 6 && (
                 <motion.div
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center"
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 rounded-full"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', delay: 0.75 }} // mais lento (era 0.3, 2.5x)
+                  transition={{ type: 'spring' }}
                 >
-                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                  <motion.div
+                    className="w-2 h-2 bg-emerald-500 rounded-full"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  <span className="text-sm text-emerald-300">Fluxo ativo</span>
                 </motion.div>
               )}
             </motion.div>
-          </motion.div>
-        );
-      })}
+          )}
+        </AnimatePresence>
 
-      {/* Label inferior */}
-      <motion.div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center z-10"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: isAnimating ? 1 : 0.3, y: 0 }}
-        transition={{ delay: isAnimating ? 8.75 : 0, duration: 1.25 }} // mais lento (era 3.5 delay, 2.5x)
-      >
-        <p className="text-base font-medium text-emerald-300/80">
-          {phase === 'waiting' ? 'Aguardando...' : 'Fluxo automatizado ativo'}
-        </p>
-      </motion.div>
+        {/* ========== FASE 2: TELA LIMPA (Cenas 7-12) ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div 
+              className="flex flex-col items-center justify-center h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 * scale }}
+            >
+              {/* Cena 7: Grande ícone */}
+              {scene === 7 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-28 h-28 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl flex items-center justify-center shadow-2xl mx-auto"
+                    animate={{ boxShadow: ['0 0 30px rgba(16,185,129,0.3)', '0 0 60px rgba(16,185,129,0.6)', '0 0 30px rgba(16,185,129,0.3)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Settings className="w-14 h-14 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-white mt-4">Automação Ativa</p>
+                </motion.div>
+              )}
 
-      {/* Indicador de status */}
-      <motion.div
-        className="absolute top-4 right-4 flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0.3 }}
-        transition={{ delay: isAnimating ? 2.5 : 0 }}
-      >
-        <motion.div
-          className="w-2 h-2 bg-green-500 rounded-full"
-          animate={{ opacity: isAnimating ? [1, 0.5, 1] : 0.3 }}
-          transition={{ duration: 2.5, repeat: Infinity }}
-        />
-        <span className="text-[10px] text-green-400">
-          {phase === 'waiting' ? 'Aguardando ativação' : 'Automação ativa'}
-        </span>
-      </motion.div>
+              {/* Cena 8: Stats */}
+              {scene === 8 && (
+                <motion.div
+                  className="grid grid-cols-3 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  {[
+                    { label: 'Tarefas/dia', value: '100+' },
+                    { label: 'Tempo salvo', value: '8h' },
+                    { label: 'Erros', value: '0%' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      className="text-center p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/30"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.2 * scale }}
+                    >
+                      <p className="text-2xl font-bold text-emerald-400">{stat.value}</p>
+                      <p className="text-xs text-slate-400">{stat.label}</p>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
 
-      {/* Progress indicator */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
-              visibleNodes > i ? 'bg-emerald-400' : 'bg-slate-600'
-            }`}
-          />
-        ))}
+              {/* Cena 9: Raio */}
+              {scene === 9 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Zap className="w-20 h-20 text-emerald-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white mt-4">Velocidade 10x</p>
+                </motion.div>
+              )}
+
+              {/* Cena 10: Crescimento */}
+              {scene === 10 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <TrendingUp className="w-20 h-20 text-green-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white mt-4">Produtividade Escalável</p>
+                </motion.div>
+              )}
+
+              {/* Cena 11: Checkmark */}
+              {scene === 11 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto"
+                    animate={{ boxShadow: ['0 0 20px rgba(34,197,94,0.3)', '0 0 40px rgba(34,197,94,0.6)', '0 0 20px rgba(34,197,94,0.3)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <CheckCircle className="w-12 h-12 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-green-400 mt-4">24/7 Ativo</p>
+                </motion.div>
+              )}
+
+              {/* Cena 12: Mensagem Final */}
+              {scene === 12 && (
+                <motion.div
+                  className="text-center max-w-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 * scale }}
+                >
+                  <motion.div
+                    className="p-6 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl"
+                    animate={{ boxShadow: ['0 0 20px rgba(16,185,129,0.2)', '0 0 40px rgba(16,185,129,0.4)', '0 0 20px rgba(16,185,129,0.2)'] }}
+                    transition={{ duration: 2 * scale, repeat: Infinity }}
+                  >
+                    <Sparkles className="w-6 h-6 text-emerald-400 mx-auto mb-3" />
+                    <p className="text-lg font-medium text-white">
+                      <span className="text-emerald-400 font-bold">Fluxos e automações</span> que trabalham enquanto você descansa.
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Progress indicator */}
+        <div className="flex gap-1.5 mt-auto pt-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((s) => (
+            <motion.div
+              key={s}
+              className="w-2 h-2 rounded-full"
+              animate={{
+                backgroundColor: scene >= s ? '#10b981' : 'rgba(255,255,255,0.2)',
+                scale: scene === s ? 1.3 : 1
+              }}
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* Badge */}
+      <motion.div
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
+      >
+        <Settings className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="text-[10px] text-emerald-300 font-medium">Automação</span>
+      </motion.div>
     </div>
   );
 };
