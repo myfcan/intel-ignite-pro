@@ -299,9 +299,12 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     // Helper para renderizar um card baseado na config
     const renderCard = (cardConfig: any, key: string, isActive: boolean = true) => {
       const cardType = cardConfig.type || cardConfig.effectType || '';
+      const isValid = isValidCardEffectType(cardType);
+      
+      console.log(`🔍 [V5-DEBUG] cardType: "${cardType}" | isValidCardEffectType: ${isValid} | cardConfig:`, cardConfig);
 
       // 🎬 PRIORIDADE 1: Card Effect Cinematográfico
-      if (isValidCardEffectType(cardType)) {
+      if (isValid) {
         console.log(`🎬 [V5] Renderizando card cinematográfico: ${cardType} (isActive: ${isActive})`);
         return (
           <div key={key} className="my-6">
