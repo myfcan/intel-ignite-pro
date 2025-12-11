@@ -1,138 +1,63 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Rocket, Sparkles, Settings, BookOpen, Cpu } from 'lucide-react';
+import { User, Rocket, Sparkles, Settings, BookOpen, Cpu, Star, TrendingUp, CheckCircle } from 'lucide-react';
 import { CardEffectProps } from './index';
+
+const BASE_DURATION = 36;
 
 /**
  * CardEffectNewProfessions - "Novas profissões com I.A."
- *
- * Efeito cinematográfico:
- * 1. Fundo escurece, feixe de luz vertical surge no centro
- * 2. Silhuetas de pessoas aparecem com rótulos flutuantes
- * 3. Rótulos entram com slide-in alternado (esquerda/direita)
- * 4. Foguete é desenhado com linha neon
- * 5. Foguete faz "ignite" e sobe com rastro de partículas
- * 6. Confetti estoura quando o foguete sobe
- * 7. Frase final aparece na parte inferior
+ * 
+ * AJUSTE X APLICADO - 12 Cenas (~36s total, 3s por cena)
+ * 
+ * FASE 1 (Cenas 1-6): Elementos empilhados - profissões emergentes
+ * FASE 2 (Cenas 7-12): Efeitos em tela limpa - foguete e celebração
  */
-export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive = false }) => {
-  const [phase, setPhase] = useState<'waiting' | 'enter' | 'silhouettes' | 'rocket' | 'ignite' | 'complete'>('waiting');
-  const [visibleProfessions, setVisibleProfessions] = useState(0);
-  const [rocketDrawn, setRocketDrawn] = useState(false);
-  const [rocketLaunched, setRocketLaunched] = useState(false);
-  const [showQuote, setShowQuote] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [loopCount, setLoopCount] = useState(0);
+export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive = false, duration }) => {
+  const [scene, setScene] = useState<number>(0);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  const professions = [
-    { id: 1, label: 'Configurador de Agentes', icon: Settings, side: 'left' },
-    { id: 2, label: 'Consultor de Automações', icon: Cpu, side: 'right' },
-    { id: 3, label: 'Criador de Cursos com I.A.', icon: BookOpen, side: 'left' },
-    { id: 4, label: 'Especialista em Prompt', icon: Sparkles, side: 'right' },
-  ];
+  const scale = useMemo(() => {
+    if (!duration || duration <= 0) return 1;
+    return duration / BASE_DURATION;
+  }, [duration]);
 
-  // Confetti colors
-  const confettiColors = ['#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#22c55e', '#eab308', '#f97316'];
-
-  // 🎬 Função para iniciar a sequência de animação
-  const startAnimation = () => {
-    // Limpar timers anteriores
+  const clearTimers = () => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
-
-    // Reset estados
-    setPhase('enter');
-    setVisibleProfessions(0);
-    setRocketDrawn(false);
-    setRocketLaunched(false);
-    setShowQuote(false);
-    setShowConfetti(false);
-
-    // Durações mais lentas (2-2.5x)
-    const SILHOUETTES_DELAY = 1250;
-    const BASE_PROF_DELAY = 2000;
-    const PROF_INCREMENT = 1000;
-    const ROCKET_DELAY = 7000;
-    const IGNITE_DELAY = 8750;
-    const CONFETTI_DELAY = 9000; // Confetti logo após ignite
-    const QUOTE_DELAY = 10500;
-    const LOOP_DELAY = 15000;
-
-    // Fase silhouettes
-    timersRef.current.push(setTimeout(() => setPhase('silhouettes'), SILHOUETTES_DELAY));
-
-    // Profissões aparecem
-    professions.forEach((_, i) => {
-      timersRef.current.push(setTimeout(() => setVisibleProfessions(i + 1), BASE_PROF_DELAY + i * PROF_INCREMENT));
-    });
-
-    // Foguete desenha
-    timersRef.current.push(setTimeout(() => {
-      setPhase('rocket');
-      setRocketDrawn(true);
-    }, ROCKET_DELAY));
-
-    // Ignite
-    timersRef.current.push(setTimeout(() => {
-      setPhase('ignite');
-      setRocketLaunched(true);
-    }, IGNITE_DELAY));
-
-    // Confetti burst
-    timersRef.current.push(setTimeout(() => {
-      setShowConfetti(true);
-    }, CONFETTI_DELAY));
-
-    // Quote
-    timersRef.current.push(setTimeout(() => {
-      setPhase('complete');
-      setShowQuote(true);
-    }, QUOTE_DELAY));
-
-    // 🔄 Loop 2x: reiniciar animação apenas 2 vezes
-    timersRef.current.push(setTimeout(() => {
-      if (loopCount < 1) {
-        setLoopCount(prev => prev + 1);
-      }
-    }, LOOP_DELAY));
   };
 
-  // 🎯 Iniciar animação quando isActive mudar para true
+  const startAnimation = () => {
+    clearTimers();
+    setScene(1);
+    for (let i = 2; i <= 12; i++) {
+      timersRef.current.push(setTimeout(() => setScene(i), (i - 1) * 3000 * scale));
+    }
+  };
+
   useEffect(() => {
     if (isActive) {
       startAnimation();
     } else {
-      // Parar e resetar quando não estiver ativo
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current = [];
-      setPhase('waiting');
-      setVisibleProfessions(0);
-      setRocketDrawn(false);
-      setRocketLaunched(false);
-      setShowQuote(false);
-      setShowConfetti(false);
+      clearTimers();
+      setScene(0);
     }
+    return () => clearTimers();
+  }, [isActive, scale]);
 
-    return () => {
-      timersRef.current.forEach(clearTimeout);
-    };
-  }, [isActive, loopCount]);
+  const professions = [
+    { id: 1, label: 'Configurador de Agentes', icon: Settings, color: 'from-blue-500 to-cyan-500' },
+    { id: 2, label: 'Consultor de Automações', icon: Cpu, color: 'from-purple-500 to-indigo-500' },
+    { id: 3, label: 'Criador de Cursos com I.A.', icon: BookOpen, color: 'from-pink-500 to-rose-500' },
+    { id: 4, label: 'Especialista em Prompt', icon: Sparkles, color: 'from-orange-500 to-amber-500' },
+  ];
 
-  const isAnimating = phase !== 'waiting';
+  const confettiColors = ['#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#22c55e', '#eab308'];
 
   return (
-    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/20">
-      {/* Background que escurece */}
-      <motion.div
-        className="absolute inset-0 bg-black"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating && phase !== 'enter' ? 0.3 : 0 }}
-        transition={{ duration: 1.25 }}
-      />
-
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/30">
       {/* Estrelas de fundo */}
       <div className="absolute inset-0">
         {[...Array(30)].map((_, i) => (
@@ -143,373 +68,294 @@ export const CardEffectNewProfessions: React.FC<CardEffectProps> = ({ isActive =
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
-            animate={{
-              opacity: isAnimating ? [0.2, 0.8, 0.2] : 0.2,
-              scale: isAnimating ? [0.8, 1.2, 0.8] : 0.8,
-            }}
+            animate={scene > 0 ? {
+              opacity: [0.2, 0.8, 0.2],
+              scale: [0.8, 1.2, 0.8],
+            } : { opacity: 0.2 }}
             transition={{
-              duration: 3.75 + Math.random() * 5,
+              duration: 3 + Math.random() * 3,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: Math.random() * 3,
             }}
           />
         ))}
       </div>
 
-      {/* Feixe de luz central */}
-      <motion.div
-        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-24 h-full"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating && phase !== 'enter' ? 1 : 0 }}
-        transition={{ duration: 1.25 }}
-      >
-        <div
-          className="w-full h-full"
-          style={{
-            background: 'linear-gradient(to top, rgba(244, 63, 94, 0.3), rgba(244, 63, 94, 0.1), transparent)',
-          }}
-        />
-      </motion.div>
+      <div className="relative z-10 h-full flex flex-col items-center justify-start px-4 sm:px-6 pt-8 pb-16">
 
-      {/* Silhuetas com rótulos */}
-      <div className="absolute inset-x-0 bottom-20 sm:bottom-16 flex justify-center items-end gap-3 sm:gap-4 px-2">
-        {professions.map((prof, i) => {
-          const Icon = prof.icon;
-          const isVisible = isAnimating && visibleProfessions > i;
-
-          return (
-            <motion.div
-              key={prof.id}
-              className="relative flex flex-col items-center"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{
-                y: isVisible ? 0 : 20,
-                opacity: isVisible ? 1 : 0,
-              }}
-              transition={{ type: 'spring', stiffness: 100 }}
+        {/* ========== FASE 1: ELEMENTOS EMPILHADOS (Cenas 1-6) ========== */}
+        <AnimatePresence>
+          {scene >= 1 && scene <= 6 && (
+            <motion.div 
+              className="flex flex-col items-center gap-4 w-full max-w-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
             >
-              {/* Silhueta */}
-              <div className="w-10 h-14 sm:w-12 sm:h-16 bg-gradient-to-b from-slate-600/80 to-slate-800/80 rounded-t-full flex items-center justify-center">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-white/50" />
-              </div>
-
-              {/* Rótulo flutuante */}
+              {/* Cena 1: Título */}
               <motion.div
-                className={`absolute -top-6 sm:-top-8 left-1/2 -translate-x-1/2 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-rose-500/20 border border-rose-500/40 rounded-lg backdrop-blur-sm whitespace-nowrap`}
-                initial={{
-                  y: -10,
-                  opacity: 0,
-                }}
-                animate={{
-                  y: isVisible ? 0 : -10,
-                  opacity: isVisible ? 1 : 0,
-                }}
-                transition={{ delay: 0.5, type: 'spring' }}
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 * scale }}
               >
-                <div className="flex items-center gap-0.5 sm:gap-1">
-                  <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-rose-400" />
-                  <span className="text-[6px] sm:text-[8px] text-rose-300 font-medium">{prof.label}</span>
+                <div className="flex items-center gap-2 justify-center mb-2">
+                  <motion.div
+                    className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Star className="w-5 h-5 text-white" />
+                  </motion.div>
+                  <span className="text-lg font-bold text-rose-300">Novas Profissões</span>
                 </div>
+                <p className="text-sm text-slate-400">Carreiras do futuro com I.A.</p>
               </motion.div>
-            </motion.div>
-          );
-        })}
-      </div>
 
-      {/* Foguete */}
-      <motion.div
-        className="absolute left-1/2 -translate-x-1/2"
-        initial={{ bottom: '35%' }}
-        animate={{
-          bottom: isAnimating && rocketLaunched ? '100%' : '35%',
-        }}
-        transition={{
-          duration: isAnimating && rocketLaunched ? 2.5 : 0,
-          ease: 'easeIn',
-        }}
-      >
-        {/* Corpo do foguete - REDESENHADO */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{
-            opacity: isAnimating && rocketDrawn ? 1 : 0,
-            scale: isAnimating && rocketDrawn ? 1 : 0,
-          }}
-          transition={{ type: 'spring', stiffness: 120 }}
-        >
-          {/* Glow do foguete */}
-          <motion.div
-            className="absolute inset-0 bg-rose-500 rounded-full blur-xl"
-            animate={isAnimating && rocketLaunched ? {
-              opacity: [0.5, 0.8, 0.5],
-              scale: [1, 1.3, 1],
-            } : { opacity: 0.3 }}
-            transition={{ duration: 0.75, repeat: Infinity }}
-          />
-
-          {/* Foguete SVG - Design corrigido e centralizado */}
-          <svg width="48" height="80" viewBox="0 0 48 80" className="relative">
-            {/* Corpo principal do foguete */}
-            <defs>
-              <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#e2e8f0" />
-                <stop offset="100%" stopColor="#94a3b8" />
-              </linearGradient>
-              <linearGradient id="flameGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#facc15" />
-                <stop offset="50%" stopColor="#f97316" />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {/* Ponta do foguete */}
-            <path
-              d="M24 0 L32 20 L16 20 Z"
-              fill="url(#bodyGradient)"
-            />
-
-            {/* Corpo cilíndrico */}
-            <rect x="16" y="20" width="16" height="35" fill="url(#bodyGradient)" />
-
-            {/* Janela circular */}
-            <circle cx="24" cy="30" r="6" fill="#22d3ee" stroke="#e2e8f0" strokeWidth="2" />
-
-            {/* Asa esquerda - corrigida e simétrica */}
-            <path
-              d="M16 40 L6 55 L6 60 L16 55 Z"
-              fill="#f43f5e"
-            />
-
-            {/* Asa direita - corrigida e simétrica */}
-            <path
-              d="M32 40 L42 55 L42 60 L32 55 Z"
-              fill="#f43f5e"
-            />
-
-            {/* Base do foguete */}
-            <rect x="14" y="55" width="20" height="8" fill="#64748b" rx="2" />
-
-            {/* Bocal central da turbina */}
-            <rect x="20" y="63" width="8" height="6" fill="#475569" rx="1" />
-          </svg>
-
-          {/* Chama/Turbina - CORRIGIDA E CENTRALIZADA */}
-          <AnimatePresence>
-            {isAnimating && rocketLaunched && (
+              {/* Cena 2-5: Profissões aparecem */}
               <motion.div
-                className="absolute left-1/2 -translate-x-1/2"
-                style={{ top: '80px' }}
-                initial={{ opacity: 0, scaleY: 0 }}
-                animate={{ opacity: 1, scaleY: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                className="grid grid-cols-2 gap-3 w-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 * scale }}
               >
-                {/* Container centralizado para a chama */}
-                <div className="relative flex justify-center">
-                  {/* Chama principal - centralizada */}
-                  <motion.div
-                    className="w-6 h-16 rounded-b-full"
-                    style={{
-                      background: 'linear-gradient(to bottom, #facc15, #f97316, transparent)',
-                    }}
-                    animate={{
-                      scaleY: [1, 1.2, 1],
-                      scaleX: [1, 0.9, 1],
-                    }}
-                    transition={{
-                      duration: 0.15,
-                      repeat: Infinity,
-                    }}
-                  />
+                {professions.slice(0, Math.min(scene, 4)).map((prof, i) => {
+                  const Icon = prof.icon;
+                  return (
+                    <motion.div
+                      key={prof.id}
+                      className="relative"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ type: 'spring', delay: i * 0.2 * scale }}
+                    >
+                      {/* Silhueta */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-16 bg-gradient-to-b from-slate-600/80 to-slate-800/80 rounded-t-full flex items-center justify-center mb-2">
+                          <User className="w-6 h-6 text-white/50" />
+                        </div>
+                        
+                        {/* Badge de profissão */}
+                        <motion.div
+                          className={`px-2 py-1 bg-gradient-to-r ${prof.color} rounded-lg backdrop-blur-sm`}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', delay: (i + 1) * 0.15 * scale }}
+                        >
+                          <div className="flex items-center gap-1">
+                            <Icon className="w-3 h-3 text-white" />
+                            <span className="text-[8px] text-white font-medium">{prof.label}</span>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
 
-                  {/* Chama interna */}
-                  <motion.div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-10 rounded-b-full"
-                    style={{
-                      background: 'linear-gradient(to bottom, #fef08a, #fbbf24, transparent)',
-                    }}
-                    animate={{
-                      scaleY: [1, 1.3, 1],
-                    }}
-                    transition={{
-                      duration: 0.1,
-                      repeat: Infinity,
-                    }}
-                  />
+              {/* Cena 6: Foguete pequeno */}
+              {scene >= 6 && (
+                <motion.div
+                  className="flex items-center gap-2 px-4 py-2 bg-rose-500/20 border border-rose-500/40 rounded-full"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <Rocket className="w-4 h-4 text-rose-400" />
+                  <span className="text-sm text-rose-300">Novas oportunidades</span>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                  {/* Faíscas centralizadas */}
-                  {[...Array(10)].map((_, i) => (
+        {/* ========== FASE 2: TELA LIMPA (Cenas 7-12) ========== */}
+        <AnimatePresence>
+          {scene >= 7 && (
+            <motion.div 
+              className="flex flex-col items-center justify-center h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 * scale }}
+            >
+              {/* Cena 7: Grande foguete */}
+              {scene === 7 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  <motion.div
+                    className="w-28 h-28 bg-gradient-to-br from-rose-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-2xl mx-auto"
+                    animate={{ 
+                      boxShadow: ['0 0 30px rgba(244,63,94,0.3)', '0 0 60px rgba(244,63,94,0.6)', '0 0 30px rgba(244,63,94,0.3)'],
+                      y: [0, -5, 0]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Rocket className="w-14 h-14 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-white mt-4">Decolando!</p>
+                </motion.div>
+              )}
+
+              {/* Cena 8: Stats */}
+              {scene === 8 && (
+                <motion.div
+                  className="grid grid-cols-3 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 * scale }}
+                >
+                  {[
+                    { label: 'Novas carreiras', value: '100+' },
+                    { label: 'Demanda', value: 'Alta' },
+                    { label: 'Mercado', value: 'Global' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      className="text-center p-4 bg-rose-500/10 rounded-xl border border-rose-500/30"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.2 * scale }}
+                    >
+                      <p className="text-lg font-bold text-rose-400">{stat.value}</p>
+                      <p className="text-xs text-slate-400">{stat.label}</p>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Cena 9: Estrelas */}
+              {scene === 9 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="flex justify-center gap-2 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: i * 0.1 * scale, type: 'spring' }}
+                      >
+                        <Star className="w-10 h-10 text-rose-400 fill-rose-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+                  <p className="text-lg font-bold text-white">Oportunidades 5 Estrelas</p>
+                </motion.div>
+              )}
+
+              {/* Cena 10: Crescimento */}
+              {scene === 10 && (
+                <motion.div
+                  className="text-center"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <TrendingUp className="w-20 h-20 text-green-400 mx-auto" />
+                  </motion.div>
+                  <p className="text-lg font-bold text-white mt-4">Mercado em Expansão</p>
+                </motion.div>
+              )}
+
+              {/* Cena 11: Confetti + Checkmark */}
+              {scene === 11 && (
+                <motion.div
+                  className="text-center relative"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring' }}
+                >
+                  {/* Confetti */}
+                  {[...Array(20)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className="absolute w-1.5 h-1.5 bg-yellow-300 rounded-full"
+                      className="absolute w-2 h-2 rounded-full"
                       style={{
+                        backgroundColor: confettiColors[i % confettiColors.length],
                         left: '50%',
-                        top: '30%',
+                        top: '50%',
                       }}
+                      initial={{ opacity: 0, scale: 0 }}
                       animate={{
-                        y: [0, 30 + Math.random() * 25],
-                        x: [(Math.random() - 0.5) * 20, (Math.random() - 0.5) * 40],
-                        opacity: [1, 0],
-                        scale: [1, 0.3],
+                        opacity: [0, 1, 0],
+                        scale: [0, 1, 0.5],
+                        x: (Math.random() - 0.5) * 200,
+                        y: (Math.random() - 0.5) * 200,
                       }}
-                      transition={{
-                        duration: 0.5 + Math.random() * 0.3,
-                        repeat: Infinity,
-                        delay: Math.random() * 0.3,
-                      }}
+                      transition={{ duration: 1.5, delay: i * 0.05 }}
                     />
                   ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </motion.div>
-
-      {/* Rastro de partículas do foguete */}
-      <AnimatePresence>
-        {isAnimating && rocketLaunched && [...Array(15)].map((_, i) => (
-          <motion.div
-            key={`trail-${i}`}
-            className="absolute left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-400 rounded-full"
-            style={{ bottom: '35%' }}
-            initial={{ opacity: 0, y: 0 }}
-            animate={{
-              opacity: [0, 1, 0],
-              y: [0, 100 + i * 10],
-              x: (Math.random() - 0.5) * 30,
-            }}
-            transition={{
-              duration: 2,
-              delay: i * 0.125,
-            }}
-          />
-        ))}
-      </AnimatePresence>
-
-      {/* 🎊 CONFETTI BURST */}
-      <AnimatePresence>
-        {isAnimating && showConfetti && (
-          <>
-            {/* Confetti pieces */}
-            {[...Array(50)].map((_, i) => {
-              const startX = 50 + (Math.random() - 0.5) * 20;
-              const startY = 30;
-              const endX = startX + (Math.random() - 0.5) * 80;
-              const endY = startY + Math.random() * 60 + 20;
-              const rotation = Math.random() * 720 - 360;
-              const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-              const size = Math.random() * 8 + 4;
-              const isCircle = Math.random() > 0.5;
-
-              return (
-                <motion.div
-                  key={`confetti-${i}`}
-                  className="absolute"
-                  style={{
-                    left: `${startX}%`,
-                    top: `${startY}%`,
-                    width: isCircle ? size : size * 0.4,
-                    height: size,
-                    backgroundColor: color,
-                    borderRadius: isCircle ? '50%' : '2px',
-                  }}
-                  initial={{
-                    opacity: 0,
-                    scale: 0,
-                    rotate: 0,
-                  }}
-                  animate={{
-                    opacity: [0, 1, 1, 0],
-                    scale: [0, 1, 1, 0.5],
-                    x: `${(endX - startX)}%`,
-                    y: `${(endY - startY)}%`,
-                    rotate: rotation,
-                  }}
-                  transition={{
-                    duration: 2 + Math.random(),
-                    delay: Math.random() * 0.3,
-                    ease: [0.25, 0.46, 0.45, 0.94],
-                  }}
-                />
-              );
-            })}
-
-            {/* Sparkle stars */}
-            {[...Array(12)].map((_, i) => {
-              const x = 30 + Math.random() * 40;
-              const y = 20 + Math.random() * 30;
-
-              return (
-                <motion.div
-                  key={`star-${i}`}
-                  className="absolute"
-                  style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                  }}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0],
-                  }}
-                  transition={{
-                    duration: 0.8,
-                    delay: 0.2 + Math.random() * 0.5,
-                  }}
-                >
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                  
+                  <motion.div
+                    className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto"
+                    animate={{ boxShadow: ['0 0 20px rgba(34,197,94,0.3)', '0 0 40px rgba(34,197,94,0.6)', '0 0 20px rgba(34,197,94,0.3)'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <CheckCircle className="w-12 h-12 text-white" />
+                  </motion.div>
+                  <p className="text-xl font-bold text-green-400 mt-4">Futuro Garantido</p>
                 </motion.div>
-              );
-            })}
-          </>
-        )}
-      </AnimatePresence>
+              )}
 
-      {/* Frase final */}
-      <AnimatePresence>
-        {isAnimating && showQuote && (
-          <motion.div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[280px] text-center"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.25 }}
-          >
-            <p className="text-xs text-rose-300/80 font-medium">
-              "Quem aprende agora escolhe onde quer estar nessa cena"
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {/* Cena 12: Mensagem Final */}
+              {scene === 12 && (
+                <motion.div
+                  className="text-center max-w-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 * scale }}
+                >
+                  <motion.div
+                    className="p-6 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-purple-500/10 border border-rose-500/30 rounded-2xl"
+                    animate={{ boxShadow: ['0 0 20px rgba(244,63,94,0.2)', '0 0 40px rgba(244,63,94,0.4)', '0 0 20px rgba(244,63,94,0.2)'] }}
+                    transition={{ duration: 2 * scale, repeat: Infinity }}
+                  >
+                    <Sparkles className="w-6 h-6 text-rose-400 mx-auto mb-3" />
+                    <p className="text-lg font-medium text-white">
+                      A I.A. <span className="text-rose-400 font-bold">cria novas profissões</span>. Quem aprende agora escolhe onde quer estar.
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Badge decorativo */}
-      <motion.div
-        className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-rose-500/20 border border-rose-500/30 rounded-full"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isAnimating ? 1 : 0 }}
-        transition={{ delay: isAnimating ? 2.5 : 0 }}
-      >
-        <Rocket className="w-3 h-3 text-rose-400" />
-        <span className="text-[9px] text-rose-300">Novas carreiras</span>
-      </motion.div>
-
-      {/* Progress indicator */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
-              (phase === 'enter' && i === 0) ||
-              (phase === 'silhouettes' && i <= visibleProfessions && i <= 2) ||
-              ((phase === 'rocket' || phase === 'ignite') && i <= 3) ||
-              (phase === 'complete' && i <= 4)
-                ? 'bg-rose-400'
-                : 'bg-slate-600'
-            }`}
-          />
-        ))}
+        {/* Progress indicator */}
+        <div className="flex gap-1.5 mt-auto pt-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((s) => (
+            <motion.div
+              key={s}
+              className="w-2 h-2 rounded-full"
+              animate={{
+                backgroundColor: scene >= s ? '#f43f5e' : 'rgba(255,255,255,0.2)',
+                scale: scene === s ? 1.3 : 1
+              }}
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* Badge */}
+      <motion.div
+        className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: scene > 0 ? 1 : 0 }}
+      >
+        <Star className="w-3.5 h-3.5 text-rose-400" />
+        <span className="text-[10px] text-rose-300 font-medium">Novas Profissões</span>
+      </motion.div>
     </div>
   );
 };
