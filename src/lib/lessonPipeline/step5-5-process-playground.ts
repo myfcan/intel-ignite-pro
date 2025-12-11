@@ -262,9 +262,11 @@ export async function step5_5ProcessPlayground(
       console.log(`✅ [STEP 5.5] Seção ${index + 1}: realConfig padrão gerado`);
 
       // Retornar seção com realConfig expandido
+      // ✅ CORREÇÃO: Preservar TODOS os campos originais do playgroundConfig (useBridgeVersion, playgroundExampleV3, etc.)
       return {
         ...section,
         playgroundConfig: {
+          ...config, // ✅ Preservar todos os campos originais (useBridgeVersion, playgroundExampleV3, etc.)
           type: 'real-playground',
           instruction: config.instruction, // Manter instruction original
           realConfig: generatedRealConfig
