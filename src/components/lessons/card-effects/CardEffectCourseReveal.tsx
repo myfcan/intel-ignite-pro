@@ -42,7 +42,7 @@ export const CardEffectCourseReveal: React.FC<CardEffectProps> = ({ isActive, du
   ];
 
   return (
-    <div className="relative w-full min-h-[480px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 via-purple-900 to-indigo-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950 via-purple-900 to-indigo-950">
       <div className="absolute inset-0 opacity-30">
         {[...Array(20)].map((_, i) => (
           <motion.div

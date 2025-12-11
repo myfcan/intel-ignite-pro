@@ -41,7 +41,7 @@ export const CardEffectThreeBlocks: React.FC<CardEffectProps> = ({ isActive, dur
   ];
 
   return (
-    <div className="relative w-full min-h-[480px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950">
       <div className="absolute inset-0 opacity-20">
         {[...Array(12)].map((_, i) => (
           <motion.div

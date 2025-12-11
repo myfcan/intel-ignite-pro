@@ -42,7 +42,7 @@ export const CardEffectStructureDraft: React.FC<CardEffectProps> = ({ isActive, 
   ];
 
   return (
-    <div className="relative w-full min-h-[480px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-950">
       <div className="absolute inset-0 opacity-20">
         {[...Array(6)].map((_, i) => (
           <motion.div
