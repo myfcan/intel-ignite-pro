@@ -42,7 +42,7 @@ export const CardEffectSkeletonBuilder: React.FC<CardEffectProps> = ({ isActive,
   ];
 
   return (
-    <div className="relative w-full min-h-[480px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-amber-950 to-orange-950">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-amber-950 to-orange-950">
       <div className="absolute inset-0 opacity-20">
         {[...Array(12)].map((_, i) => (
           <motion.div
