@@ -4,27 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Layers, TrendingUp, ArrowRight, Star, Zap } from 'lucide-react';
 
-interface CardEffectDeepIntroProps {
-  onComplete?: () => void;
+interface CardEffectProps {
+  isActive?: boolean;
+  duration?: number;
 }
 
-export const CardEffectDeepIntro = ({ onComplete }: CardEffectDeepIntroProps) => {
+export const CardEffectDeepIntro: React.FC<CardEffectProps> = ({ isActive = true }) => {
   const [currentScene, setCurrentScene] = useState(0);
   const totalScenes = 11;
   const sceneDuration = 3000;
 
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       setCurrentScene(prev => {
         if (prev >= totalScenes - 1) {
-          setTimeout(() => onComplete?.(), 500);
           return 0;
         }
         return prev + 1;
       });
     }, sceneDuration);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [isActive]);
 
   const contentTypes = [
     { icon: BookOpen, label: 'Post rápido', time: '30s', depth: 1 },

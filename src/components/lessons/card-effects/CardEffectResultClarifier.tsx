@@ -4,27 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flag, MapPin, ArrowRight, Star, Sparkles, CheckCircle } from 'lucide-react';
 
-interface CardEffectResultClarifierProps {
-  onComplete?: () => void;
+interface CardEffectProps {
+  isActive?: boolean;
+  duration?: number;
 }
 
-export const CardEffectResultClarifier = ({ onComplete }: CardEffectResultClarifierProps) => {
+export const CardEffectResultClarifier: React.FC<CardEffectProps> = ({ isActive = true }) => {
   const [currentScene, setCurrentScene] = useState(0);
   const totalScenes = 11;
   const sceneDuration = 3000;
 
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       setCurrentScene(prev => {
         if (prev >= totalScenes - 1) {
-          setTimeout(() => onComplete?.(), 500);
           return 0;
         }
         return prev + 1;
       });
     }, sceneDuration);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [isActive]);
 
   return (
     <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-green-950 to-slate-900">

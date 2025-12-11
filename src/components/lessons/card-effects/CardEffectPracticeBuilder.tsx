@@ -4,27 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, CheckSquare, HelpCircle, Lightbulb, ArrowRight, Star } from 'lucide-react';
 
-interface CardEffectPracticeBuilderProps {
-  onComplete?: () => void;
+interface CardEffectProps {
+  isActive?: boolean;
+  duration?: number;
 }
 
-export const CardEffectPracticeBuilder = ({ onComplete }: CardEffectPracticeBuilderProps) => {
+export const CardEffectPracticeBuilder: React.FC<CardEffectProps> = ({ isActive = true }) => {
   const [currentScene, setCurrentScene] = useState(0);
   const totalScenes = 11;
   const sceneDuration = 3000;
 
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       setCurrentScene(prev => {
         if (prev >= totalScenes - 1) {
-          setTimeout(() => onComplete?.(), 500);
           return 0;
         }
         return prev + 1;
       });
     }, sceneDuration);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [isActive]);
 
   const exerciseTypes = [
     { icon: CheckSquare, label: 'Exercícios práticos', color: 'from-orange-500 to-red-500' },

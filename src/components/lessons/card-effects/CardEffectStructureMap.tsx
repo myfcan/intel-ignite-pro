@@ -4,27 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Map, Layers, GitBranch, BookOpen, CheckCircle, ArrowDown } from 'lucide-react';
 
-interface CardEffectStructureMapProps {
-  onComplete?: () => void;
+interface CardEffectProps {
+  isActive?: boolean;
+  duration?: number;
 }
 
-export const CardEffectStructureMap = ({ onComplete }: CardEffectStructureMapProps) => {
+export const CardEffectStructureMap: React.FC<CardEffectProps> = ({ isActive = true }) => {
   const [currentScene, setCurrentScene] = useState(0);
   const totalScenes = 11;
   const sceneDuration = 3000;
 
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
       setCurrentScene(prev => {
         if (prev >= totalScenes - 1) {
-          setTimeout(() => onComplete?.(), 500);
           return 0;
         }
         return prev + 1;
       });
     }, sceneDuration);
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [isActive]);
 
   const structureLevels = [
     { label: 'Módulos', count: 4, color: 'from-blue-500 to-blue-600' },
