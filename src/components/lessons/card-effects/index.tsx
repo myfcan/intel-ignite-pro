@@ -169,6 +169,21 @@ import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
+// ============================================================
+// AULA 10 - Conteúdo Profundo: Cursos, Livros e Infoprodutos com I.A.
+// ============================================================
+import { CardEffectCoreTriangle } from './CardEffectCoreTriangle';
+import { CardEffectObjectiveFocus } from './CardEffectObjectiveFocus';
+import { CardEffectVideoCourseView } from './CardEffectVideoCourseView';
+import { CardEffectEbookView } from './CardEffectEbookView';
+import { CardEffectMultiFormat } from './CardEffectMultiFormat';
+import { CardEffectToolGroups } from './CardEffectToolGroups';
+import { CardEffectTextTools } from './CardEffectTextTools';
+import { CardEffectVisualTools } from './CardEffectVisualTools';
+import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
+import { CardEffectEditorInChief } from './CardEffectEditorInChief';
+import { CardEffectLongTermAsset } from './CardEffectLongTermAsset';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
