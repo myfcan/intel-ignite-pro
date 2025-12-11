@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   Sparkles,
   Copy,
-  Check
+  Check,
+  BookOpen
 } from 'lucide-react';
 
 // ============================================================================
@@ -36,15 +37,17 @@ interface PlaygroundBridgeV3Props {
 
 // Opções de chips para cada categoria
 const FORMAT_OPTIONS = ['Curso em vídeo', 'eBook', 'Apostila', 'Workshop'];
-const AUDIENCE_OPTIONS = ['Público em geral', 'Mães 40+', 'Médicos', 'Professores'];
-const RESULT_OPTIONS = ['Controlar despesas', 'Dar a primeira aula', 'Liderar reuniões'];
+const AUDIENCE_OPTIONS = ['Público em geral', 'Mães 40+', 'Professores', 'Médicos'];
+const MODULES_OPTIONS = ['3', '4', '5'];
+const CONTENT_TYPE_OPTIONS = ['Vídeos curtos', 'Aulas mais longas', 'Leitura / eBook'];
 
 /**
  * 🚀 PLAYGROUND BRIDGE V3 - MINI-FERRAMENTA INTERATIVA
  * 
  * Step 1: I DO - Veja o exemplo
- * Step 2: WE DO - Escolha seu caso real (chips + inputs)
- * Step 3: YOU DO - Adapte e teste
+ * Step 2: WE DO (parte 1) - Escolha seu caso
+ * Step 3: WE DO (parte 2) - Monte a estrutura
+ * Step 4: YOU DO - Adapte e teste
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -53,17 +56,22 @@ export function PlaygroundBridgeV3({
   lessonId,
 }: PlaygroundBridgeV3Props) {
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
 
-  // Estado das escolhas do usuário no Step 2
+  // Estado das escolhas do usuário - Step 2
   const [selectedFormat, setSelectedFormat] = useState('');
   const [customFormat, setCustomFormat] = useState('');
   const [theme, setTheme] = useState('');
   const [selectedAudience, setSelectedAudience] = useState('');
   const [customAudience, setCustomAudience] = useState('');
-  const [selectedResult, setSelectedResult] = useState('');
-  const [customResult, setCustomResult] = useState('');
+
+  // Estado das escolhas do usuário - Step 3
+  const [selectedModules, setSelectedModules] = useState('');
+  const [customModules, setCustomModules] = useState('');
+  const [selectedContentType, setSelectedContentType] = useState('');
+  const [hasExercises, setHasExercises] = useState<boolean | null>(null);
+  const [desiredResult, setDesiredResult] = useState('');
 
   if (!playgroundExample) {
     return (
@@ -77,15 +85,18 @@ export function PlaygroundBridgeV3({
   // Valores finais para o prompt
   const finalFormat = selectedFormat === 'Outro' ? customFormat : selectedFormat;
   const finalAudience = selectedAudience === 'Outro' ? customAudience : selectedAudience;
-  const finalResult = selectedResult === 'Outro' ? customResult : selectedResult;
+  const finalModules = selectedModules === 'Outro' ? customModules : selectedModules;
+  const exercisesText = hasExercises === true ? 'exercícios ao final de cada módulo' : hasExercises === false ? 'sem exercícios' : '';
 
   // Monta o prompt com as escolhas do usuário
   const buildPrompt = () => {
     let prompt = playgroundExample.examplePrompt;
     if (finalFormat) prompt = prompt.replace(/\[curso ou eBook\]/gi, finalFormat);
-    if (theme) prompt = prompt.replace(/\[tema do curso ou eBook\]/gi, theme);
+    if (theme) prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, theme);
     if (finalAudience) prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, finalAudience);
-    if (finalResult) prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, finalResult);
+    if (finalModules) prompt = prompt.replace(/\[número de módulos\]/gi, finalModules);
+    if (desiredResult) prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, desiredResult);
+    if (exercisesText) prompt = prompt.replace(/\[exercícios ou atividades\]/gi, exercisesText);
     return prompt;
   };
 
@@ -122,17 +133,48 @@ export function PlaygroundBridgeV3({
     </button>
   );
 
+  // Radio option
+  const RadioOption = ({
+    label,
+    selected,
+    onClick
+  }: {
+    label: string;
+    selected: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border transition-all duration-150 ${
+        selected 
+          ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400 dark:border-violet-600' 
+          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-violet-300'
+      }`}
+    >
+      <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+        selected ? 'border-violet-600' : 'border-slate-300 dark:border-slate-600'
+      }`}>
+        {selected && <div className="w-1.5 h-1.5 rounded-full bg-violet-600" />}
+      </div>
+      <span className="text-foreground/80">{label}</span>
+    </button>
+  );
+
   // Renderiza prompt com destaques das escolhas
   const renderPromptWithHighlights = () => {
     const parts = playgroundExample.examplePrompt.split(/(\[[^\]]+\])/g);
     return parts.map((part, idx) => {
       if (part.startsWith('[') && part.endsWith(']')) {
-        // Verifica se há um valor preenchido para este placeholder
         let value = '';
-        if (part.toLowerCase().includes('curso ou ebook')) value = finalFormat;
-        else if (part.toLowerCase().includes('tema')) value = theme;
-        else if (part.toLowerCase().includes('quem vai')) value = finalAudience;
-        else if (part.toLowerCase().includes('conseguir fazer')) value = finalResult;
+        const lowerPart = part.toLowerCase();
+        
+        if (lowerPart.includes('curso ou ebook')) value = finalFormat;
+        else if (lowerPart.includes('assunto principal')) value = theme;
+        else if (lowerPart.includes('quem vai')) value = finalAudience;
+        else if (lowerPart.includes('número de módulos')) value = finalModules;
+        else if (lowerPart.includes('conseguir fazer')) value = desiredResult;
+        else if (lowerPart.includes('exercícios')) value = exercisesText;
         
         if (value) {
           return (
@@ -156,6 +198,18 @@ export function PlaygroundBridgeV3({
       return <span key={idx}>{part}</span>;
     });
   };
+
+  const getStepInfo = (s: number) => {
+    switch(s) {
+      case 1: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
+      case 2: return { icon: '🧩', label: 'ESCOLHA SEU CASO', color: 'blue' };
+      case 3: return { icon: '📚', label: 'MONTE A ESTRUTURA', color: 'amber' };
+      case 4: return { icon: '🚀', label: 'ADAPTE E TESTE', color: 'purple' };
+      default: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
+    }
+  };
+
+  const stepInfo = getStepInfo(step);
 
   if (phase === 'playground') {
     return (
@@ -204,9 +258,9 @@ export function PlaygroundBridgeV3({
               </button>
             </div>
             
-            {/* Progress dots */}
+            {/* Progress dots - 4 steps */}
             <div className="flex justify-center gap-2 mt-2">
-              {[1, 2, 3].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div 
                   key={s}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -230,20 +284,24 @@ export function PlaygroundBridgeV3({
               {/* Badge + Título do step */}
               <div className="flex items-center gap-2.5 mb-3">
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                  step === 1 ? 'bg-emerald-500' : step === 2 ? 'bg-blue-500' : 'bg-purple-500'
+                  step === 1 ? 'bg-emerald-500' : 
+                  step === 2 ? 'bg-blue-500' : 
+                  step === 3 ? 'bg-amber-500' : 
+                  'bg-purple-500'
                 }`}>
                   {step}
                 </span>
                 <span className={`text-xs font-bold uppercase tracking-wide ${
                   step === 1 ? 'text-emerald-700 dark:text-emerald-400' : 
                   step === 2 ? 'text-blue-700 dark:text-blue-400' : 
+                  step === 3 ? 'text-amber-700 dark:text-amber-400' : 
                   'text-purple-700 dark:text-purple-400'
                 }`}>
-                  {step === 1 ? '👀 VEJA O EXEMPLO' : step === 2 ? '🧩 ESCOLHA SEU CASO' : '🚀 ADAPTE E TESTE'}
+                  {stepInfo.icon} {stepInfo.label}
                 </span>
               </div>
 
-              {/* STEP 1: I DO */}
+              {/* STEP 1: I DO - Veja o exemplo */}
               {step === 1 && (
                 <div className="space-y-3">
                   <p className="text-sm text-foreground leading-relaxed">
@@ -263,7 +321,7 @@ export function PlaygroundBridgeV3({
                 </div>
               )}
 
-              {/* STEP 2: WE DO - Interativo com chips */}
+              {/* STEP 2: WE DO (parte 1) - Escolha seu caso */}
               {step === 2 && (
                 <div className="space-y-3">
                   {/* Formato */}
@@ -300,7 +358,7 @@ export function PlaygroundBridgeV3({
                     <Input
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
-                      placeholder="Ex.: organização financeira para autônomos"
+                      placeholder="Ex.: gestão de marketing, dieta low carb..."
                       className="h-8 text-xs"
                     />
                   </div>
@@ -332,42 +390,91 @@ export function PlaygroundBridgeV3({
                       />
                     )}
                   </div>
+                </div>
+              )}
 
-                  {/* Resultado */}
+              {/* STEP 3: WE DO (parte 2) - Monte a estrutura */}
+              {step === 3 && (
+                <div className="space-y-3">
+                  {/* Módulos */}
                   <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Resultado desejado:</p>
+                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Quantos módulos ou capítulos?</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {RESULT_OPTIONS.map((opt) => (
+                      {MODULES_OPTIONS.map((opt) => (
                         <SelectChip
                           key={opt}
                           label={opt}
-                          selected={selectedResult === opt}
-                          onClick={() => setSelectedResult(selectedResult === opt ? '' : opt)}
+                          selected={selectedModules === opt}
+                          onClick={() => setSelectedModules(selectedModules === opt ? '' : opt)}
                         />
                       ))}
                       <SelectChip
                         label="Outro"
-                        selected={selectedResult === 'Outro'}
-                        onClick={() => setSelectedResult(selectedResult === 'Outro' ? '' : 'Outro')}
+                        selected={selectedModules === 'Outro'}
+                        onClick={() => setSelectedModules(selectedModules === 'Outro' ? '' : 'Outro')}
                       />
                     </div>
-                    {selectedResult === 'Outro' && (
+                    {selectedModules === 'Outro' && (
                       <Input
-                        value={customResult}
-                        onChange={(e) => setCustomResult(e.target.value)}
-                        placeholder="Ex.: Montar um portfólio..."
-                        className="mt-1.5 h-8 text-xs"
+                        type="number"
+                        value={customModules}
+                        onChange={(e) => setCustomModules(e.target.value)}
+                        placeholder="Ex.: 6, 7, 8..."
+                        className="mt-1.5 h-8 text-xs w-24"
                       />
                     )}
+                  </div>
+
+                  {/* Tipo de conteúdo */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Tipo de conteúdo principal:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CONTENT_TYPE_OPTIONS.map((opt) => (
+                        <SelectChip
+                          key={opt}
+                          label={opt}
+                          selected={selectedContentType === opt}
+                          onClick={() => setSelectedContentType(selectedContentType === opt ? '' : opt)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Exercícios */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Vai ter exercícios ou atividades?</p>
+                    <div className="flex flex-col gap-1.5">
+                      <RadioOption
+                        label="Não"
+                        selected={hasExercises === false}
+                        onClick={() => setHasExercises(false)}
+                      />
+                      <RadioOption
+                        label="Sim, no final de cada módulo"
+                        selected={hasExercises === true}
+                        onClick={() => setHasExercises(true)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Resultado desejado */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Resultado desejado:</p>
+                    <Input
+                      value={desiredResult}
+                      onChange={(e) => setDesiredResult(e.target.value)}
+                      placeholder="Ex.: controlar despesas, dar a primeira aula..."
+                      className="h-8 text-xs"
+                    />
                   </div>
                 </div>
               )}
 
-              {/* STEP 3: YOU DO */}
-              {step === 3 && (
+              {/* STEP 4: YOU DO - Adapte e teste */}
+              {step === 4 && (
                 <div className="space-y-3">
                   <p className="text-xs text-foreground/70">
-                    Veja como suas escolhas viram um prompt pronto. Você pode copiar ou ajustar antes de testar.
+                    Confira o prompt abaixo. Se quiser, ajuste os colchetes com seu caso real e depois teste no Playground.
                   </p>
                   
                   <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
@@ -405,7 +512,7 @@ export function PlaygroundBridgeV3({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+                onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3 | 4)}
                 className="text-xs order-2 sm:order-1"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" />
@@ -417,9 +524,9 @@ export function PlaygroundBridgeV3({
             
             <div className="flex-1 hidden sm:block" />
             
-            {step < 3 ? (
+            {step < 4 ? (
               <Button
-                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3 | 4)}
                 size="sm"
                 className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-5 order-1 sm:order-2"
               >
