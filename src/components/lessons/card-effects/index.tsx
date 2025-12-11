@@ -183,6 +183,7 @@ import { CardEffectVisualTools } from './CardEffectVisualTools';
 import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
 import { CardEffectEditorInChief } from './CardEffectEditorInChief';
 import { CardEffectLongTermAsset } from './CardEffectLongTermAsset';
+import { CardEffectModuleMap } from './CardEffectModuleMap';
 
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
@@ -345,6 +346,7 @@ export { CardEffectVisualTools } from './CardEffectVisualTools';
 export { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
 export { CardEffectEditorInChief } from './CardEffectEditorInChief';
 export { CardEffectLongTermAsset } from './CardEffectLongTermAsset';
+export { CardEffectModuleMap } from './CardEffectModuleMap';
 
 export type CardEffectType =
   // AULA 1 - Fundamentos
@@ -395,7 +397,7 @@ export type CardEffectType =
   // AULA 10 - Cursos, Livros e Infoprodutos com I.A.
   | 'core-triangle' | 'objective-focus' | 'video-course-view' | 'ebook-view'
   | 'multi-format' | 'tool-groups' | 'text-tools' | 'visual-tools'
-  | 'coauthor-role' | 'editor-in-chief' | 'long-term-asset';
+  | 'coauthor-role' | 'editor-in-chief' | 'long-term-asset' | 'module-map';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -555,6 +557,7 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'coauthor-role': CardEffectCoauthorRole,
   'editor-in-chief': CardEffectEditorInChief,
   'long-term-asset': CardEffectLongTermAsset,
+  'module-map': CardEffectModuleMap,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -653,6 +656,7 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'coauthor-role': 'Papel de Coautor',
   'editor-in-chief': 'Editor-Chefe',
   'long-term-asset': 'Ativo de Longo Prazo',
+  'module-map': 'Mapa de Módulos',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -765,6 +769,7 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'coauthor-role': 'I.A. como coautor inteligente',
   'editor-in-chief': 'Você como editor-chefe',
   'long-term-asset': 'Conteúdo como ativo de longo prazo',
+  'module-map': 'Mapa visual dos módulos do curso',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -825,7 +830,7 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
   'aula-10': [
     'core-triangle', 'objective-focus', 'video-course-view', 'ebook-view',
     'multi-format', 'tool-groups', 'text-tools', 'visual-tools',
-    'coauthor-role', 'editor-in-chief', 'long-term-asset',
+    'coauthor-role', 'editor-in-chief', 'long-term-asset', 'module-map',
   ],
 };
 
