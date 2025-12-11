@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,13 @@ import {
   Eye, 
   ListChecks, 
   Rocket,
-  Copy, 
-  Check,
   X,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 // ============================================================================
-// CONTRATO DE DADOS V3 - Idêntico ao V2, compatível
+// CONTRATO DE DADOS V3
 // ============================================================================
 export interface PlaygroundExampleDataV3 {
   title: string;              // título curto do modal (~60 chars)
@@ -32,11 +30,11 @@ interface PlaygroundBridgeV3Props {
 }
 
 /**
- * 🚀 PLAYGROUND BRIDGE V3 - "Turbo"
+ * 🚀 PLAYGROUND BRIDGE V3
  * 
- * 1 modal único com 3 blocos estáticos (I DO / WE DO / YOU DO)
- * Altura máxima: 1-1.5 telas mobile
- * Sem wizard, sem complexidade - micro-ferramenta guiada
+ * 1 modal único com 3 blocos (I DO / WE DO / YOU DO)
+ * Bloco 3 tem textarea EDITÁVEL para o usuário adaptar o prompt
+ * Botão final envia o prompt editado para o PlaygroundRealChat
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -45,9 +43,15 @@ export function PlaygroundBridgeV3({
   lessonId,
 }: PlaygroundBridgeV3Props) {
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
-  const [copied, setCopied] = useState(false);
   const [highlightedReq, setHighlightedReq] = useState<number | null>(null);
-  const { toast } = useToast();
+  const [editedPrompt, setEditedPrompt] = useState('');
+
+  // Inicializa o prompt editável com o exemplo
+  useEffect(() => {
+    if (playgroundExample?.examplePrompt) {
+      setEditedPrompt(playgroundExample.examplePrompt);
+    }
+  }, [playgroundExample?.examplePrompt]);
 
   // Fallback: se não tem exemplo, vai direto pro playground
   if (!playgroundExample) {
@@ -59,26 +63,37 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  const handleCopyPrompt = useCallback(() => {
-    if (!playgroundExample?.examplePrompt) return;
-    
-    navigator.clipboard.writeText(playgroundExample.examplePrompt);
-    setCopied(true);
-    toast({
-      title: "Copiado!",
-      description: "Prompt copiado. Agora adapte os [colchetes] para seu caso.",
-    });
-    
-    setTimeout(() => setCopied(false), 2000);
-  }, [playgroundExample?.examplePrompt, toast]);
-
   const handleGoToPlayground = useCallback(() => {
     setPhase('playground');
   }, []);
 
-  // Destaca colchetes correspondentes ao requirement clicado
-  const highlightBrackets = (text: string) => {
-    const parts = text.split(/(\[[^\]]+\])/g);
+  // Extrai a label (antes do :) e o placeholder (dentro de [])
+  const parseRequirement = (req: string) => {
+    const colonIndex = req.indexOf(':');
+    if (colonIndex === -1) return { label: req, placeholder: '' };
+    
+    const label = req.substring(0, colonIndex + 1).trim();
+    const rest = req.substring(colonIndex + 1).trim();
+    const bracketMatch = rest.match(/\[([^\]]+)\]/);
+    const placeholder = bracketMatch ? bracketMatch[0] : rest;
+    
+    return { label, placeholder };
+  };
+
+  // Verifica se o colchete corresponde ao requirement selecionado
+  const isRequirementMatch = (reqIndex: number, bracket: string) => {
+    const req = playgroundExample.requirements[reqIndex];
+    if (!req) return false;
+    
+    const reqBracketMatch = req.match(/\[([^\]]+)\]/);
+    if (!reqBracketMatch) return false;
+    
+    return bracket.toLowerCase().includes(reqBracketMatch[1].toLowerCase().substring(0, 10));
+  };
+
+  // Renderiza o prompt com highlights nos colchetes
+  const renderPromptWithHighlights = () => {
+    const parts = editedPrompt.split(/(\[[^\]]+\])/g);
     
     return parts.map((part, idx) => {
       if (part.startsWith('[') && part.endsWith(']')) {
@@ -88,33 +103,21 @@ export function PlaygroundBridgeV3({
         return (
           <span 
             key={idx} 
-            className={`px-1 rounded font-semibold transition-all duration-300 ${
+            className={`px-1 py-0.5 rounded font-medium transition-all duration-300 ${
               isHighlighted 
-                ? 'bg-cyan-400 text-cyan-900 ring-2 ring-cyan-400 ring-offset-1' 
-                : 'bg-amber-200 dark:bg-amber-700/60 text-amber-900 dark:text-amber-100'
+                ? 'bg-cyan-400 text-cyan-900 ring-2 ring-cyan-500' 
+                : 'bg-amber-200/80 text-amber-900'
             }`}
           >
             {part}
           </span>
         );
       }
-      return part;
+      return <span key={idx}>{part}</span>;
     });
   };
 
-  // Verifica se o colchete corresponde ao requirement selecionado
-  const isRequirementMatch = (reqIndex: number, bracket: string) => {
-    const keywords: Record<number, string[]> = {
-      0: ['tema', 'produto', 'principal', 'curso', 'ebook'],
-      1: ['público', 'quem', 'ler', 'assistir'],
-      2: ['formato', 'vídeo', 'apostila', 'workshop'],
-      3: ['resultado', 'final', 'conseguir', 'fazer', 'objetivo'],
-    };
-    const bracketLower = bracket.toLowerCase();
-    return keywords[reqIndex]?.some(kw => bracketLower.includes(kw)) || false;
-  };
-
-  // Se está no playground
+  // Se está no playground, passa o prompt editado
   if (phase === 'playground') {
     return (
       <motion.div
@@ -125,6 +128,7 @@ export function PlaygroundBridgeV3({
         <PlaygroundRealChat
           lessonId={lessonId}
           onComplete={() => onComplete(null)}
+          initialPrompt={editedPrompt}
         />
       </motion.div>
     );
@@ -139,125 +143,145 @@ export function PlaygroundBridgeV3({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="w-full max-w-md max-h-[85vh] overflow-y-auto"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
       >
-        <Card className="shadow-2xl border-2 border-primary/30 rounded-xl overflow-hidden">
+        <Card className="shadow-2xl border-0 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
           
           {/* ===== HEADER ===== */}
-          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 py-3 px-4 sticky top-0 z-10">
+          <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 py-4 px-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-bold text-base leading-tight">
-                {playgroundExample.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-white/90" />
+                <h3 className="text-white font-bold text-lg leading-tight">
+                  {playgroundExample.title}
+                </h3>
+              </div>
               <button
                 onClick={onSkip}
-                className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
+                className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2 transition-colors"
                 aria-label="Fechar"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* ===== CONTEÚDO: 3 BLOCOS ===== */}
-          <div className="p-4 space-y-4">
+          <div className="p-5 space-y-5">
             
-            {/* ----- PASSO 1: I DO (context) ----- */}
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">
+            {/* ----- BLOCO 1: I DO (context) ----- */}
+            <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                   1
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-emerald-600" />
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                    Veja o exemplo
-                  </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Eye className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                      Veja o exemplo
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground/90 leading-relaxed">
+                    {playgroundExample.context}
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-foreground leading-relaxed pl-8">
-                {playgroundExample.context}
-              </p>
             </div>
 
-            {/* ----- PASSO 2: WE DO (requirements) ----- */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+            {/* ----- BLOCO 2: WE DO (requirements) ----- */}
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                   2
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <ListChecks className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
-                    Preencha mentalmente
-                  </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ListChecks className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
+                      Preencha mentalmente
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {playgroundExample.requirements.map((req, idx) => {
+                      const { label, placeholder } = parseRequirement(req);
+                      const isSelected = highlightedReq === idx;
+                      
+                      return (
+                        <button 
+                          key={idx}
+                          type="button"
+                          onClick={() => setHighlightedReq(isSelected ? null : idx)}
+                          className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-all duration-200 flex items-start gap-2 ${
+                            isSelected 
+                              ? 'bg-cyan-100 dark:bg-cyan-900/50 ring-2 ring-cyan-400 shadow-sm' 
+                              : 'bg-white/60 dark:bg-slate-800/40 hover:bg-blue-100/80 dark:hover:bg-blue-900/30'
+                          }`}
+                        >
+                          <span className="text-foreground/80 font-medium">{label}</span>
+                          <span className={`font-semibold transition-colors ${
+                            isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-amber-700 dark:text-amber-400'
+                          }`}>
+                            {placeholder}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-blue-500/80 dark:text-blue-400/60 mt-3 italic">
+                    💡 Clique em um item para destacar no prompt abaixo
+                  </p>
                 </div>
               </div>
-              <ul className="space-y-1.5 pl-8">
-                {playgroundExample.requirements.map((req, idx) => (
-                  <li 
-                    key={idx}
-                    onClick={() => setHighlightedReq(highlightedReq === idx ? null : idx)}
-                    className={`text-sm text-foreground cursor-pointer py-1 px-2 rounded transition-all ${
-                      highlightedReq === idx 
-                        ? 'bg-cyan-100 dark:bg-cyan-900/40 ring-1 ring-cyan-400' 
-                        : 'hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                    }`}
-                  >
-                    {highlightBrackets(req)}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-[11px] text-blue-600/70 dark:text-blue-400/70 mt-2 pl-8">
-                💡 Clique em um item para destacar no prompt abaixo
-              </p>
             </div>
 
-            {/* ----- PASSO 3: YOU DO (examplePrompt) ----- */}
-            <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
+            {/* ----- BLOCO 3: YOU DO (editable prompt) ----- */}
+            <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="w-7 h-7 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                   3
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <Rocket className="w-4 h-4 text-purple-600" />
-                  <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
-                    Copie e adapte
-                  </span>
-                </div>
-              </div>
-              
-              <div className="bg-white/80 dark:bg-slate-900/60 rounded-md px-3 py-2.5 border border-purple-100 dark:border-purple-900/30 mb-3 ml-8">
-                <p className="text-sm text-foreground leading-relaxed">
-                  {highlightBrackets(playgroundExample.examplePrompt)}
-                </p>
-              </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Rocket className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+                      Adapte e teste
+                    </span>
+                  </div>
+                  
+                  {/* Preview com highlights */}
+                  <div className="bg-white dark:bg-slate-900/80 rounded-lg p-3 border border-purple-100 dark:border-purple-900/40 mb-3 min-h-[80px]">
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {renderPromptWithHighlights()}
+                    </p>
+                  </div>
 
-              <div className="pl-8">
-                <button
-                  onClick={handleCopyPrompt}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-semibold text-sm transition-all ${
-                    copied 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }`}
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copied ? 'Copiado!' : 'Copiar prompt'}</span>
-                </button>
+                  {/* Textarea editável */}
+                  <textarea
+                    value={editedPrompt}
+                    onChange={(e) => setEditedPrompt(e.target.value)}
+                    placeholder="Edite o prompt acima, substituindo os [colchetes] pelo seu caso..."
+                    className="w-full min-h-[100px] p-3 text-sm rounded-lg border-2 border-purple-200 dark:border-purple-800/60 bg-white dark:bg-slate-900 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 transition-all resize-none placeholder:text-muted-foreground/60"
+                  />
+                  
+                  <p className="text-xs text-purple-500/80 dark:text-purple-400/60 mt-2 italic">
+                    ✏️ Substitua os [colchetes] pelo seu caso real
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* ===== FOOTER CTA ===== */}
-          <div className="px-4 pb-4 pt-2 sticky bottom-0 bg-card">
+          <div className="px-5 pb-5 pt-2 sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent dark:from-slate-950 dark:via-slate-950">
             <Button
               onClick={handleGoToPlayground}
-              className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold py-3 text-sm rounded-lg shadow-md"
+              disabled={!editedPrompt.trim()}
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold py-6 text-base rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Rocket className="w-4 h-4 mr-2" />
-              Ir para o Playground
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <Rocket className="w-5 h-5 mr-2" />
+              Testar no Playground
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
         </Card>
