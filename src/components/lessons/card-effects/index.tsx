@@ -152,6 +152,23 @@ import { CardEffectBoundaryLine } from './CardEffectBoundaryLine';
 import { CardEffectDirectorRule } from './CardEffectDirectorRule';
 import { CardEffectDirectorMindset } from './CardEffectDirectorMindset';
 
+// ============================================================
+// AULA 9 - Conteúdo Profundo: Livros, Cursos, Aulas e Infoprodutos
+// ============================================================
+import { CardEffectDeepIntro } from './CardEffectDeepIntro';
+import { CardEffectAuthorityBuilder } from './CardEffectAuthorityBuilder';
+import { CardEffectStructureMap } from './CardEffectStructureMap';
+import { CardEffectAudienceFocus } from './CardEffectAudienceFocus';
+import { CardEffectResultClarifier } from './CardEffectResultClarifier';
+import { CardEffectDraftExpander } from './CardEffectDraftExpander';
+import { CardEffectPracticeBuilder } from './CardEffectPracticeBuilder';
+import { CardEffectToolTrio } from './CardEffectToolTrio';
+import { CardEffectTextEngine } from './CardEffectTextEngine';
+import { CardEffectVisualIdentity } from './CardEffectVisualIdentity';
+import { CardEffectProjectPicker } from './CardEffectProjectPicker';
+import { CardEffectMiniCourse } from './CardEffectMiniCourse';
+import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -286,6 +303,21 @@ export { CardEffectBoundaryLine } from './CardEffectBoundaryLine';
 export { CardEffectDirectorRule } from './CardEffectDirectorRule';
 export { CardEffectDirectorMindset } from './CardEffectDirectorMindset';
 
+// Re-exportar componentes - AULA 9 (Conteúdo Profundo: Livros, Cursos, Infoprodutos)
+export { CardEffectDeepIntro } from './CardEffectDeepIntro';
+export { CardEffectAuthorityBuilder } from './CardEffectAuthorityBuilder';
+export { CardEffectStructureMap } from './CardEffectStructureMap';
+export { CardEffectAudienceFocus } from './CardEffectAudienceFocus';
+export { CardEffectResultClarifier } from './CardEffectResultClarifier';
+export { CardEffectDraftExpander } from './CardEffectDraftExpander';
+export { CardEffectPracticeBuilder } from './CardEffectPracticeBuilder';
+export { CardEffectToolTrio } from './CardEffectToolTrio';
+export { CardEffectTextEngine } from './CardEffectTextEngine';
+export { CardEffectVisualIdentity } from './CardEffectVisualIdentity';
+export { CardEffectProjectPicker } from './CardEffectProjectPicker';
+export { CardEffectMiniCourse } from './CardEffectMiniCourse';
+export { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -326,7 +358,12 @@ export type CardEffectType =
   | 'course-reveal' | 'overwhelm-breaker' | 'clarity-map' | 'three-blocks'
   | 'opening-focus' | 'closing-focus' | 'ai-writer' | 'draft-machine'
   | 'structure-draft' | 'skeleton-builder' | 'topic-brackets' | 'result-brackets'
-  | 'boundary-line' | 'director-rule' | 'director-mindset';
+  | 'boundary-line' | 'director-rule' | 'director-mindset'
+  // AULA 9 - Conteúdo Profundo: Livros, Cursos, Infoprodutos
+  | 'deep-intro' | 'authority-builder' | 'structure-map' | 'audience-focus'
+  | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
+  | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
+  | 'leverage-mindset';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -460,6 +497,20 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'boundary-line': CardEffectBoundaryLine,
   'director-rule': CardEffectDirectorRule,
   'director-mindset': CardEffectDirectorMindset,
+  // AULA 9 - Conteúdo Profundo: Livros, Cursos, Infoprodutos
+  'deep-intro': CardEffectDeepIntro,
+  'authority-builder': CardEffectAuthorityBuilder,
+  'structure-map': CardEffectStructureMap,
+  'audience-focus': CardEffectAudienceFocus,
+  'result-clarifier': CardEffectResultClarifier,
+  'draft-expander': CardEffectDraftExpander,
+  'practice-builder': CardEffectPracticeBuilder,
+  'tool-trio': CardEffectToolTrio,
+  'text-engine': CardEffectTextEngine,
+  'visual-identity': CardEffectVisualIdentity,
+  'project-picker': CardEffectProjectPicker,
+  'mini-course': CardEffectMiniCourse,
+  'leverage-mindset': CardEffectLeverageMindset,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -532,6 +583,20 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'topic-brackets': 'Tópicos Entre Colchetes', 'result-brackets': 'Resultados Entre Colchetes',
   'boundary-line': 'Linha de Limite', 'director-rule': 'Regra do Diretor',
   'director-mindset': 'Mentalidade de Diretor',
+  // AULA 9 - Conteúdo Profundo: Livros, Cursos, Infoprodutos
+  'deep-intro': 'Introdução ao Conteúdo Profundo',
+  'authority-builder': 'Construtor de Autoridade',
+  'structure-map': 'Mapa da Estrutura',
+  'audience-focus': 'Foco no Público',
+  'result-clarifier': 'Clarificador de Resultado',
+  'draft-expander': 'Expansor de Rascunho',
+  'practice-builder': 'Construtor de Prática',
+  'tool-trio': 'Trio de Ferramentas',
+  'text-engine': 'Motor de Texto',
+  'visual-identity': 'Identidade Visual',
+  'project-picker': 'Seletor de Projeto',
+  'mini-course': 'Mini-Curso',
+  'leverage-mindset': 'Mentalidade de Alavanca',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -618,6 +683,20 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'boundary-line': 'Linha de limite do escopo',
   'director-rule': 'Regra do diretor no controle',
   'director-mindset': 'Mentalidade de diretor ativada',
+  // AULA 9 - Conteúdo Profundo: Livros, Cursos, Infoprodutos
+  'deep-intro': 'Por que conteúdo profundo importa agora',
+  'authority-builder': 'Construindo autoridade real com conteúdo',
+  'structure-map': 'Mapeando experiência em estrutura',
+  'audience-focus': 'Focando no público certo',
+  'result-clarifier': 'Clarificando a transformação prometida',
+  'draft-expander': 'Expandindo ideias em linguagem simples',
+  'practice-builder': 'Criando exercícios práticos',
+  'tool-trio': 'As três camadas de I.A.',
+  'text-engine': 'Motor de texto em ação',
+  'visual-identity': 'Identidade visual do projeto',
+  'project-picker': 'Escolhendo o projeto real',
+  'mini-course': 'Formato enxuto e impactante',
+  'leverage-mindset': 'I.A. como alavanca para conhecimento',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -669,6 +748,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'structure-draft', 'skeleton-builder', 'topic-brackets', 'result-brackets',
     'boundary-line', 'director-rule', 'director-mindset',
   ],
+  'aula-9': [
+    'deep-intro', 'authority-builder', 'structure-map', 'audience-focus',
+    'result-clarifier', 'draft-expander', 'practice-builder', 'tool-trio',
+    'text-engine', 'visual-identity', 'project-picker', 'mini-course',
+    'leverage-mindset',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -680,6 +765,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-6'],
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
+  ...CARD_EFFECTS_BY_LESSON['aula-9'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
