@@ -133,9 +133,8 @@ export function PlaygroundBridgeV3({
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className="w-full max-w-md"
       >
-        <Card className="shadow-2xl border-0 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+        <Card className="shadow-2xl border-0 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 max-h-[85vh] overflow-y-auto">
           
-          {/* HEADER */}
           <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 py-3 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -300,24 +299,26 @@ export function PlaygroundBridgeV3({
           </AnimatePresence>
 
           {/* FOOTER com navegação */}
-          <div className="px-5 pb-5 pt-2 flex items-center gap-3">
-            {step > 1 && (
+          <div className="px-5 pb-5 pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            {step > 1 ? (
               <Button
                 variant="ghost"
                 onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-                className="text-sm"
+                className="text-sm order-2 sm:order-1"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Voltar
               </Button>
+            ) : (
+              <div className="hidden sm:block" />
             )}
             
-            <div className="flex-1" />
+            <div className="flex-1 hidden sm:block" />
             
             {step < 3 ? (
               <Button
                 onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6"
+                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6 order-1 sm:order-2"
               >
                 Próximo
                 <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -325,10 +326,10 @@ export function PlaygroundBridgeV3({
             ) : (
               <Button
                 onClick={handleGoToPlayground}
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6"
+                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-4 sm:px-6 order-1 sm:order-2 w-full sm:w-auto"
               >
-                <Rocket className="w-4 h-4 mr-1.5" />
-                Testar no Playground
+                <Rocket className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <span>Testar no Playground</span>
               </Button>
             )}
           </div>
