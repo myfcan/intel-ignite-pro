@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaygroundRealChat } from './PlaygroundRealChat';
@@ -9,7 +9,10 @@ import {
   Rocket,
   X,
   ArrowRight,
-  Sparkles
+  ArrowLeft,
+  Sparkles,
+  Copy,
+  Check
 } from 'lucide-react';
 
 // ============================================================================
@@ -20,6 +23,7 @@ export interface PlaygroundExampleDataV3 {
   context: string;            // 1 frase curta
   requirements: string[];     // 3-4 items com [colchetes]
   examplePrompt: string;      // 1 prompt com colchetes (2-3 linhas max)
+  exampleOutput?: string;     // exemplo curto de saída da IA
 }
 
 interface PlaygroundBridgeV3Props {
@@ -30,12 +34,11 @@ interface PlaygroundBridgeV3Props {
 }
 
 /**
- * 🚀 PLAYGROUND BRIDGE V3 - MICRO-FERRAMENTA
+ * 🚀 PLAYGROUND BRIDGE V3 - WIZARD DE 3 PASSOS
  * 
- * 1 modal único, 3 blocos compactos, SEM scroll interno
- * Bloco 1: Veja o exemplo (context curto)
- * Bloco 2: Preencha mentalmente (3-4 requirements)
- * Bloco 3: Adapte e teste (1 prompt editável + dica curta)
+ * Step 1: I DO - Veja o exemplo (context + exampleOutput)
+ * Step 2: WE DO - Preencha na cabeça (requirements)
+ * Step 3: YOU DO - Adapte e teste (examplePrompt + botões)
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -44,14 +47,9 @@ export function PlaygroundBridgeV3({
   lessonId,
 }: PlaygroundBridgeV3Props) {
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [highlightedReq, setHighlightedReq] = useState<number | null>(null);
-  const [editedPrompt, setEditedPrompt] = useState('');
-
-  useEffect(() => {
-    if (playgroundExample?.examplePrompt) {
-      setEditedPrompt(playgroundExample.examplePrompt);
-    }
-  }, [playgroundExample?.examplePrompt]);
+  const [copied, setCopied] = useState(false);
 
   if (!playgroundExample) {
     return (
@@ -66,6 +64,12 @@ export function PlaygroundBridgeV3({
     setPhase('playground');
   }, []);
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(playgroundExample.examplePrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   // Extrai label e placeholder do requirement
   const parseRequirement = (req: string) => {
     const colonIndex = req.indexOf(':');
@@ -75,29 +79,15 @@ export function PlaygroundBridgeV3({
     return { label, placeholder: rest };
   };
 
-  // Verifica match entre requirement e colchete no prompt
-  const isRequirementMatch = (reqIndex: number, bracket: string) => {
-    const req = playgroundExample.requirements[reqIndex];
-    if (!req) return false;
-    const reqBracketMatch = req.match(/\[([^\]]+)\]/);
-    if (!reqBracketMatch) return false;
-    return bracket.toLowerCase().includes(reqBracketMatch[1].toLowerCase().substring(0, 10));
-  };
-
   // Renderiza prompt com highlights nos colchetes
   const renderPromptWithHighlights = () => {
-    const parts = editedPrompt.split(/(\[[^\]]+\])/g);
+    const parts = playgroundExample.examplePrompt.split(/(\[[^\]]+\])/g);
     return parts.map((part, idx) => {
       if (part.startsWith('[') && part.endsWith(']')) {
-        const isHighlighted = highlightedReq !== null && isRequirementMatch(highlightedReq, part);
         return (
           <span 
             key={idx} 
-            className={`px-0.5 rounded font-medium transition-all duration-200 ${
-              isHighlighted 
-                ? 'bg-cyan-400 text-cyan-900' 
-                : 'bg-amber-200/80 text-amber-900'
-            }`}
+            className="px-0.5 rounded font-medium bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300"
           >
             {part}
           </span>
@@ -117,16 +107,25 @@ export function PlaygroundBridgeV3({
         <PlaygroundRealChat
           lessonId={lessonId}
           onComplete={() => onComplete(null)}
-          initialPrompt={editedPrompt}
+          initialPrompt={playgroundExample.examplePrompt}
         />
       </motion.div>
     );
   }
 
+  const stepConfig = {
+    1: { color: 'emerald', icon: Eye, title: 'VEJA O EXEMPLO' },
+    2: { color: 'blue', icon: ListChecks, title: 'PREENCHA NA CABEÇA' },
+    3: { color: 'purple', icon: Rocket, title: 'ADAPTE E TESTE' }
+  };
+
+  const current = stepConfig[step];
+  const Icon = current.icon;
+
   return (
     <div 
       data-testid="playground-bridge-v3"
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-3"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -136,12 +135,12 @@ export function PlaygroundBridgeV3({
       >
         <Card className="shadow-2xl border-0 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
           
-          {/* HEADER compacto */}
+          {/* HEADER */}
           <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 py-3 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-white/90" />
-                <h3 className="text-white font-bold text-base leading-tight">
+                <h3 className="text-white font-bold text-sm leading-tight">
                   {playgroundExample.title}
                 </h3>
               </div>
@@ -153,125 +152,169 @@ export function PlaygroundBridgeV3({
                 <X className="w-4 h-4" />
               </button>
             </div>
+            
+            {/* Progress dots */}
+            <div className="flex justify-center gap-2 mt-3">
+              {[1, 2, 3].map((s) => (
+                <div 
+                  key={s}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    s === step ? 'w-6 bg-white' : s < step ? 'w-3 bg-white/60' : 'w-3 bg-white/30'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* CONTEÚDO: 3 BLOCOS compactos */}
-          <div className="p-4 space-y-3">
-            
-            {/* BLOCO 1: Veja o exemplo */}
-            <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  1
+          {/* CONTEÚDO DO STEP */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="p-5"
+            >
+              {/* Badge + Título do step */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                  step === 1 ? 'bg-emerald-500' : step === 2 ? 'bg-blue-500' : 'bg-purple-500'
+                }`}>
+                  {step}
                 </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                      Veja o exemplo
-                    </span>
-                  </div>
-                  <p className="text-sm text-foreground/90 leading-snug">
+                <div className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${
+                    step === 1 ? 'text-emerald-600' : step === 2 ? 'text-blue-600' : 'text-purple-600'
+                  }`} />
+                  <span className={`text-sm font-bold uppercase tracking-wide ${
+                    step === 1 ? 'text-emerald-700 dark:text-emerald-400' : 
+                    step === 2 ? 'text-blue-700 dark:text-blue-400' : 
+                    'text-purple-700 dark:text-purple-400'
+                  }`}>
+                    {current.title}
+                  </span>
+                </div>
+              </div>
+
+              {/* STEP 1: I DO */}
+              {step === 1 && (
+                <div className="space-y-4">
+                  <p className="text-base text-foreground leading-relaxed">
                     {playgroundExample.context}
                   </p>
-                </div>
-              </div>
-            </div>
-
-            {/* BLOCO 2: Preencha mentalmente */}
-            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <span className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  2
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <ListChecks className="w-3.5 h-3.5 text-blue-600" />
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wide">
-                      Preencha na cabeça
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {playgroundExample.requirements.map((req, idx) => {
-                      const { label, placeholder } = parseRequirement(req);
-                      const isSelected = highlightedReq === idx;
-                      
-                      return (
-                        <button 
-                          key={idx}
-                          type="button"
-                          onClick={() => setHighlightedReq(isSelected ? null : idx)}
-                          className={`w-full text-left text-xs py-1.5 px-2.5 rounded-md transition-all duration-150 flex items-start gap-1.5 ${
-                            isSelected 
-                              ? 'bg-cyan-100 dark:bg-cyan-900/50 ring-1 ring-cyan-400' 
-                              : 'bg-white/60 dark:bg-slate-800/40 hover:bg-blue-100/80'
-                          }`}
-                        >
-                          <span className="text-foreground/70 font-medium">{label}</span>
-                          <span className={`font-semibold ${
-                            isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-amber-600 dark:text-amber-400'
-                          }`}>
-                            {placeholder}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* BLOCO 3: Adapte e teste (SÓ 1 TEXTAREA) */}
-            <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <span className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  3
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Rocket className="w-3.5 h-3.5 text-purple-600" />
-                    <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
-                      Adapte e teste
-                    </span>
-                  </div>
                   
-                  {/* ÚNICO elemento de prompt - com highlights */}
-                  <div 
-                    className="bg-white dark:bg-slate-900/80 rounded-md p-2.5 border border-purple-100 dark:border-purple-900/40 min-h-[60px] cursor-text"
-                    onClick={() => document.getElementById('prompt-textarea')?.focus()}
-                  >
+                  {playgroundExample.exampleOutput && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">
+                        Exemplo de resultado:
+                      </p>
+                      <p className="text-sm text-foreground/80 italic leading-snug">
+                        {playgroundExample.exampleOutput}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* STEP 2: WE DO */}
+              {step === 2 && (
+                <div className="space-y-2">
+                  {playgroundExample.requirements.map((req, idx) => {
+                    const { label, placeholder } = parseRequirement(req);
+                    const isSelected = highlightedReq === idx;
+                    
+                    return (
+                      <button 
+                        key={idx}
+                        type="button"
+                        onClick={() => setHighlightedReq(isSelected ? null : idx)}
+                        className={`w-full text-left text-sm py-2.5 px-3 rounded-lg transition-all duration-150 flex items-start gap-2 ${
+                          isSelected 
+                            ? 'bg-cyan-100 dark:bg-cyan-900/50 ring-2 ring-cyan-400' 
+                            : 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                        }`}
+                      >
+                        <span className="text-foreground/70 font-medium">{label}</span>
+                        <span className={`font-semibold ${
+                          isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-amber-600 dark:text-amber-400'
+                        }`}>
+                          {placeholder}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* STEP 3: YOU DO */}
+              {step === 3 && (
+                <div className="space-y-3">
+                  <p className="text-sm text-foreground/70">
+                    Substitua os <span className="bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300 px-1 rounded font-medium">[colchetes]</span> pelo seu caso real:
+                  </p>
+                  
+                  <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
                     <p className="text-sm text-foreground leading-relaxed">
                       {renderPromptWithHighlights()}
                     </p>
                   </div>
 
-                  {/* Textarea invisível para edição */}
-                  <textarea
-                    id="prompt-textarea"
-                    value={editedPrompt}
-                    onChange={(e) => setEditedPrompt(e.target.value)}
-                    className="sr-only"
-                  />
-                  
-                  <p className="text-[11px] text-purple-500/80 dark:text-purple-400/60 mt-2 italic">
-                    Substitua os [colchetes] pelo seu caso real antes de testar.
-                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="w-full text-xs"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1.5 text-green-600" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1.5" />
+                        Copiar prompt
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-          {/* CTA */}
-          <div className="px-4 pb-4 pt-1">
-            <Button
-              onClick={handleGoToPlayground}
-              disabled={!editedPrompt.trim()}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold py-5 text-sm rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50"
-            >
-              <Rocket className="w-4 h-4 mr-2" />
-              Testar no Playground
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+          {/* FOOTER com navegação */}
+          <div className="px-5 pb-5 pt-2 flex items-center gap-3">
+            {step > 1 && (
+              <Button
+                variant="ghost"
+                onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+                className="text-sm"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Voltar
+              </Button>
+            )}
+            
+            <div className="flex-1" />
+            
+            {step < 3 ? (
+              <Button
+                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6"
+              >
+                Próximo
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleGoToPlayground}
+                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6"
+              >
+                <Rocket className="w-4 h-4 mr-1.5" />
+                Testar no Playground
+              </Button>
+            )}
           </div>
         </Card>
       </motion.div>
