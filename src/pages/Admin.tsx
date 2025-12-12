@@ -1,11 +1,68 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Database, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
   const navigate = useNavigate();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdateAula06Cards = async () => {
+    setIsUpdating(true);
+    try {
+      const AULA_06_ID = 'e8a82f35-2818-42ff-b71b-565fca199f59';
+
+      const experienceCards = [
+        { type: 'core-triangle', sectionIndex: 2, anchorText: 'tema, público e promessa', props: { title: 'Tríade Central', subtitle: 'Três decisões fundamentais' } },
+        { type: 'module-map', sectionIndex: 2, anchorText: 'mapa de módulos', props: { title: 'Mapa de Módulos', subtitle: 'Cada módulo resolve uma etapa' } },
+        { type: 'objective-focus', sectionIndex: 2, anchorText: 'objetivos de cada parte', props: { title: 'Objetivos de Aprendizagem', subtitle: 'O que a pessoa precisa conseguir' } },
+        { type: 'video-course-view', sectionIndex: 3, anchorText: 'curso em vídeo passo a passo', props: { title: 'Curso em Vídeo', subtitle: 'Módulos com demonstrações práticas' } },
+        { type: 'ebook-view', sectionIndex: 3, anchorText: 'eBook para leitura independente', props: { title: 'Versão eBook', subtitle: 'Capítulos com textos e checklists' } },
+        { type: 'multi-format', sectionIndex: 3, anchorText: 'mesma base, formatos diferentes', props: { title: 'Múltiplos Formatos', subtitle: 'Um conhecimento, vários produtos' } },
+        { type: 'tool-groups', sectionIndex: 4, anchorText: 'três grupos de ferramentas', props: { title: '3 Grupos de I.A.', subtitle: 'Texto, Visual e Vídeo' } },
+        { type: 'text-tools', sectionIndex: 4, anchorText: 'modelos de linguagem para estrutura e texto', props: { title: 'Ferramentas de Texto', subtitle: 'ChatGPT, Claude, Gemini' } },
+        { type: 'visual-tools', sectionIndex: 4, anchorText: 'I.A. para capas e materiais visuais', props: { title: 'Ferramentas Visuais', subtitle: 'DALL-E, Midjourney, Gemini' } },
+        { type: 'coauthor-role', sectionIndex: 5, anchorText: 'coautora, não dona', props: { title: 'I.A. como Coautora', subtitle: 'Parceira, não dona do trabalho' } },
+        { type: 'editor-in-chief', sectionIndex: 5, anchorText: 'você decide o que entra e o que fica de fora', props: { title: 'Você no Comando', subtitle: 'O filtro final é seu' } },
+        { type: 'long-term-asset', sectionIndex: 5, anchorText: 'ativo de longo prazo', props: { title: 'Ativo de Longo Prazo', subtitle: 'Conteúdo que trabalha por anos' } }
+      ];
+
+      // Buscar aula atual
+      const { data: lesson, error: fetchError } = await supabase
+        .from('lessons')
+        .select('content')
+        .eq('id', AULA_06_ID)
+        .single();
+
+      if (fetchError || !lesson) {
+        throw new Error(`Erro ao buscar aula: ${fetchError?.message}`);
+      }
+
+      // Atualizar com experienceCards
+      const updatedContent = { ...(lesson.content as object), experienceCards };
+      
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({ content: updatedContent })
+        .eq('id', AULA_06_ID);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar: ${updateError.message}`);
+      }
+
+      toast.success('Aula 06 atualizada com 12 experienceCards!');
+      console.log('✅ ExperienceCards inseridos:', experienceCards.length);
+    } catch (error) {
+      console.error('❌ Erro:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro desconhecido');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -190,6 +247,42 @@ export default function Admin() {
                 onClick={() => navigate('/admin/test-card-sync')}
               >
                 Testar Sincronização
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-green-500/20 bg-green-500/5 hover:border-green-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-6 h-6 text-green-600" />
+                Fix Aula 06 Cards
+              </CardTitle>
+              <CardDescription>
+                Inserir experienceCards no banco
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>📝 12 experienceCards pré-definidos</p>
+                <p>🎬 core-triangle, module-map, etc.</p>
+                <p>✅ Atualiza content.experienceCards</p>
+              </div>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={handleUpdateAula06Cards}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <Database className="w-4 h-4 mr-2" />
+                    Atualizar Aula 06
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
