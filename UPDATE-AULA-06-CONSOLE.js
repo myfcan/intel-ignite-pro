@@ -7,7 +7,7 @@
  * 3. Cole TODO este arquivo no console
  * 4. Pressione Enter
  *
- * O script irá atualizar a Aula 06 no banco com os 12 experienceCards corretos.
+ * O script irá atualizar a Aula 06 no banco com os 15 experienceCards corretos.
  */
 
 (async () => {
@@ -18,76 +18,94 @@
 
   const experienceCards = [
     {
-      type: 'core-triangle',
+      type: 'deep-content-vs-rapido',
+      sectionIndex: 1,
+      anchorText: 'conteúdo profundo',
+      props: { title: 'Por que conteúdo profundo importa?', subtitle: 'Da atenção rápida à confiança duradoura.' }
+    },
+    {
+      type: 'knowledge-structure',
+      sectionIndex: 1,
+      anchorText: 'organizar seu conhecimento em algo maior',
+      props: { title: 'Do solto ao estruturado', subtitle: 'Quando o que você sabe vira um projeto único.' }
+    },
+    {
+      type: 'authority-builder',
+      sectionIndex: 1,
+      anchorText: 'autoridade e confiança',
+      props: { title: 'Autoridade não nasce em um post', subtitle: 'Ela é construída em camadas.' }
+    },
+    {
+      type: 'core-decisions',
       sectionIndex: 2,
       anchorText: 'tema, público e promessa',
-      props: { title: 'Tríade Central', subtitle: 'Três decisões fundamentais' }
+      props: { title: 'As 3 decisões que destravam tudo', subtitle: 'Tema, público e promessa.' }
     },
     {
       type: 'module-map',
       sectionIndex: 2,
       anchorText: 'mapa de módulos',
-      props: { title: 'Mapa de Módulos', subtitle: 'Cada módulo resolve uma etapa' }
+      props: { title: 'Mapa de módulos', subtitle: 'Seu conhecimento em etapas claras.' }
     },
     {
       type: 'objective-focus',
       sectionIndex: 2,
       anchorText: 'objetivos de cada parte',
-      props: { title: 'Objetivos de Aprendizagem', subtitle: 'O que a pessoa precisa conseguir' }
+      props: { title: 'Objetivo de cada etapa', subtitle: 'O que o aluno ganha em cada ponto.' }
     },
     {
-      type: 'video-course-view',
+      type: 'product-shelf',
       sectionIndex: 3,
-      anchorText: 'curso em vídeo passo a passo',
-      props: { title: 'Curso em Vídeo', subtitle: 'Módulos com demonstrações práticas' }
+      anchorText: 'curso em vídeo',
+      props: { title: 'Curso em vídeo', subtitle: 'Quando sua voz e presença guiam o aluno.' }
     },
     {
-      type: 'ebook-view',
+      type: 'ebook-creator',
       sectionIndex: 3,
-      anchorText: 'eBook para leitura independente',
-      props: { title: 'Versão eBook', subtitle: 'Capítulos com textos e checklists' }
+      anchorText: 'eBook ou livro',
+      props: { title: 'eBook ou livro', subtitle: 'Quando o conhecimento ganha páginas.' }
     },
     {
-      type: 'multi-format',
+      type: 'lesson-series',
       sectionIndex: 3,
-      anchorText: 'mesma base, formatos diferentes',
-      props: { title: 'Múltiplos Formatos', subtitle: 'Um conhecimento, vários produtos' }
+      anchorText: 'sequência de aulas',
+      props: { title: 'Série de aulas', subtitle: 'Quando cada encontro empurra o aluno para o próximo nível.' }
     },
     {
-      type: 'tool-groups',
+      type: 'text-ai-helper',
       sectionIndex: 4,
-      anchorText: 'três grupos de ferramentas',
-      props: { title: '3 Grupos de I.A.', subtitle: 'Texto, Visual e Vídeo' }
+      anchorText: 'I.A. de texto',
+      props: { title: 'I.A. de texto em ação', subtitle: 'Do briefing solto ao esqueleto pronto.' }
     },
     {
-      type: 'text-tools',
+      type: 'visual-ai-helper',
       sectionIndex: 4,
-      anchorText: 'modelos de linguagem para estrutura e texto',
-      props: { title: 'Ferramentas de Texto', subtitle: 'ChatGPT, Claude, Gemini' }
+      anchorText: 'I.A. de imagem e vídeo',
+      props: { title: 'Imagens e vídeos com I.A.', subtitle: 'Visuais que reforçam a mensagem.' }
     },
     {
-      type: 'visual-tools',
+      type: 'you-are-the-author',
       sectionIndex: 4,
-      anchorText: 'I.A. para capas e materiais visuais',
-      props: { title: 'Ferramentas Visuais', subtitle: 'DALL-E, Midjourney, Gemini' }
+      anchorText: 'você continua sendo o autor',
+      props: { title: 'Você é o diretor criativo', subtitle: 'A I.A. acelera, mas não decide por você.' }
     },
     {
-      type: 'coauthor-role',
+      type: 'ai-limitations',
       sectionIndex: 5,
-      anchorText: 'coautora, não dona',
-      props: { title: 'I.A. como Coautora', subtitle: 'Parceira, não dona do trabalho' }
+      anchorText: 'I.A. não substitui revisão humana',
+      props: { title: 'Limites da I.A.', subtitle: 'Ela acerta muita coisa, mas não tudo.' }
     },
     {
-      type: 'editor-in-chief',
+      type: 'copy-paste-risk',
       sectionIndex: 5,
-      anchorText: 'você decide o que entra e o que fica de fora',
-      props: { title: 'Você no Comando', subtitle: 'O filtro final é seu' }
+      anchorText: 'copiar e colar sem adaptar',
+      props: { title: 'O perigo do copiar e colar', subtitle: 'Quando tudo fica com a mesma cara.' }
     },
     {
-      type: 'long-term-asset',
+      type: 'next-steps-deep-content',
       sectionIndex: 5,
-      anchorText: 'ativo de longo prazo',
-      props: { title: 'Ativo de Longo Prazo', subtitle: 'Conteúdo que trabalha por anos' }
+      anchorText: 'primeiro rascunho, não rascunho final',
+      props: { title: 'Próximos passos com segurança', subtitle: 'Use a I.A. como ponto de partida, não como ponto final.' }
     }
   ];
 
@@ -164,14 +182,14 @@
 
   console.log(`📊 Estado final: ${finalCardsCount} experienceCards no banco`);
 
-  if (finalCardsCount === 12) {
-    console.log('\n✅ SUCESSO! Os 12 experienceCards foram inseridos corretamente!');
+  if (finalCardsCount === 15) {
+    console.log('\n✅ SUCESSO! Os 15 experienceCards foram inseridos corretamente!');
     console.log('\n📋 Lista de cards:');
     finalContent.experienceCards.forEach((card, idx) => {
       console.log(`   ${idx + 1}. [S${card.sectionIndex}] ${card.type}`);
     });
   } else {
-    console.warn('\n⚠️  Algo deu errado. Esperado: 12 cards. Encontrado:', finalCardsCount);
+    console.warn('\n⚠️  Algo deu errado. Esperado: 15 cards. Encontrado:', finalCardsCount);
   }
 
   console.log('\n' + '='.repeat(60));
