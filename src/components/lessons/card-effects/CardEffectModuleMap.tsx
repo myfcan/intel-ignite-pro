@@ -25,7 +25,7 @@ export function CardEffectModuleMap({ isActive = true }: CardEffectProps) {
   ];
 
   return (
-    <div className="relative w-full h-full min-h-[180px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-6">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-6">
 
       {/* Título */}
       <motion.div

@@ -19,7 +19,7 @@ export function CardEffectTextTools({ isActive = true }: CardEffectProps) {
   const tools = ['ChatGPT', 'Claude', 'Gemini'];
 
   return (
-    <div className="relative w-full h-full min-h-[180px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-6">
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-950 dark:to-blue-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 p-6">
 
       {/* Ícone principal */}
       <motion.div
