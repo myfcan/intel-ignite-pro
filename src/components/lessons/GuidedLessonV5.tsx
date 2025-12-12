@@ -650,10 +650,16 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
       }
 
       audio.volume = 1.0;
-      setIsAudioInitialized(true);
-      
-      // ❌ NÃO fazer autoplay - usuário deve clicar no play
-      console.log('⏸️ [V5-ÁUDIO] Aguardando interação do usuário para iniciar');
+
+      // ✅ Autoplay quando usuário acessou a aula
+      audio.play().then(() => {
+        console.log('✅ [V5-AUTOPLAY] Áudio iniciado automaticamente');
+        setIsPlaying(true);
+        setIsAudioInitialized(true);
+      }).catch(err => {
+        console.warn('⚠️ [V5-AUTOPLAY] Bloqueado pelo navegador:', err);
+        setIsAudioInitialized(true);
+      });
     };
     
     const handleError = (e: Event) => {

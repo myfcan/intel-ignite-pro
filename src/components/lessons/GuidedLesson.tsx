@@ -436,10 +436,16 @@ export function GuidedLesson({ lessonData, onComplete, onMarkComplete, audioUrl,
       }
       
       audio.volume = 1.0;
-      setIsAudioInitialized(true);
       
-      // ❌ NÃO fazer autoplay - usuário deve clicar no play
-      console.log('⏸️ [ÁUDIO] Aguardando interação do usuário para iniciar');
+      // ✅ Autoplay quando usuário acessou a aula
+      audio.play().then(() => {
+        console.log('✅ [AUTOPLAY] Áudio iniciado automaticamente');
+        setIsPlaying(true);
+        setIsAudioInitialized(true);
+      }).catch(err => {
+        console.warn('⚠️ [AUTOPLAY] Bloqueado pelo navegador:', err);
+        setIsAudioInitialized(true);
+      });
     };
     
     const handleError = (e: Event) => {
