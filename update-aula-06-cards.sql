@@ -1,0 +1,137 @@
+-- ========================================
+-- UPDATE AULA 06 - Adicionar ExperienceCards
+-- ========================================
+--
+-- Este script atualiza a Aula 06 existente no banco
+-- para incluir os 12 experienceCards corretos.
+--
+-- Aula: "Conteúdo profundo: cursos, livros e infoprodutos com I.A."
+-- ID: e8a82f35-2818-42ff-b71b-565fca199f59
+-- ========================================
+
+UPDATE lessons
+SET content = jsonb_set(
+  content,
+  '{experienceCards}',
+  '[
+    {
+      "type": "core-triangle",
+      "sectionIndex": 2,
+      "anchorText": "tema, público e promessa",
+      "props": {
+        "title": "Tríade Central",
+        "subtitle": "Três decisões fundamentais"
+      }
+    },
+    {
+      "type": "module-map",
+      "sectionIndex": 2,
+      "anchorText": "mapa de módulos",
+      "props": {
+        "title": "Mapa de Módulos",
+        "subtitle": "Cada módulo resolve uma etapa"
+      }
+    },
+    {
+      "type": "objective-focus",
+      "sectionIndex": 2,
+      "anchorText": "objetivos de cada parte",
+      "props": {
+        "title": "Objetivos de Aprendizagem",
+        "subtitle": "O que a pessoa precisa conseguir"
+      }
+    },
+    {
+      "type": "video-course-view",
+      "sectionIndex": 3,
+      "anchorText": "curso em vídeo passo a passo",
+      "props": {
+        "title": "Curso em Vídeo",
+        "subtitle": "Módulos com demonstrações práticas"
+      }
+    },
+    {
+      "type": "ebook-view",
+      "sectionIndex": 3,
+      "anchorText": "eBook para leitura independente",
+      "props": {
+        "title": "Versão eBook",
+        "subtitle": "Capítulos com textos e checklists"
+      }
+    },
+    {
+      "type": "multi-format",
+      "sectionIndex": 3,
+      "anchorText": "mesma base, formatos diferentes",
+      "props": {
+        "title": "Múltiplos Formatos",
+        "subtitle": "Um conhecimento, vários produtos"
+      }
+    },
+    {
+      "type": "tool-groups",
+      "sectionIndex": 4,
+      "anchorText": "três grupos de ferramentas",
+      "props": {
+        "title": "3 Grupos de I.A.",
+        "subtitle": "Texto, Visual e Vídeo"
+      }
+    },
+    {
+      "type": "text-tools",
+      "sectionIndex": 4,
+      "anchorText": "modelos de linguagem para estrutura e texto",
+      "props": {
+        "title": "Ferramentas de Texto",
+        "subtitle": "ChatGPT, Claude, Gemini"
+      }
+    },
+    {
+      "type": "visual-tools",
+      "sectionIndex": 4,
+      "anchorText": "I.A. para capas e materiais visuais",
+      "props": {
+        "title": "Ferramentas Visuais",
+        "subtitle": "DALL-E, Midjourney, Gemini"
+      }
+    },
+    {
+      "type": "coauthor-role",
+      "sectionIndex": 5,
+      "anchorText": "coautora, não dona",
+      "props": {
+        "title": "I.A. como Coautora",
+        "subtitle": "Parceira, não dona do trabalho"
+      }
+    },
+    {
+      "type": "editor-in-chief",
+      "sectionIndex": 5,
+      "anchorText": "você decide o que entra e o que fica de fora",
+      "props": {
+        "title": "Você no Comando",
+        "subtitle": "O filtro final é seu"
+      }
+    },
+    {
+      "type": "long-term-asset",
+      "sectionIndex": 5,
+      "anchorText": "ativo de longo prazo",
+      "props": {
+        "title": "Ativo de Longo Prazo",
+        "subtitle": "Conteúdo que trabalha por anos"
+      }
+    }
+  ]'::jsonb
+)
+WHERE id = 'e8a82f35-2818-42ff-b71b-565fca199f59';
+
+-- ========================================
+-- VERIFICAR RESULTADO
+-- ========================================
+SELECT
+  id,
+  title,
+  jsonb_array_length(content->'experienceCards') as cards_count
+FROM lessons
+WHERE id = 'e8a82f35-2818-42ff-b71b-565fca199f59';
