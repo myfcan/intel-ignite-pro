@@ -38,6 +38,12 @@ const AVAILABLE_LESSONS = [
     description: '15 card effects cinematográficos',
     icon: '📊'
   },
+  {
+    id: 'aula-12',
+    title: 'Aula 12 - Vídeos simples com I.A.',
+    description: '15 card effects cinematográficos',
+    icon: '🎬'
+  },
 ];
 
 // 📋 Templates pré-configurados de Experience Cards por Aula
@@ -139,6 +145,28 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 5, cardIndex: 1, cardType: 'habit-builder', anchorText: 'transformando em hábito', title: 'Transformando em Hábito', subtitle: 'Um pequeno ritual para manter tudo em dia' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'pattern-vision', anchorText: 'enxergando padrões', title: 'Enxergando Padrões', subtitle: 'Meses, produtos e dias que contam a história' },
     { sectionIndex: 5, cardIndex: 3, cardType: 'panel-decision', anchorText: 'decidindo com dados', title: 'Decidindo com Seu Painel', subtitle: 'Menos achismo, mais clareza nos números' },
+  ],
+  'aula-12': [
+    // Seção 1 - Explosão de vídeos (3 cards)
+    { sectionIndex: 1, cardIndex: 1, cardType: 'video-feed-explosion', anchorText: 'explosão de vídeos', title: 'Explosão no Feed', subtitle: 'Feed transbordando de vídeos virais' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'video-connection', anchorText: 'conexão humana', title: 'Conexão por Vídeo', subtitle: 'Conexão humana através do vídeo' },
+    { sectionIndex: 1, cardIndex: 3, cardType: 'blank-screen-block', anchorText: 'tela em branco', title: 'Bloqueio da Tela Branca', subtitle: 'Tela em branco travando criador' },
+    // Seção 2 - Estrutura do vídeo (3 cards)
+    { sectionIndex: 2, cardIndex: 1, cardType: 'three-video-blocks', anchorText: 'três blocos', title: 'Os 3 Blocos do Vídeo', subtitle: 'Os três blocos essenciais do vídeo' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'hook-power', anchorText: 'gancho poderoso', title: 'Poder do Gancho', subtitle: 'Gancho poderoso nos primeiros segundos' },
+    { sectionIndex: 2, cardIndex: 3, cardType: 'call-to-action', anchorText: 'chamada para ação', title: 'Chamada para Ação', subtitle: 'Chamada clara para ação do espectador' },
+    // Seção 3 - Criando roteiros (3 cards)
+    { sectionIndex: 3, cardIndex: 1, cardType: 'idea-to-script', anchorText: 'ideia ao roteiro', title: 'Da Ideia ao Roteiro', subtitle: 'Transformando ideia em roteiro estruturado' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'three-variations', anchorText: 'três versões', title: 'Três Variações', subtitle: 'Três versões do mesmo conteúdo' },
+    { sectionIndex: 3, cardIndex: 3, cardType: 'partnership', anchorText: 'parceira de criação', title: 'Parceria com I.A.', subtitle: 'I.A. como parceira de criação' },
+    // Seção 4 - Prática e ferramentas (3 cards)
+    { sectionIndex: 4, cardIndex: 1, cardType: 'video-starter', anchorText: 'primeiro vídeo', title: 'Iniciador de Vídeo', subtitle: 'Começando o primeiro vídeo' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'ai-text-engine', anchorText: 'motor de texto', title: 'Motor de Texto com I.A.', subtitle: 'Motor de texto gerando roteiros' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'production-basics', anchorText: 'produção simples', title: 'Produção Básica', subtitle: 'Fundamentos de produção simples' },
+    // Seção 5 - Consistência e crescimento (3 cards)
+    { sectionIndex: 5, cardIndex: 1, cardType: 'script-guide', anchorText: 'guia de roteiro', title: 'Guia de Roteiro', subtitle: 'Guia passo a passo do roteiro' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'short-blocks', anchorText: 'blocos curtos', title: 'Blocos Curtos', subtitle: 'Blocos curtos e impactantes' },
+    { sectionIndex: 5, cardIndex: 3, cardType: 'consistency-wins', anchorText: 'consistência', title: 'Consistência Vence', subtitle: 'Consistência supera perfeição' },
   ],
 };
 
