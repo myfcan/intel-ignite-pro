@@ -957,6 +957,76 @@ export default function AdminV5CardConfig() {
   const [detectedCards, setDetectedCards] = useState<ExperienceCard[]>([]);
   const [sendingToPipeline, setSendingToPipeline] = useState(false);
 
+  // 🛠️ Helper para mostrar erro de sintaxe JSON com contexto visual
+  const formatJsonSyntaxError = (error: Error, jsonString: string): string => {
+    const errorMsg = error.message;
+
+    // Extrair posição do erro (funciona para vários formatos de erro)
+    const positionMatch = errorMsg.match(/at position (\d+)/);
+    const lineColMatch = errorMsg.match(/line (\d+) column (\d+)/);
+
+    if (!positionMatch && !lineColMatch) {
+      return errorMsg; // Retorna mensagem original se não conseguir extrair posição
+    }
+
+    const lines = jsonString.split('\n');
+    let errorLine = 0;
+    let errorCol = 0;
+
+    if (lineColMatch) {
+      errorLine = parseInt(lineColMatch[1]) - 1; // Line numbers são 1-indexed
+      errorCol = parseInt(lineColMatch[2]) - 1; // Column numbers são 1-indexed
+    } else if (positionMatch) {
+      // Calcular linha e coluna a partir da posição
+      const position = parseInt(positionMatch[1]);
+      let currentPos = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        const lineLength = lines[i].length + 1; // +1 para o \n
+        if (currentPos + lineLength > position) {
+          errorLine = i;
+          errorCol = position - currentPos;
+          break;
+        }
+        currentPos += lineLength;
+      }
+    }
+
+    // Montar mensagem com contexto
+    const contextLines: string[] = [];
+    contextLines.push('🔴 ERRO DE SINTAXE JSON:');
+    contextLines.push(errorMsg);
+    contextLines.push('');
+    contextLines.push('📍 Localização do erro:');
+
+    // Mostrar 2 linhas antes e depois do erro
+    const startLine = Math.max(0, errorLine - 2);
+    const endLine = Math.min(lines.length - 1, errorLine + 2);
+
+    for (let i = startLine; i <= endLine; i++) {
+      const lineNum = (i + 1).toString().padStart(4, ' ');
+      const line = lines[i];
+
+      if (i === errorLine) {
+        contextLines.push(`${lineNum} ❌ ${line}`);
+        // Adicionar seta apontando para o caractere problemático
+        const pointer = ' '.repeat(7 + errorCol) + '^ AQUI';
+        contextLines.push(pointer);
+      } else {
+        contextLines.push(`${lineNum}    ${line}`);
+      }
+    }
+
+    contextLines.push('');
+    contextLines.push('💡 Dicas:');
+    contextLines.push('• Verifique se há vírgulas faltando ou extras');
+    contextLines.push('• Verifique se todas as chaves e colchetes estão fechados');
+    contextLines.push('• Verifique se strings estão entre aspas duplas');
+    contextLines.push('• JSON não aceita comentários');
+
+    return contextLines.join('\n');
+  };
+
   const handleAnalyzeJson = () => {
     try {
       let parsed = JSON.parse(lessonJson);
@@ -1129,12 +1199,29 @@ export default function AdminV5CardConfig() {
       });
 
     } catch (error: any) {
-      console.error('❌ [V5-CONFIG] Erro ao analisar JSON:', error);
-      toast({
-        title: "Erro ao analisar JSON",
-        description: error.message || "JSON inválido. Verifique a sintaxe.",
-        variant: "destructive",
-      });
+      // 🆕 Detectar se é erro de sintaxe JSON e formatar com contexto
+      const isSyntaxError = error instanceof SyntaxError ||
+                            error.message?.includes('JSON') ||
+                            error.message?.includes('position') ||
+                            error.message?.includes('Unexpected token');
+
+      if (isSyntaxError && lessonJson) {
+        const formattedError = formatJsonSyntaxError(error, lessonJson);
+        console.error('❌ [V5-CONFIG] Erro de sintaxe JSON:\n' + formattedError);
+
+        toast({
+          title: "Erro de Sintaxe no JSON",
+          description: "Verifique o console (F12) para ver exatamente onde está o erro.",
+          variant: "destructive",
+        });
+      } else {
+        console.error('❌ [V5-CONFIG] Erro ao analisar JSON:', error);
+        toast({
+          title: "Erro ao analisar JSON",
+          description: error.message || "JSON inválido. Verifique a sintaxe.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
