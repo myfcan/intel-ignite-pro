@@ -205,7 +205,10 @@ export interface ExperienceCardConfig {
   type: string; // Tipo do card (ia-book, ia-image-generator, custom, etc.)
   sectionIndex: number; // Índice da seção onde aparece
   anchorText?: string; // Texto âncora para timing (opcional)
-  props?: ExperienceCardProps; // Props para DynamicExperienceCard
+  title?: string; // Título do card (alternativa a props.title)
+  subtitle?: string; // Subtítulo do card (alternativa a props.subtitle)
+  visualScript?: string; // Descrição cinematográfica do visual/animação do card
+  props?: ExperienceCardProps; // Props para DynamicExperienceCard (retrocompatibilidade)
 }
 
 export interface GuidedLessonData {

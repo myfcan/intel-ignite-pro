@@ -50,6 +50,16 @@ export async function step6ValidateAll(input: Step5Output): Promise<Step6Output>
           section.experienceCards.forEach((card: any, cardIdx: number) => {
             if (!card.id) warnings.push(`⚠️ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem ID`);
             if (!card.type) errors.push(`❌ ExperienceCard ${cardIdx + 1} na seção ${idx + 1} sem tipo`);
+
+            // Validação opcional de visualScript (recomendado mas não obrigatório)
+            if (card.visualScript && card.visualScript.trim().length < 20) {
+              warnings.push(`⚠️ ExperienceCard ${cardIdx + 1} (${card.type}) tem visualScript muito curto (mínimo recomendado: 20 caracteres)`);
+            }
+
+            // Validação de title/subtitle
+            if (!card.title && !card.props?.title) {
+              warnings.push(`⚠️ ExperienceCard ${cardIdx + 1} (${card.type}) sem título (nem em 'title' nem em 'props.title')`);
+            }
           });
         }
       });
