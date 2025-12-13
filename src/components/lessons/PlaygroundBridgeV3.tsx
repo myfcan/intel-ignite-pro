@@ -88,49 +88,19 @@ export function PlaygroundBridgeV3({
   const finalModules = selectedModules === 'Outro' ? customModules : selectedModules;
   const exercisesText = hasExercises === true ? 'exercícios ao final de cada módulo' : hasExercises === false ? 'sem exercícios' : '';
 
-  // Monta o prompt com as escolhas do usuário
+  // Monta o prompt DIRETAMENTE com os valores escolhidos - SEM depender de placeholders
   const buildPrompt = () => {
-    let prompt = playgroundExample.examplePrompt;
-    
-    // Substitui formato/tipo de produto
-    if (finalFormat) {
-      prompt = prompt.replace(/\[curso ou eBook\]/gi, finalFormat);
-      prompt = prompt.replace(/\[tipo de conteúdo\]/gi, finalFormat);
-    }
-    
-    // Substitui tema - suporta múltiplos formatos de placeholder
-    if (theme) {
-      prompt = prompt.replace(/\[tema do curso ou eBook\]/gi, theme);
-      prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, theme);
-      prompt = prompt.replace(/\[seu tema principal\]/gi, theme);
-    }
-    
-    // Substitui público - remove "Público" do início se já estiver no valor
-    if (finalAudience) {
-      const audienceValue = finalAudience.replace(/^Público\s*/i, '').trim();
-      prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, audienceValue);
-      prompt = prompt.replace(/\[quem você quer atingir\]/gi, audienceValue);
-    }
-    
-    // Substitui módulos - mantém estrutura "X tópicos/módulos em cada um"
-    if (finalModules) {
-      prompt = prompt.replace(/\[número de módulos\]/gi, finalModules);
-      // Substitui "3 a 5 tópicos" mantendo a estrutura da frase
-      prompt = prompt.replace(/3 a 5 tópicos/gi, `${finalModules} tópicos`);
-    }
-    
-    // Substitui resultado desejado
-    if (desiredResult) {
-      prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, desiredResult);
-      prompt = prompt.replace(/\[o que deve acontecer\]/gi, desiredResult);
-    }
-    
-    // Substitui exercícios
-    if (exercisesText) {
-      prompt = prompt.replace(/\[exercícios ou atividades\]/gi, exercisesText);
-    }
-    
-    return prompt;
+    // Construção direta do prompt com TODOS os valores preenchidos
+    const format = finalFormat || '[tipo de produto]';
+    const themeValue = theme || '[tema]';
+    const audience = finalAudience || '[público]';
+    const modules = finalModules || '[número de módulos]';
+    const result = desiredResult || '[resultado desejado]';
+    const content = selectedContentType || '[tipo de conteúdo]';
+    const exercises = exercisesText || '[exercícios]';
+
+    // Prompt construído diretamente - EXATAMENTE como deve aparecer
+    return `Você é um especialista em organização de conhecimento. Monte um esqueleto de ${format} sobre ${themeValue} para ${audience}. Estruture em ${modules} módulos com títulos claros e 3 a 5 tópicos em cada um, usando ${content}${exercises ? `, ${exercises}` : ''}, levando o aluno até o resultado final: ${result}.`;
   };
 
   const handleGoToPlayground = useCallback(() => {
@@ -194,60 +164,41 @@ export function PlaygroundBridgeV3({
     </button>
   );
 
-  // Renderiza prompt com destaques das escolhas
+  // Renderiza prompt FINAL com destaques visuais dos valores preenchidos
   const renderPromptWithHighlights = () => {
-    const parts = playgroundExample.examplePrompt.split(/(\[[^\]]+\])/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith('[') && part.endsWith(']')) {
-        let value = '';
-        const lowerPart = part.toLowerCase();
-        
-        // Formato/tipo de produto
-        if (lowerPart.includes('curso ou ebook') || lowerPart.includes('tipo de conteúdo')) {
-          value = finalFormat;
-        }
-        // Tema - múltiplos formatos
-        else if (lowerPart.includes('tema do curso') || lowerPart.includes('assunto principal') || lowerPart.includes('seu tema principal')) {
-          value = theme;
-        }
-        // Público
-        else if (lowerPart.includes('quem vai') || lowerPart.includes('quem você quer atingir')) {
-          value = finalAudience;
-        }
-        // Módulos
-        else if (lowerPart.includes('número de módulos')) {
-          value = finalModules;
-        }
-        // Resultado
-        else if (lowerPart.includes('conseguir fazer') || lowerPart.includes('o que deve acontecer')) {
-          value = desiredResult;
-        }
-        // Exercícios
-        else if (lowerPart.includes('exercícios')) {
-          value = exercisesText;
-        }
-        
-        if (value) {
-          return (
-            <span 
-              key={idx} 
-              className="px-1 rounded font-semibold bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200"
-            >
-              {value}
-            </span>
-          );
-        }
-        return (
-          <span 
-            key={idx} 
-            className="px-0.5 rounded font-medium bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300"
-          >
-            {part}
-          </span>
-        );
-      }
-      return <span key={idx}>{part}</span>;
-    });
+    const format = finalFormat || '[tipo de produto]';
+    const themeValue = theme || '[tema]';
+    const audience = finalAudience || '[público]';
+    const modules = finalModules || '[número de módulos]';
+    const result = desiredResult || '[resultado desejado]';
+    const content = selectedContentType || '[tipo de conteúdo]';
+    const exercises = exercisesText || '';
+
+    const Highlight = ({ value, filled }: { value: string; filled: boolean }) => (
+      <span className={`px-1 rounded font-semibold ${
+        filled 
+          ? 'bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200' 
+          : 'bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300'
+      }`}>
+        {value}
+      </span>
+    );
+
+    return (
+      <>
+        Você é um especialista em organização de conhecimento. Monte um esqueleto de{' '}
+        <Highlight value={format} filled={!!finalFormat} /> sobre{' '}
+        <Highlight value={themeValue} filled={!!theme} /> para{' '}
+        <Highlight value={audience} filled={!!finalAudience} />. Estruture em{' '}
+        <Highlight value={modules} filled={!!finalModules} /> módulos com títulos claros e 3 a 5 tópicos em cada um, usando{' '}
+        <Highlight value={content} filled={!!selectedContentType} />
+        {exercises && (
+          <>, <Highlight value={exercises} filled={hasExercises !== null} /></>
+        )}
+        , levando o aluno até o resultado final:{' '}
+        <Highlight value={result} filled={!!desiredResult} />.
+      </>
+    );
   };
 
   const getStepInfo = (s: number) => {
