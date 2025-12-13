@@ -387,7 +387,7 @@ const Dashboard = () => {
             gradientFrom="#ec4899"
             gradientTo="#e11d48"
             delay={0.2}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
           <AnimatedStatCard
             value={gamificationStats?.powerScore ?? 0}
@@ -396,7 +396,7 @@ const Dashboard = () => {
             gradientFrom="#6366f1"
             gradientTo="#9333ea"
             delay={0.35}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
           <AnimatedStatCard
             value={gamificationStats?.lessonsCompleted ?? 0}
@@ -405,7 +405,7 @@ const Dashboard = () => {
             gradientFrom="#10b981"
             gradientTo="#0891b2"
             delay={0.5}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
         </div>
 
