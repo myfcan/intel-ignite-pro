@@ -23,25 +23,22 @@ export function useUserGamification() {
   const [isLoading, setIsLoading] = useState(true);
   const [prevPatentLevel, setPrevPatentLevel] = useState<number | null>(null);
   const [showPatentCelebration, setShowPatentCelebration] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
 
-  const fetchStats = useCallback(async (retryCount = 0) => {
-    // Só seta loading na primeira tentativa
-    if (retryCount === 0) {
-      setIsLoading(true);
-    }
+  const fetchStats = useCallback(async (userId?: string) => {
+    setIsLoading(true);
     
     try {
-      // Aguardar sessão estar disponível
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        console.log('[useUserGamification] No session found, retry:', retryCount);
-        
-        // Retry até 3 vezes com delay se não encontrar sessão
-        if (retryCount < 3) {
-          setTimeout(() => fetchStats(retryCount + 1), 500);
-          return;
-        }
-        
+      // Se userId foi passado diretamente, usar ele
+      let targetUserId = userId;
+      
+      if (!targetUserId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        targetUserId = session?.user?.id;
+      }
+      
+      if (!targetUserId) {
+        console.log('[useUserGamification] No user ID available');
         setIsLoading(false);
         return;
       }
@@ -49,18 +46,11 @@ export function useUserGamification() {
       const { data, error } = await supabase
         .from('users')
         .select('power_score, coins, patent_level, streak_days, total_lessons_completed')
-        .eq('id', session.user.id)
+        .eq('id', targetUserId)
         .single();
 
       if (error) {
         console.error('[useUserGamification] Query error:', error);
-        
-        // Retry em caso de erro
-        if (retryCount < 3) {
-          setTimeout(() => fetchStats(retryCount + 1), 500);
-          return;
-        }
-        
         setIsLoading(false);
         return;
       }
@@ -75,10 +65,10 @@ export function useUserGamification() {
           lessonsCompleted: data.total_lessons_completed || 0,
         };
 
+        console.log('[useUserGamification] Stats loaded:', newStats);
         setStats(newStats);
-        setIsLoading(false);
         
-        // Detectar subida de patente (usando ref para evitar re-render loop)
+        // Detectar subida de patente
         setPrevPatentLevel(prev => {
           if (prev !== null && data.patent_level > prev) {
             setShowPatentCelebration(true);
@@ -86,27 +76,58 @@ export function useUserGamification() {
           }
           return data.patent_level || 0;
         });
-      } else {
-        setIsLoading(false);
       }
     } catch (err) {
       console.error('[useUserGamification] Error:', err);
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    // Função para inicializar com sessão
+    const initWithSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (isMounted && session?.user) {
+        setSessionReady(true);
+        await fetchStats(session.user.id);
+      } else if (isMounted) {
+        setIsLoading(false);
+      }
+    };
+
     // Escutar mudanças na sessão
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        fetchStats();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[useUserGamification] Auth event:', event);
+      
+      if (!isMounted) return;
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        setSessionReady(true);
+        // Pequeno delay para garantir que a sessão foi persistida
+        setTimeout(() => {
+          if (isMounted) {
+            fetchStats(session.user.id);
+          }
+        }, 100);
+      } else if (event === 'SIGNED_OUT') {
+        setStats(null);
+        setSessionReady(false);
+        setIsLoading(false);
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        // Refresh silencioso quando token é atualizado
+        fetchStats(session.user.id);
       }
     });
 
-    // Buscar stats iniciais
-    fetchStats();
+    // Inicializar
+    initWithSession();
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [fetchStats]);
@@ -115,6 +136,7 @@ export function useUserGamification() {
     stats, 
     isLoading, 
     refresh: fetchStats,
-    showPatentCelebration
+    showPatentCelebration,
+    sessionReady
   };
 }
