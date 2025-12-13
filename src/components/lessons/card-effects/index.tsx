@@ -172,6 +172,10 @@ import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 // ============================================================
 // AULA 10 - Conteúdo Profundo: Cards Especiais para Aula 06
 // ============================================================
+import { CardEffectCoreTriangle } from './CardEffectCoreTriangle';
+import { CardEffectVideoCourseView } from './CardEffectVideoCourseView';
+import { CardEffectEbookView } from './CardEffectEbookView';
+import { CardEffectMultiFormat } from './CardEffectMultiFormat';
 import { CardEffectDeepContentVsRapido } from './CardEffectDeepContentVsRapido';
 import { CardEffectKnowledgeStructure } from './CardEffectKnowledgeStructure';
 import { CardEffectCoreDecisions } from './CardEffectCoreDecisions';
@@ -186,6 +190,12 @@ import { CardEffectYouAreTheAuthor } from './CardEffectYouAreTheAuthor';
 import { CardEffectAiLimitations } from './CardEffectAiLimitations';
 import { CardEffectCopyPasteRisk } from './CardEffectCopyPasteRisk';
 import { CardEffectNextStepsDeepContent } from './CardEffectNextStepsDeepContent';
+import { CardEffectToolGroups } from './CardEffectToolGroups';
+import { CardEffectTextTools } from './CardEffectTextTools';
+import { CardEffectVisualTools } from './CardEffectVisualTools';
+import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
+import { CardEffectEditorInChief } from './CardEffectEditorInChief';
+import { CardEffectLongTermAsset } from './CardEffectLongTermAsset';
 
 
 // Re-exportar componentes - AULA 1 (Fundamentos)
@@ -389,6 +399,10 @@ export type CardEffectType =
   | 'module-map' | 'objective-focus' | 'product-shelf' | 'ebook-creator'
   | 'lesson-series' | 'text-ai-helper' | 'visual-ai-helper' | 'you-are-the-author'
   | 'ai-limitations' | 'copy-paste-risk' | 'next-steps-deep-content'
+  // Cards adicionais da Aula 06 (sections)
+  | 'core-triangle' | 'video-course-view' | 'ebook-view' | 'multi-format'
+  | 'tool-groups' | 'text-tools' | 'visual-tools' | 'coauthor-role'
+  | 'editor-in-chief' | 'long-term-asset'
 ;
 
 export interface CardEffectProps {
@@ -552,6 +566,17 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'ai-limitations': CardEffectAiLimitations,
   'copy-paste-risk': CardEffectCopyPasteRisk,
   'next-steps-deep-content': CardEffectNextStepsDeepContent,
+  // Cards adicionais da Aula 06 (sections)
+  'core-triangle': CardEffectCoreTriangle,
+  'video-course-view': CardEffectVideoCourseView,
+  'ebook-view': CardEffectEbookView,
+  'multi-format': CardEffectMultiFormat,
+  'tool-groups': CardEffectToolGroups,
+  'text-tools': CardEffectTextTools,
+  'visual-tools': CardEffectVisualTools,
+  'coauthor-role': CardEffectCoauthorRole,
+  'editor-in-chief': CardEffectEditorInChief,
+  'long-term-asset': CardEffectLongTermAsset,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -653,6 +678,17 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'ai-limitations': 'Limitações da IA',
   'copy-paste-risk': 'Risco do Copiar/Colar',
   'next-steps-deep-content': 'Próximos Passos Conteúdo Profundo',
+  // Cards adicionais da Aula 06 (sections)
+  'core-triangle': 'Tríade Central',
+  'video-course-view': 'Visualizador de Curso em Vídeo',
+  'ebook-view': 'Visualizador de eBook',
+  'multi-format': 'Multi-Formato',
+  'tool-groups': 'Grupos de Ferramentas',
+  'text-tools': 'Ferramentas de Texto',
+  'visual-tools': 'Ferramentas Visuais',
+  'coauthor-role': 'Papel de Coautor',
+  'editor-in-chief': 'Editor-Chefe',
+  'long-term-asset': 'Ativo de Longo Prazo',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -768,6 +804,17 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'ai-limitations': 'Limitações da IA que exigem revisão',
   'copy-paste-risk': 'Risco de conteúdo genérico',
   'next-steps-deep-content': 'Passos para conteúdo profundo seguro',
+  // Cards adicionais da Aula 06 (sections)
+  'core-triangle': 'Triângulo com tema, público e promessa',
+  'video-course-view': 'Visualização de curso em vídeo',
+  'ebook-view': 'Visualização de eBook',
+  'multi-format': 'Comparação de formatos',
+  'tool-groups': 'Agrupamento de ferramentas IA',
+  'text-tools': 'Ferramentas de texto IA',
+  'visual-tools': 'Ferramentas visuais IA',
+  'coauthor-role': 'Papel de coautor com IA',
+  'editor-in-chief': 'Diretor criativo do conteúdo',
+  'long-term-asset': 'Ativo de longo prazo',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
