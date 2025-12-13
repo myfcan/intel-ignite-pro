@@ -51,7 +51,7 @@ export default function PromptCategory() {
   const [userPlan, setUserPlan] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const { unlockedPrompts, isPromptUnlocked: checkPromptUnlocked, refresh: refreshUnlockedPrompts } = useUnlockedPrompts();
-  const { isAdmin } = useIsAdmin(userId);
+  const { isAdmin, loading: adminLoading } = useIsAdmin(userId);
 
   // Buscar plano do usuário e ID
   useEffect(() => {
@@ -103,8 +103,8 @@ export default function PromptCategory() {
 
   // Verificar se usuário pode acessar prompt
   const canAccessPrompt = (prompt: Prompt) => {
-    // Admins têm acesso total
-    if (isAdmin) return true;
+    // Aguardar carregamento do status admin antes de verificar
+    if (!adminLoading && isAdmin) return true;
 
     if (!prompt.isPremium) return true;
 
