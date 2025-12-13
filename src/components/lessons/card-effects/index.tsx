@@ -960,12 +960,14 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-11'],
 ];
 
-export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
+export function getCardEffectComponent(type: string | undefined | null): React.FC<CardEffectProps> | null {
+  if (!type) return null;
   const normalizedType = type.toLowerCase().trim() as CardEffectType;
   return CARD_EFFECT_COMPONENTS[normalizedType] || null;
 }
 
-export function isValidCardEffectType(type: string): type is CardEffectType {
+export function isValidCardEffectType(type: string | undefined | null): type is CardEffectType {
+  if (!type) return false;
   const normalizedType = type.toLowerCase().trim();
   return normalizedType in CARD_EFFECT_COMPONENTS;
 }
