@@ -91,37 +91,45 @@ export function PlaygroundBridgeV3({
   // Monta o prompt com as escolhas do usuário
   const buildPrompt = () => {
     let prompt = playgroundExample.examplePrompt;
+    
     // Substitui formato/tipo de produto
     if (finalFormat) {
       prompt = prompt.replace(/\[curso ou eBook\]/gi, finalFormat);
       prompt = prompt.replace(/\[tipo de conteúdo\]/gi, finalFormat);
     }
+    
     // Substitui tema - suporta múltiplos formatos de placeholder
     if (theme) {
       prompt = prompt.replace(/\[tema do curso ou eBook\]/gi, theme);
       prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, theme);
       prompt = prompt.replace(/\[seu tema principal\]/gi, theme);
     }
-    // Substitui público
+    
+    // Substitui público - remove "Público" do início se já estiver no valor
     if (finalAudience) {
-      prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, finalAudience);
-      prompt = prompt.replace(/\[quem você quer atingir\]/gi, finalAudience);
+      const audienceValue = finalAudience.replace(/^Público\s*/i, '').trim();
+      prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, audienceValue);
+      prompt = prompt.replace(/\[quem você quer atingir\]/gi, audienceValue);
     }
-    // Substitui módulos
+    
+    // Substitui módulos - mantém estrutura "X tópicos/módulos em cada um"
     if (finalModules) {
       prompt = prompt.replace(/\[número de módulos\]/gi, finalModules);
-      // Substitui "3 a 5 tópicos" por número real de módulos se especificado
-      prompt = prompt.replace(/3 a 5 tópicos/gi, `${finalModules} módulos`);
+      // Substitui "3 a 5 tópicos" mantendo a estrutura da frase
+      prompt = prompt.replace(/3 a 5 tópicos/gi, `${finalModules} tópicos`);
     }
+    
     // Substitui resultado desejado
     if (desiredResult) {
       prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, desiredResult);
       prompt = prompt.replace(/\[o que deve acontecer\]/gi, desiredResult);
     }
+    
     // Substitui exercícios
     if (exercisesText) {
       prompt = prompt.replace(/\[exercícios ou atividades\]/gi, exercisesText);
     }
+    
     return prompt;
   };
 
