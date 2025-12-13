@@ -960,39 +960,43 @@ export default function AdminV5CardConfig() {
   const handleAnalyzeJson = () => {
     try {
       let parsed = JSON.parse(lessonJson);
-      
+
       if (Array.isArray(parsed)) {
         if (parsed.length === 0) {
           throw new Error('Array JSON está vazio');
         }
         parsed = parsed[0];
       }
-      
+
       if (!parsed.title) {
         throw new Error('JSON precisa ter campo "title"');
       }
-      
+
       const sections = parsed.sections || parsed.content?.sections;
-      
+
       if (!sections || !Array.isArray(sections)) {
         throw new Error('JSON precisa ter "sections" ou "content.sections" como array');
       }
 
+      // 🎯 VALIDAÇÕES ROBUSTAS PARA MODELO V5
+      const errors: string[] = [];
+      const warnings: string[] = [];
+
       // 🔍 Detectar experienceCards do JSON (suporta ambos formatos)
       let rawCards = parsed.experienceCards || [];
-      
+
       // 🆕 Se não encontrou experienceCards, extrair dos comentários HTML do markdown
       if (rawCards.length === 0) {
         const extractedCards: any[] = [];
-        
+
         sections.forEach((section: any, sectionIdx: number) => {
           const markdown = section.markdown || section.visualContent || section.content || '';
-          
+
           // Regex para capturar <!-- archortext: TEXTO --> ou <!-- anchortext: TEXTO -->
           const anchorRegex = /<!--\s*a[rn]chortext:\s*(.+?)\s*-->/gi;
           let match;
           let cardIndex = 1;
-          
+
           while ((match = anchorRegex.exec(markdown)) !== null) {
             const anchorText = match[1].trim();
             extractedCards.push({
@@ -1006,14 +1010,85 @@ export default function AdminV5CardConfig() {
             });
           }
         });
-        
+
         rawCards = extractedCards;
-        
+
         if (extractedCards.length > 0) {
           console.log('📍 [V5-CONFIG] AnchorTexts extraídos do markdown:', extractedCards.length);
         }
       }
-      
+
+      // ✅ VALIDAÇÃO 1: Campo 'type' obrigatório em TODOS os experienceCards
+      rawCards.forEach((card: any, idx: number) => {
+        const cardNumber = idx + 1;
+
+        // Verifica se tem 'type' (não aceita apenas 'cardType')
+        if (!card.type) {
+          if (card.cardType) {
+            errors.push(`❌ ERRO CRÍTICO: Card ${cardNumber} tem 'cardType' mas NÃO tem 'type' (obrigatório). Use 'type' ao invés de 'cardType'.`);
+          } else {
+            errors.push(`❌ ERRO CRÍTICO: Card ${cardNumber} está SEM o campo 'type' (obrigatório).`);
+          }
+        }
+
+        // ✅ VALIDAÇÃO 2: visualScript deve ser STRING, não objeto
+        if (card.visualScript !== undefined) {
+          if (typeof card.visualScript === 'object') {
+            errors.push(`❌ ERRO CRÍTICO: Card ${cardNumber} (${card.type || card.cardType || 'sem tipo'}) tem 'visualScript' como OBJETO. Deve ser STRING.`);
+          } else if (typeof card.visualScript !== 'string') {
+            errors.push(`❌ ERRO: Card ${cardNumber} tem 'visualScript' com tipo inválido (${typeof card.visualScript}). Deve ser string.`);
+          }
+        }
+
+        // Validação de anchorText presente
+        if (!card.anchorText || card.anchorText.trim() === '') {
+          warnings.push(`⚠️ AVISO: Card ${cardNumber} (${card.type || card.cardType || 'sem tipo'}) não tem 'anchorText'.`);
+        }
+
+        // Validação de title
+        if (!card.title && !card.props?.title) {
+          warnings.push(`⚠️ AVISO: Card ${cardNumber} (${card.type || card.cardType || 'sem tipo'}) não tem 'title'.`);
+        }
+      });
+
+      // ✅ VALIDAÇÃO 3: playgroundConfig deve estar DENTRO de uma section, não no nível raiz
+      if (parsed.playgroundConfig && !parsed.content?.playgroundConfig) {
+        errors.push(`❌ ERRO IMPORTANTE: 'playgroundConfig' está no nível RAIZ do JSON. Deve estar DENTRO de uma section (junto com showPlaygroundCall: true).`);
+      }
+
+      // ✅ VALIDAÇÃO 4: Verificar se sections com playgroundConfig têm showPlaygroundCall
+      sections.forEach((section: any, idx: number) => {
+        if (section.playgroundConfig && !section.showPlaygroundCall) {
+          warnings.push(`⚠️ AVISO: Section ${idx + 1} tem 'playgroundConfig' mas falta 'showPlaygroundCall: true'.`);
+        }
+      });
+
+      // 🚨 Se houver ERROS CRÍTICOS, mostrar e parar
+      if (errors.length > 0) {
+        const errorMessage = errors.join('\n\n');
+        console.error('❌ [V5-CONFIG] Erros de validação:', errors);
+
+        toast({
+          title: "❌ JSON com ERROS!",
+          description: `Encontrados ${errors.length} erro(s) crítico(s). Veja o console para detalhes.`,
+          variant: "destructive",
+        });
+
+        // Mostrar erros no console de forma destacada
+        console.group('🔴 ERROS DE VALIDAÇÃO V5');
+        errors.forEach(err => console.error(err));
+        console.groupEnd();
+
+        throw new Error(errorMessage);
+      }
+
+      // ⚠️ Se houver AVISOS, mostrar mas continuar
+      if (warnings.length > 0) {
+        console.group('⚠️ AVISOS DE VALIDAÇÃO V5');
+        warnings.forEach(warn => console.warn(warn));
+        console.groupEnd();
+      }
+
       // Normalizar cards para ter sempre 'type' e outros campos consistentes
       const jsonCards = rawCards.map((card: any) => ({
         ...card,
@@ -1022,30 +1097,37 @@ export default function AdminV5CardConfig() {
         title: card.title || card.props?.title || '',
         subtitle: card.subtitle || card.props?.subtitle || '',
       }));
-      
+
       setParsedLesson(parsed);
       setSections(sections);
       setDetectedCards(jsonCards);
-      
+
       // Se tem cards no JSON, preencher experienceCards automaticamente
       if (jsonCards.length > 0) {
         setExperienceCards(jsonCards);
       }
-      
+
+      const successMessage = warnings.length > 0
+        ? `${sections.length} seções + ${jsonCards.length} cards (${warnings.length} avisos - veja console)`
+        : jsonCards.length > 0
+          ? `${sections.length} seções + ${jsonCards.length} cards detectados!`
+          : `${sections.length} seções detectadas. Nenhum card encontrado.`;
+
       toast({
-        title: "✅ JSON analisado!",
-        description: jsonCards.length > 0
-          ? `${sections.length} seções + ${jsonCards.length} anchorTexts detectados!`
-          : `${sections.length} seções detectadas. Nenhum anchorText encontrado.`,
+        title: warnings.length > 0 ? "⚠️ JSON analisado com avisos" : "✅ JSON analisado!",
+        description: successMessage,
+        variant: warnings.length > 0 ? "default" : "default",
       });
-      
+
       console.log('📊 [V5-CONFIG] JSON analisado:', {
         title: parsed.title,
         sectionsCount: sections.length,
         model: parsed.model,
         experienceCardsCount: jsonCards.length,
+        errors: errors.length,
+        warnings: warnings.length,
       });
-      
+
     } catch (error: any) {
       console.error('❌ [V5-CONFIG] Erro ao analisar JSON:', error);
       toast({
