@@ -1,211 +1,232 @@
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { Database, Brain, TrendingUp, Sparkles, FileText } from "lucide-react";
-import { CardEffectProps } from "./index";
+'use client';
 
-export const CardEffectDataLearner = ({ isActive = true, duration = 28 }: CardEffectProps) => {
-  const [phase, setPhase] = useState(0);
-  const [loopCount, setLoopCount] = useState(0);
-  const maxLoops = 2;
-  const totalPhases = 7;
-  const phaseTime = (duration * 1000) / totalPhases;
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Database, Brain, TrendingUp, Sparkles, FileText, BarChart3, Image } from 'lucide-react';
+import { CardEffectProps } from './types';
+
+/**
+ * 📊 DATA LEARNER
+ * Aula: Introdução à I.A.
+ * Conceito: I.A. aprende com dados - textos, imagens, gráficos
+ * Ajuste X2: 11 cenas (~33 segundos)
+ */
+export function CardEffectDataLearner({ isActive = true, duration = 33 }: CardEffectProps) {
+  const [scene, setScene] = useState(0);
+  const totalScenes = 11;
+  const sceneTime = (duration * 1000) / totalScenes;
 
   useEffect(() => {
-    if (!isActive || loopCount >= maxLoops) return;
+    if (!isActive) return;
+    setScene(0);
     const interval = setInterval(() => {
-      setPhase(prev => {
-        if (prev >= totalPhases - 1) {
-          setLoopCount(l => l + 1);
-          return 0;
-        }
-        return prev + 1;
-      });
-    }, phaseTime);
+      setScene(prev => (prev < totalScenes - 1 ? prev + 1 : prev));
+    }, sceneTime);
     return () => clearInterval(interval);
-  }, [isActive, loopCount, phaseTime]);
+  }, [isActive, sceneTime]);
 
-  const learningStages = [
-    { label: "Textos", icon: "📝", color: "emerald" },
-    { label: "Gráficos", icon: "📊", color: "teal" },
-    { label: "Imagens", icon: "🖼️", color: "cyan" }
+  const dataTypes = [
+    { icon: FileText, label: "Textos", emoji: "📝" },
+    { icon: BarChart3, label: "Gráficos", emoji: "📊" },
+    { icon: Image, label: "Imagens", emoji: "🖼️" },
+  ];
+
+  const stats = [
+    { label: "Padrões", value: "1.2M", emoji: "🔍" },
+    { label: "Conexões", value: "500K", emoji: "🔗" },
+    { label: "Insights", value: "10K", emoji: "💡" },
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950 p-4 sm:p-6 md:p-8 flex flex-col"
-    >
-      {/* Header */}
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="text-center mb-4"
-      >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 mb-3">
-          <Database className="w-4 h-4 text-emerald-400" />
-          <span className="text-emerald-300 text-sm font-medium">Aprendizado de Dados</span>
-        </div>
-        <h2 className="text-2xl md:text-3xl font-bold text-white">
-          I.A. <span className="text-emerald-400">Aprende</span> com Dados
-        </h2>
-      </motion.div>
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-950 via-teal-950 to-cyan-950 p-4 sm:p-6 flex flex-col">
+      
+      {/* Glow effect */}
+      <motion.div
+        className="absolute inset-0 opacity-30"
+        animate={{
+          background: [
+            'radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.4) 0%, transparent 50%)',
+            'radial-gradient(circle at 70% 70%, rgba(6, 182, 212, 0.4) 0%, transparent 50%)',
+            'radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.4) 0%, transparent 50%)',
+          ]
+        }}
+        transition={{ duration: 8, repeat: Infinity }}
+      />
 
-      {/* Main Visualization */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="relative w-full max-w-md">
-          {/* Data Flow Animation */}
-          <div className="relative h-52">
-            {/* Data Sources */}
+      <AnimatePresence mode="wait">
+        {/* Cenas 0-2: Título e intro */}
+        {scene <= 2 && (
+          <motion.div
+            key="intro"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center text-center"
+          >
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: phase >= 1 ? 1 : 0.3, x: phase >= 1 ? 0 : -50 }}
-              className="absolute left-0 top-1/2 -translate-y-1/2"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 0.8 }}
+              className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-6 shadow-2xl"
             >
-              <div className="flex flex-col gap-2">
-                {learningStages.map((item, idx) => (
-                  <motion.div
-                    key={idx}
-                    animate={phase >= 2 ? { x: [0, 80, 160] } : {}}
-                    transition={{ duration: 2, delay: idx * 0.3, repeat: Infinity }}
-                    className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-xl"
-                  >
-                    {item.icon}
-                  </motion.div>
-                ))}
-              </div>
+              <Database className="w-10 h-10 text-white" />
             </motion.div>
-
-            {/* Brain Processing */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ 
-                opacity: phase >= 2 ? 1 : 0.3, 
-                scale: phase >= 2 ? 1 : 0.5 
-              }}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            >
-              <motion.div
-                className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 flex items-center justify-center"
-                animate={phase >= 2 ? { 
-                  boxShadow: ['0 0 0px #10b981', '0 0 40px #10b981', '0 0 0px #10b981']
-                } : {}}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                <Brain className="w-10 h-10 text-emerald-400" />
-              </motion.div>
-              
-              {phase >= 3 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap"
-                >
-                  <span className="text-emerald-300 text-xs font-medium">Processando...</span>
-                </motion.div>
-              )}
-            </motion.div>
-
-            {/* Output */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: phase >= 3 ? 1 : 0.3, x: phase >= 3 ? 0 : 50 }}
-              className="absolute right-0 top-1/2 -translate-y-1/2"
-            >
-              <motion.div
-                animate={phase >= 4 ? { 
-                  scale: [1, 1.1, 1],
-                  boxShadow: ['0 0 0px #06b6d4', '0 0 20px #06b6d4', '0 0 0px #06b6d4']
-                } : {}}
-                transition={{ duration: 1, repeat: Infinity }}
-                className="p-3 rounded-xl bg-cyan-500/20 border border-cyan-500/30"
-              >
-                <Sparkles className="w-7 h-7 text-cyan-400 mx-auto mb-1" />
-                <span className="text-cyan-300 text-xs">Conhecimento</span>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          {/* Phase 5: Pattern Recognition Examples */}
-          {phase >= 5 && (
-            <motion.div
+            
+            <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 grid grid-cols-3 gap-2"
+              transition={{ delay: 0.3 }}
+              className="text-2xl sm:text-3xl font-bold text-white mb-3"
             >
-              {[
-                { label: "Padrões", icon: "🔍", value: "1.2M" },
-                { label: "Conexões", icon: "🔗", value: "500K" },
-                { label: "Insights", icon: "💡", value: "10K" }
-              ].map((stat, idx) => (
+              I.A. <span className="text-emerald-400">Aprende</span> com Dados
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-emerald-200 text-sm"
+            >
+              Quanto mais dados, mais inteligente
+            </motion.p>
+          </motion.div>
+        )}
+
+        {/* Cenas 3-5: Tipos de dados */}
+        {scene >= 3 && scene <= 5 && (
+          <motion.div
+            key="datatypes"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <h3 className="text-lg font-bold text-white mb-6">Fontes de Aprendizado:</h3>
+            <div className="flex gap-4">
+              {dataTypes.map((type, idx) => {
+                const shouldShow = scene >= 3 + idx * 0.5;
+                const Icon = type.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: shouldShow ? 1 : 0.3, y: shouldShow ? 0 : 20 }}
+                    transition={{ delay: idx * 0.15 }}
+                    className="w-20 h-20 rounded-xl bg-emerald-500/20 flex flex-col items-center justify-center text-center"
+                  >
+                    <span className="text-2xl mb-1">{type.emoji}</span>
+                    <span className="text-emerald-300 text-xs">{type.label}</span>
+                  </motion.div>
+                );
+              })}
+            </div>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: scene >= 5 ? 1 : 0 }}
+              className="mt-6 text-emerald-300 text-sm text-center"
+            >
+              Cada dado ensina algo novo
+            </motion.p>
+          </motion.div>
+        )}
+
+        {/* Cenas 6-7: Cérebro processando */}
+        {scene >= 6 && scene <= 7 && (
+          <motion.div
+            key="brain"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <motion.div
+              className="w-28 h-28 rounded-full bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 flex items-center justify-center mb-6"
+              animate={{ 
+                boxShadow: ['0 0 0px #10b981', '0 0 50px #10b981', '0 0 0px #10b981']
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <Brain className="w-14 h-14 text-emerald-400" />
+            </motion.div>
+            
+            <motion.div
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="text-emerald-300 text-sm font-medium"
+            >
+              Processando padrões...
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Cenas 8-9: Estatísticas */}
+        {scene >= 8 && scene <= 9 && (
+          <motion.div
+            key="stats"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <h3 className="text-lg font-bold text-white mb-6">Resultados do Aprendizado:</h3>
+            <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
+              {stats.map((stat, idx) => (
                 <motion.div
                   key={idx}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: idx * 0.15 }}
-                  className="p-2 rounded-lg bg-teal-500/15 border border-teal-500/20 text-center"
+                  transition={{ delay: idx * 0.15, type: "spring" }}
+                  className="p-3 rounded-lg bg-teal-500/15 border border-teal-500/20 text-center"
                 >
-                  <span className="text-lg">{stat.icon}</span>
+                  <span className="text-lg">{stat.emoji}</span>
                   <p className="text-teal-300 font-bold text-sm">{stat.value}</p>
                   <p className="text-teal-400/70 text-xs">{stat.label}</p>
                 </motion.div>
               ))}
-            </motion.div>
-          )}
-
-          {/* Phase 6: Self-Improvement Loop */}
-          {phase >= 6 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20"
-            >
-              <div className="flex items-center justify-center gap-4">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  className="w-8 h-8 rounded-full border-2 border-dashed border-emerald-400 flex items-center justify-center"
-                >
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
-                </motion.div>
-                <div className="text-center">
-                  <p className="text-white font-semibold text-sm">Auto-Aprimoramento</p>
-                  <p className="text-emerald-300 text-xs">A cada iteração, fica mais inteligente</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Insight */}
-      {phase >= 4 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
-        >
-          <div className="flex items-center gap-3 justify-center">
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
-            <div className="text-center">
-              <p className="text-white font-semibold text-sm">Quanto mais dados, melhor a I.A.</p>
-              <p className="text-emerald-300 text-xs">Ela encontra padrões que humanos não veem</p>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
 
-      {/* Progress */}
-      <div className="flex justify-center gap-2 mt-4">
-        {Array.from({ length: totalPhases }).map((_, i) => (
+        {/* Cena 10: Mensagem final */}
+        {scene >= 10 && (
+          <motion.div
+            key="final"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: ['0 0 0px rgba(16, 185, 129, 0)', '0 0 50px rgba(16, 185, 129, 0.5)', '0 0 0px rgba(16, 185, 129, 0)']
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center max-w-sm"
+            >
+              <Sparkles className="w-10 h-10 text-emerald-400 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-white mb-2">Quanto mais dados, melhor a I.A.</h3>
+              <p className="text-emerald-300 text-sm">
+                Ela encontra padrões que humanos não conseguem ver
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress indicator */}
+      <div className="flex justify-center gap-1.5 mt-4">
+        {Array.from({ length: totalScenes }).map((_, i) => (
           <motion.div
             key={i}
-            className={`w-2.5 h-2.5 rounded-full ${i <= phase ? 'bg-emerald-400' : 'bg-emerald-800'}`}
-            animate={{ scale: i === phase ? [1, 1.3, 1] : 1 }}
-            transition={{ duration: 0.5 }}
+            className={`h-1.5 rounded-full ${i <= scene ? 'bg-emerald-400' : 'bg-slate-700'}`}
+            initial={{ width: 6 }}
+            animate={{ width: i === scene ? 20 : 6 }}
+            transition={{ duration: 0.3 }}
           />
         ))}
       </div>
-    </motion.div>
+    </div>
   );
-};
+}
+
+export default CardEffectDataLearner;
