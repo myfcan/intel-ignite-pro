@@ -188,6 +188,25 @@ import CardEffectProductMindset from './CardEffectProductMindset';
 import CardEffectAssetLibrary from './CardEffectAssetLibrary';
 import CardEffectBeyondSelling from './CardEffectBeyondSelling';
 
+// ============================================================
+// AULA 11 - Planilhas, organização e automação leve com I.A.
+// ============================================================
+import CardEffectFearBreaker from './CardEffectFearBreaker';
+import CardEffectQaTable from './CardEffectQaTable';
+import CardEffectAiAssistant from './CardEffectAiAssistant';
+import CardEffectThreeQuestions from './CardEffectThreeQuestions';
+import CardEffectMapVisual from './CardEffectMapVisual';
+import CardEffectProblemToStructure from './CardEffectProblemToStructure';
+import CardEffectFinanceExample from './CardEffectFinanceExample';
+import CardEffectSalesExample from './CardEffectSalesExample';
+import CardEffectTasksExample from './CardEffectTasksExample';
+import CardEffectToolCombo from './CardEffectToolCombo';
+import CardEffectSimulatorCall from './CardEffectSimulatorCall';
+import CardEffectYouCommand from './CardEffectYouCommand';
+import CardEffectHabitBuilder from './CardEffectHabitBuilder';
+import CardEffectPatternVision from './CardEffectPatternVision';
+import CardEffectPanelDecision from './CardEffectPanelDecision';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -354,6 +373,23 @@ export { default as CardEffectProductMindset } from './CardEffectProductMindset'
 export { default as CardEffectAssetLibrary } from './CardEffectAssetLibrary';
 export { default as CardEffectBeyondSelling } from './CardEffectBeyondSelling';
 
+// Re-exportar componentes - AULA 11 (Planilhas, organização e automação)
+export { default as CardEffectFearBreaker } from './CardEffectFearBreaker';
+export { default as CardEffectQaTable } from './CardEffectQaTable';
+export { default as CardEffectAiAssistant } from './CardEffectAiAssistant';
+export { default as CardEffectThreeQuestions } from './CardEffectThreeQuestions';
+export { default as CardEffectMapVisual } from './CardEffectMapVisual';
+export { default as CardEffectProblemToStructure } from './CardEffectProblemToStructure';
+export { default as CardEffectFinanceExample } from './CardEffectFinanceExample';
+export { default as CardEffectSalesExample } from './CardEffectSalesExample';
+export { default as CardEffectTasksExample } from './CardEffectTasksExample';
+export { default as CardEffectToolCombo } from './CardEffectToolCombo';
+export { default as CardEffectSimulatorCall } from './CardEffectSimulatorCall';
+export { default as CardEffectYouCommand } from './CardEffectYouCommand';
+export { default as CardEffectHabitBuilder } from './CardEffectHabitBuilder';
+export { default as CardEffectPatternVision } from './CardEffectPatternVision';
+export { default as CardEffectPanelDecision } from './CardEffectPanelDecision';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -404,7 +440,12 @@ export type CardEffectType =
   | 'deep-content-intro' | 'start-from-zero' | 'memory-stack' | 'three-decisions'
   | 'module-map' | 'objective-lens' | 'summary-booster' | 'support-materials'
   | 'first-version' | 'tool-orchestrator' | 'visual-creator' | 'media-expander'
-  | 'product-mindset' | 'asset-library' | 'beyond-selling';
+  | 'product-mindset' | 'asset-library' | 'beyond-selling'
+  // AULA 11 - Planilhas, organização e automação leve
+  | 'fear-breaker' | 'qa-table' | 'ai-assistant' | 'three-questions'
+  | 'map-visual' | 'problem-to-structure' | 'finance-example' | 'sales-example'
+  | 'tasks-example' | 'tool-combo' | 'simulator-call' | 'you-command'
+  | 'habit-builder' | 'pattern-vision' | 'panel-decision';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -568,6 +609,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'product-mindset': CardEffectProductMindset,
   'asset-library': CardEffectAssetLibrary,
   'beyond-selling': CardEffectBeyondSelling,
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': CardEffectFearBreaker,
+  'qa-table': CardEffectQaTable,
+  'ai-assistant': CardEffectAiAssistant,
+  'three-questions': CardEffectThreeQuestions,
+  'map-visual': CardEffectMapVisual,
+  'problem-to-structure': CardEffectProblemToStructure,
+  'finance-example': CardEffectFinanceExample,
+  'sales-example': CardEffectSalesExample,
+  'tasks-example': CardEffectTasksExample,
+  'tool-combo': CardEffectToolCombo,
+  'simulator-call': CardEffectSimulatorCall,
+  'you-command': CardEffectYouCommand,
+  'habit-builder': CardEffectHabitBuilder,
+  'pattern-vision': CardEffectPatternVision,
+  'panel-decision': CardEffectPanelDecision,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -670,6 +727,22 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'product-mindset': 'Mentalidade de Produto',
   'asset-library': 'Biblioteca de Ativos',
   'beyond-selling': 'Além de Vender',
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': 'A Trava da Planilha',
+  'qa-table': 'Perguntas e Respostas',
+  'ai-assistant': 'Assistente de Planilhas',
+  'three-questions': 'As Três Perguntas',
+  'map-visual': 'Mapa Visual',
+  'problem-to-structure': 'Do Problema à Estrutura',
+  'finance-example': 'Exemplo: Finanças',
+  'sales-example': 'Exemplo: Vendas',
+  'tasks-example': 'Exemplo: Tarefas',
+  'tool-combo': 'Combo de Ferramentas',
+  'simulator-call': 'Simulador Guiado',
+  'you-command': 'Seu Comando',
+  'habit-builder': 'Construtor de Hábito',
+  'pattern-vision': 'Visão de Padrões',
+  'panel-decision': 'Painel de Decisão',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -786,6 +859,22 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'product-mindset': 'Conteúdo como ativo escalável',
   'asset-library': 'Biblioteca digital trabalhando por você',
   'beyond-selling': 'Impacto, clareza e novas possibilidades',
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': 'Planilha vazia com medo se desfazendo',
+  'qa-table': 'Tabela como perguntas e respostas',
+  'ai-assistant': 'Avatar de I.A. ajudando com planilha',
+  'three-questions': 'Três cartões com perguntas essenciais',
+  'map-visual': 'Confusão virando mapa organizado',
+  'problem-to-structure': 'Texto se transformando em planilha',
+  'finance-example': 'Extrato confuso virando controle',
+  'sales-example': 'Pedidos soltos virando planilha de vendas',
+  'tasks-example': 'Tarefas caóticas virando agenda organizada',
+  'tool-combo': 'Chat de I.A. conectado à planilha',
+  'simulator-call': 'Painel de 4 passos para gerar prompt',
+  'you-command': 'Teclado digitando comando para planilha',
+  'habit-builder': 'Calendário com lembrete de atualização',
+  'pattern-vision': 'Gráfico revelando tendências',
+  'panel-decision': 'Painel de decisão com dados',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -849,6 +938,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'first-version', 'tool-orchestrator', 'visual-creator', 'media-expander',
     'product-mindset', 'asset-library', 'beyond-selling',
   ],
+  'aula-11': [
+    'fear-breaker', 'qa-table', 'ai-assistant', 'three-questions',
+    'map-visual', 'problem-to-structure', 'finance-example', 'sales-example',
+    'tasks-example', 'tool-combo', 'simulator-call', 'you-command',
+    'habit-builder', 'pattern-vision', 'panel-decision',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -862,6 +957,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
   ...CARD_EFFECTS_BY_LESSON['aula-10'],
+  ...CARD_EFFECTS_BY_LESSON['aula-11'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
