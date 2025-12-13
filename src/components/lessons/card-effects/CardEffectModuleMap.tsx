@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, ArrowRight, BookOpen, Code, Zap } from 'lucide-react';
+import { MapPin, ArrowRight, BookOpen, Code, Zap, Flag } from 'lucide-react';
 
 interface CardEffectProps {
   isActive?: boolean;
@@ -11,17 +11,18 @@ interface CardEffectProps {
 
 const CardEffectModuleMap: React.FC<CardEffectProps> = ({
   isActive = true,
-  duration = 14,
+  duration = 11,
   title = "Desenhando o mapa de módulos",
   subtitle = "Do ponto de partida à chegada"
 }) => {
   const [currentScene, setCurrentScene] = useState(0);
-  const sceneDuration = ((duration || 14) * 1000) / 4;
+  const totalScenes = 4;
+  const sceneDuration = ((duration || 11) * 1000) / totalScenes;
 
   useEffect(() => {
     if (!isActive) return;
     const timer = setInterval(() => {
-      setCurrentScene((prev) => (prev + 1) % 4);
+      setCurrentScene((prev) => (prev + 1) % totalScenes);
     }, sceneDuration);
     return () => clearInterval(timer);
   }, [isActive, sceneDuration]);
@@ -31,7 +32,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
     { num: 2, label: 'Introdução', icon: BookOpen },
     { num: 3, label: 'Exemplos', icon: Code },
     { num: 4, label: 'Prática', icon: Zap },
-    { num: 5, label: 'Chegada', icon: MapPin },
+    { num: 5, label: 'Chegada', icon: Flag },
   ];
 
   return (
@@ -49,6 +50,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
       {/* Main Content */}
       <div className="relative flex-1 w-full max-w-lg flex items-center justify-center">
         <AnimatePresence mode="wait">
+          {/* Cena 1: Marcos numerados aparecem */}
           {currentScene === 0 && (
             <motion.div
               key="scene1"
@@ -62,7 +64,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                   key={module.num}
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: i * 0.15, type: 'spring' }}
+                  transition={{ delay: i * 0.12, type: 'spring' }}
                   className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg"
                 >
                   <span className="text-white font-bold text-lg">{module.num}</span>
@@ -74,6 +76,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 2: Linha conectando os marcos */}
           {currentScene === 1 && (
             <motion.div
               key="scene2"
@@ -94,9 +97,9 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                     </motion.div>
                     {i < modules.length - 1 && (
                       <motion.div
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ delay: i * 0.2 }}
+                        initial={{ scaleX: 0, opacity: 0 }}
+                        animate={{ scaleX: 1, opacity: 1 }}
+                        transition={{ delay: i * 0.15 }}
                       >
                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
                       </motion.div>
@@ -110,6 +113,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 3: Ícones em cada marco com labels */}
           {currentScene === 2 && (
             <motion.div
               key="scene3"
@@ -126,7 +130,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          transition={{ delay: i * 0.15 }}
+                          transition={{ delay: i * 0.1 }}
                         >
                           <module.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                         </motion.div>
@@ -134,7 +138,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                       <motion.span
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.15 + 0.2 }}
+                        transition={{ delay: i * 0.1 + 0.2 }}
                         className="text-xs mt-1 text-slate-600 dark:text-slate-400"
                       >
                         {module.label}
@@ -152,6 +156,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 4: Visão aérea do trajeto completo */}
           {currentScene === 3 && (
             <motion.div
               key="scene4"
@@ -170,7 +175,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                 <motion.div
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ duration: 1 }}
+                  transition={{ duration: 0.8 }}
                   className="absolute top-1/2 left-4 right-4 h-2 bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 rounded-full -translate-y-1/2 origin-left"
                 />
 
@@ -180,7 +185,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                       key={module.num}
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.1 }}
+                      transition={{ delay: i * 0.08 }}
                       className="flex flex-col items-center z-10"
                     >
                       <motion.div
@@ -191,7 +196,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
                             '0 0 0 0 rgba(6, 182, 212, 0)'
                           ]
                         }}
-                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-lg"
                       >
                         <module.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -207,7 +212,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.4 }}
                 className="text-center mt-6 text-sm text-slate-600 dark:text-slate-300"
               >
                 Sobrevoando o trajeto completo
@@ -219,7 +224,7 @@ const CardEffectModuleMap: React.FC<CardEffectProps> = ({
 
       {/* Progress indicator */}
       <div className="flex gap-2 mt-4">
-        {[0, 1, 2, 3].map((i) => (
+        {Array.from({ length: totalScenes }).map((_, i) => (
           <div
             key={i}
             className={`w-2 h-2 rounded-full transition-colors ${

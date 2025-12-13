@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Brain, Heart, Zap, CheckSquare } from 'lucide-react';
+import { FileText, Brain, Heart, Zap, CheckSquare, Eye, Target } from 'lucide-react';
 
 interface CardEffectProps {
   isActive?: boolean;
@@ -11,17 +11,18 @@ interface CardEffectProps {
 
 const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
   isActive = true,
-  duration = 14,
+  duration = 20,
   title = "Objetivos claros em cada etapa",
   subtitle = "O que o aluno precisa levar de cada pedaço"
 }) => {
   const [currentScene, setCurrentScene] = useState(0);
-  const sceneDuration = ((duration || 14) * 1000) / 4;
+  const totalScenes = 6;
+  const sceneDuration = ((duration || 20) * 1000) / totalScenes;
 
   useEffect(() => {
     if (!isActive) return;
     const timer = setInterval(() => {
-      setCurrentScene((prev) => (prev + 1) % 4);
+      setCurrentScene((prev) => (prev + 1) % totalScenes);
     }, sceneDuration);
     return () => clearInterval(timer);
   }, [isActive, sceneDuration]);
@@ -48,6 +49,7 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
       {/* Main Content */}
       <div className="relative flex-1 w-full max-w-lg flex items-center justify-center">
         <AnimatePresence mode="wait">
+          {/* Cena 1: Cards de aula vazios aparecendo */}
           {currentScene === 0 && (
             <motion.div
               key="scene1"
@@ -71,9 +73,42 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 2: Lente de foco aparece - metáfora visual */}
           {currentScene === 1 && (
             <motion.div
               key="scene2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center"
+            >
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                {lessons.map((lesson) => (
+                  <div
+                    key={lesson.title}
+                    className="w-28 h-20 sm:w-32 sm:h-24 bg-white dark:bg-slate-800 rounded-xl shadow-lg flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700"
+                  >
+                    <FileText className="w-6 h-6 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">{lesson.title}</span>
+                  </div>
+                ))}
+              </div>
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', delay: 0.3 }}
+                className="flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 px-4 py-2 rounded-full"
+              >
+                <Eye className="w-5 h-5 text-amber-600" />
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Qual o objetivo?</span>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Cena 3: Badges de objetivo aparecem */}
+          {currentScene === 2 && (
+            <motion.div
+              key="scene3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -101,9 +136,10 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
-          {currentScene === 2 && (
+          {/* Cena 4: Foco de luz em uma etapa específica */}
+          {currentScene === 3 && (
             <motion.div
-              key="scene3"
+              key="scene4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -113,16 +149,16 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
                 <motion.div
                   key={lesson.title}
                   animate={{
-                    boxShadow: i === 1 
+                    boxShadow: i === 2 
                       ? ['0 0 0 0 rgba(251, 146, 60, 0)', '0 0 0 8px rgba(251, 146, 60, 0.3)', '0 0 0 0 rgba(251, 146, 60, 0)']
                       : 'none'
                   }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                   className={`relative w-28 h-20 sm:w-32 sm:h-24 bg-white dark:bg-slate-800 rounded-xl shadow-lg flex flex-col items-center justify-center border-2 ${
-                    i === 1 ? 'border-amber-400' : 'border-slate-200 dark:border-slate-700'
+                    i === 2 ? 'border-amber-400' : 'border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  <lesson.icon className={`w-6 h-6 ${i === 1 ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <lesson.icon className={`w-6 h-6 ${i === 2 ? 'text-amber-500' : 'text-slate-400'}`} />
                   <span className="text-sm font-medium text-slate-600 dark:text-slate-400 mt-1">{lesson.title}</span>
                   
                   <motion.div
@@ -138,9 +174,37 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
-          {currentScene === 3 && (
+          {/* Cena 5: Transição para cards coloridos */}
+          {currentScene === 4 && (
             <motion.div
-              key="scene4"
+              key="scene5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-2 gap-3 sm:gap-4"
+            >
+              {lessons.map((lesson, i) => (
+                <motion.div
+                  key={lesson.title}
+                  initial={{ scale: 0.9, opacity: 0.8 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`relative w-28 h-20 sm:w-32 sm:h-24 bg-gradient-to-br ${lesson.color} rounded-xl shadow-lg flex flex-col items-center justify-center`}
+                >
+                  <lesson.icon className="w-6 h-6 text-white" />
+                  <span className="text-sm font-bold text-white mt-1">{lesson.verb}</span>
+                </motion.div>
+              ))}
+              <p className="col-span-2 text-center mt-2 text-sm text-slate-500 dark:text-slate-400">
+                Cada etapa com propósito claro
+              </p>
+            </motion.div>
+          )}
+
+          {/* Cena 6: Checklist visual completo */}
+          {currentScene === 5 && (
+            <motion.div
+              key="scene6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -169,14 +233,16 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
                   </motion.div>
                 ))}
               </div>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="mt-4 text-sm text-slate-600 dark:text-slate-300"
+                className="mt-6 flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-4 py-2 rounded-full"
               >
-                Checklist visual completo
-              </motion.p>
+                <Target className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">Objetivos definidos!</span>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -184,7 +250,7 @@ const CardEffectObjectiveLens: React.FC<CardEffectProps> = ({
 
       {/* Progress indicator */}
       <div className="flex gap-2 mt-4">
-        {[0, 1, 2, 3].map((i) => (
+        {Array.from({ length: totalScenes }).map((_, i) => (
           <div
             key={i}
             className={`w-2 h-2 rounded-full transition-colors ${
