@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// CONTRATO DE DADOS V3
+// CONTRATO DE DADOS V3 - DINÂMICO
 // ============================================================================
 export interface PlaygroundExampleDataV3 {
   title: string;
@@ -35,19 +35,34 @@ interface PlaygroundBridgeV3Props {
   lessonId?: string;
 }
 
-// Opções de chips para cada categoria
-const FORMAT_OPTIONS = ['Curso em vídeo', 'eBook', 'Apostila', 'Workshop'];
-const AUDIENCE_OPTIONS = ['Público em geral', 'Mães 40+', 'Professores', 'Médicos'];
-const MODULES_OPTIONS = ['3', '4', '5'];
-const CONTENT_TYPE_OPTIONS = ['Vídeos curtos', 'Aulas mais longas', 'Leitura / eBook'];
+/**
+ * Extrai o label e placeholder de um requirement
+ * Ex: "Foco principal: [trabalho atual, renda extra ou projeto pessoal]"
+ * → { label: "Foco principal", placeholder: "trabalho atual, renda extra ou projeto pessoal" }
+ */
+function parseRequirement(req: string): { label: string; placeholder: string; bracketContent: string } {
+  const colonIndex = req.indexOf(':');
+  if (colonIndex === -1) {
+    return { label: req, placeholder: '', bracketContent: '' };
+  }
+  
+  const label = req.substring(0, colonIndex).trim();
+  const rest = req.substring(colonIndex + 1).trim();
+  
+  // Extrai conteúdo entre colchetes
+  const bracketMatch = rest.match(/\[([^\]]+)\]/);
+  const bracketContent = bracketMatch ? bracketMatch[1] : rest;
+  const placeholder = bracketContent;
+  
+  return { label, placeholder, bracketContent };
+}
 
 /**
- * 🚀 PLAYGROUND BRIDGE V3 - MINI-FERRAMENTA INTERATIVA
+ * 🚀 PLAYGROUND BRIDGE V3 - MINI-FERRAMENTA INTERATIVA DINÂMICA
  * 
- * Step 1: I DO - Veja o exemplo
- * Step 2: WE DO (parte 1) - Escolha seu caso
- * Step 3: WE DO (parte 2) - Monte a estrutura
- * Step 4: YOU DO - Adapte e teste
+ * Step 1: I DO - Veja o contexto e exemplo
+ * Step 2: WE DO - Preencha cada campo baseado nos requirements do JSON
+ * Step 3: YOU DO - Veja o prompt montado e teste
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -56,22 +71,17 @@ export function PlaygroundBridgeV3({
   lessonId,
 }: PlaygroundBridgeV3Props) {
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [copied, setCopied] = useState(false);
 
-  // Estado das escolhas do usuário - Step 2
-  const [selectedFormat, setSelectedFormat] = useState('');
-  const [customFormat, setCustomFormat] = useState('');
-  const [theme, setTheme] = useState('');
-  const [selectedAudience, setSelectedAudience] = useState('');
-  const [customAudience, setCustomAudience] = useState('');
+  // Estado dinâmico para os valores de cada requirement
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
-  // Estado das escolhas do usuário - Step 3
-  const [selectedModules, setSelectedModules] = useState('');
-  const [customModules, setCustomModules] = useState('');
-  const [selectedContentType, setSelectedContentType] = useState('');
-  const [hasExercises, setHasExercises] = useState<boolean | null>(null);
-  const [desiredResult, setDesiredResult] = useState('');
+  // Parse os requirements do JSON
+  const parsedRequirements = useMemo(() => {
+    if (!playgroundExample?.requirements) return [];
+    return playgroundExample.requirements.map(parseRequirement);
+  }, [playgroundExample?.requirements]);
 
   if (!playgroundExample) {
     return (
@@ -82,26 +92,19 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // Valores finais para o prompt
-  const finalFormat = selectedFormat === 'Outro' ? customFormat : selectedFormat;
-  const finalAudience = selectedAudience === 'Outro' ? customAudience : selectedAudience;
-  const finalModules = selectedModules === 'Outro' ? customModules : selectedModules;
-  const exercisesText = hasExercises === true ? 'exercícios ao final de cada módulo' : hasExercises === false ? 'sem exercícios' : '';
-
-  // Monta o prompt DIRETAMENTE com os valores escolhidos - SEM depender de placeholders
-  const buildPrompt = () => {
-    // Construção direta do prompt com TODOS os valores preenchidos
-    const format = finalFormat || '[tipo de produto]';
-    const themeValue = theme || '[tema]';
-    const audience = finalAudience || '[público]';
-    const modules = finalModules || '[número de módulos]';
-    const result = desiredResult || '[resultado desejado]';
-    const content = selectedContentType || '[tipo de conteúdo]';
-    const exercises = exercisesText || '[exercícios]';
-
-    // Prompt construído diretamente - EXATAMENTE como deve aparecer
-    return `Você é um especialista em organização de conhecimento. Monte um esqueleto de ${format} sobre ${themeValue} para ${audience}. Estruture em ${modules} módulos com títulos claros e 3 a 5 tópicos em cada um, usando ${content}${exercises ? `, ${exercises}` : ''}, levando o aluno até o resultado final: ${result}.`;
-  };
+  // Monta o prompt substituindo os placeholders pelos valores preenchidos
+  const buildPrompt = useCallback(() => {
+    let prompt = playgroundExample.examplePrompt;
+    
+    parsedRequirements.forEach((req) => {
+      const value = fieldValues[req.label] || `[${req.bracketContent}]`;
+      // Substitui o bracket original pelo valor
+      const bracketPattern = new RegExp(`\\[${req.bracketContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
+      prompt = prompt.replace(bracketPattern, value);
+    });
+    
+    return prompt;
+  }, [playgroundExample.examplePrompt, parsedRequirements, fieldValues]);
 
   const handleGoToPlayground = useCallback(() => {
     setPhase('playground');
@@ -113,101 +116,76 @@ export function PlaygroundBridgeV3({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Chip selecionável
-  const SelectChip = ({ 
-    label, 
-    selected, 
-    onClick 
-  }: { 
-    label: string; 
-    selected: boolean; 
-    onClick: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-2.5 py-1.5 text-xs rounded-full border transition-all duration-150 ${
-        selected 
-          ? 'bg-violet-600 text-white border-violet-600' 
-          : 'bg-white dark:bg-slate-800 text-foreground/80 border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950'
-      }`}
-    >
-      {label}
-    </button>
-  );
+  const handleFieldChange = (label: string, value: string) => {
+    setFieldValues(prev => ({ ...prev, [label]: value }));
+  };
 
-  // Radio option
-  const RadioOption = ({
-    label,
-    selected,
-    onClick
-  }: {
-    label: string;
-    selected: boolean;
-    onClick: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border transition-all duration-150 ${
-        selected 
-          ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400 dark:border-violet-600' 
-          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-violet-300'
-      }`}
-    >
-      <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-        selected ? 'border-violet-600' : 'border-slate-300 dark:border-slate-600'
-      }`}>
-        {selected && <div className="w-1.5 h-1.5 rounded-full bg-violet-600" />}
-      </div>
-      <span className="text-foreground/80">{label}</span>
-    </button>
-  );
+  // Verifica se pelo menos metade dos campos está preenchida
+  const canProceedToStep3 = useMemo(() => {
+    const filledCount = Object.values(fieldValues).filter(v => v.trim()).length;
+    return filledCount >= Math.ceil(parsedRequirements.length / 2);
+  }, [fieldValues, parsedRequirements.length]);
 
-  // Renderiza prompt FINAL com destaques visuais dos valores preenchidos
+  // Renderiza prompt com destaques visuais
   const renderPromptWithHighlights = () => {
-    const format = finalFormat || '[tipo de produto]';
-    const themeValue = theme || '[tema]';
-    const audience = finalAudience || '[público]';
-    const modules = finalModules || '[número de módulos]';
-    const result = desiredResult || '[resultado desejado]';
-    const content = selectedContentType || '[tipo de conteúdo]';
-    const exercises = exercisesText || '';
-
-    const Highlight = ({ value, filled }: { value: string; filled: boolean }) => (
-      <span className={`px-1 rounded font-semibold ${
-        filled 
-          ? 'bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200' 
-          : 'bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300'
-      }`}>
-        {value}
-      </span>
-    );
-
+    const parts: { text: string; isHighlight: boolean; filled: boolean }[] = [];
+    let prompt = playgroundExample.examplePrompt;
+    let lastIndex = 0;
+    
+    // Encontra todos os brackets e seus valores
+    const bracketRegex = /\[([^\]]+)\]/g;
+    let match;
+    
+    while ((match = bracketRegex.exec(playgroundExample.examplePrompt)) !== null) {
+      // Texto antes do bracket
+      if (match.index > lastIndex) {
+        parts.push({ text: prompt.substring(lastIndex, match.index), isHighlight: false, filled: false });
+      }
+      
+      // Encontra o requirement correspondente
+      const bracketContent = match[1];
+      const req = parsedRequirements.find(r => r.bracketContent === bracketContent);
+      const value = req ? fieldValues[req.label] : '';
+      const displayValue = value || match[0];
+      const isFilled = !!value;
+      
+      parts.push({ text: displayValue, isHighlight: true, filled: isFilled });
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Texto restante
+    if (lastIndex < prompt.length) {
+      parts.push({ text: prompt.substring(lastIndex), isHighlight: false, filled: false });
+    }
+    
     return (
-      <>
-        Você é um especialista em organização de conhecimento. Monte um esqueleto de{' '}
-        <Highlight value={format} filled={!!finalFormat} /> sobre{' '}
-        <Highlight value={themeValue} filled={!!theme} /> para{' '}
-        <Highlight value={audience} filled={!!finalAudience} />. Estruture em{' '}
-        <Highlight value={modules} filled={!!finalModules} /> módulos com títulos claros e 3 a 5 tópicos em cada um, usando{' '}
-        <Highlight value={content} filled={!!selectedContentType} />
-        {exercises && (
-          <>, <Highlight value={exercises} filled={hasExercises !== null} /></>
+      <span className="text-sm leading-relaxed">
+        {parts.map((part, i) => 
+          part.isHighlight ? (
+            <span 
+              key={i} 
+              className={`px-1 rounded font-semibold ${
+                part.filled 
+                  ? 'bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200' 
+                  : 'bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300'
+              }`}
+            >
+              {part.text}
+            </span>
+          ) : (
+            <span key={i}>{part.text}</span>
+          )
         )}
-        , levando o aluno até o resultado final:{' '}
-        <Highlight value={result} filled={!!desiredResult} />.
-      </>
+      </span>
     );
   };
 
   const getStepInfo = (s: number) => {
     switch(s) {
-      case 1: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
-      case 2: return { icon: '🧩', label: 'ESCOLHA SEU CASO', color: 'blue' };
-      case 3: return { icon: '📚', label: 'MONTE A ESTRUTURA', color: 'amber' };
-      case 4: return { icon: '🚀', label: 'ADAPTE E TESTE', color: 'purple' };
-      default: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
+      case 1: return { icon: '👁', label: 'VEJA O CONTEXTO', color: 'emerald' };
+      case 2: return { icon: '🧩', label: 'PREENCHA OS CAMPOS', color: 'blue' };
+      case 3: return { icon: '🚀', label: 'ADAPTE E TESTE', color: 'purple' };
+      default: return { icon: '👁', label: 'VEJA O CONTEXTO', color: 'emerald' };
     }
   };
 
@@ -253,296 +231,224 @@ export function PlaygroundBridgeV3({
               </div>
               <button
                 onClick={onSkip}
-                className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
-                aria-label="Fechar"
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-white/80" />
               </button>
             </div>
-            
-            {/* Progress dots - 4 steps */}
-            <div className="flex justify-center gap-2 mt-2">
-              {[1, 2, 3, 4].map((s) => (
-                <div 
+
+            {/* Progress dots */}
+            <div className="flex justify-center gap-1.5 mt-2">
+              {[1, 2, 3].map((s) => (
+                <div
                   key={s}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    s === step ? 'w-6 bg-white' : s < step ? 'w-3 bg-white/60' : 'w-3 bg-white/30'
+                    s === step 
+                      ? 'w-6 bg-white' 
+                      : s < step 
+                        ? 'w-2 bg-white/60' 
+                        : 'w-2 bg-white/30'
                   }`}
                 />
               ))}
             </div>
           </div>
 
-          {/* CONTEÚDO DO STEP */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="p-4"
-            >
-              {/* Badge + Título do step */}
-              <div className="flex items-center gap-2.5 mb-3">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                  step === 1 ? 'bg-emerald-500' : 
-                  step === 2 ? 'bg-blue-500' : 
-                  step === 3 ? 'bg-amber-500' : 
-                  'bg-purple-500'
-                }`}>
-                  {step}
-                </span>
-                <span className={`text-xs font-bold uppercase tracking-wide ${
-                  step === 1 ? 'text-emerald-700 dark:text-emerald-400' : 
-                  step === 2 ? 'text-blue-700 dark:text-blue-400' : 
-                  step === 3 ? 'text-amber-700 dark:text-amber-400' : 
-                  'text-purple-700 dark:text-purple-400'
-                }`}>
-                  {stepInfo.icon} {stepInfo.label}
-                </span>
-              </div>
-
-              {/* STEP 1: I DO - Veja o exemplo */}
+          {/* CONTENT */}
+          <div className="p-4 max-h-[60vh] overflow-y-auto">
+            <AnimatePresence mode="wait">
+              {/* STEP 1: I DO - Contexto */}
               {step === 1 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {playgroundExample.context}
-                  </p>
-                  
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">1</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 tracking-wide">
+                        VEJA O CONTEXTO
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Context */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    <p className="text-sm text-foreground/80 leading-relaxed">
+                      {playgroundExample.context}
+                    </p>
+                  </div>
+
+                  {/* Requirements preview */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">
+                      Você vai preencher:
+                    </p>
+                    <div className="space-y-1.5">
+                      {parsedRequirements.map((req, i) => (
+                        <div 
+                          key={i}
+                          className="flex items-center gap-2 text-sm text-foreground/70"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                          <span className="font-medium">{req.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Example output if available */}
                   {playgroundExample.exampleOutput && (
-                    <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg p-2.5">
-                      <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5">
                         Exemplo de resultado:
                       </p>
-                      <p className="text-xs text-foreground/80 italic leading-snug">
+                      <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
                         {playgroundExample.exampleOutput}
                       </p>
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
 
-              {/* STEP 2: WE DO (parte 1) - Escolha seu caso */}
+              {/* STEP 2: WE DO - Preencher campos */}
               {step === 2 && (
-                <div className="space-y-3">
-                  {/* Formato */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Tipo de produto:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {FORMAT_OPTIONS.map((opt) => (
-                        <SelectChip
-                          key={opt}
-                          label={opt}
-                          selected={selectedFormat === opt}
-                          onClick={() => setSelectedFormat(selectedFormat === opt ? '' : opt)}
-                        />
-                      ))}
-                      <SelectChip
-                        label="Outro"
-                        selected={selectedFormat === 'Outro'}
-                        onClick={() => setSelectedFormat(selectedFormat === 'Outro' ? '' : 'Outro')}
-                      />
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400">2</span>
                     </div>
-                    {selectedFormat === 'Outro' && (
-                      <Input
-                        value={customFormat}
-                        onChange={(e) => setCustomFormat(e.target.value)}
-                        placeholder="Ex.: Podcast, Newsletter..."
-                        className="mt-1.5 h-8 text-xs"
-                      />
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <Puzzle className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 tracking-wide">
+                        PREENCHA OS CAMPOS
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Tema */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Qual é o tema?</p>
-                    <Input
-                      value={theme}
-                      onChange={(e) => setTheme(e.target.value)}
-                      placeholder="Ex.: gestão de marketing, dieta low carb..."
-                      className="h-8 text-xs"
-                    />
-                  </div>
-
-                  {/* Público */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Quem é o público?</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {AUDIENCE_OPTIONS.map((opt) => (
-                        <SelectChip
-                          key={opt}
-                          label={opt}
-                          selected={selectedAudience === opt}
-                          onClick={() => setSelectedAudience(selectedAudience === opt ? '' : opt)}
+                  {/* Dynamic fields based on requirements */}
+                  <div className="space-y-3">
+                    {parsedRequirements.map((req, i) => (
+                      <div key={i}>
+                        <label className="text-xs font-semibold text-foreground/70 mb-1 block">
+                          {req.label}:
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder={`Ex.: ${req.placeholder}`}
+                          value={fieldValues[req.label] || ''}
+                          onChange={(e) => handleFieldChange(req.label, e.target.value)}
+                          className="text-sm h-9"
                         />
-                      ))}
-                      <SelectChip
-                        label="Outro"
-                        selected={selectedAudience === 'Outro'}
-                        onClick={() => setSelectedAudience(selectedAudience === 'Outro' ? '' : 'Outro')}
-                      />
-                    </div>
-                    {selectedAudience === 'Outro' && (
-                      <Input
-                        value={customAudience}
-                        onChange={(e) => setCustomAudience(e.target.value)}
-                        placeholder="Ex.: Jovens empreendedores..."
-                        className="mt-1.5 h-8 text-xs"
-                      />
-                    )}
+                      </div>
+                    ))}
                   </div>
-                </div>
+                </motion.div>
               )}
 
-              {/* STEP 3: WE DO (parte 2) - Monte a estrutura */}
+              {/* STEP 3: YOU DO - Prompt final */}
               {step === 3 && (
-                <div className="space-y-3">
-                  {/* Módulos */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Quantos módulos ou capítulos?</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {MODULES_OPTIONS.map((opt) => (
-                        <SelectChip
-                          key={opt}
-                          label={opt}
-                          selected={selectedModules === opt}
-                          onClick={() => setSelectedModules(selectedModules === opt ? '' : opt)}
-                        />
-                      ))}
-                      <SelectChip
-                        label="Outro"
-                        selected={selectedModules === 'Outro'}
-                        onClick={() => setSelectedModules(selectedModules === 'Outro' ? '' : 'Outro')}
-                      />
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                      <span className="text-sm font-bold text-violet-700 dark:text-violet-400">3</span>
                     </div>
-                    {selectedModules === 'Outro' && (
-                      <Input
-                        type="number"
-                        value={customModules}
-                        onChange={(e) => setCustomModules(e.target.value)}
-                        placeholder="Ex.: 6, 7, 8..."
-                        className="mt-1.5 h-8 text-xs w-24"
-                      />
-                    )}
-                  </div>
-
-                  {/* Tipo de conteúdo */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Tipo de conteúdo principal:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {CONTENT_TYPE_OPTIONS.map((opt) => (
-                        <SelectChip
-                          key={opt}
-                          label={opt}
-                          selected={selectedContentType === opt}
-                          onClick={() => setSelectedContentType(selectedContentType === opt ? '' : opt)}
-                        />
-                      ))}
+                    <div className="flex items-center gap-1.5">
+                      <Rocket className="w-4 h-4 text-violet-600" />
+                      <span className="text-xs font-bold text-violet-700 dark:text-violet-400 tracking-wide">
+                        SEU PROMPT PRONTO
+                      </span>
                     </div>
                   </div>
 
-                  {/* Exercícios */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Vai ter exercícios ou atividades?</p>
-                    <div className="flex flex-col gap-1.5">
-                      <RadioOption
-                        label="Não"
-                        selected={hasExercises === false}
-                        onClick={() => setHasExercises(false)}
-                      />
-                      <RadioOption
-                        label="Sim, no final de cada módulo"
-                        selected={hasExercises === true}
-                        onClick={() => setHasExercises(true)}
-                      />
-                    </div>
+                  {/* Final prompt with highlights */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    {renderPromptWithHighlights()}
                   </div>
 
-                  {/* Resultado desejado */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">Resultado desejado:</p>
-                    <Input
-                      value={desiredResult}
-                      onChange={(e) => setDesiredResult(e.target.value)}
-                      placeholder="Ex.: controlar despesas, dar a primeira aula..."
-                      className="h-8 text-xs"
-                    />
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopy}
+                      className="flex-1 gap-1.5"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleGoToPlayground}
+                      className="flex-1 gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      Testar
+                    </Button>
                   </div>
-                </div>
+                </motion.div>
               )}
+            </AnimatePresence>
+          </div>
 
-              {/* STEP 4: YOU DO - Adapte e teste */}
-              {step === 4 && (
-                <div className="space-y-3">
-                  <p className="text-xs text-foreground/70">
-                    Confira o prompt abaixo. Se quiser, ajuste os colchetes com seu caso real e depois teste no Playground.
-                  </p>
-                  
-                  <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {renderPromptWithHighlights()}
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopy}
-                    className="w-full text-xs"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1.5 text-green-600" />
-                        Copiado!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1.5" />
-                        Copiar prompt
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* FOOTER com navegação */}
-          <div className="px-4 pb-4 pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {/* FOOTER - Navigation */}
+          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
             {step > 1 ? (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3 | 4)}
-                className="text-xs order-2 sm:order-1"
+                onClick={() => setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}
+                className="gap-1.5 text-foreground/60 hover:text-foreground"
               >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                <ArrowLeft className="w-3.5 h-3.5" />
                 Voltar
               </Button>
             ) : (
-              <div className="hidden sm:block" />
+              <div />
             )}
-            
-            <div className="flex-1 hidden sm:block" />
-            
-            {step < 4 ? (
+
+            {step < 3 && (
               <Button
-                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3 | 4)}
                 size="sm"
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-5 order-1 sm:order-2"
+                onClick={() => setStep((s) => Math.min(3, s + 1) as 1 | 2 | 3)}
+                disabled={step === 2 && !canProceedToStep3}
+                className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
               >
                 Próximo
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleGoToPlayground}
-                size="sm"
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-4 order-1 sm:order-2 w-full sm:w-auto"
-              >
-                <Rocket className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>Testar no Playground</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             )}
           </div>
