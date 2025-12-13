@@ -132,6 +132,93 @@ export async function step5_5ProcessPlayground(
   }
 
   // ============================================================================
+  // MODELO V5: PRESERVAR playgroundConfig COM useBridgeVersion E playgroundExampleV3
+  // ============================================================================
+  // V5 usa PlaygroundBridgeV3 com playgroundExampleV3 dentro de sections
+  // Deve preservar completamente o playgroundConfig original do JSON
+  // ============================================================================
+
+  if (input.model === 'v5') {
+    console.log('🎮 [STEP 5.5] Modelo V5 detectado: preservando playgroundConfig nas sections...');
+    
+    if (!input.structuredContent || !input.structuredContent.sections) {
+      console.log('⚠️ [STEP 5.5] V5 sem structuredContent/sections, pulando processamento');
+      return input;
+    }
+
+    let v5Sections = [...input.structuredContent.sections];
+    let v5ProcessedCount = 0;
+
+    // Processar cada seção V5
+    v5Sections = v5Sections.map((section, index) => {
+      // Se seção tem showPlaygroundCall e playgroundConfig, preservar e completar se necessário
+      if (section.showPlaygroundCall && section.playgroundConfig) {
+        const config = section.playgroundConfig;
+        
+        // Se é useBridgeVersion v3 com playgroundExampleV3, apenas preservar
+        if (config.useBridgeVersion === 'v3' && config.playgroundExampleV3) {
+          console.log(`✅ [STEP 5.5] V5 Seção ${index + 1}: PlaygroundBridgeV3 detectado e preservado`);
+          v5ProcessedCount++;
+          
+          // Garantir que type está definido
+          return {
+            ...section,
+            playgroundConfig: {
+              ...config,
+              type: config.type || 'real-playground'
+            }
+          };
+        }
+        
+        // Se tem playgroundConfig mas sem useBridgeVersion v3, completar com realConfig padrão
+        if (config.type === 'real-playground' && !config.realConfig) {
+          console.log(`📝 [STEP 5.5] V5 Seção ${index + 1}: Completando realConfig padrão`);
+          v5ProcessedCount++;
+          
+          return {
+            ...section,
+            playgroundConfig: {
+              ...config,
+              type: 'real-playground',
+              realConfig: {
+                title: 'Hora da Prática! 🚀',
+                maiaMessage: config.instruction || 'Agora é sua vez de praticar!',
+                scenario: {
+                  title: 'Desafio Prático',
+                  description: config.instruction || 'Use o que aprendeu para resolver este desafio.'
+                },
+                prefilledText: '',
+                userPlaceholder: 'Digite seu prompt aqui... 💭',
+                validation: {
+                  minLength: 20,
+                  requiredKeywords: [],
+                  feedback: {
+                    tooShort: '⚠️ Seu prompt precisa ter pelo menos 20 caracteres.',
+                    good: '✅ Bom trabalho!',
+                    excellent: '🎉 Excelente!'
+                  }
+                }
+              }
+            }
+          };
+        }
+      }
+      
+      return section;
+    });
+
+    console.log(`✅ [STEP 5.5] V5 concluído: ${v5ProcessedCount} playground(s) processado(s)`);
+    
+    return {
+      ...input,
+      structuredContent: {
+        ...input.structuredContent,
+        sections: v5Sections
+      }
+    };
+  }
+
+  // ============================================================================
   // MODELOS V1/V2/V4: PROCESSAR PLAYGROUNDS INLINE
   // ============================================================================
 
