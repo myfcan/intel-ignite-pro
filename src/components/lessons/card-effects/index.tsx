@@ -820,6 +820,8 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'script-guide': 'Guia de Roteiro',
   'short-blocks': 'Blocos Curtos',
   'consistency-wins': 'Consistência Vence',
+  'coauthor-role': 'Papel do Coautor',
+  'core-triangle': 'Triângulo Central',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -968,6 +970,8 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'script-guide': 'Guia passo a passo do roteiro',
   'short-blocks': 'Blocos curtos e impactantes',
   'consistency-wins': 'Consistência supera perfeição',
+  'coauthor-role': 'Você como coautor da I.A. no processo criativo',
+  'core-triangle': 'Triângulo central: Clareza, Contexto, Exemplo',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
