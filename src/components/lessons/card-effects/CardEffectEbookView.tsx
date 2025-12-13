@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, FileText } from 'lucide-react';
-import { CardEffectProps } from './index';
+import { CardEffectProps } from './types';
 
 /**
  * 📖 EBOOK VIEW

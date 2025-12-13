@@ -299,9 +299,12 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
     // Helper para renderizar um card baseado na config
     const renderCard = (cardConfig: any, key: string, isActive: boolean = true) => {
       const cardType = cardConfig.type || cardConfig.effectType || '';
+      const isValid = isValidCardEffectType(cardType);
+      
+      console.log(`🔍 [V5-DEBUG] cardType: "${cardType}" | isValidCardEffectType: ${isValid} | cardConfig:`, cardConfig);
 
       // 🎬 PRIORIDADE 1: Card Effect Cinematográfico
-      if (isValidCardEffectType(cardType)) {
+      if (isValid) {
         console.log(`🎬 [V5] Renderizando card cinematográfico: ${cardType} (isActive: ${isActive})`);
         return (
           <div key={key} className="my-6">
@@ -648,6 +651,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
 
       audio.volume = 1.0;
 
+      // ✅ Autoplay quando usuário acessou a aula
       audio.play().then(() => {
         console.log('✅ [V5-AUTOPLAY] Áudio iniciado automaticamente');
         setIsPlaying(true);
@@ -1706,6 +1710,10 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                       // Usar o cardIndex do segmento (índice original) em vez do índice do map (ordem temporal)
                       const originalCardIndex = cardSegment.cardIndex ?? 0;
                       const isThisCardActive = isCardActive(originalCardIndex);
+                      
+                      // 🔍 DEBUG: Log para verificar cada card
+                      const isValid = isValidCardEffectType(cardType);
+                      console.log(`🎬 [V5-CARD-RENDER] Seção ${originalIndex} Card ${originalCardIndex}: type="${cardType}" | isValid=${isValid} | cardConfig=`, cardConfig);
 
                       return (
                         <div
@@ -1726,7 +1734,7 @@ export function GuidedLessonV5({ lessonData, onComplete, onMarkComplete, audioUr
                               : 'shadow-lg hover:shadow-xl'
                           }`}>
                             {/* Renderizar o card effect */}
-                            {isValidCardEffectType(cardType) ? (
+                            {isValid ? (
                               <DynamicCardEffect type={cardType} isActive={isThisCardActive} />
                             ) : cardType === 'ia-book' ? (
                               <IaBookExperienceCard />

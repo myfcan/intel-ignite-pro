@@ -416,7 +416,7 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
       
       audio.volume = 1.0;
       
-      // Tentar autoplay
+      // ✅ Autoplay quando usuário acessou a aula
       audio.play().then(() => {
         console.log('✅ [AUTOPLAY] Áudio iniciado automaticamente');
         setIsPlaying(true);
@@ -424,7 +424,6 @@ export function GuidedLessonV4({ lessonData, onComplete, onMarkComplete, audioUr
       }).catch(err => {
         console.warn('⚠️ [AUTOPLAY] Bloqueado pelo navegador:', err);
         setIsAudioInitialized(true);
-        // Usuário precisará clicar no play
       });
     };
     

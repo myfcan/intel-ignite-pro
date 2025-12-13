@@ -51,7 +51,7 @@ const Dashboard = () => {
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin(user?.id);
-  const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
+  const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
   
   // Estados para controle do scroll horizontal
   const [activeTrailIndex, setActiveTrailIndex] = useState(0);
@@ -60,6 +60,20 @@ const Dashboard = () => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Refresh gamification quando user for setado (garante dados atualizados)
+  useEffect(() => {
+    if (user?.id) {
+      refreshGamification();
+    }
+  }, [user?.id]);
+
+  // Recalcular progresso das trilhas quando isAdmin mudar (após loading)
+  useEffect(() => {
+    if (!adminLoading && user?.id && trails.length > 0 && trailsProgress.length > 0) {
+      recalculateTrailsProgress();
+    }
+  }, [isAdmin, adminLoading, trails.length, trailsProgress.length]);
 
   const checkAuth = async () => {
     try {
@@ -119,6 +133,35 @@ const Dashboard = () => {
     }
   };
 
+  // Função para recalcular apenas o status das trilhas (sem buscar dados novamente)
+  const recalculateTrailsProgress = () => {
+    if (trails.length === 0 || trailsProgress.length === 0) return;
+
+    const updatedProgress = trailsProgress.map((tp, index) => {
+      const trail = trails.find(t => t.id === tp.trailId);
+      if (!trail) return tp;
+
+      let status: 'active' | 'completed' | 'locked';
+      if (tp.progress === 100) {
+        status = 'completed';
+      } else if (isAdmin) {
+        // Admins têm acesso a todas as trilhas
+        status = 'active';
+      } else if (trail.order_index === 1) {
+        // A primeira trilha sempre está desbloqueada
+        status = 'active';
+      } else {
+        // Trilhas seguintes só desbloqueiam quando a anterior estiver completa
+        const previousTrailProgress = trailsProgress[index - 1];
+        status = previousTrailProgress?.progress === 100 ? 'active' : 'locked';
+      }
+
+      return { ...tp, status };
+    });
+
+    setTrailsProgress(updatedProgress);
+  };
+
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
       // Fetch all trails
@@ -158,6 +201,7 @@ const Dashboard = () => {
       });
 
       // Calculate progress for each trail in memory
+      // NOTE: Usamos isAdmin diretamente aqui, mas será recalculado no useEffect quando isAdmin mudar
       const progressData: TrailProgress[] = [];
       
       for (const trail of trailsData || []) {
@@ -168,13 +212,10 @@ const Dashboard = () => {
         const completedLessons = lessonIds.filter(id => completedLessonIds.has(id)).length;
         const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-        // Determine status
+        // Determine status - inicialmente sem considerar isAdmin (será recalculado)
         let status: 'active' | 'completed' | 'locked';
         if (progress === 100) {
           status = 'completed';
-        } else if (isAdmin) {
-          // Admins têm acesso a todas as trilhas
-          status = 'active';
         } else if (trail.order_index === 1) {
           // A primeira trilha sempre está desbloqueada
           status = 'active';
@@ -350,7 +391,7 @@ const Dashboard = () => {
             gradientFrom="#ec4899"
             gradientTo="#e11d48"
             delay={0.2}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
           <AnimatedStatCard
             value={gamificationStats?.powerScore ?? 0}
@@ -359,7 +400,7 @@ const Dashboard = () => {
             gradientFrom="#6366f1"
             gradientTo="#9333ea"
             delay={0.35}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
           <AnimatedStatCard
             value={gamificationStats?.lessonsCompleted ?? 0}
@@ -368,7 +409,7 @@ const Dashboard = () => {
             gradientFrom="#10b981"
             gradientTo="#0891b2"
             delay={0.5}
-            isLoading={gamificationLoading}
+            isLoading={gamificationLoading || !gamificationStats}
           />
         </div>
 
