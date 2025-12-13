@@ -28,6 +28,9 @@ export interface ExperienceCardBase {
   anchorText?: string;     // Texto na narração que trigga o card
   triggerTimestamp?: number; // Timestamp alternativo para trigger
   duration?: number;       // Duração em segundos que o card fica visível
+  title?: string;          // Título do card
+  subtitle?: string;       // Subtítulo do card
+  visualScript?: string;   // Descrição cinematográfica do visual/animação (para guiar implementação)
 }
 
 // Card: I.A. Book Experience
