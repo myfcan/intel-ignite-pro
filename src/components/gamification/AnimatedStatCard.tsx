@@ -36,20 +36,26 @@ const Sparkle = ({ delay, size, x, y }: { delay: number; size: number; x: number
   />
 );
 
-// Counter hook
+// Counter hook - animates from 0 to end value when end changes
 const useCounter = (end: number, duration: number = 1.5, startDelay: number = 0) => {
   const [count, setCount] = useState(0);
-  const prevEndRef = useRef<number | null>(null);
+  const prevEndRef = useRef<number>(-1); // Start with -1 to ensure first render triggers
 
   useEffect(() => {
-    // Só anima se o valor end mudou e é maior que 0
+    // Skip if end hasn't changed
     if (prevEndRef.current === end) return;
+    
+    // Always update the ref to track current value
     prevEndRef.current = end;
     
+    // If end is 0, just set count to 0 immediately
     if (end === 0) {
       setCount(0);
       return;
     }
+
+    // Reset count to 0 before animating to new value
+    setCount(0);
 
     const timeout = setTimeout(() => {
       const startTime = Date.now();
@@ -60,12 +66,14 @@ const useCounter = (end: number, duration: number = 1.5, startDelay: number = 0)
         
         // Easing function for smooth deceleration
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        setCount(Math.floor(easeOut * end));
+        const newCount = Math.floor(easeOut * end);
+        
+        setCount(newCount);
 
         if (progress < 1) {
           requestAnimationFrame(updateCount);
         } else {
-          setCount(end);
+          setCount(end); // Ensure we end at exact value
         }
       };
 
