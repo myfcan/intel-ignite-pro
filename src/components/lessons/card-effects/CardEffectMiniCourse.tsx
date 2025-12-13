@@ -9,23 +9,21 @@ interface CardEffectProps {
   duration?: number;
 }
 
-export const CardEffectMiniCourse: React.FC<CardEffectProps> = ({ isActive = true }) => {
+export const CardEffectMiniCourse: React.FC<CardEffectProps> = ({ isActive = true, duration = 33 }) => {
   const [currentScene, setCurrentScene] = useState(0);
   const totalScenes = 11;
-  const sceneDuration = 3000;
+  const sceneTime = (duration * 1000) / totalScenes;
 
   useEffect(() => {
     if (!isActive) return;
     const interval = setInterval(() => {
       setCurrentScene(prev => {
-        if (prev >= totalScenes - 1) {
-          return 0;
-        }
+        if (prev >= totalScenes - 1) return prev;
         return prev + 1;
       });
-    }, sceneDuration);
+    }, sceneTime);
     return () => clearInterval(interval);
-  }, [isActive]);
+  }, [isActive, sceneTime]);
 
   const modules = [
     { title: 'Módulo 1', status: 'complete' },

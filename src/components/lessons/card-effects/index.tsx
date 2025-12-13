@@ -168,6 +168,8 @@ import { CardEffectVisualIdentity } from './CardEffectVisualIdentity';
 import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
+import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
+import { CardEffectCoreTriangle } from './CardEffectCoreTriangle';
 
 // ============================================================
 // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
@@ -471,7 +473,7 @@ export type CardEffectType =
   | 'deep-intro' | 'authority-builder' | 'structure-map' | 'audience-focus'
   | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
   | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
-  | 'leverage-mindset'
+  | 'leverage-mindset' | 'coauthor-role' | 'core-triangle'
   // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
   | 'deep-content-intro' | 'start-from-zero' | 'memory-stack' | 'three-decisions'
   | 'module-map' | 'objective-lens' | 'summary-booster' | 'support-materials'
@@ -634,6 +636,8 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'project-picker': CardEffectProjectPicker,
   'mini-course': CardEffectMiniCourse,
   'leverage-mindset': CardEffectLeverageMindset,
+  'coauthor-role': CardEffectCoauthorRole,
+  'core-triangle': CardEffectCoreTriangle,
   // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
   'deep-content-intro': CardEffectDeepContentIntro,
   'start-from-zero': CardEffectStartFromZero,
@@ -1019,7 +1023,7 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'deep-intro', 'authority-builder', 'structure-map', 'audience-focus',
     'result-clarifier', 'draft-expander', 'practice-builder', 'tool-trio',
     'text-engine', 'visual-identity', 'project-picker', 'mini-course',
-    'leverage-mindset',
+    'leverage-mindset', 'coauthor-role', 'core-triangle',
   ],
   'aula-10': [
     'deep-content-intro', 'start-from-zero', 'memory-stack', 'three-decisions',
