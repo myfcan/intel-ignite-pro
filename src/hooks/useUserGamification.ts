@@ -86,33 +86,42 @@ export function useUserGamification() {
 
   useEffect(() => {
     let isMounted = true;
+    let initAttempts = 0;
+    const maxAttempts = 3;
 
-    // Função para inicializar com sessão
+    // Função para inicializar com sessão (com retry para auto-login)
     const initWithSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (isMounted && session?.user) {
+        console.log('[useUserGamification] Session found, fetching stats for:', session.user.id);
         setSessionReady(true);
         await fetchStats(session.user.id);
       } else if (isMounted) {
-        setIsLoading(false);
+        initAttempts++;
+        // Retry até 3 vezes com delay para capturar auto-login
+        if (initAttempts < maxAttempts) {
+          console.log(`[useUserGamification] No session yet, retry ${initAttempts}/${maxAttempts}`);
+          setTimeout(() => {
+            if (isMounted) initWithSession();
+          }, 300);
+        } else {
+          console.log('[useUserGamification] No session after retries, setting loading false');
+          setIsLoading(false);
+        }
       }
     };
 
     // Escutar mudanças na sessão
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[useUserGamification] Auth event:', event);
+      console.log('[useUserGamification] Auth event:', event, session?.user?.id);
       
       if (!isMounted) return;
       
-      if (event === 'SIGNED_IN' && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         setSessionReady(true);
-        // Pequeno delay para garantir que a sessão foi persistida
-        setTimeout(() => {
-          if (isMounted) {
-            fetchStats(session.user.id);
-          }
-        }, 100);
+        // Buscar imediatamente quando sessão é detectada
+        await fetchStats(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setStats(null);
         setSessionReady(false);
