@@ -169,6 +169,25 @@ import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
+// ============================================================
+// AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+// ============================================================
+import CardEffectDeepContentIntro from './CardEffectDeepContentIntro';
+import CardEffectStartFromZero from './CardEffectStartFromZero';
+import CardEffectMemoryStack from './CardEffectMemoryStack';
+import CardEffectThreeDecisions from './CardEffectThreeDecisions';
+import CardEffectModuleMap from './CardEffectModuleMap';
+import CardEffectObjectiveLens from './CardEffectObjectiveLens';
+import CardEffectSummaryBooster from './CardEffectSummaryBooster';
+import CardEffectSupportMaterials from './CardEffectSupportMaterials';
+import CardEffectFirstVersion from './CardEffectFirstVersion';
+import CardEffectToolOrchestrator from './CardEffectToolOrchestrator';
+import CardEffectVisualCreator from './CardEffectVisualCreator';
+import CardEffectMediaExpander from './CardEffectMediaExpander';
+import CardEffectProductMindset from './CardEffectProductMindset';
+import CardEffectAssetLibrary from './CardEffectAssetLibrary';
+import CardEffectBeyondSelling from './CardEffectBeyondSelling';
+
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -318,6 +337,23 @@ export { CardEffectProjectPicker } from './CardEffectProjectPicker';
 export { CardEffectMiniCourse } from './CardEffectMiniCourse';
 export { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
+// Re-exportar componentes - AULA 10 (Conteúdo Profundo: Experiência em Curso Real)
+export { default as CardEffectDeepContentIntro } from './CardEffectDeepContentIntro';
+export { default as CardEffectStartFromZero } from './CardEffectStartFromZero';
+export { default as CardEffectMemoryStack } from './CardEffectMemoryStack';
+export { default as CardEffectThreeDecisions } from './CardEffectThreeDecisions';
+export { default as CardEffectModuleMap } from './CardEffectModuleMap';
+export { default as CardEffectObjectiveLens } from './CardEffectObjectiveLens';
+export { default as CardEffectSummaryBooster } from './CardEffectSummaryBooster';
+export { default as CardEffectSupportMaterials } from './CardEffectSupportMaterials';
+export { default as CardEffectFirstVersion } from './CardEffectFirstVersion';
+export { default as CardEffectToolOrchestrator } from './CardEffectToolOrchestrator';
+export { default as CardEffectVisualCreator } from './CardEffectVisualCreator';
+export { default as CardEffectMediaExpander } from './CardEffectMediaExpander';
+export { default as CardEffectProductMindset } from './CardEffectProductMindset';
+export { default as CardEffectAssetLibrary } from './CardEffectAssetLibrary';
+export { default as CardEffectBeyondSelling } from './CardEffectBeyondSelling';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -363,7 +399,12 @@ export type CardEffectType =
   | 'deep-intro' | 'authority-builder' | 'structure-map' | 'audience-focus'
   | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
   | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
-  | 'leverage-mindset';
+  | 'leverage-mindset'
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  | 'deep-content-intro' | 'start-from-zero' | 'memory-stack' | 'three-decisions'
+  | 'module-map' | 'objective-lens' | 'summary-booster' | 'support-materials'
+  | 'first-version' | 'tool-orchestrator' | 'visual-creator' | 'media-expander'
+  | 'product-mindset' | 'asset-library' | 'beyond-selling';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -511,6 +552,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'project-picker': CardEffectProjectPicker,
   'mini-course': CardEffectMiniCourse,
   'leverage-mindset': CardEffectLeverageMindset,
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': CardEffectDeepContentIntro,
+  'start-from-zero': CardEffectStartFromZero,
+  'memory-stack': CardEffectMemoryStack,
+  'three-decisions': CardEffectThreeDecisions,
+  'module-map': CardEffectModuleMap,
+  'objective-lens': CardEffectObjectiveLens,
+  'summary-booster': CardEffectSummaryBooster,
+  'support-materials': CardEffectSupportMaterials,
+  'first-version': CardEffectFirstVersion,
+  'tool-orchestrator': CardEffectToolOrchestrator,
+  'visual-creator': CardEffectVisualCreator,
+  'media-expander': CardEffectMediaExpander,
+  'product-mindset': CardEffectProductMindset,
+  'asset-library': CardEffectAssetLibrary,
+  'beyond-selling': CardEffectBeyondSelling,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -597,6 +654,22 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'project-picker': 'Seletor de Projeto',
   'mini-course': 'Mini-Curso',
   'leverage-mindset': 'Mentalidade de Alavanca',
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': 'Conteúdo que Fica',
+  'start-from-zero': 'Sempre do Zero',
+  'memory-stack': 'Pilha de Memórias',
+  'three-decisions': 'Três Decisões',
+  'module-map': 'Mapa de Módulos',
+  'objective-lens': 'Lentes de Objetivo',
+  'summary-booster': 'Impulsionador de Sumário',
+  'support-materials': 'Materiais de Apoio',
+  'first-version': 'Versão 1',
+  'tool-orchestrator': 'Orquestrador de Ferramentas',
+  'visual-creator': 'Criador Visual',
+  'media-expander': 'Expansor de Mídia',
+  'product-mindset': 'Mentalidade de Produto',
+  'asset-library': 'Biblioteca de Ativos',
+  'beyond-selling': 'Além de Vender',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -697,6 +770,22 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'project-picker': 'Escolhendo o projeto real',
   'mini-course': 'Formato enxuto e impactante',
   'leverage-mindset': 'I.A. como alavanca para conhecimento',
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': 'Timeline vs conteúdo duradouro',
+  'start-from-zero': 'Da postagem solta ao caminho contínuo',
+  'memory-stack': 'Pilha de conhecimento acumulado',
+  'three-decisions': 'Tema, público e promessa',
+  'module-map': 'Mapa visual de módulos numerados',
+  'objective-lens': 'Verbos claros em cada aula',
+  'summary-booster': 'Sumário gerado pela I.A.',
+  'support-materials': 'Roteiros, PDFs e descrições',
+  'first-version': 'Melhor editar algo do que o vazio',
+  'tool-orchestrator': 'Modelos de linguagem organizando ideias',
+  'visual-creator': 'Capas, imagens e elementos visuais',
+  'media-expander': 'Transformando texto em vídeo e áudio',
+  'product-mindset': 'Conteúdo como ativo escalável',
+  'asset-library': 'Biblioteca digital trabalhando por você',
+  'beyond-selling': 'Impacto, clareza e novas possibilidades',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -754,6 +843,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'text-engine', 'visual-identity', 'project-picker', 'mini-course',
     'leverage-mindset',
   ],
+  'aula-10': [
+    'deep-content-intro', 'start-from-zero', 'memory-stack', 'three-decisions',
+    'module-map', 'objective-lens', 'summary-booster', 'support-materials',
+    'first-version', 'tool-orchestrator', 'visual-creator', 'media-expander',
+    'product-mindset', 'asset-library', 'beyond-selling',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -766,6 +861,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
+  ...CARD_EFFECTS_BY_LESSON['aula-10'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
