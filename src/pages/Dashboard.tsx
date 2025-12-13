@@ -61,12 +61,8 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
-  // Refresh gamification quando user for setado (garante dados atualizados)
-  useEffect(() => {
-    if (user?.id) {
-      refreshGamification();
-    }
-  }, [user?.id]);
+  // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
+  // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
   // Recalcular progresso das trilhas quando isAdmin mudar (após loading)
   useEffect(() => {
