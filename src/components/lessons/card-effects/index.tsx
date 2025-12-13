@@ -169,6 +169,24 @@ import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
+// ============================================================
+// AULA 10 - Conteúdo Profundo: Cards Especiais para Aula 06
+// ============================================================
+import { CardEffectDeepContentVsRapido } from './CardEffectDeepContentVsRapido';
+import { CardEffectKnowledgeStructure } from './CardEffectKnowledgeStructure';
+import { CardEffectCoreDecisions } from './CardEffectCoreDecisions';
+import { CardEffectModuleMap } from './CardEffectModuleMap';
+import { CardEffectObjectiveFocus } from './CardEffectObjectiveFocus';
+import { CardEffectProductShelf } from './CardEffectProductShelf';
+import { CardEffectEbookCreator } from './CardEffectEbookCreator';
+import { CardEffectLessonSeries } from './CardEffectLessonSeries';
+import { CardEffectTextAiHelper } from './CardEffectTextAiHelper';
+import { CardEffectVisualAiHelper } from './CardEffectVisualAiHelper';
+import { CardEffectYouAreTheAuthor } from './CardEffectYouAreTheAuthor';
+import { CardEffectAiLimitations } from './CardEffectAiLimitations';
+import { CardEffectCopyPasteRisk } from './CardEffectCopyPasteRisk';
+import { CardEffectNextStepsDeepContent } from './CardEffectNextStepsDeepContent';
+
 
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
@@ -366,6 +384,11 @@ export type CardEffectType =
   | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
   | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
   | 'leverage-mindset'
+  // AULA 10 - Cards Especiais Aula 06
+  | 'deep-content-vs-rapido' | 'knowledge-structure' | 'core-decisions'
+  | 'module-map' | 'objective-focus' | 'product-shelf' | 'ebook-creator'
+  | 'lesson-series' | 'text-ai-helper' | 'visual-ai-helper' | 'you-are-the-author'
+  | 'ai-limitations' | 'copy-paste-risk' | 'next-steps-deep-content'
 ;
 
 export interface CardEffectProps {
@@ -514,6 +537,21 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'project-picker': CardEffectProjectPicker,
   'mini-course': CardEffectMiniCourse,
   'leverage-mindset': CardEffectLeverageMindset,
+  // AULA 10 - Cards Especiais Aula 06
+  'deep-content-vs-rapido': CardEffectDeepContentVsRapido,
+  'knowledge-structure': CardEffectKnowledgeStructure,
+  'core-decisions': CardEffectCoreDecisions,
+  'module-map': CardEffectModuleMap,
+  'objective-focus': CardEffectObjectiveFocus,
+  'product-shelf': CardEffectProductShelf,
+  'ebook-creator': CardEffectEbookCreator,
+  'lesson-series': CardEffectLessonSeries,
+  'text-ai-helper': CardEffectTextAiHelper,
+  'visual-ai-helper': CardEffectVisualAiHelper,
+  'you-are-the-author': CardEffectYouAreTheAuthor,
+  'ai-limitations': CardEffectAiLimitations,
+  'copy-paste-risk': CardEffectCopyPasteRisk,
+  'next-steps-deep-content': CardEffectNextStepsDeepContent,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -600,6 +638,21 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'project-picker': 'Seletor de Projeto',
   'mini-course': 'Mini-Curso',
   'leverage-mindset': 'Mentalidade de Alavanca',
+  // AULA 10 - Cards Especiais Aula 06
+  'deep-content-vs-rapido': 'Conteúdo Profundo vs Rápido',
+  'knowledge-structure': 'Estrutura do Conhecimento',
+  'core-decisions': 'Decisões Centrais',
+  'module-map': 'Mapa de Módulos',
+  'objective-focus': 'Foco no Objetivo',
+  'product-shelf': 'Prateleira de Produtos',
+  'ebook-creator': 'Criador de eBook',
+  'lesson-series': 'Série de Aulas',
+  'text-ai-helper': 'Assistente de Texto IA',
+  'visual-ai-helper': 'Assistente Visual IA',
+  'you-are-the-author': 'Você é o Autor',
+  'ai-limitations': 'Limitações da IA',
+  'copy-paste-risk': 'Risco do Copiar/Colar',
+  'next-steps-deep-content': 'Próximos Passos Conteúdo Profundo',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -700,6 +753,21 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'project-picker': 'Escolhendo o projeto real',
   'mini-course': 'Formato enxuto e impactante',
   'leverage-mindset': 'I.A. como alavanca para conhecimento',
+  // AULA 10 - Cards Especiais Aula 06
+  'deep-content-vs-rapido': 'Diferença entre conteúdo rápido e profundo',
+  'knowledge-structure': 'Conhecimento organizado em estrutura',
+  'core-decisions': 'As três decisões fundamentais',
+  'module-map': 'Visualização do mapa de módulos',
+  'objective-focus': 'Objetivo de cada etapa do curso',
+  'product-shelf': 'Prateleira de formatos de produto',
+  'ebook-creator': 'Criação de eBook com IA',
+  'lesson-series': 'Série de aulas estruturadas',
+  'text-ai-helper': 'IA de texto criando esqueleto',
+  'visual-ai-helper': 'IA visual gerando mídia',
+  'you-are-the-author': 'Você como diretor criativo',
+  'ai-limitations': 'Limitações da IA que exigem revisão',
+  'copy-paste-risk': 'Risco de conteúdo genérico',
+  'next-steps-deep-content': 'Passos para conteúdo profundo seguro',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -757,6 +825,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'text-engine', 'visual-identity', 'project-picker', 'mini-course',
     'leverage-mindset',
   ],
+  'aula-10': [
+    'deep-content-vs-rapido', 'knowledge-structure', 'core-decisions',
+    'module-map', 'objective-focus', 'product-shelf', 'ebook-creator',
+    'lesson-series', 'text-ai-helper', 'visual-ai-helper', 'you-are-the-author',
+    'ai-limitations', 'copy-paste-risk', 'next-steps-deep-content',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -769,6 +843,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
+  ...CARD_EFFECTS_BY_LESSON['aula-10'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
