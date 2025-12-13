@@ -189,6 +189,25 @@ import CardEffectAssetLibrary from './CardEffectAssetLibrary';
 import CardEffectBeyondSelling from './CardEffectBeyondSelling';
 
 // ============================================================
+// AULA 12 - Vídeos simples com I.A.
+// ============================================================
+import CardEffectVideoFeedExplosion from './CardEffectVideoFeedExplosion';
+import CardEffectVideoConnection from './CardEffectVideoConnection';
+import CardEffectBlankScreenBlock from './CardEffectBlankScreenBlock';
+import CardEffectThreeVideoBlocks from './CardEffectThreeVideoBlocks';
+import CardEffectHookPower from './CardEffectHookPower';
+import CardEffectCallToAction from './CardEffectCallToAction';
+import CardEffectIdeaToScript from './CardEffectIdeaToScript';
+import CardEffectThreeVariations from './CardEffectThreeVariations';
+import CardEffectPartnership from './CardEffectPartnership';
+import CardEffectVideoStarter from './CardEffectVideoStarter';
+import CardEffectAiTextEngine from './CardEffectAiTextEngine';
+import CardEffectProductionBasics from './CardEffectProductionBasics';
+import CardEffectScriptGuide from './CardEffectScriptGuide';
+import CardEffectShortBlocks from './CardEffectShortBlocks';
+import CardEffectConsistencyWins from './CardEffectConsistencyWins';
+
+// ============================================================
 // AULA 11 - Planilhas, organização e automação leve com I.A.
 // ============================================================
 import CardEffectFearBreaker from './CardEffectFearBreaker';
@@ -373,6 +392,23 @@ export { default as CardEffectProductMindset } from './CardEffectProductMindset'
 export { default as CardEffectAssetLibrary } from './CardEffectAssetLibrary';
 export { default as CardEffectBeyondSelling } from './CardEffectBeyondSelling';
 
+// Re-exportar componentes - AULA 12 (Vídeos simples)
+export { default as CardEffectVideoFeedExplosion } from './CardEffectVideoFeedExplosion';
+export { default as CardEffectVideoConnection } from './CardEffectVideoConnection';
+export { default as CardEffectBlankScreenBlock } from './CardEffectBlankScreenBlock';
+export { default as CardEffectThreeVideoBlocks } from './CardEffectThreeVideoBlocks';
+export { default as CardEffectHookPower } from './CardEffectHookPower';
+export { default as CardEffectCallToAction } from './CardEffectCallToAction';
+export { default as CardEffectIdeaToScript } from './CardEffectIdeaToScript';
+export { default as CardEffectThreeVariations } from './CardEffectThreeVariations';
+export { default as CardEffectPartnership } from './CardEffectPartnership';
+export { default as CardEffectVideoStarter } from './CardEffectVideoStarter';
+export { default as CardEffectAiTextEngine } from './CardEffectAiTextEngine';
+export { default as CardEffectProductionBasics } from './CardEffectProductionBasics';
+export { default as CardEffectScriptGuide } from './CardEffectScriptGuide';
+export { default as CardEffectShortBlocks } from './CardEffectShortBlocks';
+export { default as CardEffectConsistencyWins } from './CardEffectConsistencyWins';
+
 // Re-exportar componentes - AULA 11 (Planilhas, organização e automação)
 export { default as CardEffectFearBreaker } from './CardEffectFearBreaker';
 export { default as CardEffectQaTable } from './CardEffectQaTable';
@@ -445,7 +481,12 @@ export type CardEffectType =
   | 'fear-breaker' | 'qa-table' | 'ai-assistant' | 'three-questions'
   | 'map-visual' | 'problem-to-structure' | 'finance-example' | 'sales-example'
   | 'tasks-example' | 'tool-combo' | 'simulator-call' | 'you-command'
-  | 'habit-builder' | 'pattern-vision' | 'panel-decision';
+  | 'habit-builder' | 'pattern-vision' | 'panel-decision'
+  // AULA 12 - Vídeos simples com I.A.
+  | 'video-feed-explosion' | 'video-connection' | 'blank-screen-block' | 'three-video-blocks'
+  | 'hook-power' | 'call-to-action' | 'idea-to-script' | 'three-variations'
+  | 'partnership' | 'video-starter' | 'ai-text-engine' | 'production-basics'
+  | 'script-guide' | 'short-blocks' | 'consistency-wins';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -625,6 +666,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'habit-builder': CardEffectHabitBuilder,
   'pattern-vision': CardEffectPatternVision,
   'panel-decision': CardEffectPanelDecision,
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': CardEffectVideoFeedExplosion,
+  'video-connection': CardEffectVideoConnection,
+  'blank-screen-block': CardEffectBlankScreenBlock,
+  'three-video-blocks': CardEffectThreeVideoBlocks,
+  'hook-power': CardEffectHookPower,
+  'call-to-action': CardEffectCallToAction,
+  'idea-to-script': CardEffectIdeaToScript,
+  'three-variations': CardEffectThreeVariations,
+  'partnership': CardEffectPartnership,
+  'video-starter': CardEffectVideoStarter,
+  'ai-text-engine': CardEffectAiTextEngine,
+  'production-basics': CardEffectProductionBasics,
+  'script-guide': CardEffectScriptGuide,
+  'short-blocks': CardEffectShortBlocks,
+  'consistency-wins': CardEffectConsistencyWins,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -743,6 +800,22 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'habit-builder': 'Construtor de Hábito',
   'pattern-vision': 'Visão de Padrões',
   'panel-decision': 'Painel de Decisão',
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': 'Explosão no Feed',
+  'video-connection': 'Conexão por Vídeo',
+  'blank-screen-block': 'Bloqueio da Tela Branca',
+  'three-video-blocks': 'Os 3 Blocos do Vídeo',
+  'hook-power': 'Poder do Gancho',
+  'call-to-action': 'Chamada para Ação',
+  'idea-to-script': 'Da Ideia ao Roteiro',
+  'three-variations': 'Três Variações',
+  'partnership': 'Parceria com I.A.',
+  'video-starter': 'Iniciador de Vídeo',
+  'ai-text-engine': 'Motor de Texto com I.A.',
+  'production-basics': 'Produção Básica',
+  'script-guide': 'Guia de Roteiro',
+  'short-blocks': 'Blocos Curtos',
+  'consistency-wins': 'Consistência Vence',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -875,6 +948,22 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'habit-builder': 'Calendário com lembrete de atualização',
   'pattern-vision': 'Gráfico revelando tendências',
   'panel-decision': 'Painel de decisão com dados',
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': 'Feed transbordando de vídeos virais',
+  'video-connection': 'Conexão humana através do vídeo',
+  'blank-screen-block': 'Tela em branco travando criador',
+  'three-video-blocks': 'Os três blocos essenciais do vídeo',
+  'hook-power': 'Gancho poderoso nos primeiros segundos',
+  'call-to-action': 'Chamada clara para ação do espectador',
+  'idea-to-script': 'Transformando ideia em roteiro estruturado',
+  'three-variations': 'Três versões do mesmo conteúdo',
+  'partnership': 'I.A. como parceira de criação',
+  'video-starter': 'Começando o primeiro vídeo',
+  'ai-text-engine': 'Motor de texto gerando roteiros',
+  'production-basics': 'Fundamentos de produção simples',
+  'script-guide': 'Guia passo a passo do roteiro',
+  'short-blocks': 'Blocos curtos e impactantes',
+  'consistency-wins': 'Consistência supera perfeição',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -944,6 +1033,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'tasks-example', 'tool-combo', 'simulator-call', 'you-command',
     'habit-builder', 'pattern-vision', 'panel-decision',
   ],
+  'aula-12': [
+    'video-feed-explosion', 'video-connection', 'blank-screen-block', 'three-video-blocks',
+    'hook-power', 'call-to-action', 'idea-to-script', 'three-variations',
+    'partnership', 'video-starter', 'ai-text-engine', 'production-basics',
+    'script-guide', 'short-blocks', 'consistency-wins',
+  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -958,6 +1053,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
   ...CARD_EFFECTS_BY_LESSON['aula-10'],
   ...CARD_EFFECTS_BY_LESSON['aula-11'],
+  ...CARD_EFFECTS_BY_LESSON['aula-12'],
 ];
 
 export function getCardEffectComponent(type: string | undefined | null): React.FC<CardEffectProps> | null {
