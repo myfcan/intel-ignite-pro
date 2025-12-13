@@ -172,6 +172,25 @@ import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
 import { CardEffectCoreTriangle } from './CardEffectCoreTriangle';
 
 // ============================================================
+// AULA 9 (REAL DB) - Trabalho, renda, segurança e limites da I.A.
+// ============================================================
+import CardEffectWorkShift from './CardEffectWorkShift';
+import CardEffectInfoFlood from './CardEffectInfoFlood';
+import CardEffectValueShift from './CardEffectValueShift';
+// CardEffectTimeSaver já importado na AULA 3
+import CardEffectQualityUpgrade from './CardEffectQualityUpgrade';
+import CardEffectNewOffers from './CardEffectNewOffers';
+import CardEffectExtraIncomePaths from './CardEffectExtraIncomePaths';
+import CardEffectAiInTheBackground from './CardEffectAiInTheBackground';
+import CardEffectProblemSolverIdentity from './CardEffectProblemSolverIdentity';
+import CardEffectRoleMapping from './CardEffectRoleMapping';
+import CardEffectTaskHighlighter from './CardEffectTaskHighlighter';
+import CardEffectExperimentRoadmap from './CardEffectExperimentRoadmap';
+import CardEffectDataSafety from './CardEffectDataSafety';
+import CardEffectHumanCheck from './CardEffectHumanCheck';
+import CardEffectResponsibilityLine from './CardEffectResponsibilityLine';
+
+// ============================================================
 // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
 // ============================================================
 import CardEffectDeepContentIntro from './CardEffectDeepContentIntro';
@@ -411,7 +430,22 @@ export { default as CardEffectScriptGuide } from './CardEffectScriptGuide';
 export { default as CardEffectShortBlocks } from './CardEffectShortBlocks';
 export { default as CardEffectConsistencyWins } from './CardEffectConsistencyWins';
 
-// Re-exportar componentes - AULA 11 (Planilhas, organização e automação)
+// Re-exportar componentes - AULA 9 (REAL DB) - Trabalho, renda, segurança
+export { default as CardEffectWorkShift } from './CardEffectWorkShift';
+export { default as CardEffectInfoFlood } from './CardEffectInfoFlood';
+export { default as CardEffectValueShift } from './CardEffectValueShift';
+export { default as CardEffectQualityUpgrade } from './CardEffectQualityUpgrade';
+export { default as CardEffectNewOffers } from './CardEffectNewOffers';
+export { default as CardEffectExtraIncomePaths } from './CardEffectExtraIncomePaths';
+export { default as CardEffectAiInTheBackground } from './CardEffectAiInTheBackground';
+export { default as CardEffectProblemSolverIdentity } from './CardEffectProblemSolverIdentity';
+export { default as CardEffectRoleMapping } from './CardEffectRoleMapping';
+export { default as CardEffectTaskHighlighter } from './CardEffectTaskHighlighter';
+export { default as CardEffectExperimentRoadmap } from './CardEffectExperimentRoadmap';
+export { default as CardEffectDataSafety } from './CardEffectDataSafety';
+export { default as CardEffectHumanCheck } from './CardEffectHumanCheck';
+export { default as CardEffectResponsibilityLine } from './CardEffectResponsibilityLine';
+
 export { default as CardEffectFearBreaker } from './CardEffectFearBreaker';
 export { default as CardEffectQaTable } from './CardEffectQaTable';
 export { default as CardEffectAiAssistant } from './CardEffectAiAssistant';
@@ -488,7 +522,13 @@ export type CardEffectType =
   | 'video-feed-explosion' | 'video-connection' | 'blank-screen-block' | 'three-video-blocks'
   | 'hook-power' | 'call-to-action' | 'idea-to-script' | 'three-variations'
   | 'partnership' | 'video-starter' | 'ai-text-engine' | 'production-basics'
-  | 'script-guide' | 'short-blocks' | 'consistency-wins';
+  | 'script-guide' | 'short-blocks' | 'consistency-wins'
+  // AULA 9 (REAL DB) - Trabalho, renda, segurança e limites
+  | 'work-shift' | 'info-flood' | 'value-shift'
+  | 'quality-upgrade' | 'new-offers' | 'extra-income-paths'
+  | 'ai-in-the-background' | 'problem-solver-identity' | 'role-mapping'
+  | 'task-highlighter' | 'experiment-roadmap' | 'data-safety'
+  | 'human-check' | 'responsibility-line';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -686,6 +726,21 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'script-guide': CardEffectScriptGuide,
   'short-blocks': CardEffectShortBlocks,
   'consistency-wins': CardEffectConsistencyWins,
+  // AULA 9 (REAL DB) - Trabalho, renda, segurança e limites
+  'work-shift': CardEffectWorkShift,
+  'info-flood': CardEffectInfoFlood,
+  'value-shift': CardEffectValueShift,
+  'quality-upgrade': CardEffectQualityUpgrade,
+  'new-offers': CardEffectNewOffers,
+  'extra-income-paths': CardEffectExtraIncomePaths,
+  'ai-in-the-background': CardEffectAiInTheBackground,
+  'problem-solver-identity': CardEffectProblemSolverIdentity,
+  'role-mapping': CardEffectRoleMapping,
+  'task-highlighter': CardEffectTaskHighlighter,
+  'experiment-roadmap': CardEffectExperimentRoadmap,
+  'data-safety': CardEffectDataSafety,
+  'human-check': CardEffectHumanCheck,
+  'responsibility-line': CardEffectResponsibilityLine,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -822,6 +877,21 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'consistency-wins': 'Consistência Vence',
   'coauthor-role': 'Papel do Coautor',
   'core-triangle': 'Triângulo Central',
+  // AULA 9 (REAL DB)
+  'work-shift': 'Mudança no Trabalho',
+  'info-flood': 'Afogado em Informação',
+  'value-shift': 'Mudança de Valor',
+  'quality-upgrade': 'Upgrade de Qualidade',
+  'new-offers': 'Novos Serviços',
+  'extra-income-paths': 'Caminhos de Renda Extra',
+  'ai-in-the-background': 'I.A. nos Bastidores',
+  'problem-solver-identity': 'Identidade de Resolvedor',
+  'role-mapping': 'Mapa da Profissão',
+  'task-highlighter': 'Destacador de Tarefas',
+  'experiment-roadmap': 'Roteiro de Experimentos',
+  'data-safety': 'Segurança de Dados',
+  'human-check': 'Revisão Humana',
+  'responsibility-line': 'Linha da Responsabilidade',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -972,6 +1042,21 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'consistency-wins': 'Consistência supera perfeição',
   'coauthor-role': 'Você como coautor da I.A. no processo criativo',
   'core-triangle': 'Triângulo central: Clareza, Contexto, Exemplo',
+  // AULA 9 (REAL DB)
+  'work-shift': 'Tarefas repetitivas virando rotina inteligente',
+  'info-flood': 'I.A. filtrando grandes volumes de informação',
+  'value-shift': 'De executor de tarefa para resolvedor de problemas',
+  'quality-upgrade': 'Refinando entregas com revisões de I.A.',
+  'new-offers': 'Novos serviços e entregas antes impossíveis',
+  'extra-income-paths': 'Três caminhos para renda extra com I.A.',
+  'ai-in-the-background': 'I.A. trabalhando nos bastidores invisíveis',
+  'problem-solver-identity': 'Nova identidade: menos tarefa, mais solução',
+  'role-mapping': 'Mapeando sua profissão para uso de I.A.',
+  'task-highlighter': 'Identificando tarefas repetitivas que drenam tempo',
+  'experiment-roadmap': 'Plano de experimentos um por vez',
+  'data-safety': 'Cuidado com dados sensíveis na I.A.',
+  'human-check': 'Revisão humana obrigatória antes de enviar',
+  'responsibility-line': 'A I.A. sugere, você decide e assume',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -1024,10 +1109,11 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'boundary-line', 'director-rule', 'director-mindset',
   ],
   'aula-9': [
-    'deep-intro', 'authority-builder', 'structure-map', 'audience-focus',
-    'result-clarifier', 'draft-expander', 'practice-builder', 'tool-trio',
-    'text-engine', 'visual-identity', 'project-picker', 'mini-course',
-    'leverage-mindset', 'coauthor-role', 'core-triangle',
+    'work-shift', 'info-flood', 'value-shift',
+    'time-saver', 'quality-upgrade', 'new-offers',
+    'extra-income-paths', 'ai-in-the-background', 'problem-solver-identity',
+    'role-mapping', 'task-highlighter', 'experiment-roadmap',
+    'data-safety', 'human-check', 'responsibility-line',
   ],
   'aula-10': [
     'deep-content-intro', 'start-from-zero', 'memory-stack', 'three-decisions',
