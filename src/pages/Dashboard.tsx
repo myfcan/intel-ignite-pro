@@ -51,7 +51,7 @@ const Dashboard = () => {
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin(user?.id);
-  const { stats: gamificationStats, isLoading: gamificationLoading } = useUserGamification();
+  const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
   
   // Estados para controle do scroll horizontal
   const [activeTrailIndex, setActiveTrailIndex] = useState(0);
@@ -61,12 +61,19 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
+  // Refresh gamification quando user for setado (garante dados atualizados)
+  useEffect(() => {
+    if (user?.id) {
+      refreshGamification();
+    }
+  }, [user?.id]);
+
   // Recalcular progresso das trilhas quando isAdmin mudar (após loading)
   useEffect(() => {
-    if (!adminLoading && user?.id && trails.length > 0) {
+    if (!adminLoading && user?.id && trails.length > 0 && trailsProgress.length > 0) {
       recalculateTrailsProgress();
     }
-  }, [isAdmin, adminLoading]);
+  }, [isAdmin, adminLoading, trails.length, trailsProgress.length]);
 
   const checkAuth = async () => {
     try {

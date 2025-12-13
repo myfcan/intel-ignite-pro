@@ -25,9 +25,12 @@ export function useUserGamification() {
   const [showPatentCelebration, setShowPatentCelebration] = useState(false);
 
   const fetchStats = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Aguardar sessão estar disponível
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.log('[useUserGamification] No session found');
         setIsLoading(false);
         return;
       }
@@ -35,7 +38,7 @@ export function useUserGamification() {
       const { data, error } = await supabase
         .from('users')
         .select('power_score, coins, patent_level, streak_days, total_lessons_completed')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single();
 
       if (error) {
@@ -73,7 +76,19 @@ export function useUserGamification() {
   }, []);
 
   useEffect(() => {
+    // Escutar mudanças na sessão
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchStats();
+      }
+    });
+
+    // Buscar stats iniciais
     fetchStats();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchStats]);
 
   return { 
