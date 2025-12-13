@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lightbulb, Users, Target, BookOpen } from 'lucide-react';
+import { Lightbulb, Users, Target, BookOpen, Sparkles } from 'lucide-react';
 
 interface CardEffectProps {
   isActive?: boolean;
@@ -11,25 +11,26 @@ interface CardEffectProps {
 
 const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
   isActive = true,
-  duration = 14,
+  duration = 16,
   title = "Três decisões que destravam tudo",
   subtitle = "Tema, público e promessa"
 }) => {
   const [currentScene, setCurrentScene] = useState(0);
-  const sceneDuration = ((duration || 14) * 1000) / 4;
+  const totalScenes = 5;
+  const sceneDuration = ((duration || 16) * 1000) / totalScenes;
 
   useEffect(() => {
     if (!isActive) return;
     const timer = setInterval(() => {
-      setCurrentScene((prev) => (prev + 1) % 4);
+      setCurrentScene((prev) => (prev + 1) % totalScenes);
     }, sceneDuration);
     return () => clearInterval(timer);
   }, [isActive, sceneDuration]);
 
   const cards = [
-    { label: 'Tema', icon: Lightbulb, color: 'from-yellow-400 to-orange-500' },
-    { label: 'Público', icon: Users, color: 'from-blue-400 to-blue-600' },
-    { label: 'Promessa', icon: Target, color: 'from-green-400 to-green-600' },
+    { label: 'Tema', icon: Lightbulb, color: 'from-yellow-400 to-orange-500', question: 'Sobre o que?' },
+    { label: 'Público', icon: Users, color: 'from-blue-400 to-blue-600', question: 'Para quem?' },
+    { label: 'Promessa', icon: Target, color: 'from-green-400 to-green-600', question: 'Qual resultado?' },
   ];
 
   return (
@@ -47,6 +48,7 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
       {/* Main Content */}
       <div className="relative flex-1 w-full max-w-lg flex items-center justify-center">
         <AnimatePresence mode="wait">
+          {/* Cena 1: Cards vazios aparecendo */}
           {currentScene === 0 && (
             <motion.div
               key="scene1"
@@ -69,6 +71,7 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 2: Cards preenchidos com ícones e cores */}
           {currentScene === 1 && (
             <motion.div
               key="scene2"
@@ -97,9 +100,41 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
+          {/* Cena 3: Cards com perguntas guia */}
           {currentScene === 2 && (
             <motion.div
               key="scene3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex gap-3 sm:gap-4"
+            >
+              {cards.map((card, i) => (
+                <motion.div
+                  key={card.label}
+                  initial={{ y: -10 }}
+                  animate={{ y: 0 }}
+                  className={`w-24 h-36 sm:w-28 sm:h-40 bg-gradient-to-br ${card.color} rounded-xl shadow-lg flex flex-col items-center justify-center gap-2 p-2`}
+                >
+                  <card.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                  <span className="text-xs font-bold text-white">{card.label}</span>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.15 }}
+                    className="bg-white/20 rounded-lg px-2 py-1"
+                  >
+                    <span className="text-xs text-white">{card.question}</span>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Cena 4: Linhas conectando ao centro */}
+          {currentScene === 3 && (
+            <motion.div
+              key="scene4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -148,9 +183,10 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
             </motion.div>
           )}
 
-          {currentScene === 3 && (
+          {/* Cena 5: Resultado final - Mapa mental completo */}
+          {currentScene === 4 && (
             <motion.div
-              key="scene4"
+              key="scene5"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -193,8 +229,8 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
                 className="mt-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl px-6 py-4 shadow-xl"
               >
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-6 h-6 text-white" />
-                  <span className="text-white font-bold text-sm sm:text-base">Seu Curso</span>
+                  <Sparkles className="w-5 h-5 text-white" />
+                  <span className="text-white font-bold text-sm sm:text-base">Seu Curso Estruturado</span>
                 </div>
               </motion.div>
               <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">Mapa mental completo</p>
@@ -205,7 +241,7 @@ const CardEffectThreeDecisions: React.FC<CardEffectProps> = ({
 
       {/* Progress indicator */}
       <div className="flex gap-2 mt-4">
-        {[0, 1, 2, 3].map((i) => (
+        {Array.from({ length: totalScenes }).map((_, i) => (
           <div
             key={i}
             className={`w-2 h-2 rounded-full transition-colors ${
