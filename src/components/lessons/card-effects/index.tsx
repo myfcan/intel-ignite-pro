@@ -169,25 +169,6 @@ import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
-// ============================================================
-// AULA 10 - Conteúdo Profundo: Cursos, Livros e Infoprodutos com I.A.
-// ============================================================
-import { CardEffectDeepContentVsRapido } from './CardEffectDeepContentVsRapido';
-import { CardEffectKnowledgeStructure } from './CardEffectKnowledgeStructure';
-import { CardEffectAuthorityBuilder } from './CardEffectAuthorityBuilder';
-import { CardEffectCoreDecisions } from './CardEffectCoreDecisions';
-import { CardEffectModuleMap } from './CardEffectModuleMap';
-import { CardEffectObjectiveFocus } from './CardEffectObjectiveFocus';
-import { CardEffectProductShelf } from './CardEffectProductShelf';
-import { CardEffectEbookCreator } from './CardEffectEbookCreator';
-import { CardEffectLessonSeries } from './CardEffectLessonSeries';
-import { CardEffectTextAiHelper } from './CardEffectTextAiHelper';
-import { CardEffectVisualAiHelper } from './CardEffectVisualAiHelper';
-import { CardEffectYouAreTheAuthor } from './CardEffectYouAreTheAuthor';
-import { CardEffectAiLimitations } from './CardEffectAiLimitations';
-import { CardEffectCopyPasteRisk } from './CardEffectCopyPasteRisk';
-import { CardEffectNextStepsDeepContent } from './CardEffectNextStepsDeepContent';
-
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
 export { CardEffectGameChangers } from './CardEffectGameChangers';
@@ -337,23 +318,6 @@ export { CardEffectProjectPicker } from './CardEffectProjectPicker';
 export { CardEffectMiniCourse } from './CardEffectMiniCourse';
 export { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
-// Re-exportar componentes - AULA 10 (Cursos, Livros e Infoprodutos com I.A.)
-export { CardEffectDeepContentVsRapido } from './CardEffectDeepContentVsRapido';
-export { CardEffectKnowledgeStructure } from './CardEffectKnowledgeStructure';
-export { CardEffectAuthorityBuilder } from './CardEffectAuthorityBuilder';
-export { CardEffectCoreDecisions } from './CardEffectCoreDecisions';
-export { CardEffectModuleMap } from './CardEffectModuleMap';
-export { CardEffectObjectiveFocus } from './CardEffectObjectiveFocus';
-export { CardEffectProductShelf } from './CardEffectProductShelf';
-export { CardEffectEbookCreator } from './CardEffectEbookCreator';
-export { CardEffectLessonSeries } from './CardEffectLessonSeries';
-export { CardEffectTextAiHelper } from './CardEffectTextAiHelper';
-export { CardEffectVisualAiHelper } from './CardEffectVisualAiHelper';
-export { CardEffectYouAreTheAuthor } from './CardEffectYouAreTheAuthor';
-export { CardEffectAiLimitations } from './CardEffectAiLimitations';
-export { CardEffectCopyPasteRisk } from './CardEffectCopyPasteRisk';
-export { CardEffectNextStepsDeepContent } from './CardEffectNextStepsDeepContent';
-
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -399,12 +363,7 @@ export type CardEffectType =
   | 'deep-intro' | 'authority-builder' | 'structure-map' | 'audience-focus'
   | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
   | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
-  | 'leverage-mindset'
-  // AULA 10 - Cursos, Livros e Infoprodutos com I.A.
-  | 'deep-content-vs-rapido' | 'knowledge-structure' | 'authority-builder'
-  | 'core-decisions' | 'module-map' | 'objective-focus' | 'product-shelf'
-  | 'ebook-creator' | 'lesson-series' | 'text-ai-helper' | 'visual-ai-helper'
-  | 'you-are-the-author' | 'ai-limitations' | 'copy-paste-risk' | 'next-steps-deep-content';
+  | 'leverage-mindset';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -552,22 +511,6 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'project-picker': CardEffectProjectPicker,
   'mini-course': CardEffectMiniCourse,
   'leverage-mindset': CardEffectLeverageMindset,
-  // AULA 10 - Cursos, Livros e Infoprodutos com I.A.
-  'deep-content-vs-rapido': CardEffectDeepContentVsRapido,
-  'knowledge-structure': CardEffectKnowledgeStructure,
-  'authority-builder': CardEffectAuthorityBuilder,
-  'core-decisions': CardEffectCoreDecisions,
-  'module-map': CardEffectModuleMap,
-  'objective-focus': CardEffectObjectiveFocus,
-  'product-shelf': CardEffectProductShelf,
-  'ebook-creator': CardEffectEbookCreator,
-  'lesson-series': CardEffectLessonSeries,
-  'text-ai-helper': CardEffectTextAiHelper,
-  'visual-ai-helper': CardEffectVisualAiHelper,
-  'you-are-the-author': CardEffectYouAreTheAuthor,
-  'ai-limitations': CardEffectAiLimitations,
-  'copy-paste-risk': CardEffectCopyPasteRisk,
-  'next-steps-deep-content': CardEffectNextStepsDeepContent,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -654,19 +597,6 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'project-picker': 'Seletor de Projeto',
   'mini-course': 'Mini-Curso',
   'leverage-mindset': 'Mentalidade de Alavanca',
-  // AULA 10 - Cursos, Livros e Infoprodutos com I.A.
-  'core-triangle': 'Triângulo do Conteúdo',
-  'objective-focus': 'Foco no Objetivo',
-  'video-course-view': 'Visão do Curso em Vídeo',
-  'ebook-view': 'Visão do eBook',
-  'multi-format': 'Múltiplos Formatos',
-  'tool-groups': 'Grupos de Ferramentas',
-  'text-tools': 'Ferramentas de Texto',
-  'visual-tools': 'Ferramentas Visuais',
-  'coauthor-role': 'Papel de Coautor',
-  'editor-in-chief': 'Editor-Chefe',
-  'long-term-asset': 'Ativo de Longo Prazo',
-  'module-map': 'Mapa de Módulos',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -767,19 +697,6 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'project-picker': 'Escolhendo o projeto real',
   'mini-course': 'Formato enxuto e impactante',
   'leverage-mindset': 'I.A. como alavanca para conhecimento',
-  // AULA 10 - Cursos, Livros e Infoprodutos com I.A.
-  'core-triangle': 'Triângulo central: tema, público e resultado',
-  'objective-focus': 'Definindo objetivo claro do material',
-  'video-course-view': 'Estrutura de curso em vídeo',
-  'ebook-view': 'Estrutura de eBook/apostila',
-  'multi-format': 'Aproveitando múltiplos formatos',
-  'tool-groups': 'Categorias de ferramentas I.A.',
-  'text-tools': 'Ferramentas para criação de texto',
-  'visual-tools': 'Ferramentas para criação visual',
-  'coauthor-role': 'I.A. como coautor inteligente',
-  'editor-in-chief': 'Você como editor-chefe',
-  'long-term-asset': 'Conteúdo como ativo de longo prazo',
-  'module-map': 'Mapa visual dos módulos do curso',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -837,12 +754,6 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'text-engine', 'visual-identity', 'project-picker', 'mini-course',
     'leverage-mindset',
   ],
-  'aula-10': [
-    'deep-content-vs-rapido', 'knowledge-structure', 'authority-builder',
-    'core-decisions', 'module-map', 'objective-focus', 'product-shelf',
-    'ebook-creator', 'lesson-series', 'text-ai-helper', 'visual-ai-helper',
-    'you-are-the-author', 'ai-limitations', 'copy-paste-risk', 'next-steps-deep-content',
-  ],
 };
 
 export const CARD_EFFECT_TYPES: CardEffectType[] = [
@@ -855,7 +766,6 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
-  ...CARD_EFFECTS_BY_LESSON['aula-10'],
 ];
 
 export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
