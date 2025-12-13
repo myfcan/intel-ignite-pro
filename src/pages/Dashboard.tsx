@@ -64,12 +64,14 @@ const Dashboard = () => {
   // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
   // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
-  // Recalcular progresso das trilhas quando isAdmin mudar (após loading)
+  // Recalcular progresso das trilhas quando isAdmin mudar (após loading completar)
   useEffect(() => {
+    console.log('[Dashboard] Admin check - isAdmin:', isAdmin, 'adminLoading:', adminLoading, 'user:', user?.id);
     if (!adminLoading && user?.id && trails.length > 0 && trailsProgress.length > 0) {
+      console.log('[Dashboard] Recalculating trails with isAdmin:', isAdmin);
       recalculateTrailsProgress();
     }
-  }, [isAdmin, adminLoading, trails.length, trailsProgress.length]);
+  }, [isAdmin, adminLoading, trails.length, trailsProgress.length, user?.id]);
 
   const checkAuth = async () => {
     try {
