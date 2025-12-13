@@ -1,206 +1,375 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, TrendingUp, Users, Award, CheckCircle, Sparkles } from 'lucide-react';
+import { Video, BookOpen, GraduationCap, Award, User } from 'lucide-react';
 
 interface CardEffectProps {
   isActive?: boolean;
-  duration?: number;
+  title?: string;
+  subtitle?: string;
 }
 
-export const CardEffectAuthorityBuilder: React.FC<CardEffectProps> = ({ isActive = true }) => {
+export function CardEffectAuthorityBuilder({
+  isActive = true,
+  title = "Autoridade não nasce em um post",
+  subtitle = "Ela é construída em camadas."
+}: CardEffectProps) {
   const [currentScene, setCurrentScene] = useState(0);
-  const totalScenes = 11;
-  const sceneDuration = 3000;
 
   useEffect(() => {
     if (!isActive) return;
-    const interval = setInterval(() => {
-      setCurrentScene(prev => {
-        if (prev >= totalScenes - 1) {
-          return 0;
-        }
-        return prev + 1;
-      });
-    }, sceneDuration);
-    return () => clearInterval(interval);
+
+    const timer = setInterval(() => {
+      setCurrentScene((prev) => (prev + 1) % 4);
+    }, 3500);
+
+    return () => clearInterval(timer);
   }, [isActive]);
 
-  const authorityPillars = [
-    { icon: Users, label: 'Audiência', desc: 'Seguidores confiam' },
-    { icon: Award, label: 'Expertise', desc: 'Conhecimento comprovado' },
-    { icon: TrendingUp, label: 'Consistência', desc: 'Entrega constante' },
+  if (!isActive) return null;
+
+  const steps = [
+    { icon: Video, label: 'Curso', color: 'from-red-500 to-pink-500' },
+    { icon: BookOpen, label: 'eBook', color: 'from-blue-500 to-cyan-500' },
+    { icon: GraduationCap, label: 'Série', color: 'from-purple-500 to-indigo-500' },
   ];
 
   return (
-    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-orange-950 to-slate-900">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute top-10 right-20 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 5, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-10 left-20 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl"
-          animate={{ scale: [1.1, 1, 1.1] }}
-          transition={{ duration: 7, repeat: Infinity }}
-        />
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-950 dark:to-amber-950/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+      {/* Header */}
+      <div className="absolute top-6 left-6 right-6 z-20">
+        <motion.h3
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl font-bold text-slate-900 dark:text-white mb-2"
+        >
+          {title}
+        </motion.h3>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-sm text-slate-600 dark:text-slate-400"
+        >
+          {subtitle}
+        </motion.p>
       </div>
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center p-4 sm:p-8">
+      {/* Scene Container */}
+      <div className="relative w-full h-full flex items-center justify-center p-8">
         <AnimatePresence mode="wait">
-          {/* Fase 1: Cenas 0-5 - Pilares da autoridade */}
-          {currentScene <= 5 && (
+          {/* Cena 1: Escadinha vazia com avatar na base */}
+          {currentScene === 0 && (
             <motion.div
-              key="phase1"
+              key="scene1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-6 max-w-md"
+              className="absolute inset-0 flex items-center justify-center"
             >
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="relative"
-              >
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-2xl shadow-amber-500/30">
-                  <Crown className="w-10 h-10 text-white" />
-                </div>
-                <motion.div
-                  className="absolute -inset-2 border-2 border-amber-400/30 rounded-full"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </motion.div>
-
-              <h2 className="text-xl sm:text-2xl font-bold text-white text-center">
-                Construindo Autoridade
-              </h2>
-
-              <div className="w-full space-y-3">
-                {authorityPillars.map((pillar, idx) => (
+              {/* Escada */}
+              <div className="relative">
+                {[0, 1, 2, 3].map((step) => (
                   <motion.div
-                    key={pillar.label}
-                    initial={{ x: -30, opacity: 0 }}
-                    animate={{ 
-                      x: 0, 
-                      opacity: currentScene >= idx + 1 ? 1 : 0.3 
+                    key={step}
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: step * 0.2, type: 'spring' }}
+                    className="relative"
+                    style={{
+                      marginLeft: `${step * 60}px`,
+                      marginTop: step === 0 ? 0 : '-20px'
                     }}
-                    transition={{ delay: idx * 0.3, duration: 0.5 }}
-                    className={`flex items-center gap-4 p-3 sm:p-4 rounded-xl ${
-                      currentScene >= idx + 1
-                        ? 'bg-amber-500/20 border border-amber-500/40'
-                        : 'bg-white/5 border border-white/10'
-                    }`}
                   >
-                    <div className="p-2.5 rounded-lg bg-amber-500/30">
-                      <pillar.icon className="w-5 h-5 text-amber-300" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white text-sm sm:text-base">{pillar.label}</div>
-                      <div className="text-amber-200/60 text-xs">{pillar.desc}</div>
-                    </div>
-                    {currentScene >= idx + 1 && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="ml-auto"
-                      >
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      </motion.div>
-                    )}
+                    {/* Degrau */}
+                    <div className="w-32 h-20 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg shadow-md border-2 border-slate-300 dark:border-slate-600" />
                   </motion.div>
                 ))}
+
+                {/* Avatar na base */}
+                <motion.div
+                  initial={{ scale: 0, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  transition={{ delay: 0.8, type: 'spring', bounce: 0.5 }}
+                  className="absolute -bottom-16 -left-8"
+                >
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full shadow-lg flex items-center justify-center border-4 border-white dark:border-slate-800">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  {/* Olhar para cima */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ delay: 1.5, duration: 1.5, repeat: Infinity }}
+                    className="absolute -top-8 left-1/2 -translate-x-1/2"
+                  >
+                    <div className="w-1 h-8 bg-gradient-to-t from-emerald-400 to-transparent" />
+                  </motion.div>
+                </motion.div>
               </div>
             </motion.div>
           )}
 
-          {/* Fase 2: Cenas 6-10 - Resultado */}
-          {currentScene > 5 && (
+          {/* Cena 2: Degraus recebem ícones */}
+          {currentScene === 1 && (
             <motion.div
-              key="phase2"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              key="scene2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-6 text-center max-w-lg px-4"
+              className="absolute inset-0 flex items-center justify-center"
             >
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                className="relative"
-              >
-                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl shadow-orange-500/40">
-                  <Crown className="w-14 h-14 sm:w-18 sm:h-18 text-white" />
+              {/* Escada com ícones */}
+              <div className="relative">
+                {[0, 1, 2, 3].map((step) => {
+                  const StepData = steps[step - 1];
+                  return (
+                    <div
+                      key={step}
+                      className="relative"
+                      style={{
+                        marginLeft: `${step * 60}px`,
+                        marginTop: step === 0 ? 0 : '-20px'
+                      }}
+                    >
+                      {/* Degrau */}
+                      <div className="w-32 h-20 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg shadow-md border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        {step > 0 && StepData && (
+                          <motion.div
+                            initial={{ scale: 0, rotate: -90 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{
+                              delay: step * 0.3,
+                              type: 'spring',
+                              stiffness: 200
+                            }}
+                            className="flex flex-col items-center gap-1"
+                          >
+                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${StepData.color} flex items-center justify-center shadow-lg`}>
+                              <StepData.icon className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {StepData.label}
+                            </span>
+                          </motion.div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Avatar na base */}
+                <div className="absolute -bottom-16 -left-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full shadow-lg flex items-center justify-center border-4 border-white dark:border-slate-800">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-                {[...Array(8)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 bg-amber-400 rounded-full"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                    }}
-                    animate={{
-                      x: [0, Math.cos(i * 45 * Math.PI / 180) * 80],
-                      y: [0, Math.sin(i * 45 * Math.PI / 180) * 80],
-                      opacity: [0, 1, 0],
-                    }}
-                    transition={{ 
-                      duration: 2, 
-                      repeat: Infinity, 
-                      delay: i * 0.2 
-                    }}
-                  />
-                ))}
-              </motion.div>
-
-              <div>
-                <motion.h2
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-2xl sm:text-3xl font-bold text-white mb-3"
-                >
-                  Autoridade Real
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-amber-200/80 text-sm sm:text-base"
-                >
-                  Não nasce em um dia. É construída com profundidade e consistência ao longo do tempo.
-                </motion.p>
               </div>
+            </motion.div>
+          )}
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="flex items-center gap-2 text-amber-400"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span className="text-sm font-medium">Conteúdo profundo é o caminho</span>
-              </motion.div>
+          {/* Cena 3: Avatar subindo com rastro de luz */}
+          {currentScene === 2 && (
+            <motion.div
+              key="scene3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              {/* Escada */}
+              <div className="relative">
+                {[0, 1, 2, 3].map((step) => {
+                  const StepData = steps[step - 1];
+                  return (
+                    <div
+                      key={step}
+                      className="relative"
+                      style={{
+                        marginLeft: `${step * 60}px`,
+                        marginTop: step === 0 ? 0 : '-20px'
+                      }}
+                    >
+                      <div className="w-32 h-20 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg shadow-md border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        {step > 0 && StepData && (
+                          <div className="flex flex-col items-center gap-1">
+                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${StepData.color} flex items-center justify-center shadow-lg`}>
+                              <StepData.icon className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {StepData.label}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Rastro de luz nos degraus já visitados */}
+                      {step < 3 && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 0.6, scale: 1 }}
+                          transition={{ delay: step * 0.8 }}
+                          className="absolute inset-0 bg-gradient-to-br from-yellow-300/40 to-amber-400/40 rounded-lg blur-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Avatar subindo */}
+                <motion.div
+                  initial={{ x: -8, y: 64 }}
+                  animate={{
+                    x: [-8, 52, 112, 172],
+                    y: [64, 44, 24, 4]
+                  }}
+                  transition={{
+                    duration: 3,
+                    times: [0, 0.33, 0.66, 1],
+                    ease: 'easeInOut'
+                  }}
+                  className="absolute bottom-0 left-0"
+                >
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full shadow-xl flex items-center justify-center border-4 border-white dark:border-slate-800">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  {/* Brilho ao redor do avatar */}
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.3, 1],
+                      opacity: [0.5, 0.8, 0.5]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute inset-0 bg-emerald-400 rounded-full blur-md -z-10"
+                  />
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Cena 4: Selo de autoridade no topo */}
+          {currentScene === 3 && (
+            <motion.div
+              key="scene4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              {/* Escada completa */}
+              <div className="relative">
+                {[0, 1, 2, 3].map((step) => {
+                  const StepData = steps[step - 1];
+                  return (
+                    <div
+                      key={step}
+                      className="relative"
+                      style={{
+                        marginLeft: `${step * 60}px`,
+                        marginTop: step === 0 ? 0 : '-20px'
+                      }}
+                    >
+                      <div className="w-32 h-20 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg shadow-md border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        {step > 0 && StepData && (
+                          <div className="flex flex-col items-center gap-1">
+                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${StepData.color} flex items-center justify-center shadow-lg`}>
+                              <StepData.icon className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {StepData.label}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Rastro de luz */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-300/40 to-amber-400/40 rounded-lg blur-sm" />
+                    </div>
+                  );
+                })}
+
+                {/* Avatar no topo */}
+                <div className="absolute top-4 right-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-full shadow-xl flex items-center justify-center border-4 border-white dark:border-slate-800">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+
+                {/* Selo de autoridade */}
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.5, type: 'spring', stiffness: 150 }}
+                  className="absolute -top-24 right-0"
+                >
+                  <div className="relative">
+                    {/* Brilho pulsante */}
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.4, 0.6, 0.4]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 bg-amber-400 rounded-full blur-xl"
+                    />
+
+                    {/* Selo */}
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full shadow-2xl flex items-center justify-center border-4 border-white dark:border-slate-800">
+                      <Award className="w-12 h-12 text-white" />
+                    </div>
+
+                    {/* Raios */}
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                        transition={{
+                          delay: 0.8 + i * 0.1,
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatDelay: 1
+                        }}
+                        className="absolute w-1 h-8 bg-amber-400"
+                        style={{
+                          left: '50%',
+                          top: '50%',
+                          transformOrigin: 'bottom',
+                          transform: `rotate(${i * 45}deg) translateY(-40px)`
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Texto */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.2 }}
+                    className="mt-2 text-center"
+                  >
+                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                      AUTORIDADE
+                    </span>
+                  </motion.div>
+                </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
 
-        {/* Progress indicator */}
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 mt-4">
-          {Array.from({ length: totalScenes }).map((_, idx) => (
-            <motion.div
-              key={idx}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === currentScene ? 'w-6 bg-amber-400' : 'w-1.5 bg-white/30'
-              }`}
-            />
-          ))}
-        </div>
+      {/* Scene indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        {[0, 1, 2, 3].map((scene) => (
+          <div
+            key={scene}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              currentScene === scene
+                ? 'bg-amber-600 dark:bg-amber-400'
+                : 'bg-slate-300 dark:bg-slate-600'
+            }`}
+          />
+        ))}
       </div>
     </div>
   );
-};
-
-export default CardEffectAuthorityBuilder;
+}
