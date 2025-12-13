@@ -91,12 +91,37 @@ export function PlaygroundBridgeV3({
   // Monta o prompt com as escolhas do usuário
   const buildPrompt = () => {
     let prompt = playgroundExample.examplePrompt;
-    if (finalFormat) prompt = prompt.replace(/\[curso ou eBook\]/gi, finalFormat);
-    if (theme) prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, theme);
-    if (finalAudience) prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, finalAudience);
-    if (finalModules) prompt = prompt.replace(/\[número de módulos\]/gi, finalModules);
-    if (desiredResult) prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, desiredResult);
-    if (exercisesText) prompt = prompt.replace(/\[exercícios ou atividades\]/gi, exercisesText);
+    // Substitui formato/tipo de produto
+    if (finalFormat) {
+      prompt = prompt.replace(/\[curso ou eBook\]/gi, finalFormat);
+      prompt = prompt.replace(/\[tipo de conteúdo\]/gi, finalFormat);
+    }
+    // Substitui tema - suporta múltiplos formatos de placeholder
+    if (theme) {
+      prompt = prompt.replace(/\[tema do curso ou eBook\]/gi, theme);
+      prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, theme);
+      prompt = prompt.replace(/\[seu tema principal\]/gi, theme);
+    }
+    // Substitui público
+    if (finalAudience) {
+      prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, finalAudience);
+      prompt = prompt.replace(/\[quem você quer atingir\]/gi, finalAudience);
+    }
+    // Substitui módulos
+    if (finalModules) {
+      prompt = prompt.replace(/\[número de módulos\]/gi, finalModules);
+      // Substitui "3 a 5 tópicos" por número real de módulos se especificado
+      prompt = prompt.replace(/3 a 5 tópicos/gi, `${finalModules} módulos`);
+    }
+    // Substitui resultado desejado
+    if (desiredResult) {
+      prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, desiredResult);
+      prompt = prompt.replace(/\[o que deve acontecer\]/gi, desiredResult);
+    }
+    // Substitui exercícios
+    if (exercisesText) {
+      prompt = prompt.replace(/\[exercícios ou atividades\]/gi, exercisesText);
+    }
     return prompt;
   };
 
@@ -169,12 +194,30 @@ export function PlaygroundBridgeV3({
         let value = '';
         const lowerPart = part.toLowerCase();
         
-        if (lowerPart.includes('curso ou ebook')) value = finalFormat;
-        else if (lowerPart.includes('assunto principal')) value = theme;
-        else if (lowerPart.includes('quem vai')) value = finalAudience;
-        else if (lowerPart.includes('número de módulos')) value = finalModules;
-        else if (lowerPart.includes('conseguir fazer')) value = desiredResult;
-        else if (lowerPart.includes('exercícios')) value = exercisesText;
+        // Formato/tipo de produto
+        if (lowerPart.includes('curso ou ebook') || lowerPart.includes('tipo de conteúdo')) {
+          value = finalFormat;
+        }
+        // Tema - múltiplos formatos
+        else if (lowerPart.includes('tema do curso') || lowerPart.includes('assunto principal') || lowerPart.includes('seu tema principal')) {
+          value = theme;
+        }
+        // Público
+        else if (lowerPart.includes('quem vai') || lowerPart.includes('quem você quer atingir')) {
+          value = finalAudience;
+        }
+        // Módulos
+        else if (lowerPart.includes('número de módulos')) {
+          value = finalModules;
+        }
+        // Resultado
+        else if (lowerPart.includes('conseguir fazer') || lowerPart.includes('o que deve acontecer')) {
+          value = desiredResult;
+        }
+        // Exercícios
+        else if (lowerPart.includes('exercícios')) {
+          value = exercisesText;
+        }
         
         if (value) {
           return (
