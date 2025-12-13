@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, Users, Award } from 'lucide-react';
-import { CardEffectProps } from './index';
+import { CardEffectProps } from './types';
 
 /**
  * 🔺 CORE TRIANGLE

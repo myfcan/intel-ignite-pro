@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-
+// Importar tipos do arquivo separado para evitar dependência circular
+import type { CardEffectProps } from './types';
+export type { CardEffectProps } from './types';
 // ============================================================
 // AULA 1 - Fundamentos da Inteligência Artificial
 // ============================================================
@@ -405,10 +407,7 @@ export type CardEffectType =
   | 'editor-in-chief' | 'long-term-asset'
 ;
 
-export interface CardEffectProps {
-  isActive?: boolean;
-  duration?: number; // Duração total em segundos (para animações proporcionais)
-}
+// CardEffectProps agora é importado de ./types para evitar dependência circular
 
 const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> = {
   // AULA 1 - Fundamentos
