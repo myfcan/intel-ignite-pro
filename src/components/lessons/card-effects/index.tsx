@@ -1033,7 +1033,7 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'tasks-example', 'tool-combo', 'simulator-call', 'you-command',
     'habit-builder', 'pattern-vision', 'panel-decision',
   ],
-  'aula-12': [
+  'aula-08': [
     'video-feed-explosion', 'video-connection', 'blank-screen-block', 'three-video-blocks',
     'hook-power', 'call-to-action', 'idea-to-script', 'three-variations',
     'partnership', 'video-starter', 'ai-text-engine', 'production-basics',
@@ -1053,7 +1053,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
   ...CARD_EFFECTS_BY_LESSON['aula-10'],
   ...CARD_EFFECTS_BY_LESSON['aula-11'],
-  ...CARD_EFFECTS_BY_LESSON['aula-12'],
+  ...CARD_EFFECTS_BY_LESSON['aula-08'],
 ];
 
 export function getCardEffectComponent(type: string | undefined | null): React.FC<CardEffectProps> | null {

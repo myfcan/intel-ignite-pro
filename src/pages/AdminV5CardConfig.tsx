@@ -39,8 +39,8 @@ const AVAILABLE_LESSONS = [
     icon: '📊'
   },
   {
-    id: 'aula-12',
-    title: 'Aula 12 - Vídeos simples com I.A.',
+    id: 'aula-08',
+    title: 'Aula 08 - Vídeos simples com I.A.',
     description: '15 card effects cinematográficos',
     icon: '🎬'
   },
@@ -146,7 +146,7 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 5, cardIndex: 2, cardType: 'pattern-vision', anchorText: 'enxergando padrões', title: 'Enxergando Padrões', subtitle: 'Meses, produtos e dias que contam a história' },
     { sectionIndex: 5, cardIndex: 3, cardType: 'panel-decision', anchorText: 'decidindo com dados', title: 'Decidindo com Seu Painel', subtitle: 'Menos achismo, mais clareza nos números' },
   ],
-  'aula-12': [
+  'aula-08': [
     // Seção 1 - Explosão de vídeos (3 cards)
     { sectionIndex: 1, cardIndex: 1, cardType: 'video-feed-explosion', anchorText: 'explosão de vídeos', title: 'Explosão no Feed', subtitle: 'Feed transbordando de vídeos virais' },
     { sectionIndex: 1, cardIndex: 2, cardType: 'video-connection', anchorText: 'conexão humana', title: 'Conexão por Vídeo', subtitle: 'Conexão humana através do vídeo' },
