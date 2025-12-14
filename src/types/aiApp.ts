@@ -1,17 +1,28 @@
 /**
  * TIPOS PARA AI DIRECTORY
  *
- * Biblioteca de 30+ ferramentas IA
+ * Biblioteca de 300+ ferramentas IA
  */
 
 export type AICategory =
-  | 'text'          // ChatGPT, Claude, Jasper
-  | 'image'         // Midjourney, DALL-E, Stable Diffusion
-  | 'video'         // Sora, Runway, Pika
-  | 'audio'         // ElevenLabs, Descript
-  | 'code'          // GitHub Copilot, Cursor
-  | 'research'      // Perplexity, Phind
-  | 'productivity'; // Notion AI, Gamma
+  | 'text'           // ChatGPT, Claude, Jasper
+  | 'image'          // Midjourney, DALL-E, Stable Diffusion
+  | 'video'          // Sora, Runway, Pika
+  | 'audio'          // ElevenLabs, Descript
+  | 'code'           // GitHub Copilot, Cursor
+  | 'research'       // Perplexity, Phind
+  | 'productivity'   // Notion AI, Gamma
+  | 'automation'     // Zapier, Make
+  | 'marketing'      // Jasper, Copy.ai
+  | 'sales'          // Gong, Apollo
+  | 'customer-service' // Intercom, Zendesk AI
+  | 'data'           // Tableau AI, DataRobot
+  | 'education'      // Duolingo, Khan Academy
+  | 'healthcare'     // Ada Health, Babylon
+  | 'legal'          // Harvey, CaseText
+  | 'finance'        // Bloomberg GPT, AlphaSense
+  | 'hr'             // HireVue, Pymetrics
+  | 'agents';        // AI Agents autônomos
 
 export type PricingModel =
   | 'free'
@@ -33,6 +44,8 @@ export interface AIApp {
   tags: string[];            // Tags para busca
   isNew?: boolean;
   isFeatured?: boolean;
+  isHot?: boolean;           // Mais usadas/populares
+  isPremium?: boolean;       // Pagas e super poderosas
 }
 
 export interface CategoryInfo {
