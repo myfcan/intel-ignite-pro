@@ -4456,4 +4456,4 @@ Prazo para lançamento: {timeline}
     isFeatured: true,
     usageCount: 0
   }
-];
+]);
