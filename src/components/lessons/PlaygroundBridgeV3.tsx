@@ -216,7 +216,8 @@ export function PlaygroundBridgeV3({
   };
 
   // Renderiza linha de chips para um requirement (chips + "outro" se houver)
-  const renderChipsWithOther = (reqIndex: number, showInputForOutro: boolean = false) => {
+  // REGRA: Quando "outro" é clicado, SEMPRE abre campo de texto - em qualquer step
+  const renderChipsWithOther = (reqIndex: number) => {
     const req = parsedRequirements[reqIndex];
     if (!req) return null;
 
@@ -248,8 +249,8 @@ export function PlaygroundBridgeV3({
             />
           )}
         </div>
-        {/* Campo de texto aparece SOMENTE se showInputForOutro=true E "outro" está selecionado */}
-        {showInputForOutro && isOtherSelected && (
+        {/* Campo de texto aparece SEMPRE que "outro" está selecionado - em qualquer step */}
+        {isOtherSelected && (
           <Input
             type="text"
             placeholder="Digite sua opção..."
@@ -382,11 +383,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Linha de chips 1: requirements[0] - SOMENTE CHIPS */}
-                  {renderChipsWithOther(0, false)}
+                  {/* Linha de chips 1: requirements[0] */}
+                  {renderChipsWithOther(0)}
 
-                  {/* Linha de chips 2: requirements[1] - SOMENTE CHIPS */}
-                  {renderChipsWithOther(1, false)}
+                  {/* Linha de chips 2: requirements[1] */}
+                  {renderChipsWithOther(1)}
                 </motion.div>
               )}
 
@@ -414,11 +415,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Campo 3: requirements[2] - Chips + input se "outro" */}
-                  {renderChipsWithOther(2, true)}
+                  {/* Campo 3: requirements[2] */}
+                  {renderChipsWithOther(2)}
 
-                  {/* Campo 4: requirements[3] - Chips + input se "outro" */}
-                  {renderChipsWithOther(3, true)}
+                  {/* Campo 4: requirements[3] */}
+                  {renderChipsWithOther(3)}
                 </motion.div>
               )}
 
