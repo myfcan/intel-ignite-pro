@@ -1,9 +1,18 @@
 import { AIApp, AICategory, CategoryInfo } from '../../types/aiApp';
 
-// Category information with icons and colors
-export const categoryInfo: CategoryInfo[] = [
-  {
-    id: 'text',
+// Re-export expanded directory as main
+export { 
+  aiAppsDirectoryExpanded as aiAppsDirectory,
+  categoryInfoExpanded as categoryInfo,
+  getHotApps,
+  getPremiumApps,
+  getFeaturedApps,
+  getNewApps,
+  getAppsByCategory,
+  searchApps,
+  getAppsByPricing,
+  getTopRatedApps
+} from './apps-directory-expanded';
     name: 'Texto e Escrita',
     description: 'IAs para gerar textos, e-mails, artigos e conteúdo escrito',
     icon: 'FileText',
