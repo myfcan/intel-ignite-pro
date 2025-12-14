@@ -156,6 +156,24 @@ export function PlaygroundBridgeV3({
     setPhase('playground');
   }, []);
 
+  // Valida se todos os campos "outro" selecionados têm valor preenchido
+  const canAdvanceFromStep = useCallback((currentStep: number): boolean => {
+    // Step 2 usa requirements 0 e 1
+    // Step 3 usa requirements 2 e 3
+    const reqIndices = currentStep === 2 ? [0, 1] : currentStep === 3 ? [2, 3] : [];
+    
+    for (const idx of reqIndices) {
+      const isOtherSelected = showOtherInput[idx];
+      if (isOtherSelected) {
+        const otherValue = otherValues[idx]?.trim();
+        if (!otherValue) {
+          return false; // Campo "outro" selecionado mas vazio
+        }
+      }
+    }
+    return true;
+  }, [showOtherInput, otherValues]);
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildPrompt());
     setCopied(true);
@@ -512,7 +530,8 @@ export function PlaygroundBridgeV3({
                 <Button
                   onClick={() => setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
                   size="sm"
-                  className="h-9 px-4 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                  disabled={!canAdvanceFromStep(step)}
+                  className="h-9 px-4 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Próximo
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
