@@ -45,6 +45,14 @@ serve(async (req) => {
       });
     }
 
+    // System prompt para instruir a IA a executar o prompt como tarefa
+    const systemPrompt = `Você é um assistente prestativo. O usuário vai enviar um prompt/instrução e você deve EXECUTAR essa instrução diretamente.
+NÃO peça mais informações. NÃO faça perguntas de volta.
+Se o prompt pede para criar algo, CRIE.
+Se o prompt pede para listar algo, LISTE.
+Se o prompt pede para analisar algo, ANALISE.
+Responda em português brasileiro de forma útil e direta.`;
+
     // Call Lovable AI Gateway for main response
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -54,8 +62,11 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 500,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 800,
       }),
     });
 
