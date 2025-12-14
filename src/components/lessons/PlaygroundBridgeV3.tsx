@@ -143,8 +143,9 @@ export function PlaygroundBridgeV3({
     parsedRequirements.forEach((req, index) => {
       const value = values[index] || '';
       if (value && req.slot) {
-        // Substitui o slot original pelo valor escolhido mantendo colchetes
-        prompt = prompt.replace(req.slot, `[${value}]`);
+        // Substitui o slot original pelo valor escolhido SEM colchetes
+        // Isso evita que a IA interprete como placeholder a preencher
+        prompt = prompt.replace(req.slot, value);
       }
     });
     
