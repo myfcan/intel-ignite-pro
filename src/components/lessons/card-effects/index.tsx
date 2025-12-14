@@ -1269,9 +1269,11 @@ export const DynamicCardEffect: React.FC<DynamicCardEffectProps> = ({
   fallback = null,
   isActive = false
 }) => {
+  const normalizedType = type?.toLowerCase().trim();
   const Component = getCardEffectComponent(type);
+  console.log(`🎬 [DynamicCardEffect] type="${type}" normalized="${normalizedType}" found=${!!Component} isActive=${isActive}`);
   if (!Component) {
-    console.warn(`[DynamicCardEffect] Tipo desconhecido: "${type}"`);
+    console.warn(`[DynamicCardEffect] ❌ Tipo desconhecido: "${type}" | Normailzed: "${normalizedType}"`);
     return <>{fallback}</>;
   }
   return <Component isActive={isActive} />;
