@@ -98,14 +98,34 @@ export function PlaygroundBridgeV3({
   onSkip,
   lessonId,
 }: PlaygroundBridgeV3Props) {
+  console.log('🚀 [V3] PlaygroundBridgeV3 MONTADO!', {
+    title: playgroundExample?.title,
+    hasRequirements: !!playgroundExample?.requirements,
+    numRequirements: playgroundExample?.requirements?.length
+  });
+
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
 
   // Parse dos requirements do JSON
   const parsedRequirements = useMemo(() => {
-    if (!playgroundExample?.requirements) return [];
-    return playgroundExample.requirements.map(parseRequirement);
+    if (!playgroundExample?.requirements) {
+      console.warn('⚠️ [V3] Nenhum requirement encontrado!');
+      return [];
+    }
+
+    console.group('🔍 [V3] PARSING REQUIREMENTS');
+    console.log('📥 Requirements recebidos:', playgroundExample.requirements);
+
+    const parsed = playgroundExample.requirements.map((req, i) => {
+      const result = parseRequirement(req);
+      console.log(`[${i}] "${req}" →`, result);
+      return result;
+    });
+
+    console.groupEnd();
+    return parsed;
   }, [playgroundExample?.requirements]);
 
   // Estado para cada requirement (4 campos)
