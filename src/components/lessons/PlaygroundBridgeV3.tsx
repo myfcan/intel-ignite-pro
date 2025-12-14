@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { PlaygroundRealChat } from './PlaygroundRealChat';
 import { 
   Eye, 
-  Puzzle, 
+  Settings2, 
   Rocket,
   X,
   ArrowRight,
@@ -14,7 +14,7 @@ import {
   Sparkles,
   Copy,
   Check,
-  BookOpen
+  Lightbulb
 } from 'lucide-react';
 
 // ============================================================================
@@ -36,33 +36,49 @@ interface PlaygroundBridgeV3Props {
 }
 
 /**
- * Extrai o label e placeholder de um requirement
- * Ex: "Foco principal: [trabalho atual, renda extra ou projeto pessoal]"
- * → { label: "Foco principal", placeholder: "trabalho atual, renda extra ou projeto pessoal" }
+ * Parse um requirement no formato:
+ * "Label: [slot] – ex.: chip1, chip2, chip3"
+ * 
+ * Retorna: { label, slot, chips }
  */
-function parseRequirement(req: string): { label: string; placeholder: string; bracketContent: string } {
+function parseRequirement(req: string): { 
+  label: string; 
+  slot: string; 
+  chips: string[];
+  raw: string;
+} {
+  const raw = req;
+  
+  // Divide por ":"
   const colonIndex = req.indexOf(':');
   if (colonIndex === -1) {
-    return { label: req, placeholder: '', bracketContent: '' };
+    return { label: req, slot: '', chips: [], raw };
   }
   
   const label = req.substring(0, colonIndex).trim();
   const rest = req.substring(colonIndex + 1).trim();
   
-  // Extrai conteúdo entre colchetes
+  // Extrai slot entre colchetes
   const bracketMatch = rest.match(/\[([^\]]+)\]/);
-  const bracketContent = bracketMatch ? bracketMatch[1] : rest;
-  const placeholder = bracketContent;
+  const slot = bracketMatch ? bracketMatch[1] : '';
   
-  return { label, placeholder, bracketContent };
+  // Extrai chips após "– ex.:" ou "- ex.:" ou "ex.:"
+  const exMatch = rest.match(/[–-]\s*ex\.?:\s*(.+)$/i);
+  let chips: string[] = [];
+  if (exMatch) {
+    chips = exMatch[1].split(',').map(c => c.trim()).filter(Boolean);
+  }
+  
+  return { label, slot, chips, raw };
 }
 
 /**
- * 🚀 PLAYGROUND BRIDGE V3 - MINI-FERRAMENTA INTERATIVA DINÂMICA
+ * 🚀 PLAYGROUND BRIDGE V3 - WIZARD DE 4 PASSOS SEM SCROLL
  * 
- * Step 1: I DO - Veja o contexto e exemplo
- * Step 2: WE DO - Preencha cada campo baseado nos requirements do JSON
- * Step 3: YOU DO - Veja o prompt montado e teste
+ * Step 1: I DO - Veja o exemplo (title, context, exampleOutput)
+ * Step 2: WE DO Part 1 - Escolha seu caso (requirements[0] e [2])
+ * Step 3: WE DO Part 2 - Ajuste os detalhes (requirements[1] e [3])
+ * Step 4: YOU DO - Monte seu prompt (examplePrompt com colchetes)
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -71,17 +87,34 @@ export function PlaygroundBridgeV3({
   lessonId,
 }: PlaygroundBridgeV3Props) {
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
 
-  // Estado dinâmico para os valores de cada requirement
+  // Estado para os valores selecionados (por label)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
-  // Parse os requirements do JSON
+  // Parse todos os requirements
   const parsedRequirements = useMemo(() => {
     if (!playgroundExample?.requirements) return [];
     return playgroundExample.requirements.map(parseRequirement);
   }, [playgroundExample?.requirements]);
+
+  // Requirements por step
+  // Step 2: índices 0 e 2 (tema/foco e formato)
+  // Step 3: índices 1 e 3 (público e resultado)
+  const step2Reqs = useMemo(() => {
+    const reqs = [];
+    if (parsedRequirements[0]) reqs.push(parsedRequirements[0]);
+    if (parsedRequirements[2]) reqs.push(parsedRequirements[2]);
+    return reqs;
+  }, [parsedRequirements]);
+
+  const step3Reqs = useMemo(() => {
+    const reqs = [];
+    if (parsedRequirements[1]) reqs.push(parsedRequirements[1]);
+    if (parsedRequirements[3]) reqs.push(parsedRequirements[3]);
+    return reqs;
+  }, [parsedRequirements]);
 
   if (!playgroundExample) {
     return (
@@ -92,15 +125,17 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // Monta o prompt substituindo os placeholders pelos valores preenchidos
+  // Monta o prompt substituindo os slots pelos valores preenchidos
   const buildPrompt = useCallback(() => {
     let prompt = playgroundExample.examplePrompt;
     
     parsedRequirements.forEach((req) => {
-      const value = fieldValues[req.label] || `[${req.bracketContent}]`;
-      // Substitui o bracket original pelo valor
-      const bracketPattern = new RegExp(`\\[${req.bracketContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
-      prompt = prompt.replace(bracketPattern, value);
+      const value = fieldValues[req.label];
+      if (value && req.slot) {
+        // Substitui o bracket original pelo valor
+        const bracketPattern = new RegExp(`\\[${req.slot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'gi');
+        prompt = prompt.replace(bracketPattern, value);
+      }
     });
     
     return prompt;
@@ -116,80 +151,30 @@ export function PlaygroundBridgeV3({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFieldChange = (label: string, value: string) => {
+  const handleChipSelect = (label: string, value: string) => {
+    setFieldValues(prev => {
+      // Se já está selecionado, deseleciona
+      if (prev[label] === value) {
+        const { [label]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [label]: value };
+    });
+  };
+
+  const handleCustomInput = (label: string, value: string) => {
     setFieldValues(prev => ({ ...prev, [label]: value }));
   };
 
-  // Verifica se pelo menos metade dos campos está preenchida
-  const canProceedToStep3 = useMemo(() => {
-    const filledCount = Object.values(fieldValues).filter(v => v.trim()).length;
-    return filledCount >= Math.ceil(parsedRequirements.length / 2);
-  }, [fieldValues, parsedRequirements.length]);
+  // Verifica se pode avançar do step 2
+  const canProceedFromStep2 = useMemo(() => {
+    return step2Reqs.some(req => fieldValues[req.label]?.trim());
+  }, [fieldValues, step2Reqs]);
 
-  // Renderiza prompt com destaques visuais
-  const renderPromptWithHighlights = () => {
-    const parts: { text: string; isHighlight: boolean; filled: boolean }[] = [];
-    let prompt = playgroundExample.examplePrompt;
-    let lastIndex = 0;
-    
-    // Encontra todos os brackets e seus valores
-    const bracketRegex = /\[([^\]]+)\]/g;
-    let match;
-    
-    while ((match = bracketRegex.exec(playgroundExample.examplePrompt)) !== null) {
-      // Texto antes do bracket
-      if (match.index > lastIndex) {
-        parts.push({ text: prompt.substring(lastIndex, match.index), isHighlight: false, filled: false });
-      }
-      
-      // Encontra o requirement correspondente
-      const bracketContent = match[1];
-      const req = parsedRequirements.find(r => r.bracketContent === bracketContent);
-      const value = req ? fieldValues[req.label] : '';
-      const displayValue = value || match[0];
-      const isFilled = !!value;
-      
-      parts.push({ text: displayValue, isHighlight: true, filled: isFilled });
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Texto restante
-    if (lastIndex < prompt.length) {
-      parts.push({ text: prompt.substring(lastIndex), isHighlight: false, filled: false });
-    }
-    
-    return (
-      <span className="text-sm leading-relaxed">
-        {parts.map((part, i) => 
-          part.isHighlight ? (
-            <span 
-              key={i} 
-              className={`px-1 rounded font-semibold ${
-                part.filled 
-                  ? 'bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200' 
-                  : 'bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300'
-              }`}
-            >
-              {part.text}
-            </span>
-          ) : (
-            <span key={i}>{part.text}</span>
-          )
-        )}
-      </span>
-    );
-  };
-
-  const getStepInfo = (s: number) => {
-    switch(s) {
-      case 1: return { icon: '👁', label: 'VEJA O CONTEXTO', color: 'emerald' };
-      case 2: return { icon: '🧩', label: 'PREENCHA OS CAMPOS', color: 'blue' };
-      case 3: return { icon: '🚀', label: 'ADAPTE E TESTE', color: 'purple' };
-      default: return { icon: '👁', label: 'VEJA O CONTEXTO', color: 'emerald' };
-    }
-  };
-
-  const stepInfo = getStepInfo(step);
+  // Verifica se pode avançar do step 3
+  const canProceedFromStep3 = useMemo(() => {
+    return step3Reqs.some(req => fieldValues[req.label]?.trim());
+  }, [fieldValues, step3Reqs]);
 
   if (phase === 'playground') {
     return (
@@ -206,6 +191,46 @@ export function PlaygroundBridgeV3({
       </motion.div>
     );
   }
+
+  // Renderiza um campo com chips e input customizado
+  const renderField = (req: { label: string; slot: string; chips: string[] }) => (
+    <div key={req.label} className="space-y-2">
+      <label className="text-xs font-semibold text-foreground/70 block">
+        {req.label}:
+      </label>
+      
+      {/* Chips */}
+      {req.chips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {req.chips.map((chip, i) => {
+            const isSelected = fieldValues[req.label] === chip;
+            return (
+              <button
+                key={i}
+                onClick={() => handleChipSelect(req.label, chip)}
+                className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                  isSelected
+                    ? 'bg-violet-600 text-white border-violet-600'
+                    : 'bg-white dark:bg-slate-800 text-foreground/70 border-slate-200 dark:border-slate-700 hover:border-violet-400'
+                }`}
+              >
+                {chip}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      
+      {/* Input para "Outro" */}
+      <Input
+        type="text"
+        placeholder={req.chips.length > 0 ? 'Ou digite outro...' : `Ex.: ${req.slot}`}
+        value={req.chips.includes(fieldValues[req.label] || '') ? '' : fieldValues[req.label] || ''}
+        onChange={(e) => handleCustomInput(req.label, e.target.value)}
+        className="text-sm h-8"
+      />
+    </div>
+  );
 
   return (
     <div 
@@ -237,9 +262,9 @@ export function PlaygroundBridgeV3({
               </button>
             </div>
 
-            {/* Progress dots */}
+            {/* Progress dots - 4 steps */}
             <div className="flex justify-center gap-1.5 mt-2">
-              {[1, 2, 3].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div
                   key={s}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -254,10 +279,13 @@ export function PlaygroundBridgeV3({
             </div>
           </div>
 
-          {/* CONTENT */}
-          <div className="p-4 max-h-[60vh] overflow-y-auto">
+          {/* CONTENT - SEM SCROLL */}
+          <div className="p-4">
             <AnimatePresence mode="wait">
-              {/* STEP 1: I DO - Contexto */}
+              
+              {/* ================================================================ */}
+              {/* STEP 1: I DO - Veja o exemplo */}
+              {/* ================================================================ */}
               {step === 1 && (
                 <motion.div
                   key="step1"
@@ -265,52 +293,32 @@ export function PlaygroundBridgeV3({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* Step indicator */}
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">1</span>
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="w-4 h-4 text-emerald-600" />
-                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 tracking-wide">
-                        VEJA O CONTEXTO
-                      </span>
-                    </div>
+                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 tracking-wide uppercase">
+                      Veja o Exemplo
+                    </span>
                   </div>
 
                   {/* Context */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-                    <p className="text-sm text-foreground/80 leading-relaxed">
-                      {playgroundExample.context}
-                    </p>
-                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {playgroundExample.context}
+                  </p>
 
-                  {/* Requirements preview */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">
-                      Você vai preencher:
-                    </p>
-                    <div className="space-y-1.5">
-                      {parsedRequirements.map((req, i) => (
-                        <div 
-                          key={i}
-                          className="flex items-center gap-2 text-sm text-foreground/70"
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                          <span className="font-medium">{req.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Example output if available */}
+                  {/* Example output */}
                   {playgroundExample.exampleOutput && (
                     <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
-                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5">
-                        Exemplo de resultado:
-                      </p>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Lightbulb className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                          Exemplo de resultado:
+                        </span>
+                      </div>
                       <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
                         {playgroundExample.exampleOutput}
                       </p>
@@ -319,7 +327,9 @@ export function PlaygroundBridgeV3({
                 </motion.div>
               )}
 
-              {/* STEP 2: WE DO - Preencher campos */}
+              {/* ================================================================ */}
+              {/* STEP 2: WE DO Part 1 - Escolha seu caso */}
+              {/* ================================================================ */}
               {step === 2 && (
                 <motion.div
                   key="step2"
@@ -327,42 +337,33 @@ export function PlaygroundBridgeV3({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* Step indicator */}
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400">2</span>
+                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                      <Settings2 className="w-3.5 h-3.5 text-blue-600" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Puzzle className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 tracking-wide">
-                        PREENCHA OS CAMPOS
-                      </span>
-                    </div>
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400 tracking-wide uppercase">
+                      Escolha seu Caso
+                    </span>
                   </div>
 
-                  {/* Dynamic fields based on requirements */}
+                  {/* Instruction */}
+                  <p className="text-xs text-foreground/60">
+                    Pense em um curso ou eBook que você gostaria de criar...
+                  </p>
+
+                  {/* Fields for step 2 */}
                   <div className="space-y-3">
-                    {parsedRequirements.map((req, i) => (
-                      <div key={i}>
-                        <label className="text-xs font-semibold text-foreground/70 mb-1 block">
-                          {req.label}:
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder={`Ex.: ${req.placeholder}`}
-                          value={fieldValues[req.label] || ''}
-                          onChange={(e) => handleFieldChange(req.label, e.target.value)}
-                          className="text-sm h-9"
-                        />
-                      </div>
-                    ))}
+                    {step2Reqs.map(req => renderField(req))}
                   </div>
                 </motion.div>
               )}
 
-              {/* STEP 3: YOU DO - Prompt final */}
+              {/* ================================================================ */}
+              {/* STEP 3: WE DO Part 2 - Ajuste os detalhes */}
+              {/* ================================================================ */}
               {step === 3 && (
                 <motion.div
                   key="step3"
@@ -370,25 +371,70 @@ export function PlaygroundBridgeV3({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* Step indicator */}
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-                      <span className="text-sm font-bold text-violet-700 dark:text-violet-400">3</span>
+                    <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                      <Settings2 className="w-3.5 h-3.5 text-amber-600" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Rocket className="w-4 h-4 text-violet-600" />
-                      <span className="text-xs font-bold text-violet-700 dark:text-violet-400 tracking-wide">
-                        SEU PROMPT PRONTO
-                      </span>
-                    </div>
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400 tracking-wide uppercase">
+                      Ajuste os Detalhes
+                    </span>
                   </div>
 
-                  {/* Final prompt with highlights */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-                    {renderPromptWithHighlights()}
+                  {/* Instruction */}
+                  <p className="text-xs text-foreground/60">
+                    Agora detalhe para quem é e qual resultado você quer gerar.
+                  </p>
+
+                  {/* Fields for step 3 */}
+                  <div className="space-y-3">
+                    {step3Reqs.map(req => renderField(req))}
                   </div>
+                </motion.div>
+              )}
+
+              {/* ================================================================ */}
+              {/* STEP 4: YOU DO - Monte seu prompt */}
+              {/* ================================================================ */}
+              {step === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-3"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                      <Rocket className="w-3.5 h-3.5 text-violet-600" />
+                    </div>
+                    <span className="text-xs font-bold text-violet-700 dark:text-violet-400 tracking-wide uppercase">
+                      Monte seu Prompt
+                    </span>
+                  </div>
+
+                  {/* Instruction */}
+                  <p className="text-xs text-foreground/60">
+                    Substitua os [colchetes] pelo seu caso real antes de testar.
+                  </p>
+
+                  {/* Prompt with highlights */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      {buildPrompt()}
+                    </p>
+                  </div>
+
+                  {/* Optional: show expected output hint */}
+                  {playgroundExample.exampleOutput && (
+                    <p className="text-xs text-foreground/50 italic">
+                      Ao enviar, você deve receber algo como: "{playgroundExample.exampleOutput.substring(0, 60)}..."
+                    </p>
+                  )}
 
                   {/* Action buttons */}
                   <div className="flex gap-2">
@@ -406,7 +452,7 @@ export function PlaygroundBridgeV3({
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5" />
-                          Copiar
+                          Copiar prompt
                         </>
                       )}
                     </Button>
@@ -416,7 +462,7 @@ export function PlaygroundBridgeV3({
                       className="flex-1 gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                     >
                       <Rocket className="w-3.5 h-3.5" />
-                      Testar
+                      Testar no Playground
                     </Button>
                   </div>
                 </motion.div>
@@ -430,7 +476,7 @@ export function PlaygroundBridgeV3({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}
+                onClick={() => setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3 | 4)}
                 className="gap-1.5 text-foreground/60 hover:text-foreground"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -440,11 +486,11 @@ export function PlaygroundBridgeV3({
               <div />
             )}
 
-            {step < 3 && (
+            {step < 4 && (
               <Button
                 size="sm"
-                onClick={() => setStep((s) => Math.min(3, s + 1) as 1 | 2 | 3)}
-                disabled={step === 2 && !canProceedToStep3}
+                onClick={() => setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
+                disabled={(step === 2 && !canProceedFromStep2) || (step === 3 && !canProceedFromStep3)}
                 className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
               >
                 Próximo
