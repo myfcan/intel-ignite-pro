@@ -116,7 +116,7 @@ export function PlaygroundBridgeV3({
   // Índices 2,3 = Passo 3 (chips ou texto)
   const [values, setValues] = useState<Record<number, string>>({});
 
-  // Estado para controlar quem selecionou "outro"
+  // Estado para controlar quem selecionou "outro" - DEVE estar antes do early return
   const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
   const [otherValues, setOtherValues] = useState<Record<number, string>>({});
 
@@ -128,8 +128,9 @@ export function PlaygroundBridgeV3({
     parsedRequirements.forEach((req, index) => {
       const value = values[index] || '';
       if (value && req.slot) {
-        // Substitui o slot original pelo valor escolhido mantendo colchetes
-        prompt = prompt.replace(req.slot, `[${value}]`);
+        // Substitui o slot original pelo valor escolhido SEM colchetes
+        // Isso evita que a IA interprete como placeholder a preencher
+        prompt = prompt.replace(req.slot, value);
       }
     });
 
@@ -139,6 +140,24 @@ export function PlaygroundBridgeV3({
   const handleGoToPlayground = useCallback(() => {
     setPhase('playground');
   }, []);
+
+  // Valida se todos os campos "outro" selecionados têm valor preenchido
+  const canAdvanceFromStep = useCallback((currentStep: number): boolean => {
+    // Step 2 usa requirements 0 e 1
+    // Step 3 usa requirements 2 e 3
+    const reqIndices = currentStep === 2 ? [0, 1] : currentStep === 3 ? [2, 3] : [];
+
+    for (const idx of reqIndices) {
+      const isOtherSelected = showOtherInput[idx];
+      if (isOtherSelected) {
+        const otherValue = otherValues[idx]?.trim();
+        if (!otherValue) {
+          return false; // Campo "outro" selecionado mas vazio
+        }
+      }
+    }
+    return true;
+  }, [showOtherInput, otherValues]);
 
   // ============================================================================
   // EARLY RETURNS MUST COME AFTER ALL HOOKS
@@ -178,6 +197,7 @@ export function PlaygroundBridgeV3({
         <PlaygroundRealChat
           lessonId={lessonId}
           onComplete={() => onComplete(null)}
+          onSkip={onSkip}
           initialPrompt={buildPrompt()}
         />
       </motion.div>
@@ -219,7 +239,8 @@ export function PlaygroundBridgeV3({
   };
 
   // Renderiza linha de chips para um requirement (chips + "outro" se houver)
-  const renderChipsWithOther = (reqIndex: number, showInputForOutro: boolean = false) => {
+  // REGRA: Quando "outro" é clicado, SEMPRE abre campo de texto - em qualquer step
+  const renderChipsWithOther = (reqIndex: number) => {
     const req = parsedRequirements[reqIndex];
     if (!req) return null;
 
@@ -251,8 +272,8 @@ export function PlaygroundBridgeV3({
             />
           )}
         </div>
-        {/* Campo de texto aparece SOMENTE se showInputForOutro=true E "outro" está selecionado */}
-        {showInputForOutro && isOtherSelected && (
+        {/* Campo de texto aparece SEMPRE que "outro" está selecionado - em qualquer step */}
+        {isOtherSelected && (
           <Input
             type="text"
             placeholder="Digite sua opção..."
@@ -385,11 +406,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Linha de chips 1: requirements[0] - SOMENTE CHIPS */}
-                  {renderChipsWithOther(0, false)}
+                  {/* Linha de chips 1: requirements[0] */}
+                  {renderChipsWithOther(0)}
 
-                  {/* Linha de chips 2: requirements[1] - SOMENTE CHIPS */}
-                  {renderChipsWithOther(1, false)}
+                  {/* Linha de chips 2: requirements[1] */}
+                  {renderChipsWithOther(1)}
                 </motion.div>
               )}
 
@@ -417,11 +438,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Campo 3: requirements[2] - Chips + input se "outro" */}
-                  {renderChipsWithOther(2, true)}
+                  {/* Campo 3: requirements[2] */}
+                  {renderChipsWithOther(2)}
 
-                  {/* Campo 4: requirements[3] - Chips + input se "outro" */}
-                  {renderChipsWithOther(3, true)}
+                  {/* Campo 4: requirements[3] */}
+                  {renderChipsWithOther(3)}
                 </motion.div>
               )}
 
@@ -460,32 +481,32 @@ export function PlaygroundBridgeV3({
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full overflow-hidden">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      className="flex-1 h-9 text-xs"
+                      className="h-9 text-xs min-w-0 flex-shrink-0 sm:flex-1"
                     >
                       {copied ? (
                         <>
-                          <Check className="w-3.5 h-3.5 mr-1.5" />
-                          Copiado!
+                          <Check className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                          <span className="truncate">Copiado!</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5 mr-1.5" />
-                          Copiar prompt
+                          <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                          <span className="truncate">Copiar prompt</span>
                         </>
                       )}
                     </Button>
                     <Button
                       onClick={handleGoToPlayground}
                       size="sm"
-                      className="flex-1 h-9 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                      className="h-9 text-xs min-w-0 flex-shrink-0 sm:flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                     >
-                      <Rocket className="w-3.5 h-3.5 mr-1.5" />
-                      Testar no Playground
+                      <Rocket className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                      <span className="truncate">Testar no Playground</span>
                     </Button>
                   </div>
                 </motion.div>
@@ -514,7 +535,8 @@ export function PlaygroundBridgeV3({
                 <Button
                   onClick={() => setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
                   size="sm"
-                  className="h-9 px-4 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                  disabled={!canAdvanceFromStep(step)}
+                  className="h-9 px-4 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Próximo
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />

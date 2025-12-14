@@ -191,7 +191,7 @@ import CardEffectHumanCheck from './CardEffectHumanCheck';
 import CardEffectResponsibilityLine from './CardEffectResponsibilityLine';
 
 // ============================================================
-// AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+// AULA 10 - Conteúdo Profundo: Experiência em Curso Real (antigo)
 // ============================================================
 import CardEffectDeepContentIntro from './CardEffectDeepContentIntro';
 import CardEffectStartFromZero from './CardEffectStartFromZero';
@@ -208,6 +208,25 @@ import CardEffectMediaExpander from './CardEffectMediaExpander';
 import CardEffectProductMindset from './CardEffectProductMindset';
 import CardEffectAssetLibrary from './CardEffectAssetLibrary';
 import CardEffectBeyondSelling from './CardEffectBeyondSelling';
+
+// ============================================================
+// AULA 10 - Seu Plano de 30 Dias com I.A. (NOVOS 15 CARDS)
+// ============================================================
+import CardEffectIaStartingPoint from './CardEffectIaStartingPoint';
+import CardEffectUsageSpectrum from './CardEffectUsageSpectrum';
+import CardEffectSelfAwareness from './CardEffectSelfAwareness';
+import CardEffectTimeDrain from './CardEffectTimeDrain';
+import CardEffectFocusSelection from './CardEffectFocusSelection';
+import CardEffectImpactForecast from './CardEffectImpactForecast';
+import CardEffectWeeklySteps from './CardEffectWeeklySteps';
+import CardEffectIterationLoop from './CardEffectIterationLoop';
+import CardEffectHabitFormation from './CardEffectHabitFormation';
+import CardEffectPlanBuilder from './CardEffectPlanBuilder';
+import CardEffectIaCoach from './CardEffectIaCoach';
+import CardEffectToolCombination from './CardEffectToolCombination';
+import CardEffectSmallSteps from './CardEffectSmallSteps';
+import CardEffectPersonalLibrary from './CardEffectPersonalLibrary';
+import CardEffectSafetyBoundaries from './CardEffectSafetyBoundaries';
 
 // ============================================================
 // AULA 12 - Vídeos simples com I.A.
@@ -413,6 +432,23 @@ export { default as CardEffectProductMindset } from './CardEffectProductMindset'
 export { default as CardEffectAssetLibrary } from './CardEffectAssetLibrary';
 export { default as CardEffectBeyondSelling } from './CardEffectBeyondSelling';
 
+// Re-exportar componentes - AULA 10 (Seu Plano de 30 Dias - NOVOS 15 CARDS)
+export { default as CardEffectIaStartingPoint } from './CardEffectIaStartingPoint';
+export { default as CardEffectUsageSpectrum } from './CardEffectUsageSpectrum';
+export { default as CardEffectSelfAwareness } from './CardEffectSelfAwareness';
+export { default as CardEffectTimeDrain } from './CardEffectTimeDrain';
+export { default as CardEffectFocusSelection } from './CardEffectFocusSelection';
+export { default as CardEffectImpactForecast } from './CardEffectImpactForecast';
+export { default as CardEffectWeeklySteps } from './CardEffectWeeklySteps';
+export { default as CardEffectIterationLoop } from './CardEffectIterationLoop';
+export { default as CardEffectHabitFormation } from './CardEffectHabitFormation';
+export { default as CardEffectPlanBuilder } from './CardEffectPlanBuilder';
+export { default as CardEffectIaCoach } from './CardEffectIaCoach';
+export { default as CardEffectToolCombination } from './CardEffectToolCombination';
+export { default as CardEffectSmallSteps } from './CardEffectSmallSteps';
+export { default as CardEffectPersonalLibrary } from './CardEffectPersonalLibrary';
+export { default as CardEffectSafetyBoundaries } from './CardEffectSafetyBoundaries';
+
 // Re-exportar componentes - AULA 12 (Vídeos simples)
 export { default as CardEffectVideoFeedExplosion } from './CardEffectVideoFeedExplosion';
 export { default as CardEffectVideoConnection } from './CardEffectVideoConnection';
@@ -513,6 +549,11 @@ export type CardEffectType =
   | 'module-map' | 'objective-lens' | 'summary-booster' | 'support-materials'
   | 'first-version' | 'tool-orchestrator' | 'visual-creator' | 'media-expander'
   | 'product-mindset' | 'asset-library' | 'beyond-selling'
+  // AULA 10 - Seu Plano de 30 Dias com I.A. (NOVOS)
+  | 'ia-starting-point' | 'usage-spectrum' | 'self-awareness' | 'time-drain'
+  | 'focus-selection' | 'impact-forecast' | 'weekly-steps' | 'iteration-loop'
+  | 'habit-formation' | 'plan-builder' | 'ia-coach' | 'tool-combination'
+  | 'small-steps' | 'personal-library' | 'safety-boundaries'
   // AULA 11 - Planilhas, organização e automação leve
   | 'fear-breaker' | 'qa-table' | 'ai-assistant' | 'three-questions'
   | 'map-visual' | 'problem-to-structure' | 'finance-example' | 'sales-example'
@@ -694,6 +735,22 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'product-mindset': CardEffectProductMindset,
   'asset-library': CardEffectAssetLibrary,
   'beyond-selling': CardEffectBeyondSelling,
+  // AULA 10 - Seu Plano de 30 Dias com I.A. (NOVOS 15 CARDS)
+  'ia-starting-point': CardEffectIaStartingPoint,
+  'usage-spectrum': CardEffectUsageSpectrum,
+  'self-awareness': CardEffectSelfAwareness,
+  'time-drain': CardEffectTimeDrain,
+  'focus-selection': CardEffectFocusSelection,
+  'impact-forecast': CardEffectImpactForecast,
+  'weekly-steps': CardEffectWeeklySteps,
+  'iteration-loop': CardEffectIterationLoop,
+  'habit-formation': CardEffectHabitFormation,
+  'plan-builder': CardEffectPlanBuilder,
+  'ia-coach': CardEffectIaCoach,
+  'tool-combination': CardEffectToolCombination,
+  'small-steps': CardEffectSmallSteps,
+  'personal-library': CardEffectPersonalLibrary,
+  'safety-boundaries': CardEffectSafetyBoundaries,
   // AULA 11 - Planilhas, organização e automação leve
   'fear-breaker': CardEffectFearBreaker,
   'qa-table': CardEffectQaTable,
@@ -843,6 +900,22 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'product-mindset': 'Mentalidade de Produto',
   'asset-library': 'Biblioteca de Ativos',
   'beyond-selling': 'Além de Vender',
+  // AULA 10 - Seu Plano de 30 Dias com I.A. (NOVOS)
+  'ia-starting-point': 'Ponto de Partida I.A.',
+  'usage-spectrum': 'Espectro de Uso',
+  'self-awareness': 'Autoconhecimento',
+  'time-drain': 'Drenagem de Tempo',
+  'focus-selection': 'Seleção de Foco',
+  'impact-forecast': 'Previsão de Impacto',
+  'weekly-steps': 'Passos Semanais',
+  'iteration-loop': 'Ciclo de Iteração',
+  'habit-formation': 'Formação de Hábito',
+  'plan-builder': 'Construtor de Plano',
+  'ia-coach': 'Coach I.A.',
+  'tool-combination': 'Combinação de Ferramentas',
+  'small-steps': 'Pequenos Passos',
+  'personal-library': 'Biblioteca Pessoal',
+  'safety-boundaries': 'Limites de Segurança',
   // AULA 11 - Planilhas, organização e automação leve
   'fear-breaker': 'A Trava da Planilha',
   'qa-table': 'Perguntas e Respostas',
@@ -1008,6 +1081,22 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'product-mindset': 'Conteúdo como ativo escalável',
   'asset-library': 'Biblioteca digital trabalhando por você',
   'beyond-selling': 'Impacto, clareza e novas possibilidades',
+  // AULA 10 - Seu Plano de 30 Dias com I.A. (NOVOS)
+  'ia-starting-point': 'Onde você está no mapa da I.A.',
+  'usage-spectrum': 'Diferentes níveis de uso da I.A.',
+  'self-awareness': 'Entender seu perfil de uso atual',
+  'time-drain': 'Tarefas que roubam seu tempo',
+  'focus-selection': 'Escolhendo onde focar primeiro',
+  'impact-forecast': 'Previsão do impacto das mudanças',
+  'weekly-steps': 'Organização semanal do plano',
+  'iteration-loop': 'Ciclo de melhoria contínua',
+  'habit-formation': 'Transformando ação em hábito',
+  'plan-builder': 'Construindo seu plano personalizado',
+  'ia-coach': 'I.A. como coach pessoal',
+  'tool-combination': 'Combinando ferramentas certas',
+  'small-steps': 'Começando com passos pequenos',
+  'personal-library': 'Sua biblioteca de prompts e templates',
+  'safety-boundaries': 'Limites e cuidados com I.A.',
   // AULA 11 - Planilhas, organização e automação leve
   'fear-breaker': 'Planilha vazia com medo se desfazendo',
   'qa-table': 'Tabela como perguntas e respostas',
@@ -1121,6 +1210,12 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'first-version', 'tool-orchestrator', 'visual-creator', 'media-expander',
     'product-mindset', 'asset-library', 'beyond-selling',
   ],
+  'aula-10-plano': [
+    'ia-starting-point', 'usage-spectrum', 'self-awareness', 'time-drain',
+    'focus-selection', 'impact-forecast', 'weekly-steps', 'iteration-loop',
+    'habit-formation', 'plan-builder', 'ia-coach', 'tool-combination',
+    'small-steps', 'personal-library', 'safety-boundaries',
+  ],
   'aula-11': [
     'fear-breaker', 'qa-table', 'ai-assistant', 'three-questions',
     'map-visual', 'problem-to-structure', 'finance-example', 'sales-example',
@@ -1146,6 +1241,7 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
   ...CARD_EFFECTS_BY_LESSON['aula-10'],
+  ...CARD_EFFECTS_BY_LESSON['aula-10-plano'],
   ...CARD_EFFECTS_BY_LESSON['aula-11'],
   ...CARD_EFFECTS_BY_LESSON['aula-08'],
 ];

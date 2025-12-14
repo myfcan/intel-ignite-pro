@@ -13,11 +13,13 @@ interface Message {
 interface PlaygroundRealChatProps {
   lessonId?: string;
   onComplete?: () => void;
+  /** Callback para pular o playground sem completar */
+  onSkip?: () => void;
   /** Prompt inicial a ser pré-preenchido no textarea */
   initialPrompt?: string;
 }
 
-export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: PlaygroundRealChatProps) {
+export function PlaygroundRealChat({ lessonId, onComplete, onSkip, initialPrompt }: PlaygroundRealChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState(initialPrompt || '');
   const [isTyping, setIsTyping] = useState(false);
@@ -146,9 +148,9 @@ export function PlaygroundRealChat({ lessonId, onComplete, initialPrompt }: Play
                   {interactionsRemaining} interações restantes
                 </div>
               )}
-              {onComplete && (
+              {(onComplete || onSkip) && (
                 <button
-                  onClick={onComplete}
+                  onClick={onSkip || onComplete}
                   className="text-gray-400 hover:text-white transition-colors text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-700"
                 >
                   Pular →
