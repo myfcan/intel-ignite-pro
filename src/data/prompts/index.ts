@@ -12,14 +12,37 @@ import { businessPromptsCategory } from './business-complete';
 import { personalFinancePromptsCategory } from './personal-finance-complete';
 import { productCreationPromptsCategory } from './product-creation-complete';
 import { salesMarketingPromptsCategory } from './sales-marketing-complete';
+import { marketingDigitalPremiumPrompts, businessPremiumPrompts } from './premium-prompts-pack1';
+import { premiumPromptsPack2 } from './premium-prompts-pack2';
 import { PromptCategory, Prompt } from '../../types/prompt';
+
+// Combinar prompts premium com suas categorias
+const enhancedMarketingDigitalCategory: PromptCategory = {
+  ...marketingDigitalPromptsCategory,
+  prompts: [...marketingDigitalPromptsCategory.prompts, ...marketingDigitalPremiumPrompts]
+};
+
+const enhancedBusinessCategory: PromptCategory = {
+  ...businessPromptsCategory,
+  prompts: [...businessPromptsCategory.prompts, ...businessPremiumPrompts]
+};
+
+const enhancedPersonalFinanceCategory: PromptCategory = {
+  ...personalFinancePromptsCategory,
+  prompts: [...personalFinancePromptsCategory.prompts, ...premiumPromptsPack2.filter(p => p.categoryId === 'personal-finance')]
+};
+
+const enhancedProductCreationCategory: PromptCategory = {
+  ...productCreationPromptsCategory,
+  prompts: [...productCreationPromptsCategory.prompts, ...premiumPromptsPack2.filter(p => p.categoryId === 'product-creation')]
+};
 
 // CATEGORIAS PRINCIPAIS
 export const mainPromptCategories: PromptCategory[] = [
-  marketingDigitalPromptsCategory,
-  businessPromptsCategory,
-  personalFinancePromptsCategory,
-  productCreationPromptsCategory,
+  enhancedMarketingDigitalCategory,
+  enhancedBusinessCategory,
+  enhancedPersonalFinanceCategory,
+  enhancedProductCreationCategory,
   salesMarketingPromptsCategory,
   extraIncomePromptsCategory,
   dailyLifePromptsCategory,
@@ -28,10 +51,10 @@ export const mainPromptCategories: PromptCategory[] = [
 
 // Export all prompt categories
 export const allPromptCategories: PromptCategory[] = [
-  marketingDigitalPromptsCategory,
-  businessPromptsCategory,
-  personalFinancePromptsCategory,
-  productCreationPromptsCategory,
+  enhancedMarketingDigitalCategory,
+  enhancedBusinessCategory,
+  enhancedPersonalFinanceCategory,
+  enhancedProductCreationCategory,
   salesMarketingPromptsCategory,
   extraIncomePromptsCategory,
   freePromptsCategory,
