@@ -6,9 +6,12 @@ export function useIsAdmin(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // ⚠️ CRITICAL FIX: Se userId ainda é undefined, manter loading = true
+    // Isso evita race condition onde o componente renderiza antes do userId estar pronto
     if (!userId) {
+      console.log('[useIsAdmin] userId ainda undefined, mantendo loading=true');
       setIsAdmin(false);
-      setLoading(false);
+      setLoading(true); // MUDANÇA: Antes era false, agora é true
       return;
     }
 
@@ -28,7 +31,7 @@ export function useIsAdmin(userId: string | undefined) {
           setIsAdmin(false);
         } else {
           const adminResult = !!data;
-          console.log('[useIsAdmin] Result:', adminResult, data);
+          console.log('[useIsAdmin] ✅ Admin status confirmed:', adminResult, 'Data:', data);
           setIsAdmin(adminResult);
         }
       } catch (error) {
@@ -36,11 +39,13 @@ export function useIsAdmin(userId: string | undefined) {
         setIsAdmin(false);
       } finally {
         setLoading(false);
+        console.log('[useIsAdmin] Loading finished, isAdmin:', !!data);
       }
     };
 
     checkAdminStatus();
   }, [userId]);
 
+  console.log('[useIsAdmin] Retornando:', { isAdmin, loading, userId });
   return { isAdmin, loading };
 }

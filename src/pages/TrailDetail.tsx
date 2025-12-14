@@ -38,11 +38,36 @@ const TrailDetail = () => {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showLivModal, setShowLivModal] = useState(true);
   const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  // ⚠️ CRITICAL FIX: Obter userId PRIMEIRO antes de qualquer outra coisa
+  useEffect(() => {
+    const initializeUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      console.log('[TrailDetail] Inicializando userId:', session.user.id);
+      setUserId(session.user.id);
+    };
+
+    initializeUser();
+  }, []);
+
+  // Hook de admin - agora com userId já inicializado
   const { isAdmin, loading: adminLoading } = useIsAdmin(userId);
 
+  // Log do status de admin para debug
   useEffect(() => {
-    fetchTrailData();
-  }, [id]);
+    console.log('[TrailDetail] Status Admin:', { isAdmin, adminLoading, userId });
+  }, [isAdmin, adminLoading, userId]);
+
+  useEffect(() => {
+    // Só buscar dados após userId estar disponível
+    if (userId) {
+      fetchTrailData();
+    }
+  }, [id, userId]);
 
   const fetchTrailData = async () => {
     try {
@@ -51,9 +76,6 @@ const TrailDetail = () => {
         navigate('/auth');
         return;
       }
-      
-      // Guardar userId para o hook useIsAdmin
-      setUserId(session.user.id);
 
       // Fetch trail
       const { data: trailData, error: trailError } = await supabase
@@ -101,9 +123,17 @@ const TrailDetail = () => {
 
   const getLessonStatus = (lesson: Lesson, index: number) => {
     if (completedLessons.includes(lesson.id)) return 'completed';
-    // Admins têm acesso a todas as aulas (esperar loading terminar)
-    if (!adminLoading && isAdmin) return 'unlocked';
+
+    // ⚠️ CRITICAL FIX: Admins têm acesso a TODAS as aulas
+    if (!adminLoading && isAdmin) {
+      console.log(`[getLessonStatus] Admin detectado! Aula ${index + 1} desbloqueada`);
+      return 'unlocked';
+    }
+
+    // Lógica normal para usuários comuns
     if (index === 0 || completedLessons.includes(lessons[index - 1]?.id)) return 'unlocked';
+
+    console.log(`[getLessonStatus] Aula ${index + 1} bloqueada (isAdmin: ${isAdmin}, adminLoading: ${adminLoading})`);
     return 'locked';
   };
 

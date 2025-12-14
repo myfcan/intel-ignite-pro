@@ -58,13 +58,16 @@ export function PlaygroundBridgeV2({
   onSkip,
   lessonId,
 }: PlaygroundBridgeV2Props) {
+  // ============================================================================
+  // ALL HOOKS MUST BE AT THE TOP (Rules of Hooks)
+  // ============================================================================
   const [phase, setPhase] = useState<'example' | 'practice' | 'playground'>('example');
   const [isFlipping, setIsFlipping] = useState(false);
   const [copied, setCopied] = useState(false);
   const [userPrompt, setUserPrompt] = useState('');
   const [highlightedReq, setHighlightedReq] = useState<number | null>(null);
   const { toast } = useToast();
-  
+
   // ===== SISTEMA SEQUENCIAL =====
   // Qual requisito está ativo para preenchimento (0-3)
   const [activeStep, setActiveStep] = useState(0);
@@ -72,53 +75,17 @@ export function PlaygroundBridgeV2({
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([false, false, false, false]);
   // Prompt que vai sendo construído com os valores preenchidos
   const [builtPrompt, setBuiltPrompt] = useState(playgroundExample?.examplePrompt || '');
-  
-  // Ordem fixa: Produto (1), Público (2), Tom (3), Objetivo (4)
-  const orderedRequirements = playgroundExample?.requirements ? [
-    playgroundExample.requirements[0], // Produto
-    playgroundExample.requirements[1], // Público
-    playgroundExample.requirements[3], // Tom (era índice 3)
-    playgroundExample.requirements[2], // Objetivo (era índice 2)
-  ] : [];
-  
-  // Mapeia índice do step para o colchete no prompt e o valor a substituir
-  const getStepMapping = (stepIndex: number) => {
-    const mappings = [
-      { bracket: /\[produto principal\]/gi, valueKey: 0 },   // Produto
-      { bracket: /\[público\]/gi, valueKey: 1 },             // Público
-      { bracket: /\[tom de voz\]/gi, valueKey: 2 },          // Tom
-      { bracket: /\[objetivo do post\]/gi, valueKey: 3 },    // Objetivo
-    ];
-    return mappings[stepIndex];
-  };
-  
-  // Extrai o valor do colchete de um requisito (ex: "Produto: [pão]" → "pão")
-  const extractBracketValue = (requirement: string) => {
-    const match = requirement.match(/\[([^\]]+)\]/);
-    return match ? match[1] : '';
-  };
 
-  console.log('🌉 [BRIDGE-V2] Renderizando:', { 
-    phase, 
-    hasExample: !!playgroundExample,
-  });
-
-  // Fallback: se não tem playgroundExample, vai direto pro playground
-  if (!playgroundExample) {
-    console.warn('⚠️ [BRIDGE-V2] playgroundExample ausente, pulando modais');
-    return (
-      <PlaygroundRealChat
-        lessonId={lessonId}
-        onComplete={() => onComplete(null)}
-      />
-    );
-  }
+  // Rastreia os valores que foram inseridos no prompt (para destacar visualmente)
+  const [insertedValues, setInsertedValues] = useState<string[]>([]);
+  // Valor recém-inserido para animação pulse/glow
+  const [lastInsertedValue, setLastInsertedValue] = useState<string | null>(null);
 
   // Volta ao modal de exemplo (mantendo o texto editado)
   const handleBackToExample = useCallback(() => {
     console.log('🌉 [BRIDGE-V2] Transição: Prática → Exemplo (mantendo texto)');
     setIsFlipping(true);
-    
+
     setTimeout(() => {
       setPhase('example');
       setIsFlipping(false);
@@ -130,7 +97,7 @@ export function PlaygroundBridgeV2({
     console.log('🌉 [BRIDGE-V2] Transição: Exemplo → Prática');
     setIsFlipping(true);
     setUserPrompt(''); // Deixa vazio para o usuário colar/digitar
-    
+
     setTimeout(() => {
       setPhase('practice');
       setIsFlipping(false);
@@ -150,7 +117,7 @@ export function PlaygroundBridgeV2({
 
     console.log('🌉 [BRIDGE-V2] Transição: Prática → Playground com prompt:', userPrompt);
     setIsFlipping(true);
-    
+
     setTimeout(() => {
       setPhase('playground');
       setIsFlipping(false);
@@ -159,16 +126,64 @@ export function PlaygroundBridgeV2({
 
   const handleCopyPrompt = useCallback(() => {
     if (!playgroundExample?.examplePrompt) return;
-    
+
     navigator.clipboard.writeText(playgroundExample.examplePrompt);
     setCopied(true);
     toast({
       title: "Copiado!",
       description: "Prompt copiado para a área de transferência",
     });
-    
+
     setTimeout(() => setCopied(false), 2000);
   }, [playgroundExample?.examplePrompt, toast]);
+
+  // ============================================================================
+  // DERIVED VALUES AND HELPERS (non-hooks)
+  // ============================================================================
+
+  // Ordem fixa: Produto (1), Público (2), Tom (3), Objetivo (4)
+  const orderedRequirements = playgroundExample?.requirements ? [
+    playgroundExample.requirements[0], // Produto
+    playgroundExample.requirements[1], // Público
+    playgroundExample.requirements[3], // Tom (era índice 3)
+    playgroundExample.requirements[2], // Objetivo (era índice 2)
+  ] : [];
+
+  // Mapeia índice do step para o colchete no prompt e o valor a substituir
+  const getStepMapping = (stepIndex: number) => {
+    const mappings = [
+      { bracket: /\[produto principal\]/gi, valueKey: 0 },   // Produto
+      { bracket: /\[público\]/gi, valueKey: 1 },             // Público
+      { bracket: /\[tom de voz\]/gi, valueKey: 2 },          // Tom
+      { bracket: /\[objetivo do post\]/gi, valueKey: 3 },    // Objetivo
+    ];
+    return mappings[stepIndex];
+  };
+
+  // Extrai o valor do colchete de um requisito (ex: "Produto: [pão]" → "pão")
+  const extractBracketValue = (requirement: string) => {
+    const match = requirement.match(/\[([^\]]+)\]/);
+    return match ? match[1] : '';
+  };
+
+  console.log('🌉 [BRIDGE-V2] Renderizando:', {
+    phase,
+    hasExample: !!playgroundExample,
+  });
+
+  // ============================================================================
+  // EARLY RETURNS MUST COME AFTER ALL HOOKS
+  // ============================================================================
+  // Fallback: se não tem playgroundExample, vai direto pro playground
+  if (!playgroundExample) {
+    console.warn('⚠️ [BRIDGE-V2] playgroundExample ausente, pulando modais');
+    return (
+      <PlaygroundRealChat
+        lessonId={lessonId}
+        onComplete={() => onComplete(null)}
+      />
+    );
+  }
 
   // Mapeia requisitos para os colchetes correspondentes no prompt
   // Nova ordem: Produto (0), Público (1), Tom (2), Objetivo (3)
@@ -228,11 +243,6 @@ export function PlaygroundBridgeV2({
       }, 300);
     }
   };
-
-  // Rastreia os valores que foram inseridos no prompt (para destacar visualmente)
-  const [insertedValues, setInsertedValues] = useState<string[]>([]);
-  // Valor recém-inserido para animação pulse/glow
-  const [lastInsertedValue, setLastInsertedValue] = useState<string | null>(null);
 
   // Destaca colchetes no prompt, com highlight especial se requisito selecionado
   // E mostra valores já inseridos com cor marrom e colchetes DURANTE o processo

@@ -98,6 +98,9 @@ export function PlaygroundBridgeV3({
   onSkip,
   lessonId,
 }: PlaygroundBridgeV3Props) {
+  // ============================================================================
+  // ALL HOOKS MUST BE AT THE TOP (Rules of Hooks)
+  // ============================================================================
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
@@ -117,6 +120,48 @@ export function PlaygroundBridgeV3({
   const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
   const [otherValues, setOtherValues] = useState<Record<number, string>>({});
 
+  // Monta o prompt substituindo os slots pelos valores escolhidos
+  const buildPrompt = useCallback(() => {
+    if (!playgroundExample) return '';
+    let prompt = playgroundExample.examplePrompt;
+
+    parsedRequirements.forEach((req, index) => {
+      const value = values[index] || '';
+      if (value && req.slot) {
+        // Substitui o slot original pelo valor escolhido SEM colchetes
+        // Isso evita que a IA interprete como placeholder a preencher
+        prompt = prompt.replace(req.slot, value);
+      }
+    });
+
+    return prompt;
+  }, [playgroundExample, parsedRequirements, values]);
+
+  const handleGoToPlayground = useCallback(() => {
+    setPhase('playground');
+  }, []);
+
+  // Valida se todos os campos "outro" selecionados têm valor preenchido
+  const canAdvanceFromStep = useCallback((currentStep: number): boolean => {
+    // Step 2 usa requirements 0 e 1
+    // Step 3 usa requirements 2 e 3
+    const reqIndices = currentStep === 2 ? [0, 1] : currentStep === 3 ? [2, 3] : [];
+
+    for (const idx of reqIndices) {
+      const isOtherSelected = showOtherInput[idx];
+      if (isOtherSelected) {
+        const otherValue = otherValues[idx]?.trim();
+        if (!otherValue) {
+          return false; // Campo "outro" selecionado mas vazio
+        }
+      }
+    }
+    return true;
+  }, [showOtherInput, otherValues]);
+
+  // ============================================================================
+  // EARLY RETURNS MUST COME AFTER ALL HOOKS
+  // ============================================================================
   if (!playgroundExample) {
     return (
       <PlaygroundRealChat
@@ -135,44 +180,6 @@ export function PlaygroundBridgeV3({
   const handleTextChange = (reqIndex: number, value: string) => {
     setValues(prev => ({ ...prev, [reqIndex]: value }));
   };
-
-  // Monta o prompt substituindo os slots pelos valores escolhidos
-  const buildPrompt = useCallback(() => {
-    let prompt = playgroundExample.examplePrompt;
-    
-    parsedRequirements.forEach((req, index) => {
-      const value = values[index] || '';
-      if (value && req.slot) {
-        // Substitui o slot original pelo valor escolhido SEM colchetes
-        // Isso evita que a IA interprete como placeholder a preencher
-        prompt = prompt.replace(req.slot, value);
-      }
-    });
-    
-    return prompt;
-  }, [playgroundExample.examplePrompt, parsedRequirements, values]);
-
-  const handleGoToPlayground = useCallback(() => {
-    setPhase('playground');
-  }, []);
-
-  // Valida se todos os campos "outro" selecionados têm valor preenchido
-  const canAdvanceFromStep = useCallback((currentStep: number): boolean => {
-    // Step 2 usa requirements 0 e 1
-    // Step 3 usa requirements 2 e 3
-    const reqIndices = currentStep === 2 ? [0, 1] : currentStep === 3 ? [2, 3] : [];
-    
-    for (const idx of reqIndices) {
-      const isOtherSelected = showOtherInput[idx];
-      if (isOtherSelected) {
-        const otherValue = otherValues[idx]?.trim();
-        if (!otherValue) {
-          return false; // Campo "outro" selecionado mas vazio
-        }
-      }
-    }
-    return true;
-  }, [showOtherInput, otherValues]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildPrompt());
@@ -218,8 +225,6 @@ export function PlaygroundBridgeV3({
       {label}
     </button>
   );
-
-  // Handler para "outro" - abre campo de texto
 
   // Handler para "outro" - abre campo de texto
   const handleOtherClick = (reqIndex: number) => {
