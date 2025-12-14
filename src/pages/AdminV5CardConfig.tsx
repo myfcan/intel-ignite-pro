@@ -44,6 +44,12 @@ const AVAILABLE_LESSONS = [
     description: '15 card effects cinematográficos',
     icon: '🎬'
   },
+  {
+    id: 'aula-10-plano',
+    title: 'Aula 10 - Seu Plano de 30 Dias com I.A.',
+    description: '15 card effects cinematográficos',
+    icon: '📅'
+  },
 ];
 
 // 📋 Templates pré-configurados de Experience Cards por Aula
@@ -167,6 +173,28 @@ const LESSON_CARD_TEMPLATES: Record<string, ExperienceCard[]> = {
     { sectionIndex: 5, cardIndex: 1, cardType: 'script-guide', anchorText: 'guia de roteiro', title: 'Guia de Roteiro', subtitle: 'Guia passo a passo do roteiro' },
     { sectionIndex: 5, cardIndex: 2, cardType: 'short-blocks', anchorText: 'blocos curtos', title: 'Blocos Curtos', subtitle: 'Blocos curtos e impactantes' },
     { sectionIndex: 5, cardIndex: 3, cardType: 'consistency-wins', anchorText: 'consistência', title: 'Consistência Vence', subtitle: 'Consistência supera perfeição' },
+  ],
+  'aula-10-plano': [
+    // Seção 1 - Ponto de Partida (3 cards)
+    { sectionIndex: 1, cardIndex: 1, cardType: 'ia-starting-point', anchorText: 'ponto de partida', title: 'Ponto de Partida I.A.', subtitle: 'Onde você está no mapa da I.A.' },
+    { sectionIndex: 1, cardIndex: 2, cardType: 'usage-spectrum', anchorText: 'espectro de uso', title: 'Espectro de Uso', subtitle: 'Diferentes níveis de uso da I.A.' },
+    { sectionIndex: 1, cardIndex: 3, cardType: 'self-awareness', anchorText: 'autoconhecimento', title: 'Autoconhecimento', subtitle: 'Entender seu perfil de uso atual' },
+    // Seção 2 - Identificando Oportunidades (3 cards)
+    { sectionIndex: 2, cardIndex: 1, cardType: 'time-drain', anchorText: 'tarefas que drenam', title: 'Drenagem de Tempo', subtitle: 'Tarefas que roubam seu tempo' },
+    { sectionIndex: 2, cardIndex: 2, cardType: 'focus-selection', anchorText: 'escolhendo foco', title: 'Seleção de Foco', subtitle: 'Escolhendo onde focar primeiro' },
+    { sectionIndex: 2, cardIndex: 3, cardType: 'impact-forecast', anchorText: 'previsão de impacto', title: 'Previsão de Impacto', subtitle: 'Impacto das mudanças planejadas' },
+    // Seção 3 - Estrutura do Plano (3 cards)
+    { sectionIndex: 3, cardIndex: 1, cardType: 'weekly-steps', anchorText: 'passos semanais', title: 'Passos Semanais', subtitle: 'Organização semanal do plano' },
+    { sectionIndex: 3, cardIndex: 2, cardType: 'iteration-loop', anchorText: 'ciclo de melhoria', title: 'Ciclo de Iteração', subtitle: 'Melhoria contínua a cada semana' },
+    { sectionIndex: 3, cardIndex: 3, cardType: 'habit-formation', anchorText: 'formando hábito', title: 'Formação de Hábito', subtitle: 'Transformando ação em hábito' },
+    // Seção 4 - Ferramentas e Suporte (3 cards)
+    { sectionIndex: 4, cardIndex: 1, cardType: 'plan-builder', anchorText: 'construindo plano', title: 'Construtor de Plano', subtitle: 'Seu plano personalizado' },
+    { sectionIndex: 4, cardIndex: 2, cardType: 'ia-coach', anchorText: 'coach pessoal', title: 'Coach I.A.', subtitle: 'I.A. como coach pessoal' },
+    { sectionIndex: 4, cardIndex: 3, cardType: 'tool-combination', anchorText: 'combinando ferramentas', title: 'Combinação de Ferramentas', subtitle: 'As ferramentas certas juntas' },
+    // Seção 5 - Sustentabilidade (3 cards)
+    { sectionIndex: 5, cardIndex: 1, cardType: 'small-steps', anchorText: 'pequenos passos', title: 'Pequenos Passos', subtitle: 'Começando com calma e consistência' },
+    { sectionIndex: 5, cardIndex: 2, cardType: 'personal-library', anchorText: 'biblioteca pessoal', title: 'Biblioteca Pessoal', subtitle: 'Seus prompts e templates favoritos' },
+    { sectionIndex: 5, cardIndex: 3, cardType: 'safety-boundaries', anchorText: 'limites de segurança', title: 'Limites de Segurança', subtitle: 'Cuidados e limites com I.A.' },
   ],
 };
 
