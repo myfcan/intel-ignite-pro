@@ -455,32 +455,32 @@ export function PlaygroundBridgeV3({
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full overflow-hidden">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      className="flex-1 h-9 text-xs"
+                      className="h-9 text-xs min-w-0 flex-shrink-0 sm:flex-1"
                     >
                       {copied ? (
                         <>
-                          <Check className="w-3.5 h-3.5 mr-1.5" />
-                          Copiado!
+                          <Check className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                          <span className="truncate">Copiado!</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5 mr-1.5" />
-                          Copiar prompt
+                          <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                          <span className="truncate">Copiar prompt</span>
                         </>
                       )}
                     </Button>
                     <Button
                       onClick={handleGoToPlayground}
                       size="sm"
-                      className="flex-1 h-9 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                      className="h-9 text-xs min-w-0 flex-shrink-0 sm:flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                     >
-                      <Rocket className="w-3.5 h-3.5 mr-1.5" />
-                      Testar no Playground
+                      <Rocket className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                      <span className="truncate">Testar no Playground</span>
                     </Button>
                   </div>
                 </motion.div>
