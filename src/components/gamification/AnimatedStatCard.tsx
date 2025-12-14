@@ -36,54 +36,53 @@ const Sparkle = ({ delay, size, x, y }: { delay: number; size: number; x: number
   />
 );
 
-// Counter hook - animates from 0 to end value when end changes
-const useCounter = (end: number, duration: number = 1.5, startDelay: number = 0) => {
+// Counter hook - simplified: just show value directly, no animation delays
+const useCounter = (end: number, isLoading: boolean) => {
   const [count, setCount] = useState(0);
-  const prevEndRef = useRef<number>(-1); // Start with -1 to ensure first render triggers
+  const animatingRef = useRef(false);
 
   useEffect(() => {
-    // Skip if end hasn't changed
-    if (prevEndRef.current === end) return;
+    // If loading, keep current count
+    if (isLoading) return;
     
-    // Always update the ref to track current value
-    prevEndRef.current = end;
+    // If already at the target value, do nothing
+    if (count === end) return;
     
-    // If end is 0, just set count to 0 immediately
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
+    // If already animating to this value, don't restart
+    if (animatingRef.current) return;
+    
+    // Start animation
+    animatingRef.current = true;
+    const startValue = count;
+    const startTime = Date.now();
+    const duration = 1200; // 1.2 seconds
 
-    // Reset count to 0 before animating to new value
-    setCount(0);
+    const updateCount = () => {
+      const now = Date.now();
+      const progress = Math.min((now - startTime) / duration, 1);
+      
+      // Easing function
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const newCount = Math.floor(startValue + (end - startValue) * easeOut);
+      
+      setCount(newCount);
 
-    const timeout = setTimeout(() => {
-      const startTime = Date.now();
+      if (progress < 1) {
+        requestAnimationFrame(updateCount);
+      } else {
+        setCount(end);
+        animatingRef.current = false;
+      }
+    };
 
-      const updateCount = () => {
-        const now = Date.now();
-        const progress = Math.min((now - startTime) / (duration * 1000), 1);
-        
-        // Easing function for smooth deceleration
-        const easeOut = 1 - Math.pow(1 - progress, 3);
-        const newCount = Math.floor(easeOut * end);
-        
-        setCount(newCount);
+    requestAnimationFrame(updateCount);
+    
+    return () => {
+      animatingRef.current = false;
+    };
+  }, [end, isLoading, count]);
 
-        if (progress < 1) {
-          requestAnimationFrame(updateCount);
-        } else {
-          setCount(end); // Ensure we end at exact value
-        }
-      };
-
-      requestAnimationFrame(updateCount);
-    }, startDelay * 1000);
-
-    return () => clearTimeout(timeout);
-  }, [end, duration, startDelay]);
-
-  return count;
+  return isLoading ? 0 : count;
 };
 
 export const AnimatedStatCard = ({
@@ -96,7 +95,7 @@ export const AnimatedStatCard = ({
   isLoading = false,
 }: AnimatedStatCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const animatedValue = useCounter(isLoading ? 0 : value, 1.5, delay + 0.3);
+  const animatedValue = useCounter(value, isLoading);
 
   // Generate sparkle positions
   const sparkles = [

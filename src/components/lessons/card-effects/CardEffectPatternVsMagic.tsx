@@ -1,162 +1,240 @@
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { Wand2, Binary, Brain, Sparkles, ArrowRight } from "lucide-react";
-import { CardEffectProps } from "./index";
+'use client';
 
-export const CardEffectPatternVsMagic = ({ isActive = true, duration = 15 }: CardEffectProps) => {
-  const [phase, setPhase] = useState(0);
-  const [loopCount, setLoopCount] = useState(0);
-  const maxLoops = 2;
-  const totalPhases = 5;
-  const phaseTime = (duration * 1000) / totalPhases;
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wand2, Binary, Brain, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { CardEffectProps } from './types';
+
+/**
+ * ✨ PATTERN VS MAGIC
+ * Aula: Introdução à I.A.
+ * Conceito: I.A. não é mágica, é reconhecimento de padrões
+ * Ajuste X2: 11 cenas (~33 segundos)
+ */
+export function CardEffectPatternVsMagic({ isActive = true, duration = 33 }: CardEffectProps) {
+  const [scene, setScene] = useState(0);
+  const totalScenes = 11;
+  const sceneTime = (duration * 1000) / totalScenes;
 
   useEffect(() => {
-    if (!isActive || loopCount >= maxLoops) return;
+    if (!isActive) return;
+    setScene(0);
     const interval = setInterval(() => {
-      setPhase(prev => {
-        if (prev >= totalPhases - 1) {
-          setLoopCount(l => l + 1);
-          return 0;
-        }
-        return prev + 1;
-      });
-    }, phaseTime);
+      setScene(prev => (prev < totalScenes - 1 ? prev + 1 : prev));
+    }, sceneTime);
     return () => clearInterval(interval);
-  }, [isActive, loopCount, phaseTime]);
+  }, [isActive, sceneTime]);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative w-full min-h-[550px] sm:min-h-[600px] h-[75vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 p-4 sm:p-6 md:p-8 flex flex-col"
-    >
-      {/* Header */}
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="text-center mb-4 sm:mb-6"
-      >
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-purple-500/20 border border-purple-500/30 mb-3 sm:mb-4">
-          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
-          <span className="text-purple-300 text-xs sm:text-sm font-medium">Desmistificando</span>
-        </div>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-          <span className="text-pink-400">Magia</span> ou <span className="text-cyan-400">Padrões</span>?
-        </h2>
-      </motion.div>
+    <div className="relative w-full min-h-[520px] sm:min-h-[600px] h-[70vh] max-h-[700px] rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 p-4 sm:p-6 flex flex-col">
+      
+      {/* Glow effect */}
+      <motion.div
+        className="absolute inset-0 opacity-30"
+        animate={{
+          background: [
+            'radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.4) 0%, transparent 50%)',
+            'radial-gradient(circle at 70% 70%, rgba(6, 182, 212, 0.4) 0%, transparent 50%)',
+            'radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.4) 0%, transparent 50%)',
+          ]
+        }}
+        transition={{ duration: 8, repeat: Infinity }}
+      />
 
-      {/* Visual Comparison - Layout responsivo */}
-      <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
-        <div className="w-full max-w-md flex items-center justify-between gap-2 sm:gap-4">
-          {/* Magic Side (Myth) */}
+      <AnimatePresence mode="wait">
+        {/* Cenas 0-2: Título e intro */}
+        {scene <= 2 && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: phase >= 1 ? 1 : 0.3, 
-              scale: phase >= 1 ? 1 : 0.8,
-              filter: phase >= 3 ? 'blur(2px) grayscale(0.5)' : 'none'
-            }}
-            className="relative flex-1"
-          >
-            <div className="p-3 sm:p-4 md:p-6 rounded-xl bg-pink-500/10 border border-pink-500/20 text-center">
-              <motion.div
-                animate={phase < 3 ? { rotate: [0, 10, -10, 0] } : {}}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Wand2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-pink-400 mx-auto mb-2 sm:mb-3" />
-              </motion.div>
-              <h3 className="text-pink-400 font-bold mb-0.5 sm:mb-1 text-sm sm:text-base">"Magia"</h3>
-              <p className="text-pink-300/60 text-[10px] sm:text-xs">Mito popular</p>
-            </div>
-            
-            {phase >= 3 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <span className="text-red-400 text-2xl sm:text-3xl md:text-4xl font-bold">✗</span>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Center Arrow */}
-          <motion.div
+            key="intro"
             initial={{ opacity: 0 }}
-            animate={{ opacity: phase >= 2 ? 1 : 0 }}
-            className="flex-shrink-0"
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center text-center"
           >
             <motion.div
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1, repeat: Infinity }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 0.8 }}
+              className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-6 shadow-2xl"
             >
-              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white/60" />
+              <Brain className="w-10 h-10 text-white" />
             </motion.div>
+            
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl sm:text-3xl font-bold text-white mb-3"
+            >
+              <span className="text-pink-400">Magia</span> ou <span className="text-cyan-400">Padrões</span>?
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-purple-200 text-sm"
+            >
+              Desmistificando a I.A.
+            </motion.p>
           </motion.div>
+        )}
 
-          {/* Pattern Side (Reality) */}
+        {/* Cenas 3-5: Magia (mito) */}
+        {scene >= 3 && scene <= 5 && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: phase >= 2 ? 1 : 0.3, 
-              scale: phase >= 2 ? 1 : 0.8,
-              filter: phase >= 3 ? 'none' : 'grayscale(0.3)'
-            }}
-            className="relative flex-1"
+            key="magic"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
           >
-            <motion.div 
-              className="p-3 sm:p-4 md:p-6 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center"
-              animate={phase >= 3 ? { 
-                boxShadow: ['0 0 0px #06b6d4', '0 0 20px #06b6d4', '0 0 0px #06b6d4']
-              } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
+            <motion.div
+              className="p-6 rounded-xl bg-pink-500/10 border border-pink-500/20 text-center mb-4"
+              animate={scene >= 4 ? { filter: 'blur(2px) grayscale(0.5)' } : {}}
             >
-              <Binary className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-cyan-400 mx-auto mb-2 sm:mb-3" />
-              <h3 className="text-cyan-400 font-bold mb-0.5 sm:mb-1 text-sm sm:text-base">Padrões</h3>
-              <p className="text-cyan-300/60 text-[10px] sm:text-xs">Realidade científica</p>
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Wand2 className="w-12 h-12 text-pink-400 mx-auto mb-3" />
+              </motion.div>
+              <h3 className="text-pink-400 font-bold text-lg mb-1">"Magia"</h3>
+              <p className="text-pink-300/60 text-xs">Mito popular</p>
             </motion.div>
-
-            {phase >= 3 && (
+            
+            {scene >= 5 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2"
+                className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center"
               >
-                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <span className="text-white text-sm sm:text-base md:text-lg">✓</span>
-                </div>
+                <span className="text-red-400 text-3xl font-bold">✗</span>
               </motion.div>
             )}
           </motion.div>
-        </div>
-      </div>
+        )}
 
-      {/* Explanation */}
-      {phase >= 4 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3 sm:mt-4 md:mt-6 p-3 sm:p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center"
-        >
-          <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 mx-auto mb-1 sm:mb-2" />
-          <p className="text-white font-semibold text-sm sm:text-base">I.A. reconhece padrões em dados</p>
-          <p className="text-cyan-300 text-[10px] sm:text-xs md:text-sm">Não é mágica - é matemática e estatística avançada</p>
-        </motion.div>
-      )}
+        {/* Cenas 6-8: Padrões (realidade) */}
+        {scene >= 6 && scene <= 8 && (
+          <motion.div
+            key="patterns"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <motion.div 
+              className="p-6 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center mb-4"
+              animate={{ 
+                boxShadow: ['0 0 0px #06b6d4', '0 0 30px #06b6d4', '0 0 0px #06b6d4']
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Binary className="w-12 h-12 text-cyan-400 mx-auto mb-3" />
+              <h3 className="text-cyan-400 font-bold text-lg mb-1">Padrões</h3>
+              <p className="text-cyan-300/60 text-xs">Realidade científica</p>
+            </motion.div>
 
-      {/* Progress */}
-      <div className="flex justify-center gap-1.5 sm:gap-2 mt-3 sm:mt-4">
-        {Array.from({ length: totalPhases }).map((_, i) => (
+            {scene >= 7 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"
+              >
+                <CheckCircle className="w-6 h-6 text-white" />
+              </motion.div>
+            )}
+            
+            {scene >= 8 && (
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 text-cyan-300 text-sm text-center"
+              >
+                I.A. encontra padrões em dados
+              </motion.p>
+            )}
+          </motion.div>
+        )}
+
+        {/* Cena 9: Comparação visual */}
+        {scene === 9 && (
+          <motion.div
+            key="compare"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex items-center justify-center"
+          >
+            <div className="flex items-center gap-6">
+              <div className="text-center opacity-40">
+                <Wand2 className="w-10 h-10 text-pink-400 mx-auto mb-2" />
+                <span className="text-pink-300 text-xs">Magia</span>
+              </div>
+              
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <ArrowRight className="w-8 h-8 text-white/60" />
+              </motion.div>
+              
+              <div className="text-center">
+                <motion.div
+                  animate={{ 
+                    boxShadow: ['0 0 0px #06b6d4', '0 0 20px #06b6d4', '0 0 0px #06b6d4']
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="w-14 h-14 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-2"
+                >
+                  <Binary className="w-7 h-7 text-cyan-400" />
+                </motion.div>
+                <span className="text-cyan-300 text-xs">Padrões</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Cena 10: Mensagem final */}
+        {scene >= 10 && (
+          <motion.div
+            key="final"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: ['0 0 0px rgba(6, 182, 212, 0)', '0 0 50px rgba(6, 182, 212, 0.5)', '0 0 0px rgba(6, 182, 212, 0)']
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="p-6 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-center max-w-sm"
+            >
+              <Sparkles className="w-10 h-10 text-cyan-400 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-white mb-2">I.A. reconhece padrões em dados</h3>
+              <p className="text-cyan-300 text-sm">
+                Não é mágica - é matemática e estatística avançada
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress indicator */}
+      <div className="flex justify-center gap-1.5 mt-4">
+        {Array.from({ length: totalScenes }).map((_, i) => (
           <motion.div
             key={i}
-            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${i <= phase ? 'bg-purple-400' : 'bg-purple-800'}`}
-            animate={{ scale: i === phase ? [1, 1.3, 1] : 1 }}
-            transition={{ duration: 0.5 }}
+            className={`h-1.5 rounded-full ${i <= scene ? 'bg-purple-400' : 'bg-slate-700'}`}
+            initial={{ width: 6 }}
+            animate={{ width: i === scene ? 20 : 6 }}
+            transition={{ duration: 0.3 }}
           />
         ))}
       </div>
-    </motion.div>
+    </div>
   );
-};
+}
+
+export default CardEffectPatternVsMagic;

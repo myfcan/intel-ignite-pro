@@ -4,23 +4,27 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlaygroundRealChat } from './PlaygroundRealChat';
-import {
+import { 
+  Eye, 
+  Settings2, 
+  Rocket,
+  Layers,
   X,
   ArrowRight,
   ArrowLeft,
   Sparkles,
   Copy,
   Check,
-  Rocket
+  Lightbulb
 } from 'lucide-react';
 
 // ============================================================================
-// CONTRATO DE DADOS V3 - TEMPLATE GENÉRICO
+// CONTRATO DE DADOS V3
 // ============================================================================
 export interface PlaygroundExampleDataV3 {
   title: string;
   context: string;
-  requirements: string[]; // Formato: "Label: [opção1 | opção2 | opção3 | outro]"
+  requirements: string[];
   examplePrompt: string;
   exampleOutput?: string;
 }
@@ -33,27 +37,60 @@ interface PlaygroundBridgeV3Props {
 }
 
 // ============================================================================
-// INTERFACE PARA REQUIREMENT PARSEADO
+// PARSER DE REQUIREMENTS V3 - REGRA ABSOLUTA
+// Formato: "Label: [opção 1 | opção 2 | opção 3 | outro]"
+// - Cada item separado por | vira um chip
+// - Se existir "outro", abre campo de texto quando selecionado
 // ============================================================================
 interface ParsedRequirement {
   label: string;
-  options: string[];
-  originalText: string; // Para buscar no examplePrompt
+  slot: string;
+  chips: string[];
+  hasOther: boolean;
+}
+
+function parseRequirement(req: string): ParsedRequirement {
+  // Formato: "Label: [opção 1 | opção 2 | outro]"
+  const colonIndex = req.indexOf(':');
+  
+  if (colonIndex === -1) {
+    return { label: req, slot: '', chips: [], hasOther: false };
+  }
+  
+  const label = req.slice(0, colonIndex).trim();
+  const rest = req.slice(colonIndex + 1).trim();
+  
+  // Extrai o conteúdo dentro dos colchetes
+  const bracketMatch = rest.match(/\[([^\]]+)\]/);
+  
+  if (!bracketMatch) {
+    return { label, slot: rest, chips: [], hasOther: false };
+  }
+  
+  const slotContent = bracketMatch[1];
+  const slot = `[${slotContent}]`;
+  
+  // Divide por | (pipe) para extrair chips
+  const rawChips = slotContent
+    .split('|')
+    .map(s => s.trim())
+    .filter(Boolean);
+  
+  // Verifica se tem "outro" e separa
+  const hasOther = rawChips.some(c => c.toLowerCase() === 'outro');
+  const chips = rawChips.filter(c => c.toLowerCase() !== 'outro');
+  
+  return { label, slot, chips, hasOther };
 }
 
 /**
- * 🚀 PLAYGROUND BRIDGE V3 - TEMPLATE GENÉRICO
- *
- * ESTRUTURA FIXA (nunca muda):
- * - 4 passos em wizard, sem scroll
- * - Step 1: I DO - Veja o exemplo
- * - Step 2: WE DO (parte 1) - Escolha (SOMENTE chips)
- * - Step 3: WE DO (parte 2) - Ajuste (chips + inputs opcionais)
- * - Step 4: YOU DO - Adapte e teste
- *
- * DADOS DINÂMICOS (vêm do JSON):
- * - title, context, requirements[], examplePrompt, exampleOutput
- * - Cada requirements[i] no formato: "Label: [opção1 | opção2 | opção3 | outro]"
+ * 🚀 PLAYGROUND BRIDGE V3 - WIZARD DE 4 PASSOS SEM SCROLL
+ * 
+ * REGRAS FIXAS:
+ * - Step 1: I DO - VEJA O EXEMPLO
+ * - Step 2: WE DO Part 1 - SOMENTE CHIPS (zero digitação)
+ * - Step 3: WE DO Part 2 - Chips + campos de texto opcionais
+ * - Step 4: YOU DO - ADAPTE E TESTE (prompt final)
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -65,9 +102,16 @@ export function PlaygroundBridgeV3({
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
 
-  // Estado dinâmico: selections[index] = valor selecionado
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const [customValues, setCustomValues] = useState<Record<number, string>>({});
+  // Parse dos requirements do JSON
+  const parsedRequirements = useMemo(() => {
+    if (!playgroundExample?.requirements) return [];
+    return playgroundExample.requirements.map(parseRequirement);
+  }, [playgroundExample?.requirements]);
+
+  // Estado para cada requirement (4 campos)
+  // Índices 0,1 = Passo 2 (só chips)
+  // Índices 2,3 = Passo 3 (chips ou texto)
+  const [values, setValues] = useState<Record<number, string>>({});
 
   if (!playgroundExample) {
     return (
@@ -78,98 +122,30 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // ============================================================================
-  // PARSER GENÉRICO - Extrai label e opções de cada requirement
-  // ============================================================================
-  const parseRequirement = useCallback((req: string): ParsedRequirement => {
-    const colonIndex = req.indexOf(':');
-    if (colonIndex === -1) {
-      return { label: req, options: [], originalText: req };
-    }
+  // Handler para selecionar chip
+  const handleChipSelect = (reqIndex: number, value: string) => {
+    setValues(prev => ({ ...prev, [reqIndex]: value }));
+  };
 
-    const label = req.substring(0, colonIndex).trim();
+  // Handler para campo de texto (só usado no Passo 3)
+  const handleTextChange = (reqIndex: number, value: string) => {
+    setValues(prev => ({ ...prev, [reqIndex]: value }));
+  };
 
-    const bracketStart = req.indexOf('[');
-    const bracketEnd = req.indexOf(']');
-
-    if (bracketStart === -1 || bracketEnd === -1) {
-      return { label, options: [], originalText: req };
-    }
-
-    const optionsStr = req.substring(bracketStart + 1, bracketEnd);
-    const options = optionsStr.split('|').map(opt => opt.trim()).filter(opt => opt.length > 0);
-
-    return { label, options, originalText: req };
-  }, []);
-
-  // Parse todos os requirements
-  const parsedRequirements = useMemo(() => {
-    return playgroundExample.requirements.map(req => parseRequirement(req));
-  }, [playgroundExample.requirements, parseRequirement]);
-
-  // ============================================================================
-  // DISTRIBUIÇÃO DOS REQUIREMENTS
-  // ============================================================================
-  const step2Requirements = parsedRequirements.slice(0, 2); // requirements[0] e [1]
-  const step3Requirements = parsedRequirements.slice(2, 4); // requirements[2] e [3]
-
-  // ============================================================================
-  // MONTA O PROMPT FINAL COM AS ESCOLHAS
-  // ============================================================================
+  // Monta o prompt substituindo os slots pelos valores escolhidos
   const buildPrompt = useCallback(() => {
     let prompt = playgroundExample.examplePrompt;
-
+    
     parsedRequirements.forEach((req, index) => {
-      const selectedOption = selections[index];
-      let finalValue = '';
-
-      if (selectedOption) {
-        // Se selecionou "outro", usar o valor customizado
-        if (selectedOption.toLowerCase() === 'outro') {
-          finalValue = customValues[index] || '';
-        } else {
-          finalValue = selectedOption;
-        }
-      }
-
-      // Tentar encontrar o padrão no prompt
-      // Buscar por variações: [label], [label completo], etc.
-      if (finalValue) {
-        // Criar regex para encontrar o placeholder
-        const labelLower = req.label.toLowerCase();
-
-        // Padrão 1: Buscar exatamente [label]
-        const pattern1 = new RegExp(`\\[${req.label}\\]`, 'gi');
-        prompt = prompt.replace(pattern1, finalValue);
-
-        // Padrão 2: Buscar variações comuns do label
-        const labelWords = req.label.split(' ').filter(w => w.length > 3);
-        labelWords.forEach(word => {
-          const pattern = new RegExp(`\\[[^\\]]*${word}[^\\]]*\\]`, 'gi');
-          prompt = prompt.replace(pattern, finalValue);
-        });
+      const value = values[index] || '';
+      if (value && req.slot) {
+        // Substitui o slot original pelo valor escolhido mantendo colchetes
+        prompt = prompt.replace(req.slot, `[${value}]`);
       }
     });
-
+    
     return prompt;
-  }, [playgroundExample.examplePrompt, parsedRequirements, selections, customValues]);
-
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
-  const handleSelectOption = (reqIndex: number, option: string) => {
-    setSelections(prev => ({
-      ...prev,
-      [reqIndex]: prev[reqIndex] === option ? '' : option
-    }));
-  };
-
-  const handleCustomValueChange = (reqIndex: number, value: string) => {
-    setCustomValues(prev => ({
-      ...prev,
-      [reqIndex]: value
-    }));
-  };
+  }, [playgroundExample.examplePrompt, parsedRequirements, values]);
 
   const handleGoToPlayground = useCallback(() => {
     setPhase('playground');
@@ -181,145 +157,6 @@ export function PlaygroundBridgeV3({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ============================================================================
-  // COMPONENTES DE UI
-  // ============================================================================
-  const SelectChip = ({
-    label,
-    selected,
-    onClick
-  }: {
-    label: string;
-    selected: boolean;
-    onClick: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-2.5 py-1.5 text-xs rounded-full border transition-all duration-150 ${
-        selected
-          ? 'bg-violet-600 text-white border-violet-600'
-          : 'bg-white dark:bg-slate-800 text-foreground/80 border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
-  // ============================================================================
-  // RENDERIZA UM GRUPO DE REQUIREMENT (label + chips)
-  // ============================================================================
-  const renderRequirementGroup = (req: ParsedRequirement, reqIndex: number, showInputForOutro: boolean = false) => {
-    const selectedOption = selections[reqIndex] || '';
-    const isOutroSelected = selectedOption.toLowerCase() === 'outro';
-
-    return (
-      <div key={reqIndex}>
-        <p className="text-[11px] font-semibold text-foreground/70 mb-1.5">{req.label}:</p>
-        <div className="flex flex-wrap gap-1.5">
-          {req.options.map((option) => (
-            <SelectChip
-              key={option}
-              label={option}
-              selected={selectedOption === option}
-              onClick={() => handleSelectOption(reqIndex, option)}
-            />
-          ))}
-        </div>
-        {/* Mostrar input SOMENTE se showInputForOutro=true E "outro" está selecionado */}
-        {showInputForOutro && isOutroSelected && (
-          <Input
-            value={customValues[reqIndex] || ''}
-            onChange={(e) => handleCustomValueChange(reqIndex, e.target.value)}
-            placeholder="Digite sua opção..."
-            className="mt-1.5 h-8 text-xs"
-          />
-        )}
-      </div>
-    );
-  };
-
-  // ============================================================================
-  // RENDERIZA PROMPT COM HIGHLIGHTS
-  // ============================================================================
-  const renderPromptWithHighlights = () => {
-    const parts = playgroundExample.examplePrompt.split(/(\[[^\]]+\])/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith('[') && part.endsWith(']')) {
-        // Verificar se esse colchete foi substituído
-        let wasReplaced = false;
-        parsedRequirements.forEach((req, reqIndex) => {
-          const selectedOption = selections[reqIndex];
-          if (selectedOption) {
-            const finalValue = selectedOption.toLowerCase() === 'outro'
-              ? customValues[reqIndex]
-              : selectedOption;
-
-            if (finalValue && part.toLowerCase().includes(req.label.toLowerCase().split(' ')[0])) {
-              wasReplaced = true;
-            }
-          }
-        });
-
-        if (wasReplaced) {
-          // Substituir pelo valor real
-          let replaced = part;
-          parsedRequirements.forEach((req, reqIndex) => {
-            const selectedOption = selections[reqIndex];
-            if (selectedOption) {
-              const finalValue = selectedOption.toLowerCase() === 'outro'
-                ? customValues[reqIndex]
-                : selectedOption;
-
-              if (finalValue) {
-                const labelWords = req.label.toLowerCase().split(' ');
-                const partLower = part.toLowerCase();
-                if (labelWords.some(word => partLower.includes(word))) {
-                  replaced = finalValue;
-                }
-              }
-            }
-          });
-
-          return (
-            <span
-              key={idx}
-              className="px-1 rounded font-semibold bg-violet-200 text-violet-900 dark:bg-violet-500/40 dark:text-violet-200"
-            >
-              {replaced}
-            </span>
-          );
-        }
-
-        // Não foi substituído - mostrar colchete em amarelo
-        return (
-          <span
-            key={idx}
-            className="px-0.5 rounded font-medium bg-amber-200/80 text-amber-900 dark:bg-amber-500/30 dark:text-amber-300"
-          >
-            {part}
-          </span>
-        );
-      }
-      return <span key={idx}>{part}</span>;
-    });
-  };
-
-  const getStepInfo = (s: number) => {
-    switch(s) {
-      case 1: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
-      case 2: return { icon: '🧩', label: 'ESCOLHA SEU CASO', color: 'blue' };
-      case 3: return { icon: '📚', label: 'AJUSTE OS DETALHES', color: 'amber' };
-      case 4: return { icon: '🚀', label: 'ADAPTE E TESTE', color: 'purple' };
-      default: return { icon: '👁', label: 'VEJA O EXEMPLO', color: 'emerald' };
-    }
-  };
-
-  const stepInfo = getStepInfo(step);
-
-  // ============================================================================
-  // RENDER: PLAYGROUND
-  // ============================================================================
   if (phase === 'playground') {
     return (
       <motion.div
@@ -336,11 +173,94 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // ============================================================================
-  // RENDER: MODAL (4 STEPS)
-  // ============================================================================
+  // Renderiza chips para um requirement
+  const ChipButton = ({ 
+    label, 
+    selected, 
+    onClick 
+  }: { 
+    label: string; 
+    selected: boolean; 
+    onClick: () => void 
+  }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
+        selected
+          ? 'bg-violet-600 text-white border-violet-600 shadow-md'
+          : 'bg-white dark:bg-slate-800 text-foreground/70 border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  // Estado para controlar quem selecionou "outro"
+  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
+  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
+
+  // Handler para "outro" - abre campo de texto
+  const handleOtherClick = (reqIndex: number) => {
+    setShowOtherInput(prev => ({ ...prev, [reqIndex]: true }));
+    setValues(prev => ({ ...prev, [reqIndex]: '' }));
+  };
+
+  // Handler para valor do campo "outro"
+  const handleOtherChange = (reqIndex: number, value: string) => {
+    setOtherValues(prev => ({ ...prev, [reqIndex]: value }));
+    setValues(prev => ({ ...prev, [reqIndex]: value }));
+  };
+
+  // Renderiza linha de chips para um requirement (chips + "outro" se houver)
+  const renderChipsWithOther = (reqIndex: number) => {
+    const req = parsedRequirements[reqIndex];
+    if (!req) return null;
+
+    const currentValue = values[reqIndex] || '';
+    const isOtherSelected = showOtherInput[reqIndex];
+
+    return (
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-foreground/80">
+          {req.label}
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {req.chips.map((chip) => (
+            <ChipButton
+              key={chip}
+              label={chip}
+              selected={currentValue === chip && !isOtherSelected}
+              onClick={() => {
+                setShowOtherInput(prev => ({ ...prev, [reqIndex]: false }));
+                handleChipSelect(reqIndex, chip);
+              }}
+            />
+          ))}
+          {req.hasOther && (
+            <ChipButton
+              label="outro"
+              selected={isOtherSelected}
+              onClick={() => handleOtherClick(reqIndex)}
+            />
+          )}
+        </div>
+        {/* Campo de texto aparece quando "outro" é selecionado */}
+        {isOtherSelected && (
+          <Input
+            type="text"
+            placeholder="Digite sua opção..."
+            value={otherValues[reqIndex] || ''}
+            onChange={(e) => handleOtherChange(reqIndex, e.target.value)}
+            className="text-sm h-9 mt-2"
+            autoFocus
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div
+    <div 
       data-testid="playground-bridge-v3"
       className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-3"
     >
@@ -351,7 +271,7 @@ export function PlaygroundBridgeV3({
         className="w-full max-w-md"
       >
         <Card className="shadow-2xl border-0 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
-
+          
           {/* HEADER */}
           <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 py-2.5 px-4">
             <div className="flex items-center justify-between">
@@ -363,169 +283,237 @@ export function PlaygroundBridgeV3({
               </div>
               <button
                 onClick={onSkip}
-                className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"
-                aria-label="Fechar"
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-white/80" />
               </button>
             </div>
 
             {/* Progress dots - 4 steps */}
-            <div className="flex justify-center gap-2 mt-2">
+            <div className="flex justify-center gap-1.5 mt-2">
               {[1, 2, 3, 4].map((s) => (
                 <div
                   key={s}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    s === step ? 'w-6 bg-white' : s < step ? 'w-3 bg-white/60' : 'w-3 bg-white/30'
+                    s === step 
+                      ? 'w-6 bg-white' 
+                      : s < step 
+                        ? 'w-2 bg-white/60' 
+                        : 'w-2 bg-white/30'
                   }`}
                 />
               ))}
             </div>
           </div>
 
-          {/* CONTEÚDO DO STEP */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="p-4"
-            >
-              {/* Badge + Título do step */}
-              <div className="flex items-center gap-2.5 mb-3">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                  step === 1 ? 'bg-emerald-500' :
-                  step === 2 ? 'bg-blue-500' :
-                  step === 3 ? 'bg-amber-500' :
-                  'bg-purple-500'
-                }`}>
-                  {step}
-                </span>
-                <span className={`text-xs font-bold uppercase tracking-wide ${
-                  step === 1 ? 'text-emerald-700 dark:text-emerald-400' :
-                  step === 2 ? 'text-blue-700 dark:text-blue-400' :
-                  step === 3 ? 'text-amber-700 dark:text-amber-400' :
-                  'text-purple-700 dark:text-purple-400'
-                }`}>
-                  {stepInfo.icon} {stepInfo.label}
-                </span>
-              </div>
-
-              {/* STEP 1: I DO - Veja o exemplo */}
+          {/* CONTENT - SEM SCROLL */}
+          <div className="p-4">
+            <AnimatePresence mode="wait">
+              
+              {/* ================================================================ */}
+              {/* STEP 1: VEJA O EXEMPLO (I DO) */}
+              {/* ================================================================ */}
               {step === 1 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-foreground leading-relaxed">
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-3"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 tracking-wide uppercase">
+                      Veja o Exemplo
+                    </span>
+                  </div>
+
+                  {/* Context text - dinâmico do JSON */}
+                  <p className="text-sm text-foreground/80 leading-relaxed">
                     {playgroundExample.context}
                   </p>
 
+                  {/* Example output */}
                   {playgroundExample.exampleOutput && (
-                    <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg p-2.5">
-                      <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">
-                        Exemplo de resultado:
-                      </p>
-                      <p className="text-xs text-foreground/80 italic leading-snug">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Lightbulb className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase">
+                          Exemplo de resultado
+                        </span>
+                      </div>
+                      <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed whitespace-pre-line">
                         {playgroundExample.exampleOutput}
                       </p>
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
 
-              {/* STEP 2: WE DO (parte 1) - SOMENTE CHIPS */}
+              {/* ================================================================ */}
+              {/* STEP 2: ESCOLHA SEU CASO (WE DO - Parte 1) */}
+              {/* REGRA: SOMENTE CHIPS - ZERO INPUTS */}
+              {/* Usa requirements[0] e requirements[1] */}
+              {/* ================================================================ */}
               {step === 2 && (
-                <div className="space-y-3">
-                  {step2Requirements.map((req, localIndex) => {
-                    const globalIndex = localIndex; // requirements[0] e requirements[1]
-                    return renderRequirementGroup(req, globalIndex, false); // false = NÃO mostrar input
-                  })}
-                </div>
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                      <Settings2 className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400 tracking-wide uppercase">
+                      Escolha seu Caso
+                    </span>
+                  </div>
+
+                  {/* Linha de chips 1: requirements[0] */}
+                  {renderChipsWithOther(0)}
+
+                  {/* Linha de chips 2: requirements[1] */}
+                  {renderChipsWithOther(1)}
+                </motion.div>
               )}
 
-              {/* STEP 3: WE DO (parte 2) - Chips + inputs opcionais */}
+              {/* ================================================================ */}
+              {/* STEP 3: COMPLETE OS DETALHES (WE DO - Parte 2) */}
+              {/* Chips + 1 ou 2 campos de texto curtos se necessário */}
+              {/* Usa requirements[2] e requirements[3] */}
+              {/* ================================================================ */}
               {step === 3 && (
-                <div className="space-y-3">
-                  {step3Requirements.map((req, localIndex) => {
-                    const globalIndex = localIndex + 2; // requirements[2] e requirements[3]
-                    return renderRequirementGroup(req, globalIndex, true); // true = mostrar input se "outro"
-                  })}
-                </div>
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                      <Layers className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400 tracking-wide uppercase">
+                      Complete os Detalhes
+                    </span>
+                  </div>
+
+                  {/* Campo 3: requirements[2] */}
+                  {renderChipsWithOther(2)}
+
+                  {/* Campo 4: requirements[3] */}
+                  {renderChipsWithOther(3)}
+                </motion.div>
               )}
 
-              {/* STEP 4: YOU DO - Adapte e teste */}
+              {/* ================================================================ */}
+              {/* STEP 4: ADAPTE E TESTE (YOU DO) */}
+              {/* ================================================================ */}
               {step === 4 && (
-                <div className="space-y-3">
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-3"
+                >
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                      <Rocket className="w-3.5 h-3.5 text-violet-600" />
+                    </div>
+                    <span className="text-xs font-bold text-violet-700 dark:text-violet-400 tracking-wide uppercase">
+                      Adapte e Teste
+                    </span>
+                  </div>
+
+                  {/* Instruction */}
                   <p className="text-xs text-foreground/70">
                     Confira o prompt abaixo. Se quiser, ajuste os colchetes com seu caso real e depois teste no Playground.
                   </p>
 
-                  <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3">
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {renderPromptWithHighlights()}
+                  {/* Prompt box */}
+                  <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    <p className="text-xs text-foreground/90 leading-relaxed font-mono">
+                      {buildPrompt()}
                     </p>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopy}
-                    className="w-full text-xs"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1.5 text-green-600" />
-                        Copiado!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1.5" />
-                        Copiar prompt
-                      </>
-                    )}
-                  </Button>
-                </div>
+                  {/* Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopy}
+                      className="flex-1 h-9 text-xs"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1.5" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1.5" />
+                          Copiar prompt
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleGoToPlayground}
+                      size="sm"
+                      className="flex-1 h-9 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                    >
+                      <Rocket className="w-3.5 h-3.5 mr-1.5" />
+                      Testar no Playground
+                    </Button>
+                  </div>
+                </motion.div>
               )}
-            </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+          </div>
 
-          {/* FOOTER com navegação */}
-          <div className="px-4 pb-4 pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            {step > 1 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3 | 4)}
-                className="text-xs order-2 sm:order-1"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                Voltar
-              </Button>
-            ) : (
-              <div className="hidden sm:block" />
-            )}
+          {/* FOOTER - Navigation */}
+          <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center">
+              {step > 1 ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3 | 4)}
+                  className="text-xs text-foreground/60 hover:text-foreground"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                  Voltar
+                </Button>
+              ) : (
+                <div />
+              )}
 
-            <div className="flex-1 hidden sm:block" />
-
-            {step < 4 ? (
-              <Button
-                onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3 | 4)}
-                size="sm"
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-5 order-1 sm:order-2"
-              >
-                Próximo
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleGoToPlayground}
-                size="sm"
-                className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold px-4 order-1 sm:order-2 w-full sm:w-auto"
-              >
-                <Rocket className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>Testar no Playground</span>
-              </Button>
-            )}
+              {step < 4 && (
+                <Button
+                  onClick={() => setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
+                  size="sm"
+                  className="h-9 px-4 text-xs bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                >
+                  Próximo
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
       </motion.div>

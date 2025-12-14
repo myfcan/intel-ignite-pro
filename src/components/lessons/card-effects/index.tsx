@@ -168,6 +168,84 @@ import { CardEffectVisualIdentity } from './CardEffectVisualIdentity';
 import { CardEffectProjectPicker } from './CardEffectProjectPicker';
 import { CardEffectMiniCourse } from './CardEffectMiniCourse';
 import { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
+import { CardEffectCoauthorRole } from './CardEffectCoauthorRole';
+import { CardEffectCoreTriangle } from './CardEffectCoreTriangle';
+
+// ============================================================
+// AULA 9 (REAL DB) - Trabalho, renda, segurança e limites da I.A.
+// ============================================================
+import CardEffectWorkShift from './CardEffectWorkShift';
+import CardEffectInfoFlood from './CardEffectInfoFlood';
+import CardEffectValueShift from './CardEffectValueShift';
+// CardEffectTimeSaver já importado na AULA 3
+import CardEffectQualityUpgrade from './CardEffectQualityUpgrade';
+import CardEffectNewOffers from './CardEffectNewOffers';
+import CardEffectExtraIncomePaths from './CardEffectExtraIncomePaths';
+import CardEffectAiInTheBackground from './CardEffectAiInTheBackground';
+import CardEffectProblemSolverIdentity from './CardEffectProblemSolverIdentity';
+import CardEffectRoleMapping from './CardEffectRoleMapping';
+import CardEffectTaskHighlighter from './CardEffectTaskHighlighter';
+import CardEffectExperimentRoadmap from './CardEffectExperimentRoadmap';
+import CardEffectDataSafety from './CardEffectDataSafety';
+import CardEffectHumanCheck from './CardEffectHumanCheck';
+import CardEffectResponsibilityLine from './CardEffectResponsibilityLine';
+
+// ============================================================
+// AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+// ============================================================
+import CardEffectDeepContentIntro from './CardEffectDeepContentIntro';
+import CardEffectStartFromZero from './CardEffectStartFromZero';
+import CardEffectMemoryStack from './CardEffectMemoryStack';
+import CardEffectThreeDecisions from './CardEffectThreeDecisions';
+import CardEffectModuleMap from './CardEffectModuleMap';
+import CardEffectObjectiveLens from './CardEffectObjectiveLens';
+import CardEffectSummaryBooster from './CardEffectSummaryBooster';
+import CardEffectSupportMaterials from './CardEffectSupportMaterials';
+import CardEffectFirstVersion from './CardEffectFirstVersion';
+import CardEffectToolOrchestrator from './CardEffectToolOrchestrator';
+import CardEffectVisualCreator from './CardEffectVisualCreator';
+import CardEffectMediaExpander from './CardEffectMediaExpander';
+import CardEffectProductMindset from './CardEffectProductMindset';
+import CardEffectAssetLibrary from './CardEffectAssetLibrary';
+import CardEffectBeyondSelling from './CardEffectBeyondSelling';
+
+// ============================================================
+// AULA 12 - Vídeos simples com I.A.
+// ============================================================
+import CardEffectVideoFeedExplosion from './CardEffectVideoFeedExplosion';
+import CardEffectVideoConnection from './CardEffectVideoConnection';
+import CardEffectBlankScreenBlock from './CardEffectBlankScreenBlock';
+import CardEffectThreeVideoBlocks from './CardEffectThreeVideoBlocks';
+import CardEffectHookPower from './CardEffectHookPower';
+import CardEffectCallToAction from './CardEffectCallToAction';
+import CardEffectIdeaToScript from './CardEffectIdeaToScript';
+import CardEffectThreeVariations from './CardEffectThreeVariations';
+import CardEffectPartnership from './CardEffectPartnership';
+import CardEffectVideoStarter from './CardEffectVideoStarter';
+import CardEffectAiTextEngine from './CardEffectAiTextEngine';
+import CardEffectProductionBasics from './CardEffectProductionBasics';
+import CardEffectScriptGuide from './CardEffectScriptGuide';
+import CardEffectShortBlocks from './CardEffectShortBlocks';
+import CardEffectConsistencyWins from './CardEffectConsistencyWins';
+
+// ============================================================
+// AULA 11 - Planilhas, organização e automação leve com I.A.
+// ============================================================
+import CardEffectFearBreaker from './CardEffectFearBreaker';
+import CardEffectQaTable from './CardEffectQaTable';
+import CardEffectAiAssistant from './CardEffectAiAssistant';
+import CardEffectThreeQuestions from './CardEffectThreeQuestions';
+import CardEffectMapVisual from './CardEffectMapVisual';
+import CardEffectProblemToStructure from './CardEffectProblemToStructure';
+import CardEffectFinanceExample from './CardEffectFinanceExample';
+import CardEffectSalesExample from './CardEffectSalesExample';
+import CardEffectTasksExample from './CardEffectTasksExample';
+import CardEffectToolCombo from './CardEffectToolCombo';
+import CardEffectSimulatorCall from './CardEffectSimulatorCall';
+import CardEffectYouCommand from './CardEffectYouCommand';
+import CardEffectHabitBuilder from './CardEffectHabitBuilder';
+import CardEffectPatternVision from './CardEffectPatternVision';
+import CardEffectPanelDecision from './CardEffectPanelDecision';
 
 // Re-exportar componentes - AULA 1 (Fundamentos)
 export { CardEffectHypeDetector } from './CardEffectHypeDetector';
@@ -318,6 +396,72 @@ export { CardEffectProjectPicker } from './CardEffectProjectPicker';
 export { CardEffectMiniCourse } from './CardEffectMiniCourse';
 export { CardEffectLeverageMindset } from './CardEffectLeverageMindset';
 
+// Re-exportar componentes - AULA 10 (Conteúdo Profundo: Experiência em Curso Real)
+export { default as CardEffectDeepContentIntro } from './CardEffectDeepContentIntro';
+export { default as CardEffectStartFromZero } from './CardEffectStartFromZero';
+export { default as CardEffectMemoryStack } from './CardEffectMemoryStack';
+export { default as CardEffectThreeDecisions } from './CardEffectThreeDecisions';
+export { default as CardEffectModuleMap } from './CardEffectModuleMap';
+export { default as CardEffectObjectiveLens } from './CardEffectObjectiveLens';
+export { default as CardEffectSummaryBooster } from './CardEffectSummaryBooster';
+export { default as CardEffectSupportMaterials } from './CardEffectSupportMaterials';
+export { default as CardEffectFirstVersion } from './CardEffectFirstVersion';
+export { default as CardEffectToolOrchestrator } from './CardEffectToolOrchestrator';
+export { default as CardEffectVisualCreator } from './CardEffectVisualCreator';
+export { default as CardEffectMediaExpander } from './CardEffectMediaExpander';
+export { default as CardEffectProductMindset } from './CardEffectProductMindset';
+export { default as CardEffectAssetLibrary } from './CardEffectAssetLibrary';
+export { default as CardEffectBeyondSelling } from './CardEffectBeyondSelling';
+
+// Re-exportar componentes - AULA 12 (Vídeos simples)
+export { default as CardEffectVideoFeedExplosion } from './CardEffectVideoFeedExplosion';
+export { default as CardEffectVideoConnection } from './CardEffectVideoConnection';
+export { default as CardEffectBlankScreenBlock } from './CardEffectBlankScreenBlock';
+export { default as CardEffectThreeVideoBlocks } from './CardEffectThreeVideoBlocks';
+export { default as CardEffectHookPower } from './CardEffectHookPower';
+export { default as CardEffectCallToAction } from './CardEffectCallToAction';
+export { default as CardEffectIdeaToScript } from './CardEffectIdeaToScript';
+export { default as CardEffectThreeVariations } from './CardEffectThreeVariations';
+export { default as CardEffectPartnership } from './CardEffectPartnership';
+export { default as CardEffectVideoStarter } from './CardEffectVideoStarter';
+export { default as CardEffectAiTextEngine } from './CardEffectAiTextEngine';
+export { default as CardEffectProductionBasics } from './CardEffectProductionBasics';
+export { default as CardEffectScriptGuide } from './CardEffectScriptGuide';
+export { default as CardEffectShortBlocks } from './CardEffectShortBlocks';
+export { default as CardEffectConsistencyWins } from './CardEffectConsistencyWins';
+
+// Re-exportar componentes - AULA 9 (REAL DB) - Trabalho, renda, segurança
+export { default as CardEffectWorkShift } from './CardEffectWorkShift';
+export { default as CardEffectInfoFlood } from './CardEffectInfoFlood';
+export { default as CardEffectValueShift } from './CardEffectValueShift';
+export { default as CardEffectQualityUpgrade } from './CardEffectQualityUpgrade';
+export { default as CardEffectNewOffers } from './CardEffectNewOffers';
+export { default as CardEffectExtraIncomePaths } from './CardEffectExtraIncomePaths';
+export { default as CardEffectAiInTheBackground } from './CardEffectAiInTheBackground';
+export { default as CardEffectProblemSolverIdentity } from './CardEffectProblemSolverIdentity';
+export { default as CardEffectRoleMapping } from './CardEffectRoleMapping';
+export { default as CardEffectTaskHighlighter } from './CardEffectTaskHighlighter';
+export { default as CardEffectExperimentRoadmap } from './CardEffectExperimentRoadmap';
+export { default as CardEffectDataSafety } from './CardEffectDataSafety';
+export { default as CardEffectHumanCheck } from './CardEffectHumanCheck';
+export { default as CardEffectResponsibilityLine } from './CardEffectResponsibilityLine';
+
+export { default as CardEffectFearBreaker } from './CardEffectFearBreaker';
+export { default as CardEffectQaTable } from './CardEffectQaTable';
+export { default as CardEffectAiAssistant } from './CardEffectAiAssistant';
+export { default as CardEffectThreeQuestions } from './CardEffectThreeQuestions';
+export { default as CardEffectMapVisual } from './CardEffectMapVisual';
+export { default as CardEffectProblemToStructure } from './CardEffectProblemToStructure';
+export { default as CardEffectFinanceExample } from './CardEffectFinanceExample';
+export { default as CardEffectSalesExample } from './CardEffectSalesExample';
+export { default as CardEffectTasksExample } from './CardEffectTasksExample';
+export { default as CardEffectToolCombo } from './CardEffectToolCombo';
+export { default as CardEffectSimulatorCall } from './CardEffectSimulatorCall';
+export { default as CardEffectYouCommand } from './CardEffectYouCommand';
+export { default as CardEffectHabitBuilder } from './CardEffectHabitBuilder';
+export { default as CardEffectPatternVision } from './CardEffectPatternVision';
+export { default as CardEffectPanelDecision } from './CardEffectPanelDecision';
+
 export type CardEffectType =
   // AULA 1 - Fundamentos
   | 'hype-detector' | 'game-changers' | 'trend-vs-change' | 'pattern-vs-magic'
@@ -363,7 +507,28 @@ export type CardEffectType =
   | 'deep-intro' | 'authority-builder' | 'structure-map' | 'audience-focus'
   | 'result-clarifier' | 'draft-expander' | 'practice-builder' | 'tool-trio'
   | 'text-engine' | 'visual-identity' | 'project-picker' | 'mini-course'
-  | 'leverage-mindset';
+  | 'leverage-mindset' | 'coauthor-role' | 'core-triangle'
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  | 'deep-content-intro' | 'start-from-zero' | 'memory-stack' | 'three-decisions'
+  | 'module-map' | 'objective-lens' | 'summary-booster' | 'support-materials'
+  | 'first-version' | 'tool-orchestrator' | 'visual-creator' | 'media-expander'
+  | 'product-mindset' | 'asset-library' | 'beyond-selling'
+  // AULA 11 - Planilhas, organização e automação leve
+  | 'fear-breaker' | 'qa-table' | 'ai-assistant' | 'three-questions'
+  | 'map-visual' | 'problem-to-structure' | 'finance-example' | 'sales-example'
+  | 'tasks-example' | 'tool-combo' | 'simulator-call' | 'you-command'
+  | 'habit-builder' | 'pattern-vision' | 'panel-decision'
+  // AULA 12 - Vídeos simples com I.A.
+  | 'video-feed-explosion' | 'video-connection' | 'blank-screen-block' | 'three-video-blocks'
+  | 'hook-power' | 'call-to-action' | 'idea-to-script' | 'three-variations'
+  | 'partnership' | 'video-starter' | 'ai-text-engine' | 'production-basics'
+  | 'script-guide' | 'short-blocks' | 'consistency-wins'
+  // AULA 9 (REAL DB) - Trabalho, renda, segurança e limites
+  | 'work-shift' | 'info-flood' | 'value-shift'
+  | 'quality-upgrade' | 'new-offers' | 'extra-income-paths'
+  | 'ai-in-the-background' | 'problem-solver-identity' | 'role-mapping'
+  | 'task-highlighter' | 'experiment-roadmap' | 'data-safety'
+  | 'human-check' | 'responsibility-line';
 
 export interface CardEffectProps {
   isActive?: boolean;
@@ -511,6 +676,71 @@ const CARD_EFFECT_COMPONENTS: Record<CardEffectType, React.FC<CardEffectProps>> 
   'project-picker': CardEffectProjectPicker,
   'mini-course': CardEffectMiniCourse,
   'leverage-mindset': CardEffectLeverageMindset,
+  'coauthor-role': CardEffectCoauthorRole,
+  'core-triangle': CardEffectCoreTriangle,
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': CardEffectDeepContentIntro,
+  'start-from-zero': CardEffectStartFromZero,
+  'memory-stack': CardEffectMemoryStack,
+  'three-decisions': CardEffectThreeDecisions,
+  'module-map': CardEffectModuleMap,
+  'objective-lens': CardEffectObjectiveLens,
+  'summary-booster': CardEffectSummaryBooster,
+  'support-materials': CardEffectSupportMaterials,
+  'first-version': CardEffectFirstVersion,
+  'tool-orchestrator': CardEffectToolOrchestrator,
+  'visual-creator': CardEffectVisualCreator,
+  'media-expander': CardEffectMediaExpander,
+  'product-mindset': CardEffectProductMindset,
+  'asset-library': CardEffectAssetLibrary,
+  'beyond-selling': CardEffectBeyondSelling,
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': CardEffectFearBreaker,
+  'qa-table': CardEffectQaTable,
+  'ai-assistant': CardEffectAiAssistant,
+  'three-questions': CardEffectThreeQuestions,
+  'map-visual': CardEffectMapVisual,
+  'problem-to-structure': CardEffectProblemToStructure,
+  'finance-example': CardEffectFinanceExample,
+  'sales-example': CardEffectSalesExample,
+  'tasks-example': CardEffectTasksExample,
+  'tool-combo': CardEffectToolCombo,
+  'simulator-call': CardEffectSimulatorCall,
+  'you-command': CardEffectYouCommand,
+  'habit-builder': CardEffectHabitBuilder,
+  'pattern-vision': CardEffectPatternVision,
+  'panel-decision': CardEffectPanelDecision,
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': CardEffectVideoFeedExplosion,
+  'video-connection': CardEffectVideoConnection,
+  'blank-screen-block': CardEffectBlankScreenBlock,
+  'three-video-blocks': CardEffectThreeVideoBlocks,
+  'hook-power': CardEffectHookPower,
+  'call-to-action': CardEffectCallToAction,
+  'idea-to-script': CardEffectIdeaToScript,
+  'three-variations': CardEffectThreeVariations,
+  'partnership': CardEffectPartnership,
+  'video-starter': CardEffectVideoStarter,
+  'ai-text-engine': CardEffectAiTextEngine,
+  'production-basics': CardEffectProductionBasics,
+  'script-guide': CardEffectScriptGuide,
+  'short-blocks': CardEffectShortBlocks,
+  'consistency-wins': CardEffectConsistencyWins,
+  // AULA 9 (REAL DB) - Trabalho, renda, segurança e limites
+  'work-shift': CardEffectWorkShift,
+  'info-flood': CardEffectInfoFlood,
+  'value-shift': CardEffectValueShift,
+  'quality-upgrade': CardEffectQualityUpgrade,
+  'new-offers': CardEffectNewOffers,
+  'extra-income-paths': CardEffectExtraIncomePaths,
+  'ai-in-the-background': CardEffectAiInTheBackground,
+  'problem-solver-identity': CardEffectProblemSolverIdentity,
+  'role-mapping': CardEffectRoleMapping,
+  'task-highlighter': CardEffectTaskHighlighter,
+  'experiment-roadmap': CardEffectExperimentRoadmap,
+  'data-safety': CardEffectDataSafety,
+  'human-check': CardEffectHumanCheck,
+  'responsibility-line': CardEffectResponsibilityLine,
 };
 
 export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
@@ -597,6 +827,71 @@ export const CARD_EFFECT_LABELS: Record<CardEffectType, string> = {
   'project-picker': 'Seletor de Projeto',
   'mini-course': 'Mini-Curso',
   'leverage-mindset': 'Mentalidade de Alavanca',
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': 'Conteúdo que Fica',
+  'start-from-zero': 'Sempre do Zero',
+  'memory-stack': 'Pilha de Memórias',
+  'three-decisions': 'Três Decisões',
+  'module-map': 'Mapa de Módulos',
+  'objective-lens': 'Lentes de Objetivo',
+  'summary-booster': 'Impulsionador de Sumário',
+  'support-materials': 'Materiais de Apoio',
+  'first-version': 'Versão 1',
+  'tool-orchestrator': 'Orquestrador de Ferramentas',
+  'visual-creator': 'Criador Visual',
+  'media-expander': 'Expansor de Mídia',
+  'product-mindset': 'Mentalidade de Produto',
+  'asset-library': 'Biblioteca de Ativos',
+  'beyond-selling': 'Além de Vender',
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': 'A Trava da Planilha',
+  'qa-table': 'Perguntas e Respostas',
+  'ai-assistant': 'Assistente de Planilhas',
+  'three-questions': 'As Três Perguntas',
+  'map-visual': 'Mapa Visual',
+  'problem-to-structure': 'Do Problema à Estrutura',
+  'finance-example': 'Exemplo: Finanças',
+  'sales-example': 'Exemplo: Vendas',
+  'tasks-example': 'Exemplo: Tarefas',
+  'tool-combo': 'Combo de Ferramentas',
+  'simulator-call': 'Simulador Guiado',
+  'you-command': 'Seu Comando',
+  'habit-builder': 'Construtor de Hábito',
+  'pattern-vision': 'Visão de Padrões',
+  'panel-decision': 'Painel de Decisão',
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': 'Explosão no Feed',
+  'video-connection': 'Conexão por Vídeo',
+  'blank-screen-block': 'Bloqueio da Tela Branca',
+  'three-video-blocks': 'Os 3 Blocos do Vídeo',
+  'hook-power': 'Poder do Gancho',
+  'call-to-action': 'Chamada para Ação',
+  'idea-to-script': 'Da Ideia ao Roteiro',
+  'three-variations': 'Três Variações',
+  'partnership': 'Parceria com I.A.',
+  'video-starter': 'Iniciador de Vídeo',
+  'ai-text-engine': 'Motor de Texto com I.A.',
+  'production-basics': 'Produção Básica',
+  'script-guide': 'Guia de Roteiro',
+  'short-blocks': 'Blocos Curtos',
+  'consistency-wins': 'Consistência Vence',
+  'coauthor-role': 'Papel do Coautor',
+  'core-triangle': 'Triângulo Central',
+  // AULA 9 (REAL DB)
+  'work-shift': 'Mudança no Trabalho',
+  'info-flood': 'Afogado em Informação',
+  'value-shift': 'Mudança de Valor',
+  'quality-upgrade': 'Upgrade de Qualidade',
+  'new-offers': 'Novos Serviços',
+  'extra-income-paths': 'Caminhos de Renda Extra',
+  'ai-in-the-background': 'I.A. nos Bastidores',
+  'problem-solver-identity': 'Identidade de Resolvedor',
+  'role-mapping': 'Mapa da Profissão',
+  'task-highlighter': 'Destacador de Tarefas',
+  'experiment-roadmap': 'Roteiro de Experimentos',
+  'data-safety': 'Segurança de Dados',
+  'human-check': 'Revisão Humana',
+  'responsibility-line': 'Linha da Responsabilidade',
 };
 
 export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
@@ -697,6 +992,71 @@ export const CARD_EFFECT_DESCRIPTIONS: Record<CardEffectType, string> = {
   'project-picker': 'Escolhendo o projeto real',
   'mini-course': 'Formato enxuto e impactante',
   'leverage-mindset': 'I.A. como alavanca para conhecimento',
+  // AULA 10 - Conteúdo Profundo: Experiência em Curso Real
+  'deep-content-intro': 'Timeline vs conteúdo duradouro',
+  'start-from-zero': 'Da postagem solta ao caminho contínuo',
+  'memory-stack': 'Pilha de conhecimento acumulado',
+  'three-decisions': 'Tema, público e promessa',
+  'module-map': 'Mapa visual de módulos numerados',
+  'objective-lens': 'Verbos claros em cada aula',
+  'summary-booster': 'Sumário gerado pela I.A.',
+  'support-materials': 'Roteiros, PDFs e descrições',
+  'first-version': 'Melhor editar algo do que o vazio',
+  'tool-orchestrator': 'Modelos de linguagem organizando ideias',
+  'visual-creator': 'Capas, imagens e elementos visuais',
+  'media-expander': 'Transformando texto em vídeo e áudio',
+  'product-mindset': 'Conteúdo como ativo escalável',
+  'asset-library': 'Biblioteca digital trabalhando por você',
+  'beyond-selling': 'Impacto, clareza e novas possibilidades',
+  // AULA 11 - Planilhas, organização e automação leve
+  'fear-breaker': 'Planilha vazia com medo se desfazendo',
+  'qa-table': 'Tabela como perguntas e respostas',
+  'ai-assistant': 'Avatar de I.A. ajudando com planilha',
+  'three-questions': 'Três cartões com perguntas essenciais',
+  'map-visual': 'Confusão virando mapa organizado',
+  'problem-to-structure': 'Texto se transformando em planilha',
+  'finance-example': 'Extrato confuso virando controle',
+  'sales-example': 'Pedidos soltos virando planilha de vendas',
+  'tasks-example': 'Tarefas caóticas virando agenda organizada',
+  'tool-combo': 'Chat de I.A. conectado à planilha',
+  'simulator-call': 'Painel de 4 passos para gerar prompt',
+  'you-command': 'Teclado digitando comando para planilha',
+  'habit-builder': 'Calendário com lembrete de atualização',
+  'pattern-vision': 'Gráfico revelando tendências',
+  'panel-decision': 'Painel de decisão com dados',
+  // AULA 12 - Vídeos simples com I.A.
+  'video-feed-explosion': 'Feed transbordando de vídeos virais',
+  'video-connection': 'Conexão humana através do vídeo',
+  'blank-screen-block': 'Tela em branco travando criador',
+  'three-video-blocks': 'Os três blocos essenciais do vídeo',
+  'hook-power': 'Gancho poderoso nos primeiros segundos',
+  'call-to-action': 'Chamada clara para ação do espectador',
+  'idea-to-script': 'Transformando ideia em roteiro estruturado',
+  'three-variations': 'Três versões do mesmo conteúdo',
+  'partnership': 'I.A. como parceira de criação',
+  'video-starter': 'Começando o primeiro vídeo',
+  'ai-text-engine': 'Motor de texto gerando roteiros',
+  'production-basics': 'Fundamentos de produção simples',
+  'script-guide': 'Guia passo a passo do roteiro',
+  'short-blocks': 'Blocos curtos e impactantes',
+  'consistency-wins': 'Consistência supera perfeição',
+  'coauthor-role': 'Você como coautor da I.A. no processo criativo',
+  'core-triangle': 'Triângulo central: Clareza, Contexto, Exemplo',
+  // AULA 9 (REAL DB)
+  'work-shift': 'Tarefas repetitivas virando rotina inteligente',
+  'info-flood': 'I.A. filtrando grandes volumes de informação',
+  'value-shift': 'De executor de tarefa para resolvedor de problemas',
+  'quality-upgrade': 'Refinando entregas com revisões de I.A.',
+  'new-offers': 'Novos serviços e entregas antes impossíveis',
+  'extra-income-paths': 'Três caminhos para renda extra com I.A.',
+  'ai-in-the-background': 'I.A. trabalhando nos bastidores invisíveis',
+  'problem-solver-identity': 'Nova identidade: menos tarefa, mais solução',
+  'role-mapping': 'Mapeando sua profissão para uso de I.A.',
+  'task-highlighter': 'Identificando tarefas repetitivas que drenam tempo',
+  'experiment-roadmap': 'Plano de experimentos um por vez',
+  'data-safety': 'Cuidado com dados sensíveis na I.A.',
+  'human-check': 'Revisão humana obrigatória antes de enviar',
+  'responsibility-line': 'A I.A. sugere, você decide e assume',
 };
 
 export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
@@ -749,10 +1109,29 @@ export const CARD_EFFECTS_BY_LESSON: Record<string, CardEffectType[]> = {
     'boundary-line', 'director-rule', 'director-mindset',
   ],
   'aula-9': [
-    'deep-intro', 'authority-builder', 'structure-map', 'audience-focus',
-    'result-clarifier', 'draft-expander', 'practice-builder', 'tool-trio',
-    'text-engine', 'visual-identity', 'project-picker', 'mini-course',
-    'leverage-mindset',
+    'work-shift', 'info-flood', 'value-shift',
+    'time-saver', 'quality-upgrade', 'new-offers',
+    'extra-income-paths', 'ai-in-the-background', 'problem-solver-identity',
+    'role-mapping', 'task-highlighter', 'experiment-roadmap',
+    'data-safety', 'human-check', 'responsibility-line',
+  ],
+  'aula-10': [
+    'deep-content-intro', 'start-from-zero', 'memory-stack', 'three-decisions',
+    'module-map', 'objective-lens', 'summary-booster', 'support-materials',
+    'first-version', 'tool-orchestrator', 'visual-creator', 'media-expander',
+    'product-mindset', 'asset-library', 'beyond-selling',
+  ],
+  'aula-11': [
+    'fear-breaker', 'qa-table', 'ai-assistant', 'three-questions',
+    'map-visual', 'problem-to-structure', 'finance-example', 'sales-example',
+    'tasks-example', 'tool-combo', 'simulator-call', 'you-command',
+    'habit-builder', 'pattern-vision', 'panel-decision',
+  ],
+  'aula-08': [
+    'video-feed-explosion', 'video-connection', 'blank-screen-block', 'three-video-blocks',
+    'hook-power', 'call-to-action', 'idea-to-script', 'three-variations',
+    'partnership', 'video-starter', 'ai-text-engine', 'production-basics',
+    'script-guide', 'short-blocks', 'consistency-wins',
   ],
 };
 
@@ -766,14 +1145,19 @@ export const CARD_EFFECT_TYPES: CardEffectType[] = [
   ...CARD_EFFECTS_BY_LESSON['aula-7'],
   ...CARD_EFFECTS_BY_LESSON['aula-8'],
   ...CARD_EFFECTS_BY_LESSON['aula-9'],
+  ...CARD_EFFECTS_BY_LESSON['aula-10'],
+  ...CARD_EFFECTS_BY_LESSON['aula-11'],
+  ...CARD_EFFECTS_BY_LESSON['aula-08'],
 ];
 
-export function getCardEffectComponent(type: string): React.FC<CardEffectProps> | null {
+export function getCardEffectComponent(type: string | undefined | null): React.FC<CardEffectProps> | null {
+  if (!type) return null;
   const normalizedType = type.toLowerCase().trim() as CardEffectType;
   return CARD_EFFECT_COMPONENTS[normalizedType] || null;
 }
 
-export function isValidCardEffectType(type: string): type is CardEffectType {
+export function isValidCardEffectType(type: string | undefined | null): type is CardEffectType {
+  if (!type) return false;
   const normalizedType = type.toLowerCase().trim();
   return normalizedType in CARD_EFFECT_COMPONENTS;
 }

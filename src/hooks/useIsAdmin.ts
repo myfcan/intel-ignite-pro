@@ -13,7 +13,9 @@ export function useIsAdmin(userId: string | undefined) {
     }
 
     const checkAdminStatus = async () => {
+      setLoading(true);
       try {
+        console.log('[useIsAdmin] Checking admin status for:', userId);
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
@@ -22,13 +24,15 @@ export function useIsAdmin(userId: string | undefined) {
           .maybeSingle();
 
         if (error) {
-          console.error('Error checking admin status:', error);
+          console.error('[useIsAdmin] Error:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          const adminResult = !!data;
+          console.log('[useIsAdmin] Result:', adminResult, data);
+          setIsAdmin(adminResult);
         }
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('[useIsAdmin] Unexpected error:', error);
         setIsAdmin(false);
       } finally {
         setLoading(false);

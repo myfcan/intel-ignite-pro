@@ -38,7 +38,7 @@ const TrailDetail = () => {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showLivModal, setShowLivModal] = useState(true);
   const [userId, setUserId] = useState<string | undefined>(undefined);
-  const { isAdmin } = useIsAdmin(userId);
+  const { isAdmin, loading: adminLoading } = useIsAdmin(userId);
 
   useEffect(() => {
     fetchTrailData();
@@ -101,8 +101,8 @@ const TrailDetail = () => {
 
   const getLessonStatus = (lesson: Lesson, index: number) => {
     if (completedLessons.includes(lesson.id)) return 'completed';
-    // Admins têm acesso a todas as aulas
-    if (isAdmin) return 'unlocked';
+    // Admins têm acesso a todas as aulas (esperar loading terminar)
+    if (!adminLoading && isAdmin) return 'unlocked';
     if (index === 0 || completedLessons.includes(lessons[index - 1]?.id)) return 'unlocked';
     return 'locked';
   };
@@ -126,7 +126,7 @@ const TrailDetail = () => {
     navigate(route);
   };
 
-  if (loading) {
+  if (loading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
