@@ -172,6 +172,7 @@ export function PlaygroundBridgeV3({
         <PlaygroundRealChat
           lessonId={lessonId}
           onComplete={() => onComplete(null)}
+          onSkip={onSkip}
           initialPrompt={buildPrompt()}
         />
       </motion.div>
