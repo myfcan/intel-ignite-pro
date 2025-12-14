@@ -37,22 +37,24 @@ interface PlaygroundBridgeV3Props {
 }
 
 // ============================================================================
-// PARSER DE REQUIREMENTS
-// Formato: "Label: [ex.: opção1, opção2, opção3]"
-// Extrai: label, slot completo, e chips (opções dentro do colchete)
+// PARSER DE REQUIREMENTS V3 - REGRA ABSOLUTA
+// Formato: "Label: [opção 1 | opção 2 | opção 3 | outro]"
+// - Cada item separado por | vira um chip
+// - Se existir "outro", abre campo de texto quando selecionado
 // ============================================================================
 interface ParsedRequirement {
   label: string;
   slot: string;
   chips: string[];
+  hasOther: boolean;
 }
 
 function parseRequirement(req: string): ParsedRequirement {
-  // Formato: "Label: [ex.: opção1, opção2, opção3]"
+  // Formato: "Label: [opção 1 | opção 2 | outro]"
   const colonIndex = req.indexOf(':');
   
   if (colonIndex === -1) {
-    return { label: req, slot: '', chips: [] };
+    return { label: req, slot: '', chips: [], hasOther: false };
   }
   
   const label = req.slice(0, colonIndex).trim();
@@ -62,22 +64,23 @@ function parseRequirement(req: string): ParsedRequirement {
   const bracketMatch = rest.match(/\[([^\]]+)\]/);
   
   if (!bracketMatch) {
-    return { label, slot: rest, chips: [] };
+    return { label, slot: rest, chips: [], hasOther: false };
   }
   
   const slotContent = bracketMatch[1];
   const slot = `[${slotContent}]`;
   
-  // Remove "ex.:" ou "ex:" do início se existir
-  let cleanContent = slotContent.replace(/^ex\.?:\s*/i, '');
-  
-  // Divide por vírgula para extrair chips
-  const chips = cleanContent
-    .split(',')
+  // Divide por | (pipe) para extrair chips
+  const rawChips = slotContent
+    .split('|')
     .map(s => s.trim())
     .filter(Boolean);
   
-  return { label, slot, chips };
+  // Verifica se tem "outro" e separa
+  const hasOther = rawChips.some(c => c.toLowerCase() === 'outro');
+  const chips = rawChips.filter(c => c.toLowerCase() !== 'outro');
+  
+  return { label, slot, chips, hasOther };
 }
 
 /**
@@ -192,12 +195,29 @@ export function PlaygroundBridgeV3({
     </button>
   );
 
-  // Renderiza linha de chips para um requirement (SOMENTE CHIPS, sem input)
-  const renderChipsOnly = (reqIndex: number) => {
+  // Estado para controlar quem selecionou "outro"
+  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
+  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
+
+  // Handler para "outro" - abre campo de texto
+  const handleOtherClick = (reqIndex: number) => {
+    setShowOtherInput(prev => ({ ...prev, [reqIndex]: true }));
+    setValues(prev => ({ ...prev, [reqIndex]: '' }));
+  };
+
+  // Handler para valor do campo "outro"
+  const handleOtherChange = (reqIndex: number, value: string) => {
+    setOtherValues(prev => ({ ...prev, [reqIndex]: value }));
+    setValues(prev => ({ ...prev, [reqIndex]: value }));
+  };
+
+  // Renderiza linha de chips para um requirement (chips + "outro" se houver)
+  const renderChipsWithOther = (reqIndex: number) => {
     const req = parsedRequirements[reqIndex];
     if (!req) return null;
 
     const currentValue = values[reqIndex] || '';
+    const isOtherSelected = showOtherInput[reqIndex];
 
     return (
       <div className="space-y-1.5">
@@ -209,59 +229,34 @@ export function PlaygroundBridgeV3({
             <ChipButton
               key={chip}
               label={chip}
-              selected={currentValue === chip}
-              onClick={() => handleChipSelect(reqIndex, chip)}
+              selected={currentValue === chip && !isOtherSelected}
+              onClick={() => {
+                setShowOtherInput(prev => ({ ...prev, [reqIndex]: false }));
+                handleChipSelect(reqIndex, chip);
+              }}
             />
           ))}
+          {req.hasOther && (
+            <ChipButton
+              label="outro"
+              selected={isOtherSelected}
+              onClick={() => handleOtherClick(reqIndex)}
+            />
+          )}
         </div>
-      </div>
-    );
-  };
-
-  // Renderiza chips OU campo de texto para Passo 3
-  const renderChipsOrText = (reqIndex: number) => {
-    const req = parsedRequirements[reqIndex];
-    if (!req) return null;
-
-    const currentValue = values[reqIndex] || '';
-    const hasMultipleOptions = req.chips.length > 1;
-
-    if (hasMultipleOptions) {
-      // Chips
-      return (
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground/80">
-            {req.label}
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {req.chips.map((chip) => (
-              <ChipButton
-                key={chip}
-                label={chip}
-                selected={currentValue === chip}
-                onClick={() => handleChipSelect(reqIndex, chip)}
-              />
-            ))}
-          </div>
-        </div>
-      );
-    } else {
-      // Campo de texto curto
-      return (
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-foreground/80">
-            {req.label}
-          </label>
+        {/* Campo de texto aparece quando "outro" é selecionado */}
+        {isOtherSelected && (
           <Input
             type="text"
-            placeholder={req.chips[0] || req.slot.replace(/[\[\]]/g, '')}
-            value={currentValue}
-            onChange={(e) => handleTextChange(reqIndex, e.target.value)}
-            className="text-sm h-9"
+            placeholder="Digite sua opção..."
+            value={otherValues[reqIndex] || ''}
+            onChange={(e) => handleOtherChange(reqIndex, e.target.value)}
+            className="text-sm h-9 mt-2"
+            autoFocus
           />
-        </div>
-      );
-    }
+        )}
+      </div>
+    );
   };
 
   return (
@@ -383,11 +378,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Linha de chips 1: requirements[0] - SOMENTE CHIPS */}
-                  {renderChipsOnly(0)}
+                  {/* Linha de chips 1: requirements[0] */}
+                  {renderChipsWithOther(0)}
 
-                  {/* Linha de chips 2: requirements[1] - SOMENTE CHIPS */}
-                  {renderChipsOnly(1)}
+                  {/* Linha de chips 2: requirements[1] */}
+                  {renderChipsWithOther(1)}
                 </motion.div>
               )}
 
@@ -415,11 +410,11 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Campo 3: requirements[2] - chips ou texto */}
-                  {renderChipsOrText(2)}
+                  {/* Campo 3: requirements[2] */}
+                  {renderChipsWithOther(2)}
 
-                  {/* Campo 4: requirements[3] - chips ou texto */}
-                  {renderChipsOrText(3)}
+                  {/* Campo 4: requirements[3] */}
+                  {renderChipsWithOther(3)}
                 </motion.div>
               )}
 
