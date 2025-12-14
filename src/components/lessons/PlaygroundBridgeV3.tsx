@@ -113,6 +113,10 @@ export function PlaygroundBridgeV3({
   // Índices 2,3 = Passo 3 (chips ou texto)
   const [values, setValues] = useState<Record<number, string>>({});
 
+  // Estado para controlar quem selecionou "outro" - DEVE estar antes do early return
+  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
+  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
+
   if (!playgroundExample) {
     return (
       <PlaygroundRealChat
@@ -195,9 +199,7 @@ export function PlaygroundBridgeV3({
     </button>
   );
 
-  // Estado para controlar quem selecionou "outro"
-  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
-  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
+  // Handler para "outro" - abre campo de texto
 
   // Handler para "outro" - abre campo de texto
   const handleOtherClick = (reqIndex: number) => {
