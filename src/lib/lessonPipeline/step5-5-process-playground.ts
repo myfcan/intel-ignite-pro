@@ -155,17 +155,35 @@ export async function step5_5ProcessPlayground(
       if (section.showPlaygroundCall && section.playgroundConfig) {
         const config = section.playgroundConfig;
         
-        // Se é useBridgeVersion v3 com playgroundExampleV3, apenas preservar
+        // Se é useBridgeVersion v3 com playgroundExampleV3, processar e adicionar "outro"
         if (config.useBridgeVersion === 'v3' && config.playgroundExampleV3) {
-          console.log(`✅ [STEP 5.5] V5 Seção ${index + 1}: PlaygroundBridgeV3 detectado e preservado`);
+          console.log(`✅ [STEP 5.5] V5 Seção ${index + 1}: PlaygroundBridgeV3 detectado`);
           v5ProcessedCount++;
           
-          // Garantir que type está definido
+          // REGRA OBRIGATÓRIA: Adicionar "outro" em TODOS os requirements que não têm
+          const processedExample = { ...config.playgroundExampleV3 };
+          if (processedExample.requirements && Array.isArray(processedExample.requirements)) {
+            processedExample.requirements = processedExample.requirements.map((req: string) => {
+              // Se já tem "outro" no final do bracket, não mexer
+              if (req.includes('| outro]') || req.includes('|outro]')) {
+                return req;
+              }
+              // Adicionar "| outro]" antes do último colchete
+              if (req.includes(']')) {
+                return req.replace(/\]([^\]]*)$/, ' | outro]$1');
+              }
+              return req;
+            });
+            console.log(`📝 [STEP 5.5] V5 Seção ${index + 1}: "outro" adicionado aos requirements`);
+          }
+          
+          // Garantir que type está definido e requirements tem "outro"
           return {
             ...section,
             playgroundConfig: {
               ...config,
-              type: config.type || 'real-playground'
+              type: config.type || 'real-playground',
+              playgroundExampleV3: processedExample
             }
           };
         }
