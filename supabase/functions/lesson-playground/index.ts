@@ -82,7 +82,22 @@ Responda em português brasileiro de forma útil e direta.`;
     const aiData = await aiResponse.json();
     const responseText = aiData.choices[0]?.message?.content || '';
 
-    // Get feedback on the prompt
+    // Get detailed feedback on the prompt
+    const feedbackSystemPrompt = `Você é um coach de prompts. Analise o prompt do usuário e dê feedback ESPECÍFICO e ACIONÁVEL.
+
+ESTRUTURA DO FEEDBACK (máximo 3 frases):
+1. Um ponto POSITIVO específico (o que está bom)
+2. Uma SUGESTÃO CONCRETA de melhoria (ex: "Adicione X para obter Y")
+3. Opcional: Exemplo rápido de como melhorar
+
+CRITÉRIOS DE AVALIAÇÃO:
+- Clareza: O objetivo está claro?
+- Contexto: Há informações suficientes?
+- Especificidade: É específico ou vago?
+- Formato: Indica o formato desejado da resposta?
+
+Responda em português brasileiro, tom encorajador mas direto.`;
+
     const feedbackResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -91,11 +106,11 @@ Responda em português brasileiro de forma útil e direta.`;
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [{
-          role: 'user',
-          content: `Analise este prompt e dê feedback construtivo em português (máximo 2 frases): "${prompt}"`
-        }],
-        max_tokens: 200,
+        messages: [
+          { role: 'system', content: feedbackSystemPrompt },
+          { role: 'user', content: `Analise este prompt:\n\n"${prompt}"` }
+        ],
+        max_tokens: 300,
       }),
     });
 
