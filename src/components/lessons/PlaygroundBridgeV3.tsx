@@ -98,6 +98,9 @@ export function PlaygroundBridgeV3({
   onSkip,
   lessonId,
 }: PlaygroundBridgeV3Props) {
+  // ============================================================================
+  // ALL HOOKS MUST BE AT THE TOP (Rules of Hooks)
+  // ============================================================================
   const [phase, setPhase] = useState<'modal' | 'playground'>('modal');
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
@@ -113,6 +116,33 @@ export function PlaygroundBridgeV3({
   // Índices 2,3 = Passo 3 (chips ou texto)
   const [values, setValues] = useState<Record<number, string>>({});
 
+  // Estado para controlar quem selecionou "outro"
+  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
+  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
+
+  // Monta o prompt substituindo os slots pelos valores escolhidos
+  const buildPrompt = useCallback(() => {
+    if (!playgroundExample) return '';
+    let prompt = playgroundExample.examplePrompt;
+
+    parsedRequirements.forEach((req, index) => {
+      const value = values[index] || '';
+      if (value && req.slot) {
+        // Substitui o slot original pelo valor escolhido mantendo colchetes
+        prompt = prompt.replace(req.slot, `[${value}]`);
+      }
+    });
+
+    return prompt;
+  }, [playgroundExample, parsedRequirements, values]);
+
+  const handleGoToPlayground = useCallback(() => {
+    setPhase('playground');
+  }, []);
+
+  // ============================================================================
+  // EARLY RETURNS MUST COME AFTER ALL HOOKS
+  // ============================================================================
   if (!playgroundExample) {
     return (
       <PlaygroundRealChat
@@ -131,25 +161,6 @@ export function PlaygroundBridgeV3({
   const handleTextChange = (reqIndex: number, value: string) => {
     setValues(prev => ({ ...prev, [reqIndex]: value }));
   };
-
-  // Monta o prompt substituindo os slots pelos valores escolhidos
-  const buildPrompt = useCallback(() => {
-    let prompt = playgroundExample.examplePrompt;
-    
-    parsedRequirements.forEach((req, index) => {
-      const value = values[index] || '';
-      if (value && req.slot) {
-        // Substitui o slot original pelo valor escolhido mantendo colchetes
-        prompt = prompt.replace(req.slot, `[${value}]`);
-      }
-    });
-    
-    return prompt;
-  }, [playgroundExample.examplePrompt, parsedRequirements, values]);
-
-  const handleGoToPlayground = useCallback(() => {
-    setPhase('playground');
-  }, []);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildPrompt());
@@ -194,10 +205,6 @@ export function PlaygroundBridgeV3({
       {label}
     </button>
   );
-
-  // Estado para controlar quem selecionou "outro"
-  const [showOtherInput, setShowOtherInput] = useState<Record<number, boolean>>({});
-  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
 
   // Handler para "outro" - abre campo de texto
   const handleOtherClick = (reqIndex: number) => {
