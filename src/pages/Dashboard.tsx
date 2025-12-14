@@ -65,11 +65,22 @@ const Dashboard = () => {
   // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
   // Recalcular progresso das trilhas quando isAdmin mudar (após loading completar)
+  // CRITICAL: Usamos um ref para evitar recálculo infinito mas garantir que isAdmin seja aplicado
+  const hasRecalculatedForAdmin = useRef(false);
+  
   useEffect(() => {
-    console.log('[Dashboard] Admin check - isAdmin:', isAdmin, 'adminLoading:', adminLoading, 'user:', user?.id);
-    if (!adminLoading && user?.id && trails.length > 0 && trailsProgress.length > 0) {
-      console.log('[Dashboard] Recalculating trails with isAdmin:', isAdmin);
+    console.log('[Dashboard] Admin check - isAdmin:', isAdmin, 'adminLoading:', adminLoading, 'user:', user?.id, 'hasRecalculated:', hasRecalculatedForAdmin.current);
+    
+    // Se já é admin e ainda não recalculamos, força recálculo
+    if (!adminLoading && isAdmin && trails.length > 0 && trailsProgress.length > 0 && !hasRecalculatedForAdmin.current) {
+      console.log('[Dashboard] FORCING recalculation for admin user');
+      hasRecalculatedForAdmin.current = true;
       recalculateTrailsProgress();
+    }
+    
+    // Reset o flag se o usuário deslogar
+    if (!user?.id) {
+      hasRecalculatedForAdmin.current = false;
     }
   }, [isAdmin, adminLoading, trails.length, trailsProgress.length, user?.id]);
 
