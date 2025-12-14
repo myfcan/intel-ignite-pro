@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import {
   Eye, 
   Settings2, 
   Rocket,
+  Layers,
   X,
   ArrowRight,
   ArrowLeft,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// CONTRATO DE DADOS V3 - DINÂMICO
+// CONTRATO DE DADOS V3
 // ============================================================================
 export interface PlaygroundExampleDataV3 {
   title: string;
@@ -35,54 +36,22 @@ interface PlaygroundBridgeV3Props {
   lessonId?: string;
 }
 
-/**
- * Parse um requirement no formato:
- * "Label: [slot] – ex.: chip1, chip2, chip3"
- * ou
- * "Label: [chip1, chip2, chip3]" (sem – ex.:)
- * 
- * Retorna: { label, slot, chips }
- */
-function parseRequirement(req: string): { 
-  label: string; 
-  slot: string; 
-  chips: string[];
-} {
-  // Divide por ":"
-  const colonIndex = req.indexOf(':');
-  if (colonIndex === -1) {
-    return { label: req, slot: '', chips: [] };
-  }
-  
-  const label = req.substring(0, colonIndex).trim();
-  const rest = req.substring(colonIndex + 1).trim();
-  
-  // Extrai slot entre colchetes
-  const bracketMatch = rest.match(/\[([^\]]+)\]/);
-  const slot = bracketMatch ? bracketMatch[1] : '';
-  
-  // Extrai chips após "– ex.:" ou "- ex.:" ou "ex.:"
-  const exMatch = rest.match(/[–-]\s*ex\.?:\s*(.+)$/i);
-  let chips: string[] = [];
-  
-  if (exMatch) {
-    // Tem "– ex.:" → usa os exemplos como chips
-    chips = exMatch[1].split(',').map(c => c.trim()).filter(Boolean);
-  } else if (slot) {
-    // Não tem "– ex.:" → usa o conteúdo dos colchetes como chips
-    chips = slot.split(',').map(c => c.trim()).filter(Boolean);
-  }
-  
-  return { label, slot, chips };
-}
+// ============================================================================
+// CHIPS PRÉ-DEFINIDOS (valores fixos como especificado)
+// ============================================================================
+const PRODUCT_TYPES = ['Curso em vídeo', 'eBook', 'Apostila', 'Workshop'];
+const AUDIENCE_OPTIONS = ['Público em geral', 'Mães 40+', 'Professores', 'Médicos'];
+const MODULE_COUNTS = ['3', '4', '5'];
+const CONTENT_TYPES = ['Vídeos curtos', 'Aulas mais longas', 'Leitura / eBook'];
+const EXERCISE_OPTIONS = ['Não', 'Sim, no final de cada módulo'];
 
 /**
  * 🚀 PLAYGROUND BRIDGE V3 - WIZARD DE 4 PASSOS SEM SCROLL
  * 
- * Step 1: I DO - Veja o exemplo (title, context, exampleOutput)
- * Step 2: WE DO Part 1 - Escolha seu caso (requirements[0] e [2])
- * Step 3: WE DO Part 2 - Ajuste os detalhes (requirements[1] e [3])
- * Step 4: YOU DO - Monte seu prompt (examplePrompt com colchetes)
+ * Step 1: I DO - VEJA O EXEMPLO
+ * Step 2: WE DO Part 1 - ESCOLHA SEU CASO (tipo produto, tema, público)
+ * Step 3: WE DO Part 2 - MONTE A ESTRUTURA (módulos, conteúdo, exercícios, resultado)
+ * Step 4: YOU DO - ADAPTE E TESTE
  */
 export function PlaygroundBridgeV3({
   playgroundExample,
@@ -94,35 +63,25 @@ export function PlaygroundBridgeV3({
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [copied, setCopied] = useState(false);
 
-  // Estado para os valores selecionados (por label)
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  // Estado para inputs custom ("Outro")
-  const [customInputs, setCustomInputs] = useState<Record<string, string>>({});
-  // Estado para mostrar input de "Outro"
-  const [showCustomInput, setShowCustomInput] = useState<Record<string, boolean>>({});
+  // Step 2 - Escolha seu caso
+  const [productType, setProductType] = useState('');
+  const [productTypeCustom, setProductTypeCustom] = useState('');
+  const [showProductTypeCustom, setShowProductTypeCustom] = useState(false);
+  
+  const [tema, setTema] = useState('');
+  
+  const [audience, setAudience] = useState('');
+  const [audienceCustom, setAudienceCustom] = useState('');
+  const [showAudienceCustom, setShowAudienceCustom] = useState(false);
 
-  // Parse todos os requirements
-  const parsedRequirements = useMemo(() => {
-    if (!playgroundExample?.requirements) return [];
-    return playgroundExample.requirements.map(parseRequirement);
-  }, [playgroundExample?.requirements]);
-
-  // Requirements por step
-  // Step 2: índices 0 e 2 (tema/foco e formato)
-  // Step 3: índices 1 e 3 (público e resultado)
-  const step2Reqs = useMemo(() => {
-    const reqs = [];
-    if (parsedRequirements[0]) reqs.push(parsedRequirements[0]);
-    if (parsedRequirements[2]) reqs.push(parsedRequirements[2]);
-    return reqs;
-  }, [parsedRequirements]);
-
-  const step3Reqs = useMemo(() => {
-    const reqs = [];
-    if (parsedRequirements[1]) reqs.push(parsedRequirements[1]);
-    if (parsedRequirements[3]) reqs.push(parsedRequirements[3]);
-    return reqs;
-  }, [parsedRequirements]);
+  // Step 3 - Monte a estrutura
+  const [moduleCount, setModuleCount] = useState('');
+  const [moduleCountCustom, setModuleCountCustom] = useState('');
+  const [showModuleCountCustom, setShowModuleCountCustom] = useState(false);
+  
+  const [contentType, setContentType] = useState('');
+  const [exercises, setExercises] = useState('');
+  const [resultado, setResultado] = useState('');
 
   if (!playgroundExample) {
     return (
@@ -133,21 +92,39 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // Monta o prompt substituindo os slots pelos valores preenchidos
+  // Valores finais para o prompt
+  const finalProductType = showProductTypeCustom ? productTypeCustom : productType;
+  const finalAudience = showAudienceCustom ? audienceCustom : audience;
+  const finalModuleCount = showModuleCountCustom ? moduleCountCustom : moduleCount;
+
+  // Monta o prompt substituindo os slots pelos valores escolhidos
   const buildPrompt = useCallback(() => {
     let prompt = playgroundExample.examplePrompt;
     
-    parsedRequirements.forEach((req) => {
-      const value = fieldValues[req.label];
-      if (value && req.slot) {
-        // Substitui o bracket original pelo valor
-        const bracketPattern = new RegExp(`\\[${req.slot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'gi');
-        prompt = prompt.replace(bracketPattern, value);
-      }
-    });
+    // Substitui os colchetes pelos valores escolhidos
+    if (finalProductType) {
+      prompt = prompt.replace(/\[curso em vídeo, eBook, apostila, workshop, outro\]/gi, `[${finalProductType}]`);
+      prompt = prompt.replace(/\[curso ou eBook\]/gi, `[${finalProductType}]`);
+    }
+    if (tema) {
+      prompt = prompt.replace(/\[assunto principal do curso ou eBook\]/gi, `[${tema}]`);
+    }
+    if (finalAudience) {
+      prompt = prompt.replace(/\[quem vai ler ou assistir\]/gi, `[${finalAudience}]`);
+    }
+    if (finalModuleCount) {
+      prompt = prompt.replace(/\[número de módulos\]/gi, `[${finalModuleCount}]`);
+    }
+    if (resultado) {
+      prompt = prompt.replace(/\[o que a pessoa deve conseguir fazer ao final\]/gi, `[${resultado}]`);
+    }
+    if (exercises) {
+      const exerciseText = exercises === 'Sim, no final de cada módulo' ? 'exercícios ao final de cada módulo' : 'sem exercícios';
+      prompt = prompt.replace(/\[exercícios ou atividades\]/gi, `[${exerciseText}]`);
+    }
     
     return prompt;
-  }, [playgroundExample.examplePrompt, parsedRequirements, fieldValues]);
+  }, [playgroundExample.examplePrompt, finalProductType, tema, finalAudience, finalModuleCount, resultado, exercises]);
 
   const handleGoToPlayground = useCallback(() => {
     setPhase('playground');
@@ -159,32 +136,36 @@ export function PlaygroundBridgeV3({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleChipSelect = (label: string, value: string) => {
-    // Se clicou em "Outro", mostra o input
+  // Handlers para chips
+  const handleProductTypeSelect = (value: string) => {
     if (value === '__other__') {
-      setShowCustomInput(prev => ({ ...prev, [label]: true }));
-      return;
+      setShowProductTypeCustom(true);
+      setProductType('');
+    } else {
+      setProductType(value);
+      setShowProductTypeCustom(false);
     }
-    
-    // Seleciona o chip
-    setFieldValues(prev => ({ ...prev, [label]: value }));
-    setShowCustomInput(prev => ({ ...prev, [label]: false }));
   };
 
-  const handleCustomInputChange = (label: string, value: string) => {
-    setCustomInputs(prev => ({ ...prev, [label]: value }));
-    setFieldValues(prev => ({ ...prev, [label]: value }));
+  const handleAudienceSelect = (value: string) => {
+    if (value === '__other__') {
+      setShowAudienceCustom(true);
+      setAudience('');
+    } else {
+      setAudience(value);
+      setShowAudienceCustom(false);
+    }
   };
 
-  // Verifica se pode avançar do step 2
-  const canProceedFromStep2 = useMemo(() => {
-    return step2Reqs.some(req => fieldValues[req.label]?.trim());
-  }, [fieldValues, step2Reqs]);
-
-  // Verifica se pode avançar do step 3
-  const canProceedFromStep3 = useMemo(() => {
-    return step3Reqs.some(req => fieldValues[req.label]?.trim());
-  }, [fieldValues, step3Reqs]);
+  const handleModuleCountSelect = (value: string) => {
+    if (value === '__other__') {
+      setShowModuleCountCustom(true);
+      setModuleCount('');
+    } else {
+      setModuleCount(value);
+      setShowModuleCountCustom(false);
+    }
+  };
 
   if (phase === 'playground') {
     return (
@@ -202,66 +183,47 @@ export function PlaygroundBridgeV3({
     );
   }
 
-  // Renderiza um campo com CHIPS como opções principais
-  const renderField = (req: { label: string; slot: string; chips: string[] }) => {
-    const isSelected = (chip: string) => fieldValues[req.label] === chip;
-    const isShowingCustom = showCustomInput[req.label];
-    
-    return (
-      <div key={req.label} className="space-y-2">
-        <label className="text-xs font-semibold text-foreground/80 block">
-          {req.label}:
-        </label>
-        
-        {/* Chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {req.chips.map((chip, i) => (
-            <button
-              key={i}
-              onClick={() => handleChipSelect(req.label, chip)}
-              className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
-                isSelected(chip)
-                  ? 'bg-violet-600 text-white border-violet-600 shadow-md'
-                  : 'bg-white dark:bg-slate-800 text-foreground/70 border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
-              }`}
-            >
-              {chip}
-            </button>
-          ))}
-          
-          {/* Chip "Outro" */}
-          <button
-            onClick={() => handleChipSelect(req.label, '__other__')}
-            className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
-              isShowingCustom
-                ? 'bg-amber-500 text-white border-amber-500'
-                : 'bg-slate-100 dark:bg-slate-700 text-foreground/60 border-slate-200 dark:border-slate-600 hover:border-amber-400'
-            }`}
-          >
-            Outro...
-          </button>
-        </div>
-        
-        {/* Input para "Outro" - só aparece se clicou */}
-        {isShowingCustom && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            transition={{ duration: 0.15 }}
-          >
-            <Input
-              type="text"
-              placeholder="Digite sua opção..."
-              value={customInputs[req.label] || ''}
-              onChange={(e) => handleCustomInputChange(req.label, e.target.value)}
-              className="text-sm h-8 mt-1"
-              autoFocus
-            />
-          </motion.div>
-        )}
-      </div>
-    );
-  };
+  // Renderiza um chip button
+  const ChipButton = ({ 
+    label, 
+    selected, 
+    onClick 
+  }: { 
+    label: string; 
+    selected: boolean; 
+    onClick: () => void 
+  }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
+        selected
+          ? 'bg-violet-600 text-white border-violet-600 shadow-md'
+          : 'bg-white dark:bg-slate-800 text-foreground/70 border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  // Chip "Outro"
+  const OtherChip = ({ 
+    active, 
+    onClick 
+  }: { 
+    active: boolean; 
+    onClick: () => void 
+  }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs rounded-full border transition-all font-medium ${
+        active
+          ? 'bg-amber-500 text-white border-amber-500'
+          : 'bg-slate-100 dark:bg-slate-700 text-foreground/60 border-slate-200 dark:border-slate-600 hover:border-amber-400'
+      }`}
+    >
+      Outro
+    </button>
+  );
 
   return (
     <div 
@@ -315,7 +277,7 @@ export function PlaygroundBridgeV3({
             <AnimatePresence mode="wait">
               
               {/* ================================================================ */}
-              {/* STEP 1: I DO - Veja o exemplo */}
+              {/* STEP 1: VEJA O EXEMPLO (I DO) */}
               {/* ================================================================ */}
               {step === 1 && (
                 <motion.div
@@ -336,9 +298,9 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Context */}
+                  {/* Context text */}
                   <p className="text-sm text-foreground/80 leading-relaxed">
-                    {playgroundExample.context}
+                    Com 1 prompt e algumas informações suas, a I.A. sugere o esqueleto de um curso ou eBook completo.
                   </p>
 
                   {/* Example output */}
@@ -346,8 +308,8 @@ export function PlaygroundBridgeV3({
                     <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Lightbulb className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                          Exemplo de resultado:
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase">
+                          Exemplo de resultado
                         </span>
                       </div>
                       <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
@@ -359,7 +321,7 @@ export function PlaygroundBridgeV3({
               )}
 
               {/* ================================================================ */}
-              {/* STEP 2: WE DO Part 1 - Escolha seu caso */}
+              {/* STEP 2: ESCOLHA SEU CASO (WE DO - Parte 1) */}
               {/* ================================================================ */}
               {step === 2 && (
                 <motion.div
@@ -368,7 +330,7 @@ export function PlaygroundBridgeV3({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* Step indicator */}
                   <div className="flex items-center gap-2">
@@ -380,15 +342,86 @@ export function PlaygroundBridgeV3({
                     </span>
                   </div>
 
-                  {/* Fields for step 2 with chips */}
-                  <div className="space-y-4">
-                    {step2Reqs.map(req => renderField(req))}
+                  {/* Campo 1: Tipo de produto */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Tipo de produto
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PRODUCT_TYPES.map((type) => (
+                        <ChipButton
+                          key={type}
+                          label={type}
+                          selected={productType === type && !showProductTypeCustom}
+                          onClick={() => handleProductTypeSelect(type)}
+                        />
+                      ))}
+                      <OtherChip
+                        active={showProductTypeCustom}
+                        onClick={() => handleProductTypeSelect('__other__')}
+                      />
+                    </div>
+                    {showProductTypeCustom && (
+                      <Input
+                        type="text"
+                        placeholder="Digite o tipo..."
+                        value={productTypeCustom}
+                        onChange={(e) => setProductTypeCustom(e.target.value)}
+                        className="text-sm h-8 mt-1"
+                        autoFocus
+                      />
+                    )}
+                  </div>
+
+                  {/* Campo 2: Tema */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Qual é o tema?
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Ex.: organização financeira, inglês para iniciantes, marketing para médicos"
+                      value={tema}
+                      onChange={(e) => setTema(e.target.value)}
+                      className="text-sm h-9"
+                    />
+                  </div>
+
+                  {/* Campo 3: Público */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Quem é o público?
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {AUDIENCE_OPTIONS.map((opt) => (
+                        <ChipButton
+                          key={opt}
+                          label={opt}
+                          selected={audience === opt && !showAudienceCustom}
+                          onClick={() => handleAudienceSelect(opt)}
+                        />
+                      ))}
+                      <OtherChip
+                        active={showAudienceCustom}
+                        onClick={() => handleAudienceSelect('__other__')}
+                      />
+                    </div>
+                    {showAudienceCustom && (
+                      <Input
+                        type="text"
+                        placeholder="Digite o público..."
+                        value={audienceCustom}
+                        onChange={(e) => setAudienceCustom(e.target.value)}
+                        className="text-sm h-8 mt-1"
+                        autoFocus
+                      />
+                    )}
                   </div>
                 </motion.div>
               )}
 
               {/* ================================================================ */}
-              {/* STEP 3: WE DO Part 2 - Ajuste os detalhes */}
+              {/* STEP 3: MONTE A ESTRUTURA (WE DO - Parte 2) */}
               {/* ================================================================ */}
               {step === 3 && (
                 <motion.div
@@ -397,27 +430,101 @@ export function PlaygroundBridgeV3({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* Step indicator */}
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                      <Settings2 className="w-3.5 h-3.5 text-amber-600" />
+                      <Layers className="w-3.5 h-3.5 text-amber-600" />
                     </div>
                     <span className="text-xs font-bold text-amber-700 dark:text-amber-400 tracking-wide uppercase">
-                      Ajuste os Detalhes
+                      Monte a Estrutura
                     </span>
                   </div>
 
-                  {/* Fields for step 3 with chips */}
-                  <div className="space-y-4">
-                    {step3Reqs.map(req => renderField(req))}
+                  {/* Campo 1: Quantidade de módulos */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Quantos módulos ou capítulos?
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {MODULE_COUNTS.map((count) => (
+                        <ChipButton
+                          key={count}
+                          label={count}
+                          selected={moduleCount === count && !showModuleCountCustom}
+                          onClick={() => handleModuleCountSelect(count)}
+                        />
+                      ))}
+                      <OtherChip
+                        active={showModuleCountCustom}
+                        onClick={() => handleModuleCountSelect('__other__')}
+                      />
+                    </div>
+                    {showModuleCountCustom && (
+                      <Input
+                        type="number"
+                        placeholder="Ex.: 6"
+                        value={moduleCountCustom}
+                        onChange={(e) => setModuleCountCustom(e.target.value)}
+                        className="text-sm h-8 mt-1 w-20"
+                        autoFocus
+                      />
+                    )}
+                  </div>
+
+                  {/* Campo 2: Tipo de conteúdo */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Tipo de conteúdo principal
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CONTENT_TYPES.map((type) => (
+                        <ChipButton
+                          key={type}
+                          label={type}
+                          selected={contentType === type}
+                          onClick={() => setContentType(type)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Campo 3: Exercícios */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Vai ter exercícios ou atividades?
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {EXERCISE_OPTIONS.map((opt) => (
+                        <ChipButton
+                          key={opt}
+                          label={opt}
+                          selected={exercises === opt}
+                          onClick={() => setExercises(opt)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Campo 4: Resultado desejado */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground/80">
+                      Resultado desejado
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Ex.: controlar despesas, dar a primeira aula, liderar reuniões"
+                      value={resultado}
+                      onChange={(e) => setResultado(e.target.value)}
+                      className="text-sm h-9"
+                    />
                   </div>
                 </motion.div>
               )}
 
               {/* ================================================================ */}
-              {/* STEP 4: YOU DO - Monte seu prompt */}
+              {/* STEP 4: ADAPTE E TESTE (YOU DO) */}
               {/* ================================================================ */}
               {step === 4 && (
                 <motion.div
@@ -434,13 +541,13 @@ export function PlaygroundBridgeV3({
                       <Rocket className="w-3.5 h-3.5 text-violet-600" />
                     </div>
                     <span className="text-xs font-bold text-violet-700 dark:text-violet-400 tracking-wide uppercase">
-                      Monte seu Prompt
+                      Adapte e Teste
                     </span>
                   </div>
 
                   {/* Instruction */}
                   <p className="text-xs text-foreground/60">
-                    Substitua os [colchetes] pelo seu caso real e clique em Testar no Playground.
+                    Confira o prompt abaixo. Se quiser, ajuste os colchetes com seu caso real e depois teste no Playground.
                   </p>
 
                   {/* Prompt final */}
@@ -473,7 +580,7 @@ export function PlaygroundBridgeV3({
                     <Button
                       size="sm"
                       onClick={handleGoToPlayground}
-                      className="flex-1 gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                      className="flex-1 gap-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
                     >
                       <Rocket className="w-3.5 h-3.5" />
                       Testar no Playground
@@ -485,13 +592,13 @@ export function PlaygroundBridgeV3({
           </div>
 
           {/* FOOTER - Navigation */}
-          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <div className="px-4 pb-4 pt-2 flex justify-between items-center border-t border-slate-100 dark:border-slate-800">
             {step > 1 ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setStep((s) => Math.max(1, s - 1) as 1 | 2 | 3 | 4)}
-                className="gap-1.5 text-foreground/60 hover:text-foreground"
+                className="gap-1 text-foreground/60"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Voltar
@@ -504,8 +611,7 @@ export function PlaygroundBridgeV3({
               <Button
                 size="sm"
                 onClick={() => setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
-                disabled={(step === 2 && !canProceedFromStep2) || (step === 3 && !canProceedFromStep3)}
-                className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                className="gap-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
               >
                 Próximo
                 <ArrowRight className="w-3.5 h-3.5" />
