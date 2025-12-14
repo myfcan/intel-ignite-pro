@@ -46,12 +46,17 @@ serve(async (req) => {
     }
 
     // System prompt para instruir a IA a executar o prompt como tarefa
-    const systemPrompt = `Você é um assistente prestativo. O usuário vai enviar um prompt/instrução e você deve EXECUTAR essa instrução diretamente.
-NÃO peça mais informações. NÃO faça perguntas de volta.
-Se o prompt pede para criar algo, CRIE.
-Se o prompt pede para listar algo, LISTE.
-Se o prompt pede para analisar algo, ANALISE.
-Responda em português brasileiro de forma útil e direta.`;
+    const systemPrompt = `REGRAS ABSOLUTAS:
+1. EXECUTE a instrução do usuário IMEDIATAMENTE
+2. NUNCA peça mais informações - o prompt já está completo
+3. NUNCA faça perguntas de volta
+4. Responda DIRETAMENTE com o conteúdo solicitado
+
+O usuário vai enviar uma instrução/tarefa. Você deve executá-la e entregar o resultado.
+Se pede para analisar algo, ANALISE.
+Se pede para listar algo, LISTE.
+Se pede para criar algo, CRIE.
+Responda em português brasileiro.`;
 
     // Call Lovable AI Gateway for main response
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
