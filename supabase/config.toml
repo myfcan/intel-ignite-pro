@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.v7-pipeline]
 verify_jwt = false
+
+[functions.v7-code-analysis]
+verify_jwt = false

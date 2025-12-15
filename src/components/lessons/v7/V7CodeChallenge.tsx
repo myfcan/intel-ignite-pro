@@ -1,12 +1,14 @@
 // src/components/lessons/v7/V7CodeChallenge.tsx
-// Code challenge component for V7 lessons with execution and validation
+// Code challenge component for V7 lessons with execution, validation, and AI feedback
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Check, X, Code, RefreshCw, Lightbulb, Terminal } from 'lucide-react';
+import { Play, Check, X, Code, RefreshCw, Lightbulb, Terminal, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InteractionPoint } from '@/types/v7-cinematic.types';
 import { CodeEditor } from './CodeEditor';
+import { V7CodeFeedback } from './V7CodeFeedback';
+import { useV7CodeAnalysis } from '@/hooks/useV7CodeAnalysis';
 
 interface V7CodeChallengeProps {
   interaction: InteractionPoint;
@@ -21,6 +23,7 @@ export interface CodeChallengeResult {
   output: string;
   timeSpent: number;
   attempts: number;
+  aiScore?: number;
 }
 
 export const V7CodeChallenge = ({
@@ -34,10 +37,35 @@ export const V7CodeChallenge = ({
   const [hasCompleted, setHasCompleted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showHint, setShowHint] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
+  const [showAiFeedback, setShowAiFeedback] = useState(true);
   const [attempts, setAttempts] = useState(0);
   const [startTime] = useState(Date.now());
 
   const hint = interaction.content.hint;
+  const expectedCode = interaction.content.expectedCode || '';
+
+  // AI Code Analysis hook
+  const { 
+    analysis, 
+    isAnalyzing, 
+    error: analysisError, 
+    analyzeCode,
+    reset: resetAnalysis 
+  } = useV7CodeAnalysis({
+    expectedCode,
+    context: interaction.content.question || 'Desafio de código',
+    language: 'javascript',
+    debounceMs: 1500,
+    minCodeLength: 15
+  });
+
+  // Trigger AI analysis when code changes
+  useEffect(() => {
+    if (showAiFeedback && !hasCompleted) {
+      analyzeCode(code);
+    }
+  }, [code, showAiFeedback, hasCompleted, analyzeCode]);
 
   // Safe code execution in a sandbox
   const executeCode = useCallback(async (codeToRun: string): Promise<{ output: string; error: string | null }> => {
@@ -124,6 +152,7 @@ export const V7CodeChallenge = ({
     setCode(interaction.content.codeTemplate || '// Escreva seu código aqui\n');
     setOutput('');
     setIsCorrect(null);
+    resetAnalysis();
   };
 
   const handleSubmit = () => {
@@ -134,7 +163,15 @@ export const V7CodeChallenge = ({
       output,
       timeSpent: Date.now() - startTime,
       attempts,
+      aiScore: analysis?.score,
     });
+  };
+
+  const toggleAiFeedback = () => {
+    setShowAiFeedback((prev) => !prev);
+    if (!showAiFeedback) {
+      analyzeCode(code);
+    }
   };
 
   return (
@@ -160,15 +197,30 @@ export const V7CodeChallenge = ({
               </div>
             </div>
 
-            {/* Status badge */}
-            {isCorrect !== null && (
-              <div className={`
-                px-3 py-1 rounded-full text-sm font-medium
-                ${isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}
-              `}>
-                {isCorrect ? '✓ Correto' : '✗ Incorreto'}
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {/* AI Feedback toggle */}
+              <button
+                onClick={toggleAiFeedback}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  showAiFeedback 
+                    ? 'bg-primary/20 text-primary' 
+                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                IA
+              </button>
+
+              {/* Status badge */}
+              {isCorrect !== null && (
+                <div className={`
+                  px-3 py-1 rounded-full text-sm font-medium
+                  ${isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}
+                `}>
+                  {isCorrect ? '✓ Correto' : '✗ Incorreto'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -220,6 +272,42 @@ export const V7CodeChallenge = ({
               </div>
             </div>
           </div>
+
+          {/* AI Feedback Panel */}
+          <AnimatePresence>
+            {showAiFeedback && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-6"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-white/80 text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Feedback de IA em Tempo Real
+                  </h4>
+                  {expectedCode && (
+                    <button
+                      onClick={() => setShowDiff(!showDiff)}
+                      className="flex items-center gap-2 text-xs text-white/60 hover:text-white/80 transition-colors"
+                    >
+                      {showDiff ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showDiff ? 'Ocultar comparação' : 'Ver comparação'}
+                    </button>
+                  )}
+                </div>
+                <V7CodeFeedback
+                  analysis={analysis}
+                  isAnalyzing={isAnalyzing}
+                  error={analysisError}
+                  userCode={code}
+                  expectedCode={expectedCode}
+                  showDiff={showDiff}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Hint section */}
           {hint && !hasCompleted && (
