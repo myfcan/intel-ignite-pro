@@ -7,12 +7,16 @@ import {
   V7PlayerState,
   CinematicAct,
   SyncPoint,
+  InteractionPoint,
 } from '@/types/v7-cinematic.types';
 import { CinematicActRenderer } from './CinematicActRenderer';
 import { V7Timeline } from './V7Timeline';
 import { V7PlayerControls } from './V7PlayerControls';
 import { V7AudioEngine } from './V7AudioEngine';
 import { ParticlesBackground } from './ParticlesBackground';
+import { V7QuizInteraction, QuizResult } from './V7QuizInteraction';
+import { V7CodeChallenge, CodeChallengeResult } from './V7CodeChallenge';
+import { V7InteractionFeedback } from './V7InteractionFeedback';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
 
 interface V7CinematicPlayerProps {
@@ -53,7 +57,14 @@ export const V7CinematicPlayer = ({
 
   // Interaction state
   const [showInteraction, setShowInteraction] = useState(false);
-  const [currentInteractionId, setCurrentInteractionId] = useState<string | null>(null);
+  const [currentInteraction, setCurrentInteraction] = useState<InteractionPoint | null>(null);
+  const [feedbackState, setFeedbackState] = useState<{
+    show: boolean;
+    type: 'success' | 'error' | 'partial';
+    message: string;
+    points?: number;
+    xp?: number;
+  } | null>(null);
 
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -262,7 +273,7 @@ export const V7CinematicPlayer = ({
     if (interaction && !playerState.interactionResults[interaction.id]) {
       pause();
       setShowInteraction(true);
-      setCurrentInteractionId(interaction.id);
+      setCurrentInteraction(interaction);
     }
 
     animationFrameRef.current = requestAnimationFrame(updateTime);
@@ -328,12 +339,27 @@ export const V7CinematicPlayer = ({
         xp: prev.xp + (interaction.points || 0),
       }));
 
+      // Show feedback
+      const isCorrect = result.correct !== false;
+      setFeedbackState({
+        show: true,
+        type: isCorrect ? 'success' : 'error',
+        message: isCorrect 
+          ? (interaction.feedback?.onSuccess?.content || 'Correto! Excelente trabalho!')
+          : (interaction.feedback?.onError?.content || 'Incorreto. Tente novamente!'),
+        points: isCorrect ? (interaction.points || 0) : 0,
+        xp: isCorrect ? (interaction.points || 0) : 0,
+      });
+
       // Hide interaction
       setShowInteraction(false);
-      setCurrentInteractionId(null);
+      setCurrentInteraction(null);
 
-      // Resume playback
-      play();
+      // Resume playback after feedback
+      setTimeout(() => {
+        setFeedbackState(null);
+        play();
+      }, 2500);
 
       trackEvent({
         type: 'interaction',
@@ -456,19 +482,52 @@ export const V7CinematicPlayer = ({
       />
 
       {/* Interaction overlay */}
-      {showInteraction && currentInteractionId && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80">
-          {/* Interaction component will be rendered here */}
-          <div className="bg-white rounded-lg p-8 max-w-2xl">
-            <p className="text-gray-600">Interação: {currentInteractionId}</p>
-            <button
-              onClick={() => handleInteractionComplete(currentInteractionId, { completed: true })}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-            >
-              Continuar
-            </button>
-          </div>
+      {showInteraction && currentInteraction && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          {currentInteraction.type === 'quiz' || currentInteraction.type === 'reflection' ? (
+            <V7QuizInteraction
+              interaction={currentInteraction}
+              onComplete={(result: QuizResult) => handleInteractionComplete(currentInteraction.id, result)}
+              onSkip={!currentInteraction.required ? () => {
+                setShowInteraction(false);
+                setCurrentInteraction(null);
+                play();
+              } : undefined}
+            />
+          ) : currentInteraction.type === 'code-challenge' ? (
+            <V7CodeChallenge
+              interaction={currentInteraction}
+              onComplete={(result: CodeChallengeResult) => handleInteractionComplete(currentInteraction.id, result)}
+              onSkip={!currentInteraction.required ? () => {
+                setShowInteraction(false);
+                setCurrentInteraction(null);
+                play();
+              } : undefined}
+            />
+          ) : (
+            // Fallback for other interaction types
+            <div className="bg-slate-900 rounded-lg p-8 max-w-2xl border border-white/10">
+              <p className="text-white">Interação: {currentInteraction.id}</p>
+              <button
+                onClick={() => handleInteractionComplete(currentInteraction.id, { completed: true })}
+                className="mt-4 px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Feedback overlay */}
+      {feedbackState?.show && (
+        <V7InteractionFeedback
+          type={feedbackState.type}
+          message={feedbackState.message}
+          points={feedbackState.points}
+          xp={feedbackState.xp}
+          onComplete={() => setFeedbackState(null)}
+        />
       )}
 
       {/* Score/XP display */}
