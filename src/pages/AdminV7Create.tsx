@@ -32,7 +32,6 @@ import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useV7LessonEditor } from '@/hooks/useV7LessonEditor';
-import { AI_CATEGORIES, DIFFICULTY_LABELS } from '@/constants/ai-categories';
 
 export default function AdminV7Create() {
   const navigate = useNavigate();
@@ -61,7 +60,7 @@ export default function AdminV7Create() {
     title: '',
     subtitle: '',
     difficulty: 'beginner',
-    category: 'chatgpt', // Default to ChatGPT for AI-focused lessons
+    category: 'prompts',
     tags: [],
     learningObjectives: [],
     narrativeScript: '',
@@ -109,7 +108,7 @@ export default function AdminV7Create() {
           title: formData.title,
           subtitle: formData.subtitle || '',
           difficulty: formData.difficulty || 'beginner',
-          category: formData.category || 'chatgpt',
+          category: formData.category || 'prompts',
           tags: formData.tags || [],
           learningObjectives: formData.learningObjectives || [],
           narrativeScript: formData.narrativeScript,
@@ -294,7 +293,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="title">Título da Lição *</Label>
                   <Input
                     id="title"
-                    placeholder="Ex: ChatGPT Profissional - Do Amador ao R$ 30k/mês"
+                    placeholder="Ex: Dominando Prompts com ChatGPT"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                   />
@@ -305,7 +304,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="subtitle">Subtítulo</Label>
                   <Input
                     id="subtitle"
-                    placeholder="A diferença brutal entre quem brinca e quem lucra com IA"
+                    placeholder="Uma jornada cinematográfica pelo mundo da IA"
                     value={formData.subtitle}
                     onChange={(e) => handleInputChange('subtitle', e.target.value)}
                   />
@@ -314,7 +313,7 @@ export default function AdminV7Create() {
                 {/* Difficulty and Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="difficulty">Nível</Label>
+                    <Label htmlFor="difficulty">Dificuldade</Label>
                     <Select
                       value={formData.difficulty}
                       onValueChange={(value) => handleInputChange('difficulty', value)}
@@ -323,15 +322,15 @@ export default function AdminV7Create() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="beginner">{DIFFICULTY_LABELS.beginner}</SelectItem>
-                        <SelectItem value="intermediate">{DIFFICULTY_LABELS.intermediate}</SelectItem>
-                        <SelectItem value="advanced">{DIFFICULTY_LABELS.advanced}</SelectItem>
+                        <SelectItem value="beginner">Iniciante</SelectItem>
+                        <SelectItem value="intermediate">Intermediário</SelectItem>
+                        <SelectItem value="advanced">Avançado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Ferramenta/Tópico de IA</Label>
+                    <Label htmlFor="category">Categoria</Label>
                     <Select
                       value={formData.category}
                       onValueChange={(value) => handleInputChange('category', value)}
@@ -339,19 +338,14 @@ export default function AdminV7Create() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[400px]">
-                        {AI_CATEGORIES.map((group) => (
-                          <div key={group.group}>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                              {group.group}
-                            </div>
-                            {group.items.map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
+                      <SelectContent>
+                        <SelectItem value="prompts">Prompts</SelectItem>
+                        <SelectItem value="chatgpt">ChatGPT</SelectItem>
+                        <SelectItem value="ai-fundamentals">Fundamentos de IA</SelectItem>
+                        <SelectItem value="automation">Automação com IA</SelectItem>
+                        <SelectItem value="image-generation">Geração de Imagens</SelectItem>
+                        <SelectItem value="ai-tools">Ferramentas de IA</SelectItem>
+                        <SelectItem value="productivity">Produtividade com IA</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -377,7 +371,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="objectives">Objetivos de Aprendizado</Label>
                   <Textarea
                     id="objectives"
-                    placeholder="Digite um objetivo por linha:&#10;- Dominar o Método PERFEITO de prompts&#10;- Criar prompts que geram resultados vendáveis&#10;- Economizar 20+ horas por semana com IA&#10;- Transformar IA em ferramenta de renda"
+                    placeholder="Digite um objetivo por linha:&#10;- Dominar técnicas de prompt&#10;- Usar ChatGPT de forma avançada&#10;- Automatizar tarefas com IA"
                     rows={4}
                     value={formData.learningObjectives?.join('\n')}
                     onChange={(e) => {
@@ -405,7 +399,7 @@ export default function AdminV7Create() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;98% das pessoas usa IA como um brinquedo. Eles pedem piadas, poemas, curiosidades...&#10;&#10;Enquanto isso, os 2% que DOMINAM IA estão fazendo R$ 30.000/mês em 2 horas por dia.&#10;&#10;A diferença? Eles sabem exatamente COMO pedir. E você vai aprender isso agora.&#10;&#10;Vou te mostrar a diferença entre um prompt que vale R$ 0 e um prompt que vale R$ 500...&#10;&#10;[Continue com o roteiro completo, incluindo desafios práticos e comparações]"
+                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Bem-vindo à jornada pelo mundo da Inteligência Artificial. Hoje, vamos explorar como criar prompts eficazes que transformam suas interações com o ChatGPT...&#10;&#10;[Continue com o roteiro completo, incluindo pontos de interação e desafios]"
                   rows={15}
                   value={formData.narrativeScript}
                   onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
@@ -514,23 +508,27 @@ export default function AdminV7Create() {
         {/* Info Card */}
         <Card className="bg-blue-500/5 border-blue-500/20">
           <CardHeader>
-            <CardTitle className="text-sm">ℹ️ Como funciona o V7 Cinematic para IA</CardTitle>
+            <CardTitle className="text-sm">ℹ️ Como funciona o V7 Cinematic</CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <p>
-              1. <strong>Roteiro Narrativo</strong>: Escreva seu roteiro focado em ensinar IA (prompts, ferramentas, aplicações)
+              1. <strong>Roteiro Narrativo</strong>: A IA analisa seu roteiro e divide em atos
+              cinematográficos
             </p>
             <p>
-              2. <strong>Geração de Atos</strong>: Cada ato recebe animações cinematográficas e transições suaves
+              2. <strong>Geração de Atos</strong>: Cada ato recebe animações, transições e
+              sincronização de áudio
             </p>
             <p>
-              3. <strong>Comparações Práticas</strong>: Amador vs Profissional (ex: prompt genérico vs prompt estratégico)
+              3. <strong>Playground Comparativo</strong>: Código amateur vs professional é
+              gerado automaticamente
             </p>
             <p>
-              4. <strong>Desafios Interativos</strong>: Alunos testam na prática (ex: criar prompts, comparar resultados)
+              4. <strong>Interações</strong>: Pontos de interação são inseridos
+              estrategicamente
             </p>
             <p>
-              5. <strong>Gamificação</strong>: XP, conquistas e feedback em tempo real motivam o aprendizado
+              5. <strong>Gamificação</strong>: XP, achievements e scoring são configurados
             </p>
           </CardContent>
         </Card>
