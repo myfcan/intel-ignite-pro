@@ -1151,6 +1151,42 @@ export type Database = {
         }
         Relationships: []
       }
+      v7_analytics: {
+        Row: {
+          created_at: string
+          duration: number
+          events: Json
+          id: string
+          lesson_id: string
+          metrics: Json
+          session_id: string
+          start_time: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number
+          events?: Json
+          id?: string
+          lesson_id: string
+          metrics?: Json
+          session_id: string
+          start_time: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          events?: Json
+          id?: string
+          lesson_id?: string
+          metrics?: Json
+          session_id?: string
+          start_time?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       validation_alerts: {
         Row: {
           created_at: string | null
