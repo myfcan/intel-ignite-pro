@@ -177,7 +177,6 @@ const V7CinematicDemo = () => {
       acts={acts}
       totalDuration="8:00"
       onComplete={handleComplete}
-      isAudioPlaying={true}
     />
   );
 };

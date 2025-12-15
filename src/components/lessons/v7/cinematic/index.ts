@@ -10,3 +10,7 @@ export { V7ActComparison } from "./V7ActComparison";
 export { V7ActInteraction } from "./V7ActInteraction";
 export { V7ActResult } from "./V7ActResult";
 export { V7ActPlayground } from "./V7ActPlayground";
+
+// V7 Cinematic Components - Phase 4 (Audio)
+export { V7AudioControls } from "./V7AudioControls";
+export { useV7CinematicAudio } from "./useV7CinematicAudio";
