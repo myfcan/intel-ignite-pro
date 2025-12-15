@@ -1,5 +1,5 @@
 // src/components/lessons/v7/V7CinematicPlayer.tsx
-// Main player component for V7 Cinematic Lessons with full audio sync and transitions
+// Main player component for V7 Cinematic Lessons with full audio sync, transitions, and accessibility
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
@@ -19,7 +19,11 @@ import { ParticlesBackground } from './ParticlesBackground';
 import { V7QuizInteraction, QuizResult } from './V7QuizInteraction';
 import { V7CodeChallenge, CodeChallengeResult } from './V7CodeChallenge';
 import { V7InteractionFeedback } from './V7InteractionFeedback';
+import { V7TouchControls } from './V7TouchControls';
+import { V7Subtitles } from './V7Subtitles';
+import { V7AccessibilityWrapper } from './V7AccessibilityWrapper';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WordTimestamp {
   word: string;
