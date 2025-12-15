@@ -39,7 +39,6 @@ export default function AdminV7Preview() {
           .from('lessons')
           .select('*')
           .eq('id', lessonId)
-          .eq('model', 'v7')
           .maybeSingle();
 
         if (fetchError) {
@@ -47,7 +46,12 @@ export default function AdminV7Preview() {
         }
 
         if (!data) {
-          throw new Error('Lição V7 não encontrada');
+          throw new Error('Lição não encontrada. Verifique se você está logado como admin.');
+        }
+
+        // Verify it's a V7 lesson
+        if (data.model !== 'v7') {
+          throw new Error(`Esta lição não é V7 (model: ${data.model})`);
         }
 
         // Transform database content to V7CinematicLesson format
