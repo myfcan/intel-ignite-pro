@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mainPromptCategories } from '@/data/prompts';
+import { allPromptCategories } from '@/data/prompts';
 import {
   Sparkles,
   DollarSign,
@@ -31,8 +31,8 @@ export default function PromptLibrary() {
   const navigate = useNavigate();
 
   // Calcular estatísticas
-  const totalPrompts = mainPromptCategories.reduce((sum, cat) => sum + cat.prompts.length, 0);
-  const freePrompts = mainPromptCategories.reduce(
+  const totalPrompts = allPromptCategories.reduce((sum, cat) => sum + cat.prompts.length, 0);
+  const freePrompts = allPromptCategories.reduce(
     (sum, cat) => sum + cat.prompts.filter(p => !p.isPremium).length,
     0
   );
@@ -131,7 +131,7 @@ export default function PromptLibrary() {
                 <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{mainPromptCategories.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{allPromptCategories.length}</p>
                 <p className="text-gray-600 text-xs sm:text-sm truncate">Categorias</p>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function PromptLibrary() {
 
         {/* Categories Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {mainPromptCategories.map((category) => {
+          {allPromptCategories.map((category) => {
             const Icon = categoryIcons[category.id] || Sparkles;
             const freeCount = category.prompts.filter(p => !p.isPremium).length;
             const premiumCount = category.prompts.length - freeCount;
