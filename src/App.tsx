@@ -61,6 +61,8 @@ const AdminPlaygroundSessions = lazy(() => import("./pages/AdminPlaygroundSessio
 const AdminV5CardConfig = lazy(() => import("./pages/AdminV5CardConfig"));
 const AdminTestCardSync = lazy(() => import("./pages/AdminTestCardSync"));
 const TestCard = lazy(() => import("./pages/TestCard"));
+const AdminV7Create = lazy(() => import("./pages/AdminV7Create"));
+const AdminV7Preview = lazy(() => import("./pages/AdminV7Preview"));
 
 const queryClient = new QueryClient();
 
@@ -163,6 +165,9 @@ const App = () => (
               <Route path="/admin/v5-card-config" element={<ProtectedRoute><AdminV5CardConfig /></ProtectedRoute>} />
               <Route path="/admin/test-card" element={<ProtectedRoute><TestCard /></ProtectedRoute>} />
               <Route path="/admin/test-card-sync" element={<ProtectedRoute><AdminTestCardSync /></ProtectedRoute>} />
+              {/* V7 CINEMATIC ROUTES */}
+              <Route path="/admin/v7/create" element={<ProtectedRoute><AdminV7Create /></ProtectedRoute>} />
+              <Route path="/admin/v7/preview/:lessonId?" element={<ProtectedRoute><AdminV7Preview /></ProtectedRoute>} />
               {/* NEW FEATURES ROUTES */}
               <Route path="/guides" element={<Guides />} />
               <Route path="/guides/:guideId" element={<GuideDetail />} />
