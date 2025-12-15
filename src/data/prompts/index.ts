@@ -63,13 +63,25 @@ const enhancedBlogCategory: PromptCategory = {
   prompts: [...blogPromptsCategory.prompts, ...blogContentPremiumPrompts]
 };
 
-// Export all prompt categories
+// Enhanced Sales category with Pack 4
+const enhancedSalesCategory: PromptCategory = {
+  ...salesMarketingPromptsCategory,
+  prompts: [...salesMarketingPromptsCategory.prompts, ...vendasPremiumPrompts]
+};
+
+// Enhanced Social category with Pack 4
+const enhancedSocialCategory: PromptCategory = {
+  ...socialPromptsCategory,
+  prompts: [...socialPromptsCategory.prompts, ...redesSociaisPremiumPrompts]
+};
+
+// Export all prompt categories with enhanced versions
 export const allPromptCategories: PromptCategory[] = [
   enhancedMarketingDigitalCategory,
   enhancedBusinessCategory,
   enhancedPersonalFinanceCategory,
   enhancedProductCreationCategory,
-  salesMarketingPromptsCategory,
+  enhancedSalesCategory,
   extraIncomePromptsCategory,
   freePromptsCategory,
   dailyLifePromptsCategory,
@@ -77,7 +89,7 @@ export const allPromptCategories: PromptCategory[] = [
   enhancedBlogCategory,
   studyPromptsCategory,
   contentPromptsCategory,
-  socialPromptsCategory,
+  enhancedSocialCategory,
   seoPromptsCategory
 ];
 
