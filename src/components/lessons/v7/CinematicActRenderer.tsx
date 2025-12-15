@@ -181,16 +181,29 @@ export const CinematicActRenderer = ({
 
     switch (layer.type) {
       case 'text':
+        // Check if content is HTML or plain text
+        const isHTML = typeof layer.content === 'string' && layer.content.includes('<');
+        const textStyle = {
+          ...getLayerStyle(),
+          ...(layer.style || {}),
+        };
+        
         return (
           <div
             key={layer.id}
             className={`layer-text ${getAnimationClass()}`}
-            style={getLayerStyle()}
+            style={textStyle}
           >
-            <div
-              className="text-content"
-              dangerouslySetInnerHTML={{ __html: layer.content }}
-            />
+            {isHTML ? (
+              <div
+                className="text-content"
+                dangerouslySetInnerHTML={{ __html: layer.content }}
+              />
+            ) : (
+              <div className="text-content" style={layer.style}>
+                {layer.content}
+              </div>
+            )}
           </div>
         );
 
