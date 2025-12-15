@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Film } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { V7LessonsList } from '@/components/admin/V7LessonsList';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
@@ -124,6 +125,9 @@ export default function Admin() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Lista de Aulas V7 */}
+        <V7LessonsList />
 
         {/* Cards de acesso rápido */}
         <div className="grid gap-6 md:grid-cols-3">
