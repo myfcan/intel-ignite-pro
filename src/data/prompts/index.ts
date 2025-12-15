@@ -15,6 +15,7 @@ import { salesMarketingPromptsCategory } from './sales-marketing-complete';
 import { marketingDigitalPremiumPrompts, businessPremiumPrompts } from './premium-prompts-pack1';
 import { premiumPromptsPack2 } from './premium-prompts-pack2';
 import { emailMarketingPremiumPrompts, blogContentPremiumPrompts } from './premium-prompts-pack3';
+import { vendasPremiumPrompts, redesSociaisPremiumPrompts } from './premium-prompts-pack4';
 import { PromptCategory, Prompt } from '../../types/prompt';
 
 // Combinar prompts premium com suas categorias
