@@ -1,26 +1,27 @@
+import { Prompt } from '../../types/prompt';
+
 /**
- * PACK 3 - PROMPTS PREMIUM
+ * PACK 3: PROMPTS PREMIUM
  * 30 prompts: 15 Email Marketing + 15 Blog/Conteúdo
  */
 
-import { Prompt } from './promptTypes';
-
-// ==========================================
-// EMAIL MARKETING - 15 Prompts Premium
-// ==========================================
+// =====================================================
+// EMAIL MARKETING - PROMPTS PREMIUM (15)
+// =====================================================
 
 export const emailMarketingPremiumPrompts: Prompt[] = [
   {
     id: 'email-welcome-sequence',
+    categoryId: 'email-marketing',
     title: 'Sequência de Boas-Vindas Completa',
     description: 'Crie uma sequência de 5 emails para novos assinantes que constrói relacionamento e converte.',
-    fullPrompt: `Você é um especialista em email marketing e automação. Crie uma sequência completa de 5 emails de boas-vindas para novos assinantes.
+    template: `Você é um especialista em email marketing e automação. Crie uma sequência completa de 5 emails de boas-vindas para novos assinantes.
 
 CONTEXTO DO NEGÓCIO:
-- Nicho: [seu nicho/mercado]
-- Produto/Serviço principal: [o que você vende]
-- Avatar do cliente: [descreva seu cliente ideal]
-- Promessa principal: [benefício central que você entrega]
+- Nicho: {nicho}
+- Produto/Serviço principal: {produto}
+- Avatar do cliente: {avatar}
+- Promessa principal: {promessa}
 
 ESTRUTURA DA SEQUÊNCIA:
 
@@ -65,2474 +66,2010 @@ Para cada email, inclua:
 - Preview text otimizado
 - Corpo completo do email
 - PS estratégico`,
-    category: 'email-marketing',
+    variables: [
+      { name: 'nicho', label: 'Nicho/Mercado', placeholder: 'Ex: Finanças pessoais', type: 'text', required: true },
+      { name: 'produto', label: 'Produto/Serviço', placeholder: 'Ex: Curso de investimentos', type: 'text', required: true },
+      { name: 'avatar', label: 'Cliente ideal', placeholder: 'Ex: Jovens de 25-35 anos querendo investir', type: 'textarea', required: true },
+      { name: 'promessa', label: 'Promessa principal', placeholder: 'Ex: Aprender a investir do zero', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['welcome', 'automação', 'sequência', 'conversão'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['welcome', 'automação', 'sequência', 'conversão']
+    isFeatured: true,
+    usageCount: 0
   },
   {
     id: 'email-launch-campaign',
+    categoryId: 'email-marketing',
     title: 'Campanha de Lançamento 7 Dias',
     description: 'Sequência de emails para lançamento de produto com gatilhos mentais e urgência.',
-    fullPrompt: `Você é um copywriter especialista em lançamentos digitais. Crie uma campanha completa de 7 emails para lançamento.
+    template: `Você é um copywriter especialista em lançamentos digitais. Crie uma campanha completa de 7 emails para lançamento.
 
 INFORMAÇÕES DO LANÇAMENTO:
-- Produto: [nome e descrição]
-- Preço: [valor e condições especiais]
-- Duração do carrinho aberto: [ex: 7 dias]
-- Bônus exclusivos: [liste os bônus]
-- Garantia: [tipo e prazo]
+- Produto: {produto}
+- Preço: {preco}
+- Benefício principal: {beneficio}
+- Data de abertura: {data_abertura}
+- Data de fechamento: {data_fechamento}
 
-ESTRUTURA DA CAMPANHA:
+ESTRUTURA DOS 7 DIAS:
 
 📧 DIA 1 - ABERTURA DO CARRINHO
-- Assunto: alta urgência + novidade
-- Anuncie oficialmente a abertura
-- Destaque a oferta especial de lançamento
-- Liste os bônus para primeiros compradores
-- CTA: garantir vaga agora
+- Assunto: máxima urgência/novidade
+- Anuncie a abertura
+- Resuma a oferta e benefícios
+- Inclua bônus de early bird
+- CTA forte para página de vendas
 
 📧 DIA 2 - PROVA SOCIAL
-- Assunto: resultados de alunos/clientes
-- Compartilhe 3-5 depoimentos poderosos
-- Mostre transformações reais
-- Conecte resultados com o produto
-- CTA: fazer parte do grupo de sucesso
+- Assunto: resultados de alunos
+- Depoimentos poderosos
+- Casos de transformação
+- Screenshot de resultados
 
-📧 DIA 3 - CONTEÚDO + OBJEÇÕES
-- Assunto: responda dúvida comum
-- Entregue valor genuíno (mini-aula)
-- Quebre objeção principal
-- Mostre que o produto resolve isso
-- CTA: eliminar essa dor agora
+📧 DIA 3 - CONTEÚDO DE VALOR
+- Entregue uma aula/dica gratuita
+- Mostre uma prévia do método
+- Construa autoridade
 
-📧 DIA 4 - BÔNUS EXTRA (Meio do lançamento)
-- Assunto: surpresa/presente
-- Anuncie bônus adicional inesperado
-- Crie senso de valor crescente
-- Atualize contagem de vagas/vendas
-- CTA: aproveitar pacote completo
+📧 DIA 4 - FAQ E OBJEÇÕES
+- Responda dúvidas frequentes
+- Quebre as principais objeções
+- Reforce a garantia
 
-📧 DIA 5 - STORYTELLING
-- Assunto: história pessoal/de cliente
-- Conte jornada de transformação
-- Conecte emocionalmente
-- Mostre o "antes e depois"
-- CTA: começar sua transformação
+📧 DIA 5 - BÔNUS SURPRESA
+- Anuncie um bônus extra
+- Crie mais valor percebido
+- Reforce a urgência
 
-📧 DIA 6 - ÚLTIMA CHANCE
-- Assunto: aviso final
-- Destaque que faltam 24 horas
-- Recapitule tudo que está incluído
-- Reforce garantia (risco zero)
-- CTA: última oportunidade
+📧 DIA 6 - ÚLTIMAS 24 HORAS
+- Contagem regressiva
+- Escassez real
+- Depoimento impactante
 
-📧 DIA 7 - ENCERRAMENTO
-- Assunto: últimas horas (urgência máxima)
-- Email curto e direto
-- Countdown final
-- Lembre da remoção dos bônus
-- CTA: garantir antes do fechamento
-
-Para cada email, forneça:
-- Linha de assunto principal + 2 alternativas
-- Preview text
-- Corpo completo formatado
-- PS com gatilho extra`,
-    category: 'email-marketing',
+📧 DIA 7 - ÚLTIMA CHANCE
+- Fechamento do carrinho
+- Último email antes do fim
+- Resumo de tudo incluído
+- CTA final urgente`,
+    variables: [
+      { name: 'produto', label: 'Nome do Produto', placeholder: 'Ex: Mentoria Elite', type: 'text', required: true },
+      { name: 'preco', label: 'Preço', placeholder: 'Ex: R$ 1.997', type: 'text', required: true },
+      { name: 'beneficio', label: 'Benefício Principal', placeholder: 'Ex: Dobrar seu faturamento em 90 dias', type: 'text', required: true },
+      { name: 'data_abertura', label: 'Data de Abertura', placeholder: 'Ex: 15/03', type: 'text', required: true },
+      { name: 'data_fechamento', label: 'Data de Fechamento', placeholder: 'Ex: 22/03', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['lançamento', 'campanha', 'urgência', 'conversão'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['lançamento', 'campanha', 'vendas', 'urgência']
+    usageCount: 0
   },
   {
     id: 'email-reengagement',
-    title: 'Campanha de Reativação de Lista',
-    description: 'Sequência para reativar assinantes inativos e limpar sua lista.',
-    fullPrompt: `Você é especialista em email marketing e reativação de listas. Crie uma campanha de 4 emails para reengajar assinantes inativos.
+    categoryId: 'email-marketing',
+    title: 'Sequência de Reengajamento',
+    description: 'Recupere assinantes inativos com uma sequência estratégica de reativação.',
+    template: `Crie uma sequência de 5 emails para reengajar assinantes inativos.
 
 CONTEXTO:
-- Período de inatividade: [ex: 90+ dias sem abrir]
-- Tamanho do segmento inativo: [número aproximado]
-- Último conteúdo/oferta enviado: [descreva]
-- Incentivo para reativação: [desconto, bônus, etc.]
+- Negócio: {negocio}
+- Tempo de inatividade: {tempo_inatividade}
+- Oferta especial para retorno: {oferta_especial}
 
-SEQUÊNCIA DE REATIVAÇÃO:
+SEQUÊNCIA DE REENGAJAMENTO:
 
 📧 EMAIL 1 - "SENTIMOS SUA FALTA"
-- Assunto: personalizado e curioso
-- Tom: amigável, não desesperado
-- Reconheça que não interagiram
-- Pergunte se ainda querem receber
-- Ofereça algo de valor gratuito
-- CTA: "Sim, quero continuar"
+- Assunto emocional/pessoal
+- Reconheça a ausência
+- Pergunte o que houve
+- Ofereça ajuda
 
-📧 EMAIL 2 - "MUDAMOS POR VOCÊ" (3 dias depois)
-- Assunto: novidade/mudança
-- Mostre o que melhorou na newsletter
-- Destaque conteúdos recentes populares
-- Ofereça escolher preferências
-- CTA: atualizar preferências
+📧 EMAIL 2 - "NOVIDADES QUE VOCÊ PERDEU"
+- Mostre o que mudou
+- Destaque novos conteúdos/produtos
+- Crie FOMO (medo de perder)
 
-📧 EMAIL 3 - "PRESENTE ESPECIAL" (5 dias depois)
-- Assunto: oferta exclusiva
-- Ofereça desconto/bônus de reativação
-- Prazo limitado para a oferta
-- Mostre o que estão perdendo
-- CTA: resgatar presente
+📧 EMAIL 3 - "PRESENTE ESPECIAL"
+- Ofereça algo exclusivo
+- Desconto ou bônus gratuito
+- Prazo limitado
 
-📧 EMAIL 4 - "ÚLTIMA MENSAGEM" (7 dias depois)
-- Assunto: despedida respeitosa
-- Avise que vai remover da lista
-- Dê última chance de ficar
-- Botão claro para permanecer
-- Botão para cancelar inscrição
-- CTA: "Quero continuar" vs "Pode me remover"
+📧 EMAIL 4 - "ÚLTIMA TENTATIVA"
+- Tom sincero e direto
+- Pergunte se ainda quer receber
+- Dê opção de atualizar preferências
 
-MÉTRICAS DE SUCESSO:
-- Taxa de reativação esperada: 5-15%
-- Limpeza de lista: remover não-respondentes
-- Melhoria na entregabilidade
-
-Para cada email, inclua:
-- 2 opções de linha de assunto
-- Preview text
-- Corpo completo
-- Configuração de automação sugerida`,
-    category: 'email-marketing',
+📧 EMAIL 5 - "DESPEDIDA"
+- Avise sobre remoção da lista
+- Última chance de ficar
+- Link claro para continuar`,
+    variables: [
+      { name: 'negocio', label: 'Tipo de Negócio', placeholder: 'Ex: Escola de inglês online', type: 'text', required: true },
+      { name: 'tempo_inatividade', label: 'Tempo de Inatividade', placeholder: 'Ex: 90 dias sem abrir emails', type: 'text', required: true },
+      { name: 'oferta_especial', label: 'Oferta Especial', placeholder: 'Ex: 30% de desconto no próximo curso', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['reengajamento', 'inativos', 'recuperação', 'lista'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['reativação', 'lista', 'engajamento', 'limpeza']
+    usageCount: 0
   },
   {
-    id: 'email-abandoned-cart',
+    id: 'email-cart-abandonment',
+    categoryId: 'email-marketing',
     title: 'Sequência de Carrinho Abandonado',
-    description: 'Recupere vendas perdidas com emails estratégicos para carrinhos abandonados.',
-    fullPrompt: `Você é especialista em recuperação de vendas e email marketing. Crie uma sequência de 4 emails para carrinho abandonado.
+    description: 'Recupere vendas perdidas com emails estratégicos de abandono de carrinho.',
+    template: `Crie uma sequência de 4 emails para recuperar carrinhos abandonados.
 
-INFORMAÇÕES DO E-COMMERCE:
-- Tipo de produto: [físico/digital/serviço]
-- Ticket médio: [valor]
-- Motivos comuns de abandono: [frete, preço, dúvidas]
-- Incentivo disponível: [desconto, frete grátis, bônus]
+PRODUTO ABANDONADO:
+- Nome: {produto}
+- Preço: {preco}
+- Benefício principal: {beneficio}
+- Garantia: {garantia}
 
 SEQUÊNCIA DE RECUPERAÇÃO:
 
-📧 EMAIL 1 - LEMBRETE (1 hora após abandono)
-- Assunto: simples e direto
-- Tom: prestativo, não vendedor
-- Lembre dos itens no carrinho
-- Pergunte se houve problema técnico
-- Mostre imagem do produto
-- CTA: finalizar compra
+📧 EMAIL 1 - 1 HORA APÓS ABANDONO
+"Você esqueceu algo..."
+- Tom amigável, não vendedor
+- Lembre do produto
+- Botão direto para finalizar
+- Ofereça ajuda (dúvidas?)
 
-📧 EMAIL 2 - VALOR (24 horas após)
-- Assunto: destaque benefício
-- Reforce os benefícios do produto
-- Inclua depoimento relevante
-- Responda dúvida frequente
-- Mostre avaliações/estrelas
-- CTA: garantir o seu
+📧 EMAIL 2 - 24 HORAS APÓS
+"Ainda está pensando?"
+- Reforce os benefícios
+- Adicione depoimento
+- Quebre uma objeção comum
+- CTA para voltar ao checkout
 
-📧 EMAIL 3 - INCENTIVO (48 horas após)
-- Assunto: oferta especial
-- Ofereça desconto ou frete grátis
-- Prazo limitado para a oferta
-- Destaque economia
-- Adicione urgência leve
-- CTA: usar cupom agora
+📧 EMAIL 3 - 48 HORAS APÓS
+"Oferta especial para você"
+- Ofereça um incentivo (desconto/bônus)
+- Crie urgência (expira em 24h)
+- Destaque a garantia
+- Simplifique a decisão
 
-📧 EMAIL 4 - ÚLTIMA CHANCE (72 horas após)
-- Assunto: expiração do carrinho/oferta
-- Avise que itens podem esgotar
-- Última chamada para o desconto
-- Crie urgência real
-- CTA: finalizar antes que expire
-
-ELEMENTOS TÉCNICOS:
-- Personalização com nome do produto
-- Imagem dinâmica do item
-- Link direto para checkout
-- Cupom aplicado automaticamente
-
-Para cada email, forneça:
-- Linha de assunto + emoji strategy
-- Preview text otimizado
-- Corpo do email formatado
-- Timing exato de envio`,
-    category: 'email-marketing',
+📧 EMAIL 4 - 72 HORAS APÓS
+"Última chance"
+- Último lembrete
+- Resuma tudo incluído
+- Reforce o incentivo
+- CTA urgente final`,
+    variables: [
+      { name: 'produto', label: 'Nome do Produto', placeholder: 'Ex: Curso de Marketing Digital', type: 'text', required: true },
+      { name: 'preco', label: 'Preço', placeholder: 'Ex: R$ 497', type: 'text', required: true },
+      { name: 'beneficio', label: 'Benefício Principal', placeholder: 'Ex: Aprender a vender online', type: 'text', required: true },
+      { name: 'garantia', label: 'Garantia', placeholder: 'Ex: 7 dias de garantia incondicional', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['carrinho', 'abandono', 'recuperação', 'vendas'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['carrinho', 'recuperação', 'e-commerce', 'vendas']
+    usageCount: 0
   },
   {
     id: 'email-newsletter-weekly',
+    categoryId: 'email-marketing',
     title: 'Template de Newsletter Semanal',
-    description: 'Estrutura completa para criar newsletters engajantes toda semana.',
-    fullPrompt: `Você é especialista em newsletters e criação de conteúdo. Crie um template de newsletter semanal que mantém engajamento alto.
-
-INFORMAÇÕES DA NEWSLETTER:
-- Nome/Marca: [sua newsletter]
-- Nicho: [seu mercado]
-- Tom de voz: [formal/casual/inspirador/provocativo]
-- Frequência: semanal
-- Objetivo principal: [educar/entreter/vender/inspirar]
-
-ESTRUTURA DO TEMPLATE:
-
-📰 SEÇÃO 1 - GANCHO DE ABERTURA
-- Pergunta provocativa OU
-- Estatística surpreendente OU
-- História pessoal breve OU
-- Observação do momento atual
-[Objetivo: capturar atenção nos primeiros 3 segundos]
-
-📰 SEÇÃO 2 - INSIGHT PRINCIPAL
-- Um conceito/ideia central da semana
-- Explicação clara e prática
-- Exemplo ou analogia
-- Por que isso importa agora
-[Formato: 150-250 palavras]
-
-📰 SEÇÃO 3 - AÇÃO PRÁTICA
-- Uma dica implementável hoje
-- Passo a passo simples (3-5 passos)
-- Resultado esperado
-[Formato: lista ou bullets]
-
-📰 SEÇÃO 4 - CURADORIA DE VALOR
-- 3 recursos úteis da semana:
-  • 📖 Artigo/Thread recomendado
-  • 🎧 Podcast/Vídeo interessante
-  • 🛠️ Ferramenta/Recurso útil
-[Com descrição de 1 linha cada]
-
-📰 SEÇÃO 5 - CONEXÃO PESSOAL
-- Bastidores ou reflexão pessoal
-- Pergunta para o leitor
-- Convite para responder
-[Humaniza a marca]
-
-📰 SEÇÃO 6 - CTA SEMANAL
-- Rotativo entre:
-  • Produto/Serviço
-  • Conteúdo gratuito
-  • Engajamento (responder, compartilhar)
-  • Indicação (member get member)
-
-📰 ASSINATURA
-- Despedida consistente
-- Nome + cargo/título
-- Links sociais
-- PS estratégico (opcional)
-
-DICAS DE FORMATAÇÃO:
-- Use emojis com moderação
-- Parágrafos curtos (2-3 linhas)
-- Negrito para pontos-chave
-- Bullets para listas
-- Espaçamento generoso
-
-Crie um exemplo completo usando este template para o nicho especificado.`,
-    category: 'email-marketing',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['newsletter', 'semanal', 'engajamento', 'conteúdo']
-  },
-  {
-    id: 'email-flash-sale',
-    title: 'Campanha de Venda Relâmpago 24h',
-    description: 'Emails de alta conversão para promoções de tempo limitado.',
-    fullPrompt: `Você é copywriter especialista em campanhas de urgência. Crie uma campanha de venda relâmpago de 24 horas.
-
-DETALHES DA PROMOÇÃO:
-- Produto/Oferta: [o que está em promoção]
-- Desconto: [percentual ou valor]
-- Duração: 24 horas
-- Quantidade limitada: [se aplicável]
-- Motivo da promoção: [aniversário, Black Friday, queima, etc.]
-
-SEQUÊNCIA DE 4 EMAILS EM 24H:
-
-⚡ EMAIL 1 - LANÇAMENTO (Hora 0)
-Horário: [ex: 8h da manhã]
-
-- Assunto: URGÊNCIA + NOVIDADE
-- Anuncie a venda relâmpago
-- Destaque o desconto de forma impactante
-- Mostre economia em reais
-- Countdown visual (texto)
-- Lista rápida do que está incluído
-- CTA: Garantir agora com X% OFF
-
-⚡ EMAIL 2 - MEIO-DIA (Hora 4-6)
-Horário: [ex: 12h-14h]
-
-- Assunto: Atualização + Prova social
-- "Já vendemos X unidades"
-- Depoimento rápido de cliente
-- Lembre do prazo (restam X horas)
-- Destaque bônus ou diferencial
-- CTA: Aproveitar antes que acabe
-
-⚡ EMAIL 3 - AVISO (Hora 18-20)
-Horário: [ex: tarde/noite]
-
-- Assunto: Últimas horas - AVISO
-- Urgência máxima no tom
-- Recapitule a oferta completa
-- "Depois de meia-noite, volta ao preço normal"
-- Quebre última objeção
-- CTA: Última chance
-
-⚡ EMAIL 4 - ENCERRAMENTO (Hora 23)
-Horário: [ex: 23h]
-
-- Assunto: 1 HORA - Fechando
-- Email curtíssimo e direto
-- Countdown: "59 minutos"
-- Apenas o essencial
-- Link direto para checkout
-- CTA: Comprar agora
-
-ELEMENTOS DE CONVERSÃO:
-- Timer visual em cada email
-- Preço riscado vs preço promocional
-- Selos de garantia
-- Botões grandes e coloridos
-
-Para cada email, forneça:
-- 3 opções de linha de assunto
-- Preview text
-- Corpo formatado
-- Horário ideal de envio`,
-    category: 'email-marketing',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['flash-sale', 'urgência', 'promoção', '24h']
-  },
-  {
-    id: 'email-testimonial-request',
-    title: 'Sequência de Pedido de Depoimento',
-    description: 'Emails para coletar depoimentos e avaliações de clientes satisfeitos.',
-    fullPrompt: `Você é especialista em customer success e prova social. Crie uma sequência de emails para coletar depoimentos de clientes.
-
-CONTEXTO:
-- Produto/Serviço: [o que foi comprado]
-- Tempo desde a compra: [quando enviar]
-- Formato desejado: [texto, vídeo, áudio, avaliação]
-- Incentivo oferecido: [desconto, bônus, sorteio]
-
-SEQUÊNCIA DE 3 EMAILS:
-
-📝 EMAIL 1 - PEDIDO INICIAL
-Timing: [ex: 7 dias após compra/resultado]
-
-- Assunto: amigável e pessoal
-- Celebre o progresso/resultado do cliente
-- Explique a importância de depoimentos
-- Faça o pedido de forma simples
-- Ofereça opções de formato
-- Perguntas guia para facilitar:
-  1. Como era sua situação antes?
-  2. O que mudou após usar [produto]?
-  3. Qual resultado específico você teve?
-  4. O que diria para quem está em dúvida?
-- Mencione o incentivo (se houver)
-- CTA: link para formulário simples
-
-📝 EMAIL 2 - LEMBRETE
-Timing: 3-5 dias depois
-
-- Assunto: lembrete gentil
-- "Sei que está ocupado(a), mas..."
-- Reforce o quanto a opinião importa
-- Simplifique ainda mais (1 pergunta só)
-- Mostre como será usado (com permissão)
-- Lembre do incentivo
-- CTA: responder este email mesmo
-
-📝 EMAIL 3 - ÚLTIMA TENTATIVA
-Timing: 5-7 dias depois
-
-- Assunto: última chance + incentivo
-- Tom: respeitoso mas direto
-- Aumente o incentivo ou crie urgência
-- Ofereça alternativas:
-  • Responder 1 pergunta por email
-  • Gravar áudio de 30 segundos
-  • Dar nota de 1-5 estrelas
-- Agradeça independente da resposta
-- CTA: escolher a forma mais fácil
-
-MODELOS DE PERGUNTAS POR FORMATO:
-
-Para TEXTO (100 palavras):
-- Qual era seu maior desafio antes?
-- Como [produto] te ajudou?
-- Qual resultado você alcançou?
-
-Para VÍDEO (60 segundos):
-- Se apresente brevemente
-- Conte sua transformação
-- Recomende para quem?
-
-Para AVALIAÇÃO RÁPIDA:
-- Nota de 1-5
-- Uma frase sobre o produto
-- Recomendaria? Sim/Não
-
-Forneça cada email completo com assunto, preview e corpo.`,
-    category: 'email-marketing',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['depoimento', 'prova-social', 'avaliação', 'cliente']
-  },
-  {
-    id: 'email-upsell-cross-sell',
-    title: 'Emails de Upsell e Cross-sell',
-    description: 'Aumente o ticket médio com emails estratégicos pós-compra.',
-    fullPrompt: `Você é especialista em maximização de receita e email marketing. Crie uma sequência de upsell e cross-sell pós-compra.
+    description: 'Estrutura completa para newsletter semanal que engaja e converte.',
+    template: `Crie uma newsletter semanal envolvente e estratégica.
 
 INFORMAÇÕES:
-- Produto comprado: [produto inicial]
-- Preço do produto inicial: [valor]
-- Upsell disponível: [versão superior/complemento]
-- Cross-sell disponível: [produto relacionado]
-- Desconto para upgrade: [se houver]
+- Tema da semana: {tema}
+- Nicho: {nicho}
+- Tom de voz: {tom}
+- CTA principal: {cta}
 
-SEQUÊNCIA ESTRATÉGICA:
+ESTRUTURA DA NEWSLETTER:
 
-💎 EMAIL 1 - CONFIRMAÇÃO + SEMENTE (Imediato)
-- Agradeça pela compra
-- Confirme detalhes do pedido
-- Mostre como usar/acessar
-- Plante a semente do upgrade:
-  "PS: Sabia que existe uma versão [premium/completa]?"
-- Link discreto para saber mais
+📰 ABERTURA (Hook)
+- Frase de abertura impactante
+- Conexão com algo atual
+- Preview do que vem pela frente
 
-💎 EMAIL 2 - CROSS-SELL (3-5 dias depois)
-- Assunto: "Pessoas que compraram X também adoram Y"
-- Mostre produto complementar
-- Explique como potencializa o produto inicial
-- Oferta especial por ser cliente
-- Depoimentos de quem comprou os dois
-- CTA: Adicionar Y ao seu arsenal
+📰 SEÇÃO 1: CONTEÚDO PRINCIPAL
+- Insight ou dica da semana
+- Formato: problema → solução
+- Exemplo prático aplicável
 
-💎 EMAIL 3 - UPSELL (7-10 dias depois)
-- Assunto: Proposta de upgrade
-- Reconheça que está usando o produto
-- Apresente a versão superior
-- Destaque o que está "perdendo":
-  • Feature exclusiva 1
-  • Feature exclusiva 2
-  • Feature exclusiva 3
-- Oferta de upgrade com desconto
-- Tabela comparativa: Básico vs Premium
-- CTA: Fazer upgrade agora
+📰 SEÇÃO 2: BASTIDORES/PESSOAL
+- Algo que aconteceu na semana
+- Lição aprendida
+- Humanização da marca
 
-💎 EMAIL 4 - BUNDLE/PACOTE (14 dias depois)
-- Assunto: Oferta especial de cliente VIP
-- Crie um pacote exclusivo
-- Desconto maior por ser bundle
-- "Tudo que você precisa em um só lugar"
-- Economia destacada em reais
-- Prazo limitado
-- CTA: Garantir pacote completo
+📰 SEÇÃO 3: CURADORIA
+- 3 links/recursos úteis
+- Ferramenta recomendada
+- Conteúdo de terceiros relevante
 
-TÁTICAS DE CONVERSÃO:
-- Use o nome do produto comprado
-- Reforce a decisão inicial
-- Mostre valor, não desconto
-- Crie ofertas exclusivas para clientes
-- Use escassez real
+📰 SEÇÃO 4: CTA/OFERTA
+- Chamada para ação principal
+- Produto/serviço em destaque
+- Próximos eventos
 
-Para cada email, inclua:
-- Linha de assunto
-- Preview text
-- Corpo completo
-- Timing exato
-- Segmentação recomendada`,
-    category: 'email-marketing',
+📰 FECHAMENTO
+- Despedida pessoal
+- PS com gancho para próxima edição
+- Links de redes sociais`,
+    variables: [
+      { name: 'tema', label: 'Tema da Semana', placeholder: 'Ex: Produtividade no home office', type: 'text', required: true },
+      { name: 'nicho', label: 'Nicho', placeholder: 'Ex: Empreendedorismo digital', type: 'text', required: true },
+      { name: 'tom', label: 'Tom de Voz', placeholder: 'Ex: Descontraído e direto', type: 'text', required: true },
+      { name: 'cta', label: 'CTA Principal', placeholder: 'Ex: Inscrever-se no webinar', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['newsletter', 'semanal', 'engajamento', 'conteúdo'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['upsell', 'cross-sell', 'pós-venda', 'ticket-médio']
+    usageCount: 0
+  },
+  {
+    id: 'email-upsell-sequence',
+    categoryId: 'email-marketing',
+    title: 'Sequência de Upsell Pós-Compra',
+    description: 'Maximize o valor do cliente com uma sequência estratégica de upsell.',
+    template: `Crie uma sequência de upsell para clientes que acabaram de comprar.
+
+CONTEXTO:
+- Produto comprado: {produto_comprado}
+- Produto de upsell: {produto_upsell}
+- Preço do upsell: {preco_upsell}
+- Complementaridade: {complementaridade}
+
+SEQUÊNCIA DE UPSELL (5 EMAILS):
+
+📧 EMAIL 1 - IMEDIATO (Thank You Page)
+- Parabenize pela compra
+- Oferta especial exclusiva
+- Desconto válido por 24h
+- Mostre a complementaridade
+
+📧 EMAIL 2 - 24 HORAS
+- Lembrete da oferta especial
+- Depoimento de quem comprou ambos
+- Resultados potencializados
+
+📧 EMAIL 3 - 48 HORAS
+- Última chance do desconto
+- FAQ sobre o upsell
+- Garantia reforçada
+
+📧 EMAIL 4 - 1 SEMANA
+- Como está indo com o produto?
+- Apresente o upsell como upgrade
+- Novo ângulo de benefícios
+
+📧 EMAIL 5 - 2 SEMANAS
+- Oferta especial de aniversário de compra
+- Preço intermediário
+- Prazo limitado`,
+    variables: [
+      { name: 'produto_comprado', label: 'Produto Comprado', placeholder: 'Ex: Curso Básico de Design', type: 'text', required: true },
+      { name: 'produto_upsell', label: 'Produto de Upsell', placeholder: 'Ex: Pacote de Templates Premium', type: 'text', required: true },
+      { name: 'preco_upsell', label: 'Preço do Upsell', placeholder: 'Ex: R$ 297', type: 'text', required: true },
+      { name: 'complementaridade', label: 'Como se complementam', placeholder: 'Ex: Templates prontos para aplicar o que aprendeu', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['upsell', 'pós-compra', 'LTV', 'vendas'],
+    difficulty: 'advanced',
+    isPremium: true,
+    usageCount: 0
   },
   {
     id: 'email-webinar-sequence',
-    title: 'Sequência de Webinar Completa',
-    description: 'Emails para promover, lembrar e converter após um webinar.',
-    fullPrompt: `Você é especialista em webinars e funis de vendas. Crie a sequência completa de emails para um webinar.
+    categoryId: 'email-marketing',
+    title: 'Sequência para Webinar',
+    description: 'Emails para promover webinar, lembrar inscritos e converter após o evento.',
+    template: `Crie uma sequência completa de emails para webinar.
 
-INFORMAÇÕES DO WEBINAR:
-- Título: [nome do webinar]
-- Data e hora: [quando acontece]
-- Duração: [ex: 60 minutos]
-- Tema principal: [o que será ensinado]
-- Oferta no final: [produto que será vendido]
+DADOS DO WEBINAR:
+- Tema: {tema}
+- Data e horário: {data_horario}
+- Benefício principal: {beneficio}
+- Oferta no final: {oferta}
 
-FASE 1 - PRÉ-WEBINAR (Inscrição)
+SEQUÊNCIA COMPLETA:
 
-📧 EMAIL 1 - CONVITE INICIAL (7 dias antes)
-- Assunto: convite irresistível
-- Apresente o tema e benefícios
-- O que vai aprender (3-5 bullets)
-- Para quem é (e para quem NÃO é)
-- Data, hora, duração
-- CTA: Reservar minha vaga grátis
+📧 PRÉ-WEBINAR (5 emails)
 
-📧 EMAIL 2 - LEMBRETE 1 (3 dias antes)
-- Assunto: "Você se inscreveu?"
-- Reforce os benefícios
-- Compartilhe credenciais do apresentador
-- Crie expectativa com teaser
-- CTA: Confirmar presença
+1. CONVITE INICIAL
+- Anuncie o webinar
+- Destaque o benefício principal
+- Crie urgência (vagas limitadas)
 
-📧 EMAIL 3 - LEMBRETE 2 (1 dia antes)
-- Assunto: Amanhã às [hora]
-- Checklist de preparação
-- Link de acesso
+2. LEMBRETE -3 DIAS
+- Reforce os aprendizados
+- Adicione bônus para quem assistir ao vivo
+
+3. LEMBRETE -1 DIA
+- Preview do conteúdo
 - Instruções técnicas
-- O que ter em mãos
-- CTA: Adicionar ao calendário
 
-📧 EMAIL 4 - DIA DO WEBINAR (2h antes)
-- Assunto: Estamos quase começando
-- Link de acesso em destaque
-- "Entra agora para garantir lugar"
-- Última dica de preparação
-- CTA: Acessar sala
+4. NO DIA - MANHÃ
+- Lembrete animado
+- Horário e link
 
-FASE 2 - PÓS-WEBINAR
+5. NO DIA - 1H ANTES
+- Último lembrete
+- Link direto
 
-📧 EMAIL 5 - PARA QUEM ASSISTIU (Imediato)
-- Assunto: Replay + Oferta especial
-- Agradeça a participação
-- Link do replay (se houver)
-- Recapitule a oferta apresentada
-- Bônus exclusivo para participantes ao vivo
-- Prazo para aproveitar
-- CTA: Garantir oferta especial
+📧 PÓS-WEBINAR (4 emails)
 
-📧 EMAIL 6 - PARA QUEM NÃO ASSISTIU (Imediato)
-- Assunto: Você perdeu... mas tem solução
-- Reconheça que não pôde participar
-- Ofereça o replay
-- Resuma os principais insights
-- Mantenha a oferta disponível
-- CTA: Assistir replay agora
+1. IMEDIATO - REPLAY
+- Link do replay
+- Resumo dos pontos principais
+- Oferta especial
 
-📧 EMAIL 7 - FOLLOW-UP (24h depois)
-- Assunto: Dúvidas sobre [oferta]?
-- Responda objeções comuns
-- Mais depoimentos
-- Lembre do prazo
-- CTA: Tirar dúvidas ou comprar
+2. DIA SEGUINTE
+- Destaques do webinar
+- Perguntas respondidas
+- CTA para oferta
 
-📧 EMAIL 8 - ENCERRAMENTO (48h depois)
-- Assunto: Última chamada
-- Prazo final
-- Recapitule tudo incluído
-- Último lembrete de bônus
-- CTA: Garantir antes do fechamento
+3. 2 DIAS DEPOIS
+- Depoimentos de quem comprou
+- FAQ da oferta
+- Urgência
 
-Forneça cada email com assunto, preview e corpo completo.`,
-    category: 'email-marketing',
+4. ÚLTIMO DIA
+- Replay expira
+- Oferta fecha
+- Última chance`,
+    variables: [
+      { name: 'tema', label: 'Tema do Webinar', placeholder: 'Ex: Como criar seu primeiro curso online', type: 'text', required: true },
+      { name: 'data_horario', label: 'Data e Horário', placeholder: 'Ex: 20/03 às 20h', type: 'text', required: true },
+      { name: 'beneficio', label: 'Benefício Principal', placeholder: 'Ex: Aprender o passo a passo para lançar', type: 'text', required: true },
+      { name: 'oferta', label: 'Oferta no Final', placeholder: 'Ex: Mentoria de lançamentos', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['webinar', 'evento', 'lançamento', 'leads'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['webinar', 'evento', 'funil', 'conversão']
+    usageCount: 0
+  },
+  {
+    id: 'email-testimonial-request',
+    categoryId: 'email-marketing',
+    title: 'Sequência para Pedir Depoimentos',
+    description: 'Emails estratégicos para coletar depoimentos poderosos de clientes.',
+    template: `Crie uma sequência para coletar depoimentos de clientes satisfeitos.
+
+CONTEXTO:
+- Produto/Serviço: {produto}
+- Momento ideal para pedir: {momento}
+- Formato desejado: {formato}
+
+SEQUÊNCIA DE COLETA:
+
+📧 EMAIL 1 - PEDIDO INICIAL
+- Agradeça pelo feedback positivo
+- Explique a importância do depoimento
+- Facilite o processo (perguntas guiadas)
+- Ofereça recompensa (opcional)
+
+PERGUNTAS GUIA:
+1. Qual era sua situação antes?
+2. O que te fez escolher [produto]?
+3. Quais resultados você obteve?
+4. O que você diria para quem está em dúvida?
+
+📧 EMAIL 2 - LEMBRETE GENTIL (3 dias)
+- Reforce o pedido
+- Simplifique ainda mais
+- Ofereça alternativas (áudio, vídeo)
+
+📧 EMAIL 3 - FACILITADOR (7 dias)
+- Envie exemplos de bons depoimentos
+- Ofereça template para preencher
+- Deadline suave
+
+📧 EMAIL 4 - AGRADECIMENTO
+- Agradeça pelo depoimento
+- Mostre como será usado
+- Ofereça benefício de gratidão`,
+    variables: [
+      { name: 'produto', label: 'Produto/Serviço', placeholder: 'Ex: Curso de Inglês Online', type: 'text', required: true },
+      { name: 'momento', label: 'Momento para Pedir', placeholder: 'Ex: 30 dias após a compra', type: 'text', required: true },
+      { name: 'formato', label: 'Formato Desejado', placeholder: 'Ex: Vídeo curto ou texto', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['depoimento', 'prova social', 'cliente', 'feedback'],
+    difficulty: 'beginner',
+    isPremium: true,
+    usageCount: 0
   },
   {
     id: 'email-seasonal-campaign',
-    title: 'Campanhas Sazonais (Datas Comemorativas)',
-    description: 'Templates para Black Friday, Natal, Dia das Mães e outras datas.',
-    fullPrompt: `Você é especialista em marketing sazonal e email marketing. Crie templates de campanha para datas comemorativas.
+    categoryId: 'email-marketing',
+    title: 'Campanha Sazonal Completa',
+    description: 'Sequência de emails para datas comemorativas e campanhas sazonais.',
+    template: `Crie uma campanha de email marketing para data comemorativa.
 
-DATA ESCOLHIDA: [Black Friday / Natal / Dia das Mães / Dia dos Namorados / Ano Novo / Páscoa / Outro]
+DADOS DA CAMPANHA:
+- Data comemorativa: {data_comemorativa}
+- Oferta especial: {oferta}
+- Período da campanha: {periodo}
+- Desconto/Benefício: {desconto}
 
-INFORMAÇÕES:
-- Produto/Serviço: [o que vende]
-- Desconto/Oferta: [promoção especial]
-- Período da campanha: [datas]
-- Diferencial da marca: [por que comprar de você]
+ESTRUTURA DA CAMPANHA:
 
-ESTRUTURA DA CAMPANHA SAZONAL:
+📧 FASE 1 - AQUECIMENTO (1 semana antes)
 
-🎄 EMAIL 1 - AQUECIMENTO (7 dias antes)
-- Assunto: Algo especial está chegando...
-- Teaser da promoção
-- Crie expectativa e curiosidade
-- Convide para lista VIP/early access
-- CTA: Quero ser avisado primeiro
+1. TEASER
+- Antecipe algo especial
+- Crie curiosidade
+- Peça para marcar na agenda
 
-🎄 EMAIL 2 - LANÇAMENTO (Dia 1)
-- Assunto: [DATA] começou! [Desconto]% OFF
-- Anuncie a promoção oficialmente
-- Destaque os melhores produtos/ofertas
-- Mostre economia em reais
-- Diferenciais da compra com você
-- CTA: Comprar com desconto
+2. REVELAÇÃO
+- Anuncie a promoção
+- Destaque o desconto
+- Data de início
 
-🎄 EMAIL 3 - CURADORIA (Dia 2-3)
-- Assunto: Top [X] mais vendidos nessa [data]
-- Curadoria dos produtos mais populares
-- Facilite a escolha do cliente
-- Categorize: "Para ele", "Para ela", etc.
-- Sugestões por faixa de preço
-- CTA: Ver toda a seleção
+📧 FASE 2 - CAMPANHA ATIVA
 
-🎄 EMAIL 4 - PROVA SOCIAL (Dia 4)
-- Assunto: O que estão dizendo sobre nós
-- Depoimentos de clientes
-- Avaliações e estrelas
-- Números (vendas, satisfação)
-- CTA: Fazer parte dos satisfeitos
+3. ABERTURA
+- Promoção começou!
+- Todos os detalhes
+- CTA principal
 
-🎄 EMAIL 5 - URGÊNCIA (Penúltimo dia)
-- Assunto: ⚠️ Últimas [X] horas de [DATA]
-- Aviso de fim de promoção
-- Produtos quase esgotando
-- Últimas unidades de best-sellers
-- CTA: Aproveitar antes de acabar
+4. MEIO DA CAMPANHA
+- Lembrete
+- Produtos mais vendidos
+- Depoimentos
 
-🎄 EMAIL 6 - ÚLTIMO DIA
-- Assunto: HOJE é o último dia!
-- Email curto e urgente
-- Countdown
-- Entrega garantida (se físico)
-- CTA: Garantir agora
+5. PENÚLTIMO DIA
+- Urgência
+- O que ainda está disponível
+- Bônus de última hora
 
-ADAPTAÇÕES POR DATA:
-- Black Friday: foco em descontos agressivos
-- Natal: foco em presentes e entrega
-- Dia das Mães: foco emocional
-- Dia dos Namorados: foco em experiência
-- Ano Novo: foco em renovação/metas
+📧 FASE 3 - ENCERRAMENTO
 
-Forneça cada email adaptado para a data escolhida.`,
-    category: 'email-marketing',
+6. ÚLTIMO DIA
+- Últimas horas
+- Contagem regressiva
+- CTA urgente
+
+7. EXTENDED (opcional)
+- "Voltamos por mais 24h"
+- Pedidos especiais atendidos`,
+    variables: [
+      { name: 'data_comemorativa', label: 'Data Comemorativa', placeholder: 'Ex: Black Friday, Natal, Dia das Mães', type: 'text', required: true },
+      { name: 'oferta', label: 'Oferta Especial', placeholder: 'Ex: Todos os cursos com 50% OFF', type: 'text', required: true },
+      { name: 'periodo', label: 'Período da Campanha', placeholder: 'Ex: 20 a 27 de novembro', type: 'text', required: true },
+      { name: 'desconto', label: 'Desconto/Benefício', placeholder: 'Ex: 50% de desconto + bônus', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['sazonal', 'promoção', 'datas', 'campanha'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['sazonal', 'datas', 'black-friday', 'natal']
+    usageCount: 0
   },
   {
     id: 'email-referral-program',
+    categoryId: 'email-marketing',
     title: 'Programa de Indicação por Email',
-    description: 'Sequência para lançar e promover programa de indicação.',
-    fullPrompt: `Você é especialista em growth e programas de referral. Crie uma sequência de emails para programa de indicação.
+    description: 'Sequência para lançar e promover programa de indicação de clientes.',
+    template: `Crie uma sequência de emails para programa de indicação.
 
-ESTRUTURA DO PROGRAMA:
-- Recompensa para quem indica: [ex: R$50 de crédito]
-- Recompensa para indicado: [ex: 20% de desconto]
-- Mecânica: [link único, código, etc.]
-- Limite: [quantas indicações por pessoa]
+PROGRAMA:
+- Recompensa para quem indica: {recompensa_indicador}
+- Benefício para indicado: {beneficio_indicado}
+- Mecânica: {mecanica}
 
-SEQUÊNCIA DE EMAILS:
+SEQUÊNCIA DO PROGRAMA:
 
-🎁 EMAIL 1 - LANÇAMENTO DO PROGRAMA
-- Assunto: Ganhe [recompensa] indicando amigos
-- Apresente o programa oficialmente
-- Explique como funciona (3 passos simples):
-  1. Compartilhe seu link
-  2. Amigo compra com desconto
-  3. Você ganha [recompensa]
-- Benefício duplo: você ganha, amigo ganha
-- CTA: Pegar meu link de indicação
+📧 EMAIL 1 - LANÇAMENTO DO PROGRAMA
+- Anuncie o programa
+- Explique as recompensas
+- Mostre como é fácil participar
+- Link para área de indicação
 
-🎁 EMAIL 2 - COMO INDICAR (3 dias depois)
-- Assunto: Dicas para ganhar mais indicando
-- Ensine a compartilhar efetivamente:
-  • WhatsApp (modelo de mensagem pronto)
-  • Instagram Stories (como postar)
-  • Email (template para copiar)
-- Mostre quem já está ganhando
-- CTA: Começar a indicar agora
+📧 EMAIL 2 - COMO FUNCIONA
+- Passo a passo detalhado
+- Exemplos de indicações
+- FAQ
+- Templates para compartilhar
 
-🎁 EMAIL 3 - PROVA SOCIAL (7 dias depois)
-- Assunto: [Nome] já ganhou R$[X] indicando
-- Cases de sucesso do programa
-- Ranking de maiores indicadores
-- Quanto já foi distribuído
-- CTA: Quero fazer parte
+📧 EMAIL 3 - PRIMEIRAS INDICAÇÕES
+- Celebre os primeiros resultados
+- Ranking de indicadores
+- Aumente a recompensa temporariamente
 
-🎁 EMAIL 4 - BOOST TEMPORÁRIO (Ocasional)
-- Assunto: DOBRO de recompensa só hoje!
-- Anuncie promoção especial do programa
-- Período limitado para ganhar mais
-- Urgência para indicar agora
-- CTA: Indicar com recompensa dobrada
+📧 EMAIL 4 - LEMBRETE MENSAL
+- Resgate pendente?
+- Novos benefícios
+- Histórias de sucesso
 
-🎁 EMAIL 5 - LEMBRETE MENSAL
-- Assunto: Seu saldo de indicações
-- Mostre quantas indicações fez
-- Quanto já ganhou
-- Quantas indicações faltam para próximo nível
-- Facilite com links prontos
-- CTA: Indicar mais amigos
-
-MATERIAIS COMPLEMENTARES:
-- Template de mensagem WhatsApp
-- Sugestão de post para Stories
-- Email modelo para enviar a amigos
-- Banner/imagem para compartilhar
-
-Forneça cada email completo com todos os elementos.`,
-    category: 'email-marketing',
+📧 EMAIL 5 - SUPER AÇÃO
+- Período de bônus duplo
+- Urgência limitada
+- Competição entre indicadores`,
+    variables: [
+      { name: 'recompensa_indicador', label: 'Recompensa do Indicador', placeholder: 'Ex: R$ 50 de crédito por indicação', type: 'text', required: true },
+      { name: 'beneficio_indicado', label: 'Benefício do Indicado', placeholder: 'Ex: 20% de desconto na primeira compra', type: 'text', required: true },
+      { name: 'mecanica', label: 'Mecânica do Programa', placeholder: 'Ex: Link personalizado + código de desconto', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['indicação', 'referral', 'programa', 'crescimento'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['indicação', 'referral', 'growth', 'viral']
+    usageCount: 0
   },
   {
     id: 'email-onboarding-saas',
-    title: 'Onboarding SaaS (Software)',
-    description: 'Sequência para ativar novos usuários de software/plataforma.',
-    fullPrompt: `Você é especialista em customer success e onboarding. Crie uma sequência de emails para ativar novos usuários de SaaS.
+    categoryId: 'email-marketing',
+    title: 'Onboarding de SaaS/Produto',
+    description: 'Sequência de ativação para novos usuários de software ou produto digital.',
+    template: `Crie uma sequência de onboarding para novos usuários.
 
-INFORMAÇÕES DO PRODUTO:
-- Nome da plataforma: [seu SaaS]
-- Ação de ativação principal: [o que define um usuário ativo]
-- Período de trial: [se houver]
-- Features principais: [3-5 funcionalidades-chave]
+PRODUTO:
+- Nome: {produto}
+- Ação principal de valor: {acao_valor}
+- Tempo ideal para ativação: {tempo_ativacao}
+- Obstáculos comuns: {obstaculos}
 
-SEQUÊNCIA DE ONBOARDING (14 dias):
+SEQUÊNCIA DE ONBOARDING:
 
-🚀 EMAIL 1 - BEM-VINDO (Imediato)
-- Assunto: Bem-vindo ao [Nome]! 🎉
-- Celebre a decisão
-- Link de acesso em destaque
-- 1 próximo passo claro (quick win)
-- Vídeo de boas-vindas (se houver)
+📧 EMAIL 1 - BEM-VINDO (Imediato)
+- Celebre a chegada
+- Primeiro passo simples
+- Link direto para começar
 - Suporte disponível
-- CTA: Acessar [Plataforma]
 
-🚀 EMAIL 2 - QUICK WIN (Dia 1)
-- Assunto: Conquiste seu primeiro [resultado] em 5 min
-- Guie para a primeira vitória
-- Passo a passo simples (3-5 etapas)
-- Screenshot ou GIF demonstrando
-- Resultado esperado
-- CTA: Fazer isso agora
+📧 EMAIL 2 - PRIMEIRO MARCO (Dia 1)
+- Guia do primeiro uso
+- Video tutorial curto
+- Dica rápida de sucesso
 
-🚀 EMAIL 3 - FEATURE PRINCIPAL (Dia 3)
-- Assunto: Você já experimentou [Feature Principal]?
-- Apresente a funcionalidade mais valiosa
-- Caso de uso prático
-- Como outras empresas usam
-- Tutorial rápido
-- CTA: Experimentar [Feature]
+📧 EMAIL 3 - CHECKLIST (Dia 3)
+- Progresso até agora
+- Próximos passos
+- Funcionalidades ainda não usadas
 
-🚀 EMAIL 4 - DICA PRO (Dia 5)
-- Assunto: Dica que nossos power users adoram
-- Compartilhe hack/atalho avançado
-- Mostre ganho de produtividade
-- "A maioria não sabe disso"
-- CTA: Testar dica pro
+📧 EMAIL 4 - CASO DE SUCESSO (Dia 5)
+- Como outros usuários usam
+- Resultados alcançados
+- Dicas avançadas
 
-🚀 EMAIL 5 - PROGRESSO (Dia 7)
-- Assunto: Seu progresso na primeira semana
-- Recapitule o que já configurou
-- Mostre o que falta explorar
-- Checklist visual de ativação
-- Incentive próximos passos
-- CTA: Completar configuração
+📧 EMAIL 5 - SUPORTE PROATIVO (Dia 7)
+- Tudo certo?
+- FAQ
+- Contato direto com suporte
 
-🚀 EMAIL 6 - CASE DE SUCESSO (Dia 10)
-- Assunto: Como [Cliente] alcançou [Resultado]
-- História de cliente similar
-- Resultados específicos
-- O que ele fez diferente
-- CTA: Replicar a estratégia
-
-🚀 EMAIL 7 - SUPORTE (Dia 12)
-- Assunto: Alguma dúvida? Estamos aqui
-- Convide para call/demo
-- Links para recursos de ajuda
-- FAQ rápido
-- Comunidade/grupo de usuários
-- CTA: Falar com nosso time
-
-🚀 EMAIL 8 - FIM DO TRIAL (Dia 14, se aplicável)
-- Assunto: Seu trial termina em 24h
-- Recapitule o valor gerado
-- Mostre o que perderá
-- Oferta de conversão
-- CTA: Assinar agora
-
-Para cada email, inclua métricas de sucesso e segmentação.`,
-    category: 'email-marketing',
+📧 EMAIL 6 - UPGRADE (Dia 14)
+- Funcionalidades premium
+- Trial do plano superior
+- Benefícios do upgrade`,
+    variables: [
+      { name: 'produto', label: 'Nome do Produto', placeholder: 'Ex: TaskFlow Pro', type: 'text', required: true },
+      { name: 'acao_valor', label: 'Ação Principal de Valor', placeholder: 'Ex: Criar a primeira tarefa', type: 'text', required: true },
+      { name: 'tempo_ativacao', label: 'Tempo para Ativação', placeholder: 'Ex: 7 dias', type: 'text', required: true },
+      { name: 'obstaculos', label: 'Obstáculos Comuns', placeholder: 'Ex: Configuração inicial complexa', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['onboarding', 'SaaS', 'ativação', 'retenção'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['onboarding', 'saas', 'ativação', 'trial']
+    usageCount: 0
   },
   {
     id: 'email-win-back',
-    title: 'Campanha Win-Back (Ex-Clientes)',
-    description: 'Reconquiste clientes que cancelaram ou pararam de comprar.',
-    fullPrompt: `Você é especialista em retenção e win-back campaigns. Crie uma sequência para reconquistar ex-clientes.
+    categoryId: 'email-marketing',
+    title: 'Campanha Win-Back de Clientes',
+    description: 'Reconquiste clientes que pararam de comprar com ofertas irresistíveis.',
+    template: `Crie uma campanha para reconquistar clientes inativos.
 
 CONTEXTO:
-- Produto/Serviço: [o que vendia]
-- Tempo desde última compra/cancelamento: [período]
-- Motivos comuns de saída: [preço, concorrência, etc.]
-- Oferta de retorno: [desconto especial, upgrade]
+- Última compra há: {tempo_inativo}
+- Produto mais comprado: {produto_frequente}
+- Oferta de retorno: {oferta_retorno}
+- Motivos comuns de churn: {motivos_churn}
 
 SEQUÊNCIA WIN-BACK:
 
-💔 EMAIL 1 - "SENTIMOS SUA FALTA"
-- Assunto: Faz tempo que não nos vemos, [Nome]
-- Tom: genuíno, não desesperado
+📧 EMAIL 1 - "SENTIMOS SUA FALTA"
+- Tom pessoal e genuíno
 - Reconheça a ausência
-- Pergunte o que aconteceu (feedback)
-- Mostre o que há de novo
-- Sem venda direta
-- CTA: Contar o que aconteceu
+- Pergunte o que aconteceu
+- Ofereça ajuda
 
-💔 EMAIL 2 - "O QUE MUDOU" (5 dias depois)
-- Assunto: [X] novidades que você perdeu
-- Liste melhorias/novidades desde a saída
-- Responda objeções comuns
-- Mostre evolução do produto/serviço
-- Cases de quem voltou
-- CTA: Ver as novidades
+📧 EMAIL 2 - "MUITO MUDOU"
+- Novidades desde a última compra
+- Melhorias feitas
+- Novos produtos/serviços
 
-💔 EMAIL 3 - "OFERTA ESPECIAL" (10 dias depois)
-- Assunto: Um presente para ex-clientes especiais
-- Oferta exclusiva de retorno
-- Desconto significativo ou upgrade grátis
+📧 EMAIL 3 - "OFERTA EXCLUSIVA"
+- Desconto especial de retorno
 - Prazo limitado
-- Sem compromisso longo (se aplicável)
-- CTA: Aceitar oferta de volta
+- Sem compromisso
 
-💔 EMAIL 4 - "ÚLTIMA TENTATIVA" (15 dias depois)
-- Assunto: Antes de seguirmos caminhos diferentes...
-- Tom: respeitoso e definitivo
-- Última oferta/condição especial
-- Pergunte: "O que precisaria para voltar?"
-- Opção de apenas manter contato
-- CTA: Responder ou aceitar oferta
+📧 EMAIL 4 - "ÚLTIMA CHANCE"
+- Oferta expira
+- Resumo dos benefícios
+- CTA urgente
 
-SEGMENTAÇÃO POR MOTIVO DE SAÍDA:
-- Preço alto → Email focado em valor/ROI
-- Concorrência → Email comparativo (diplomático)
-- Não usava → Email sobre novos recursos/simplicidade
-- Suporte ruim → Email sobre melhorias no atendimento
-
-MÉTRICAS ESPERADAS:
-- Taxa de retorno: 5-15%
-- Melhor período para win-back: 30-90 dias
-- LTV recuperado vs CAC de reativação
-
-Forneça cada email com personalizações por motivo de saída.`,
-    category: 'email-marketing',
+📧 EMAIL 5 - "ADEUS?"
+- Vai remover da lista
+- Última oportunidade
+- Link para ficar`,
+    variables: [
+      { name: 'tempo_inativo', label: 'Tempo Inativo', placeholder: 'Ex: 6 meses', type: 'text', required: true },
+      { name: 'produto_frequente', label: 'Produto Mais Comprado', placeholder: 'Ex: Suplementos mensais', type: 'text', required: true },
+      { name: 'oferta_retorno', label: 'Oferta de Retorno', placeholder: 'Ex: 40% OFF na próxima compra', type: 'text', required: true },
+      { name: 'motivos_churn', label: 'Motivos de Saída', placeholder: 'Ex: Preço, falta de tempo, esquecimento', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['win-back', 'churn', 'reativação', 'clientes'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['win-back', 'retenção', 'ex-cliente', 'reconquistar']
+    usageCount: 0
+  },
+  {
+    id: 'email-survey-feedback',
+    categoryId: 'email-marketing',
+    title: 'Pesquisa e Coleta de Feedback',
+    description: 'Sequência para coletar feedback valioso e insights dos clientes.',
+    template: `Crie uma sequência de emails para pesquisa de satisfação.
+
+CONTEXTO:
+- Tipo de pesquisa: {tipo_pesquisa}
+- Objetivo principal: {objetivo}
+- Incentivo para responder: {incentivo}
+
+SEQUÊNCIA DE PESQUISA:
+
+📧 EMAIL 1 - CONVITE PARA PESQUISA
+- Valorize a opinião do cliente
+- Tempo estimado (curto!)
+- Benefício de responder
+- Link direto para pesquisa
+
+📧 EMAIL 2 - LEMBRETE (3 dias)
+- "Ainda queremos ouvir você"
+- Reforce o incentivo
+- Simplifique ainda mais
+
+📧 EMAIL 3 - ÚLTIMO LEMBRETE (7 dias)
+- Pesquisa fecha em breve
+- Impacto das respostas
+- Agradecimento antecipado
+
+📧 EMAIL 4 - AGRADECIMENTO
+- Obrigado por responder
+- Entrega do incentivo
+- Próximos passos
+
+📧 EMAIL 5 - RESULTADOS
+- Compartilhe insights gerais
+- Ações que serão tomadas
+- Valorize a participação`,
+    variables: [
+      { name: 'tipo_pesquisa', label: 'Tipo de Pesquisa', placeholder: 'Ex: NPS, satisfação, produto', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo Principal', placeholder: 'Ex: Melhorar o atendimento', type: 'text', required: true },
+      { name: 'incentivo', label: 'Incentivo', placeholder: 'Ex: Cupom de 10% para quem responder', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['pesquisa', 'feedback', 'NPS', 'satisfação'],
+    difficulty: 'beginner',
+    isPremium: true,
+    usageCount: 0
+  },
+  {
+    id: 'email-flash-sale',
+    categoryId: 'email-marketing',
+    title: 'Flash Sale - Venda Relâmpago',
+    description: 'Sequência de emails para promoção relâmpago com máxima urgência.',
+    template: `Crie uma sequência de emails para flash sale.
+
+DADOS DA PROMOÇÃO:
+- Produto em promoção: {produto}
+- Desconto: {desconto}
+- Duração: {duracao}
+- Limite de estoque: {limite}
+
+SEQUÊNCIA FLASH SALE:
+
+📧 EMAIL 1 - TEASER (1 dia antes)
+- Algo grande vem aí
+- Marque na agenda
+- Exclusivo para lista
+
+📧 EMAIL 2 - ABERTURA (Início)
+- FLASH SALE COMEÇOU!
+- Desconto + tempo limitado
+- CTA urgente
+- Contador
+
+📧 EMAIL 3 - MEIO DO CAMINHO
+- X% já vendido
+- Últimas unidades
+- Depoimentos rápidos
+- CTA
+
+📧 EMAIL 4 - ÚLTIMAS HORAS
+- Estoque acabando
+- Últimas X horas
+- Última chance
+- CTA final
+
+📧 EMAIL 5 - ENCERRAMENTO
+- Flash sale encerrada
+- Obrigado a quem comprou
+- Lista de espera para próxima`,
+    variables: [
+      { name: 'produto', label: 'Produto', placeholder: 'Ex: Curso Completo de Excel', type: 'text', required: true },
+      { name: 'desconto', label: 'Desconto', placeholder: 'Ex: 70% OFF', type: 'text', required: true },
+      { name: 'duracao', label: 'Duração', placeholder: 'Ex: 24 horas', type: 'text', required: true },
+      { name: 'limite', label: 'Limite de Estoque', placeholder: 'Ex: 100 unidades', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['flash sale', 'promoção', 'urgência', 'desconto'],
+    difficulty: 'intermediate',
+    isPremium: true,
+    usageCount: 0
   },
   {
     id: 'email-event-invitation',
+    categoryId: 'email-marketing',
     title: 'Convite para Evento Presencial/Online',
-    description: 'Sequência completa para promover eventos e garantir presença.',
-    fullPrompt: `Você é especialista em marketing de eventos. Crie uma sequência de emails para promover um evento.
+    description: 'Sequência completa para promover e lotar seu evento.',
+    template: `Crie uma sequência de emails para promover evento.
 
-INFORMAÇÕES DO EVENTO:
-- Nome: [título do evento]
-- Tipo: [presencial/online/híbrido]
-- Data e horário: [quando]
-- Local/Plataforma: [onde]
-- Capacidade: [número de vagas]
-- Investimento: [gratuito/pago - valor]
-- Palestrantes: [quem vai falar]
-- Público-alvo: [para quem é]
+DADOS DO EVENTO:
+- Nome: {nome_evento}
+- Data e local: {data_local}
+- Público-alvo: {publico}
+- Investimento: {investimento}
+- Benefício principal: {beneficio}
 
-SEQUÊNCIA DE PROMOÇÃO:
+SEQUÊNCIA DO EVENTO:
 
-🎫 EMAIL 1 - SAVE THE DATE (30 dias antes)
-- Assunto: 📅 Marque na agenda: [Nome do Evento]
+📧 FASE 1 - ANÚNCIO (4 semanas antes)
+
+1. SAVE THE DATE
 - Anuncie o evento
-- Data, hora, local
-- Palestrantes confirmados
-- Por que não pode perder
-- Early bird (se houver)
-- CTA: Garantir minha vaga
+- Data e local
+- Early bird
 
-🎫 EMAIL 2 - PROGRAMAÇÃO (20 dias antes)
-- Assunto: Veja o que você vai aprender
-- Programação completa
-- Destaques de cada palestra
-- Networking/benefícios extras
-- Fotos de edições anteriores
-- CTA: Inscrever agora
+2. PROGRAMAÇÃO
+- O que vai acontecer
+- Palestrantes/atrações
+- Resultados anteriores
 
-🎫 EMAIL 3 - PALESTRANTES (14 dias antes)
-- Assunto: Conheça quem vai te ensinar
-- Bio dos palestrantes
-- Credenciais e conquistas
-- Por que foram escolhidos
-- Teaser do conteúdo
-- CTA: Aprender com eles
+📧 FASE 2 - VENDAS (2-3 semanas)
 
-🎫 EMAIL 4 - URGÊNCIA (7 dias antes)
-- Assunto: ⚠️ Últimas [X] vagas para [Evento]
-- Vagas se esgotando
-- O que outros inscritos estão dizendo
-- Benefícios de quem já confirmou
-- CTA: Garantir antes de lotar
+3. LOTE PROMOCIONAL
+- Desconto por tempo limitado
+- Depoimentos de edições anteriores
+- Bônus para quem comprar agora
 
-🎫 EMAIL 5 - LEMBRETE FINAL (3 dias antes)
-- Assunto: [Evento] é em 3 dias!
-- Para inscritos: confirmação + instruções
-- Para não-inscritos: última chance
-- O que levar/preparar
-- CTA: Confirmar presença
+4. PROGRAMAÇÃO COMPLETA
+- Agenda detalhada
+- Networking
+- Materiais inclusos
 
-🎫 EMAIL 6 - DIA ANTERIOR
-- Assunto: Amanhã! Tudo pronto?
-- Checklist final
-- Horário, local, estacionamento
-- Link de acesso (se online)
-- Dicas para aproveitar melhor
-- CTA: Pronto para amanhã!
+5. LOTE NORMAL
+- Preço cheio
+- Últimas vagas
+- FAQ
 
-🎫 EMAIL 7 - PÓS-EVENTO
-- Assunto: Obrigado por participar! 🙏
-- Agradeça a presença
-- Peça feedback (pesquisa rápida)
-- Materiais para download
-- Fotos do evento
-- Próximo evento (save the date)
-- CTA: Deixar avaliação
+📧 FASE 3 - FINAL (1 semana)
 
-Forneça cada email com todos os elementos.`,
-    category: 'email-marketing',
+6. ÚLTIMAS VAGAS
+- Contagem regressiva
+- FOMO
+- Quem vai estar lá
+
+7. ENCERRAMENTO
+- Última chance
+- Ver você lá!`,
+    variables: [
+      { name: 'nome_evento', label: 'Nome do Evento', placeholder: 'Ex: Summit de Marketing Digital 2024', type: 'text', required: true },
+      { name: 'data_local', label: 'Data e Local', placeholder: 'Ex: 15/03 em São Paulo', type: 'text', required: true },
+      { name: 'publico', label: 'Público-alvo', placeholder: 'Ex: Empreendedores digitais', type: 'text', required: true },
+      { name: 'investimento', label: 'Investimento', placeholder: 'Ex: R$ 497', type: 'text', required: true },
+      { name: 'beneficio', label: 'Benefício Principal', placeholder: 'Ex: Networking + Estratégias práticas', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['evento', 'convite', 'presencial', 'online'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['evento', 'convite', 'presencial', 'online']
-  },
-  {
-    id: 'email-educational-drip',
-    title: 'Sequência Educacional (Drip Campaign)',
-    description: 'Série de emails educativos que nutrem leads até a conversão.',
-    fullPrompt: `Você é especialista em nurturing e educação de leads. Crie uma sequência drip educacional de 7 emails.
-
-CONTEXTO:
-- Nicho: [seu mercado]
-- Tema central: [assunto da sequência]
-- Objetivo final: [ação desejada após a sequência]
-- Lead magnet inicial: [o que capturou o email]
-
-SEQUÊNCIA EDUCACIONAL DE 7 DIAS:
-
-📚 EMAIL 1 - ENTREGA + FUNDAMENTOS (Dia 0)
-- Assunto: Seu [lead magnet] + um bônus
-- Entregue o prometido
-- Apresente-se brevemente
-- Introduza o tema central
-- Teaser do que vem pela frente
-- Defina expectativas da série
-- CTA: Acessar o material
-
-📚 EMAIL 2 - O PROBLEMA (Dia 1)
-- Assunto: Por que [problema] acontece?
-- Aprofunde no problema/dor
-- Estatísticas e dados
-- Consequências de não resolver
-- Gere identificação
-- CTA: Refletir sobre isso
-
-📚 EMAIL 3 - A MUDANÇA DE PARADIGMA (Dia 2)
-- Assunto: O que ninguém te contou sobre [tema]
-- Quebre um mito ou crença limitante
-- Apresente nova perspectiva
-- Por que a abordagem tradicional falha
-- CTA: Pensar diferente
-
-📚 EMAIL 4 - A SOLUÇÃO (FRAMEWORK) (Dia 3)
-- Assunto: Meu método de [X] passos
-- Apresente seu framework/método
-- Visão geral do sistema
-- Por que funciona
-- Resultados possíveis
-- CTA: Entender o método
-
-📚 EMAIL 5 - PASSO 1 DETALHADO (Dia 4)
-- Assunto: Passo 1: [Nome do passo]
-- Deep dive no primeiro passo
-- Como implementar
-- Erros comuns a evitar
-- Mini exercício prático
-- CTA: Aplicar hoje
-
-📚 EMAIL 6 - CASES E PROVA (Dia 5)
-- Assunto: [Nome] fez isso e conseguiu [resultado]
-- 2-3 histórias de transformação
-- Diferentes perfis de pessoas
-- Resultados específicos
-- O que fizeram
-- CTA: Ver mais histórias
-
-📚 EMAIL 7 - PRÓXIMO PASSO (Dia 6)
-- Assunto: O que separa quem consegue de quem desiste
-- Recapitule a jornada
-- Desafio de implementação
-- Apresente sua solução (produto/serviço)
-- Oferta especial para a série
-- CTA: Dar o próximo passo
-
-PRINCÍPIOS DA SEQUÊNCIA:
-- Cada email entrega valor independente
-- Progressão lógica de conhecimento
-- Soft sells nos primeiros, hard sell no final
-- Storytelling em todos os emails
-
-Forneça cada email com assunto, preview e corpo completo.`,
-    category: 'email-marketing',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['educacional', 'drip', 'nurturing', 'leads']
+    usageCount: 0
   }
 ];
 
-// ==========================================
-// BLOG/CONTEÚDO - 15 Prompts Premium
-// ==========================================
+// =====================================================
+// BLOG/CONTEÚDO - PROMPTS PREMIUM (15)
+// =====================================================
 
 export const blogContentPremiumPrompts: Prompt[] = [
   {
     id: 'blog-pillar-content',
-    title: 'Artigo Pilar Completo (3000+ palavras)',
-    description: 'Crie um artigo pilar otimizado para SEO que domina o tópico.',
-    fullPrompt: `Você é um especialista em SEO e marketing de conteúdo. Crie um artigo pilar completo e otimizado.
+    categoryId: 'blog-conteudo',
+    title: 'Artigo Pilar Completo (+3000 palavras)',
+    description: 'Crie um artigo pilar completo e otimizado para SEO que domina o tópico.',
+    template: `Crie um artigo pilar completo e abrangente sobre o tema.
 
-INFORMAÇÕES:
-- Palavra-chave principal: [keyword alvo]
-- Palavras-chave secundárias: [3-5 termos relacionados]
-- Público-alvo: [quem vai ler]
-- Objetivo: [ranquear, converter, educar]
-- Tom de voz: [profissional/casual/técnico]
+TEMA DO ARTIGO:
+- Palavra-chave principal: {keyword}
+- Palavras-chave secundárias: {keywords_sec}
+- Público-alvo: {publico}
+- Objetivo: {objetivo}
 
 ESTRUTURA DO ARTIGO PILAR:
 
-📝 META INFORMAÇÕES
-- Title tag (máx. 60 caracteres)
-- Meta description (máx. 160 caracteres)
-- URL sugerida (slug)
-- Categoria do blog
-
-📝 TÍTULO PRINCIPAL (H1)
-- Inclua palavra-chave
-- Promessa clara de valor
-- Ano atual (se relevante)
-- Número (se aplicável)
-
-📝 INTRODUÇÃO (150-200 palavras)
-- Hook que prende atenção
-- Apresente o problema/tema
-- O que o leitor vai aprender
-- Por que confiar neste conteúdo
+📝 INTRODUÇÃO (300 palavras)
+- Hook poderoso
+- Promessa do artigo
+- Por que isso importa
 - Preview dos tópicos
 
-📝 ÍNDICE/SUMÁRIO
-- Todos os H2s linkáveis
-- Navegação fácil
-- Featured snippet friendly
+📝 SEÇÃO 1: FUNDAMENTOS (500 palavras)
+- O que é [tema]
+- História/contexto
+- Por que é importante agora
+- Estatísticas relevantes
 
-📝 DESENVOLVIMENTO (2500+ palavras)
-Divida em 6-8 seções (H2) com:
-- Explicação clara do tópico
-- Dados e estatísticas recentes
+📝 SEÇÃO 2: COMO FUNCIONA (600 palavras)
+- Explicação detalhada
+- Componentes principais
 - Exemplos práticos
-- Citações de especialistas
-- Imagens/infográficos sugeridos
-- Sub-seções (H3) quando necessário
+- Diagrama/infográfico sugerido
 
-📝 SEÇÕES OBRIGATÓRIAS:
-1. O que é [tema]? (definição)
-2. Por que [tema] é importante?
-3. Como fazer [tema] (passo a passo)
-4. [X] melhores práticas/dicas
-5. Erros comuns a evitar
-6. Ferramentas/recursos recomendados
-7. FAQ (5-7 perguntas)
+📝 SEÇÃO 3: PASSO A PASSO (800 palavras)
+- Guia completo de implementação
+- Cada passo detalhado
+- Dicas práticas
+- Erros comuns a evitar
 
-📝 CONCLUSÃO (150-200 palavras)
-- Recapitule os pontos principais
-- Call-to-action claro
-- Próximos passos para o leitor
+📝 SEÇÃO 4: CASOS E EXEMPLOS (500 palavras)
+- Cases de sucesso
+- Antes e depois
+- Resultados mensuráveis
+- Lições aprendidas
 
-📝 ELEMENTOS DE SEO:
-- Densidade de keyword: 1-2%
-- LSI keywords naturalmente inseridas
-- Links internos sugeridos (3-5)
-- Links externos para fontes confiáveis
+📝 SEÇÃO 5: FERRAMENTAS E RECURSOS (400 palavras)
+- Melhores ferramentas
+- Recursos gratuitos
+- Templates e checklists
+- Links úteis
+
+📝 SEÇÃO 6: FAQ (300 palavras)
+- 5-7 perguntas frequentes
+- Respostas objetivas
+- Schema markup sugerido
+
+📝 CONCLUSÃO (200 palavras)
+- Resumo dos pontos principais
+- Próximos passos
+- CTA final
+
+ELEMENTOS SEO:
+- Meta title (60 caracteres)
+- Meta description (155 caracteres)
+- URL sugerida
 - Alt text para imagens
-
-📝 SCHEMA MARKUP SUGERIDO:
-- Article
-- FAQPage
-- HowTo (se aplicável)
-
-Crie o artigo completo seguindo esta estrutura.`,
-    category: 'blog-content',
+- Links internos sugeridos`,
+    variables: [
+      { name: 'keyword', label: 'Palavra-chave Principal', placeholder: 'Ex: marketing de conteúdo', type: 'text', required: true },
+      { name: 'keywords_sec', label: 'Palavras-chave Secundárias', placeholder: 'Ex: estratégia de conteúdo, blog corporativo', type: 'textarea', required: true },
+      { name: 'publico', label: 'Público-alvo', placeholder: 'Ex: Profissionais de marketing', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo do Artigo', placeholder: 'Ex: Educar e gerar leads', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['artigo pilar', 'SEO', 'conteúdo longo', 'autoridade'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['pilar', 'seo', 'long-form', 'autoridade']
-  },
-  {
-    id: 'blog-listicle-viral',
-    title: 'Listicle Viral (Lista que Engaja)',
-    description: 'Artigos em formato de lista que viralizam e geram tráfego.',
-    fullPrompt: `Você é especialista em conteúdo viral e listicles. Crie um artigo em formato de lista altamente compartilhável.
-
-INFORMAÇÕES:
-- Tema: [assunto do listicle]
-- Número de itens: [ex: 15, 21, 37]
-- Público: [quem vai ler]
-- Objetivo: [tráfego, leads, shares]
-
-ESTRUTURA DO LISTICLE:
-
-📋 TÍTULO VIRAL
-- Número ímpar ou específico (não use 10, 20)
-- Promessa de benefício
-- Gatilho de curiosidade
-Exemplos:
-- "37 [Coisas] Que [Benefício] em [Prazo]"
-- "[X] Segredos de [Autoridade] Para [Resultado]"
-- "[X] Erros Que [Público] Comete (E Como Evitar)"
-
-📋 INTRODUÇÃO (100-150 palavras)
-- Estatística surpreendente OU
-- Pergunta provocativa OU
-- História breve
-- O que o leitor vai ganhar
-- Promessa de facilidade
-
-📋 LISTA (Desenvolva cada item)
-Para cada item, inclua:
-- Título chamativo (H2 ou H3)
-- Explicação (50-150 palavras)
-- Exemplo prático ou dado
-- Dica de implementação
-- Imagem/visual sugerido
-
-📋 FORMATOS DE ITEM VARIADOS:
-1. Dica direta + exemplo
-2. Mito vs Realidade
-3. Antes vs Depois
-4. Ferramenta + caso de uso
-5. Erro + solução
-6. Citação de expert + contexto
-
-📋 ELEMENTOS DE ENGAJAMENTO:
-- Boxes de destaque
-- Checklists printáveis
-- Infográfico resumo
-- Tweet/quote pronto para compartilhar
-- CTA entre seções
-
-📋 CONCLUSÃO
-- Quick recap (lista resumida)
-- Pergunta para comentários
-- CTA para ação ou compartilhamento
-- Conteúdo relacionado
-
-📋 OTIMIZAÇÃO PARA VIRAL:
-- Shareability score alto
-- Títulos tweetáveis
-- Imagens Pinterest-friendly
-- Open graph otimizado
-
-Crie o listicle completo com todos os itens desenvolvidos.`,
-    category: 'blog-content',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['listicle', 'viral', 'lista', 'compartilhável']
+    isFeatured: true,
+    usageCount: 0
   },
   {
     id: 'blog-how-to-guide',
-    title: 'Guia How-To Definitivo',
-    description: 'Tutorial passo a passo que ranqueia para "como fazer".',
-    fullPrompt: `Você é especialista em tutoriais e conteúdo educacional. Crie um guia how-to completo e prático.
+    categoryId: 'blog-conteudo',
+    title: 'Guia "Como Fazer" Completo',
+    description: 'Tutorial passo a passo detalhado que resolve um problema específico.',
+    template: `Crie um guia "Como Fazer" completo e prático.
 
-INFORMAÇÕES:
-- Tema: Como [ação/resultado desejado]
-- Nível: [iniciante/intermediário/avançado]
-- Tempo estimado: [quanto tempo leva]
-- Ferramentas necessárias: [se houver]
+TEMA DO GUIA:
+- Problema a resolver: {problema}
+- Resultado esperado: {resultado}
+- Nível do leitor: {nivel}
+- Tempo de execução: {tempo}
 
-ESTRUTURA DO GUIA HOW-TO:
+ESTRUTURA DO GUIA:
 
-🔧 META E TÍTULO
-- "Como [Ação] em [Prazo/Passos]: Guia Completo [Ano]"
-- Meta description com benefício claro
-- Featured snippet otimizado
-
-🔧 OVERVIEW BOX
-- Tempo necessário: X minutos/horas
-- Dificuldade: Fácil/Médio/Difícil
-- Custo estimado: Grátis/R$X
-- Materiais: Lista rápida
-- Resultado: O que vai conseguir
-
-🔧 INTRODUÇÃO
-- Por que fazer isso é importante
-- Resultados esperados
-- Erros comuns que vamos evitar
+📝 INTRODUÇÃO
+- O problema que você vai resolver
+- Por que este guia é diferente
+- O que você vai aprender
 - Pré-requisitos (se houver)
 
-🔧 PASSO A PASSO DETALHADO
-Para cada passo, inclua:
+📝 VISÃO GERAL DO PROCESSO
+- Resumo dos passos
+- Materiais necessários
+- Tempo estimado
+- Dificuldade
 
-PASSO [N]: [Nome do Passo]
-- O que fazer (instrução clara)
-- Por que fazer (contexto)
-- Como fazer (detalhamento)
-- Screenshot/imagem sugerida
-- Dica extra ou atalho
+📝 PASSO 1: [Primeiro passo]
+- Explicação detalhada
+- Por que é importante
+- Dica prática
 - Erro comum a evitar
-- Checkpoint: como saber se fez certo
+- Screenshot/imagem sugerida
 
-🔧 SEÇÕES COMPLEMENTARES:
+📝 PASSO 2: [Segundo passo]
+[mesma estrutura]
 
-Dicas de Expert:
-- 3-5 dicas avançadas
-- Atalhos de produtividade
-- Best practices
+📝 PASSO 3: [Terceiro passo]
+[mesma estrutura]
 
-Troubleshooting:
-- Problema 1 → Solução
-- Problema 2 → Solução
-- Problema 3 → Solução
+[Continue para todos os passos necessários]
 
-Variações:
-- Como fazer com [alternativa A]
-- Como fazer com [alternativa B]
-- Versão rápida vs completa
+📝 TROUBLESHOOTING
+- Problemas comuns
+- Como resolver cada um
+- Quando pedir ajuda
 
-🔧 RECURSOS ADICIONAIS
-- Ferramentas recomendadas
-- Templates/downloads
-- Vídeo complementar (se houver)
-- Artigos relacionados
+📝 PRÓXIMOS PASSOS
+- O que fazer depois
+- Como aprofundar
+- Recursos adicionais
 
-🔧 CONCLUSÃO
-- Recapitule os passos
-- Próximo nível (o que fazer depois)
-- CTA para aplicar
-- Convite para compartilhar resultado
+📝 FAQ
+- 5 perguntas frequentes
+- Respostas práticas
 
-🔧 SCHEMA MARKUP: HowTo
-- name
-- totalTime
-- tool[]
-- supply[]
-- step[]
-
-Crie o guia completo com todos os passos detalhados.`,
-    category: 'blog-content',
+📝 CONCLUSÃO
+- Resumo do que foi aprendido
+- Encorajamento
+- CTA`,
+    variables: [
+      { name: 'problema', label: 'Problema a Resolver', placeholder: 'Ex: Como criar um blog do zero', type: 'text', required: true },
+      { name: 'resultado', label: 'Resultado Esperado', placeholder: 'Ex: Blog funcionando e publicando', type: 'text', required: true },
+      { name: 'nivel', label: 'Nível do Leitor', placeholder: 'Ex: Iniciante', type: 'text', required: true },
+      { name: 'tempo', label: 'Tempo de Execução', placeholder: 'Ex: 2 horas', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['tutorial', 'how-to', 'guia', 'passo a passo'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['how-to', 'tutorial', 'guia', 'passo-a-passo']
+    usageCount: 0
+  },
+  {
+    id: 'blog-listicle-ultimate',
+    categoryId: 'blog-conteudo',
+    title: 'Listicle Ultimate (X Maneiras/Dicas)',
+    description: 'Artigo em lista completo e detalhado com valor máximo.',
+    template: `Crie um listicle ultimate sobre o tema.
+
+DADOS DO LISTICLE:
+- Tema: {tema}
+- Número de itens: {num_itens}
+- Objetivo: {objetivo}
+- Diferencial: {diferencial}
+
+ESTRUTURA DO LISTICLE:
+
+📝 TÍTULO CHAMATIVO
+- Número específico
+- Benefício claro
+- Urgência ou curiosidade
+- 3 opções de título
+
+📝 INTRODUÇÃO
+- Hook com estatística ou pergunta
+- Por que essa lista é diferente
+- O que o leitor vai ganhar
+- Preview dos melhores itens
+
+📝 ITEM 1 (O MELHOR/MAIS IMPORTANTE)
+- Título do item
+- Por que é #1
+- Como aplicar
+- Exemplo real
+- Dica bônus
+
+📝 ITEM 2
+[estrutura similar, adaptada]
+
+📝 ITEM 3
+[estrutura similar, adaptada]
+
+[Continue para todos os itens]
+
+📝 ITEM BÔNUS
+- Surpresa extra
+- Alto valor
+- Exclusivo
+
+📝 COMPARATIVO
+- Tabela resumo dos itens
+- Quando usar cada um
+- Recomendações por perfil
+
+📝 CONCLUSÃO
+- Top 3 para começar
+- Qual aplicar primeiro
+- CTA
+
+📝 ELEMENTOS SEO
+- Meta tags
+- URLs amigáveis
+- Schema de lista`,
+    variables: [
+      { name: 'tema', label: 'Tema do Listicle', placeholder: 'Ex: Ferramentas de produtividade', type: 'text', required: true },
+      { name: 'num_itens', label: 'Número de Itens', placeholder: 'Ex: 15', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo', placeholder: 'Ex: Ajudar a escolher a melhor ferramenta', type: 'text', required: true },
+      { name: 'diferencial', label: 'Diferencial', placeholder: 'Ex: Testei todas pessoalmente', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['listicle', 'lista', 'dicas', 'ferramentas'],
+    difficulty: 'intermediate',
+    isPremium: true,
+    usageCount: 0
   },
   {
     id: 'blog-case-study',
+    categoryId: 'blog-conteudo',
     title: 'Case Study Detalhado',
-    description: 'Estudo de caso que demonstra resultados e constrói autoridade.',
-    fullPrompt: `Você é especialista em storytelling de negócios. Crie um case study completo e persuasivo.
+    description: 'Estudo de caso completo que mostra resultados e metodologia.',
+    template: `Crie um case study detalhado e convincente.
 
-INFORMAÇÕES:
-- Cliente/Empresa: [nome ou pseudônimo]
-- Setor/Nicho: [área de atuação]
-- Problema inicial: [desafio enfrentado]
-- Solução aplicada: [o que foi feito]
-- Resultados: [métricas e conquistas]
+DADOS DO CASE:
+- Cliente/Projeto: {cliente}
+- Desafio inicial: {desafio}
+- Solução aplicada: {solucao}
+- Resultados obtidos: {resultados}
+- Período: {periodo}
 
 ESTRUTURA DO CASE STUDY:
 
-📊 TÍTULO
-- "[Empresa] Aumentou [Métrica] em [X]% Com [Solução]"
-- Foco no resultado, não no processo
+📝 RESUMO EXECUTIVO
+- Resultado principal em destaque
+- Métricas-chave
+- Tempo para resultado
 
-📊 RESUMO EXECUTIVO (Box destacado)
-- Cliente: [nome]
-- Setor: [área]
-- Desafio: [1 linha]
-- Solução: [1 linha]
-- Resultado: [métrica principal]
-- Tempo: [quanto levou]
+📝 O CLIENTE
+- Quem é
+- Contexto do mercado
+- Tamanho/características
+- Por que nos procurou
 
-📊 SEÇÃO 1: O DESAFIO
-- Contexto da empresa/pessoa
-- Situação antes (dados específicos)
-- Dores e problemas enfrentados
-- Tentativas anteriores que falharam
-- Por que era crítico resolver
+📝 O DESAFIO
+- Situação inicial
+- Problemas enfrentados
+- Tentativas anteriores
 - O que estava em jogo
 
-📊 SEÇÃO 2: A DESCOBERTA
-- Como nos encontraram
-- Por que escolheram nossa solução
-- Dúvidas e objeções iniciais
-- Momento de decisão
+📝 A SOLUÇÃO
+- Estratégia proposta
+- Por que essa abordagem
+- Fases de implementação
+- Recursos utilizados
 
-📊 SEÇÃO 3: A SOLUÇÃO
-- Diagnóstico inicial
-- Estratégia desenvolvida
-- Implementação fase a fase
-- Desafios durante o processo
-- Ajustes realizados
-- Timeline do projeto
+📝 O PROCESSO
+- Cronograma
+- Etapas detalhadas
+- Obstáculos superados
+- Ajustes no caminho
 
-📊 SEÇÃO 4: OS RESULTADOS
-Métricas antes vs depois:
-- Métrica 1: [antes] → [depois] (+X%)
-- Métrica 2: [antes] → [depois] (+X%)
-- Métrica 3: [antes] → [depois] (+X%)
+📝 OS RESULTADOS
+- Métricas antes x depois
+- Resultados quantitativos
+- Benefícios qualitativos
+- ROI calculado
 
-Resultados qualitativos:
-- Mudança de mindset
-- Impacto na equipe
-- Benefícios inesperados
+📝 DEPOIMENTO DO CLIENTE
+- Quote impactante
+- Vídeo (se disponível)
+- Avaliação
 
-📊 SEÇÃO 5: DEPOIMENTO
-- Quote direta do cliente
-- Em primeira pessoa
-- Emocional + racional
-- Recomendação
-
-📊 SEÇÃO 6: LIÇÕES APRENDIDAS
+📝 LIÇÕES APRENDIDAS
 - O que funcionou melhor
-- O que faríamos diferente
-- Dicas para quem está começando
+- O que faria diferente
+- Dicas para replicar
 
-📊 CTA
-- "Quer resultados similares?"
-- Próximo passo claro
-- Formulário de contato
-
-📊 ELEMENTOS VISUAIS:
-- Foto do cliente (se permitido)
-- Gráficos de evolução
-- Timeline visual
-- Antes/depois side-by-side
-
-Crie o case study completo.`,
-    category: 'blog-content',
+📝 PRÓXIMOS PASSOS
+- CTA para consultoria
+- Diagnóstico gratuito
+- Materiais relacionados`,
+    variables: [
+      { name: 'cliente', label: 'Cliente/Projeto', placeholder: 'Ex: Loja de e-commerce de moda', type: 'text', required: true },
+      { name: 'desafio', label: 'Desafio Inicial', placeholder: 'Ex: Baixa taxa de conversão (1.2%)', type: 'text', required: true },
+      { name: 'solucao', label: 'Solução Aplicada', placeholder: 'Ex: Redesign de checkout + email marketing', type: 'text', required: true },
+      { name: 'resultados', label: 'Resultados', placeholder: 'Ex: Aumento de 150% nas vendas', type: 'text', required: true },
+      { name: 'periodo', label: 'Período', placeholder: 'Ex: 3 meses', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['case study', 'resultados', 'prova social', 'portfolio'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['case-study', 'resultados', 'prova-social', 'B2B']
+    usageCount: 0
   },
   {
     id: 'blog-comparison-post',
-    title: 'Post Comparativo (X vs Y)',
-    description: 'Artigo de comparação que ranqueia e ajuda na decisão.',
-    fullPrompt: `Você é especialista em conteúdo de decisão de compra. Crie um post comparativo completo e imparcial.
+    categoryId: 'blog-conteudo',
+    title: 'Post de Comparação (X vs Y)',
+    description: 'Artigo comparativo completo entre duas ou mais opções.',
+    template: `Crie um artigo comparativo detalhado e imparcial.
 
-INFORMAÇÕES:
-- Opção A: [primeiro item/ferramenta/produto]
-- Opção B: [segundo item]
-- Critérios importantes: [o que o público considera]
-- Público: [quem está decidindo]
+COMPARAÇÃO:
+- Opção A: {opcao_a}
+- Opção B: {opcao_b}
+- Critérios principais: {criterios}
+- Público-alvo: {publico}
 
-ESTRUTURA DO POST COMPARATIVO:
+ESTRUTURA DO COMPARATIVO:
 
-⚖️ TÍTULO
-- "[A] vs [B]: Qual Escolher em [Ano]?"
-- "[A] ou [B]? Comparação Completa + Veredicto"
-
-⚖️ INTRODUÇÃO
+📝 INTRODUÇÃO
+- O dilema do leitor
 - Por que essa comparação importa
-- Promessa de clareza na decisão
-- Preview do que será comparado
-- Sua experiência com ambos
+- O que você vai descobrir
 
-⚖️ QUICK ANSWER BOX (Featured Snippet)
-- Resumo em 2-3 linhas
-- Quando escolher A
-- Quando escolher B
-
-⚖️ OVERVIEW DE CADA OPÇÃO
-
-[Opção A]:
-- O que é
-- Para quem é ideal
-- Principais características
-- Preço
-- Prós rápidos
-- Contras rápidos
-
-[Opção B]:
-- O que é
-- Para quem é ideal
-- Principais características
-- Preço
-- Prós rápidos
-- Contras rápidos
-
-⚖️ COMPARAÇÃO DETALHADA
-
-TABELA COMPARATIVA:
-| Critério | [A] | [B] | Vencedor |
-|----------|-----|-----|----------|
-| Preço | | | |
-| Facilidade | | | |
-| Features | | | |
-| Suporte | | | |
-| etc. | | | |
-
-Para cada critério (5-8):
-- Análise da Opção A
-- Análise da Opção B
-- Veredicto do critério
+📝 VISÃO GERAL RÁPIDA
+- Tabela resumo
+- Vencedor por categoria
 - Para quem cada um é melhor
 
-⚖️ PRÓS E CONTRAS DETALHADOS
+📝 O QUE É [OPÇÃO A]
+- Descrição
+- História/background
+- Proposta de valor
+- Público ideal
+
+📝 O QUE É [OPÇÃO B]
+[mesma estrutura]
+
+📝 COMPARAÇÃO DETALHADA
+
+Critério 1: [Nome]
+- Opção A: análise
+- Opção B: análise
+- Vencedor: X
+- Por quê
+
+Critério 2: [Nome]
+[mesma estrutura]
+
+[Continue para todos os critérios]
+
+📝 PRÓS E CONTRAS
 
 Opção A:
-✅ Prós:
-- Pro 1 (explicação)
-- Pro 2 (explicação)
-- Pro 3 (explicação)
+✅ Prós (5)
+❌ Contras (3)
 
-❌ Contras:
-- Contra 1 (explicação)
-- Contra 2 (explicação)
+Opção B:
+✅ Prós (5)
+❌ Contras (3)
 
-[Repetir para Opção B]
-
-⚖️ CASOS DE USO
-- Escolha A se: [cenários]
-- Escolha B se: [cenários]
-- Considere ambos se: [cenário]
-
-⚖️ PREÇOS E PLANOS
-- Comparativo de preços
+📝 PREÇOS E PLANOS
+- Comparativo de valores
 - Custo-benefício
-- Plano recomendado de cada
+- Ofertas especiais
 
-⚖️ VEREDICTO FINAL
-- Sua recomendação
-- Justificativa
-- Situações específicas
+📝 VEREDICTO FINAL
+- Para quem escolher A
+- Para quem escolher B
+- Minha recomendação pessoal
 
-⚖️ FAQ
-- [A] ou [B] para iniciantes?
-- Qual tem melhor suporte?
-- Posso migrar de um para outro?
+📝 FAQ
+- Perguntas frequentes sobre ambos
 
-Crie a comparação completa e objetiva.`,
-    category: 'blog-content',
+📝 CONCLUSÃO E CTA`,
+    variables: [
+      { name: 'opcao_a', label: 'Opção A', placeholder: 'Ex: WordPress', type: 'text', required: true },
+      { name: 'opcao_b', label: 'Opção B', placeholder: 'Ex: Wix', type: 'text', required: true },
+      { name: 'criterios', label: 'Critérios de Comparação', placeholder: 'Ex: Preço, facilidade, recursos, SEO', type: 'textarea', required: true },
+      { name: 'publico', label: 'Público-alvo', placeholder: 'Ex: Iniciantes que querem criar um site', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['comparação', 'versus', 'review', 'análise'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['comparação', 'versus', 'decisão', 'review']
+    usageCount: 0
   },
   {
-    id: 'blog-ultimate-resource',
-    title: 'Recurso Definitivo (Link Building)',
-    description: 'Página de recursos que atrai backlinks naturalmente.',
-    fullPrompt: `Você é especialista em link building e conteúdo de referência. Crie uma página de recursos definitiva.
+    id: 'blog-expert-roundup',
+    categoryId: 'blog-conteudo',
+    title: 'Expert Roundup (Opinião de Especialistas)',
+    description: 'Artigo compilando insights de vários especialistas sobre um tema.',
+    template: `Crie um artigo de expert roundup sobre o tema.
 
-INFORMAÇÕES:
-- Tema: [área/nicho]
-- Tipos de recursos: [ferramentas, cursos, livros, etc.]
-- Público-alvo: [quem vai usar]
+TEMA DO ROUNDUP:
+- Pergunta central: {pergunta}
+- Número de especialistas: {num_experts}
+- Objetivo: {objetivo}
+- Nicho: {nicho}
 
-ESTRUTURA DA PÁGINA DE RECURSOS:
+ESTRUTURA DO ROUNDUP:
 
-📚 TÍTULO
-- "Os [X] Melhores Recursos de [Tema] em [Ano]"
-- "[Tema]: Guia Definitivo de Recursos (Atualizado)"
-- "Tudo Sobre [Tema]: [X]+ Recursos Curados"
-
-📚 INTRODUÇÃO
-- O que torna esta lista especial
-- Como foi curada
-- Como usar melhor
-- Última atualização
-
-📚 ÍNDICE POR CATEGORIA
-- [Categoria 1] - X recursos
-- [Categoria 2] - X recursos
-- [Categoria 3] - X recursos
-...
-
-📚 CATEGORIA 1: [Nome]
-Breve introdução da categoria
-
-Recurso 1:
-- Nome (com link)
-- Descrição (2-3 linhas)
-- Preço: Grátis/Pago
-- Destaque: Por que é bom
-- Ideal para: [perfil]
-
-[Repetir para cada recurso]
-
-📚 SEÇÕES DE RECURSOS:
-
-🛠️ FERRAMENTAS
-- Ferramentas gratuitas
-- Ferramentas pagas
-- Ferramentas freemium
-
-📖 CONTEÚDO EDUCACIONAL
-- Cursos online
-- Certificações
-- Tutoriais gratuitos
-- Canais YouTube
-
-📚 LIVROS E LEITURAS
-- Livros essenciais
-- Ebooks gratuitos
-- Blogs de referência
-- Newsletters
-
-👥 COMUNIDADES
-- Grupos Facebook
-- Comunidades Discord
-- Fóruns
-- Eventos
-
-🎧 PODCASTS E VÍDEOS
-- Podcasts top
-- Canais YouTube
-- Webinars gravados
-
-📊 TEMPLATES E DOWNLOADS
-- Planilhas
-- Checklists
-- Templates
-
-📚 COMO CONTRIBUIR
-- Sugira um recurso
-- Formulário de submissão
-- Critérios de aceitação
-
-📚 CHANGELOG
-- Data: recurso adicionado/removido
-- Mantém atualizado e relevante
-
-📚 ELEMENTOS DE SEO:
-- Links internos estratégicos
-- Outbound links de qualidade
-- Schema markup: ItemList
-- Atualização regular (mostrar data)
-
-Crie a página de recursos completa.`,
-    category: 'blog-content',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['recursos', 'link-building', 'curadoria', 'referência']
-  },
-  {
-    id: 'blog-trend-analysis',
-    title: 'Análise de Tendências do Setor',
-    description: 'Artigo de tendências que posiciona como thought leader.',
-    fullPrompt: `Você é analista de tendências e thought leader. Crie um artigo de análise de tendências do setor.
-
-INFORMAÇÕES:
-- Setor/Nicho: [área de análise]
-- Período: [ano/trimestre]
-- Fontes de dados: [pesquisas, relatórios, observações]
-- Público: [quem vai ler]
-
-ESTRUTURA DA ANÁLISE DE TENDÊNCIAS:
-
-📈 TÍTULO
-- "[X] Tendências de [Setor] Para [Ano/Período]"
-- "O Futuro de [Setor]: [X] Tendências Que Vão Dominar"
-- "Estado de [Setor] em [Ano]: Análise Completa"
-
-📈 RESUMO EXECUTIVO
-- 3-5 tendências principais em bullets
-- Implicação geral para o mercado
-- Por que isso importa agora
-
-📈 INTRODUÇÃO
-- Contexto do mercado atual
-- Mudanças recentes significativas
-- Metodologia da análise
+📝 INTRODUÇÃO
+- Por que essa pergunta importa
+- Quem são os especialistas
 - O que você vai aprender
 
-📈 PANORAMA ATUAL
-- Estado do mercado hoje
-- Números e estatísticas-chave
-- Players principais
-- Desafios atuais
+📝 RESUMO DAS RESPOSTAS
+- Principais tendências
+- Pontos de concordância
+- Insights únicos
 
-📈 TENDÊNCIA 1: [Nome]
-- O que é
-- Por que está emergindo
-- Dados que comprovam
-- Exemplos reais
-- Impacto esperado
-- Como se preparar
-- Previsão: [curto/médio/longo prazo]
+📝 ESPECIALISTA 1
+- Nome e credenciais
+- Foto sugerida
+- Resposta completa
+- Insight principal em destaque
+- Link/contato
 
-[Repetir estrutura para cada tendência - 5 a 10]
+📝 ESPECIALISTA 2
+[mesma estrutura]
 
-📈 TENDÊNCIAS EM DECLÍNIO
-- O que está perdendo força
-- Por que está acabando
-- O que substitui
+[Continue para todos os especialistas]
 
-📈 WILDCARDS / INCERTEZAS
-- Fatores que podem mudar tudo
-- Cenários alternativos
-- O que observar
+📝 ANÁLISE DAS RESPOSTAS
+- Padrões identificados
+- Divergências interessantes
+- Conclusões práticas
 
-📈 IMPLICAÇÕES PRÁTICAS
+📝 PLANO DE AÇÃO
+- Como aplicar os insights
+- Primeiro passo recomendado
+- Recursos mencionados
 
-Para empresas:
-- O que fazer agora
-- O que parar de fazer
-- Onde investir
+📝 CONCLUSÃO
+- Resumo dos melhores insights
+- Agradecimento aos especialistas
+- CTA
 
-Para profissionais:
-- Skills em alta
-- Skills obsoletas
-- Como se reposicionar
-
-📈 PREVISÕES
-- Curto prazo (6 meses)
-- Médio prazo (1-2 anos)
-- Longo prazo (3-5 anos)
-
-📈 CONCLUSÃO
-- Síntese das tendências
-- Chamada para ação
-- Como acompanhar atualizações
-
-📈 METODOLOGIA
-- Fontes utilizadas
-- Período de análise
-- Limitações
-
-📈 SOBRE O AUTOR
-- Credenciais
-- Por que confiar nesta análise
-
-Crie a análise de tendências completa.`,
-    category: 'blog-content',
+📝 BÔNUS: INFOGRÁFICO
+- Sugestão de design
+- Principais quotes visuais`,
+    variables: [
+      { name: 'pergunta', label: 'Pergunta Central', placeholder: 'Ex: Qual a tendência mais importante para 2024?', type: 'text', required: true },
+      { name: 'num_experts', label: 'Número de Especialistas', placeholder: 'Ex: 10', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo', placeholder: 'Ex: Identificar tendências de mercado', type: 'text', required: true },
+      { name: 'nicho', label: 'Nicho', placeholder: 'Ex: Marketing Digital', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['roundup', 'especialistas', 'autoridade', 'tendências'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['tendências', 'análise', 'thought-leadership', 'previsões']
+    usageCount: 0
+  },
+  {
+    id: 'blog-ultimate-guide',
+    categoryId: 'blog-conteudo',
+    title: 'Guia Definitivo (Ultimate Guide)',
+    description: 'O guia mais completo da internet sobre um tema específico.',
+    template: `Crie o guia definitivo sobre o tema.
+
+DADOS DO GUIA:
+- Tema: {tema}
+- Objetivo: {objetivo}
+- Público: {publico}
+- Diferencial: {diferencial}
+
+ESTRUTURA DO GUIA DEFINITIVO:
+
+📝 CAPA/HEADER
+- Título épico
+- Subtítulo explicativo
+- Estimativa de leitura
+- Índice clicável
+
+📝 INTRODUÇÃO (500 palavras)
+- Por que este guia existe
+- O que você vai dominar
+- Por que confiar neste guia
+- Como usar o guia
+
+📝 CAPÍTULO 1: FUNDAMENTOS
+- Conceitos básicos
+- Glossário de termos
+- História e contexto
+- Por que é importante
+
+📝 CAPÍTULO 2: ESTRATÉGIA
+- Planejamento
+- Definição de objetivos
+- Métricas de sucesso
+- Roadmap sugerido
+
+📝 CAPÍTULO 3: IMPLEMENTAÇÃO
+- Passo a passo detalhado
+- Ferramentas necessárias
+- Templates prontos
+- Checklist de execução
+
+📝 CAPÍTULO 4: TÁTICAS AVANÇADAS
+- Técnicas de experts
+- Hacks e atalhos
+- Otimizações
+- A/B tests sugeridos
+
+📝 CAPÍTULO 5: ESTUDOS DE CASO
+- 3-5 cases reais
+- Resultados documentados
+- Lições aprendidas
+
+📝 CAPÍTULO 6: ERROS COMUNS
+- Os maiores erros
+- Como evitá-los
+- Como corrigir
+
+📝 CAPÍTULO 7: FUTURO E TENDÊNCIAS
+- Para onde está indo
+- O que esperar
+- Como se preparar
+
+📝 RECURSOS E FERRAMENTAS
+- Lista completa de ferramentas
+- Templates gratuitos
+- Cursos recomendados
+- Livros essenciais
+
+📝 CONCLUSÃO
+- Resumo dos pontos-chave
+- Plano de ação de 30 dias
+- CTA principal
+
+📝 FAQ EXTENSO
+- 15-20 perguntas
+- Schema markup`,
+    variables: [
+      { name: 'tema', label: 'Tema do Guia', placeholder: 'Ex: SEO para iniciantes', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo', placeholder: 'Ex: Ranquear na primeira página do Google', type: 'text', required: true },
+      { name: 'publico', label: 'Público-alvo', placeholder: 'Ex: Donos de pequenos negócios', type: 'text', required: true },
+      { name: 'diferencial', label: 'Diferencial do Guia', placeholder: 'Ex: Atualizado para 2024 com IA', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['guia definitivo', 'completo', 'autoridade', 'SEO'],
+    difficulty: 'advanced',
+    isPremium: true,
+    isFeatured: true,
+    usageCount: 0
+  },
+  {
+    id: 'blog-news-analysis',
+    categoryId: 'blog-conteudo',
+    title: 'Análise de Notícia/Tendência',
+    description: 'Artigo de análise profunda sobre notícia ou tendência do mercado.',
+    template: `Crie uma análise profunda sobre a notícia/tendência.
+
+DADOS DA ANÁLISE:
+- Notícia/Tendência: {noticia}
+- Fonte original: {fonte}
+- Impacto no mercado: {impacto}
+- Seu posicionamento: {posicionamento}
+
+ESTRUTURA DA ANÁLISE:
+
+📝 MANCHETE DE IMPACTO
+- Título que gera clique
+- Subtítulo contextualizador
+
+📝 O QUE ACONTECEU
+- Resumo factual
+- Dados principais
+- Timeline
+- Quem está envolvido
+
+📝 POR QUE ISSO IMPORTA
+- Impacto no mercado
+- Quem é afetado
+- Consequências imediatas
+- Efeitos de longo prazo
+
+📝 ANÁLISE PROFUNDA
+- Causas por trás
+- Contexto histórico
+- Comparações relevantes
+- Dados de suporte
+
+📝 DIFERENTES PERSPECTIVAS
+- Otimistas dizem...
+- Críticos argumentam...
+- Especialistas opinam...
+
+📝 MINHA ANÁLISE
+- O que eu penso
+- Por que penso assim
+- Experiência relevante
+- Previsões
+
+📝 O QUE FAZER AGORA
+- Ações recomendadas
+- O que evitar
+- Como se preparar
+- Oportunidades
+
+📝 CONCLUSÃO
+- Resumo da posição
+- Visão de futuro
+- CTA para discussão`,
+    variables: [
+      { name: 'noticia', label: 'Notícia/Tendência', placeholder: 'Ex: Google lança nova atualização de algoritmo', type: 'text', required: true },
+      { name: 'fonte', label: 'Fonte Original', placeholder: 'Ex: Blog oficial do Google', type: 'text', required: true },
+      { name: 'impacto', label: 'Impacto Esperado', placeholder: 'Ex: Mudança no ranqueamento de sites', type: 'text', required: true },
+      { name: 'posicionamento', label: 'Seu Posicionamento', placeholder: 'Ex: Especialista em SEO', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['análise', 'notícia', 'tendência', 'opinião'],
+    difficulty: 'intermediate',
+    isPremium: true,
+    usageCount: 0
   },
   {
     id: 'blog-interview-format',
-    title: 'Entrevista com Expert',
-    description: 'Formato de entrevista que gera autoridade e tráfego.',
-    fullPrompt: `Você é especialista em content marketing e jornalismo. Crie uma entrevista envolvente com um expert.
+    categoryId: 'blog-conteudo',
+    title: 'Entrevista Formatada para Blog',
+    description: 'Transforme uma entrevista em um artigo de blog envolvente.',
+    template: `Formate a entrevista como artigo de blog envolvente.
 
-INFORMAÇÕES:
-- Entrevistado: [nome e cargo]
-- Área de expertise: [especialidade]
-- Tema da entrevista: [foco principal]
-- Formato: [texto/áudio/vídeo transcrito]
+DADOS DA ENTREVISTA:
+- Entrevistado: {entrevistado}
+- Cargo/expertise: {expertise}
+- Tema principal: {tema}
+- Principais insights: {insights}
 
-ESTRUTURA DA ENTREVISTA:
+ESTRUTURA DO ARTIGO:
 
-🎤 TÍTULO
-- "Entrevista: [Nome] Revela [Insight Principal]"
-- "[Nome] Sobre [Tema]: 'Quote Impactante'"
-- "Conversando com [Nome]: [X] Lições Sobre [Tema]"
-
-🎤 INTRODUÇÃO DO ENTREVISTADO
-- Quem é [Nome]
-- Principais conquistas
-- Por que essa pessoa é relevante
+📝 INTRODUÇÃO
+- Quem é o entrevistado
+- Por que essa conversa importa
+- O que o leitor vai descobrir
 - Contexto da entrevista
-- Foto profissional
 
-🎤 DESTAQUES (Box)
-- 3-5 quotes ou insights principais
-- Para quem quer ler rápido
+📝 HIGHLIGHT PRINCIPAL
+- Quote mais impactante
+- Em destaque visual
+- Contexto breve
 
-🎤 PERGUNTAS E RESPOSTAS
+📝 SOBRE O ENTREVISTADO
+- Bio completa
+- Conquistas relevantes
+- Por que ouvir essa pessoa
+- Links e contatos
 
-Categoria 1: Trajetória
-P: Como você começou em [área]?
-R: [Resposta desenvolvida]
+📝 A ENTREVISTA
+[Formato conversacional ou Q&A]
 
-P: Qual foi o momento decisivo da sua carreira?
-R: [Resposta]
+Pergunta 1: [Pergunta]
+Resposta: [Resposta editada e formatada]
+💡 Insight-chave: [destaque]
 
-Categoria 2: Expertise
-P: Qual é o maior erro que você vê [público] cometendo?
-R: [Resposta]
+Pergunta 2: [Pergunta]
+[mesma estrutura]
 
-P: Se pudesse dar apenas um conselho sobre [tema], qual seria?
-R: [Resposta]
+[Continue para todas as perguntas]
 
-Categoria 3: Mercado/Futuro
-P: Como você vê [área] evoluindo nos próximos anos?
-R: [Resposta]
+📝 PRINCIPAIS TAKEAWAYS
+- Lista dos 5-7 insights
+- Formato de bullets
+- Actionable
 
-P: O que você está animado para explorar/fazer?
-R: [Resposta]
+📝 RECURSOS MENCIONADOS
+- Links citados
+- Ferramentas
+- Livros/cursos
 
-Categoria 4: Práticas
-P: Como é sua rotina de [atividade]?
-R: [Resposta]
-
-P: Quais ferramentas/recursos você mais usa?
-R: [Resposta]
-
-🎤 LIGHTNING ROUND (Respostas rápidas)
-- Livro favorito:
-- Pessoa que inspira:
-- Melhor conselho que recebeu:
-- Hábito que mudou sua vida:
-- Previsão ousada:
-
-🎤 ONDE ENCONTRAR
-- Redes sociais
-- Site/Newsletter
-- Projetos atuais
-
-🎤 NOTA DO EDITOR
-- Insights pessoais
+📝 CONCLUSÃO
 - Agradecimento
-- Próximas entrevistas
-
-🎤 PERGUNTAS BÔNUS (Para série):
-10-15 perguntas adicionais para diferentes contextos:
-- Para iniciantes
-- Para avançados
-- Sobre fracassos
-- Sobre sucesso
-- Controversas (com tato)
-
-Crie o roteiro completo de perguntas e estrutura.`,
-    category: 'blog-content',
+- Como se conectar com o entrevistado
+- CTA`,
+    variables: [
+      { name: 'entrevistado', label: 'Nome do Entrevistado', placeholder: 'Ex: João Silva', type: 'text', required: true },
+      { name: 'expertise', label: 'Cargo/Expertise', placeholder: 'Ex: CEO da StartupX', type: 'text', required: true },
+      { name: 'tema', label: 'Tema Principal', placeholder: 'Ex: Crescimento de startups', type: 'text', required: true },
+      { name: 'insights', label: 'Principais Insights', placeholder: 'Ex: Cultura, produto, vendas', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['entrevista', 'especialista', 'insights', 'autoridade'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['entrevista', 'expert', 'autoridade', 'Q&A']
+    usageCount: 0
   },
   {
-    id: 'blog-data-driven-post',
-    title: 'Artigo Baseado em Dados',
-    description: 'Post com pesquisa original que atrai links e mídia.',
-    fullPrompt: `Você é especialista em data journalism e pesquisa. Crie um artigo baseado em dados originais.
+    id: 'blog-resource-page',
+    categoryId: 'blog-conteudo',
+    title: 'Página de Recursos Completa',
+    description: 'Crie uma página de recursos definitiva sobre um tema.',
+    template: `Crie uma página de recursos completa e útil.
 
-INFORMAÇÕES:
-- Tema da pesquisa: [o que foi investigado]
-- Fonte dos dados: [como coletou]
-- Tamanho da amostra: [quantos respondentes/dados]
-- Descoberta principal: [finding mais importante]
+TEMA DOS RECURSOS:
+- Nicho: {nicho}
+- Objetivo: {objetivo}
+- Público-alvo: {publico}
+- Categorias: {categorias}
 
-ESTRUTURA DO ARTIGO DATA-DRIVEN:
+ESTRUTURA DA PÁGINA:
 
-📊 TÍTULO
-- "Pesquisa: [X]% dos [Grupo] [Fazem/Acreditam] [Algo]"
-- "Novo Estudo Revela [Descoberta Surpreendente] Sobre [Tema]"
-- "Analisamos [X] [Coisas] e Descobrimos [Insight]"
+📝 INTRODUÇÃO
+- O que você vai encontrar
+- Como usar esta página
+- Como foi curada
+- Última atualização
 
-📊 KEY FINDINGS BOX
-- Finding 1: [estatística] - [implicação]
-- Finding 2: [estatística] - [implicação]
-- Finding 3: [estatística] - [implicação]
-(Fácil de citar e compartilhar)
+📝 ÍNDICE NAVEGÁVEL
+- Todas as categorias
+- Links âncora
+- Número de itens por categoria
 
-📊 INTRODUÇÃO
-- Por que essa pesquisa foi feita
-- Pergunta que queríamos responder
-- Metodologia resumida
-- O que encontramos (preview)
+📝 CATEGORIA 1: [Nome]
 
-📊 METODOLOGIA
-- Período da coleta
-- Método (survey, análise, scraping)
-- Tamanho e perfil da amostra
-- Margem de erro
-- Limitações
-(Transparência = credibilidade)
+Recurso 1:
+- Nome e link
+- Descrição (2-3 linhas)
+- Preço (grátis/pago)
+- Para quem é ideal
+- Avaliação (★★★★☆)
 
-📊 DESCOBERTAS PRINCIPAIS
+Recurso 2:
+[mesma estrutura]
 
-Finding 1: [Título da Descoberta]
-- A estatística: X%
-- O que isso significa
-- Gráfico/visualização
-- Comparação com expectativa ou benchmarks
-- Quote de expert comentando
+[5-10 recursos por categoria]
 
-[Repetir para cada finding - 5 a 10]
+📝 CATEGORIA 2: [Nome]
+[mesma estrutura]
 
-📊 ANÁLISE E INSIGHTS
-- O que os dados dizem juntos
-- Correlações interessantes
-- O que surpreendeu
-- O que confirmou hipóteses
+📝 CATEGORIA 3: [Nome]
+[mesma estrutura]
 
-📊 COMPARAÇÃO COM OUTROS ESTUDOS
-- Como se compara com pesquisas similares
-- O que há de novo
-- Onde diverge
+📝 BÔNUS: MEUS FAVORITOS
+- Top 5 recursos pessoais
+- Por que uso cada um
+- Dicas de uso
 
-📊 IMPLICAÇÕES PRÁTICAS
-Para [Público 1]:
-- O que fazer com esses dados
+📝 COMO CONTRIBUIR
+- Sugerir novo recurso
+- Reportar link quebrado
+- Feedback
 
-Para [Público 2]:
-- Como aplicar os insights
+📝 ATUALIZAÇÕES
+- Changelog de adições
+- Recursos removidos e por quê
 
-📊 CONCLUSÃO
-- Síntese dos principais achados
-- Perguntas que ficaram abertas
-- Próximos passos de pesquisa
-
-📊 DADOS PARA DOWNLOAD
-- Infográfico resumo (embed code)
-- PDF do relatório completo
-- Dados brutos (se apropriado)
-
-📊 CITAÇÃO SUGERIDA
-"Segundo pesquisa do [Seu Site], X% dos [grupo] [dado]."
-
-📊 METODOLOGIA DETALHADA (Apêndice)
-- Perguntas do survey
-- Segmentação
-- Tratamento estatístico
-
-Crie o artigo com dados simulados realistas.`,
-    category: 'blog-content',
+📝 DOWNLOAD
+- Versão PDF
+- Planilha com todos os links
+- Newsletter de atualizações`,
+    variables: [
+      { name: 'nicho', label: 'Nicho', placeholder: 'Ex: Marketing Digital', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo da Página', placeholder: 'Ex: Reunir melhores ferramentas', type: 'text', required: true },
+      { name: 'publico', label: 'Público-alvo', placeholder: 'Ex: Profissionais de marketing', type: 'text', required: true },
+      { name: 'categorias', label: 'Categorias', placeholder: 'Ex: Ferramentas, cursos, livros, podcasts', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['recursos', 'ferramentas', 'curadoria', 'links'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['dados', 'pesquisa', 'estatísticas', 'link-bait']
+    usageCount: 0
   },
   {
-    id: 'blog-roundup-expert',
-    title: 'Expert Roundup Post',
-    description: 'Compilação de opiniões de experts que gera autoridade.',
-    fullPrompt: `Você é especialista em outreach e conteúdo colaborativo. Crie um expert roundup post.
+    id: 'blog-myth-busting',
+    categoryId: 'blog-conteudo',
+    title: 'Artigo de Desconstrução de Mitos',
+    description: 'Desminta mitos comuns do seu nicho com fatos e dados.',
+    template: `Crie um artigo que desminta mitos comuns.
 
-INFORMAÇÕES:
-- Tema/Pergunta central: [a pergunta feita aos experts]
-- Nicho: [área de expertise]
-- Número de experts: [quantos participantes]
+DADOS DO ARTIGO:
+- Tema geral: {tema}
+- Número de mitos: {num_mitos}
+- Fonte de dados: {fonte_dados}
+- Seu posicionamento: {posicionamento}
 
-ESTRUTURA DO EXPERT ROUNDUP:
+ESTRUTURA DO ARTIGO:
 
-👥 TÍTULO
-- "[X] Experts Respondem: [Pergunta]"
-- "O Que [X] Líderes de [Área] Pensam Sobre [Tema]"
-- "[X] Especialistas Revelam Seus Segredos de [Tema]"
+📝 INTRODUÇÃO IMPACTANTE
+- Estatística surpreendente
+- Por que tantos acreditam nos mitos
+- O perigo de seguir maus conselhos
+- O que você vai descobrir
 
-👥 INTRODUÇÃO
-- Por que essa pergunta é importante
-- Como selecionamos os experts
+📝 MITO #1: "[Afirmação comum]"
+❌ O que dizem
+✅ A verdade
+📊 Dados que comprovam
+💡 O que fazer em vez disso
+🔗 Fonte
+
+📝 MITO #2: "[Afirmação comum]"
+[mesma estrutura]
+
+📝 MITO #3: "[Afirmação comum]"
+[mesma estrutura]
+
+[Continue para todos os mitos]
+
+📝 POR QUE ESSES MITOS PERSISTEM
+- Origens históricas
+- Quem se beneficia
+- Viés de confirmação
+- Fontes ruins
+
+📝 COMO IDENTIFICAR MITOS
+- Sinais de alerta
+- Perguntas a fazer
+- Fontes confiáveis
+- Pensamento crítico
+
+📝 O QUE REALMENTE FUNCIONA
+- Práticas comprovadas
+- Baseado em dados
+- Casos de sucesso
+
+📝 CONCLUSÃO
+- Resumo das verdades
+- Encorajamento
+- CTA para compartilhar`,
+    variables: [
+      { name: 'tema', label: 'Tema Geral', placeholder: 'Ex: Emagrecimento', type: 'text', required: true },
+      { name: 'num_mitos', label: 'Número de Mitos', placeholder: 'Ex: 7', type: 'text', required: true },
+      { name: 'fonte_dados', label: 'Fonte de Dados', placeholder: 'Ex: Estudos científicos, experiência', type: 'text', required: true },
+      { name: 'posicionamento', label: 'Seu Posicionamento', placeholder: 'Ex: Nutricionista especializado', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['mitos', 'verdade', 'fatos', 'educativo'],
+    difficulty: 'intermediate',
+    isPremium: true,
+    usageCount: 0
+  },
+  {
+    id: 'blog-year-in-review',
+    categoryId: 'blog-conteudo',
+    title: 'Retrospectiva do Ano/Período',
+    description: 'Artigo de retrospectiva com lições, números e planos.',
+    template: `Crie uma retrospectiva completa do período.
+
+DADOS DA RETROSPECTIVA:
+- Período: {periodo}
+- Área/Negócio: {area}
+- Principais conquistas: {conquistas}
+- Maiores desafios: {desafios}
+
+ESTRUTURA DA RETROSPECTIVA:
+
+📝 INTRODUÇÃO
+- O que esse período significou
+- Preview das seções
+- Tom geral (celebração/aprendizado)
+
+📝 NÚMEROS DO PERÍODO
+- Métricas principais
+- Comparativo com período anterior
+- Crescimento percentual
+- Infográfico sugerido
+
+📝 MAIORES CONQUISTAS
+- Top 5-7 vitórias
+- Contexto de cada uma
+- O que possibilitou
+- Impacto nos resultados
+
+📝 MAIORES DESAFIOS
+- Principais dificuldades
+- Como foram enfrentadas
+- O que aprendeu
+- O que faria diferente
+
+📝 LIÇÕES APRENDIDAS
+- Top 10 lições
+- Explicação de cada
+- Como aplicar
+
+📝 BASTIDORES
+- O que poucos sabem
+- Momentos difíceis
+- Decisões importantes
+- Humanização
+
+📝 AGRADECIMENTOS
+- Pessoas chave
+- Clientes/parceiros
+- Equipe
+- Comunidade
+
+📝 PRÓXIMO PERÍODO
+- Planos e metas
+- O que esperar
+- Novidades
+- Pedido de feedback
+
+📝 CONCLUSÃO
+- Resumo emocional
+- Gratidão
+- CTA para comentários`,
+    variables: [
+      { name: 'periodo', label: 'Período', placeholder: 'Ex: 2024', type: 'text', required: true },
+      { name: 'area', label: 'Área/Negócio', placeholder: 'Ex: Minha agência de marketing', type: 'text', required: true },
+      { name: 'conquistas', label: 'Principais Conquistas', placeholder: 'Ex: 100 clientes, 1M faturamento', type: 'textarea', required: true },
+      { name: 'desafios', label: 'Maiores Desafios', placeholder: 'Ex: Equipe, processos, crise', type: 'textarea', required: true }
+    ],
+    examples: [],
+    tags: ['retrospectiva', 'review', 'lições', 'planejamento'],
+    difficulty: 'intermediate',
+    isPremium: true,
+    usageCount: 0
+  },
+  {
+    id: 'blog-beginner-guide',
+    categoryId: 'blog-conteudo',
+    title: 'Guia para Iniciantes Completo',
+    description: 'Guia introdutório perfeito para quem está começando.',
+    template: `Crie um guia completo para iniciantes.
+
+DADOS DO GUIA:
+- Tema: {tema}
+- Público: {publico}
+- Resultado esperado: {resultado}
+- Pré-requisitos: {prerequisitos}
+
+ESTRUTURA DO GUIA:
+
+📝 INTRODUÇÃO ACOLHEDORA
+- "Bem-vindo ao mundo de [tema]"
+- Não precisa ter medo
 - O que você vai aprender
-- Índice de participantes
+- Jornada esperada
 
-👥 KEY INSIGHTS (Resumo)
-- 5-7 insights principais consolidados
-- Padrões que emergiram
-- Pontos de concordância
-- Divergências interessantes
+📝 O QUE É [TEMA]?
+- Definição simples
+- Analogias do dia a dia
+- Por que existe
+- Por que importa para você
 
-👥 RESPOSTA DOS EXPERTS
+📝 GLOSSÁRIO BÁSICO
+- 15-20 termos essenciais
+- Definições simples
+- Exemplos de uso
 
-Expert 1: [Nome Completo]
-📸 [Foto]
-🏢 [Cargo, Empresa]
-🔗 [Links: Twitter, LinkedIn, Site]
+📝 PRIMEIROS PASSOS
+- O que fazer primeiro
+- O que NÃO fazer
+- Ferramentas necessárias
+- Investimento inicial
 
-"[Resposta do expert - 100-300 palavras]"
+📝 PASSO A PASSO PARA INICIANTES
 
-💡 Takeaway: [resumo em 1 linha]
+Passo 1: [Nome]
+- O que fazer
+- Por que é importante
+- Como fazer (detalhado)
+- Erro comum
+- Dica
 
----
+Passo 2: [Nome]
+[mesma estrutura]
 
-[Repetir formato para cada expert]
+[Continue até completar o básico]
 
-👥 ANÁLISE DAS RESPOSTAS
-- Tema 1: O que a maioria concorda
-- Tema 2: Perspectivas divergentes
-- Tema 3: Insights únicos
-- Tema 4: Surpresas
+📝 ERROS DE INICIANTE
+- Top 10 erros
+- Por que cometem
+- Como evitar
 
-👥 COMO ENTRAR EM CONTATO
-- Liste todos os experts com links
-- Facilitador para networking
+📝 RECURSOS PARA INICIANTES
+- Cursos gratuitos
+- Canais recomendados
+- Comunidades
+- Livros introdutórios
 
-👥 CONCLUSÃO
-- Síntese geral
-- Próximo passo para o leitor
-- Agradecimento aos participantes
+📝 PRÓXIMOS PASSOS
+- Quando você não é mais iniciante
+- O que estudar depois
+- Como se aprofundar
 
-👥 BÔNUS: PERGUNTAS QUE NÃO ENTRARAM
-- Teasers para próximos roundups
+📝 FAQ PARA INICIANTES
+- 10 perguntas mais comuns
+- Respostas diretas
 
-👥 TEMPLATE DE OUTREACH (Para você replicar):
-
-Assunto: [Tema] - Contribuição para artigo com [outros experts]
-
-Olá [Nome],
-
-Estou criando um expert roundup sobre [tema] e adoraria incluir sua perspectiva junto com [mencione 2-3 nomes conhecidos].
-
-A pergunta é: "[Sua pergunta]"
-
-Precisaria apenas de 2-3 parágrafos com sua opinião. Incluirei seu nome, foto, bio e links.
-
-Deadline: [data]
-
-Interessado?
-
-[Seu nome]
-
-👥 CHECKLIST DE OUTREACH:
-- Personalize cada email
-- Mencione outros experts já confirmados
-- Faça follow-up educadamente
-- Ofereça ver a resposta antes de publicar
-- Avise quando publicar
-
-Crie o template completo do roundup.`,
-    category: 'blog-content',
+📝 CONCLUSÃO ENCORAJADORA
+- Você consegue!
+- Primeiro passo
+- Comunidade de apoio
+- CTA`,
+    variables: [
+      { name: 'tema', label: 'Tema', placeholder: 'Ex: Investimentos', type: 'text', required: true },
+      { name: 'publico', label: 'Público Específico', placeholder: 'Ex: Jovens de 20-30 anos', type: 'text', required: true },
+      { name: 'resultado', label: 'Resultado Esperado', placeholder: 'Ex: Fazer primeiro investimento', type: 'text', required: true },
+      { name: 'prerequisitos', label: 'Pré-requisitos', placeholder: 'Ex: Nenhum, zero experiência', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['iniciantes', 'guia', 'básico', 'introdução'],
+    difficulty: 'beginner',
     isPremium: true,
-    copyCount: 0,
-    tags: ['roundup', 'experts', 'colaborativo', 'outreach']
+    usageCount: 0
   },
   {
-    id: 'blog-controversy-opinion',
-    title: 'Post de Opinião Controversa',
-    description: 'Artigo de opinião que gera debate e viraliza.',
-    fullPrompt: `Você é especialista em thought leadership e conteúdo viral. Crie um post de opinião que gera debate saudável.
+    id: 'blog-data-driven',
+    categoryId: 'blog-conteudo',
+    title: 'Artigo Baseado em Dados',
+    description: 'Artigo com estatísticas, pesquisas e análise de dados.',
+    template: `Crie um artigo baseado em dados e pesquisas.
 
-INFORMAÇÕES:
-- Opinião/Tese: [sua posição controversa]
-- Por que é controversa: [o que a maioria pensa]
-- Sua experiência: [o que te qualifica a opinar]
-- Tom desejado: [provocativo/respeitoso/humor]
+DADOS DO ARTIGO:
+- Tema da pesquisa: {tema}
+- Fontes de dados: {fontes}
+- Hipótese principal: {hipotese}
+- Conclusão esperada: {conclusao}
 
-ESTRUTURA DO POST DE OPINIÃO:
+ESTRUTURA DO ARTIGO:
 
-🔥 TÍTULO PROVOCATIVO
-- "[Crença Comum] Está Errado. Aqui Está o Porquê."
-- "Por Que Eu [Faço Algo Incomum] (E Você Deveria Também)"
-- "Unpopular Opinion: [Sua Opinião]"
-- "Chega de [Prática Comum]. Funciona Melhor [Alternativa]."
+📝 TÍTULO COM NÚMERO
+- Estatística impactante no título
+- Gera curiosidade
+- Promete insights
 
-🔥 HOOK DE ABERTURA
-- Declaração forte e direta
-- Reconheça a controvérsia
-- Por que você está "arriscando" escrever isso
-- O que está em jogo
+📝 RESUMO EXECUTIVO
+- Principais descobertas
+- Números-chave
+- Implicações práticas
 
-🔥 O ARGUMENTO CONVENCIONAL
-- O que a maioria acredita
-- Por que essa crença existe
-- Onde você discorda
-- Seja justo com o outro lado
+📝 METODOLOGIA
+- Como os dados foram coletados
+- Tamanho da amostra
+- Período analisado
+- Limitações
 
-🔥 SUA TESE
-- Declare claramente sua posição
-- Em 1-2 frases impactantes
+📝 CONTEXTO
+- Por que essa pesquisa
+- Estado atual do tema
+- Gap de conhecimento
 
-🔥 EVIDÊNCIAS E ARGUMENTOS
+📝 DESCOBERTAS PRINCIPAIS
 
-Argumento 1:
-- Apresente o ponto
-- Dados ou exemplos
-- Por que isso importa
-- Antecipe a contra-argumentação
+Descoberta 1:
+📊 Dado: [estatística]
+📈 Gráfico sugerido
+💡 O que significa
+🎯 Implicação prática
 
-Argumento 2:
-- [mesma estrutura]
+Descoberta 2:
+[mesma estrutura]
 
-Argumento 3:
-- [mesma estrutura]
+[Continue para todas as descobertas]
 
-🔥 EXPERIÊNCIA PESSOAL
-- Sua história com o tema
-- O que você tentou
-- O que funcionou/não funcionou
-- Por que mudou de opinião
+📝 ANÁLISE CRUZADA
+- Correlações encontradas
+- Padrões identificados
+- Surpresas
 
-🔥 RECONHEÇA AS EXCEÇÕES
-- Quando sua opinião não se aplica
-- Casos onde o convencional funciona
-- Nuance é sinal de inteligência
+📝 COMPARATIVO
+- Com pesquisas anteriores
+- Com outros mercados
+- Evolução no tempo
 
-🔥 ANTECIPE AS CRÍTICAS
-Crítica 1: [O que vão dizer]
-Resposta: [Sua defesa]
+📝 IMPLICAÇÕES PRÁTICAS
+- O que fazer com esses dados
+- Recomendações
+- Próximos passos
 
-Crítica 2: [O que vão dizer]
-Resposta: [Sua defesa]
+📝 MATERIAIS PARA DOWNLOAD
+- Infográfico resumo
+- Planilha de dados
+- Apresentação pronta
 
-🔥 CALL TO REFLECTION
-- Perguntas para o leitor considerar
-- Convite para testar a ideia
-- Sem forçar concordância
+📝 CONCLUSÃO
+- Resumo das descobertas
+- Chamada para ação
+- Próxima pesquisa
 
-🔥 CONCLUSÃO
-- Reafirme sua posição
-- Convide ao debate respeitoso
-- Esteja aberto a mudar de ideia
-
-🔥 NOTA SOBRE TOM:
-- Seja confiante, não arrogante
-- Ataque ideias, não pessoas
-- Use dados quando possível
-- Adicione humor quando apropriado
-- Mostre que você pensou no assunto
-
-Crie o post de opinião completo.`,
-    category: 'blog-content',
+📝 REFERÊNCIAS
+- Todas as fontes citadas
+- Links verificados`,
+    variables: [
+      { name: 'tema', label: 'Tema da Pesquisa', placeholder: 'Ex: Uso de IA no marketing', type: 'text', required: true },
+      { name: 'fontes', label: 'Fontes de Dados', placeholder: 'Ex: Pesquisa própria + dados públicos', type: 'textarea', required: true },
+      { name: 'hipotese', label: 'Hipótese Principal', placeholder: 'Ex: 70% das empresas usarão IA até 2025', type: 'text', required: true },
+      { name: 'conclusao', label: 'Conclusão Esperada', placeholder: 'Ex: Adoção de IA é inevitável', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['dados', 'pesquisa', 'estatísticas', 'análise'],
+    difficulty: 'advanced',
     isPremium: true,
-    copyCount: 0,
-    tags: ['opinião', 'controverso', 'debate', 'thought-leadership']
-  },
-  {
-    id: 'blog-story-driven',
-    title: 'Post Story-Driven (Narrativo)',
-    description: 'Artigo narrativo que ensina através de história.',
-    fullPrompt: `Você é especialista em storytelling e marketing de conteúdo. Crie um artigo narrativo que educa através de história.
-
-INFORMAÇÕES:
-- Lição principal: [o que quer ensinar]
-- Protagonista: [quem é o personagem - você, cliente, personagem]
-- Conflito: [qual era o desafio]
-- Transformação: [o que mudou]
-- Público: [quem vai ler]
-
-ESTRUTURA STORY-DRIVEN:
-
-📖 TÍTULO
-- Fórmula: [Situação Ruim] → [Transformação] → [Resultado]
-- Ou: "Como [Eu/Nome] [Superou Desafio] e [Alcançou Resultado]"
-
-📖 GANCHO (Primeiras 3 linhas)
-- Comece no momento de tensão
-- In media res (no meio da ação)
-- Crie urgência de continuar lendo
-
-Exemplo: "Era 3h da manhã. Eu estava sentado no chão do escritório, laptop na frente, prestes a enviar o email que destruiria minha carreira. Ou salvaria."
-
-📖 ATO 1: O MUNDO COMUM
-- Quem era o protagonista antes
-- Rotina, crenças, situação
-- O problema que ignorava
-- Sinais de que algo precisava mudar
-
-📖 ATO 2A: O CHAMADO
-- O momento de crise/oportunidade
-- O que forçou a mudança
-- A decisão de agir
-- Medos e dúvidas
-
-📖 ATO 2B: A JORNADA
-- Os desafios enfrentados
-- As tentativas e erros
-- O mentor ou insight
-- O momento mais difícil
-- A virada
-
-📖 ATO 3: A TRANSFORMAÇÃO
-- O breakthrough
-- A nova realidade
-- Os resultados alcançados
-- Como é a vida agora
-
-📖 A LIÇÃO (Transição para ensino)
-- O que essa história ensina
-- Princípios universais
-- Como aplicar no contexto do leitor
-
-📖 FRAMEWORK/MÉTODO
-- Estruture o aprendizado
-- Passos práticos extraídos da história
-- Ferramentas e recursos
-
-📖 REFLEXÃO PARA O LEITOR
-- Perguntas para autoaplicação
-- Onde você está na jornada?
-- Qual é o seu próximo passo?
-
-📖 CONCLUSÃO EMOCIONAL
-- Volte à história
-- Mostre o protagonista hoje
-- Mensagem de esperança/empoderamento
-- CTA emocional
-
-📖 TÉCNICAS NARRATIVAS A USAR:
-- Diálogos diretos
-- Descrições sensoriais
-- Detalhes específicos (números, datas, lugares)
-- Vulnerabilidade
-- Humor nos momentos certos
-- Cliffhangers entre seções
-
-Crie o artigo narrativo completo.`,
-    category: 'blog-content',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['storytelling', 'narrativo', 'história', 'emocional']
-  },
-  {
-    id: 'blog-faq-page',
-    title: 'Página de FAQ Otimizada',
-    description: 'FAQ que ranqueia para featured snippets e voice search.',
-    fullPrompt: `Você é especialista em SEO e experiência do usuário. Crie uma página de FAQ otimizada.
-
-INFORMAÇÕES:
-- Produto/Serviço/Tema: [o que você oferece]
-- Público: [quem pergunta]
-- Dúvidas mais comuns: [liste 5-10]
-- Tom: [formal/casual/técnico]
-
-ESTRUTURA DA PÁGINA FAQ:
-
-❓ TÍTULO
-- "FAQ: Tudo Sobre [Tema/Produto]"
-- "[X] Perguntas Frequentes Sobre [Tema] Respondidas"
-- "[Tema]: Suas Dúvidas Respondidas"
-
-❓ INTRODUÇÃO
-- O que esta página contém
-- Como usar (índice, busca)
-- Convite para perguntar se não encontrar
-
-❓ CATEGORIAS DE PERGUNTAS
-
-Categoria 1: [Nome - ex: "Sobre o Produto"]
-- Pergunta 1
-- Pergunta 2
-- Pergunta 3
-
-Categoria 2: [Nome - ex: "Preços e Pagamento"]
-- Pergunta 1
-- Pergunta 2
-
-[Continue com 4-6 categorias]
-
-❓ FORMATO DE CADA PERGUNTA
-
-Q: [Pergunta exatamente como o usuário perguntaria]
-
-A: [Resposta estruturada]
-
-Parágrafo 1: Resposta direta (primeiras 40-60 palavras - featured snippet)
-
-Parágrafo 2: Detalhamento/contexto
-
-- Bullet 1 se necessário
-- Bullet 2
-
-Link relacionado: [se houver página com mais info]
-
----
-
-❓ 15-20 PERGUNTAS ESSENCIAIS
-
-Sobre o Básico:
-1. O que é [produto/serviço]?
-2. Para quem é [produto]?
-3. Como funciona [produto]?
-4. Preciso de [pré-requisito]?
-5. Quanto tempo leva para [resultado]?
-
-Sobre Preço:
-6. Quanto custa [produto]?
-7. Tem versão gratuita?
-8. Quais formas de pagamento?
-9. Posso parcelar?
-10. Tem garantia de devolução?
-
-Sobre Uso:
-11. Como começo a usar?
-12. Preciso instalar algo?
-13. Funciona no celular?
-14. Posso cancelar quando quiser?
-15. Consigo exportar meus dados?
-
-Sobre Suporte:
-16. Como entro em contato?
-17. Qual o horário de atendimento?
-18. Tem suporte em português?
-19. Onde encontro tutoriais?
-20. Vocês fazem implementação?
-
-❓ ELEMENTOS DE OTIMIZAÇÃO
-
-Schema Markup FAQPage:
-- @type: FAQPage
-- mainEntity: [array de Questions]
-
-Voice Search Optimization:
-- Perguntas em linguagem natural
-- "Como", "O que", "Por que", "Quando"
-- Respostas diretas no início
-
-UX Elements:
-- Accordion/expansível
-- Busca interna
-- Anchor links
-- "Isso respondeu sua dúvida?" (feedback)
-
-❓ CTA FINAL
-- Não encontrou sua resposta?
-- Formulário de contato
-- Chat/WhatsApp
-
-Crie a página FAQ completa com todas as perguntas.`,
-    category: 'blog-content',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['faq', 'featured-snippet', 'voice-search', 'suporte']
+    usageCount: 0
   },
   {
     id: 'blog-content-upgrade',
-    title: 'Post com Content Upgrade',
-    description: 'Artigo com material bônus para capturar leads.',
-    fullPrompt: `Você é especialista em lead generation e content marketing. Crie um post com content upgrade estratégico.
-
-INFORMAÇÕES:
-- Tema do post: [assunto principal]
-- Content upgrade: [material bônus - checklist, template, ebook]
-- CTA desejado: [download, inscrição, trial]
-- Persona: [quem vai baixar]
-
-ESTRUTURA DO POST COM UPGRADE:
-
-🎁 TÍTULO DO POST
-- Promessa clara de valor
-- Hint do bônus no título (opcional)
-
-🎁 TEASER DO UPGRADE (Início do post)
-[Box de destaque]
-📥 BÔNUS EXCLUSIVO: [Nome do Material]
-[Descrição em 1 linha do que contém]
-[Botão: Baixar Grátis]
-
-🎁 CONTEÚDO DO POST
-- Artigo completo e valioso
-- O upgrade complementa, não substitui
-- Mencione o upgrade 2-3x naturalmente
-
-🎁 MOMENTOS PARA MENCIONAR O UPGRADE:
-
-Menção 1 (após primeiro H2):
-"A propósito, criei um [template/checklist] com [benefício]. Baixe grátis aqui [link inline]."
-
-Menção 2 (no meio do post):
-[Box visual]
-💡 Dica: Use o [Nome do Upgrade] para implementar isso mais rápido. [CTA]
-
-Menção 3 (conclusão):
-[Box maior com preview do material]
-
-🎁 ESTRUTURA DO UPGRADE
-
-Se for CHECKLIST:
-- Título chamativo
-- 10-20 itens acionáveis
-- Boxes para marcar
-- Design profissional
-- Logo + contato
-
-Se for TEMPLATE:
-- Pronto para usar
-- Editável (Google Docs, Notion, etc.)
-- Instruções de uso
-- Exemplos preenchidos
-
-Se for EBOOK/GUIA:
-- 10-20 páginas
-- Complementa o post
-- Conteúdo exclusivo
-- Design atrativo
-
-Se for PLANILHA:
-- Fórmulas automáticas
-- Instruções nas abas
-- Exemplo preenchido
-- Versão limpa para usar
-
-🎁 PÁGINA DE CAPTURA (Para o upgrade)
-
-Headline: [Benefício do Material]
-Subheadline: [O que contém + formato]
-
-Preview visual do material
-
-3-4 bullets do que vai receber:
-✅ [Benefício 1]
-✅ [Benefício 2]
-✅ [Benefício 3]
-
-Formulário:
-- Nome
-- Email
-- [Botão: Quero Meu [Material]]
-
-Nota: Você também receberá [frequência] emails com [tipo de conteúdo]. Cancele quando quiser.
-
-🎁 EMAIL DE ENTREGA
-
-Assunto: Aqui está seu [Material] 🎁
-
-Olá [Nome],
-
-Muito obrigado por baixar o [Nome do Material]!
-
-👇 Clique aqui para acessar:
-[BOTÃO: Baixar [Material]]
-
-Dicas para aproveitar melhor:
-1. [Dica 1]
-2. [Dica 2]
-3. [Dica 3]
-
-Nos próximos dias, vou compartilhar [preview do que vem].
-
-Qualquer dúvida, responda este email.
-
-[Assinatura]
-
-PS: [Próximo passo ou oferta relacionada]
-
-🎁 SEQUÊNCIA PÓS-DOWNLOAD
-- Email 1: Entrega (imediato)
-- Email 2: Implementação (dia 2)
-- Email 3: Conteúdo relacionado (dia 4)
-- Email 4: Case/prova social (dia 6)
-- Email 5: Oferta (dia 7)
-
-Crie o post completo + estrutura do upgrade.`,
-    category: 'blog-content',
-    isPremium: true,
-    copyCount: 0,
-    tags: ['lead-magnet', 'content-upgrade', 'captura', 'bônus']
-  },
-  {
-    id: 'blog-update-refresh',
+    categoryId: 'blog-conteudo',
     title: 'Atualização de Conteúdo Antigo',
-    description: 'Framework para atualizar posts antigos e recuperar tráfego.',
-    fullPrompt: `Você é especialista em SEO e atualização de conteúdo. Crie um framework para atualizar posts antigos.
+    description: 'Roteiro para atualizar e melhorar artigos antigos.',
+    template: `Crie um plano para atualizar conteúdo existente.
 
-INFORMAÇÕES DO POST ORIGINAL:
-- URL: [link do post]
-- Data de publicação: [quando foi publicado]
-- Tráfego atual: [visitas/mês]
-- Posição atual: [ranking para keyword principal]
-- Problema: [por que precisa atualizar]
+ARTIGO ORIGINAL:
+- URL: {url}
+- Data de publicação: {data_pub}
+- Performance atual: {performance}
+- Objetivo da atualização: {objetivo}
 
-FRAMEWORK DE ATUALIZAÇÃO:
+ANÁLISE E PLANO:
 
-🔄 AUDITORIA DO POST ATUAL
+📝 AUDITORIA DO CONTEÚDO ATUAL
 
-Checklist de Análise:
-□ Informações desatualizadas
-□ Links quebrados
-□ Estatísticas antigas
-□ Screenshots/imagens obsoletas
-□ Ferramentas que não existem mais
-□ Preços incorretos
-□ Referências a anos passados
-□ Concorrentes superaram no ranking
-□ Featured snippet perdido
-□ CTR baixo (título fraco)
+SEO:
+- Palavra-chave atual
+- Posição no Google
+- CTR
+- Backlinks
 
-🔄 PESQUISA DE ATUALIZAÇÃO
+Conteúdo:
+- Extensão atual
+- Estrutura
+- Qualidade das informações
+- Links quebrados
 
-Keyword Research Refresh:
-- Keyword principal ainda relevante?
-- Novas keywords relacionadas?
-- Intenção de busca mudou?
-- Novos concorrentes?
-- O que os top 3 têm que você não tem?
+📝 O QUE ATUALIZAR
 
-Content Gap Analysis:
-- Seções que faltam
-- Perguntas não respondidas
-- Formatos não explorados (vídeo, infográfico)
+Informações desatualizadas:
+- [item 1]
+- [item 2]
+- [item 3]
 
-🔄 PLANO DE ATUALIZAÇÃO
+Seções a adicionar:
+- [nova seção 1]
+- [nova seção 2]
 
-NÍVEL 1 - Quick Wins (1-2 horas):
-- Atualizar ano no título e H1
-- Corrigir estatísticas
-- Atualizar links quebrados
-- Adicionar data de atualização
-- Melhorar meta description
+Seções a remover/condensar:
+- [seção]
 
-NÍVEL 2 - Melhorias Médias (3-5 horas):
-- Adicionar nova seção
-- Atualizar screenshots
-- Incluir FAQ schema
-- Adicionar mais exemplos
-- Melhorar formatação
+📝 MELHORIAS DE SEO
 
-NÍVEL 3 - Reescrita Parcial (1-2 dias):
-- Expandir significativamente
-- Novo título/angle
-- Adicionar mídia (vídeo, infográfico)
-- Content upgrade
-- Redesign da página
+- Nova keyword principal
+- Keywords secundárias
+- Meta title otimizado
+- Meta description nova
+- URLs de imagens
 
-🔄 TEMPLATE DE MUDANÇAS
+📝 MELHORIAS DE CONTEÚDO
 
-Título:
-- Original: [título antigo]
-- Novo: [título atualizado + ano]
-- Razão: [por que mudou]
+- Dados atualizados para [ano]
+- Novas ferramentas/recursos
+- Cases mais recentes
+- FAQ expandido
 
-Meta Description:
-- Original: [descrição antiga]
-- Nova: [descrição otimizada]
+📝 MELHORIAS VISUAIS
 
-Seções Adicionadas:
-1. [Nova seção]: [conteúdo resumido]
-2. [Nova seção]: [conteúdo resumido]
+- Imagens novas
+- Infográficos
+- Tabelas comparativas
+- Screenshots atualizados
 
-Seções Removidas/Consolidadas:
-1. [Seção]: [razão]
+📝 CHECKLIST DE ATUALIZAÇÃO
 
-Dados Atualizados:
-- [Dado antigo] → [Dado novo]
-- [Dado antigo] → [Dado novo]
+□ Título atualizado
+□ Meta tags revisadas
+□ Introdução reescrita
+□ Dados atualizados
+□ Links verificados
+□ Novas seções adicionadas
+□ Imagens atualizadas
+□ CTA atualizado
+□ Data de atualização visível
 
-Links Corrigidos:
-- [Link quebrado] → [Novo destino]
+📝 PROMOÇÃO PÓS-ATUALIZAÇÃO
 
-🔄 OTIMIZAÇÕES TÉCNICAS
-
-On-Page:
-- Verificar heading hierarchy
-- Adicionar internal links novos
-- Otimizar imagens (alt, compressão)
-- Schema markup adequado
-
-UX:
-- Tempo de leitura
-- Índice/navegação
-- Mobile-friendly
-- Core Web Vitals
-
-🔄 PLANO DE PROMOÇÃO PÓS-UPDATE
-
-- [ ] Atualizar data de publicação
-- [ ] Compartilhar nas redes (como novo)
-- [ ] Email para lista (conteúdo atualizado)
-- [ ] Pedir novos backlinks
-- [ ] Submeter no Search Console
-
-🔄 TRACKING
-
-Métricas a monitorar (30/60/90 dias):
-- Posição no ranking
-- Tráfego orgânico
-- CTR (Search Console)
-- Tempo na página
-- Conversões
-
-Crie o plano de atualização completo para o post.`,
-    category: 'blog-content',
+- Re-compartilhar em redes
+- Email para lista
+- Responder comentários antigos
+- Buscar novos backlinks`,
+    variables: [
+      { name: 'url', label: 'URL do Artigo', placeholder: 'Ex: /blog/guia-seo-2023', type: 'text', required: true },
+      { name: 'data_pub', label: 'Data de Publicação', placeholder: 'Ex: Janeiro 2023', type: 'text', required: true },
+      { name: 'performance', label: 'Performance Atual', placeholder: 'Ex: 500 visitas/mês, posição 15', type: 'text', required: true },
+      { name: 'objetivo', label: 'Objetivo da Atualização', placeholder: 'Ex: Chegar no top 5 do Google', type: 'text', required: true }
+    ],
+    examples: [],
+    tags: ['atualização', 'refresh', 'SEO', 'otimização'],
+    difficulty: 'intermediate',
     isPremium: true,
-    copyCount: 0,
-    tags: ['atualização', 'refresh', 'seo', 'recuperar-tráfego']
+    usageCount: 0
   }
+];
+
+// Exporta todos os prompts do Pack 3
+export const premiumPromptsPack3 = [
+  ...emailMarketingPremiumPrompts,
+  ...blogContentPremiumPrompts
 ];
