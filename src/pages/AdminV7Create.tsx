@@ -1,5 +1,6 @@
 // src/pages/AdminV7Create.tsx
 // Admin page for creating and editing V7 Cinematic Lessons
+// Supports two creation methods: JSON paste or Form-based
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -29,7 +30,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Film, Sparkles, Save, Play, Loader2, RefreshCw, Trash2, Edit } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Film, Sparkles, Save, Play, Loader2, RefreshCw, Trash2, Edit, FileJson, FormInput, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +61,18 @@ export default function AdminV7Create() {
   // STATE
   // ============================================================================
 
+  const [creationMethod, setCreationMethod] = useState<'json' | 'form'>('json');
+  
+  // JSON method state
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonValidation, setJsonValidation] = useState<{
+    isValid: boolean;
+    error?: string;
+    data?: any;
+    stats?: { sections: number; duration: number };
+  }>({ isValid: false });
+
+  // Form method state
   const [formData, setFormData] = useState<Partial<V7PipelineInput>>({
     title: '',
     subtitle: '',
@@ -81,6 +95,48 @@ export default function AdminV7Create() {
   }, [loadedFormData]);
 
   // ============================================================================
+  // JSON VALIDATION
+  // ============================================================================
+
+  const validateJson = (input: string) => {
+    if (!input.trim()) {
+      setJsonValidation({ isValid: false });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(input);
+      
+      // Validate required fields
+      if (!parsed.title) {
+        setJsonValidation({ isValid: false, error: 'Campo "title" é obrigatório' });
+        return;
+      }
+      
+      if (!parsed.narrativeScript && !parsed.sections) {
+        setJsonValidation({ isValid: false, error: 'Campo "narrativeScript" ou "sections" é obrigatório' });
+        return;
+      }
+
+      // Calculate stats
+      const sections = parsed.sections?.length || 0;
+      const duration = parsed.duration || 300;
+
+      setJsonValidation({
+        isValid: true,
+        data: parsed,
+        stats: { sections, duration }
+      });
+    } catch (e: any) {
+      setJsonValidation({ isValid: false, error: `JSON inválido: ${e.message}` });
+    }
+  };
+
+  useEffect(() => {
+    validateJson(jsonInput);
+  }, [jsonInput]);
+
+  // ============================================================================
   // HANDLERS
   // ============================================================================
 
@@ -91,8 +147,64 @@ export default function AdminV7Create() {
     }
   };
 
-  const handleGenerateLesson = async () => {
-    // Validate form
+  const handleGenerateFromJson = async () => {
+    if (!jsonValidation.isValid || !jsonValidation.data) {
+      toast({
+        title: 'JSON inválido',
+        description: 'Corrija os erros no JSON antes de enviar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const payload = jsonValidation.data;
+      
+      // Call V7 Pipeline Edge Function
+      const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+        body: {
+          title: payload.title,
+          subtitle: payload.subtitle || '',
+          difficulty: payload.difficulty || 'beginner',
+          category: payload.category || 'prompts',
+          tags: payload.tags || [],
+          learningObjectives: payload.learningObjectives || [],
+          narrativeScript: payload.narrativeScript || '',
+          sections: payload.sections,
+          duration: payload.duration || 300,
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Pipeline failed');
+
+      toast({
+        title: '✨ Lição V7 gerada com sucesso!',
+        description: `${data.stats?.actCount || 0} atos criados`,
+      });
+
+      setGeneratedLesson({
+        id: data.lessonId,
+        title: payload.title,
+        model: 'v7-cinematic',
+        content: data.content,
+        stats: data.stats,
+      });
+    } catch (error: any) {
+      console.error('[AdminV7Create] Pipeline error:', error);
+      toast({
+        title: 'Erro ao gerar lição',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateFromForm = async () => {
     if (!formData.title || !formData.narrativeScript) {
       toast({
         title: 'Campos obrigatórios',
@@ -105,7 +217,6 @@ export default function AdminV7Create() {
     setIsGenerating(true);
 
     try {
-      // Call V7 Pipeline Edge Function
       const { data, error } = await supabase.functions.invoke('v7-pipeline', {
         body: {
           title: formData.title,
@@ -124,10 +235,9 @@ export default function AdminV7Create() {
 
       toast({
         title: '✨ Lição V7 gerada com sucesso!',
-        description: `${data.stats.actCount} atos criados, ${data.stats.interactivePoints} pontos interativos`,
+        description: `${data.stats?.actCount || 0} atos criados, ${data.stats?.interactivePoints || 0} pontos interativos`,
       });
 
-      // Store generated lesson data
       setGeneratedLesson({
         id: data.lessonId || `v7-preview-${Date.now()}`,
         title: formData.title,
@@ -170,20 +280,18 @@ export default function AdminV7Create() {
 
   const handlePreview = () => {
     if (isEditing && editLessonId) {
-      navigate(`/admin/v7/preview/${editLessonId}`);
-    } else if (generatedLesson) {
-      navigate(`/admin/v7/preview/${generatedLesson.id}`);
+      navigate(`/admin/v7/play/${editLessonId}`);
+    } else if (generatedLesson?.id) {
+      navigate(`/admin/v7/play/${generatedLesson.id}`);
     }
   };
 
   const handleSave = async () => {
     try {
       if (isEditing && editLessonId) {
-        // Activate existing lesson
         await setLessonStatus(true, 'pronta');
         navigate('/admin');
       } else if (generatedLesson) {
-        // Activate newly generated lesson
         if (generatedLesson.id && !generatedLesson.id.startsWith('v7-preview-')) {
           const { error } = await supabase
             .from('lessons')
@@ -275,154 +383,346 @@ export default function AdminV7Create() {
           </Card>
         )}
 
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">Informações</TabsTrigger>
-            <TabsTrigger value="narrative">Roteiro</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="basic" className="space-y-4">
-            {/* Main Form */}
-            <Card className="border-2 border-cyan-500/20">
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>
-                  Configure os dados principais da lição cinematográfica
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                {/* Title */}
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título da Lição *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Ex: Dominando Prompts com ChatGPT"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                  />
+        {/* Generated Lesson Success */}
+        {generatedLesson && (
+          <Card className="border-green-500/30 bg-green-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="w-4 h-4" />
+                Lição Gerada com Sucesso!
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <p><strong>{generatedLesson.title}</strong></p>
+              {generatedLesson.stats && (
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="secondary">{generatedLesson.stats.actCount} atos</Badge>
+                  <Badge variant="secondary">{generatedLesson.stats.interactivePoints || 0} interações</Badge>
                 </div>
+              )}
+              <div className="flex gap-2 mt-3">
+                <Button size="sm" onClick={handlePreview}>
+                  <Play className="w-4 h-4 mr-1" />
+                  Preview
+                </Button>
+                <Button size="sm" variant="default" onClick={handleSave}>
+                  <Save className="w-4 h-4 mr-1" />
+                  Publicar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                {/* Subtitle */}
-                <div className="space-y-2">
-                  <Label htmlFor="subtitle">Subtítulo</Label>
-                  <Input
-                    id="subtitle"
-                    placeholder="Uma jornada cinematográfica pelo mundo da IA"
-                    value={formData.subtitle}
-                    onChange={(e) => handleInputChange('subtitle', e.target.value)}
-                  />
-                </div>
+        {/* Creation Method Tabs */}
+        {!isEditing && (
+          <Tabs value={creationMethod} onValueChange={(v) => setCreationMethod(v as 'json' | 'form')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="json" className="flex items-center gap-2">
+                <FileJson className="w-4 h-4" />
+                Colar JSON
+              </TabsTrigger>
+              <TabsTrigger value="form" className="flex items-center gap-2">
+                <FormInput className="w-4 h-4" />
+                Formulário
+              </TabsTrigger>
+            </TabsList>
 
-                {/* Difficulty and Category */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty">Dificuldade</Label>
-                    <Select
-                      value={formData.difficulty}
-                      onValueChange={(value) => handleInputChange('difficulty', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">{DIFFICULTY_LABELS.beginner}</SelectItem>
-                        <SelectItem value="intermediate">{DIFFICULTY_LABELS.intermediate}</SelectItem>
-                        <SelectItem value="advanced">{DIFFICULTY_LABELS.advanced}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Ferramenta/Tópico de IA</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => handleInputChange('category', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AI_CATEGORIES.map((group) => (
-                          <SelectGroup key={group.group}>
-                            <SelectLabel>{group.group}</SelectLabel>
-                            {group.items.map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Duration */}
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duração Estimada (segundos)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    placeholder="300"
-                    value={formData.duration}
-                    onChange={(e) => handleInputChange('duration', parseInt(e.target.value))}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Aproximadamente {Math.floor((formData.duration || 0) / 60)} minutos
-                  </p>
-                </div>
-
-                {/* Learning Objectives */}
-                <div className="space-y-2">
-                  <Label htmlFor="objectives">Objetivos de Aprendizado</Label>
+            {/* JSON Method */}
+            <TabsContent value="json" className="space-y-4">
+              <Card className="border-2 border-cyan-500/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileJson className="w-5 h-5 text-cyan-500" />
+                    JSON da Lição V7
+                  </CardTitle>
+                  <CardDescription>
+                    Cole o JSON completo da lição. Deve conter pelo menos "title" e "narrativeScript" ou "sections".
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <Textarea
-                    id="objectives"
-                    placeholder="Digite um objetivo por linha:&#10;- Dominar técnicas de prompt&#10;- Usar ChatGPT de forma avançada&#10;- Automatizar tarefas com IA"
-                    rows={4}
-                    value={formData.learningObjectives?.join('\n')}
-                    onChange={(e) => {
-                      const objectives = e.target.value.split('\n').filter((o) => o.trim());
-                      handleInputChange('learningObjectives', objectives);
-                    }}
+                    placeholder={`{
+  "title": "Nome da Lição",
+  "subtitle": "Subtítulo opcional",
+  "difficulty": "beginner",
+  "category": "chatgpt",
+  "narrativeScript": "Roteiro completo da narração...",
+  "duration": 300
+}`}
+                    rows={15}
+                    value={jsonInput}
+                    onChange={(e) => setJsonInput(e.target.value)}
+                    className="font-mono text-sm"
                   />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  
+                  {/* Validation Feedback */}
+                  {jsonInput && (
+                    <div className={`p-3 rounded-lg ${jsonValidation.isValid ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                      {jsonValidation.isValid ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="text-sm">JSON válido</span>
+                          {jsonValidation.stats && (
+                            <div className="ml-auto flex gap-2">
+                              <Badge variant="outline">{jsonValidation.stats.sections} seções</Badge>
+                              <Badge variant="outline">{Math.floor(jsonValidation.stats.duration / 60)}min</Badge>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-red-600">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-sm">{jsonValidation.error}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-          <TabsContent value="narrative">
-            {/* Narrative Script */}
-            <Card className="border-2 border-purple-500/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                  Roteiro Narrativo
-                </CardTitle>
-                <CardDescription>
-                  Escreva o roteiro completo da narração. A IA irá processar e criar os atos
-                  cinematográficos automaticamente.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Bem-vindo à jornada pelo mundo da Inteligência Artificial. Hoje, vamos explorar como criar prompts eficazes que transformam suas interações com o ChatGPT...&#10;&#10;[Continue com o roteiro completo, incluindo pontos de interação e desafios]"
-                  rows={15}
-                  value={formData.narrativeScript}
-                  onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {formData.narrativeScript?.length || 0} caracteres
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  <Button
+                    onClick={handleGenerateFromJson}
+                    disabled={isGenerating || !jsonValidation.isValid}
+                    className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                    size="lg"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Processando Pipeline...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5 mr-2" />
+                        Enviar para Pipeline V7
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 sm:gap-4">
-          {isEditing ? (
-            <>
+            {/* Form Method */}
+            <TabsContent value="form" className="space-y-4">
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="basic">Informações</TabsTrigger>
+                  <TabsTrigger value="narrative">Roteiro</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="basic" className="space-y-4">
+                  <Card className="border-2 border-cyan-500/20">
+                    <CardHeader>
+                      <CardTitle>Informações Básicas</CardTitle>
+                      <CardDescription>
+                        Configure os dados principais da lição cinematográfica
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6">
+                      {/* Title */}
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Título da Lição *</Label>
+                        <Input
+                          id="title"
+                          placeholder="Ex: Dominando Prompts com ChatGPT"
+                          value={formData.title}
+                          onChange={(e) => handleInputChange('title', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Subtitle */}
+                      <div className="space-y-2">
+                        <Label htmlFor="subtitle">Subtítulo</Label>
+                        <Input
+                          id="subtitle"
+                          placeholder="Uma jornada cinematográfica pelo mundo da IA"
+                          value={formData.subtitle}
+                          onChange={(e) => handleInputChange('subtitle', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Difficulty and Category */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="difficulty">Dificuldade</Label>
+                          <Select
+                            value={formData.difficulty}
+                            onValueChange={(value) => handleInputChange('difficulty', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beginner">{DIFFICULTY_LABELS.beginner}</SelectItem>
+                              <SelectItem value="intermediate">{DIFFICULTY_LABELS.intermediate}</SelectItem>
+                              <SelectItem value="advanced">{DIFFICULTY_LABELS.advanced}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Ferramenta/Tópico de IA</Label>
+                          <Select
+                            value={formData.category}
+                            onValueChange={(value) => handleInputChange('category', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AI_CATEGORIES.map((group) => (
+                                <SelectGroup key={group.group}>
+                                  <SelectLabel>{group.group}</SelectLabel>
+                                  {group.items.map((item) => (
+                                    <SelectItem key={item.value} value={item.value}>
+                                      {item.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Duration */}
+                      <div className="space-y-2">
+                        <Label htmlFor="duration">Duração Estimada (segundos)</Label>
+                        <Input
+                          id="duration"
+                          type="number"
+                          placeholder="300"
+                          value={formData.duration}
+                          onChange={(e) => handleInputChange('duration', parseInt(e.target.value))}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Aproximadamente {Math.floor((formData.duration || 0) / 60)} minutos
+                        </p>
+                      </div>
+
+                      {/* Learning Objectives */}
+                      <div className="space-y-2">
+                        <Label htmlFor="objectives">Objetivos de Aprendizado</Label>
+                        <Textarea
+                          id="objectives"
+                          placeholder="Digite um objetivo por linha:&#10;- Dominar técnicas de prompt&#10;- Usar ChatGPT de forma avançada&#10;- Automatizar tarefas com IA"
+                          rows={4}
+                          value={formData.learningObjectives?.join('\n')}
+                          onChange={(e) => {
+                            const objectives = e.target.value.split('\n').filter((o) => o.trim());
+                            handleInputChange('learningObjectives', objectives);
+                          }}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="narrative">
+                  <Card className="border-2 border-purple-500/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-purple-500" />
+                        Roteiro Narrativo
+                      </CardTitle>
+                      <CardDescription>
+                        Escreva o roteiro completo da narração. A IA irá processar e criar os atos
+                        cinematográficos automaticamente.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Textarea
+                        placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Bem-vindo à jornada pelo mundo da Inteligência Artificial. Hoje, vamos explorar como criar prompts eficazes que transformam suas interações com o ChatGPT...&#10;&#10;[Continue com o roteiro completo, incluindo pontos de interação e desafios]"
+                        rows={15}
+                        value={formData.narrativeScript}
+                        onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formData.narrativeScript?.length || 0} caracteres
+                      </p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              <Button
+                onClick={handleGenerateFromForm}
+                disabled={isGenerating || !formData.title || !formData.narrativeScript}
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Gerando Lição V7...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Gerar Lição V7 Cinematic
+                  </>
+                )}
+              </Button>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* Editing Mode Actions */}
+        {isEditing && (
+          <>
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="basic">Informações</TabsTrigger>
+                <TabsTrigger value="narrative">Roteiro</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4">
+                <Card className="border-2 border-cyan-500/20">
+                  <CardHeader>
+                    <CardTitle>Informações Básicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Título da Lição *</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subtitle">Subtítulo</Label>
+                      <Input
+                        id="subtitle"
+                        value={formData.subtitle}
+                        onChange={(e) => handleInputChange('subtitle', e.target.value)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="narrative">
+                <Card className="border-2 border-purple-500/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-purple-500" />
+                      Roteiro Narrativo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      rows={15}
+                      value={formData.narrativeScript}
+                      onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
+                      className="font-mono text-sm"
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex flex-wrap gap-3 sm:gap-4">
               <Button
                 onClick={handleRegenerateLesson}
                 disabled={isGenerating || !hasChanges}
@@ -472,44 +772,9 @@ export default function AdminV7Create() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={handleGenerateLesson}
-                disabled={isGenerating || !formData.title || !formData.narrativeScript}
-                className="flex-1 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700"
-                size="lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                    Gerando Lição V7...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Gerar Lição V7
-                  </>
-                )}
-              </Button>
-
-              {generatedLesson && (
-                <>
-                  <Button onClick={handlePreview} variant="outline" size="lg">
-                    <Play className="w-5 h-5 mr-2" />
-                    Preview
-                  </Button>
-
-                  <Button onClick={handleSave} variant="default" size="lg">
-                    <Save className="w-5 h-5 mr-2" />
-                    Salvar
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
 
         {/* Info Card */}
         <Card className="bg-blue-500/5 border-blue-500/20">
