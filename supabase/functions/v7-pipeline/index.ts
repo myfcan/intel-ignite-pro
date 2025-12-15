@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
         estimated_time: Math.ceil(totalDuration / 60),
         difficulty_level: input.difficulty,
         is_active: false, // Draft mode
-        status: 'draft',
+        status: 'rascunho',
       })
       .select('id')
       .single();
