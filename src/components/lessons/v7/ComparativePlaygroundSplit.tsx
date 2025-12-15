@@ -8,6 +8,8 @@ import {
   V7PlayerState,
 } from '@/types/v7-cinematic.types';
 import { CodeEditor } from './CodeEditor';
+import { V7AIAnalysis } from './V7AIAnalysis';
+import { useV7Feedback } from './V7FeedbackSystem';
 import { ArrowRight, TrendingUp, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -27,7 +29,7 @@ export const ComparativePlaygroundSplit = ({
   // ============================================================================
 
   const [activePane, setActivePane] = useState<'amateur' | 'professional'>('amateur');
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(true); // Show AI analysis by default
   const [amateurCode, setAmateurCode] = useState(
     comparisonData.amateur.editor.initialCode
   );
@@ -36,6 +38,9 @@ export const ComparativePlaygroundSplit = ({
     professional?: any;
   }>({});
 
+  // Feedback system
+  const { showSuccess, showError, showInfo } = useV7Feedback();
+
   // ============================================================================
   // CODE EXECUTION (MOCK)
   // ============================================================================
@@ -43,6 +48,8 @@ export const ComparativePlaygroundSplit = ({
   const executeCode = useCallback((code: string, pane: 'amateur' | 'professional') => {
     // This would integrate with a real code execution engine
     // For now, just mock the execution
+    showInfo(`Executando código ${pane}...`, { duration: 2000 });
+
     try {
       // Mock execution result
       const result = {
@@ -57,6 +64,11 @@ export const ComparativePlaygroundSplit = ({
         [pane]: result,
       }));
 
+      showSuccess(
+        `Código ${pane} executado com sucesso! (${result.executionTime.toFixed(0)}ms)`,
+        { duration: 3000 }
+      );
+
       return result;
     } catch (error: any) {
       const result = {
@@ -69,9 +81,11 @@ export const ComparativePlaygroundSplit = ({
         [pane]: result,
       }));
 
+      showError(`Erro ao executar código ${pane}: ${error.message}`, { duration: 5000 });
+
       return result;
     }
-  }, []);
+  }, [showInfo, showSuccess, showError]);
 
   const handleRunAmateur = useCallback(() => {
     executeCode(amateurCode, 'amateur');
@@ -337,6 +351,18 @@ export const ComparativePlaygroundSplit = ({
       {renderLayout()}
 
       {showAnalysis && renderComparison()}
+
+      {/* AI Analysis Panel */}
+      {showAnalysis && (
+        <div className="absolute top-4 right-4 w-96 max-h-[80vh] overflow-y-auto">
+          <V7AIAnalysis
+            code={amateurCode}
+            language={comparisonData.amateur.editor.language}
+            professionalCode={comparisonData.professional.editor.initialCode}
+            realTime={true}
+          />
+        </div>
+      )}
 
       {/* Guidance panel (for amateur pane) */}
       {showAnalysis && comparisonData.amateur.guidance && (
