@@ -15,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Film, Sparkles, Save, Play } from 'lucide-react';
+import { ArrowLeft, Film, Sparkles, Save, Play, Loader2 } from 'lucide-react';
 import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
-
+import { supabase } from '@/integrations/supabase/client';
 export default function AdminV7Create() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -63,22 +63,38 @@ export default function AdminV7Create() {
     setIsGenerating(true);
 
     try {
-      // In production, this would call the V7 pipeline API
-      // For now, we'll simulate the generation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call V7 Pipeline Edge Function
+      const { data, error } = await supabase.functions.invoke('v7-pipeline', {
+        body: {
+          title: formData.title,
+          subtitle: formData.subtitle || '',
+          difficulty: formData.difficulty || 'beginner',
+          category: formData.category || 'javascript',
+          tags: formData.tags || [],
+          learningObjectives: formData.learningObjectives || [],
+          narrativeScript: formData.narrativeScript,
+          duration: formData.duration || 300,
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Pipeline failed');
 
       toast({
         title: '✨ Lição V7 gerada com sucesso!',
-        description: 'A lição cinematográfica está pronta para preview',
+        description: `${data.stats.actCount} atos criados, ${data.stats.interactivePoints} pontos interativos`,
       });
 
-      // Mock generated lesson data
+      // Store generated lesson data
       setGeneratedLesson({
-        id: `v7-${Date.now()}`,
+        id: data.lessonId || `v7-preview-${Date.now()}`,
         title: formData.title,
         model: 'v7-cinematic',
+        content: data.content,
+        stats: data.stats,
       });
     } catch (error: any) {
+      console.error('[AdminV7Create] Pipeline error:', error);
       toast({
         title: 'Erro ao gerar lição',
         description: error.message,

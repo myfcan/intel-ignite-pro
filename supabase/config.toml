@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.send-daily-mission-notifications]
 verify_jwt = false
+
+[functions.v7-pipeline]
+verify_jwt = false
