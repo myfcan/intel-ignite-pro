@@ -205,6 +205,7 @@ export interface InteractionContent {
   question?: string;
   options?: InteractionOption[];
   codeTemplate?: string;
+  expectedCode?: string; // Expected code for AI comparison
   placeholder?: string;
   hint?: string;
 }
