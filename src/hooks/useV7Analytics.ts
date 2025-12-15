@@ -110,21 +110,25 @@ export function useV7Analytics(lessonId: string) {
         user_id: sessionRef.current.userId,
         session_id: sessionRef.current.sessionId,
         start_time: new Date(sessionRef.current.startTime).toISOString(),
-        events: sessionRef.current.events,
-        metrics: sessionRef.current.metrics,
-        duration: Date.now() - sessionRef.current.startTime,
+        events: JSON.parse(JSON.stringify(sessionRef.current.events)),
+        metrics: JSON.parse(JSON.stringify(sessionRef.current.metrics)),
+        duration: Math.floor((Date.now() - sessionRef.current.startTime) / 1000),
       };
 
-      // TODO: Create v7_analytics table in database to persist analytics
-      // For now, just log the analytics data
-      console.log('[V7Analytics] Analytics data (not persisted - table not created yet):', analyticsData);
-      console.log(
-        '[V7Analytics] Flushed',
-        sessionRef.current.events.length,
-        'events (local only)'
-      );
-      // Clear flushed events
-      sessionRef.current.events = [];
+      // Store in Supabase v7_analytics table
+      const { error } = await supabase.from('v7_analytics').insert([analyticsData]);
+
+      if (error) {
+        console.error('[V7Analytics] Failed to flush analytics:', error);
+      } else {
+        console.log(
+          '[V7Analytics] Flushed',
+          sessionRef.current.events.length,
+          'events'
+        );
+        // Clear flushed events
+        sessionRef.current.events = [];
+      }
     } catch (error) {
       console.error('[V7Analytics] Error flushing analytics:', error);
     }
