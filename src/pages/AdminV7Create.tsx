@@ -11,7 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -341,16 +343,14 @@ export default function AdminV7Create() {
                       </SelectTrigger>
                       <SelectContent>
                         {AI_CATEGORIES.map((group) => (
-                          <div key={group.group}>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                              {group.group}
-                            </div>
+                          <SelectGroup key={group.group}>
+                            <SelectLabel>{group.group}</SelectLabel>
                             {group.items.map((item) => (
                               <SelectItem key={item.value} value={item.value}>
                                 {item.label}
                               </SelectItem>
                             ))}
-                          </div>
+                          </SelectGroup>
                         ))}
                       </SelectContent>
                     </Select>
