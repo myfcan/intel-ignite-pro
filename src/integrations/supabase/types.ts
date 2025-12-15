@@ -190,6 +190,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           lesson_type: string | null
+          model: string | null
           order_index: number
           passing_score: number | null
           progresso_criacao: number | null
@@ -215,6 +216,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
+          model?: string | null
           order_index: number
           passing_score?: number | null
           progresso_criacao?: number | null
@@ -240,6 +242,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           lesson_type?: string | null
+          model?: string | null
           order_index?: number
           passing_score?: number | null
           progresso_criacao?: number | null
@@ -257,6 +260,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      missions_daily_templates: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          requirement_type: string
+          requirement_value: number
+          reward_type: string
+          reward_value: number
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          requirement_type: string
+          requirement_value: number
+          reward_type: string
+          reward_value: number
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          requirement_type?: string
+          requirement_value?: number
+          reward_type?: string
+          reward_value?: number
+          title?: string
+        }
+        Relationships: []
       }
       missoes_diarias: {
         Row: {
@@ -581,6 +617,118 @@ export type Database = {
           },
         ]
       }
+      user_daily_missions: {
+        Row: {
+          completed: boolean
+          created_at: string | null
+          date: string
+          id: string
+          mission_id: string
+          progress_value: number
+          reward_claimed: boolean
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string | null
+          date?: string
+          id?: string
+          mission_id: string
+          progress_value?: number
+          reward_claimed?: boolean
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string | null
+          date?: string
+          id?: string
+          mission_id?: string
+          progress_value?: number
+          reward_claimed?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions_daily_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_gamification_events: {
+        Row: {
+          coins_delta: number
+          created_at: string
+          event_reference_id: string | null
+          event_type: string
+          id: string
+          payload: Json | null
+          user_id: string
+          xp_delta: number
+        }
+        Insert: {
+          coins_delta?: number
+          created_at?: string
+          event_reference_id?: string | null
+          event_type: string
+          id?: string
+          payload?: Json | null
+          user_id: string
+          xp_delta?: number
+        }
+        Update: {
+          coins_delta?: number
+          created_at?: string
+          event_reference_id?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          user_id?: string
+          xp_delta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gamification_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_guide_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          guide_id: string
+          id: string
+          started_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          guide_id: string
+          id?: string
+          started_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          guide_id?: string
+          id?: string
+          started_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_onboarding_answers: {
         Row: {
           answer_value: string
@@ -791,6 +939,47 @@ export type Database = {
           },
         ]
       }
+      user_rewards: {
+        Row: {
+          collected: boolean
+          collected_at: string | null
+          created_at: string | null
+          id: string
+          mission_id: string
+          reward_type: string
+          reward_value: number
+          user_id: string
+        }
+        Insert: {
+          collected?: boolean
+          collected_at?: string | null
+          created_at?: string | null
+          id?: string
+          mission_id: string
+          reward_type: string
+          reward_value: number
+          user_id: string
+        }
+        Update: {
+          collected?: boolean
+          collected_at?: string | null
+          created_at?: string | null
+          id?: string
+          mission_id?: string
+          reward_type?: string
+          reward_value?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "user_daily_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -812,13 +1001,70 @@ export type Database = {
         }
         Relationships: []
       }
+      user_streaks: {
+        Row: {
+          best_streak: number
+          created_at: string | null
+          current_streak: number
+          last_active_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          best_streak?: number
+          created_at?: string | null
+          current_streak?: number
+          last_active_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          best_streak?: number
+          created_at?: string | null
+          current_streak?: number
+          last_active_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_unlocked_prompts: {
+        Row: {
+          category_id: string
+          credits_spent: number
+          id: string
+          prompt_id: string
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          credits_spent?: number
+          id?: string
+          prompt_id: string
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          credits_spent?: number
+          id?: string
+          prompt_id?: string
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           age: number | null
+          avatar_url: string | null
+          coins: number | null
           created_at: string | null
           daily_interaction_limit: number | null
           daily_time: Database["public"]["Enums"]["daily_time_type"] | null
           email: string
+          gamification_updated_at: string | null
           id: string
           interactions_used_today: number | null
           last_activity_date: string | null
@@ -827,10 +1073,14 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          notifications_enabled: boolean | null
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
+          patent_level: number | null
+          phone: string | null
           plan: Database["public"]["Enums"]["plan_type"] | null
+          power_score: number | null
           profession: string | null
           streak_days: number | null
           total_lessons_completed: number | null
@@ -839,10 +1089,13 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar_url?: string | null
+          coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           email: string
+          gamification_updated_at?: string | null
           id: string
           interactions_used_today?: number | null
           last_activity_date?: string | null
@@ -851,10 +1104,14 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name: string
+          notifications_enabled?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          patent_level?: number | null
+          phone?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          power_score?: number | null
           profession?: string | null
           streak_days?: number | null
           total_lessons_completed?: number | null
@@ -863,10 +1120,13 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar_url?: string | null
+          coins?: number | null
           created_at?: string | null
           daily_interaction_limit?: number | null
           daily_time?: Database["public"]["Enums"]["daily_time_type"] | null
           email?: string
+          gamification_updated_at?: string | null
           id?: string
           interactions_used_today?: number | null
           last_activity_date?: string | null
@@ -875,10 +1135,14 @@ export type Database = {
             | Database["public"]["Enums"]["learning_goal_type"]
             | null
           name?: string
+          notifications_enabled?: boolean | null
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          patent_level?: number | null
+          phone?: string | null
           plan?: Database["public"]["Enums"]["plan_type"] | null
+          power_score?: number | null
           profession?: string | null
           streak_days?: number | null
           total_lessons_completed?: number | null
@@ -971,6 +1235,16 @@ export type Database = {
       create_lesson_draft:
         | {
             Args: {
+              p_content: Json
+              p_estimated_time: number
+              p_order_index: number
+              p_title: string
+              p_trail_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_audio_url?: string
               p_content: Json
               p_estimated_time: number
@@ -979,16 +1253,6 @@ export type Database = {
               p_title: string
               p_trail_id: string
               p_word_timestamps?: Json
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_content: Json
-              p_estimated_time: number
-              p_order_index: number
-              p_title: string
-              p_trail_id: string
             }
             Returns: string
           }
@@ -1007,6 +1271,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_gamification_event: {
+        Args: {
+          p_event_reference_id?: string
+          p_event_type: string
+          p_payload?: Json
+        }
+        Returns: Database["public"]["CompositeTypes"]["gamification_result"]
+        SetofOptions: {
+          from: "*"
+          to: "gamification_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "user"
@@ -1023,7 +1301,15 @@ export type Database = {
       plan_type: "basico" | "ultra" | "pro"
     }
     CompositeTypes: {
-      [_ in never]: never
+      gamification_result: {
+        xp_delta: number | null
+        coins_delta: number | null
+        new_power_score: number | null
+        new_coins: number | null
+        new_patent_level: number | null
+        patent_name: string | null
+        is_new_patent: boolean | null
+      }
     }
   }
 }
