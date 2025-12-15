@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, Film, Sparkles, Save, Play } from 'lucide-react';
 import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
+import { processV7Pipeline, saveV7Lesson } from '@/services/v7-pipeline';
 
 export default function AdminV7Create() {
   const navigate = useNavigate();
@@ -63,21 +64,19 @@ export default function AdminV7Create() {
     setIsGenerating(true);
 
     try {
-      // In production, this would call the V7 pipeline API
-      // For now, we'll simulate the generation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call V7 Pipeline to process the input
+      const result = await processV7Pipeline(formData as V7PipelineInput);
+
+      if (!result.success || !result.lesson) {
+        throw new Error(result.error || 'Failed to generate lesson');
+      }
 
       toast({
         title: '✨ Lição V7 gerada com sucesso!',
-        description: 'A lição cinematográfica está pronta para preview',
+        description: `Criada com ${result.lesson.cinematicFlow.acts.length} atos cinematográficos`,
       });
 
-      // Mock generated lesson data
-      setGeneratedLesson({
-        id: `v7-${Date.now()}`,
-        title: formData.title,
-        model: 'v7-cinematic',
-      });
+      setGeneratedLesson(result.lesson);
     } catch (error: any) {
       toast({
         title: 'Erro ao gerar lição',
@@ -99,10 +98,16 @@ export default function AdminV7Create() {
     if (!generatedLesson) return;
 
     try {
-      // Save to database
+      // Save to database using V7 Pipeline
+      const success = await saveV7Lesson(generatedLesson);
+
+      if (!success) {
+        throw new Error('Failed to save lesson to database');
+      }
+
       toast({
         title: '💾 Lição salva!',
-        description: 'A lição V7 foi salva com sucesso',
+        description: `A lição V7 "${generatedLesson.title}" foi salva com sucesso`,
       });
 
       navigate('/admin');
