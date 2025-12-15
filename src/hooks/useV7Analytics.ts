@@ -115,20 +115,16 @@ export function useV7Analytics(lessonId: string) {
         duration: Date.now() - sessionRef.current.startTime,
       };
 
-      // Store in Supabase
-      const { error } = await supabase.from('v7_analytics').insert([analyticsData]);
-
-      if (error) {
-        console.error('[V7Analytics] Failed to flush analytics:', error);
-      } else {
-        console.log(
-          '[V7Analytics] Flushed',
-          sessionRef.current.events.length,
-          'events'
-        );
-        // Clear flushed events
-        sessionRef.current.events = [];
-      }
+      // TODO: Create v7_analytics table in database to persist analytics
+      // For now, just log the analytics data
+      console.log('[V7Analytics] Analytics data (not persisted - table not created yet):', analyticsData);
+      console.log(
+        '[V7Analytics] Flushed',
+        sessionRef.current.events.length,
+        'events (local only)'
+      );
+      // Clear flushed events
+      sessionRef.current.events = [];
     } catch (error) {
       console.error('[V7Analytics] Error flushing analytics:', error);
     }
