@@ -115,11 +115,25 @@ export default function AdminV7Create() {
     if (!generatedLesson) return;
 
     try {
-      // Save to database
-      toast({
-        title: '💾 Lição salva!',
-        description: 'A lição V7 foi salva com sucesso',
-      });
+      // Lesson is already saved by the pipeline, just activate it
+      if (generatedLesson.id && !generatedLesson.id.startsWith('v7-preview-')) {
+        const { error } = await supabase
+          .from('lessons')
+          .update({ is_active: true, status: 'published' })
+          .eq('id', generatedLesson.id);
+
+        if (error) throw error;
+
+        toast({
+          title: '💾 Lição publicada!',
+          description: 'A lição V7 foi ativada e está disponível',
+        });
+      } else {
+        toast({
+          title: '💾 Lição salva!',
+          description: 'A lição V7 foi salva como rascunho',
+        });
+      }
 
       navigate('/admin');
     } catch (error: any) {

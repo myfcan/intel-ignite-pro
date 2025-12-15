@@ -162,41 +162,39 @@ Deno.serve(async (req) => {
     };
 
     // ========================================================================
-    // STEP 4: Save to database (if trail_id provided)
+    // STEP 4: Save to database (ALWAYS save, trail_id optional)
     // ========================================================================
     let lessonId: string | null = null;
     
-    if (input.trail_id) {
-      console.log('[V7Pipeline] Step 4: Saving to database...');
-      
-      const { data: lesson, error: lessonError } = await supabase
-        .from('lessons')
-        .insert({
-          title: input.title,
-          description: input.subtitle || '',
-          trail_id: input.trail_id,
-          order_index: input.order_index || 0,
-          model: 'v7',
-          lesson_type: 'v7-cinematic',
-          content: lessonContent,
-          audio_url: audioUrl || null,
-          word_timestamps: wordTimestamps.length > 0 ? wordTimestamps : null,
-          estimated_time: Math.ceil(totalDuration / 60),
-          difficulty_level: input.difficulty,
-          is_active: false, // Draft mode
-          status: 'draft',
-        })
-        .select('id')
-        .single();
+    console.log('[V7Pipeline] Step 4: Saving to database...');
+    
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert({
+        title: input.title,
+        description: input.subtitle || '',
+        trail_id: input.trail_id || null, // Optional - can be assigned later
+        order_index: input.order_index || 0,
+        model: 'v7',
+        lesson_type: 'v7-cinematic',
+        content: lessonContent,
+        audio_url: audioUrl || null,
+        word_timestamps: wordTimestamps.length > 0 ? wordTimestamps : null,
+        estimated_time: Math.ceil(totalDuration / 60),
+        difficulty_level: input.difficulty,
+        is_active: false, // Draft mode
+        status: 'draft',
+      })
+      .select('id')
+      .single();
 
-      if (lessonError) {
-        console.error('[V7Pipeline] Database error:', lessonError);
-        throw new Error(`Failed to save lesson: ${lessonError.message}`);
-      }
-
-      lessonId = lesson.id;
-      console.log('[V7Pipeline] Lesson saved with ID:', lessonId);
+    if (lessonError) {
+      console.error('[V7Pipeline] Database error:', lessonError);
+      throw new Error(`Failed to save lesson: ${lessonError.message}`);
     }
+
+    lessonId = lesson.id;
+    console.log('[V7Pipeline] Lesson saved with ID:', lessonId);
 
     // ========================================================================
     // RESPONSE
