@@ -24,17 +24,39 @@ import {
   Code,
   Search as SearchIcon,
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  Bot,
+  TrendingUp,
+  DollarSign,
+  Headphones,
+  BarChart,
+  GraduationCap,
+  Heart,
+  Scale,
+  Wallet,
+  Users,
+  LucideIcon
 } from 'lucide-react';
 
-const categoryIcons = {
+const categoryIcons: Record<string, LucideIcon> = {
   text: FileText,
   image: Image,
   video: Video,
   audio: Mic,
   code: Code,
   research: SearchIcon,
-  productivity: Zap
+  productivity: Zap,
+  automation: Bot,
+  marketing: TrendingUp,
+  sales: DollarSign,
+  'customer-service': Headphones,
+  data: BarChart,
+  education: GraduationCap,
+  healthcare: Heart,
+  legal: Scale,
+  finance: Wallet,
+  hr: Users,
+  agents: Sparkles
 };
 
 /**
@@ -133,7 +155,7 @@ export default function AIDirectory() {
             Todas ({aiAppsDirectory.length})
           </Button>
           {categoryInfo.map((cat) => {
-            const Icon = categoryIcons[cat.id];
+            const Icon = categoryIcons[cat.id] || Sparkles;
             const count = getAppsByCategory(cat.id).length;
             return (
               <Button
