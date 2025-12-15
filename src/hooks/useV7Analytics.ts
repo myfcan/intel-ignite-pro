@@ -110,12 +110,12 @@ export function useV7Analytics(lessonId: string) {
         user_id: sessionRef.current.userId,
         session_id: sessionRef.current.sessionId,
         start_time: new Date(sessionRef.current.startTime).toISOString(),
-        events: sessionRef.current.events,
-        metrics: sessionRef.current.metrics,
-        duration: Date.now() - sessionRef.current.startTime,
+        events: JSON.parse(JSON.stringify(sessionRef.current.events)),
+        metrics: JSON.parse(JSON.stringify(sessionRef.current.metrics)),
+        duration: Math.floor((Date.now() - sessionRef.current.startTime) / 1000),
       };
 
-      // Store in Supabase
+      // Store in Supabase v7_analytics table
       const { error } = await supabase.from('v7_analytics').insert([analyticsData]);
 
       if (error) {

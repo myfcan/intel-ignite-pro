@@ -39,7 +39,6 @@ export function useIsAdmin(userId: string | undefined) {
         setIsAdmin(false);
       } finally {
         setLoading(false);
-        console.log('[useIsAdmin] Loading finished, isAdmin:', !!data);
       }
     };
 

@@ -1,5 +1,5 @@
 // src/components/lessons/v7/V7CinematicPlayer.tsx
-// Main player component for V7 Cinematic Lessons
+// Main player component for V7 Cinematic Lessons with full audio sync, transitions, accessibility, and performance optimization
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
@@ -7,15 +7,36 @@ import {
   V7PlayerState,
   CinematicAct,
   SyncPoint,
+  InteractionPoint,
 } from '@/types/v7-cinematic.types';
 import { CinematicActRenderer } from './CinematicActRenderer';
 import { V7Timeline } from './V7Timeline';
-import { V7PlayerControls } from './V7PlayerControls';
-import { V7AudioEngine } from './V7AudioEngine';
+import { V7PlayerControls, VolumeSettings } from './V7PlayerControls';
+import { V7AdvancedAudioEngine, V7AdvancedAudioEngineRef } from './V7AdvancedAudioEngine';
+import { V7SynchronizedCaptions } from './V7SynchronizedCaptions';
+import { V7ActTransition } from './V7CinematicTransitions';
+import { OptimizedParticlesBackground } from './OptimizedParticlesBackground';
+import { V7QuizInteraction, QuizResult } from './V7QuizInteraction';
+import { V7CodeChallenge, CodeChallengeResult } from './V7CodeChallenge';
+import { V7InteractionFeedback } from './V7InteractionFeedback';
+import { V7TouchControls } from './V7TouchControls';
+import { V7Subtitles } from './V7Subtitles';
+import { V7AccessibilityWrapper } from './V7AccessibilityWrapper';
+import { V7PerformanceOverlay } from './V7PerformanceOverlay';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
+import { useV7Performance, isLowEndDevice } from '@/hooks/useV7Performance';
+import { useV7AudioPreloader } from '@/hooks/useV7AudioPreloader';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
 
 interface V7CinematicPlayerProps {
   lesson: V7CinematicLesson;
+  wordTimestamps?: WordTimestamp[];
   onComplete?: (results: V7PlayerState) => void;
   onProgress?: (progress: number) => void;
   autoPlay?: boolean;
@@ -23,6 +44,7 @@ interface V7CinematicPlayerProps {
 
 export const V7CinematicPlayer = ({
   lesson,
+  wordTimestamps = [],
   onComplete,
   onProgress,
   autoPlay = false,
@@ -48,24 +70,111 @@ export const V7CinematicPlayer = ({
 
   // Current act tracking
   const [currentAct, setCurrentAct] = useState<CinematicAct | null>(null);
-  const [nextAct, setNextAct] = useState<CinematicAct | null>(null);
+
+  // Captions visibility
+  const [showCaptions, setShowCaptions] = useState(true);
 
   // Interaction state
   const [showInteraction, setShowInteraction] = useState(false);
-  const [currentInteractionId, setCurrentInteractionId] = useState<string | null>(null);
+  const [currentInteraction, setCurrentInteraction] = useState<InteractionPoint | null>(null);
+  const [feedbackState, setFeedbackState] = useState<{
+    show: boolean;
+    type: 'success' | 'error' | 'partial';
+    message: string;
+    points?: number;
+    xp?: number;
+  } | null>(null);
 
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionType, setTransitionType] = useState<string | null>(null);
+  const [transitionType, setTransitionType] = useState<'fade' | 'slide' | 'zoom' | 'dissolve'>('fade');
+
+  // Volume settings state
+  const [volumeSettings, setVolumeSettings] = useState<VolumeSettings>({
+    master: 1,
+    narration: lesson.audioTrack.volume?.narration || 1,
+    music: lesson.audioTrack.volume?.music || 0.3,
+    effects: lesson.audioTrack.volume?.effects || 1,
+  });
 
   // Refs for timing and audio
-  const animationFrameRef = useRef<number>();
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const startTimeRef = useRef<number>(0);
+  const audioEngineRef = useRef<V7AdvancedAudioEngineRef>(null);
   const lastUpdateRef = useRef<number>(0);
+
+  // Performance state
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
 
   // Analytics hook
   const { trackEvent, trackMetric } = useV7Analytics(lesson.id);
+
+  // Performance monitoring hook
+  const { 
+    metrics: performanceMetrics, 
+    startMonitoring, 
+    recordLoadingComplete,
+    recordAudioLoadTime,
+  } = useV7Performance({
+    onLowPerformance: () => {
+      console.log('[V7Player] Low performance detected, reducing effects');
+      setReducedMotion(true);
+    },
+    fpsThreshold: 25,
+  });
+
+  // Audio preloader for lazy loading
+  const audioAssets = useMemo(() => {
+    const assets = [];
+    
+    // Main narration
+    if (lesson.audioTrack.narration?.url) {
+      assets.push({
+        id: 'narration-main',
+        url: lesson.audioTrack.narration.url,
+        type: 'narration' as const,
+        startTime: 0,
+        duration: lesson.duration,
+      });
+    }
+    
+    // Background music
+    if (lesson.audioTrack.backgroundMusic?.url) {
+      assets.push({
+        id: 'music-main',
+        url: lesson.audioTrack.backgroundMusic.url,
+        type: 'music' as const,
+        startTime: 0,
+        duration: lesson.duration,
+      });
+    }
+    
+    // Sound effects
+    lesson.audioTrack.soundEffects?.forEach((effect, index) => {
+      assets.push({
+        id: `effect-${index}`,
+        url: effect.url,
+        type: 'effect' as const,
+        startTime: effect.triggerTime,
+        duration: 5, // Assume 5s duration for effects
+      });
+    });
+    
+    return assets;
+  }, [lesson.audioTrack, lesson.duration]);
+
+  const { 
+    progress: audioPreloadProgress,
+    isAssetReady,
+  } = useV7AudioPreloader(audioAssets, playerState.currentTime, {
+    preloadAhead: 30,
+    maxConcurrent: 2,
+    onAudioReady: (assetId) => {
+      console.log('[V7Player] Audio asset ready:', assetId);
+      if (assetId === 'narration-main') {
+        recordAudioLoadTime(performance.now());
+      }
+    },
+  });
 
   // ============================================================================
   // COMPUTED VALUES
@@ -83,16 +192,6 @@ export const V7CinematicPlayer = ({
     [lesson.cinematicFlow.acts]
   );
 
-  // Get sync points for current time
-  const getCurrentSyncPoints = useCallback(
-    (time: number): SyncPoint[] => {
-      return lesson.audioTrack.syncPoints.filter(
-        (sp) => Math.abs(sp.timestamp - time) < 0.1
-      );
-    },
-    [lesson.audioTrack.syncPoints]
-  );
-
   // Calculate progress percentage
   const progress = useMemo(() => {
     return (playerState.currentTime / lesson.duration) * 100;
@@ -104,21 +203,13 @@ export const V7CinematicPlayer = ({
 
   const play = useCallback(() => {
     setPlayerState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
-    startTimeRef.current = performance.now() - playerState.currentTime * 1000;
+    audioEngineRef.current?.play();
     trackEvent({ type: 'act-start', timestamp: Date.now(), data: { actId: currentAct?.id } });
-  }, [playerState.currentTime, currentAct, trackEvent]);
+  }, [currentAct, trackEvent]);
 
   const pause = useCallback(() => {
     setPlayerState((prev) => ({ ...prev, isPlaying: false, isPaused: true }));
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    audioEngineRef.current?.pause();
     trackEvent({ type: 'pause', timestamp: Date.now(), data: { time: playerState.currentTime } });
   }, [playerState.currentTime, trackEvent]);
 
@@ -126,10 +217,7 @@ export const V7CinematicPlayer = ({
     (time: number) => {
       const clampedTime = Math.max(0, Math.min(time, lesson.duration));
       setPlayerState((prev) => ({ ...prev, currentTime: clampedTime }));
-      if (audioRef.current) {
-        audioRef.current.currentTime = clampedTime;
-      }
-      startTimeRef.current = performance.now() - clampedTime * 1000;
+      audioEngineRef.current?.seek(clampedTime);
 
       // Update current act
       const newAct = getCurrentActAtTime(clampedTime);
@@ -145,167 +233,133 @@ export const V7CinematicPlayer = ({
   const setVolume = useCallback((volume: number) => {
     const clampedVolume = Math.max(0, Math.min(volume, 1));
     setPlayerState((prev) => ({ ...prev, volume: clampedVolume }));
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
+    audioEngineRef.current?.setVolume(clampedVolume);
   }, []);
 
   const setPlaybackRate = useCallback((rate: number) => {
     setPlayerState((prev) => ({ ...prev, playbackRate: rate }));
-    if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
+    audioEngineRef.current?.setPlaybackRate(rate);
   }, []);
 
   // ============================================================================
-  // ACT TRANSITIONS
+  // AUDIO TIME UPDATE HANDLER
   // ============================================================================
 
-  const transitionToAct = useCallback(
-    (act: CinematicAct) => {
-      setIsTransitioning(true);
-      setTransitionType(act.transitions.in.type);
+  const handleTimeUpdate = useCallback(
+    (time: number) => {
+      // Update current time
+      setPlayerState((prev) => ({ ...prev, currentTime: time }));
 
-      // Find transition config
-      const transitionConfig = lesson.cinematicFlow.transitions.find(
-        (t) => t.toActId === act.id
-      );
-
-      const transitionDuration = transitionConfig?.duration || 500;
-
-      setTimeout(() => {
-        setCurrentAct(act);
-        setPlayerState((prev) => ({
-          ...prev,
-          currentActId: act.id,
-        }));
-        setIsTransitioning(false);
-        setTransitionType(null);
-      }, transitionDuration);
-
-      trackEvent({
-        type: 'act-start',
-        timestamp: Date.now(),
-        data: { actId: act.id, type: act.type },
-      });
-    },
-    [lesson.cinematicFlow.transitions, trackEvent]
-  );
-
-  // ============================================================================
-  // TIME UPDATE LOOP
-  // ============================================================================
-
-  const updateTime = useCallback(() => {
-    if (!playerState.isPlaying) return;
-
-    const now = performance.now();
-    const elapsed = (now - startTimeRef.current) / 1000;
-    const newTime = elapsed * playerState.playbackRate;
-
-    // Check if lesson is complete
-    if (newTime >= lesson.duration) {
-      pause();
-      setPlayerState((prev) => ({ ...prev, currentTime: lesson.duration }));
-
-      trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState });
-
-      if (onComplete) {
-        onComplete(playerState);
+      // Report progress (throttled to every 100ms)
+      const now = performance.now();
+      if (onProgress && now - lastUpdateRef.current > 100) {
+        onProgress((time / lesson.duration) * 100);
+        lastUpdateRef.current = now;
       }
-      return;
-    }
 
-    // Update current time
-    setPlayerState((prev) => ({ ...prev, currentTime: newTime }));
+      // Check if lesson is complete
+      if (time >= lesson.duration) {
+        pause();
+        setPlayerState((prev) => ({ ...prev, currentTime: lesson.duration }));
+        trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState });
 
-    // Report progress (throttled to every 100ms)
-    if (onProgress && now - lastUpdateRef.current > 100) {
-      onProgress((newTime / lesson.duration) * 100);
-      lastUpdateRef.current = now;
-    }
+        if (onComplete) {
+          onComplete(playerState);
+        }
+        return;
+      }
 
-    // Check for act changes
-    const newAct = getCurrentActAtTime(newTime);
-    if (newAct && newAct.id !== currentAct?.id) {
-      // Mark previous act as completed
-      if (currentAct) {
-        setPlayerState((prev) => ({
-          ...prev,
-          completedActs: [...prev.completedActs, currentAct.id],
-        }));
+      // Check for act changes
+      const newAct = getCurrentActAtTime(time);
+      if (newAct && newAct.id !== currentAct?.id) {
+        // Mark previous act as completed
+        if (currentAct) {
+          setPlayerState((prev) => ({
+            ...prev,
+            completedActs: [...prev.completedActs, currentAct.id],
+          }));
+
+          trackEvent({
+            type: 'act-complete',
+            timestamp: Date.now(),
+            data: { actId: currentAct.id },
+          });
+        }
+
+        // Determine transition type from act config
+        const transitionEffect = newAct.transitions.in.type as 'fade' | 'slide' | 'zoom' | 'dissolve';
+        setTransitionType(transitionEffect || 'dissolve');
+        setIsTransitioning(true);
+
+        // Transition to new act
+        setTimeout(() => {
+          setCurrentAct(newAct);
+          setPlayerState((prev) => ({
+            ...prev,
+            currentActId: newAct.id,
+          }));
+          setIsTransitioning(false);
+        }, 400);
 
         trackEvent({
-          type: 'act-complete',
+          type: 'act-start',
           timestamp: Date.now(),
-          data: { actId: currentAct.id },
+          data: { actId: newAct.id, type: newAct.type },
         });
       }
 
-      // Transition to new act
-      transitionToAct(newAct);
-    }
-
-    // Check for sync points
-    const syncPoints = getCurrentSyncPoints(newTime);
-    syncPoints.forEach((sp) => {
-      if (sp.action) {
-        handleSyncAction(sp);
+      // Check for interactions
+      const interaction = lesson.interactionPoints.find(
+        (ip) => Math.abs(ip.timestamp - time) < 0.1 && ip.required
+      );
+      if (interaction && !playerState.interactionResults[interaction.id]) {
+        pause();
+        setShowInteraction(true);
+        setCurrentInteraction(interaction);
       }
-    });
-
-    // Check for interactions
-    const interaction = lesson.interactionPoints.find(
-      (ip) => Math.abs(ip.timestamp - newTime) < 0.1 && ip.required
-    );
-    if (interaction && !playerState.interactionResults[interaction.id]) {
-      pause();
-      setShowInteraction(true);
-      setCurrentInteractionId(interaction.id);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(updateTime);
-  }, [
-    playerState,
-    lesson,
-    currentAct,
-    getCurrentActAtTime,
-    getCurrentSyncPoints,
-    pause,
-    transitionToAct,
-    onComplete,
-    onProgress,
-    trackEvent,
-  ]);
+    },
+    [
+      lesson,
+      currentAct,
+      playerState,
+      getCurrentActAtTime,
+      pause,
+      onComplete,
+      onProgress,
+      trackEvent,
+    ]
+  );
 
   // ============================================================================
   // SYNC POINT HANDLER
   // ============================================================================
 
-  const handleSyncAction = useCallback((syncPoint: SyncPoint) => {
-    if (!syncPoint.action) return;
+  const handleSyncPoint = useCallback(
+    (syncPoint: SyncPoint) => {
+      if (!syncPoint.action) return;
 
-    console.log('[V7Player] Executing sync action:', syncPoint.action.type);
+      console.log('[V7Player] Executing sync action:', syncPoint.action.type);
 
-    switch (syncPoint.action.type) {
-      case 'pause':
-        pause();
-        break;
-      case 'highlight':
-        // Trigger highlight animation
-        // This will be handled by the ActRenderer
-        break;
-      case 'zoom':
-        // Trigger zoom animation
-        break;
-      case 'reveal':
-        // Trigger reveal animation
-        break;
-      case 'execute':
-        // Execute custom action
-        break;
-    }
-  }, [pause]);
+      switch (syncPoint.action.type) {
+        case 'pause':
+          pause();
+          break;
+        case 'highlight':
+          // Trigger highlight animation - handled by ActRenderer
+          break;
+        case 'zoom':
+          // Trigger zoom animation
+          break;
+        case 'reveal':
+          // Trigger reveal animation
+          break;
+        case 'execute':
+          // Execute custom action
+          break;
+      }
+    },
+    [pause]
+  );
 
   // ============================================================================
   // INTERACTION HANDLERS
@@ -327,12 +381,27 @@ export const V7CinematicPlayer = ({
         xp: prev.xp + (interaction.points || 0),
       }));
 
+      // Show feedback
+      const isCorrect = result.correct !== false;
+      setFeedbackState({
+        show: true,
+        type: isCorrect ? 'success' : 'error',
+        message: isCorrect
+          ? interaction.feedback?.onSuccess?.content || 'Correto! Excelente trabalho!'
+          : interaction.feedback?.onError?.content || 'Incorreto. Tente novamente!',
+        points: isCorrect ? interaction.points || 0 : 0,
+        xp: isCorrect ? interaction.points || 0 : 0,
+      });
+
       // Hide interaction
       setShowInteraction(false);
-      setCurrentInteractionId(null);
+      setCurrentInteraction(null);
 
-      // Resume playback
-      play();
+      // Resume playback after feedback
+      setTimeout(() => {
+        setFeedbackState(null);
+        play();
+      }, 2500);
 
       trackEvent({
         type: 'interaction',
@@ -347,8 +416,17 @@ export const V7CinematicPlayer = ({
   // EFFECTS
   // ============================================================================
 
-  // Initialize player
+  // Initialize player and start performance monitoring
   useEffect(() => {
+    // Start performance monitoring
+    startMonitoring();
+    
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || isLowEndDevice()) {
+      setReducedMotion(true);
+    }
+
     if (lesson.cinematicFlow.acts.length > 0) {
       setCurrentAct(lesson.cinematicFlow.acts[0]);
       setPlayerState((prev) => ({
@@ -357,29 +435,16 @@ export const V7CinematicPlayer = ({
       }));
     }
 
+    // Record loading complete
+    recordLoadingComplete();
+
     if (autoPlay) {
-      play();
+      // Small delay to ensure audio is ready
+      setTimeout(() => {
+        play();
+      }, 500);
     }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [lesson, autoPlay, play]);
-
-  // Start animation loop when playing
-  useEffect(() => {
-    if (playerState.isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(updateTime);
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [playerState.isPlaying, updateTime]);
+  }, [lesson, autoPlay, play, startMonitoring, recordLoadingComplete]);
 
   // Track metrics
   useEffect(() => {
@@ -391,82 +456,297 @@ export const V7CinematicPlayer = ({
     });
   }, [progress, trackMetric]);
 
+  // Toggle performance overlay with keyboard shortcut (Shift+P)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'P') {
+        setShowPerformanceOverlay(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // ============================================================================
+  // COMPUTED - Current act index
+  // ============================================================================
+
+  const currentActIndex = useMemo(() => {
+    return lesson.cinematicFlow.acts.findIndex((a) => a.id === currentAct?.id);
+  }, [lesson.cinematicFlow.acts, currentAct]);
+
+  // ============================================================================
+  // NAVIGATION HANDLERS FOR TOUCH/ACCESSIBILITY
+  // ============================================================================
+
+  const handleNextAct = useCallback(() => {
+    const nextIndex = currentActIndex + 1;
+    if (nextIndex < lesson.cinematicFlow.acts.length) {
+      const nextAct = lesson.cinematicFlow.acts[nextIndex];
+      seek(nextAct.startTime);
+    }
+  }, [currentActIndex, lesson.cinematicFlow.acts, seek]);
+
+  const handlePreviousAct = useCallback(() => {
+    const prevIndex = currentActIndex - 1;
+    if (prevIndex >= 0) {
+      const prevAct = lesson.cinematicFlow.acts[prevIndex];
+      seek(prevAct.startTime);
+    }
+  }, [currentActIndex, lesson.cinematicFlow.acts, seek]);
+
+  const handlePlayPauseToggle = useCallback(() => {
+    if (playerState.isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+  }, [playerState.isPlaying, play, pause]);
+
   // ============================================================================
   // RENDER
   // ============================================================================
 
   if (!currentAct) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div 
+        className="flex items-center justify-center h-screen bg-gray-900"
+        role="status"
+        aria-label="Carregando aula"
+      >
         <p className="text-white">Carregando aula...</p>
       </div>
     );
   }
 
   return (
-    <div className="v7-cinematic-player relative w-full h-screen bg-black overflow-hidden">
-      {/* Audio element */}
-      <audio
-        ref={audioRef}
-        src={lesson.audioTrack.narration.url}
-        preload="auto"
-        className="hidden"
-      />
-
-      {/* Main cinematic view */}
-      <div className="v7-stage relative w-full h-full">
-        <CinematicActRenderer
-          act={currentAct}
-          currentTime={playerState.currentTime}
-          isTransitioning={isTransitioning}
-          transitionType={transitionType}
-          lesson={lesson}
-          playerState={playerState}
+    <V7AccessibilityWrapper
+      lessonTitle={lesson.title}
+      currentActTitle={currentAct?.title || 'Ato ' + (currentActIndex + 1)}
+      currentActIndex={currentActIndex}
+      totalActs={lesson.cinematicFlow.acts.length}
+      isPlaying={playerState.isPlaying}
+      currentTime={playerState.currentTime}
+      duration={lesson.duration}
+      onPlay={play}
+      onPause={pause}
+      onSeek={seek}
+      onNextAct={handleNextAct}
+      onPreviousAct={handlePreviousAct}
+      onVolumeChange={setVolume}
+      volume={volumeSettings.master}
+    >
+      <div 
+        className="v7-cinematic-player relative w-full h-screen bg-black overflow-hidden"
+        role="main"
+        aria-label={`Reprodutor de aula: ${lesson.title}`}
+      >
+        {/* Performance monitoring overlay */}
+        <V7PerformanceOverlay
+          fps={performanceMetrics.fps}
+          loadingTime={performanceMetrics.loadingTime}
+          audioLoadTime={performanceMetrics.audioLoadTime}
+          frameDrops={performanceMetrics.frameDrops}
+          isLowPerformance={performanceMetrics.isLowPerformance}
+          audioProgress={audioPreloadProgress}
+          show={showPerformanceOverlay}
         />
-      </div>
 
-      {/* Timeline */}
-      <V7Timeline
-        lesson={lesson}
-        currentTime={playerState.currentTime}
-        onSeek={seek}
-        completedActs={playerState.completedActs}
-      />
+        {/* Optimized Particles background */}
+        <OptimizedParticlesBackground
+          intensity={reducedMotion ? 'low' : 'medium'}
+          colorScheme="purple"
+          interactive={false}
+          speed={0.5}
+          connected={!reducedMotion}
+          className="opacity-40"
+          reducedMotion={reducedMotion}
+          isVisible={!playerState.isPlaying || !reducedMotion}
+        />
 
-      {/* Player controls */}
-      <V7PlayerControls
-        isPlaying={playerState.isPlaying}
-        volume={playerState.volume}
-        playbackRate={playerState.playbackRate}
-        onPlay={play}
-        onPause={pause}
-        onVolumeChange={setVolume}
-        onPlaybackRateChange={setPlaybackRate}
-      />
+        {/* Advanced Audio Engine with volume settings */}
+        <V7AdvancedAudioEngine
+          ref={audioEngineRef}
+          audioTrack={{
+            ...lesson.audioTrack,
+            volume: {
+              narration: volumeSettings.narration,
+              music: volumeSettings.music,
+              effects: volumeSettings.effects,
+            },
+          }}
+          wordTimestamps={wordTimestamps}
+          currentTime={playerState.currentTime}
+          isPlaying={playerState.isPlaying}
+          volume={volumeSettings.master}
+          playbackRate={playerState.playbackRate}
+          onTimeUpdate={handleTimeUpdate}
+          onSyncPoint={handleSyncPoint}
+          onAudioReady={() => console.log('[V7Player] Audio ready')}
+          onAudioError={(err) => console.error('[V7Player] Audio error:', err)}
+        />
 
-      {/* Interaction overlay */}
-      {showInteraction && currentInteractionId && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80">
-          {/* Interaction component will be rendered here */}
-          <div className="bg-white rounded-lg p-8 max-w-2xl">
-            <p className="text-gray-600">Interação: {currentInteractionId}</p>
-            <button
-              onClick={() => handleInteractionComplete(currentInteractionId, { completed: true })}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+        {/* Main cinematic view with touch controls for mobile */}
+        <V7TouchControls
+          onSwipeLeft={handleNextAct}
+          onSwipeRight={handlePreviousAct}
+          onTap={handlePlayPauseToggle}
+          onDoubleTap={() => seek(playerState.currentTime + 10)}
+          isPlaying={playerState.isPlaying}
+          currentActIndex={currentActIndex}
+          totalActs={lesson.cinematicFlow.acts.length}
+        >
+          <div className="v7-stage relative w-full h-full z-10">
+            <V7ActTransition
+              actId={currentAct.id}
+              type={transitionType}
+              direction="left"
             >
-              Continuar
-            </button>
+              <CinematicActRenderer
+                act={currentAct}
+                currentTime={playerState.currentTime}
+                isTransitioning={isTransitioning}
+                transitionType={transitionType}
+                lesson={lesson}
+                playerState={playerState}
+              />
+            </V7ActTransition>
+          </div>
+        </V7TouchControls>
+
+        {/* Full Subtitles with settings and transcript */}
+        <V7Subtitles
+          wordTimestamps={wordTimestamps}
+          currentTime={playerState.currentTime}
+          isVisible={showCaptions}
+          onToggle={() => setShowCaptions(!showCaptions)}
+          onSeek={seek}
+          lessonTitle={lesson.title}
+        />
+
+        {/* Timeline - responsive, hidden on very small mobile */}
+        <div 
+          className="hidden sm:block" 
+          id="v7-controls"
+          role="region"
+          aria-label="Linha do tempo da aula"
+        >
+          <V7Timeline
+            lesson={lesson}
+            currentTime={playerState.currentTime}
+            onSeek={seek}
+            completedActs={playerState.completedActs}
+          />
+        </div>
+
+        {/* Player controls - responsive with safe area */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 z-30 pb-safe"
+          role="toolbar"
+          aria-label="Controles do player"
+        >
+          <V7PlayerControls
+            isPlaying={playerState.isPlaying}
+            volume={volumeSettings.master}
+            volumeSettings={volumeSettings}
+            playbackRate={playerState.playbackRate}
+            hasBackgroundMusic={!!lesson.audioTrack.backgroundMusic}
+            hasSoundEffects={!!lesson.audioTrack.soundEffects?.length}
+            onPlay={play}
+            onPause={pause}
+            onVolumeChange={(v) => setVolumeSettings((prev) => ({ ...prev, master: v }))}
+            onVolumeSettingsChange={setVolumeSettings}
+            onPlaybackRateChange={setPlaybackRate}
+          />
+        </div>
+
+        {/* Interaction overlay */}
+        {showInteraction && currentInteraction && (
+          <div 
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Interação da aula"
+          >
+            {currentInteraction.type === 'quiz' || currentInteraction.type === 'reflection' ? (
+              <V7QuizInteraction
+                interaction={currentInteraction}
+                onComplete={(result: QuizResult) =>
+                  handleInteractionComplete(currentInteraction.id, result)
+                }
+                onSkip={
+                  !currentInteraction.required
+                    ? () => {
+                        setShowInteraction(false);
+                        setCurrentInteraction(null);
+                        play();
+                      }
+                    : undefined
+                }
+              />
+            ) : currentInteraction.type === 'code-challenge' ? (
+              <V7CodeChallenge
+                interaction={currentInteraction}
+                onComplete={(result: CodeChallengeResult) =>
+                  handleInteractionComplete(currentInteraction.id, result)
+                }
+                onSkip={
+                  !currentInteraction.required
+                    ? () => {
+                        setShowInteraction(false);
+                        setCurrentInteraction(null);
+                        play();
+                      }
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="bg-slate-900 rounded-lg p-6 sm:p-8 max-w-2xl w-full mx-4 border border-white/10">
+                <p className="text-white">Interação: {currentInteraction.id}</p>
+                <button
+                  onClick={() => handleInteractionComplete(currentInteraction.id, { completed: true })}
+                  className="mt-4 px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  aria-label="Continuar para o próximo conteúdo"
+                >
+                  Continuar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feedback overlay */}
+        {feedbackState?.show && (
+          <V7InteractionFeedback
+            type={feedbackState.type}
+            message={feedbackState.message}
+            points={feedbackState.points}
+            xp={feedbackState.xp}
+            onComplete={() => setFeedbackState(null)}
+          />
+        )}
+
+        {/* Score/XP display - Mobile responsive */}
+        <div 
+          className="absolute top-4 right-4 z-40 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4"
+          role="status"
+          aria-label={`Pontuação: ${playerState.xp} XP`}
+          aria-live="polite"
+        >
+          <div className="text-white text-xs sm:text-sm">
+            <div>XP: {playerState.xp}</div>
+            <div className="hidden sm:block">Score: {playerState.score}</div>
           </div>
         </div>
-      )}
 
-      {/* Score/XP display */}
-      <div className="absolute top-4 right-4 z-40 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
-        <div className="text-white text-sm">
-          <div>XP: {playerState.xp}</div>
-          <div>Score: {playerState.score}</div>
+        {/* Mobile navigation hint - only on first load */}
+        <div className="sm:hidden absolute bottom-28 left-1/2 -translate-x-1/2 text-center pointer-events-none">
+          <p className="text-white/40 text-xs animate-pulse">
+            Deslize para navegar • Toque para pausar
+          </p>
         </div>
       </div>
-    </div>
+    </V7AccessibilityWrapper>
   );
 };

@@ -12,36 +12,98 @@ import { businessPromptsCategory } from './business-complete';
 import { personalFinancePromptsCategory } from './personal-finance-complete';
 import { productCreationPromptsCategory } from './product-creation-complete';
 import { salesMarketingPromptsCategory } from './sales-marketing-complete';
+import { marketingDigitalPremiumPrompts, businessPremiumPrompts } from './premium-prompts-pack1';
+import { premiumPromptsPack2 } from './premium-prompts-pack2';
+import { emailMarketingPremiumPrompts, blogContentPremiumPrompts } from './premium-prompts-pack3';
+import { vendasPremiumPrompts, redesSociaisPremiumPrompts } from './premium-prompts-pack4';
+import { seoPremiumPrompts, estudoPremiumPrompts } from './premium-prompts-pack5';
 import { PromptCategory, Prompt } from '../../types/prompt';
+
+// Combinar prompts premium com suas categorias
+const enhancedMarketingDigitalCategory: PromptCategory = {
+  ...marketingDigitalPromptsCategory,
+  prompts: [...marketingDigitalPromptsCategory.prompts, ...marketingDigitalPremiumPrompts]
+};
+
+const enhancedBusinessCategory: PromptCategory = {
+  ...businessPromptsCategory,
+  prompts: [...businessPromptsCategory.prompts, ...businessPremiumPrompts]
+};
+
+const enhancedPersonalFinanceCategory: PromptCategory = {
+  ...personalFinancePromptsCategory,
+  prompts: [...personalFinancePromptsCategory.prompts, ...premiumPromptsPack2.filter(p => p.categoryId === 'personal-finance')]
+};
+
+const enhancedProductCreationCategory: PromptCategory = {
+  ...productCreationPromptsCategory,
+  prompts: [...productCreationPromptsCategory.prompts, ...premiumPromptsPack2.filter(p => p.categoryId === 'product-creation')]
+};
 
 // CATEGORIAS PRINCIPAIS
 export const mainPromptCategories: PromptCategory[] = [
-  marketingDigitalPromptsCategory,
-  businessPromptsCategory,
-  personalFinancePromptsCategory,
-  productCreationPromptsCategory,
+  enhancedMarketingDigitalCategory,
+  enhancedBusinessCategory,
+  enhancedPersonalFinanceCategory,
+  enhancedProductCreationCategory,
   salesMarketingPromptsCategory,
   extraIncomePromptsCategory,
   dailyLifePromptsCategory,
   freePromptsCategory
 ];
 
-// Export all prompt categories
+// Enhanced Email category with Pack 3
+const enhancedEmailCategory: PromptCategory = {
+  ...emailPromptsCategory,
+  prompts: [...emailPromptsCategory.prompts, ...emailMarketingPremiumPrompts]
+};
+
+// Enhanced Blog category with Pack 3
+const enhancedBlogCategory: PromptCategory = {
+  ...blogPromptsCategory,
+  prompts: [...blogPromptsCategory.prompts, ...blogContentPremiumPrompts]
+};
+
+// Enhanced Sales category with Pack 4
+const enhancedSalesCategory: PromptCategory = {
+  ...salesMarketingPromptsCategory,
+  prompts: [...salesMarketingPromptsCategory.prompts, ...vendasPremiumPrompts]
+};
+
+// Enhanced Social category with Pack 4
+const enhancedSocialCategory: PromptCategory = {
+  ...socialPromptsCategory,
+  prompts: [...socialPromptsCategory.prompts, ...redesSociaisPremiumPrompts]
+};
+
+// Enhanced SEO category with Pack 5
+const enhancedSeoCategory: PromptCategory = {
+  ...seoPromptsCategory,
+  prompts: [...seoPromptsCategory.prompts, ...seoPremiumPrompts]
+};
+
+// Enhanced Study category with Pack 5
+const enhancedStudyCategory: PromptCategory = {
+  ...studyPromptsCategory,
+  prompts: [...studyPromptsCategory.prompts, ...estudoPremiumPrompts]
+};
+
+// Export all prompt categories with enhanced versions
 export const allPromptCategories: PromptCategory[] = [
-  marketingDigitalPromptsCategory,
-  businessPromptsCategory,
-  personalFinancePromptsCategory,
-  productCreationPromptsCategory,
-  salesMarketingPromptsCategory,
+  enhancedMarketingDigitalCategory,
+  enhancedBusinessCategory,
+  enhancedPersonalFinanceCategory,
+  enhancedProductCreationCategory,
+  enhancedSalesCategory,
   extraIncomePromptsCategory,
   freePromptsCategory,
   dailyLifePromptsCategory,
-  emailPromptsCategory,
-  blogPromptsCategory,
-  studyPromptsCategory,
+  enhancedEmailCategory,
+  enhancedBlogCategory,
+  enhancedStudyCategory,
   contentPromptsCategory,
-  socialPromptsCategory,
-  seoPromptsCategory
+  enhancedSocialCategory,
+  enhancedSeoCategory
 ];
 
 // Export individual categories for direct import

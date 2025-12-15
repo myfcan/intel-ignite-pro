@@ -2,6 +2,7 @@
 // Renders individual cinematic acts with full visual layers, animations, and transitions
 
 import { useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CinematicAct,
   V7CinematicLesson,
@@ -9,6 +10,7 @@ import {
   VisualLayer,
 } from '@/types/v7-cinematic.types';
 import { ComparativePlaygroundSplit } from './ComparativePlaygroundSplit';
+import { V7CameraEffects, CameraEffect, CameraPresets } from './V7CameraEffects';
 
 interface CinematicActRendererProps {
   act: CinematicAct;
@@ -33,6 +35,7 @@ export const CinematicActRenderer = ({
 
   const [activeAnimations, setActiveAnimations] = useState<Set<string>>(new Set());
   const [layerStates, setLayerStates] = useState<Map<string, any>>(new Map());
+  const [cameraEffect, setCameraEffect] = useState<CameraEffect>({ type: 'none', duration: 0 });
 
   // ============================================================================
   // COMPUTED VALUES
@@ -58,6 +61,33 @@ export const CinematicActRenderer = ({
 
     setActiveAnimations(newActiveAnimations);
   }, [actTime, act.content.animations]);
+
+  // Determine camera effect based on act type and timing
+  useEffect(() => {
+    // Apply camera effects based on act type
+    if (actTime < 0.5) {
+      // Entry effect
+      switch (act.type) {
+        case 'narrative':
+          setCameraEffect(CameraPresets.kenBurns);
+          break;
+        case 'revelation':
+          setCameraEffect(CameraPresets.dramaticZoomIn);
+          break;
+        case 'challenge':
+          setCameraEffect(CameraPresets.subtleFocus);
+          break;
+        case 'interactive':
+          setCameraEffect({ type: 'zoom-in', duration: 1, intensity: 0.2 });
+          break;
+        case 'outro':
+          setCameraEffect(CameraPresets.dollyReveal);
+          break;
+        default:
+          setCameraEffect({ type: 'none', duration: 0 });
+      }
+    }
+  }, [act.type, act.id]); // Reset on act change
 
   // ============================================================================
   // RENDER HELPERS
@@ -323,34 +353,96 @@ export const CinematicActRenderer = ({
   // RENDER
   // ============================================================================
 
+  // Framer Motion variants for act transitions
+  const actVariants = {
+    initial: { 
+      opacity: 0, 
+      scale: transitionType === 'zoom' ? 0.9 : 1,
+      x: transitionType === 'slide' ? 100 : 0,
+      filter: transitionType === 'dissolve' ? 'blur(10px)' : 'blur(0px)',
+    },
+    animate: { 
+      opacity: 1, 
+      scale: 1,
+      x: 0,
+      filter: 'blur(0px)',
+      transition: {
+        duration: 0.6,
+        ease: 'easeOut' as const,
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: transitionType === 'zoom' ? 1.1 : 1,
+      x: transitionType === 'slide' ? -100 : 0,
+      filter: transitionType === 'dissolve' ? 'blur(10px)' : 'blur(0px)',
+      transition: {
+        duration: 0.4,
+        ease: 'easeIn' as const,
+      }
+    },
+  };
+
   return (
-    <div
-      className={`cinematic-act-renderer absolute inset-0 ${getTransitionClass()}`}
+    <motion.div
+      key={act.id}
+      variants={actVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="cinematic-act-renderer absolute inset-0"
       data-act-id={act.id}
       data-act-type={act.type}
     >
-      {/* Background layer */}
-      {renderBackground()}
+      <V7CameraEffects
+        effect={cameraEffect}
+        isActive={!isTransitioning}
+        className="absolute inset-0"
+      >
+        {/* Background layer */}
+        {renderBackground()}
 
-      {/* Visual layers (sorted by zIndex) */}
-      <div className="relative w-full h-full">
-        {act.content.visual.layers
-          .sort((a, b) => a.zIndex - b.zIndex)
-          .map((layer) => renderLayer(layer))}
-      </div>
+        {/* Visual layers (sorted by zIndex) with stagger animation */}
+        <div className="relative w-full h-full">
+          {act.content.visual.layers
+            .sort((a, b) => a.zIndex - b.zIndex)
+            .map((layer, index) => (
+              <motion.div
+                key={layer.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  transition: { 
+                    delay: index * 0.1, 
+                    duration: 0.5,
+                    ease: 'easeOut'
+                  }
+                }}
+              >
+                {renderLayer(layer)}
+              </motion.div>
+            ))}
+        </div>
 
-      {/* Particle effects */}
-      {renderParticles()}
+        {/* Particle effects */}
+        {renderParticles()}
 
-      {/* Overlay content (subtitles, captions, etc.) */}
-      {renderOverlay()}
+        {/* Overlay content (subtitles, captions, etc.) */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { delay: 0.3 } }}
+        >
+          {renderOverlay()}
+        </motion.div>
+      </V7CameraEffects>
 
       {/* Act type indicator (for debugging) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-2 left-2 z-50 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          Act: {act.type} | Time: {actTime.toFixed(2)}s
+          Act: {act.type} | Time: {actTime.toFixed(2)}s | Camera: {cameraEffect.type}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
