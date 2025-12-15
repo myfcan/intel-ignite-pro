@@ -147,38 +147,25 @@ export const V7PlayerControls = ({
           )}
         </div>
 
-        {/* Playback Rate */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {/* Playback Rate - Visible Buttons */}
+        <div className="flex items-center gap-1 bg-black/40 rounded-full px-2 py-1">
+          <Settings className="h-4 w-4 text-gray-400 mr-1" />
+          {playbackRates.map((rate) => (
             <Button
+              key={rate}
+              onClick={() => handlePlaybackRateChange(rate)}
               variant="ghost"
               size="sm"
-              className="rounded-full hover:bg-white/10 text-white px-3 h-10"
+              className={`rounded-full h-8 min-w-[40px] px-2 text-xs font-medium transition-all ${
+                playbackRate === rate
+                  ? 'bg-white text-black hover:bg-white/90'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
             >
-              <Settings className="h-4 w-4 mr-2" />
-              <span className="text-sm">{playbackRate}x</span>
+              {rate}x
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-gray-900 border-gray-700">
-            <div className="px-2 py-1">
-              <p className="text-xs text-gray-400 mb-1">Velocidade de reprodução</p>
-            </div>
-            {playbackRates.map((rate) => (
-              <DropdownMenuItem
-                key={rate}
-                onClick={() => handlePlaybackRateChange(rate)}
-                className={`text-white hover:bg-gray-800 cursor-pointer ${
-                  playbackRate === rate ? 'bg-gray-800' : ''
-                }`}
-              >
-                <span className={playbackRate === rate ? 'font-bold' : ''}>
-                  {rate}x
-                </span>
-                {rate === 1 && <span className="ml-2 text-xs text-gray-400">(Normal)</span>}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          ))}
+        </div>
 
         {/* Keyboard shortcuts hint */}
         <div className="hidden lg:flex items-center gap-2 ml-2 text-gray-400 text-xs">
