@@ -180,14 +180,14 @@ export default function AdminV7Create() {
     try {
       if (isEditing && editLessonId) {
         // Activate existing lesson
-        await setLessonStatus(true, 'published');
+        await setLessonStatus(true, 'pronta');
         navigate('/admin');
       } else if (generatedLesson) {
         // Activate newly generated lesson
         if (generatedLesson.id && !generatedLesson.id.startsWith('v7-preview-')) {
           const { error } = await supabase
             .from('lessons')
-            .update({ is_active: true, status: 'published' })
+            .update({ is_active: true, status: 'pronta' })
             .eq('id', generatedLesson.id);
 
           if (error) throw error;

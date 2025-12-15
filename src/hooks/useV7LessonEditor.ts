@@ -185,7 +185,7 @@ export const useV7LessonEditor = ({ lessonId }: UseV7LessonEditorProps) => {
 
   // Activate/deactivate lesson
   const setLessonStatus = useCallback(
-    async (isActive: boolean, status: string = 'published') => {
+    async (isActive: boolean, status: string = 'pronta') => {
       if (!lessonId) {
         throw new Error('No lesson ID');
       }
