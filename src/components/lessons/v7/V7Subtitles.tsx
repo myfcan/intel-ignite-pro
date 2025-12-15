@@ -80,7 +80,6 @@ export const V7Subtitles = ({
     position: 'bottom',
   });
   const [showFullTranscript, setShowFullTranscript] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   
   const transcriptRef = useRef<HTMLDivElement>(null);
   const currentWordRef = useRef<HTMLSpanElement>(null);
@@ -217,8 +216,8 @@ export const V7Subtitles = ({
           )}
         </Button>
 
-        {/* Settings button */}
-        <Popover open={showSettings} onOpenChange={setShowSettings}>
+        {/* Settings button - use controlled state without causing re-renders */}
+        <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"

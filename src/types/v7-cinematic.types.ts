@@ -94,6 +94,7 @@ export interface VisualLayer {
   content: any; // Specific content based on type
   animation?: LayerAnimation;
   interactive?: boolean;
+  style?: Record<string, string | number>; // Custom inline styles for the layer
 }
 
 export interface LayerAnimation {
