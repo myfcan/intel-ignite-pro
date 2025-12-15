@@ -91,8 +91,8 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* V7 Cinematic System - New Feature */}
-        <Card className="border-2 border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 hover:border-cyan-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/v7/create')}>
+        {/* V7 Cinematic System - New Feature - Rebuild 2025-12-15 */}
+        <Card className="border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-cyan-500/20" onClick={() => navigate('/admin/v7/create')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
               <Film className="w-8 h-8 text-cyan-500" />
