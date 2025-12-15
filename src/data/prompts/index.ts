@@ -14,6 +14,7 @@ import { productCreationPromptsCategory } from './product-creation-complete';
 import { salesMarketingPromptsCategory } from './sales-marketing-complete';
 import { marketingDigitalPremiumPrompts, businessPremiumPrompts } from './premium-prompts-pack1';
 import { premiumPromptsPack2 } from './premium-prompts-pack2';
+import { emailMarketingPremiumPrompts, blogContentPremiumPrompts } from './premium-prompts-pack3';
 import { PromptCategory, Prompt } from '../../types/prompt';
 
 // Combinar prompts premium com suas categorias
@@ -49,6 +50,18 @@ export const mainPromptCategories: PromptCategory[] = [
   freePromptsCategory
 ];
 
+// Enhanced Email category with Pack 3
+const enhancedEmailCategory: PromptCategory = {
+  ...emailPromptsCategory,
+  prompts: [...emailPromptsCategory.prompts, ...emailMarketingPremiumPrompts]
+};
+
+// Enhanced Blog category with Pack 3
+const enhancedBlogCategory: PromptCategory = {
+  ...blogPromptsCategory,
+  prompts: [...blogPromptsCategory.prompts, ...blogContentPremiumPrompts]
+};
+
 // Export all prompt categories
 export const allPromptCategories: PromptCategory[] = [
   enhancedMarketingDigitalCategory,
@@ -59,8 +72,8 @@ export const allPromptCategories: PromptCategory[] = [
   extraIncomePromptsCategory,
   freePromptsCategory,
   dailyLifePromptsCategory,
-  emailPromptsCategory,
-  blogPromptsCategory,
+  enhancedEmailCategory,
+  enhancedBlogCategory,
   studyPromptsCategory,
   contentPromptsCategory,
   socialPromptsCategory,
