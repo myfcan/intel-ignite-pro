@@ -1,5 +1,5 @@
 // src/components/lessons/v7/V7CinematicPlayer.tsx
-// Main player component for V7 Cinematic Lessons
+// Main player component for V7 Cinematic Lessons with full audio sync and transitions
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
@@ -12,15 +12,24 @@ import {
 import { CinematicActRenderer } from './CinematicActRenderer';
 import { V7Timeline } from './V7Timeline';
 import { V7PlayerControls } from './V7PlayerControls';
-import { V7AudioEngine } from './V7AudioEngine';
+import { V7AdvancedAudioEngine, V7AdvancedAudioEngineRef } from './V7AdvancedAudioEngine';
+import { V7SynchronizedCaptions } from './V7SynchronizedCaptions';
+import { V7ActTransition } from './V7CinematicTransitions';
 import { ParticlesBackground } from './ParticlesBackground';
 import { V7QuizInteraction, QuizResult } from './V7QuizInteraction';
 import { V7CodeChallenge, CodeChallengeResult } from './V7CodeChallenge';
 import { V7InteractionFeedback } from './V7InteractionFeedback';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
 
+interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface V7CinematicPlayerProps {
   lesson: V7CinematicLesson;
+  wordTimestamps?: WordTimestamp[];
   onComplete?: (results: V7PlayerState) => void;
   onProgress?: (progress: number) => void;
   autoPlay?: boolean;
@@ -28,6 +37,7 @@ interface V7CinematicPlayerProps {
 
 export const V7CinematicPlayer = ({
   lesson,
+  wordTimestamps = [],
   onComplete,
   onProgress,
   autoPlay = false,
@@ -53,7 +63,9 @@ export const V7CinematicPlayer = ({
 
   // Current act tracking
   const [currentAct, setCurrentAct] = useState<CinematicAct | null>(null);
-  const [nextAct, setNextAct] = useState<CinematicAct | null>(null);
+
+  // Captions visibility
+  const [showCaptions, setShowCaptions] = useState(true);
 
   // Interaction state
   const [showInteraction, setShowInteraction] = useState(false);
@@ -68,12 +80,10 @@ export const V7CinematicPlayer = ({
 
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionType, setTransitionType] = useState<string | null>(null);
+  const [transitionType, setTransitionType] = useState<'fade' | 'slide' | 'zoom' | 'dissolve'>('fade');
 
   // Refs for timing and audio
-  const animationFrameRef = useRef<number>();
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const startTimeRef = useRef<number>(0);
+  const audioEngineRef = useRef<V7AdvancedAudioEngineRef>(null);
   const lastUpdateRef = useRef<number>(0);
 
   // Analytics hook
@@ -95,16 +105,6 @@ export const V7CinematicPlayer = ({
     [lesson.cinematicFlow.acts]
   );
 
-  // Get sync points for current time
-  const getCurrentSyncPoints = useCallback(
-    (time: number): SyncPoint[] => {
-      return lesson.audioTrack.syncPoints.filter(
-        (sp) => Math.abs(sp.timestamp - time) < 0.1
-      );
-    },
-    [lesson.audioTrack.syncPoints]
-  );
-
   // Calculate progress percentage
   const progress = useMemo(() => {
     return (playerState.currentTime / lesson.duration) * 100;
@@ -116,21 +116,13 @@ export const V7CinematicPlayer = ({
 
   const play = useCallback(() => {
     setPlayerState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
-    startTimeRef.current = performance.now() - playerState.currentTime * 1000;
+    audioEngineRef.current?.play();
     trackEvent({ type: 'act-start', timestamp: Date.now(), data: { actId: currentAct?.id } });
-  }, [playerState.currentTime, currentAct, trackEvent]);
+  }, [currentAct, trackEvent]);
 
   const pause = useCallback(() => {
     setPlayerState((prev) => ({ ...prev, isPlaying: false, isPaused: true }));
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    audioEngineRef.current?.pause();
     trackEvent({ type: 'pause', timestamp: Date.now(), data: { time: playerState.currentTime } });
   }, [playerState.currentTime, trackEvent]);
 
@@ -138,10 +130,7 @@ export const V7CinematicPlayer = ({
     (time: number) => {
       const clampedTime = Math.max(0, Math.min(time, lesson.duration));
       setPlayerState((prev) => ({ ...prev, currentTime: clampedTime }));
-      if (audioRef.current) {
-        audioRef.current.currentTime = clampedTime;
-      }
-      startTimeRef.current = performance.now() - clampedTime * 1000;
+      audioEngineRef.current?.seek(clampedTime);
 
       // Update current act
       const newAct = getCurrentActAtTime(clampedTime);
@@ -157,167 +146,133 @@ export const V7CinematicPlayer = ({
   const setVolume = useCallback((volume: number) => {
     const clampedVolume = Math.max(0, Math.min(volume, 1));
     setPlayerState((prev) => ({ ...prev, volume: clampedVolume }));
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
+    audioEngineRef.current?.setVolume(clampedVolume);
   }, []);
 
   const setPlaybackRate = useCallback((rate: number) => {
     setPlayerState((prev) => ({ ...prev, playbackRate: rate }));
-    if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
+    audioEngineRef.current?.setPlaybackRate(rate);
   }, []);
 
   // ============================================================================
-  // ACT TRANSITIONS
+  // AUDIO TIME UPDATE HANDLER
   // ============================================================================
 
-  const transitionToAct = useCallback(
-    (act: CinematicAct) => {
-      setIsTransitioning(true);
-      setTransitionType(act.transitions.in.type);
+  const handleTimeUpdate = useCallback(
+    (time: number) => {
+      // Update current time
+      setPlayerState((prev) => ({ ...prev, currentTime: time }));
 
-      // Find transition config
-      const transitionConfig = lesson.cinematicFlow.transitions.find(
-        (t) => t.toActId === act.id
-      );
-
-      const transitionDuration = transitionConfig?.duration || 500;
-
-      setTimeout(() => {
-        setCurrentAct(act);
-        setPlayerState((prev) => ({
-          ...prev,
-          currentActId: act.id,
-        }));
-        setIsTransitioning(false);
-        setTransitionType(null);
-      }, transitionDuration);
-
-      trackEvent({
-        type: 'act-start',
-        timestamp: Date.now(),
-        data: { actId: act.id, type: act.type },
-      });
-    },
-    [lesson.cinematicFlow.transitions, trackEvent]
-  );
-
-  // ============================================================================
-  // TIME UPDATE LOOP
-  // ============================================================================
-
-  const updateTime = useCallback(() => {
-    if (!playerState.isPlaying) return;
-
-    const now = performance.now();
-    const elapsed = (now - startTimeRef.current) / 1000;
-    const newTime = elapsed * playerState.playbackRate;
-
-    // Check if lesson is complete
-    if (newTime >= lesson.duration) {
-      pause();
-      setPlayerState((prev) => ({ ...prev, currentTime: lesson.duration }));
-
-      trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState });
-
-      if (onComplete) {
-        onComplete(playerState);
+      // Report progress (throttled to every 100ms)
+      const now = performance.now();
+      if (onProgress && now - lastUpdateRef.current > 100) {
+        onProgress((time / lesson.duration) * 100);
+        lastUpdateRef.current = now;
       }
-      return;
-    }
 
-    // Update current time
-    setPlayerState((prev) => ({ ...prev, currentTime: newTime }));
+      // Check if lesson is complete
+      if (time >= lesson.duration) {
+        pause();
+        setPlayerState((prev) => ({ ...prev, currentTime: lesson.duration }));
+        trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState });
 
-    // Report progress (throttled to every 100ms)
-    if (onProgress && now - lastUpdateRef.current > 100) {
-      onProgress((newTime / lesson.duration) * 100);
-      lastUpdateRef.current = now;
-    }
+        if (onComplete) {
+          onComplete(playerState);
+        }
+        return;
+      }
 
-    // Check for act changes
-    const newAct = getCurrentActAtTime(newTime);
-    if (newAct && newAct.id !== currentAct?.id) {
-      // Mark previous act as completed
-      if (currentAct) {
-        setPlayerState((prev) => ({
-          ...prev,
-          completedActs: [...prev.completedActs, currentAct.id],
-        }));
+      // Check for act changes
+      const newAct = getCurrentActAtTime(time);
+      if (newAct && newAct.id !== currentAct?.id) {
+        // Mark previous act as completed
+        if (currentAct) {
+          setPlayerState((prev) => ({
+            ...prev,
+            completedActs: [...prev.completedActs, currentAct.id],
+          }));
+
+          trackEvent({
+            type: 'act-complete',
+            timestamp: Date.now(),
+            data: { actId: currentAct.id },
+          });
+        }
+
+        // Determine transition type from act config
+        const transitionEffect = newAct.transitions.in.type as 'fade' | 'slide' | 'zoom' | 'dissolve';
+        setTransitionType(transitionEffect || 'dissolve');
+        setIsTransitioning(true);
+
+        // Transition to new act
+        setTimeout(() => {
+          setCurrentAct(newAct);
+          setPlayerState((prev) => ({
+            ...prev,
+            currentActId: newAct.id,
+          }));
+          setIsTransitioning(false);
+        }, 400);
 
         trackEvent({
-          type: 'act-complete',
+          type: 'act-start',
           timestamp: Date.now(),
-          data: { actId: currentAct.id },
+          data: { actId: newAct.id, type: newAct.type },
         });
       }
 
-      // Transition to new act
-      transitionToAct(newAct);
-    }
-
-    // Check for sync points
-    const syncPoints = getCurrentSyncPoints(newTime);
-    syncPoints.forEach((sp) => {
-      if (sp.action) {
-        handleSyncAction(sp);
+      // Check for interactions
+      const interaction = lesson.interactionPoints.find(
+        (ip) => Math.abs(ip.timestamp - time) < 0.1 && ip.required
+      );
+      if (interaction && !playerState.interactionResults[interaction.id]) {
+        pause();
+        setShowInteraction(true);
+        setCurrentInteraction(interaction);
       }
-    });
-
-    // Check for interactions
-    const interaction = lesson.interactionPoints.find(
-      (ip) => Math.abs(ip.timestamp - newTime) < 0.1 && ip.required
-    );
-    if (interaction && !playerState.interactionResults[interaction.id]) {
-      pause();
-      setShowInteraction(true);
-      setCurrentInteraction(interaction);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(updateTime);
-  }, [
-    playerState,
-    lesson,
-    currentAct,
-    getCurrentActAtTime,
-    getCurrentSyncPoints,
-    pause,
-    transitionToAct,
-    onComplete,
-    onProgress,
-    trackEvent,
-  ]);
+    },
+    [
+      lesson,
+      currentAct,
+      playerState,
+      getCurrentActAtTime,
+      pause,
+      onComplete,
+      onProgress,
+      trackEvent,
+    ]
+  );
 
   // ============================================================================
   // SYNC POINT HANDLER
   // ============================================================================
 
-  const handleSyncAction = useCallback((syncPoint: SyncPoint) => {
-    if (!syncPoint.action) return;
+  const handleSyncPoint = useCallback(
+    (syncPoint: SyncPoint) => {
+      if (!syncPoint.action) return;
 
-    console.log('[V7Player] Executing sync action:', syncPoint.action.type);
+      console.log('[V7Player] Executing sync action:', syncPoint.action.type);
 
-    switch (syncPoint.action.type) {
-      case 'pause':
-        pause();
-        break;
-      case 'highlight':
-        // Trigger highlight animation
-        // This will be handled by the ActRenderer
-        break;
-      case 'zoom':
-        // Trigger zoom animation
-        break;
-      case 'reveal':
-        // Trigger reveal animation
-        break;
-      case 'execute':
-        // Execute custom action
-        break;
-    }
-  }, [pause]);
+      switch (syncPoint.action.type) {
+        case 'pause':
+          pause();
+          break;
+        case 'highlight':
+          // Trigger highlight animation - handled by ActRenderer
+          break;
+        case 'zoom':
+          // Trigger zoom animation
+          break;
+        case 'reveal':
+          // Trigger reveal animation
+          break;
+        case 'execute':
+          // Execute custom action
+          break;
+      }
+    },
+    [pause]
+  );
 
   // ============================================================================
   // INTERACTION HANDLERS
@@ -344,11 +299,11 @@ export const V7CinematicPlayer = ({
       setFeedbackState({
         show: true,
         type: isCorrect ? 'success' : 'error',
-        message: isCorrect 
-          ? (interaction.feedback?.onSuccess?.content || 'Correto! Excelente trabalho!')
-          : (interaction.feedback?.onError?.content || 'Incorreto. Tente novamente!'),
-        points: isCorrect ? (interaction.points || 0) : 0,
-        xp: isCorrect ? (interaction.points || 0) : 0,
+        message: isCorrect
+          ? interaction.feedback?.onSuccess?.content || 'Correto! Excelente trabalho!'
+          : interaction.feedback?.onError?.content || 'Incorreto. Tente novamente!',
+        points: isCorrect ? interaction.points || 0 : 0,
+        xp: isCorrect ? interaction.points || 0 : 0,
       });
 
       // Hide interaction
@@ -385,28 +340,12 @@ export const V7CinematicPlayer = ({
     }
 
     if (autoPlay) {
-      play();
+      // Small delay to ensure audio is ready
+      setTimeout(() => {
+        play();
+      }, 500);
     }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
   }, [lesson, autoPlay, play]);
-
-  // Start animation loop when playing
-  useEffect(() => {
-    if (playerState.isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(updateTime);
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [playerState.isPlaying, updateTime]);
 
   // Track metrics
   useEffect(() => {
@@ -442,25 +381,48 @@ export const V7CinematicPlayer = ({
         className="opacity-40"
       />
 
-      {/* Audio element */}
-      <audio
-        ref={audioRef}
-        src={lesson.audioTrack.narration.url}
-        preload="auto"
-        className="hidden"
+      {/* Advanced Audio Engine */}
+      <V7AdvancedAudioEngine
+        ref={audioEngineRef}
+        audioTrack={lesson.audioTrack}
+        wordTimestamps={wordTimestamps}
+        currentTime={playerState.currentTime}
+        isPlaying={playerState.isPlaying}
+        volume={playerState.volume}
+        playbackRate={playerState.playbackRate}
+        onTimeUpdate={handleTimeUpdate}
+        onSyncPoint={handleSyncPoint}
+        onAudioReady={() => console.log('[V7Player] Audio ready')}
+        onAudioError={(err) => console.error('[V7Player] Audio error:', err)}
       />
 
-      {/* Main cinematic view */}
+      {/* Main cinematic view with transitions */}
       <div className="v7-stage relative w-full h-full z-10">
-        <CinematicActRenderer
-          act={currentAct}
-          currentTime={playerState.currentTime}
-          isTransitioning={isTransitioning}
-          transitionType={transitionType}
-          lesson={lesson}
-          playerState={playerState}
-        />
+        <V7ActTransition
+          actId={currentAct.id}
+          type={transitionType}
+          direction="left"
+        >
+          <CinematicActRenderer
+            act={currentAct}
+            currentTime={playerState.currentTime}
+            isTransitioning={isTransitioning}
+            transitionType={transitionType}
+            lesson={lesson}
+            playerState={playerState}
+          />
+        </V7ActTransition>
       </div>
+
+      {/* Synchronized Captions */}
+      {showCaptions && wordTimestamps.length > 0 && (
+        <V7SynchronizedCaptions
+          wordTimestamps={wordTimestamps}
+          currentTime={playerState.currentTime}
+          isVisible={!showInteraction && !feedbackState}
+          maxWords={10}
+        />
+      )}
 
       {/* Timeline */}
       <V7Timeline
@@ -471,15 +433,30 @@ export const V7CinematicPlayer = ({
       />
 
       {/* Player controls */}
-      <V7PlayerControls
-        isPlaying={playerState.isPlaying}
-        volume={playerState.volume}
-        playbackRate={playerState.playbackRate}
-        onPlay={play}
-        onPause={pause}
-        onVolumeChange={setVolume}
-        onPlaybackRateChange={setPlaybackRate}
-      />
+      <div className="absolute bottom-0 left-0 right-0 z-30">
+        <V7PlayerControls
+          isPlaying={playerState.isPlaying}
+          volume={playerState.volume}
+          playbackRate={playerState.playbackRate}
+          onPlay={play}
+          onPause={pause}
+          onVolumeChange={setVolume}
+          onPlaybackRateChange={setPlaybackRate}
+        />
+      </div>
+
+      {/* Caption toggle button */}
+      <button
+        onClick={() => setShowCaptions(!showCaptions)}
+        className={`absolute bottom-20 right-4 z-40 p-2 rounded-lg transition-colors ${
+          showCaptions ? 'bg-cyan-500/80' : 'bg-gray-600/80'
+        } hover:bg-cyan-600/80`}
+        title={showCaptions ? 'Ocultar legendas' : 'Mostrar legendas'}
+      >
+        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+        </svg>
+      </button>
 
       {/* Interaction overlay */}
       {showInteraction && currentInteraction && (
@@ -487,22 +464,34 @@ export const V7CinematicPlayer = ({
           {currentInteraction.type === 'quiz' || currentInteraction.type === 'reflection' ? (
             <V7QuizInteraction
               interaction={currentInteraction}
-              onComplete={(result: QuizResult) => handleInteractionComplete(currentInteraction.id, result)}
-              onSkip={!currentInteraction.required ? () => {
-                setShowInteraction(false);
-                setCurrentInteraction(null);
-                play();
-              } : undefined}
+              onComplete={(result: QuizResult) =>
+                handleInteractionComplete(currentInteraction.id, result)
+              }
+              onSkip={
+                !currentInteraction.required
+                  ? () => {
+                      setShowInteraction(false);
+                      setCurrentInteraction(null);
+                      play();
+                    }
+                  : undefined
+              }
             />
           ) : currentInteraction.type === 'code-challenge' ? (
             <V7CodeChallenge
               interaction={currentInteraction}
-              onComplete={(result: CodeChallengeResult) => handleInteractionComplete(currentInteraction.id, result)}
-              onSkip={!currentInteraction.required ? () => {
-                setShowInteraction(false);
-                setCurrentInteraction(null);
-                play();
-              } : undefined}
+              onComplete={(result: CodeChallengeResult) =>
+                handleInteractionComplete(currentInteraction.id, result)
+              }
+              onSkip={
+                !currentInteraction.required
+                  ? () => {
+                      setShowInteraction(false);
+                      setCurrentInteraction(null);
+                      play();
+                    }
+                  : undefined
+              }
             />
           ) : (
             // Fallback for other interaction types
@@ -530,11 +519,11 @@ export const V7CinematicPlayer = ({
         />
       )}
 
-      {/* Score/XP display */}
-      <div className="absolute top-4 right-4 z-40 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
-        <div className="text-white text-sm">
+      {/* Score/XP display - Mobile responsive */}
+      <div className="absolute top-4 right-4 z-40 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4">
+        <div className="text-white text-xs sm:text-sm">
           <div>XP: {playerState.xp}</div>
-          <div>Score: {playerState.score}</div>
+          <div className="hidden sm:block">Score: {playerState.score}</div>
         </div>
       </div>
     </div>
