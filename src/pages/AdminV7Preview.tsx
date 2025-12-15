@@ -1,5 +1,6 @@
 // src/pages/AdminV7Preview.tsx
 // Preview page for V7 Cinematic Lessons - Fetches from database
+// Last rebuild: 2025-12-15
 
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
