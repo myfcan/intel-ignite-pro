@@ -12,6 +12,7 @@ import { CinematicActRenderer } from './CinematicActRenderer';
 import { V7Timeline } from './V7Timeline';
 import { V7PlayerControls } from './V7PlayerControls';
 import { V7AudioEngine } from './V7AudioEngine';
+import { ParticlesBackground } from './ParticlesBackground';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
 
 interface V7CinematicPlayerProps {
@@ -405,6 +406,16 @@ export const V7CinematicPlayer = ({
 
   return (
     <div className="v7-cinematic-player relative w-full h-screen bg-black overflow-hidden">
+      {/* Particles background */}
+      <ParticlesBackground
+        intensity="medium"
+        colorScheme="purple"
+        interactive={!playerState.isPlaying}
+        speed={0.8}
+        connected={true}
+        className="opacity-40"
+      />
+
       {/* Audio element */}
       <audio
         ref={audioRef}
@@ -414,7 +425,7 @@ export const V7CinematicPlayer = ({
       />
 
       {/* Main cinematic view */}
-      <div className="v7-stage relative w-full h-full">
+      <div className="v7-stage relative w-full h-full z-10">
         <CinematicActRenderer
           act={currentAct}
           currentTime={playerState.currentTime}
