@@ -16,6 +16,7 @@ import { marketingDigitalPremiumPrompts, businessPremiumPrompts } from './premiu
 import { premiumPromptsPack2 } from './premium-prompts-pack2';
 import { emailMarketingPremiumPrompts, blogContentPremiumPrompts } from './premium-prompts-pack3';
 import { vendasPremiumPrompts, redesSociaisPremiumPrompts } from './premium-prompts-pack4';
+import { seoPremiumPrompts, estudoPremiumPrompts } from './premium-prompts-pack5';
 import { PromptCategory, Prompt } from '../../types/prompt';
 
 // Combinar prompts premium com suas categorias
@@ -73,6 +74,18 @@ const enhancedSalesCategory: PromptCategory = {
 const enhancedSocialCategory: PromptCategory = {
   ...socialPromptsCategory,
   prompts: [...socialPromptsCategory.prompts, ...redesSociaisPremiumPrompts]
+};
+
+// Enhanced SEO category with Pack 5
+const enhancedSeoCategory: PromptCategory = {
+  ...seoPromptsCategory,
+  prompts: [...seoPromptsCategory.prompts, ...seoPremiumPrompts]
+};
+
+// Enhanced Study category with Pack 5
+const enhancedStudyCategory: PromptCategory = {
+  ...studyPromptsCategory,
+  prompts: [...studyPromptsCategory.prompts, ...estudoPremiumPrompts]
 };
 
 // Export all prompt categories with enhanced versions
