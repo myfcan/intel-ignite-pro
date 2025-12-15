@@ -42,64 +42,112 @@ export const AI_CATEGORIES = [
   },
 ] as const;
 
-// Exemplos de narrativas por categoria
+// Exemplos de narrativas por categoria (diversos tipos de aulas)
 export const NARRATIVE_EXAMPLES = {
-  'chatgpt': `"98% das pessoas usa ChatGPT como um brinquedo. Eles pedem piadas, poemas, curiosidades...
+  'chatgpt': `"ChatGPT revolucionou como interagimos com IA.
 
-Enquanto isso, os 2% que DOMINAM ChatGPT estão fazendo R$ 30.000/mês em 2 horas por dia.
+Mas você sabe realmente como ele funciona por trás das cortinas?
 
-A diferença? Eles sabem exatamente COMO pedir. E você vai aprender isso agora."`,
+Vamos explorar desde os fundamentos até técnicas avançadas de uso."`,
 
-  'prompt-engineering': `"Vou te mostrar a diferença entre um prompt que vale R$ 0 e um prompt que vale R$ 500.
+  'claude': `"Claude se destaca em análise profunda e raciocínio complexo.
 
-A diferença? 30 segundos.
+Mas quando usar Claude ao invés de ChatGPT?
 
-Mas esses 30 segundos separam quem brinca de IA de quem LUCRA com IA."`,
+Vou te mostrar 5 cenários onde cada um brilha."`,
 
-  'ai-marketing': `"Enquanto 98% copia e cola respostas genéricas da IA...
+  'gemini': `"Gemini traz a potência do Google para IA conversacional.
 
-Os 2% que dominam IA para Marketing estão criando campanhas que convertem 10x mais.
+Com acesso a dados em tempo real e integração com ferramentas Google.
 
-Mesma IA. Resultados COMPLETAMENTE diferentes."`,
+Descubra como aproveitar esses superpoderes."`,
 
-  'claude': `"Claude não é 'só mais uma IA'.
+  'prompt-engineering': `"Um prompt bem construído pode transformar resultados mediocres em extraordinários.
 
-Ele é o MELHOR para análise profunda, raciocínio complexo e trabalhos que exigem precisão.
+Vamos desvendar a ciência por trás de prompts eficazes.
 
-Vou te mostrar casos que ChatGPT falha e Claude DOMINA."`,
+Você vai aprender frameworks, técnicas e boas práticas."`,
 
-  'midjourney': `"A diferença entre uma imagem amadora e uma imagem profissional de R$ 500?
+  'ai-marketing': `"IA está transformando o marketing digital.
 
-Não é talento. É PROMPT.
+De criação de conteúdo a análise de dados, segmentação a automação.
 
-Vou te mostrar a anatomia de um prompt Midjourney que gera resultados vendáveis."`,
+Explore como aplicar IA em cada etapa do funil de marketing."`,
+
+  'ai-content': `"Criar conteúdo de qualidade leva tempo e criatividade.
+
+IA pode acelerar o processo sem perder autenticidade.
+
+Descubra como usar IA como copiloto criativo."`,
+
+  'midjourney': `"Midjourney democratizou a criação de imagens com IA.
+
+Mas dominar prompts visuais é uma arte.
+
+Aprenda a anatomia de prompts que geram resultados incríveis."`,
+
+  'perplexity': `"Perplexity combina busca tradicional com poder de IA.
+
+É como ter um pesquisador expert ao seu lado.
+
+Veja como usar Perplexity para pesquisas profundas e precisas."`,
+
+  'ai-automation': `"Automação com IA vai além de bots simples.
+
+Podemos criar fluxos inteligentes que aprendem e se adaptam.
+
+Explore casos práticos de automação inteligente."`,
 } as const;
 
-// Objetivos de aprendizado por categoria
+// Objetivos de aprendizado por categoria (diversos focos)
 export const LEARNING_OBJECTIVES_TEMPLATES = {
   'chatgpt': [
-    'Dominar o Método PERFEITO de prompts',
-    'Criar prompts que geram resultados vendáveis',
-    'Economizar 20+ horas por semana com IA',
-    'Transformar ChatGPT em ferramenta de renda',
-  ],
-  'prompt-engineering': [
-    'Entender a anatomia de prompts profissionais',
-    'Aplicar frameworks de prompting avançados',
-    'Criar prompts específicos por objetivo',
-    'Comparar prompts genéricos vs estratégicos',
-  ],
-  'ai-marketing': [
-    'Criar campanhas de marketing com IA',
-    'Gerar copies que convertem usando IA',
-    'Automatizar criação de conteúdo para redes sociais',
-    'Segmentar público usando análise de IA',
+    'Compreender como ChatGPT processa e gera respostas',
+    'Aplicar técnicas avançadas de prompting',
+    'Identificar limitações e vieses do modelo',
+    'Usar ChatGPT efetivamente em diferentes contextos',
   ],
   'claude': [
-    'Entender quando usar Claude vs ChatGPT',
+    'Entender quando usar Claude vs outros modelos',
     'Aproveitar capacidades analíticas do Claude',
     'Criar documentos técnicos com precisão',
-    'Usar Claude para pesquisa e síntese',
+    'Usar Claude para pesquisa e síntese profunda',
+  ],
+  'gemini': [
+    'Explorar integrações do Gemini com Google',
+    'Usar busca em tempo real efetivamente',
+    'Combinar Gemini com outras ferramentas Google',
+    'Aproveitar multimodalidade (texto + imagens)',
+  ],
+  'prompt-engineering': [
+    'Entender a anatomia de prompts eficazes',
+    'Aplicar frameworks de prompting (Zero-shot, Few-shot, Chain-of-thought)',
+    'Criar prompts específicos por objetivo',
+    'Iterar e refinar prompts sistematicamente',
+  ],
+  'ai-marketing': [
+    'Aplicar IA em análise de mercado e personas',
+    'Gerar conteúdo otimizado para SEO',
+    'Automatizar workflows de marketing',
+    'Medir e otimizar campanhas com IA',
+  ],
+  'ai-content': [
+    'Usar IA como copiloto criativo',
+    'Manter voz e autenticidade no conteúdo',
+    'Escalar produção sem perder qualidade',
+    'Editar e refinar output de IA',
+  ],
+  'midjourney': [
+    'Construir prompts visuais efetivos',
+    'Entender parâmetros e modificadores',
+    'Iterar designs usando variações',
+    'Criar estilos consistentes',
+  ],
+  'perplexity': [
+    'Formular queries de pesquisa eficazes',
+    'Interpretar e validar fontes',
+    'Usar Perplexity para research profundo',
+    'Combinar Perplexity com outras ferramentas',
   ],
 } as const;
 

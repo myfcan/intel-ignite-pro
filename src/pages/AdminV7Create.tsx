@@ -294,7 +294,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="title">Título da Lição *</Label>
                   <Input
                     id="title"
-                    placeholder="Ex: ChatGPT Profissional - Do Amador ao R$ 30k/mês"
+                    placeholder="Ex: Claude vs ChatGPT - Quando Usar Cada Um"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                   />
@@ -305,7 +305,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="subtitle">Subtítulo</Label>
                   <Input
                     id="subtitle"
-                    placeholder="A diferença brutal entre quem brinca e quem lucra com IA"
+                    placeholder="Uma jornada cinematográfica pelos modelos de IA"
                     value={formData.subtitle}
                     onChange={(e) => handleInputChange('subtitle', e.target.value)}
                   />
@@ -377,7 +377,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="objectives">Objetivos de Aprendizado</Label>
                   <Textarea
                     id="objectives"
-                    placeholder="Digite um objetivo por linha:&#10;- Dominar o Método PERFEITO de prompts&#10;- Criar prompts que geram resultados vendáveis&#10;- Economizar 20+ horas por semana com IA&#10;- Transformar IA em ferramenta de renda"
+                    placeholder="Digite um objetivo por linha:&#10;- Entender as diferenças entre Claude e ChatGPT&#10;- Saber quando usar cada modelo de IA&#10;- Comparar pontos fortes e fracos de cada ferramenta&#10;- Aplicar o conhecimento em casos práticos"
                     rows={4}
                     value={formData.learningObjectives?.join('\n')}
                     onChange={(e) => {
@@ -405,7 +405,7 @@ export default function AdminV7Create() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;98% das pessoas usa IA como um brinquedo. Eles pedem piadas, poemas, curiosidades...&#10;&#10;Enquanto isso, os 2% que DOMINAM IA estão fazendo R$ 30.000/mês em 2 horas por dia.&#10;&#10;A diferença? Eles sabem exatamente COMO pedir. E você vai aprender isso agora.&#10;&#10;Vou te mostrar a diferença entre um prompt que vale R$ 0 e um prompt que vale R$ 500...&#10;&#10;[Continue com o roteiro completo, incluindo desafios práticos e comparações]"
+                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Você já se perguntou qual IA usar para cada tarefa?&#10;&#10;Claude é conhecido por análises profundas e raciocínio complexo. ChatGPT pela criatividade e versatilidade.&#10;&#10;Mas quando usar cada um? Essa é a pergunta que vamos responder hoje.&#10;&#10;Vou te mostrar 5 cenários reais e qual IA performa melhor em cada um...&#10;&#10;[Continue com o roteiro completo, incluindo demonstrações práticas e comparações]"
                   rows={15}
                   value={formData.narrativeScript}
                   onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
@@ -514,23 +514,23 @@ export default function AdminV7Create() {
         {/* Info Card */}
         <Card className="bg-blue-500/5 border-blue-500/20">
           <CardHeader>
-            <CardTitle className="text-sm">ℹ️ Como funciona o V7 Cinematic para IA</CardTitle>
+            <CardTitle className="text-sm">ℹ️ Como funciona o V7 Cinematic</CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <p>
-              1. <strong>Roteiro Narrativo</strong>: Escreva seu roteiro focado em ensinar IA (prompts, ferramentas, aplicações)
+              1. <strong>Roteiro Narrativo</strong>: Escreva o roteiro da sua aula (conceitos, ferramentas, comparações, casos de uso)
             </p>
             <p>
-              2. <strong>Geração de Atos</strong>: Cada ato recebe animações cinematográficas e transições suaves
+              2. <strong>Geração de Atos</strong>: O sistema divide em atos cinematográficos com animações e transições
             </p>
             <p>
-              3. <strong>Comparações Práticas</strong>: Amador vs Profissional (ex: prompt genérico vs prompt estratégico)
+              3. <strong>Experiências Interativas</strong>: Playground, comparações, desafios práticos integrados
             </p>
             <p>
-              4. <strong>Desafios Interativos</strong>: Alunos testam na prática (ex: criar prompts, comparar resultados)
+              4. <strong>Sincronização de Áudio</strong>: Narração sincronizada com elementos visuais
             </p>
             <p>
-              5. <strong>Gamificação</strong>: XP, conquistas e feedback em tempo real motivam o aprendizado
+              5. <strong>Gamificação</strong>: XP, conquistas e feedback em tempo real
             </p>
           </CardContent>
         </Card>
