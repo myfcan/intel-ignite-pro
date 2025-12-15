@@ -59,12 +59,26 @@ export default function AdminV7Preview() {
         const timeline = content?.timeline || { acts: [], totalDuration: (data.estimated_time || 5) * 60 };
         const totalDuration = content?.metadata?.totalDuration || timeline.totalDuration || (data.estimated_time || 5) * 60;
         
-        // Convert timeline acts to cinematicFlow acts format
+        // Define background gradients for variety
+        const gradients = [
+          'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+          'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+          'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+          'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',
+          'linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)',
+          'linear-gradient(135deg, #232526 0%, #414345 100%)',
+        ];
+        
+        // Convert timeline acts to cinematicFlow acts format with proper visual structure
         const cinematicActs: CinematicAct[] = (timeline.acts || []).map((act: any, index: number) => {
           const actType = act.type === 'code-demo' ? 'interactive' : 
                           act.type === 'comparison' ? 'revelation' : 
                           act.type === 'challenge' ? 'challenge' :
                           act.type || 'narrative';
+          
+          const narrative = act.content?.narrative || act.title || '';
+          const visualEffects = act.visualEffects || {};
+          const gradientIndex = index % gradients.length;
           
           return {
             id: act.id || `act-${index + 1}`,
@@ -77,16 +91,16 @@ export default function AdminV7Preview() {
                 type: 'slide' as const,
                 background: { 
                   type: 'gradient' as const, 
-                  value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  value: gradients[gradientIndex],
                   opacity: 1,
                 },
                 layers: [
                   {
-                    id: `layer-${act.id}`,
+                    id: `text-layer-${act.id}`,
                     type: 'text' as const,
                     zIndex: 10,
-                    position: { x: '50%', y: '50%', width: '80%', height: 'auto' },
-                    content: act.content?.narrative || act.title || '',
+                    position: { x: '10%', y: '30%', width: '80%', height: 'auto' },
+                    content: `<div class="text-white text-2xl sm:text-4xl font-bold leading-relaxed drop-shadow-lg">${narrative}</div>`,
                   },
                 ],
               },
@@ -94,14 +108,15 @@ export default function AdminV7Preview() {
                 narrationSegment: {
                   start: act.startTime || 0,
                   end: act.endTime || (act.startTime || 0) + 60,
-                  text: act.content?.narrative || '',
+                  text: narrative,
                 },
               },
               animations: [],
+              particles: visualEffects.particles ? [{ id: `particles-${act.id}`, type: 'sparkle', color: '#60a5fa' }] : undefined,
             },
             transitions: {
-              in: { type: 'fade' as const, duration: 500, easing: 'ease-in-out' as const },
-              out: { type: 'fade' as const, duration: 500, easing: 'ease-in-out' as const },
+              in: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
+              out: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
             },
           };
         });
@@ -147,9 +162,9 @@ export default function AdminV7Preview() {
           },
           audioTrack: {
             narration: {
-              url: data.audio_url || '',
+              url: content?.audioConfig?.url || data.audio_url || '',
               duration: totalDuration,
-              format: 'mp3',
+              format: content?.audioConfig?.format || 'mp3',
             },
             syncPoints: cinematicActs.map((act) => ({
               id: `sync-${act.id}`,
