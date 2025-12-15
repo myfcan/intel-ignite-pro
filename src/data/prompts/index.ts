@@ -100,10 +100,10 @@ export const allPromptCategories: PromptCategory[] = [
   dailyLifePromptsCategory,
   enhancedEmailCategory,
   enhancedBlogCategory,
-  studyPromptsCategory,
+  enhancedStudyCategory,
   contentPromptsCategory,
   enhancedSocialCategory,
-  seoPromptsCategory
+  enhancedSeoCategory
 ];
 
 // Export individual categories for direct import
