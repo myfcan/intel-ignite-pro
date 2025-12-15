@@ -11,7 +11,7 @@ import {
 } from '@/types/v7-cinematic.types';
 import { CinematicActRenderer } from './CinematicActRenderer';
 import { V7Timeline } from './V7Timeline';
-import { V7PlayerControls } from './V7PlayerControls';
+import { V7PlayerControls, VolumeSettings } from './V7PlayerControls';
 import { V7AdvancedAudioEngine, V7AdvancedAudioEngineRef } from './V7AdvancedAudioEngine';
 import { V7SynchronizedCaptions } from './V7SynchronizedCaptions';
 import { V7ActTransition } from './V7CinematicTransitions';
@@ -81,6 +81,14 @@ export const V7CinematicPlayer = ({
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionType, setTransitionType] = useState<'fade' | 'slide' | 'zoom' | 'dissolve'>('fade');
+
+  // Volume settings state
+  const [volumeSettings, setVolumeSettings] = useState<VolumeSettings>({
+    master: 1,
+    narration: lesson.audioTrack.volume?.narration || 1,
+    music: lesson.audioTrack.volume?.music || 0.3,
+    effects: lesson.audioTrack.volume?.effects || 1,
+  });
 
   // Refs for timing and audio
   const audioEngineRef = useRef<V7AdvancedAudioEngineRef>(null);
@@ -381,14 +389,21 @@ export const V7CinematicPlayer = ({
         className="opacity-40"
       />
 
-      {/* Advanced Audio Engine */}
+      {/* Advanced Audio Engine with volume settings */}
       <V7AdvancedAudioEngine
         ref={audioEngineRef}
-        audioTrack={lesson.audioTrack}
+        audioTrack={{
+          ...lesson.audioTrack,
+          volume: {
+            narration: volumeSettings.narration,
+            music: volumeSettings.music,
+            effects: volumeSettings.effects,
+          },
+        }}
         wordTimestamps={wordTimestamps}
         currentTime={playerState.currentTime}
         isPlaying={playerState.isPlaying}
-        volume={playerState.volume}
+        volume={volumeSettings.master}
         playbackRate={playerState.playbackRate}
         onTimeUpdate={handleTimeUpdate}
         onSyncPoint={handleSyncPoint}
@@ -436,11 +451,15 @@ export const V7CinematicPlayer = ({
       <div className="absolute bottom-0 left-0 right-0 z-30">
         <V7PlayerControls
           isPlaying={playerState.isPlaying}
-          volume={playerState.volume}
+          volume={volumeSettings.master}
+          volumeSettings={volumeSettings}
           playbackRate={playerState.playbackRate}
+          hasBackgroundMusic={!!lesson.audioTrack.backgroundMusic}
+          hasSoundEffects={!!lesson.audioTrack.soundEffects?.length}
           onPlay={play}
           onPause={pause}
-          onVolumeChange={setVolume}
+          onVolumeChange={(v) => setVolumeSettings((prev) => ({ ...prev, master: v }))}
+          onVolumeSettingsChange={setVolumeSettings}
           onPlaybackRateChange={setPlaybackRate}
         />
       </div>
