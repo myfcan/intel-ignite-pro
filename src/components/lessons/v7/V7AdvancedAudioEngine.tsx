@@ -276,30 +276,48 @@ export const V7AdvancedAudioEngine = forwardRef<V7AdvancedAudioEngineRef, V7Adva
       [volume, audioTrack.volume]
     );
 
-    // Check for sound effects at current time
+    // Check for sound effects at current time - integrated into time update
+    const checkSoundEffects = useCallback(
+      (time: number) => {
+        if (!audioTrack.soundEffects) return;
+
+        const tolerance = 0.15; // 150ms tolerance for effects
+
+        audioTrack.soundEffects.forEach((effect) => {
+          const timeDiff = Math.abs(time - effect.triggerTime);
+          const effectKey = `effect-${effect.id}`;
+
+          if (
+            timeDiff < tolerance &&
+            !processedSyncPointsRef.current.has(effectKey)
+          ) {
+            console.log('[V7AdvancedAudioEngine] Playing sound effect:', effect.id, 'at', time);
+            playSoundEffect(effect);
+            processedSyncPointsRef.current.add(effectKey);
+          }
+
+          // Clear processed effects after they pass
+          if (time > effect.triggerTime + 1) {
+            processedSyncPointsRef.current.delete(effectKey);
+          }
+        });
+      },
+      [audioTrack.soundEffects, playSoundEffect]
+    );
+
+    // Enhanced time update handler that also checks sound effects
     useEffect(() => {
-      if (!audioTrack.soundEffects || !narrationRef.current) return;
+      if (!narrationRef.current || !isPlaying) return;
 
-      const time = narrationRef.current.currentTime;
-      const tolerance = 0.1;
-
-      audioTrack.soundEffects.forEach((effect) => {
-        const timeDiff = Math.abs(time - effect.triggerTime);
-
-        if (
-          timeDiff < tolerance &&
-          !processedSyncPointsRef.current.has(`effect-${effect.id}`)
-        ) {
-          playSoundEffect(effect);
-          processedSyncPointsRef.current.add(`effect-${effect.id}`);
+      const checkEffectsInterval = setInterval(() => {
+        if (narrationRef.current) {
+          const time = narrationRef.current.currentTime;
+          checkSoundEffects(time);
         }
+      }, 50); // Check every 50ms for precise timing
 
-        // Clear processed effects
-        if (time > effect.triggerTime + 1) {
-          processedSyncPointsRef.current.delete(`effect-${effect.id}`);
-        }
-      });
-    }, [audioTrack.soundEffects, playSoundEffect]);
+      return () => clearInterval(checkEffectsInterval);
+    }, [isPlaying, checkSoundEffects]);
 
     // ============================================================================
     // AUDIO ELEMENT EVENT HANDLERS
@@ -373,10 +391,13 @@ export const V7AdvancedAudioEngine = forwardRef<V7AdvancedAudioEngineRef, V7Adva
 
         {/* Development debug info */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="fixed bottom-2 left-2 z-50 bg-black/70 text-white text-xs p-2 rounded font-mono">
+          <div className="fixed bottom-2 left-2 z-50 bg-black/70 text-white text-xs p-2 rounded font-mono max-w-xs">
             <div>Audio Time: {narrationRef.current?.currentTime?.toFixed(2)}s</div>
             <div>Word Index: {lastWordIndexRef.current}</div>
             <div>Ready: {isAudioReady ? '✓' : '✗'}</div>
+            <div>Music: {audioTrack.backgroundMusic ? '✓' : '✗'}</div>
+            <div>SFX Count: {audioTrack.soundEffects?.length || 0}</div>
+            <div>Playing: {isPlaying ? '▶' : '⏸'}</div>
           </div>
         )}
       </>
