@@ -11,7 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -61,7 +63,7 @@ export default function AdminV7Create() {
     title: '',
     subtitle: '',
     difficulty: 'beginner',
-    category: 'chatgpt', // Default to ChatGPT for AI-focused lessons
+    category: 'prompts',
     tags: [],
     learningObjectives: [],
     narrativeScript: '',
@@ -109,7 +111,7 @@ export default function AdminV7Create() {
           title: formData.title,
           subtitle: formData.subtitle || '',
           difficulty: formData.difficulty || 'beginner',
-          category: formData.category || 'chatgpt',
+          category: formData.category || 'prompts',
           tags: formData.tags || [],
           learningObjectives: formData.learningObjectives || [],
           narrativeScript: formData.narrativeScript,
@@ -294,7 +296,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="title">Título da Lição *</Label>
                   <Input
                     id="title"
-                    placeholder="Ex: Claude vs ChatGPT - Quando Usar Cada Um"
+                    placeholder="Ex: Dominando Prompts com ChatGPT"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                   />
@@ -305,7 +307,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="subtitle">Subtítulo</Label>
                   <Input
                     id="subtitle"
-                    placeholder="Uma jornada cinematográfica pelos modelos de IA"
+                    placeholder="Uma jornada cinematográfica pelo mundo da IA"
                     value={formData.subtitle}
                     onChange={(e) => handleInputChange('subtitle', e.target.value)}
                   />
@@ -314,7 +316,7 @@ export default function AdminV7Create() {
                 {/* Difficulty and Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="difficulty">Nível</Label>
+                    <Label htmlFor="difficulty">Dificuldade</Label>
                     <Select
                       value={formData.difficulty}
                       onValueChange={(value) => handleInputChange('difficulty', value)}
@@ -339,18 +341,16 @@ export default function AdminV7Create() {
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[400px]">
+                      <SelectContent>
                         {AI_CATEGORIES.map((group) => (
-                          <div key={group.group}>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                              {group.group}
-                            </div>
+                          <SelectGroup key={group.group}>
+                            <SelectLabel>{group.group}</SelectLabel>
                             {group.items.map((item) => (
                               <SelectItem key={item.value} value={item.value}>
                                 {item.label}
                               </SelectItem>
                             ))}
-                          </div>
+                          </SelectGroup>
                         ))}
                       </SelectContent>
                     </Select>
@@ -377,7 +377,7 @@ export default function AdminV7Create() {
                   <Label htmlFor="objectives">Objetivos de Aprendizado</Label>
                   <Textarea
                     id="objectives"
-                    placeholder="Digite um objetivo por linha:&#10;- Entender as diferenças entre Claude e ChatGPT&#10;- Saber quando usar cada modelo de IA&#10;- Comparar pontos fortes e fracos de cada ferramenta&#10;- Aplicar o conhecimento em casos práticos"
+                    placeholder="Digite um objetivo por linha:&#10;- Dominar técnicas de prompt&#10;- Usar ChatGPT de forma avançada&#10;- Automatizar tarefas com IA"
                     rows={4}
                     value={formData.learningObjectives?.join('\n')}
                     onChange={(e) => {
@@ -405,7 +405,7 @@ export default function AdminV7Create() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Você já se perguntou qual IA usar para cada tarefa?&#10;&#10;Claude é conhecido por análises profundas e raciocínio complexo. ChatGPT pela criatividade e versatilidade.&#10;&#10;Mas quando usar cada um? Essa é a pergunta que vamos responder hoje.&#10;&#10;Vou te mostrar 5 cenários reais e qual IA performa melhor em cada um...&#10;&#10;[Continue com o roteiro completo, incluindo demonstrações práticas e comparações]"
+                  placeholder="Escreva o roteiro narrativo completo aqui...&#10;&#10;Exemplo:&#10;Bem-vindo à jornada pelo mundo da Inteligência Artificial. Hoje, vamos explorar como criar prompts eficazes que transformam suas interações com o ChatGPT...&#10;&#10;[Continue com o roteiro completo, incluindo pontos de interação e desafios]"
                   rows={15}
                   value={formData.narrativeScript}
                   onChange={(e) => handleInputChange('narrativeScript', e.target.value)}
@@ -518,19 +518,23 @@ export default function AdminV7Create() {
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <p>
-              1. <strong>Roteiro Narrativo</strong>: Escreva o roteiro da sua aula (conceitos, ferramentas, comparações, casos de uso)
+              1. <strong>Roteiro Narrativo</strong>: A IA analisa seu roteiro e divide em atos
+              cinematográficos
             </p>
             <p>
-              2. <strong>Geração de Atos</strong>: O sistema divide em atos cinematográficos com animações e transições
+              2. <strong>Geração de Atos</strong>: Cada ato recebe animações, transições e
+              sincronização de áudio
             </p>
             <p>
-              3. <strong>Experiências Interativas</strong>: Playground, comparações, desafios práticos integrados
+              3. <strong>Playground Comparativo</strong>: Código amateur vs professional é
+              gerado automaticamente
             </p>
             <p>
-              4. <strong>Sincronização de Áudio</strong>: Narração sincronizada com elementos visuais
+              4. <strong>Interações</strong>: Pontos de interação são inseridos
+              estrategicamente
             </p>
             <p>
-              5. <strong>Gamificação</strong>: XP, conquistas e feedback em tempo real
+              5. <strong>Gamificação</strong>: XP, achievements e scoring são configurados
             </p>
           </CardContent>
         </Card>

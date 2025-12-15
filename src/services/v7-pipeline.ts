@@ -391,7 +391,6 @@ export async function processV7Pipeline(
         tags: input.tags || [],
         description: `Lição V7 sobre ${input.title}`,
         learningObjectives: input.learningObjectives || [],
-        prerequisites: input.prerequisites,
         estimatedTime: Math.ceil(totalDuration / 60),
         version: '1.0.0',
         createdAt: new Date().toISOString(),
@@ -422,7 +421,16 @@ export async function processV7Pipeline(
           })),
         },
         transitions,
-        theme: input.theme,
+        theme: input.theme ? {
+          primary: input.theme.primary || '#667eea',
+          secondary: input.theme.secondary || '#764ba2',
+          background: input.theme.background || '#0f0f23',
+          text: input.theme.text || '#ffffff',
+          accent: input.theme.accent || '#00d4ff',
+          fonts: input.theme.fonts,
+          borderRadius: input.theme.borderRadius,
+          shadows: input.theme.shadows,
+        } : undefined,
       },
       audioTrack: {
         narration: {
@@ -505,15 +513,17 @@ function getActColor(type: string): string {
  */
 export async function saveV7Lesson(lesson: V7CinematicLesson): Promise<boolean> {
   try {
-    const { error } = await supabase.from('v7_lessons').insert([
+    const { error } = await supabase.from('lessons').insert([
       {
-        id: lesson.id,
         title: lesson.title,
-        subtitle: lesson.subtitle,
-        duration: lesson.duration,
-        data: lesson,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        description: lesson.subtitle || '',
+        model: 'v7',
+        lesson_type: 'v7-cinematic',
+        content: JSON.parse(JSON.stringify(lesson)),
+        estimated_time: Math.ceil(lesson.duration / 60),
+        is_active: false,
+        status: 'draft',
+        order_index: 0,
       },
     ]);
 
