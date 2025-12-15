@@ -32,6 +32,7 @@ import { V7PipelineInput } from '@/types/v7-cinematic.types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useV7LessonEditor } from '@/hooks/useV7LessonEditor';
+import { AI_CATEGORIES, DIFFICULTY_LABELS } from '@/constants/ai-categories';
 
 export default function AdminV7Create() {
   const navigate = useNavigate();
@@ -322,15 +323,15 @@ export default function AdminV7Create() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="beginner">Iniciante</SelectItem>
-                        <SelectItem value="intermediate">Intermediário</SelectItem>
-                        <SelectItem value="advanced">Avançado</SelectItem>
+                        <SelectItem value="beginner">{DIFFICULTY_LABELS.beginner}</SelectItem>
+                        <SelectItem value="intermediate">{DIFFICULTY_LABELS.intermediate}</SelectItem>
+                        <SelectItem value="advanced">{DIFFICULTY_LABELS.advanced}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
+                    <Label htmlFor="category">Ferramenta/Tópico de IA</Label>
                     <Select
                       value={formData.category}
                       onValueChange={(value) => handleInputChange('category', value)}
@@ -339,13 +340,18 @@ export default function AdminV7Create() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="prompts">Prompts</SelectItem>
-                        <SelectItem value="chatgpt">ChatGPT</SelectItem>
-                        <SelectItem value="ai-fundamentals">Fundamentos de IA</SelectItem>
-                        <SelectItem value="automation">Automação com IA</SelectItem>
-                        <SelectItem value="image-generation">Geração de Imagens</SelectItem>
-                        <SelectItem value="ai-tools">Ferramentas de IA</SelectItem>
-                        <SelectItem value="productivity">Produtividade com IA</SelectItem>
+                        {AI_CATEGORIES.map((group) => (
+                          <div key={group.group}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                              {group.group}
+                            </div>
+                            {group.items.map((item) => (
+                              <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
