@@ -1,5 +1,5 @@
 // src/components/lessons/v7/V7CinematicPlayer.tsx
-// Main player component for V7 Cinematic Lessons with full audio sync, transitions, and accessibility
+// Main player component for V7 Cinematic Lessons with full audio sync, transitions, accessibility, and performance optimization
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
@@ -15,14 +15,17 @@ import { V7PlayerControls, VolumeSettings } from './V7PlayerControls';
 import { V7AdvancedAudioEngine, V7AdvancedAudioEngineRef } from './V7AdvancedAudioEngine';
 import { V7SynchronizedCaptions } from './V7SynchronizedCaptions';
 import { V7ActTransition } from './V7CinematicTransitions';
-import { ParticlesBackground } from './ParticlesBackground';
+import { OptimizedParticlesBackground } from './OptimizedParticlesBackground';
 import { V7QuizInteraction, QuizResult } from './V7QuizInteraction';
 import { V7CodeChallenge, CodeChallengeResult } from './V7CodeChallenge';
 import { V7InteractionFeedback } from './V7InteractionFeedback';
 import { V7TouchControls } from './V7TouchControls';
 import { V7Subtitles } from './V7Subtitles';
 import { V7AccessibilityWrapper } from './V7AccessibilityWrapper';
+import { V7PerformanceOverlay } from './V7PerformanceOverlay';
 import { useV7Analytics } from '@/hooks/useV7Analytics';
+import { useV7Performance, isLowEndDevice } from '@/hooks/useV7Performance';
+import { useV7AudioPreloader } from '@/hooks/useV7AudioPreloader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WordTimestamp {
@@ -98,8 +101,80 @@ export const V7CinematicPlayer = ({
   const audioEngineRef = useRef<V7AdvancedAudioEngineRef>(null);
   const lastUpdateRef = useRef<number>(0);
 
+  // Performance state
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
+
   // Analytics hook
   const { trackEvent, trackMetric } = useV7Analytics(lesson.id);
+
+  // Performance monitoring hook
+  const { 
+    metrics: performanceMetrics, 
+    startMonitoring, 
+    recordLoadingComplete,
+    recordAudioLoadTime,
+  } = useV7Performance({
+    onLowPerformance: () => {
+      console.log('[V7Player] Low performance detected, reducing effects');
+      setReducedMotion(true);
+    },
+    fpsThreshold: 25,
+  });
+
+  // Audio preloader for lazy loading
+  const audioAssets = useMemo(() => {
+    const assets = [];
+    
+    // Main narration
+    if (lesson.audioTrack.narration?.url) {
+      assets.push({
+        id: 'narration-main',
+        url: lesson.audioTrack.narration.url,
+        type: 'narration' as const,
+        startTime: 0,
+        duration: lesson.duration,
+      });
+    }
+    
+    // Background music
+    if (lesson.audioTrack.backgroundMusic?.url) {
+      assets.push({
+        id: 'music-main',
+        url: lesson.audioTrack.backgroundMusic.url,
+        type: 'music' as const,
+        startTime: 0,
+        duration: lesson.duration,
+      });
+    }
+    
+    // Sound effects
+    lesson.audioTrack.soundEffects?.forEach((effect, index) => {
+      assets.push({
+        id: `effect-${index}`,
+        url: effect.url,
+        type: 'effect' as const,
+        startTime: effect.triggerTime,
+        duration: 5, // Assume 5s duration for effects
+      });
+    });
+    
+    return assets;
+  }, [lesson.audioTrack, lesson.duration]);
+
+  const { 
+    progress: audioPreloadProgress,
+    isAssetReady,
+  } = useV7AudioPreloader(audioAssets, playerState.currentTime, {
+    preloadAhead: 30,
+    maxConcurrent: 2,
+    onAudioReady: (assetId) => {
+      console.log('[V7Player] Audio asset ready:', assetId);
+      if (assetId === 'narration-main') {
+        recordAudioLoadTime(performance.now());
+      }
+    },
+  });
 
   // ============================================================================
   // COMPUTED VALUES
@@ -341,8 +416,17 @@ export const V7CinematicPlayer = ({
   // EFFECTS
   // ============================================================================
 
-  // Initialize player
+  // Initialize player and start performance monitoring
   useEffect(() => {
+    // Start performance monitoring
+    startMonitoring();
+    
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || isLowEndDevice()) {
+      setReducedMotion(true);
+    }
+
     if (lesson.cinematicFlow.acts.length > 0) {
       setCurrentAct(lesson.cinematicFlow.acts[0]);
       setPlayerState((prev) => ({
@@ -351,13 +435,16 @@ export const V7CinematicPlayer = ({
       }));
     }
 
+    // Record loading complete
+    recordLoadingComplete();
+
     if (autoPlay) {
       // Small delay to ensure audio is ready
       setTimeout(() => {
         play();
       }, 500);
     }
-  }, [lesson, autoPlay, play]);
+  }, [lesson, autoPlay, play, startMonitoring, recordLoadingComplete]);
 
   // Track metrics
   useEffect(() => {
@@ -368,6 +455,18 @@ export const V7CinematicPlayer = ({
       unit: '%',
     });
   }, [progress, trackMetric]);
+
+  // Toggle performance overlay with keyboard shortcut (Shift+P)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'P') {
+        setShowPerformanceOverlay(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // ============================================================================
   // COMPUTED - Current act index
@@ -443,15 +542,27 @@ export const V7CinematicPlayer = ({
         role="main"
         aria-label={`Reprodutor de aula: ${lesson.title}`}
       >
-        {/* Particles background */}
-        <ParticlesBackground
-          intensity="medium"
+        {/* Performance monitoring overlay */}
+        <V7PerformanceOverlay
+          fps={performanceMetrics.fps}
+          loadingTime={performanceMetrics.loadingTime}
+          audioLoadTime={performanceMetrics.audioLoadTime}
+          frameDrops={performanceMetrics.frameDrops}
+          isLowPerformance={performanceMetrics.isLowPerformance}
+          audioProgress={audioPreloadProgress}
+          show={showPerformanceOverlay}
+        />
+
+        {/* Optimized Particles background */}
+        <OptimizedParticlesBackground
+          intensity={reducedMotion ? 'low' : 'medium'}
           colorScheme="purple"
-          interactive={!playerState.isPlaying}
-          speed={0.8}
-          connected={true}
+          interactive={false}
+          speed={0.5}
+          connected={!reducedMotion}
           className="opacity-40"
-          aria-hidden="true"
+          reducedMotion={reducedMotion}
+          isVisible={!playerState.isPlaying || !reducedMotion}
         />
 
         {/* Advanced Audio Engine with volume settings */}
