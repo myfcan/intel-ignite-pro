@@ -1,8 +1,19 @@
 // src/components/lessons/v7/CodeEditor.tsx
-// Code editor component for V7 lessons
+// Code editor component for V7 lessons with Prism.js syntax highlighting
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { EditorAnnotation } from '@/types/v7-cinematic.types';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-jsx';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-markdown';
+import '@/styles/prism-dark.css';
 
 interface CodeEditorProps {
   code: string;
@@ -13,6 +24,16 @@ interface CodeEditorProps {
   annotations?: EditorAnnotation[];
   theme?: string;
 }
+
+// Map common language names to Prism grammar names
+const languageMap: Record<string, string> = {
+  js: 'javascript',
+  ts: 'typescript',
+  py: 'python',
+  md: 'markdown',
+  sh: 'bash',
+  shell: 'bash',
+};
 
 export const CodeEditor = ({
   code,
@@ -31,72 +52,23 @@ export const CodeEditor = ({
   const preRef = useRef<HTMLPreElement>(null);
 
   // ============================================================================
-  // SYNTAX HIGHLIGHTING
+  // SYNTAX HIGHLIGHTING WITH PRISM.JS
   // ============================================================================
 
-  const highlightCode = (code: string, language: string): string => {
-    // Simple syntax highlighting (in production, use a proper library like Prism or Monaco)
-    // This is a basic implementation for demonstration
-
-    let highlighted = code;
-
-    // JavaScript/TypeScript keywords
-    if (language === 'javascript' || language === 'typescript') {
-      const keywords = [
-        'const',
-        'let',
-        'var',
-        'function',
-        'return',
-        'if',
-        'else',
-        'for',
-        'while',
-        'class',
-        'import',
-        'export',
-        'default',
-        'async',
-        'await',
-        'try',
-        'catch',
-      ];
-
-      keywords.forEach((keyword) => {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'g');
-        highlighted = highlighted.replace(
-          regex,
-          `<span class="text-purple-400 font-semibold">${keyword}</span>`
-        );
-      });
-
-      // Strings
-      highlighted = highlighted.replace(
-        /(['"`])(?:(?=(\\?))\2.)*?\1/g,
-        '<span class="text-green-400">$&</span>'
-      );
-
-      // Comments
-      highlighted = highlighted.replace(
-        /\/\/.*/g,
-        '<span class="text-gray-500 italic">$&</span>'
-      );
-
-      // Numbers
-      highlighted = highlighted.replace(
-        /\b\d+\b/g,
-        '<span class="text-yellow-400">$&</span>'
-      );
-
-      // Functions
-      highlighted = highlighted.replace(
-        /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
-        '<span class="text-blue-400">$1</span>('
-      );
+  const highlightedCode = useMemo(() => {
+    const normalizedLang = languageMap[language] || language;
+    const grammar = Prism.languages[normalizedLang] || Prism.languages.javascript;
+    
+    try {
+      return Prism.highlight(code, grammar, normalizedLang);
+    } catch (error) {
+      console.warn('Prism highlighting failed, using plain text:', error);
+      return code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     }
-
-    return highlighted;
-  };
+  }, [code, language]);
 
   // ============================================================================
   // LINE NUMBERS
@@ -214,10 +186,13 @@ export const CodeEditor = ({
           {/* Syntax-highlighted code (background) */}
           <pre
             ref={preRef}
-            className="absolute inset-0 p-4 text-sm font-mono text-gray-300 pointer-events-none overflow-auto whitespace-pre-wrap break-words"
+            className="absolute inset-0 p-4 text-sm font-mono pointer-events-none overflow-auto whitespace-pre-wrap break-words prism-code"
             style={{ scrollBehavior: 'auto' }}
           >
-            <code dangerouslySetInnerHTML={{ __html: highlightCode(code, language) }} />
+            <code 
+              className={`language-${languageMap[language] || language}`}
+              dangerouslySetInnerHTML={{ __html: highlightedCode }} 
+            />
           </pre>
 
           {/* Editable textarea (foreground, transparent) */}
