@@ -88,8 +88,8 @@ export function useV7CinematicLesson(lessonId: string | undefined): UseV7Cinemat
       const wordTimestamps = data.word_timestamps as any;
 
       // Extract acts from timeline or create default structure
-      const timeline = content?.timeline || {};
-      const rawActs = timeline?.acts || content?.cinematicFlow?.acts || [];
+      const timeline = content?.timeline || content?.cinematic_flow?.timeline || {};
+      const rawActs = content?.cinematic_flow?.acts || timeline?.acts || content?.cinematicFlow?.acts || [];
       
       // Transform acts to cinematic format
       const acts: V7CinematicActData[] = rawActs.map((act: any, index: number) => {
@@ -168,9 +168,16 @@ function transformActToCinematic(act: any, index: number): V7CinematicActData {
 // Map pipeline act types to cinematic types
 function mapActType(type: string): V7CinematicActData['type'] {
   const typeMap: Record<string, V7CinematicActData['type']> = {
+    // Direct mappings
+    'dramatic': 'dramatic',
+    'comparison': 'comparison',
+    'quiz': 'interaction',
+    'interaction': 'interaction',
+    'result': 'result',
+    'playground': 'playground',
+    // Legacy/pipeline mappings
     'narrative': 'dramatic',
     'reveal': 'dramatic',
-    'comparison': 'comparison',
     'challenge': 'interaction',
     'code-demo': 'playground',
     'interactive': 'interaction',
@@ -182,16 +189,35 @@ function mapActType(type: string): V7CinematicActData['type'] {
 // Extract content based on act type
 function extractActContent(act: any, type: V7CinematicActData['type']): V7CinematicActData['content'] {
   const content = act.content || {};
+  const visual = content.visual || {};
   
   switch (type) {
     case 'dramatic':
       return {
-        narrative: content.narrative || act.title,
-        dramaticNumber: extractDramaticNumber(content.narrative),
-        dramaticLabel: act.title,
+        narrative: visual.subtitle || content.narrative || act.title,
+        dramaticNumber: String(visual.mainValue || extractDramaticNumber(content.narrative)),
+        dramaticLabel: visual.highlightWord || act.title,
       };
     
     case 'comparison':
+      // Handle visual-based comparison (from DB)
+      if (visual.leftCard && visual.rightCard) {
+        return {
+          comparisonItems: [
+            { 
+              label: visual.leftCard.label || 'Opção A', 
+              description: visual.leftCard.details || visual.leftCard.value, 
+              highlight: visual.leftCard.isPositive 
+            },
+            { 
+              label: visual.rightCard.label || 'Opção B', 
+              description: visual.rightCard.details || visual.rightCard.value, 
+              highlight: visual.rightCard.isPositive 
+            },
+          ],
+        };
+      }
+      // Handle legacy comparison structure
       if (content.comparison) {
         return {
           comparisonItems: [
@@ -208,6 +234,18 @@ function extractActContent(act: any, type: V7CinematicActData['type']): V7Cinema
       };
     
     case 'interaction':
+      // Handle visual-based quiz (from DB)
+      if (visual.question && visual.options) {
+        return {
+          interactionQuestion: visual.question,
+          interactionOptions: visual.options.map((opt: any) => ({
+            id: opt.id || `opt-${opt.text?.slice(0, 10)}`,
+            label: opt.text,
+            correct: opt.isCorrect,
+          })),
+        };
+      }
+      // Handle legacy challenge structure
       if (content.challenge) {
         return {
           interactionQuestion: content.challenge.prompt,
@@ -233,9 +271,10 @@ function extractActContent(act: any, type: V7CinematicActData['type']): V7Cinema
     
     case 'result':
       return {
+        narrative: visual.subtitle || content.narrative,
+        dramaticNumber: String(visual.mainValue || '100%'),
         resultMetrics: [
-          { label: 'Score', value: '100%', icon: 'trophy' },
-          { label: 'Tempo', value: '5min', icon: 'clock' },
+          { label: 'Score', value: String(visual.mainValue || '100%'), icon: 'trophy' },
         ],
       };
     
@@ -246,7 +285,10 @@ function extractActContent(act: any, type: V7CinematicActData['type']): V7Cinema
       };
     
     default:
-      return { narrative: content.narrative || act.title };
+      return { 
+        narrative: visual.subtitle || content.narrative || act.title,
+        dramaticNumber: String(visual.mainValue || '01'),
+      };
   }
 }
 
