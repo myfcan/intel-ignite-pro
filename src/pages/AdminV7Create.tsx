@@ -69,7 +69,13 @@ export default function AdminV7Create() {
     isValid: boolean;
     error?: string;
     data?: any;
-    stats?: { sections: number; duration: number };
+    stats?: { 
+      sections: number; 
+      duration: number;
+      actCount?: number;
+      narrationCount?: number;
+      hasCinematicFlow?: boolean;
+    };
   }>({ isValid: false });
 
   // Form method state
@@ -113,19 +119,42 @@ export default function AdminV7Create() {
         return;
       }
       
-      if (!parsed.narrativeScript && !parsed.sections) {
-        setJsonValidation({ isValid: false, error: 'Campo "narrativeScript" ou "sections" é obrigatório' });
+      // Accept cinematic_flow.acts OR narrativeScript OR sections
+      const hasCinematicFlow = parsed.cinematic_flow?.acts?.length > 0;
+      const hasNarrativeScript = !!parsed.narrativeScript;
+      const hasSections = parsed.sections?.length > 0;
+      
+      if (!hasCinematicFlow && !hasNarrativeScript && !hasSections) {
+        setJsonValidation({ 
+          isValid: false, 
+          error: 'Campo "cinematic_flow.acts", "narrativeScript" ou "sections" é obrigatório' 
+        });
         return;
       }
 
       // Calculate stats
+      const actCount = parsed.cinematic_flow?.acts?.length || 0;
       const sections = parsed.sections?.length || 0;
       const duration = parsed.duration || 300;
+
+      // Extract narration count for cinematic_flow
+      let narrationCount = 0;
+      if (hasCinematicFlow) {
+        narrationCount = parsed.cinematic_flow.acts.filter(
+          (act: any) => act.audio?.narration
+        ).length;
+      }
 
       setJsonValidation({
         isValid: true,
         data: parsed,
-        stats: { sections, duration }
+        stats: { 
+          sections: actCount || sections, 
+          duration,
+          actCount,
+          narrationCount,
+          hasCinematicFlow,
+        }
       });
     } catch (e: any) {
       setJsonValidation({ isValid: false, error: `JSON inválido: ${e.message}` });
@@ -174,6 +203,8 @@ export default function AdminV7Create() {
           narrativeScript: payload.narrativeScript || '',
           sections: payload.sections,
           duration: payload.duration || 300,
+          // Support for cinematic_flow.acts structure
+          cinematic_flow: payload.cinematic_flow,
         },
       });
 
@@ -460,14 +491,28 @@ export default function AdminV7Create() {
                   {jsonInput && (
                     <div className={`p-3 rounded-lg ${jsonValidation.isValid ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
                       {jsonValidation.isValid ? (
-                        <div className="flex items-center gap-2 text-green-600">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span className="text-sm">JSON válido</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="text-sm">JSON válido</span>
+                          </div>
                           {jsonValidation.stats && (
-                            <div className="ml-auto flex gap-2">
-                              <Badge variant="outline">{jsonValidation.stats.sections} seções</Badge>
+                            <div className="flex flex-wrap gap-2">
+                              {jsonValidation.stats.hasCinematicFlow ? (
+                                <>
+                                  <Badge variant="default" className="bg-cyan-600">{jsonValidation.stats.actCount} atos cinematográficos</Badge>
+                                  <Badge variant="outline">{jsonValidation.stats.narrationCount} narrações</Badge>
+                                </>
+                              ) : (
+                                <Badge variant="outline">{jsonValidation.stats.sections} seções</Badge>
+                              )}
                               <Badge variant="outline">{Math.floor(jsonValidation.stats.duration / 60)}min</Badge>
                             </div>
+                          )}
+                          {jsonValidation.stats?.hasCinematicFlow && (
+                            <p className="text-xs text-muted-foreground">
+                              ✓ Estrutura cinematic_flow detectada - visual.instruction e audio.narration serão processados separadamente
+                            </p>
                           )}
                         </div>
                       ) : (

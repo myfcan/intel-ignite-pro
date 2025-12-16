@@ -43,14 +43,22 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       const content = data.content as any;
       const timestamps = data.word_timestamps as any[] || [];
       
+      // Check if using rich cinematic_flow structure
+      const hasCinematicFlow = content?.cinematic_flow?.acts?.length > 0;
+      
       // Calculate total duration from acts or default
-      const rawActs = content?.cinematic_flow?.acts || [];
+      const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || [];
       const totalDuration = content?.cinematic_flow?.timeline?.totalDuration || 
+        content?.metadata?.totalDuration ||
         rawActs.reduce((sum: number, act: any) => sum + (act.duration || 60), 0) ||
         (data.estimated_time || 8) * 60;
 
+      console.log('[useV7PhaseScript] Loading lesson:', data.id);
+      console.log('[useV7PhaseScript] Has cinematic_flow:', hasCinematicFlow);
+      console.log('[useV7PhaseScript] Acts count:', rawActs.length);
+
       // Transform database acts to V7 phases
-      const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration);
+      const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow);
 
       // Create script
       const lessonScript: V7LessonScript = {
@@ -86,7 +94,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 }
 
 // Transform database acts to V7 phase format
-function transformActsToPhases(acts: any[], totalDuration: number): V7Phase[] {
+function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicFlow: boolean = false): V7Phase[] {
   if (!acts || acts.length === 0) {
     // Return default phases if no acts
     return getDefaultPhases(totalDuration);
@@ -108,9 +116,14 @@ function transformActsToPhases(acts: any[], totalDuration: number): V7Phase[] {
   currentTime = 3;
 
   acts.forEach((act, index) => {
-    const duration = act.duration || 60;
+    const duration = act.duration || act.endTime - act.startTime || 60;
     const endTime = currentTime + duration;
     const phaseType = mapActTypeToPhaseType(act.type);
+    
+    // For cinematic_flow, extract visual and audio separately
+    const visualData = hasCinematicFlow ? act.visual : act.content?.visual;
+    const audioData = hasCinematicFlow ? act.audio : act.content?.audio;
+    const interactionData = hasCinematicFlow ? act.interaction : act.content?.interaction;
     
     const phase: V7Phase = {
       id: act.id || `phase-${index + 1}`,
@@ -118,9 +131,23 @@ function transformActsToPhases(acts: any[], totalDuration: number): V7Phase[] {
       startTime: currentTime,
       endTime,
       type: phaseType,
-      mood: extractMood(act.content?.visual),
+      mood: extractMood(visualData),
       autoAdvance: phaseType !== 'interaction' && phaseType !== 'playground',
-      scenes: generateScenesForPhase(act, phaseType, currentTime, duration),
+      scenes: generateScenesForPhase(
+        { 
+          ...act, 
+          content: { 
+            visual: visualData, 
+            audio: audioData, 
+            interaction: interactionData,
+            // Pass visual.instruction as screen direction metadata
+            screenDirection: visualData?.instruction || '',
+          } 
+        }, 
+        phaseType, 
+        currentTime, 
+        duration
+      ),
     };
 
     phases.push(phase);
