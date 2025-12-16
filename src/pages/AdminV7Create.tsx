@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useV7LessonEditor } from '@/hooks/useV7LessonEditor';
 import { AI_CATEGORIES, DIFFICULTY_LABELS } from '@/constants/ai-categories';
+import { V7PipelineMonitor, PipelineStep, PipelineLog, DEFAULT_V7_PIPELINE_STEPS } from '@/components/admin/V7PipelineMonitor';
 
 export default function AdminV7Create() {
   const navigate = useNavigate();
@@ -92,6 +93,12 @@ export default function AdminV7Create() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLesson, setGeneratedLesson] = useState<any>(null);
+
+  // Pipeline Monitor State
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>([]);
+  const [pipelineLogs, setPipelineLogs] = useState<PipelineLog[]>([]);
+  const [pipelineProgress, setPipelineProgress] = useState(0);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
 
   // Sync form data when editing
   useEffect(() => {
@@ -186,12 +193,51 @@ export default function AdminV7Create() {
       return;
     }
 
+    // Reset and initialize pipeline monitor
     setIsGenerating(true);
+    setPipelineError(null);
+    setPipelineProgress(0);
+    setPipelineLogs([]);
+    setPipelineSteps(DEFAULT_V7_PIPELINE_STEPS.map(s => ({ ...s, status: 'pending' })));
+
+    const addLog = (level: PipelineLog['level'], message: string) => {
+      setPipelineLogs(prev => [...prev, { timestamp: new Date(), level, message }]);
+    };
+
+    const updateStep = (stepId: string, status: PipelineStep['status'], message?: string) => {
+      setPipelineSteps(prev => prev.map(s => 
+        s.id === stepId ? { ...s, status, message } : s
+      ));
+    };
 
     try {
       const payload = jsonValidation.data;
       
+      // Step 1: Validate
+      updateStep('validate', 'running');
+      addLog('info', 'Iniciando validação do JSON...');
+      await new Promise(r => setTimeout(r, 300));
+      updateStep('validate', 'completed');
+      setPipelineProgress(10);
+      addLog('success', 'JSON validado com sucesso');
+
+      // Step 2: Processing acts
+      updateStep('process-acts', 'running');
+      addLog('info', `Processando ${payload.cinematic_flow?.acts?.length || 0} atos cinematográficos...`);
+      setPipelineProgress(20);
+
+      // Step 3: Extract narration
+      updateStep('extract-narration', 'running');
+      addLog('info', 'Extraindo narrações de audio.narration...');
+      setPipelineProgress(30);
+
+      // Step 4: Generate audio (mark as running)
+      updateStep('generate-audio', 'running');
+      addLog('info', 'Preparando geração de áudio...');
+      setPipelineProgress(40);
+
       // Call V7 Pipeline Edge Function
+      addLog('info', 'Enviando para Pipeline V7...');
       const { data, error } = await supabase.functions.invoke('v7-pipeline', {
         body: {
           title: payload.title,
@@ -203,13 +249,42 @@ export default function AdminV7Create() {
           narrativeScript: payload.narrativeScript || '',
           sections: payload.sections,
           duration: payload.duration || 300,
-          // Support for cinematic_flow.acts structure
           cinematic_flow: payload.cinematic_flow,
         },
       });
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error || 'Pipeline failed');
+
+      // Update completed steps
+      updateStep('process-acts', 'completed', `${data.stats?.actCount || 0} atos`);
+      updateStep('extract-narration', 'completed', `${data.stats?.narrationCount || 0} narrações`);
+      setPipelineProgress(60);
+      
+      if (data.stats?.hasAudio) {
+        updateStep('generate-audio', 'completed', 'Áudio gerado');
+        addLog('success', 'Áudio gerado via ElevenLabs');
+      } else {
+        updateStep('generate-audio', 'completed', 'Sem áudio');
+        addLog('info', 'Geração de áudio pulada (desabilitada ou sem narração)');
+      }
+      setPipelineProgress(75);
+
+      // Step 5: Build content
+      updateStep('build-content', 'running');
+      addLog('info', 'Construindo conteúdo final...');
+      await new Promise(r => setTimeout(r, 200));
+      updateStep('build-content', 'completed');
+      setPipelineProgress(85);
+      addLog('success', 'Conteúdo construído');
+
+      // Step 6: Save to database
+      updateStep('save-database', 'running');
+      addLog('info', 'Salvando no banco de dados...');
+      await new Promise(r => setTimeout(r, 200));
+      updateStep('save-database', 'completed', `ID: ${data.lessonId?.slice(0, 8)}...`);
+      setPipelineProgress(100);
+      addLog('success', `Lição salva com ID: ${data.lessonId}`);
 
       toast({
         title: '✨ Lição V7 gerada com sucesso!',
@@ -225,6 +300,14 @@ export default function AdminV7Create() {
       });
     } catch (error: any) {
       console.error('[AdminV7Create] Pipeline error:', error);
+      setPipelineError(error.message);
+      addLog('error', `Erro: ${error.message}`);
+      
+      // Mark current running step as error
+      setPipelineSteps(prev => prev.map(s => 
+        s.status === 'running' ? { ...s, status: 'error' } : s
+      ));
+      
       toast({
         title: 'Erro ao gerar lição',
         description: error.message,
@@ -542,6 +625,15 @@ export default function AdminV7Create() {
                       </>
                     )}
                   </Button>
+
+                  {/* Pipeline Progress Monitor */}
+                  <V7PipelineMonitor
+                    isRunning={isGenerating}
+                    steps={pipelineSteps}
+                    logs={pipelineLogs}
+                    progress={pipelineProgress}
+                    error={pipelineError}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
