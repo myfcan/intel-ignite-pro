@@ -121,54 +121,32 @@ export async function deleteV7Lesson(lessonId: string) {
   return true;
 }
 
-// Regenerate audio for V7 lesson
-export async function regenerateV7Audio(
+// Regenerate audio for V7 lesson via ElevenLabs
+export async function regenerateV7LessonAudio(
   lessonId: string,
-  narrativeScript: string,
   voiceId?: string
-) {
+): Promise<{
+  success: boolean;
+  audioUrl?: string;
+  wordTimestampsCount?: number;
+  error?: string;
+}> {
   try {
-    // Get existing lesson
-    const lesson = await fetchV7Lesson(lessonId);
-    if (!lesson) throw new Error('Lesson not found');
+    console.log('[V7CinematicService] Regenerating audio for:', lessonId);
 
-    // Call pipeline with regenerate flag
-    const result = await submitToV7Pipeline({
-      title: lesson.title,
-      subtitle: lesson.description || '',
-      difficulty: (lesson.difficulty_level as any) || 'beginner',
-      category: (lesson.content as any)?.metadata?.category || 'IA',
-      tags: (lesson.content as any)?.metadata?.tags || [],
-      learningObjectives: (lesson.content as any)?.metadata?.learningObjectives || [],
-      narrativeScript,
-      duration: (lesson.estimated_time || 5) * 60,
-      voice_id: voiceId,
-      generate_audio: true,
+    const { data, error } = await supabase.functions.invoke('v7-regenerate-audio', {
+      body: { lessonId, voiceId },
     });
 
-    return result;
+    if (error) {
+      console.error('[V7CinematicService] Regenerate audio error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[V7CinematicService] Regenerate audio result:', data);
+    return data;
   } catch (err: any) {
-    console.error('[V7CinematicService] Regenerate error:', err);
+    console.error('[V7CinematicService] Error:', err);
     return { success: false, error: err.message };
   }
-}
-
-// Update lesson content
-export async function updateV7LessonContent(
-  lessonId: string,
-  updates: {
-    title?: string;
-    description?: string;
-    content?: any;
-    audio_url?: string;
-    word_timestamps?: any;
-  }
-) {
-  const { error } = await supabase
-    .from('lessons')
-    .update(updates)
-    .eq('id', lessonId);
-
-  if (error) throw error;
-  return true;
 }

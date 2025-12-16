@@ -1,21 +1,23 @@
 // src/pages/AdminV7Preview.tsx
 // Preview page for V7 Cinematic Lessons - Fetches from database
-// Last rebuild: 2025-12-15
+// Last rebuild: 2025-12-16
 
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Volume2, RefreshCw } from 'lucide-react';
 import { V7CinematicPlayer } from '@/components/lessons/v7/V7CinematicPlayer';
 import { v7TestLesson } from '@/data/v7-test-lesson';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { regenerateV7LessonAudio } from '@/services/v7CinematicService';
 import type { V7CinematicLesson, CinematicAct } from '@/types/v7-cinematic.types';
 
 export default function AdminV7Preview() {
   const navigate = useNavigate();
   const { lessonId } = useParams();
   const { toast } = useToast();
+  const [isRegeneratingAudio, setIsRegeneratingAudio] = useState(false);
 
   const [lesson, setLesson] = useState<V7CinematicLesson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -248,6 +250,47 @@ export default function AdminV7Preview() {
     console.log('[V7Preview] Progress:', progress.toFixed(1), '%');
   };
 
+  const handleRegenerateAudio = async () => {
+    if (!lessonId || lessonId.startsWith('v7-preview-')) {
+      toast({
+        title: 'Erro',
+        description: 'Não é possível regenerar áudio para lição de teste',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsRegeneratingAudio(true);
+    toast({
+      title: 'Gerando áudio...',
+      description: 'Isso pode levar alguns minutos',
+    });
+
+    try {
+      const result = await regenerateV7LessonAudio(lessonId);
+
+      if (result.success) {
+        toast({
+          title: '✅ Áudio gerado com sucesso!',
+          description: `${result.wordTimestampsCount || 0} timestamps de palavras`,
+        });
+        // Reload the page to get new audio
+        window.location.reload();
+      } else {
+        throw new Error(result.error || 'Falha ao gerar áudio');
+      }
+    } catch (err: any) {
+      console.error('[V7Preview] Regenerate audio error:', err);
+      toast({
+        title: 'Erro ao gerar áudio',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRegeneratingAudio(false);
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -284,7 +327,7 @@ export default function AdminV7Preview() {
   return (
     <div className="relative w-full h-screen bg-black">
       {/* Back button overlay */}
-      <div className="absolute top-4 left-4 z-50">
+      <div className="absolute top-4 left-4 z-50 flex gap-2">
         <Button
           variant="ghost"
           onClick={() => navigate('/admin/v7/create')}
@@ -293,6 +336,28 @@ export default function AdminV7Preview() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar
         </Button>
+        
+        {/* Regenerate Audio Button */}
+        {lessonId && !lessonId.startsWith('v7-preview-') && (
+          <Button
+            variant="ghost"
+            onClick={handleRegenerateAudio}
+            disabled={isRegeneratingAudio}
+            className="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 backdrop-blur-sm border border-cyan-500/30"
+          >
+            {isRegeneratingAudio ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 mr-2" />
+                Regenerar Áudio
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Error banner if using fallback */}
