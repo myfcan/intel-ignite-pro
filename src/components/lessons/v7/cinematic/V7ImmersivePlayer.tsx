@@ -4,21 +4,22 @@ import { V7MinimalTimeline } from "./V7MinimalTimeline";
 import { V7AudioIndicator } from "./V7AudioIndicator";
 import { V7AudioControls } from "./V7AudioControls";
 import { V7DiscreteNavigation } from "./V7DiscreteNavigation";
-import { OptimizedParticlesBackground } from "../OptimizedParticlesBackground";
+import { V7CinematicCanvas } from "./V7CinematicCanvas";
 import { useV7CinematicAudio } from "./useV7CinematicAudio";
+import { useV7SoundEffects } from "./useV7SoundEffects";
 
 interface V7Act {
   id: string;
   type: "dramatic" | "comparison" | "interaction" | "result" | "playground";
   content: ReactNode;
   autoAdvanceMs?: number;
-  audioUrl?: string; // Audio URL for this act
+  audioUrl?: string;
 }
 
 interface V7ImmersivePlayerProps {
   acts: V7Act[];
   totalDuration?: string;
-  audioUrl?: string; // Single audio URL for entire lesson
+  audioUrl?: string;
   onComplete?: () => void;
   onActChange?: (actIndex: number) => void;
 }
@@ -36,12 +37,16 @@ export const V7ImmersivePlayer = ({
   const totalActs = acts.length;
   const currentAct = acts[currentActIndex];
 
+  // Sound effects hook
+  const { playSound, unlockAudio } = useV7SoundEffects();
+
   // Audio hook
   const audio = useV7CinematicAudio({
     onEnded: () => {
       if (currentActIndex < totalActs - 1) {
         goToNext();
       } else {
+        playSound('completion');
         onComplete?.();
       }
     }
@@ -54,7 +59,24 @@ export const V7ImmersivePlayer = ({
     }
   }, [audioUrl]);
 
-  // Auto-advance logic (when no audio or audio not playing)
+  // Play sound effect on act change
+  useEffect(() => {
+    if (currentActIndex > 0) {
+      playSound('transition-whoosh');
+    }
+  }, [currentActIndex]);
+
+  // Unlock audio on first interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      unlockAudio();
+      window.removeEventListener('click', handleInteraction);
+    };
+    window.addEventListener('click', handleInteraction);
+    return () => window.removeEventListener('click', handleInteraction);
+  }, [unlockAudio]);
+
+  // Auto-advance logic
   useEffect(() => {
     if (currentAct?.autoAdvanceMs && currentActIndex < totalActs - 1 && !audio.isPlaying) {
       const timer = setTimeout(() => {
@@ -91,26 +113,30 @@ export const V7ImmersivePlayer = ({
 
   const goToNext = useCallback(() => {
     if (currentActIndex < totalActs - 1) {
+      playSound('transition-whoosh');
       setCurrentActIndex(prev => prev + 1);
     } else {
+      playSound('completion');
       onComplete?.();
     }
-  }, [currentActIndex, totalActs, onComplete]);
+  }, [currentActIndex, totalActs, onComplete, playSound]);
 
   const goToPrevious = useCallback(() => {
     if (currentActIndex > 0) {
+      playSound('click-soft');
       setCurrentActIndex(prev => prev - 1);
     }
-  }, [currentActIndex]);
+  }, [currentActIndex, playSound]);
 
   const skipToPlayground = useCallback(() => {
     const playgroundIndex = acts.findIndex(act => act.type === "playground");
+    playSound('transition-dramatic');
     if (playgroundIndex !== -1) {
       setCurrentActIndex(playgroundIndex);
     } else {
       setCurrentActIndex(totalActs - 1);
     }
-  }, [acts, totalActs]);
+  }, [acts, totalActs, playSound]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -130,6 +156,18 @@ export const V7ImmersivePlayer = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [goToNext, goToPrevious, audio]);
 
+  // Map act type to canvas mood
+  const getCanvasMood = (type: V7Act['type']): "dramatic" | "calm" | "energetic" | "mysterious" => {
+    switch (type) {
+      case 'dramatic': return 'dramatic';
+      case 'comparison': return 'mysterious';
+      case 'interaction': return 'energetic';
+      case 'result': return 'energetic';
+      case 'playground': return 'calm';
+      default: return 'dramatic';
+    }
+  };
+
   return (
     <div 
       className="w-full h-screen relative overflow-hidden cursor-none"
@@ -138,10 +176,11 @@ export const V7ImmersivePlayer = ({
       }}
       onMouseMove={() => setShowControls(true)}
     >
-      {/* Particles Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <OptimizedParticlesBackground />
-      </div>
+      {/* Cinematic Canvas Background */}
+      <V7CinematicCanvas 
+        mood={getCanvasMood(currentAct.type)}
+        intensity={audio.isPlaying ? "high" : "medium"}
+      />
 
       {/* Timeline */}
       <V7MinimalTimeline
@@ -152,10 +191,10 @@ export const V7ImmersivePlayer = ({
         isVisible={showControls}
       />
 
-      {/* Audio Indicator (animated bars when playing) */}
+      {/* Audio Indicator */}
       <V7AudioIndicator isPlaying={audio.isPlaying} />
 
-      {/* Audio Controls (play/pause, volume) */}
+      {/* Audio Controls */}
       {audioUrl && (
         <V7AudioControls
           isPlaying={audio.isPlaying}
@@ -175,10 +214,10 @@ export const V7ImmersivePlayer = ({
         <motion.div
           key={currentAct.id}
           className="absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
           {currentAct.content}
         </motion.div>
