@@ -7,6 +7,13 @@ import { V7DiscreteNavigation } from "./V7DiscreteNavigation";
 import { V7CinematicCanvas } from "./V7CinematicCanvas";
 import { useV7CinematicAudio } from "./useV7CinematicAudio";
 import { useV7SoundEffects } from "./useV7SoundEffects";
+import { V7SynchronizedCaptions } from "../V7SynchronizedCaptions";
+
+interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
 
 interface V7Act {
   id: string;
@@ -20,6 +27,7 @@ interface V7ImmersivePlayerProps {
   acts: V7Act[];
   totalDuration?: string;
   audioUrl?: string;
+  wordTimestamps?: WordTimestamp[];
   onComplete?: () => void;
   onActChange?: (actIndex: number) => void;
 }
@@ -28,6 +36,7 @@ export const V7ImmersivePlayer = ({
   acts,
   totalDuration = "8:00",
   audioUrl,
+  wordTimestamps = [],
   onComplete,
   onActChange
 }: V7ImmersivePlayerProps) => {
@@ -222,6 +231,16 @@ export const V7ImmersivePlayer = ({
           {currentAct.content}
         </motion.div>
       </AnimatePresence>
+
+      {/* Word-Level Synchronized Captions */}
+      {wordTimestamps.length > 0 && (
+        <V7SynchronizedCaptions
+          wordTimestamps={wordTimestamps}
+          currentTime={audio.currentTime}
+          isVisible={audio.isPlaying || audio.currentTime > 0}
+          maxWords={15}
+        />
+      )}
 
       {/* Navigation */}
       <motion.div

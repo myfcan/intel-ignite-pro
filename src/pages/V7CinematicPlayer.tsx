@@ -76,6 +76,7 @@ export default function V7CinematicPlayer() {
       acts={acts}
       totalDuration={totalDuration}
       audioUrl={lesson.audioUrl}
+      wordTimestamps={lesson.wordTimestamps}
       onComplete={handleComplete}
       onActChange={setCurrentActIndex}
     />
