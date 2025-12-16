@@ -65,7 +65,7 @@ const Dashboard = () => {
   // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
   // Recalcular progresso das trilhas quando isAdmin mudar (após loading completar)
-  // CRITICAL: Usamos um ref para evitar recálculo infinito mas garantir que isAdmin seja aplicado
+  // CRITICAL: Recálculo inline para evitar problemas de closure e ordem de declaração
   const hasRecalculatedForAdmin = useRef(false);
   
   useEffect(() => {
@@ -75,14 +75,37 @@ const Dashboard = () => {
     if (!adminLoading && isAdmin && trails.length > 0 && trailsProgress.length > 0 && !hasRecalculatedForAdmin.current) {
       console.log('[Dashboard] FORCING recalculation for admin user');
       hasRecalculatedForAdmin.current = true;
-      recalculateTrailsProgress();
+      
+      // Recalcular inline usando setter funcional
+      setTrailsProgress(currentProgress => {
+        if (currentProgress.length === 0) return currentProgress;
+        
+        const updatedProgress = currentProgress.map((tp, index) => {
+          const trail = trails.find(t => t.id === tp.trailId);
+          if (!trail) return tp;
+
+          let status: 'active' | 'completed' | 'locked';
+          if (tp.progress === 100) {
+            status = 'completed';
+          } else {
+            // Admin tem acesso a todas as trilhas
+            console.log('[Dashboard] Setting trail', trail.title, 'to ACTIVE for admin');
+            status = 'active';
+          }
+
+          return { ...tp, status };
+        });
+
+        console.log('[Dashboard] Updated progress for admin:', updatedProgress.map(p => ({ trailId: p.trailId, status: p.status })));
+        return updatedProgress;
+      });
     }
     
     // Reset o flag se o usuário deslogar
     if (!user?.id) {
       hasRecalculatedForAdmin.current = false;
     }
-  }, [isAdmin, adminLoading, trails.length, trailsProgress.length, user?.id]);
+  }, [isAdmin, adminLoading, trails, trailsProgress.length, user?.id]);
 
   const checkAuth = async () => {
     try {
@@ -142,34 +165,6 @@ const Dashboard = () => {
     }
   };
 
-  // Função para recalcular apenas o status das trilhas (sem buscar dados novamente)
-  const recalculateTrailsProgress = () => {
-    if (trails.length === 0 || trailsProgress.length === 0) return;
-
-    const updatedProgress = trailsProgress.map((tp, index) => {
-      const trail = trails.find(t => t.id === tp.trailId);
-      if (!trail) return tp;
-
-      let status: 'active' | 'completed' | 'locked';
-      if (tp.progress === 100) {
-        status = 'completed';
-      } else if (isAdmin) {
-        // Admins têm acesso a todas as trilhas
-        status = 'active';
-      } else if (trail.order_index === 1) {
-        // A primeira trilha sempre está desbloqueada
-        status = 'active';
-      } else {
-        // Trilhas seguintes só desbloqueiam quando a anterior estiver completa
-        const previousTrailProgress = trailsProgress[index - 1];
-        status = previousTrailProgress?.progress === 100 ? 'active' : 'locked';
-      }
-
-      return { ...tp, status };
-    });
-
-    setTrailsProgress(updatedProgress);
-  };
 
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
