@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
     if (content?.cinematic_flow?.acts) {
       const narrations: string[] = [];
       for (const act of content.cinematic_flow.acts) {
-        if (act.audio?.narration) {
-          narrations.push(act.audio.narration);
+        if (act.content?.audio?.narration) {
+          narrations.push(act.content.audio.narration);
         }
       }
       narrativeText = narrations.join('\n\n');
