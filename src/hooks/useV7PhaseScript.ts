@@ -120,10 +120,10 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
     const endTime = currentTime + duration;
     const phaseType = mapActTypeToPhaseType(act.type);
     
-    // For cinematic_flow, extract visual and audio separately
-    const visualData = hasCinematicFlow ? act.visual : act.content?.visual;
-    const audioData = hasCinematicFlow ? act.audio : act.content?.audio;
-    const interactionData = hasCinematicFlow ? act.interaction : act.content?.interaction;
+    // For cinematic_flow, extract visual and audio from act.content
+    const visualData = act.content?.visual;
+    const audioData = act.content?.audio;
+    const interactionData = act.content?.interaction;
     
     const phase: V7Phase = {
       id: act.id || `phase-${index + 1}`,
