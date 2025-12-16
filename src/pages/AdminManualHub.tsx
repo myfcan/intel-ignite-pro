@@ -98,7 +98,7 @@ export default function AdminManualHub() {
               </CardHeader>
               <CardContent className="pt-0">
                 <Button
-                  onClick={() => navigate('/admin/v7-create')}
+                  onClick={() => navigate('/admin/v7/create')}
                   className="w-full bg-amber-600 hover:bg-amber-700"
                   size="sm"
                 >
