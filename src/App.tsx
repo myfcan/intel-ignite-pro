@@ -63,6 +63,8 @@ const AdminTestCardSync = lazy(() => import("./pages/AdminTestCardSync"));
 const TestCard = lazy(() => import("./pages/TestCard"));
 const AdminV7Create = lazy(() => import("./pages/AdminV7Create"));
 const AdminV7Preview = lazy(() => import("./pages/AdminV7Preview"));
+const V7CinematicDemo = lazy(() => import("./pages/V7CinematicDemo"));
+const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
 
 const queryClient = new QueryClient();
 
@@ -112,7 +114,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <URLFixer />
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -139,6 +141,7 @@ const App = () => (
               } />
               <Route path="/lessons/:id" element={<Lesson />} />
               <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
+              <Route path="/v7/:lessonId" element={<V7CinematicPlayer />} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/admin/pipeline" element={<ProtectedRoute><AdminPipelineHub /></ProtectedRoute>} />
               <Route path="/admin/pipeline/create-single" element={<ProtectedRoute><AdminPipelineCreateSingle /></ProtectedRoute>} />
@@ -168,6 +171,8 @@ const App = () => (
               {/* V7 CINEMATIC ROUTES */}
               <Route path="/admin/v7/create" element={<ProtectedRoute><AdminV7Create /></ProtectedRoute>} />
               <Route path="/admin/v7/preview/:lessonId?" element={<ProtectedRoute><AdminV7Preview /></ProtectedRoute>} />
+              <Route path="/admin/v7/demo" element={<ProtectedRoute><V7CinematicDemo /></ProtectedRoute>} />
+              <Route path="/admin/v7/play/:lessonId" element={<ProtectedRoute><V7CinematicPlayer /></ProtectedRoute>} />
               {/* NEW FEATURES ROUTES */}
               <Route path="/guides" element={<Guides />} />
               <Route path="/guides/:guideId" element={<GuideDetail />} />

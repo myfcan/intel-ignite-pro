@@ -1,12 +1,18 @@
 // supabase/functions/v7-pipeline/index.ts
-// V7 Cinematic Lesson Pipeline - Generates cinematic lesson structure with ElevenLabs audio
+// V7 Cinematic Lesson Pipeline - 100% Automatic Act Generation from Narrative Script
+// Uses AI to analyze script and generate proper 5-act cinematic structure
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface V7PipelineInput {
   title: string;
@@ -21,25 +27,124 @@ interface V7PipelineInput {
   order_index?: number;
   voice_id?: string;
   generate_audio?: boolean;
+  // Support for rich cinematic_flow.acts structure
+  cinematic_flow?: {
+    acts: Array<{
+      id?: string;
+      type: string;
+      title?: string;
+      duration?: number;
+      visual?: {
+        instruction?: string; // NOT narrated - screen direction only
+        [key: string]: any;
+      };
+      audio?: {
+        narration?: string; // NARRATED by TTS
+        [key: string]: any;
+      };
+      interaction?: any;
+      content?: any;
+    }>;
+    timeline?: {
+      totalDuration?: number;
+    };
+  };
 }
 
-interface V7Act {
-  id: string;
-  type: 'narrative' | 'code-demo' | 'challenge' | 'comparison' | 'reveal';
+// V7 Cinematic Act Types (matching frontend components)
+type V7ActType = 'dramatic' | 'comparison' | 'interaction' | 'playground' | 'result';
+
+interface V7DramaticContent {
+  mainValue: string;
+  subtitle: string;
+  highlightWord?: string;
+  mood?: 'danger' | 'success' | 'warning' | 'neutral';
+}
+
+interface V7ComparisonContent {
   title: string;
+  subtitle?: string;
+  leftCard: {
+    label: string;
+    value: string;
+    isPositive: boolean;
+    details: string[];
+    icon?: string;
+  };
+  rightCard: {
+    label: string;
+    value: string;
+    isPositive: boolean;
+    details: string[];
+    icon?: string;
+  };
+}
+
+interface V7InteractionContent {
+  title: string;
+  subtitle?: string;
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect?: boolean;
+    isDefault?: boolean;
+  }>;
+  buttonText: string;
+}
+
+interface V7PlaygroundContent {
+  title: string;
+  subtitle?: string;
+  leftSide: {
+    label: string;
+    placeholder: string;
+    defaultValue?: string;
+    badge?: string;
+  };
+  rightSide: {
+    label: string;
+    placeholder: string;
+    defaultValue?: string;
+    isPro?: boolean;
+    badge?: string;
+  };
+}
+
+interface V7ResultContent {
+  emoji: string;
+  title: string;
+  message: string;
+  metrics: Array<{
+    label: string;
+    value: string | number;
+    suffix?: string;
+    icon?: string;
+    isHighlight?: boolean;
+  }>;
+  ctaText?: string;
+  celebrationLevel?: 'low' | 'medium' | 'high';
+}
+
+interface V7CinematicAct {
+  id: string;
+  type: V7ActType;
+  title: string;
+  narrativeSegment: string;
   startTime: number;
   endTime: number;
-  content: {
-    narrative?: string;
-    code?: { language: string; code: string; highlightLines?: number[] };
-    challenge?: { prompt: string; solution: string; hints: string[] };
-    comparison?: { before: string; after: string; explanation: string };
-    reveal?: { question: string; answer: string; explanation: string };
-  };
+  autoAdvanceMs?: number;
+  content: V7DramaticContent | V7ComparisonContent | V7InteractionContent | V7PlaygroundContent | V7ResultContent;
   visualEffects: {
-    particles?: boolean;
-    glow?: boolean;
-    cameraMovement?: string;
+    mood: 'dramatic' | 'calm' | 'energetic' | 'mysterious';
+    particles: boolean;
+    glow: boolean;
+    blur: boolean;
+    rays: boolean;
+  };
+  soundEffects: {
+    onEnter?: string;
+    onAction?: string;
+    ambient?: string;
   };
 }
 
@@ -49,8 +154,26 @@ interface WordTimestamp {
   end: number;
 }
 
+interface AIGeneratedActs {
+  acts: Array<{
+    type: V7ActType;
+    title: string;
+    narrativeSegment: string;
+    content: any;
+    visualEffects: {
+      mood: string;
+      particles: boolean;
+      glow: boolean;
+    };
+  }>;
+  summary: string;
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -62,33 +185,105 @@ Deno.serve(async (req) => {
 
     const input: V7PipelineInput = await req.json();
     console.log('[V7Pipeline] Starting pipeline for:', input.title);
+    
+    // Check if using cinematic_flow.acts (rich structure) or narrativeScript (flat)
+    const hasCinematicFlow = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
+    
+    if (hasCinematicFlow) {
+      console.log('[V7Pipeline] Using cinematic_flow.acts structure with', input.cinematic_flow!.acts.length, 'acts');
+    } else {
+      console.log('[V7Pipeline] Using flat narrativeScript, length:', input.narrativeScript?.length || 0);
+    }
 
-    // Validate input
-    if (!input.title || !input.narrativeScript) {
-      throw new Error('Title and narrative script are required');
+    if (!input.title) {
+      throw new Error('Title is required');
+    }
+    
+    if (!hasCinematicFlow && !input.narrativeScript) {
+      throw new Error('Either cinematic_flow.acts or narrativeScript is required');
     }
 
     // ========================================================================
-    // STEP 1: Parse narrative script into acts
+    // STEP 1: Process Acts (from cinematic_flow or AI generation)
     // ========================================================================
-    console.log('[V7Pipeline] Step 1: Parsing narrative script...');
+    let aiGeneratedActs: AIGeneratedActs;
+    let narrativeForAudio = '';
     
-    const acts = parseNarrativeIntoActs(input.narrativeScript, input.duration);
-    console.log('[V7Pipeline] Generated', acts.length, 'acts');
+    if (hasCinematicFlow) {
+      // Use provided cinematic_flow.acts directly
+      console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts...');
+      
+      // Extract ONLY audio.narration for TTS (not visual.instruction)
+      const narrations: string[] = [];
+      
+      aiGeneratedActs = {
+        acts: input.cinematic_flow!.acts.map((act, index) => {
+          // Extract narration for TTS
+          const narration = act.audio?.narration || '';
+          if (narration) {
+            narrations.push(narration);
+          }
+          
+          return {
+            type: (act.type || 'dramatic') as V7ActType,
+            title: act.title || `Ato ${index + 1}`,
+            narrativeSegment: narration, // Only narration, not visual instruction
+            content: {
+              // Preserve visual instruction as metadata (not for TTS)
+              visualInstruction: act.visual?.instruction || '',
+              // Pass through all visual content
+              ...act.visual,
+              // Pass through interaction content
+              ...act.interaction,
+              // Pass through any existing content
+              ...act.content,
+            },
+            visualEffects: {
+              mood: act.visual?.mood || 'dramatic',
+              particles: true,
+              glow: true,
+            },
+          };
+        }),
+        summary: `Aula V7 Cinematográfica: ${input.title}`,
+      };
+      
+      // Combine all narrations for TTS
+      narrativeForAudio = narrations.join('\n\n');
+      console.log('[V7Pipeline] Extracted', narrations.length, 'narration segments for TTS');
+      console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
+      
+    } else {
+      // Use AI to generate acts from flat narrativeScript
+      console.log('[V7Pipeline] Step 1: Generating cinematic acts with AI...');
+      aiGeneratedActs = await generateActsWithAI(input.narrativeScript, input.title);
+      narrativeForAudio = input.narrativeScript;
+    }
+    
+    console.log('[V7Pipeline] Processed', aiGeneratedActs.acts.length, 'acts');
 
     // ========================================================================
-    // STEP 2: Generate audio with ElevenLabs (if enabled)
+    // STEP 2: Build V7 Cinematic Acts Structure
+    // ========================================================================
+    console.log('[V7Pipeline] Step 2: Building cinematic act structure...');
+    
+    const cinematicActs = buildCinematicActs(aiGeneratedActs, input.duration);
+    console.log('[V7Pipeline] Built', cinematicActs.length, 'cinematic acts');
+
+    // ========================================================================
+    // STEP 3: Generate Audio with ElevenLabs (ONLY from narration, not visual instructions)
     // ========================================================================
     let audioUrl = '';
     let wordTimestamps: WordTimestamp[] = [];
     
-    const shouldGenerateAudio = input.generate_audio !== false; // Default true
+    const shouldGenerateAudio = input.generate_audio !== false && narrativeForAudio.length > 0;
     
     if (shouldGenerateAudio) {
-      console.log('[V7Pipeline] Step 2: Generating audio with ElevenLabs...');
+      console.log('[V7Pipeline] Step 3: Generating audio with ElevenLabs...');
+      console.log('[V7Pipeline] Audio text length:', narrativeForAudio.length, '(only narration, not visual instructions)');
       
       const audioResult = await generateAudioWithElevenLabs(
-        input.narrativeScript,
+        narrativeForAudio, // Only narration text, not visual instructions
         input.voice_id,
         supabase
       );
@@ -101,27 +296,49 @@ Deno.serve(async (req) => {
         
         // Recalculate act timings based on word timestamps
         if (wordTimestamps.length > 0) {
-          recalculateActTimings(acts, wordTimestamps, input.narrativeScript);
+          recalculateActTimingsFromWordTimestamps(
+            cinematicActs,
+            wordTimestamps,
+            narrativeForAudio
+          );
         }
       } else {
         console.warn('[V7Pipeline] Audio generation failed:', audioResult.error);
       }
     } else {
-      console.log('[V7Pipeline] Step 2: Skipping audio generation (disabled)');
+      console.log('[V7Pipeline] Step 3: Skipping audio generation (disabled or no narration)');
     }
 
     // ========================================================================
-    // STEP 3: Build V7 lesson structure
+    // STEP 4: Build Complete V7 Lesson Content
     // ========================================================================
-    console.log('[V7Pipeline] Step 3: Building lesson structure...');
+    console.log('[V7Pipeline] Step 4: Building complete lesson content...');
     
     const totalDuration = wordTimestamps.length > 0 
       ? Math.ceil(wordTimestamps[wordTimestamps.length - 1].end)
       : input.duration;
     
+    // Preserve original cinematic_flow if provided (for useV7PhaseScript to use)
+    const cinematic_flow = hasCinematicFlow ? {
+      acts: input.cinematic_flow!.acts.map((act, index) => ({
+        ...act,
+        id: act.id || `act-${index + 1}`,
+        // Ensure visual and audio are properly structured
+        visual: {
+          instruction: act.visual?.instruction || '', // Screen direction (NOT narrated)
+          ...act.visual,
+        },
+        audio: {
+          narration: act.audio?.narration || '', // TTS content
+          ...act.audio,
+        },
+      })),
+      timeline: input.cinematic_flow!.timeline || { totalDuration },
+    } : undefined;
+
     const lessonContent = {
-      model: 'v7',
-      version: '1.0.0',
+      model: 'v7-cinematic',
+      version: '2.0.0',
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
@@ -130,50 +347,69 @@ Deno.serve(async (req) => {
         tags: input.tags,
         learningObjectives: input.learningObjectives,
         totalDuration: totalDuration,
-        actCount: acts.length,
+        actCount: cinematicActs.length,
         createdAt: new Date().toISOString(),
+        generatedBy: hasCinematicFlow ? 'v7-pipeline-cinematic-flow' : 'v7-pipeline-ai',
+        hasCinematicFlow: hasCinematicFlow,
       },
       audioConfig: {
         url: audioUrl,
         format: 'mp3',
         sampleRate: 44100,
+        hasWordTimestamps: wordTimestamps.length > 0,
       },
-      timeline: {
-        acts: acts,
+      // Store the original cinematic_flow for frontend to use
+      cinematic_flow: cinematic_flow,
+      // Also store the processed structure for backward compatibility
+      cinematicStructure: {
+        acts: cinematicActs,
         totalDuration: totalDuration,
+        actTypes: cinematicActs.map(a => a.type),
       },
       interactivity: {
-        pausePoints: acts
-          .filter(a => a.type === 'challenge')
-          .map(a => a.startTime),
-        codePlaygrounds: acts
-          .filter(a => a.type === 'code-demo' || a.type === 'challenge')
+        pausePoints: cinematicActs
+          .filter(a => a.type === 'interaction' || a.type === 'playground')
+          .map(a => ({ actId: a.id, time: a.startTime, type: a.type })),
+        quizzes: cinematicActs
+          .filter(a => a.type === 'interaction')
           .map(a => ({
             actId: a.id,
-            language: a.content.code?.language || 'javascript',
-            starterCode: a.content.code?.code || '',
+            options: (a.content as V7InteractionContent).options,
+          })),
+        playgrounds: cinematicActs
+          .filter(a => a.type === 'playground')
+          .map(a => ({
+            actId: a.id,
+            config: a.content as V7PlaygroundContent,
           })),
       },
       visualTheme: {
-        primaryColor: 'cyan',
+        primaryColor: '#667eea',
+        secondaryColor: '#764ba2',
+        accentPositive: '#4ecdc4',
+        accentNegative: '#ff6b6b',
         particlesEnabled: true,
         glowEffects: true,
+        cinematicCanvas: true,
+      },
+      soundConfig: {
+        transitionSounds: true,
+        interactionFeedback: true,
+        celebrationEffects: true,
       },
     };
 
     // ========================================================================
-    // STEP 4: Save to database (ALWAYS save, trail_id optional)
+    // STEP 5: Save to Database
     // ========================================================================
-    let lessonId: string | null = null;
-    
-    console.log('[V7Pipeline] Step 4: Saving to database...');
+    console.log('[V7Pipeline] Step 5: Saving to database...');
     
     const { data: lesson, error: lessonError } = await supabase
       .from('lessons')
       .insert({
         title: input.title,
-        description: input.subtitle || '',
-        trail_id: input.trail_id || null, // Optional - can be assigned later
+        description: input.subtitle || aiGeneratedActs.summary,
+        trail_id: input.trail_id || null,
         order_index: input.order_index || 0,
         model: 'v7',
         lesson_type: 'v7-cinematic',
@@ -182,8 +418,8 @@ Deno.serve(async (req) => {
         word_timestamps: wordTimestamps.length > 0 ? wordTimestamps : null,
         estimated_time: Math.ceil(totalDuration / 60),
         difficulty_level: input.difficulty,
-        is_active: false, // Draft mode
-        status: 'draft',
+        is_active: false,
+        status: 'rascunho',
       })
       .select('id')
       .single();
@@ -193,7 +429,7 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to save lesson: ${lessonError.message}`);
     }
 
-    lessonId = lesson.id;
+    const lessonId = lesson.id;
     console.log('[V7Pipeline] Lesson saved with ID:', lessonId);
 
     // ========================================================================
@@ -206,15 +442,23 @@ Deno.serve(async (req) => {
       audioUrl,
       wordTimestampsCount: wordTimestamps.length,
       stats: {
-        actCount: acts.length,
+        actCount: cinematicActs.length,
+        actTypes: {
+          dramatic: cinematicActs.filter(a => a.type === 'dramatic').length,
+          comparison: cinematicActs.filter(a => a.type === 'comparison').length,
+          interaction: cinematicActs.filter(a => a.type === 'interaction').length,
+          playground: cinematicActs.filter(a => a.type === 'playground').length,
+          result: cinematicActs.filter(a => a.type === 'result').length,
+        },
         totalDuration: totalDuration,
-        interactivePoints: lessonContent.interactivity.pausePoints.length,
-        codePlaygrounds: lessonContent.interactivity.codePlaygrounds.length,
         hasAudio: !!audioUrl,
+        hasWordTimestamps: wordTimestamps.length > 0,
       },
+      aiSummary: aiGeneratedActs.summary,
     };
 
     console.log('[V7Pipeline] Pipeline completed successfully');
+    console.log('[V7Pipeline] Stats:', JSON.stringify(response.stats));
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -231,6 +475,350 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// ============================================================================
+// AI-POWERED ACT GENERATION
+// ============================================================================
+
+async function generateActsWithAI(narrativeScript: string, title: string): Promise<AIGeneratedActs> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  
+  if (!OPENAI_API_KEY) {
+    console.warn('[V7Pipeline:AI] OpenAI key not found, using fallback parsing');
+    return fallbackActParsing(narrativeScript, title);
+  }
+
+  const systemPrompt = `Você é um especialista em design instrucional cinematográfico. Sua tarefa é analisar um roteiro narrativo e dividi-lo em EXATAMENTE 5 atos cinematográficos seguindo esta estrutura:
+
+## ESTRUTURA DOS 5 ATOS OBRIGATÓRIOS:
+
+1. **ATO 1 - DRAMATIC (Hook)**: O gancho inicial que captura atenção com um dado impactante ou estatística chocante
+   - Tipo: "dramatic"
+   - Deve ter: mainValue (ex: "98%"), subtitle, highlightWord, mood (danger/success/warning)
+
+2. **ATO 2 - COMPARISON (Conflito)**: Comparação lado a lado mostrando dois caminhos/grupos diferentes
+   - Tipo: "comparison"
+   - Deve ter: leftCard (negativo) e rightCard (positivo) com label, value, isPositive, details[]
+
+3. **ATO 3 - INTERACTION (Quiz)**: Um teste/quiz interativo para engajar o usuário
+   - Tipo: "interaction"
+   - Deve ter: title, subtitle, options[] (com id, text, isCorrect), buttonText
+
+4. **ATO 4 - PLAYGROUND (Desafio)**: Um desafio prático split-screen comparando abordagens
+   - Tipo: "playground"
+   - Deve ter: leftSide (amador) e rightSide (profissional) com label, placeholder, badge
+
+5. **ATO 5 - RESULT (Revelação)**: O resultado/conclusão com métricas e CTA
+   - Tipo: "result"
+   - Deve ter: emoji, title, message, metrics[] (label, value, isHighlight), ctaText
+
+## REGRAS:
+- Extraia informações REAIS do roteiro, não invente dados
+- Cada ato deve ter um narrativeSegment com o trecho do roteiro correspondente
+- Mantenha o tom dramático e cinematográfico
+- Os valores/números devem vir do roteiro original
+- Responda APENAS com JSON válido, sem markdown
+
+## FORMATO DE RESPOSTA:
+{
+  "acts": [
+    {
+      "type": "dramatic",
+      "title": "O Choque Inicial",
+      "narrativeSegment": "Trecho do roteiro...",
+      "content": { ... conteúdo específico do tipo ... },
+      "visualEffects": { "mood": "dramatic", "particles": true, "glow": true }
+    },
+    ... mais 4 atos ...
+  ],
+  "summary": "Resumo da aula em uma frase"
+}`;
+
+  const userPrompt = `Analise este roteiro narrativo e gere os 5 atos cinematográficos:
+
+TÍTULO DA AULA: ${title}
+
+ROTEIRO COMPLETO:
+${narrativeScript}
+
+Gere os 5 atos (dramatic, comparison, interaction, playground, result) extraindo os dados reais do roteiro.`;
+
+  try {
+    console.log('[V7Pipeline:AI] Calling OpenAI for act generation...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[V7Pipeline:AI] OpenAI error:', response.status, errorText);
+      return fallbackActParsing(narrativeScript, title);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      console.error('[V7Pipeline:AI] No content in response');
+      return fallbackActParsing(narrativeScript, title);
+    }
+
+    // Parse JSON response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('[V7Pipeline:AI] No JSON found in response');
+      return fallbackActParsing(narrativeScript, title);
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as AIGeneratedActs;
+    console.log('[V7Pipeline:AI] Successfully generated', parsed.acts.length, 'acts');
+    
+    // Validate we have 5 acts
+    if (parsed.acts.length !== 5) {
+      console.warn('[V7Pipeline:AI] Expected 5 acts, got', parsed.acts.length);
+      // Fill missing acts
+      while (parsed.acts.length < 5) {
+        parsed.acts.push(createDefaultAct(parsed.acts.length, narrativeScript));
+      }
+    }
+
+    return parsed;
+
+  } catch (error: any) {
+    console.error('[V7Pipeline:AI] Error:', error);
+    return fallbackActParsing(narrativeScript, title);
+  }
+}
+
+function createDefaultAct(index: number, narrativeScript: string): AIGeneratedActs['acts'][0] {
+  const types: V7ActType[] = ['dramatic', 'comparison', 'interaction', 'playground', 'result'];
+  const type = types[index] || 'dramatic';
+  
+  const segment = narrativeScript.slice(
+    Math.floor(narrativeScript.length * index / 5),
+    Math.floor(narrativeScript.length * (index + 1) / 5)
+  );
+
+  const defaultContents: Record<V7ActType, any> = {
+    dramatic: {
+      mainValue: '98%',
+      subtitle: 'das pessoas não sabem usar IA corretamente',
+      highlightWord: 'não sabem',
+      mood: 'danger'
+    },
+    comparison: {
+      title: 'A Diferença',
+      leftCard: {
+        label: 'MAIORIA',
+        value: 'R$ 0',
+        isPositive: false,
+        details: ['Uso básico', 'Sem estratégia', 'Resultados mediocres']
+      },
+      rightCard: {
+        label: 'TOP 2%',
+        value: 'R$ 30K',
+        isPositive: true,
+        details: ['Uso profissional', 'Estratégia clara', 'Resultados extraordinários']
+      }
+    },
+    interaction: {
+      title: 'Teste Rápido',
+      subtitle: 'Como você usa IA atualmente?',
+      options: [
+        { id: 'opt1', text: 'Para resolver problemas reais', isCorrect: true },
+        { id: 'opt2', text: 'Para curiosidade e testes', isCorrect: false },
+        { id: 'opt3', text: 'Raramente uso', isCorrect: false }
+      ],
+      buttonText: 'Ver Resultado'
+    },
+    playground: {
+      title: 'Desafio Prático',
+      subtitle: 'Compare as duas abordagens',
+      leftSide: {
+        label: 'MODO AMADOR',
+        placeholder: 'Digite um prompt básico...',
+        badge: '❌'
+      },
+      rightSide: {
+        label: 'MODO PROFISSIONAL',
+        placeholder: 'Use o método estruturado...',
+        isPro: true,
+        badge: '✓'
+      }
+    },
+    result: {
+      emoji: '🚀',
+      title: 'Você Pode Fazer Parte do Top 2%',
+      message: 'Agora você conhece o caminho. A escolha é sua.',
+      metrics: [
+        { label: 'Potencial', value: 'Ilimitado', isHighlight: true },
+        { label: 'Próximo Passo', value: 'AGORA' }
+      ],
+      ctaText: 'Começar Agora',
+      celebrationLevel: 'high'
+    }
+  };
+
+  return {
+    type,
+    title: `Ato ${index + 1}`,
+    narrativeSegment: segment,
+    content: defaultContents[type],
+    visualEffects: {
+      mood: type === 'dramatic' ? 'dramatic' : type === 'result' ? 'energetic' : 'mysterious',
+      particles: true,
+      glow: true
+    }
+  };
+}
+
+function fallbackActParsing(narrativeScript: string, title: string): AIGeneratedActs {
+  console.log('[V7Pipeline] Using fallback act parsing');
+  
+  const paragraphs = narrativeScript
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+
+  const acts: AIGeneratedActs['acts'] = [];
+  const types: V7ActType[] = ['dramatic', 'comparison', 'interaction', 'playground', 'result'];
+  
+  for (let i = 0; i < 5; i++) {
+    const segmentStart = Math.floor(paragraphs.length * i / 5);
+    const segmentEnd = Math.floor(paragraphs.length * (i + 1) / 5);
+    const segment = paragraphs.slice(segmentStart, segmentEnd).join('\n\n');
+    
+    acts.push(createDefaultAct(i, segment || narrativeScript));
+    acts[i].narrativeSegment = segment || narrativeScript.slice(i * 200, (i + 1) * 200);
+  }
+
+  return {
+    acts,
+    summary: `Aula V7 Cinematográfica: ${title}`
+  };
+}
+
+// ============================================================================
+// BUILD CINEMATIC ACTS
+// ============================================================================
+
+function buildCinematicActs(aiActs: AIGeneratedActs, totalDuration: number): V7CinematicAct[] {
+  const timePerAct = totalDuration / aiActs.acts.length;
+  
+  return aiActs.acts.map((act, index) => {
+    const startTime = Math.floor(index * timePerAct);
+    const endTime = Math.floor((index + 1) * timePerAct);
+    
+    // Auto-advance for dramatic acts (hook)
+    const autoAdvanceMs = act.type === 'dramatic' ? 4000 : 
+                          act.type === 'comparison' ? 6000 : 
+                          undefined;
+
+    const cinematicAct: V7CinematicAct = {
+      id: `act-${index + 1}-${act.type}`,
+      type: act.type,
+      title: act.title,
+      narrativeSegment: act.narrativeSegment,
+      startTime,
+      endTime,
+      autoAdvanceMs,
+      content: act.content,
+      visualEffects: {
+        mood: mapMood(act.type, act.visualEffects?.mood),
+        particles: act.visualEffects?.particles ?? true,
+        glow: act.visualEffects?.glow ?? true,
+        blur: act.type === 'dramatic' || act.type === 'result',
+        rays: act.type === 'dramatic' || act.type === 'result',
+      },
+      soundEffects: {
+        onEnter: getSoundForAct(act.type, 'enter'),
+        onAction: getSoundForAct(act.type, 'action'),
+        ambient: act.type === 'dramatic' ? 'ambient-low' : undefined,
+      },
+    };
+
+    return cinematicAct;
+  });
+}
+
+function mapMood(actType: V7ActType, aiMood?: string): 'dramatic' | 'calm' | 'energetic' | 'mysterious' {
+  if (aiMood && ['dramatic', 'calm', 'energetic', 'mysterious'].includes(aiMood)) {
+    return aiMood as any;
+  }
+  
+  switch (actType) {
+    case 'dramatic': return 'dramatic';
+    case 'comparison': return 'mysterious';
+    case 'interaction': return 'energetic';
+    case 'playground': return 'calm';
+    case 'result': return 'energetic';
+    default: return 'dramatic';
+  }
+}
+
+function getSoundForAct(actType: V7ActType, trigger: 'enter' | 'action'): string {
+  const sounds: Record<V7ActType, { enter: string; action: string }> = {
+    dramatic: { enter: 'transition-dramatic', action: 'dramatic-hit' },
+    comparison: { enter: 'transition-whoosh', action: 'reveal' },
+    interaction: { enter: 'transition-whoosh', action: 'click-confirm' },
+    playground: { enter: 'transition-whoosh', action: 'success' },
+    result: { enter: 'reveal', action: 'completion' },
+  };
+  
+  return sounds[actType]?.[trigger] || 'transition-whoosh';
+}
+
+// ============================================================================
+// RECALCULATE TIMINGS FROM WORD TIMESTAMPS
+// ============================================================================
+
+function recalculateActTimingsFromWordTimestamps(
+  acts: V7CinematicAct[],
+  wordTimestamps: WordTimestamp[],
+  narrativeScript: string
+): void {
+  if (acts.length === 0 || wordTimestamps.length === 0) return;
+  
+  console.log('[V7Pipeline] Recalculating act timings from', wordTimestamps.length, 'word timestamps');
+  
+  // Calculate total words and assign proportionally
+  const totalWords = wordTimestamps.length;
+  const wordsPerAct = Math.ceil(totalWords / acts.length);
+  
+  acts.forEach((act, index) => {
+    const startWordIndex = index * wordsPerAct;
+    const endWordIndex = Math.min((index + 1) * wordsPerAct - 1, totalWords - 1);
+    
+    if (startWordIndex < totalWords) {
+      act.startTime = wordTimestamps[startWordIndex].start;
+    }
+    
+    if (endWordIndex < totalWords) {
+      act.endTime = wordTimestamps[endWordIndex].end;
+    }
+    
+    // Ensure last act goes to the very end
+    if (index === acts.length - 1) {
+      act.endTime = wordTimestamps[totalWords - 1].end;
+    }
+    
+    console.log(`[V7Pipeline] Act ${index + 1}: ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s`);
+  });
+}
 
 // ============================================================================
 // ELEVENLABS AUDIO GENERATION
@@ -252,8 +840,7 @@ async function generateAudioWithElevenLabs(
     return { success: false, error: 'ELEVENLABS_API_KEY not configured' };
   }
   
-  // Default voice: Alice (Xb7hH8MSUJpSbSDYk0k2) - good for Portuguese
-  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2';
+  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - good for Portuguese
   const modelId = 'eleven_multilingual_v2';
   
   console.log('[V7Pipeline:Audio] Generating audio...');
@@ -261,7 +848,6 @@ async function generateAudioWithElevenLabs(
   console.log('[V7Pipeline:Audio] Text length:', text.length);
   
   try {
-    // Call ElevenLabs with timestamps
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps`,
       {
@@ -298,7 +884,7 @@ async function generateAudioWithElevenLabs(
       return { success: false, error: 'No audio in response' };
     }
     
-    console.log('[V7Pipeline:Audio] Audio generated, size:', audioBase64.length);
+    console.log('[V7Pipeline:Audio] Audio generated, base64 length:', audioBase64.length);
     
     // Process word timestamps
     let wordTimestamps: WordTimestamp[] = [];
@@ -307,14 +893,14 @@ async function generateAudioWithElevenLabs(
         alignment.characters,
         alignment.character_start_times_seconds
       );
-      console.log('[V7Pipeline:Audio] Word timestamps:', wordTimestamps.length);
+      console.log('[V7Pipeline:Audio] Processed', wordTimestamps.length, 'word timestamps');
     }
     
     // Upload to Supabase Storage
     let audioUrl = '';
     if (supabase) {
       const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
-      const fileName = `v7-lesson-${Date.now()}.mp3`;
+      const fileName = `v7-cinematic-${Date.now()}.mp3`;
       
       const { error: uploadError } = await supabase.storage
         .from('lesson-audios')
@@ -345,10 +931,6 @@ async function generateAudioWithElevenLabs(
     return { success: false, error: error.message };
   }
 }
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 
 function processWordTimestamps(
   characters: string[],
@@ -384,182 +966,4 @@ function processWordTimestamps(
   }
   
   return words;
-}
-
-function parseNarrativeIntoActs(script: string, totalDuration: number): V7Act[] {
-  const acts: V7Act[] = [];
-  
-  // Split script into paragraphs
-  const paragraphs = script
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
-
-  if (paragraphs.length === 0) {
-    return [{
-      id: 'act-1',
-      type: 'narrative',
-      title: 'Introdução',
-      startTime: 0,
-      endTime: totalDuration,
-      content: { narrative: script },
-      visualEffects: { particles: true, glow: true },
-    }];
-  }
-
-  const timePerParagraph = totalDuration / paragraphs.length;
-
-  paragraphs.forEach((paragraph, index) => {
-    const startTime = Math.floor(index * timePerParagraph);
-    const endTime = Math.floor((index + 1) * timePerParagraph);
-    const actType = detectActType(paragraph);
-    
-    acts.push({
-      id: `act-${index + 1}`,
-      type: actType,
-      title: generateActTitle(paragraph, actType, index),
-      startTime,
-      endTime,
-      content: generateActContent(paragraph, actType),
-      visualEffects: {
-        particles: actType === 'reveal' || index === 0,
-        glow: actType === 'code-demo' || actType === 'challenge',
-        cameraMovement: index === 0 ? 'zoom-in' : 'pan',
-      },
-    });
-  });
-
-  return acts;
-}
-
-function recalculateActTimings(
-  acts: V7Act[],
-  wordTimestamps: WordTimestamp[],
-  narrativeScript: string
-): void {
-  if (acts.length === 0 || wordTimestamps.length === 0) return;
-  
-  const paragraphs = narrativeScript
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
-  
-  let wordIndex = 0;
-  
-  acts.forEach((act, actIndex) => {
-    const paragraph = paragraphs[actIndex] || '';
-    const paragraphWords = paragraph.split(/\s+/).filter(w => w.length > 0);
-    
-    // Find start time
-    if (wordIndex < wordTimestamps.length) {
-      act.startTime = wordTimestamps[wordIndex].start;
-    }
-    
-    // Move word index forward by paragraph word count
-    wordIndex += paragraphWords.length;
-    
-    // Find end time
-    if (wordIndex <= wordTimestamps.length) {
-      act.endTime = wordTimestamps[Math.min(wordIndex - 1, wordTimestamps.length - 1)].end;
-    }
-    
-    // Ensure last act goes to the end
-    if (actIndex === acts.length - 1) {
-      act.endTime = wordTimestamps[wordTimestamps.length - 1].end;
-    }
-  });
-  
-  console.log('[V7Pipeline] Act timings recalculated from word timestamps');
-}
-
-function detectActType(paragraph: string): V7Act['type'] {
-  const lower = paragraph.toLowerCase();
-  
-  if (lower.includes('```') || lower.includes('código') || lower.includes('function') || lower.includes('const ')) {
-    return 'code-demo';
-  }
-  if (lower.includes('desafio') || lower.includes('exercício') || lower.includes('tente') || lower.includes('pratique')) {
-    return 'challenge';
-  }
-  if (lower.includes('antes') && lower.includes('depois')) {
-    return 'comparison';
-  }
-  if (lower.includes('?') && lower.includes('resposta')) {
-    return 'reveal';
-  }
-  
-  return 'narrative';
-}
-
-function generateActTitle(paragraph: string, type: V7Act['type'], index: number): string {
-  const typeLabels: Record<string, string> = {
-    'narrative': 'Narrativa',
-    'code-demo': 'Demonstração',
-    'challenge': 'Desafio',
-    'comparison': 'Comparação',
-    'reveal': 'Revelação',
-  };
-  
-  const firstLine = paragraph.split('\n')[0].substring(0, 50);
-  if (firstLine.length > 10 && firstLine.length < 50) {
-    return firstLine.replace(/[#*_]/g, '').trim();
-  }
-  
-  return `${typeLabels[type]} ${index + 1}`;
-}
-
-function generateActContent(paragraph: string, type: V7Act['type']): V7Act['content'] {
-  switch (type) {
-    case 'code-demo':
-      const codeMatch = paragraph.match(/```(\w+)?\n([\s\S]*?)```/);
-      if (codeMatch) {
-        return {
-          narrative: paragraph.replace(/```[\s\S]*?```/, '').trim(),
-          code: {
-            language: codeMatch[1] || 'javascript',
-            code: codeMatch[2].trim(),
-          },
-        };
-      }
-      return {
-        narrative: paragraph,
-        code: {
-          language: 'javascript',
-          code: '// Código de exemplo\nconsole.log("Hello V7!");',
-        },
-      };
-
-    case 'challenge':
-      return {
-        narrative: paragraph,
-        challenge: {
-          prompt: paragraph,
-          solution: '// Solução será adicionada',
-          hints: ['Tente pensar passo a passo', 'Revise o conteúdo anterior'],
-        },
-      };
-
-    case 'comparison':
-      return {
-        narrative: paragraph,
-        comparison: {
-          before: '// Antes',
-          after: '// Depois (otimizado)',
-          explanation: paragraph,
-        },
-      };
-
-    case 'reveal':
-      return {
-        narrative: paragraph,
-        reveal: {
-          question: paragraph.split('?')[0] + '?',
-          answer: paragraph.split('?')[1]?.trim() || 'Resposta revelada!',
-          explanation: paragraph,
-        },
-      };
-
-    default:
-      return { narrative: paragraph };
-  }
 }

@@ -64,25 +64,29 @@ const Dashboard = () => {
   // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
   // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
-  // Recalcular progresso das trilhas quando isAdmin mudar (após loading completar)
-  // CRITICAL: Usamos um ref para evitar recálculo infinito mas garantir que isAdmin seja aplicado
-  const hasRecalculatedForAdmin = useRef(false);
-  
-  useEffect(() => {
-    console.log('[Dashboard] Admin check - isAdmin:', isAdmin, 'adminLoading:', adminLoading, 'user:', user?.id, 'hasRecalculated:', hasRecalculatedForAdmin.current);
-    
-    // Se já é admin e ainda não recalculamos, força recálculo
-    if (!adminLoading && isAdmin && trails.length > 0 && trailsProgress.length > 0 && !hasRecalculatedForAdmin.current) {
-      console.log('[Dashboard] FORCING recalculation for admin user');
-      hasRecalculatedForAdmin.current = true;
-      recalculateTrailsProgress();
+  // Derivar progresso das trilhas COM status de admin
+  // CRITICAL: Calcula status dinamicamente baseado em isAdmin
+  const trailsProgressWithStatus = trailsProgress.map((tp, index) => {
+    const trail = trails.find(t => t.id === tp.trailId);
+    if (!trail) return tp;
+
+    let status: 'active' | 'completed' | 'locked';
+    if (tp.progress === 100) {
+      status = 'completed';
+    } else if (isAdmin) {
+      // Admin tem acesso a todas as trilhas
+      status = 'active';
+    } else if (trail.order_index === 1) {
+      // Primeira trilha sempre desbloqueada
+      status = 'active';
+    } else {
+      // Trilhas seguintes dependem da anterior
+      const previousProgress = trailsProgress[index - 1];
+      status = previousProgress?.progress === 100 ? 'active' : 'locked';
     }
-    
-    // Reset o flag se o usuário deslogar
-    if (!user?.id) {
-      hasRecalculatedForAdmin.current = false;
-    }
-  }, [isAdmin, adminLoading, trails.length, trailsProgress.length, user?.id]);
+
+    return { ...tp, status };
+  });
 
   const checkAuth = async () => {
     try {
@@ -142,34 +146,6 @@ const Dashboard = () => {
     }
   };
 
-  // Função para recalcular apenas o status das trilhas (sem buscar dados novamente)
-  const recalculateTrailsProgress = () => {
-    if (trails.length === 0 || trailsProgress.length === 0) return;
-
-    const updatedProgress = trailsProgress.map((tp, index) => {
-      const trail = trails.find(t => t.id === tp.trailId);
-      if (!trail) return tp;
-
-      let status: 'active' | 'completed' | 'locked';
-      if (tp.progress === 100) {
-        status = 'completed';
-      } else if (isAdmin) {
-        // Admins têm acesso a todas as trilhas
-        status = 'active';
-      } else if (trail.order_index === 1) {
-        // A primeira trilha sempre está desbloqueada
-        status = 'active';
-      } else {
-        // Trilhas seguintes só desbloqueiam quando a anterior estiver completa
-        const previousTrailProgress = trailsProgress[index - 1];
-        status = previousTrailProgress?.progress === 100 ? 'active' : 'locked';
-      }
-
-      return { ...tp, status };
-    });
-
-    setTrailsProgress(updatedProgress);
-  };
 
   const fetchTrailsWithProgress = async (userId: string) => {
     try {
@@ -442,12 +418,12 @@ const Dashboard = () => {
             >
               <div className="flex gap-4 pb-2">
                 {trails.map((trail, index) => {
-                  const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
+                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
                   const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
                   
                   const previousTrail = trails[index - 1];
-                  const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
+                  const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
                   const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
                   
                   const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
@@ -511,12 +487,12 @@ const Dashboard = () => {
           {/* Desktop: Grid Normal */}
           <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5">
             {trails.map((trail, index) => {
-              const trailProgress = trailsProgress.find((tp) => tp.trailId === trail.id);
+              const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
               const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
               
               const previousTrail = trails[index - 1];
-              const previousProgress = trailsProgress.find((tp) => tp.trailId === previousTrail?.id);
+              const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
               const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
               
               const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;

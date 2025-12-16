@@ -5,7 +5,9 @@ import "./index.css";
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {
-  import('./lib/exerciseValidator.test');
+  import('./lib/exerciseValidator.test').catch(() => {
+    // Ignore test file loading errors in dev
+  });
 }
 
 createRoot(document.getElementById("root")!).render(

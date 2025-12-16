@@ -80,7 +80,6 @@ export const V7Subtitles = ({
     position: 'bottom',
   });
   const [showFullTranscript, setShowFullTranscript] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   
   const transcriptRef = useRef<HTMLDivElement>(null);
   const currentWordRef = useRef<HTMLSpanElement>(null);
@@ -217,136 +216,13 @@ export const V7Subtitles = ({
           )}
         </Button>
 
-        {/* Settings button */}
-        <Popover open={showSettings} onOpenChange={setShowSettings}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-lg bg-gray-600/80 hover:bg-gray-500/80"
-              aria-label="Configurações de legendas"
-            >
-              <Settings className="w-5 h-5 text-white" aria-hidden="true" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-72 bg-gray-900/95 backdrop-blur-lg border-gray-700 p-4"
-            side="top"
-            align="end"
-          >
-            <div className="space-y-4">
-              <h4 className="text-white text-sm font-medium">Configurações de Legenda</h4>
-
-              {/* Font Size */}
-              <div className="space-y-2">
-                <label className="text-white text-xs">Tamanho da fonte</label>
-                <div className="flex gap-2">
-                  {(['small', 'medium', 'large', 'xlarge'] as const).map((size) => (
-                    <Button
-                      key={size}
-                      onClick={() => handleSettingChange('fontSize', size)}
-                      variant="ghost"
-                      size="sm"
-                      className={`flex-1 text-xs ${
-                        settings.fontSize === size
-                          ? 'bg-cyan-500/80 text-white'
-                          : 'bg-gray-700/50 text-gray-300'
-                      }`}
-                    >
-                      {size === 'small' ? 'P' : size === 'medium' ? 'M' : size === 'large' ? 'G' : 'XG'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Background */}
-              <div className="space-y-2">
-                <label className="text-white text-xs">Fundo</label>
-                <div className="flex gap-2">
-                  {(['transparent', 'semi', 'solid'] as const).map((bg) => (
-                    <Button
-                      key={bg}
-                      onClick={() => handleSettingChange('backgroundColor', bg)}
-                      variant="ghost"
-                      size="sm"
-                      className={`flex-1 text-xs ${
-                        settings.backgroundColor === bg
-                          ? 'bg-cyan-500/80 text-white'
-                          : 'bg-gray-700/50 text-gray-300'
-                      }`}
-                    >
-                      {bg === 'transparent' ? 'Nenhum' : bg === 'semi' ? 'Semi' : 'Sólido'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Text Color */}
-              <div className="space-y-2">
-                <label className="text-white text-xs">Cor do texto</label>
-                <div className="flex gap-2">
-                  {(['white', 'yellow', 'cyan'] as const).map((color) => (
-                    <Button
-                      key={color}
-                      onClick={() => handleSettingChange('textColor', color)}
-                      variant="ghost"
-                      size="sm"
-                      className={`flex-1 ${
-                        settings.textColor === color
-                          ? 'ring-2 ring-cyan-500'
-                          : ''
-                      }`}
-                    >
-                      <span className={TEXT_COLOR_MAP[color]}>Aa</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Position */}
-              <div className="space-y-2">
-                <label className="text-white text-xs">Posição</label>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleSettingChange('position', 'top')}
-                    variant="ghost"
-                    size="sm"
-                    className={`flex-1 ${
-                      settings.position === 'top'
-                        ? 'bg-cyan-500/80 text-white'
-                        : 'bg-gray-700/50 text-gray-300'
-                    }`}
-                  >
-                    <ChevronUp className="w-4 h-4 mr-1" />
-                    Topo
-                  </Button>
-                  <Button
-                    onClick={() => handleSettingChange('position', 'bottom')}
-                    variant="ghost"
-                    size="sm"
-                    className={`flex-1 ${
-                      settings.position === 'bottom'
-                        ? 'bg-cyan-500/80 text-white'
-                        : 'bg-gray-700/50 text-gray-300'
-                    }`}
-                  >
-                    <ChevronDown className="w-4 h-4 mr-1" />
-                    Base
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Full transcript toggle */}
+        {/* Settings button - simplified without Popover to avoid re-render loop */}
         <Button
           onClick={() => setShowFullTranscript(!showFullTranscript)}
           variant="ghost"
           size="icon"
           className="rounded-lg bg-gray-600/80 hover:bg-gray-500/80"
-          aria-label={showFullTranscript ? 'Minimizar transcrição' : 'Ver transcrição completa'}
-          aria-expanded={showFullTranscript}
+          aria-label="Mostrar transcrição completa"
         >
           {showFullTranscript ? (
             <Minimize2 className="w-5 h-5 text-white" aria-hidden="true" />

@@ -1,0 +1,222 @@
+{
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "De 98% que brincam para 2% que faturam",
+  "difficulty": "beginner",
+  "category": "Prompt Engineering",
+  "estimated_time": 8,
+  "learning_objectives": [
+    "Entender a diferença entre uso amador e profissional de IA",
+    "Aprender o Método PERFEITO para prompts",
+    "Descobrir como monetizar habilidades com IA"
+  ],
+  "cinematic_flow": {
+    "timeline": {
+      "totalDuration": 540
+    },
+    "acts": [
+      {
+        "id": "act-1-dramatic",
+        "type": "dramatic",
+        "title": "Entrada Dramática",
+        "duration": 30,
+        "content": {
+          "visual": {
+            "instruction": "Tela preta com partículas → Número 98% surge gigante com animação count-up → Texto revela letra por letra → Palavra BRINQUEDO explode na tela com cor vermelha",
+            "mainValue": "98%",
+            "subtitle": "das pessoas usam IA como BRINQUEDO",
+            "highlightWord": "BRINQUEDO",
+            "mood": "dramatic",
+            "examples": [
+              "Conta uma piada.",
+              "Faz um poema sobre batata.",
+              "Escreve como pirata."
+            ]
+          },
+          "audio": {
+            "narration": "98 por cento... das pessoas... usam inteligência artificial como... BRINQUEDO. Sim. Brinquedo. 'Conta uma piada.' 'Faz um poema sobre batata.' 'Escreve como pirata.' Curiosidade. Teste. Diversão passageira."
+          }
+        }
+      },
+      {
+        "id": "act-2-narrative",
+        "type": "comparison",
+        "title": "Narrativa Comparativa",
+        "duration": 60,
+        "content": {
+          "visual": {
+            "instruction": "Split screen com dois cards lado a lado → Card esquerdo vermelho/negativo (98%) → Card direito verde/positivo (2%) → Contadores animados mostrando valores → Warning box surge embaixo com citação de Eric Schmidt",
+            "title": "98% vs 2%",
+            "leftCard": {
+              "label": "98% que brincam",
+              "value": "R$ 0",
+              "details": "Perguntam: 'O que a IA pode fazer?'",
+              "isPositive": false
+            },
+            "rightCard": {
+              "label": "2% que faturam",
+              "value": "R$ 30.000/mês",
+              "details": "Perguntam: 'O que EU posso fazer com a IA?'",
+              "isPositive": true
+            },
+            "warning": "Eric Schmidt, ex-CEO do Google: 'Vem aí um caos de 7 anos. Quem não dominar IA agora, será dominado por ela.'"
+          },
+          "audio": {
+            "narration": "Enquanto 98% brincam... Os outros 2% faturam 30 mil reais por mês. Trabalhando 2 horas por dia. Com 10 vezes mais produtividade. Não é exagero. É matemática. 98% perguntam: 'O que a IA pode fazer?' 2% perguntam: 'O que EU posso fazer com a IA?' 98% ganham zero reais extras. 2% criaram uma nova profissão. E tem mais... Eric Schmidt, ex-CEO do Google, acabou de alertar: 'Vem aí um caos de 7 anos. Quem não dominar IA agora, será dominado por ela.' Não em 20 anos. Não em 10 anos. Em 7 anos. A janela está fechando. E você? De que lado vai estar?"
+          }
+        }
+      },
+      {
+        "id": "act-3-interaction",
+        "type": "quiz",
+        "title": "Autoavaliação",
+        "duration": 60,
+        "content": {
+          "visual": {
+            "instruction": "Card central com título 'Teste Relâmpago' → Checkboxes animados surgindo um por um → Usuário seleciona opções → Após seleção, resultado surge com animação de impacto → Se marcou mais bad, card vermelho com alerta de perdas",
+            "question": "Suas últimas 5 interações com IA foram para quê?",
+            "title": "Descubra em qual grupo você está",
+            "options": [
+              { "id": "opt-1", "text": "Resolver um problema real de trabalho", "isCorrect": true, "category": "good" },
+              { "id": "opt-2", "text": "Automatizar uma tarefa repetitiva", "isCorrect": true, "category": "good" },
+              { "id": "opt-3", "text": "Criar conteúdo para ganhar dinheiro", "isCorrect": true, "category": "good" },
+              { "id": "opt-4", "text": "Economizar tempo significativo", "isCorrect": true, "category": "good" },
+              { "id": "opt-5", "text": "Curiosidade / Teste / Brincadeira", "isCorrect": false, "category": "bad" }
+            ],
+            "revealGoodMessage": "Você está no caminho certo! Continue usando IA estrategicamente.",
+            "revealBadMessage": "Se você marcou mais curiosidade que estratégia... Você está no grupo dos 98%. E está literalmente perdendo 2 mil reais por mês.",
+            "metrics": [
+              { "label": "Perda mensal", "value": "R$ 2.000" },
+              { "label": "Perda anual", "value": "R$ 24.000" }
+            ]
+          },
+          "audio": {
+            "narration": "Vamos descobrir em qual grupo você está. Teste relâmpago. Seja honesto. Suas últimas 5 interações com IA foram para quê? Se você marcou mais curiosidade que estratégia... Você está no grupo dos 98%. E está literalmente perdendo 2 mil reais por mês. Todo mês. 24 mil por ano. Jogados fora. Mas calma... Isso muda hoje. Nos próximos 5 minutos."
+          }
+        }
+      },
+      {
+        "id": "act-4-playground",
+        "type": "playground",
+        "title": "Desafio Playground",
+        "duration": 150,
+        "content": {
+          "visual": {
+            "instruction": "Split screen vertical → Lado esquerdo: Modo Amador (fundo vermelho escuro) → Lado direito: Modo Profissional (fundo verde escuro) → Prompts sendo digitados com animação de typing → Resultados surgem com comparação de scores → Barra de análise mostra métricas lado a lado",
+            "title": "DESAFIO PRÁTICO",
+            "subtitle": "Criar posts para uma loja de roupas femininas",
+            "challenge": "A diferença entre ganhar ZERO e ganhar 500 reais está em 30 segundos de conhecimento.",
+            "amateurPrompt": "me ajuda com posts para loja",
+            "professionalPrompt": "P - PAPEL: Atue como especialista em moda feminina e psicologia de consumo\nE - ESPECIFICIDADE: Crie 5 posts para Instagram sobre coleção outono/inverno\nR - REFERÊNCIA: Loja boutique para mulheres 25-40 anos, classe A/B\nF - FORMATO: Emoji + título instigante + texto de 3 linhas + CTA sutil\nE - EXEMPLO: Tom Vogue Brasil encontra Glamour\nI - INTENÇÃO: Despertar desejo sem parecer vendedor\nT - TOM: Sofisticado, íntimo, exclusivo\nO - OBSTÁCULOS: Evitar 'compre agora', 'promoção', 'imperdível'",
+            "amateurResult": {
+              "title": "Resultado Amador",
+              "content": "Compre agora!\nPromoção imperdível!\nNovidades chegaram!\nNão perca!\nAproveite!",
+              "score": 10,
+              "maxScore": 100,
+              "verdict": "fraco"
+            },
+            "professionalResult": {
+              "title": "Resultado Profissional",
+              "content": "🌙 O Pretinho Que Não É Básico\nAquele vestido que transita do board meeting para o happy hour sem pedir licença.\nQuantos pretinhos cabem em uma vida? (link na bio)\n\n✨ After Dark Collection\nQuando o sol se põe, sua personalidade brilha.\nPeças que conversam com a lua e dançam com as estrelas.\n\n🥂 O Blazer Que Sussurra Poder\nNão grita. Não precisa.\nQuando você sabe quem é, o mundo escuta em silêncio.",
+              "score": 95,
+              "maxScore": 100,
+              "verdict": "excelente"
+            },
+            "explanation": "Tempo extra investido: 30 segundos. Valor comercial: 500 reais. Isso é mil reais por minuto. 60 mil reais por hora.",
+            "analysisMetrics": [
+              { "label": "Especificidade", "amateur": 10, "professional": 95 },
+              { "label": "Originalidade", "amateur": 5, "professional": 92 },
+              { "label": "Valor comercial", "amateur": 0, "professional": 88 }
+            ]
+          },
+          "audio": {
+            "narration": "Vou te provar uma coisa. A diferença entre ganhar ZERO e ganhar 500 reais está em 30 segundos de conhecimento. Observe. DESAFIO: Criar posts para uma loja de roupas femininas. Primeiro, o jeito AMADOR - como 98% fazem. Genérico. Sem alma. Sem personalidade. Qualquer IA grátis faz isso. Valor comercial: ZERO reais. Agora observe o modo PROFISSIONAL - como os 2% fazem. Viu a diferença? Primeiro: genérico, esquecível, gratuito. Segundo: único, memorável, vendedor. Tempo extra investido: 30 segundos. Valor comercial: 500 reais. 500 reais por 30 segundos. Isso é mil reais por minuto. 60 mil reais por hora. E você ainda está brincando de 'conta piada'?"
+          }
+        }
+      },
+      {
+        "id": "act-5-revelation",
+        "type": "reveal",
+        "title": "Revelação e Transformação",
+        "duration": 120,
+        "content": {
+          "visual": {
+            "instruction": "Texto 'A diferença não é talento' surgindo → Palavra MÉTODO explode grande na tela → Cards das 7 IAs surgem em sequência com animação → Cada card tem emoji, título, subtítulo → Timeline de projeção aparece embaixo com marcos de 30/90/180 dias",
+            "mainValue": "MÉTODO",
+            "subtitle": "A diferença entre zero e 500 reais não é talento. É MÉTODO.",
+            "highlightWord": "MÉTODO",
+            "items": [
+              { "emoji": "🎭", "title": "ChatGPT", "subtitle": "O Camaleão Digital", "description": "Adapta-se a qualquer situação. Cria 100 variações de qualquer coisa." },
+              { "emoji": "🎓", "title": "Claude", "subtitle": "O Professor Particular", "description": "Explica o complexo como se fosse simples. Analisa profundamente." },
+              { "emoji": "🔍", "title": "Gemini", "subtitle": "O Pesquisador Obsessivo", "description": "Conectado ao Google. Informações em tempo real. Dados sempre atualizados." },
+              { "emoji": "🕵️", "title": "Perplexity", "subtitle": "O Detetive da Internet", "description": "Sempre mostra as fontes. Verifica tudo. Nunca mente." },
+              { "emoji": "😂", "title": "Grok", "subtitle": "O Comediante Inteligente", "description": "Respostas não convencionais. Humor que vende. Irreverência que engaja." },
+              { "emoji": "🎨", "title": "Meta AI", "subtitle": "O Criador Visual", "description": "Integrado às redes. Cria imagens. Viraliza conteúdo." },
+              { "emoji": "🤝", "title": "Dream Team", "subtitle": "Múltiplas IAs", "description": "Pipeline de produção. Uma cria, outra refina, outra valida." }
+            ],
+            "metrics": [
+              { "period": "30 dias", "result": "Você cobrando 500 reais por post" },
+              { "period": "90 dias", "result": "5 mil reais mensais extras" },
+              { "period": "6 meses", "result": "Você ensinando outros e cobrando por isso" }
+            ]
+          },
+          "audio": {
+            "narration": "A diferença entre zero e 500 reais não é talento. Não é experiência. Não é diploma. É MÉTODO. Os 2% conhecem o método. Os 98% não. Simples assim. E aqui está o mapa completo do que você vai dominar: ChatGPT - O Camaleão Digital. Adapta-se a qualquer situação. Cria 100 variações de qualquer coisa. Claude - O Professor Particular. Explica o complexo como se fosse simples. Analisa profundamente. Gemini - O Pesquisador Obsessivo. Conectado ao Google. Informações em tempo real. Dados sempre atualizados. Perplexity - O Detetive da Internet. Sempre mostra as fontes. Verifica tudo. Nunca mente. Grok - O Comediante Inteligente. Respostas não convencionais. Humor que vende. Irreverência que engaja. Meta AI - O Criador Visual. Integrado às redes. Cria imagens. Viraliza conteúdo. Dream Team - Múltiplas IAs. Pipeline de produção. Uma cria, outra refina, outra valida. Em 30 dias: Você cobrando 500 reais por post. Em 90 dias: 5 mil reais mensais extras. Em 6 meses: Você ensinando outros e cobrando por isso. Não é promessa. É matemática."
+          }
+        }
+      },
+      {
+        "id": "act-6-cta",
+        "type": "cta",
+        "title": "Call to Action Final",
+        "duration": 60,
+        "content": {
+          "visual": {
+            "instruction": "Dois cards de destino lado a lado → Card esquerdo escuro com emoji dormindo (98%) → Card direito brilhante com foguete (2%) → Animação de pulso no card positivo → Countdown 3-2-1 aparece antes da escolha",
+            "title": "A escolha é sua. E é agora.",
+            "ctaTitle": "Escolha seu destino",
+            "ctaOptions": [
+              { "label": "CONTINUAR 98%", "emoji": "😴", "variant": "secondary", "description": "Brincando com IA. Perdendo 2 mil por mês. Sendo ultrapassado." },
+              { "label": "ENTRAR NOS 2%", "emoji": "🚀", "variant": "primary", "description": "Dominar o método. Começar a faturar. Trabalhar menos. Ganhar mais." }
+            ],
+            "countdown": true
+          },
+          "audio": {
+            "narration": "Agora você tem duas opções. Opção 1: Continuar nos 98%. Brincando com IA. Perdendo 2 mil por mês. Sendo ultrapassado. Virando obsoleto em 7 anos. Opção 2: Entrar nos 2%. Dominar o método. Começar a faturar. Trabalhar menos. Ganhar mais. A escolha é sua. E é agora. Porque amanhã... Amanhã você volta pros 98%. A zona de conforto sempre vence. A não ser... que você faça algo diferente. Agora. Neste exato momento. 3... 2... 1... Escolha."
+          }
+        }
+      },
+      {
+        "id": "act-7-gamification",
+        "type": "gamification",
+        "title": "Conquistas Desbloqueadas",
+        "duration": 60,
+        "content": {
+          "visual": {
+            "instruction": "Confetti explosion → Badges surgindo com animação bounce → XP counter animado contando de 0 a 250 → Level up indicator → Cards de próximos passos surgem → Botões CTA para próxima aula e lembrete",
+            "title": "🎊 PARABÉNS!",
+            "subtitle": "Você completou a primeira aula",
+            "achievements": [
+              { "emoji": "✅", "title": "Saiu da Matrix", "description": "Entendeu a diferença entre 98% e 2%" },
+              { "emoji": "💰", "title": "Primeiro R$ 500", "description": "Aprendeu o método PERFEITO" },
+              { "emoji": "🧠", "title": "Mente Aberta", "description": "Está pronto para dominar as IAs" }
+            ],
+            "xpEarned": 250,
+            "newLevel": "DESPERTO",
+            "nextLesson": {
+              "title": "ChatGPT: O Camaleão Digital",
+              "subtitle": "Próxima aula disponível",
+              "emoji": "🎭"
+            },
+            "ctaButtons": [
+              { "label": "AGENDAR LEMBRETE", "emoji": "🔔", "variant": "secondary" },
+              { "label": "COMEÇAR AGORA", "emoji": "🚀", "variant": "primary" }
+            ]
+          },
+          "audio": {
+            "narration": "Parabéns! Você completou a primeira aula. E olha o que você desbloqueou: Conquista: Saiu da Matrix. Você entendeu a diferença entre os 98% e os 2%. Conquista: Primeiro 500 reais. Você aprendeu que 30 segundos de método valem 500 reais. Conquista: Mente Aberta. Você está pronto para dominar as IAs. Você ganhou 250 pontos de experiência. Seu novo nível: DESPERTO. Próxima aula: ChatGPT - O Camaleão Digital. A jornada está apenas começando. Te vejo na próxima aula."
+          }
+        }
+      }
+    ]
+  }
+}
