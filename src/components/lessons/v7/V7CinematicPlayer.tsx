@@ -47,7 +47,7 @@ export const V7CinematicPlayer = ({
   wordTimestamps = [],
   onComplete,
   onProgress,
-  autoPlay = false,
+  autoPlay = true,
 }: V7CinematicPlayerProps) => {
   // ============================================================================
   // ALL HOOKS AT TOP (Rules of Hooks)
@@ -104,6 +104,11 @@ export const V7CinematicPlayer = ({
   // Performance state
   const [reducedMotion, setReducedMotion] = useState(false);
   const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
+
+  // Cinematic experience state
+  const [showCursor, setShowCursor] = useState(true);
+  const [showControls, setShowControls] = useState(true);
+  const cursorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Analytics hook
   const { trackEvent, trackMetric } = useV7Analytics(lesson.id);
@@ -463,9 +468,71 @@ export const V7CinematicPlayer = ({
         setShowPerformanceOverlay(prev => !prev);
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Cinematic experience: Hide cursor and controls when idle
+  useEffect(() => {
+    const handleMouseMove = () => {
+      setShowCursor(true);
+      setShowControls(true);
+
+      // Clear existing timer
+      if (cursorTimerRef.current) {
+        clearTimeout(cursorTimerRef.current);
+      }
+
+      // Hide cursor and controls after 3 seconds of inactivity
+      if (playerState.isPlaying) {
+        cursorTimerRef.current = setTimeout(() => {
+          setShowCursor(false);
+          setShowControls(false);
+        }, 3000);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('click', handleMouseMove);
+
+    // Initial hide after 3 seconds if playing
+    if (playerState.isPlaying) {
+      cursorTimerRef.current = setTimeout(() => {
+        setShowCursor(false);
+        setShowControls(false);
+      }, 3000);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleMouseMove);
+      if (cursorTimerRef.current) {
+        clearTimeout(cursorTimerRef.current);
+      }
+    };
+  }, [playerState.isPlaying]);
+
+  // Fullscreen request on load (cinematic experience)
+  useEffect(() => {
+    const requestFullscreen = async () => {
+      try {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+          console.log('[V7Player] Fullscreen activated');
+        }
+      } catch (err) {
+        console.log('[V7Player] Fullscreen not available or denied:', err);
+      }
+    };
+
+    // Request fullscreen after a small delay (better UX)
+    const timer = setTimeout(() => {
+      requestFullscreen();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // ============================================================================
@@ -537,8 +604,9 @@ export const V7CinematicPlayer = ({
       onVolumeChange={setVolume}
       volume={volumeSettings.master}
     >
-      <div 
+      <div
         className="v7-cinematic-player relative w-full h-screen bg-black overflow-hidden"
+        style={{ cursor: showCursor ? 'default' : 'none' }}
         role="main"
         aria-label={`Reprodutor de aula: ${lesson.title}`}
       >
@@ -625,9 +693,10 @@ export const V7CinematicPlayer = ({
           lessonTitle={lesson.title}
         />
 
-        {/* Timeline - responsive, hidden on very small mobile */}
-        <div 
-          className="hidden sm:block" 
+        {/* Timeline - responsive, hidden on very small mobile, fades out when idle */}
+        <div
+          className="hidden sm:block transition-opacity duration-300"
+          style={{ opacity: showControls ? 1 : 0 }}
           id="v7-controls"
           role="region"
           aria-label="Linha do tempo da aula"
@@ -640,9 +709,10 @@ export const V7CinematicPlayer = ({
           />
         </div>
 
-        {/* Player controls - responsive with safe area */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 z-30 pb-safe"
+        {/* Player controls - responsive with safe area, fades out when idle */}
+        <div
+          className="absolute bottom-0 left-0 right-0 z-30 pb-safe transition-opacity duration-300"
+          style={{ opacity: showControls ? 1 : 0 }}
           role="toolbar"
           aria-label="Controles do player"
         >
