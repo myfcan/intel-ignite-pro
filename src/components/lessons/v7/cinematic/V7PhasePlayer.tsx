@@ -330,7 +330,7 @@ export const V7PhasePlayer = ({
 
   return (
     <div 
-      className="w-full h-screen relative overflow-hidden cursor-none"
+      className={`w-full h-screen relative overflow-hidden ${showControls ? 'cursor-default' : 'cursor-none'}`}
       style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)' }}
       onMouseMove={() => setShowControls(true)}
     >
