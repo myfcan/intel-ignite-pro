@@ -367,19 +367,21 @@ export const V7AdvancedAudioEngine = forwardRef<V7AdvancedAudioEngineRef, V7Adva
 
     return (
       <>
-        {/* Main narration audio */}
-        <audio
-          ref={narrationRef}
-          src={audioTrack.narration.url}
-          preload="auto"
-          className="hidden"
-          onTimeUpdate={handleTimeUpdate}
-          onCanPlay={handleAudioCanPlay}
-          onError={handleAudioError}
-        />
+        {/* Main narration audio - only render if URL is provided */}
+        {audioTrack.narration?.url && (
+          <audio
+            ref={narrationRef}
+            src={audioTrack.narration.url}
+            preload="auto"
+            className="hidden"
+            onTimeUpdate={handleTimeUpdate}
+            onCanPlay={handleAudioCanPlay}
+            onError={handleAudioError}
+          />
+        )}
 
         {/* Background music (optional) */}
-        {audioTrack.backgroundMusic && (
+        {audioTrack.backgroundMusic?.url && (
           <audio
             ref={musicRef}
             src={audioTrack.backgroundMusic.url}

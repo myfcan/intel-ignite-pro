@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { regenerateV7LessonAudio } from '@/services/v7CinematicService';
 import type { V7CinematicLesson, CinematicAct } from '@/types/v7-cinematic.types';
+import { adaptAdminLessonToV7, validateAdminLesson } from '@/services/v7-lesson-adapter';
 
 export default function AdminV7Preview() {
   const navigate = useNavigate();
@@ -56,174 +57,188 @@ export default function AdminV7Preview() {
           throw new Error(`Esta lição não é V7 (model: ${data.model})`);
         }
 
-        // Transform database content to V7CinematicLesson format
+        console.log('[V7Preview] Raw lesson data:', data);
+
+        // Use adapter to transform database content to V7CinematicLesson
         const content = data.content as any;
-        const timeline = content?.timeline || { acts: [], totalDuration: (data.estimated_time || 5) * 60 };
-        const totalDuration = content?.metadata?.totalDuration || timeline.totalDuration || (data.estimated_time || 5) * 60;
-        
-        // Define background gradients for variety
-        const gradients = [
-          'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-          'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-          'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
-          'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',
-          'linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)',
-          'linear-gradient(135deg, #232526 0%, #414345 100%)',
-        ];
-        
-        // Convert timeline acts to cinematicFlow acts format with proper visual structure
-        const cinematicActs: CinematicAct[] = (timeline.acts || []).map((act: any, index: number) => {
-          const actType = act.type === 'code-demo' ? 'interactive' : 
-                          act.type === 'comparison' ? 'revelation' : 
-                          act.type === 'challenge' ? 'challenge' :
-                          act.type || 'narrative';
-          
-          const narrative = act.content?.narrative || act.title || '';
-          const visualEffects = act.visualEffects || {};
-          const gradientIndex = index % gradients.length;
-          
-          return {
-            id: act.id || `act-${index + 1}`,
-            type: actType as CinematicAct['type'],
-            title: act.title || `Ato ${index + 1}`,
-            startTime: act.startTime || 0,
-            duration: (act.endTime || 0) - (act.startTime || 0),
-            content: {
-              visual: {
-                type: 'slide' as const,
-                background: { 
-                  type: 'gradient' as const, 
-                  value: gradients[gradientIndex],
-                  opacity: 1,
-                },
-                layers: [
-                  {
-                    id: `text-layer-${act.id}`,
-                    type: 'text' as const,
-                    zIndex: 10,
-                    position: { x: '10%', y: '40%', width: '80%', height: 'auto' },
-                    content: narrative,
-                    style: {
-                      color: '#ffffff',
-                      fontSize: '2rem',
-                      fontWeight: 'bold',
-                      lineHeight: '1.4',
-                      textShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                      textAlign: 'center',
-                    },
+
+        // Try adapter first (for new AdminLessonInput format)
+        if (validateAdminLesson(content)) {
+          console.log('[V7Preview] Using v7-lesson-adapter for transformation');
+          const v7Lesson = adaptAdminLessonToV7(data.id, content);
+          console.log('[V7Preview] Lesson adapted:', v7Lesson.title, '| Acts:', v7Lesson.cinematicFlow.acts.length);
+          setLesson(v7Lesson);
+        } else {
+          // Fallback to manual transformation for old format
+          console.log('[V7Preview] Using manual transformation for legacy format');
+
+          const timeline = content?.timeline || { acts: [], totalDuration: (data.estimated_time || 5) * 60 };
+          const totalDuration = content?.metadata?.totalDuration || timeline.totalDuration || (data.estimated_time || 5) * 60;
+
+          // Define background gradients for variety
+          const gradients = [
+            'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+            'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+            'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+            'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%)',
+            'linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)',
+            'linear-gradient(135deg, #232526 0%, #414345 100%)',
+          ];
+
+          // Convert timeline acts to cinematicFlow acts format with proper visual structure
+          const cinematicActs: CinematicAct[] = (timeline.acts || []).map((act: any, index: number) => {
+            const actType = act.type === 'code-demo' ? 'interactive' :
+                            act.type === 'comparison' ? 'revelation' :
+                            act.type === 'challenge' ? 'challenge' :
+                            act.type || 'narrative';
+
+            const narrative = act.content?.narrative || act.title || '';
+            const visualEffects = act.visualEffects || {};
+            const gradientIndex = index % gradients.length;
+
+            return {
+              id: act.id || `act-${index + 1}`,
+              type: actType as CinematicAct['type'],
+              title: act.title || `Ato ${index + 1}`,
+              startTime: act.startTime || 0,
+              duration: (act.endTime || 0) - (act.startTime || 0),
+              content: {
+                visual: {
+                  type: 'slide' as const,
+                  background: {
+                    type: 'gradient' as const,
+                    value: gradients[gradientIndex],
+                    opacity: 1,
                   },
+                  layers: [
+                    {
+                      id: `text-layer-${act.id}`,
+                      type: 'text' as const,
+                      zIndex: 10,
+                      position: { x: '10%', y: '40%', width: '80%', height: 'auto' },
+                      content: narrative,
+                      style: {
+                        color: '#ffffff',
+                        fontSize: '2rem',
+                        fontWeight: 'bold',
+                        lineHeight: '1.4',
+                        textShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        textAlign: 'center',
+                      },
+                    },
+                  ],
+                },
+                audio: {
+                  narrationSegment: {
+                    start: act.startTime || 0,
+                    end: act.endTime || (act.startTime || 0) + 60,
+                    text: narrative,
+                  },
+                },
+                animations: [],
+                particles: visualEffects.particles ? [{ id: `particles-${act.id}`, type: 'sparkle', color: '#60a5fa' }] : undefined,
+              },
+              transitions: {
+                in: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
+                out: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
+              },
+            };
+          });
+
+          const v7Lesson: V7CinematicLesson = {
+            id: data.id,
+            model: 'v7-cinematic',
+            title: data.title,
+            subtitle: content?.metadata?.subtitle || data.description || '',
+            duration: totalDuration,
+            metadata: {
+              difficulty: content?.metadata?.difficulty || data.difficulty_level || 'beginner',
+              category: content?.metadata?.category || 'javascript',
+              tags: content?.metadata?.tags || [],
+              description: data.description || '',
+              learningObjectives: content?.metadata?.learningObjectives || [],
+              estimatedTime: data.estimated_time || 5,
+              version: content?.version || '1.0.0',
+              createdAt: data.created_at || new Date().toISOString(),
+              updatedAt: data.created_at || new Date().toISOString(),
+            },
+            cinematicFlow: {
+              acts: cinematicActs,
+              timeline: {
+                totalDuration: totalDuration,
+                acts: cinematicActs.map((act) => ({
+                  actId: act.id,
+                  startTime: act.startTime,
+                  endTime: act.startTime + act.duration,
+                  color: act.type === 'narrative' ? '#667eea' :
+                         act.type === 'challenge' ? '#f59e0b' :
+                         act.type === 'revelation' ? '#10b981' : '#8b5cf6',
+                })),
+                markers: [],
+                chapters: cinematicActs.map((act) => ({
+                  id: act.id,
+                  title: act.title,
+                  startTime: act.startTime,
+                  endTime: act.startTime + act.duration,
+                })),
+              },
+              transitions: [],
+            },
+            audioTrack: {
+              narration: {
+                url: content?.audioConfig?.url || data.audio_url || '',
+                duration: totalDuration,
+                format: content?.audioConfig?.format || 'mp3',
+              },
+              syncPoints: cinematicActs.map((act) => ({
+                id: `sync-${act.id}`,
+                timestamp: act.startTime,
+                actId: act.id,
+                type: 'act-start' as const,
+              })),
+              volume: {
+                narration: 1,
+                music: 0.3,
+                effects: 0.5,
+              },
+            },
+            interactionPoints: content?.interactivity?.pausePoints?.map((time: number, i: number) => ({
+              id: `interaction-${i + 1}`,
+              timestamp: time,
+              actId: cinematicActs.find(a => a.startTime <= time && (a.startTime + a.duration) >= time)?.id || 'act-1',
+              type: 'quiz' as const,
+              required: false,
+              content: {
+                question: '',
+                options: [],
+              },
+            })) || [],
+            gamification: {
+              enabled: true,
+              xpRewards: [
+                { id: 'xp-completion', event: 'challenge-complete', amount: 100 },
+                { id: 'xp-interaction', event: 'interaction-success', amount: 50 },
+              ],
+              achievements: [],
+              scoring: {
+                maxScore: 100,
+                criteria: [
+                  { id: 'completion', name: 'Completude', weight: 0.5, maxPoints: 50 },
+                  { id: 'interactions', name: 'Interações', weight: 0.3, maxPoints: 30 },
+                  { id: 'time', name: 'Tempo', weight: 0.2, maxPoints: 20 },
                 ],
               },
-              audio: {
-                narrationSegment: {
-                  start: act.startTime || 0,
-                  end: act.endTime || (act.startTime || 0) + 60,
-                  text: narrative,
-                },
-              },
-              animations: [],
-              particles: visualEffects.particles ? [{ id: `particles-${act.id}`, type: 'sparkle', color: '#60a5fa' }] : undefined,
             },
-            transitions: {
-              in: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
-              out: { type: 'fade' as const, duration: 400, easing: 'ease-in-out' as const },
+            analytics: {
+              enabled: true,
+              events: [],
+              metrics: [],
             },
           };
-        });
 
-        const v7Lesson: V7CinematicLesson = {
-          id: data.id,
-          model: 'v7-cinematic',
-          title: data.title,
-          subtitle: content?.metadata?.subtitle || data.description || '',
-          duration: totalDuration,
-          metadata: {
-            difficulty: content?.metadata?.difficulty || data.difficulty_level || 'beginner',
-            category: content?.metadata?.category || 'javascript',
-            tags: content?.metadata?.tags || [],
-            description: data.description || '',
-            learningObjectives: content?.metadata?.learningObjectives || [],
-            estimatedTime: data.estimated_time || 5,
-            version: content?.version || '1.0.0',
-            createdAt: data.created_at || new Date().toISOString(),
-            updatedAt: data.created_at || new Date().toISOString(),
-          },
-          cinematicFlow: {
-            acts: cinematicActs,
-            timeline: {
-              totalDuration: totalDuration,
-              acts: cinematicActs.map((act) => ({
-                actId: act.id,
-                startTime: act.startTime,
-                endTime: act.startTime + act.duration,
-                color: act.type === 'narrative' ? '#667eea' : 
-                       act.type === 'challenge' ? '#f59e0b' : 
-                       act.type === 'revelation' ? '#10b981' : '#8b5cf6',
-              })),
-              markers: [],
-              chapters: cinematicActs.map((act) => ({
-                id: act.id,
-                title: act.title,
-                startTime: act.startTime,
-                endTime: act.startTime + act.duration,
-              })),
-            },
-            transitions: [],
-          },
-          audioTrack: {
-            narration: {
-              url: content?.audioConfig?.url || data.audio_url || '',
-              duration: totalDuration,
-              format: content?.audioConfig?.format || 'mp3',
-            },
-            syncPoints: cinematicActs.map((act) => ({
-              id: `sync-${act.id}`,
-              timestamp: act.startTime,
-              actId: act.id,
-              type: 'act-start' as const,
-            })),
-            volume: {
-              narration: 1,
-              music: 0.3,
-              effects: 0.5,
-            },
-          },
-          interactionPoints: content?.interactivity?.pausePoints?.map((time: number, i: number) => ({
-            id: `interaction-${i + 1}`,
-            timestamp: time,
-            actId: cinematicActs.find(a => a.startTime <= time && (a.startTime + a.duration) >= time)?.id || 'act-1',
-            type: 'quiz' as const,
-            required: false,
-            content: {
-              question: '',
-              options: [],
-            },
-          })) || [],
-          gamification: {
-            enabled: true,
-            xpRewards: [
-              { id: 'xp-completion', event: 'challenge-complete', amount: 100 },
-              { id: 'xp-interaction', event: 'interaction-success', amount: 50 },
-            ],
-            achievements: [],
-            scoring: {
-              maxScore: 100,
-              criteria: [
-                { id: 'completion', name: 'Completude', weight: 0.5, maxPoints: 50 },
-                { id: 'interactions', name: 'Interações', weight: 0.3, maxPoints: 30 },
-                { id: 'time', name: 'Tempo', weight: 0.2, maxPoints: 20 },
-              ],
-            },
-          },
-          analytics: {
-            enabled: true,
-            events: [],
-            metrics: [],
-          },
-        };
-
-        console.log('[V7Preview] Lesson loaded:', v7Lesson.title, '| Acts:', cinematicActs.length);
-        setLesson(v7Lesson);
+          console.log('[V7Preview] Lesson loaded:', v7Lesson.title, '| Acts:', cinematicActs.length);
+          setLesson(v7Lesson);
+        }
       } catch (err: any) {
         console.error('[V7Preview] Error fetching lesson:', err);
         setError(err.message);
@@ -374,7 +389,7 @@ export default function AdminV7Preview() {
         lesson={lesson}
         onComplete={handleComplete}
         onProgress={handleProgress}
-        autoPlay={false}
+        autoPlay={true}
       />
     </div>
   );
