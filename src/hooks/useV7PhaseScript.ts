@@ -188,7 +188,17 @@ function extractMood(visual: any): V7Phase['mood'] {
 // Generate scenes for a phase based on act content
 function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime: number, duration: number): V7Scene[] {
   const visual = act.content?.visual || {};
+  const interaction = act.content?.interaction || {};
+  const audio = act.content?.audio || {};
   const scenes: V7Scene[] = [];
+  
+  // Extract common fields that can appear in any act
+  const commonFields = {
+    narration: audio.narration || act.narration || '',
+    explanation: visual.explanation || interaction.explanation || act.explanation || '',
+    tip: visual.tip || interaction.tip || '',
+    warning: visual.warning || '',
+  };
   
   switch (phaseType) {
     case 'dramatic':
@@ -201,6 +211,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
           number: String(visual.mainValue || '01'),
           subtitle: visual.subtitle || act.title,
           highlightWord: visual.highlightWord,
+          ...commonFields,
         },
         animation: 'count-up',
       });
@@ -212,6 +223,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         content: {
           mainText: visual.subtitle || act.title,
           subtitle: visual.highlightWord ? `${visual.highlightWord}` : '',
+          ...commonFields,
         },
         animation: 'letter-by-letter',
       });
@@ -237,6 +249,14 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
               isPositive: visual.rightCard?.isPositive 
             },
           ],
+          // Playground comparison fields
+          amateurPrompt: visual.amateurPrompt || visual.leftCard?.prompt || '',
+          professionalPrompt: visual.professionalPrompt || visual.rightCard?.prompt || '',
+          amateurResult: visual.amateurResult || visual.leftCard?.result || '',
+          professionalResult: visual.professionalResult || visual.rightCard?.result || '',
+          amateurScore: visual.amateurScore || visual.leftCard?.score || 0,
+          professionalScore: visual.professionalScore || visual.rightCard?.score || 100,
+          ...commonFields,
         },
         animation: 'slide-left',
       });
@@ -254,38 +274,79 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
               right: visual.rightCard?.details || '' 
             },
           ],
+          ...commonFields,
         },
         animation: 'fade',
       });
       break;
 
     case 'interaction':
+      // Extract quiz-specific fields
+      const quizOptions = (visual.options || interaction.options || []).map((opt: any) => ({
+        id: opt.id || `opt-${Math.random().toString(36).substr(2, 9)}`,
+        label: opt.text || opt.label || '',
+        text: opt.text || opt.label || '',
+        isCorrect: opt.isCorrect ?? false,
+        category: opt.category || (opt.isCorrect ? 'good' : 'bad'),
+        feedback: opt.feedback || '',
+      }));
+
       scenes.push({
         id: `${act.id}-quiz`,
         type: 'quiz',
         startTime,
         duration,
         content: {
-          mainText: visual.question || 'Responda:',
-          options: (visual.options || []).map((opt: any) => ({
-            id: opt.id,
-            label: opt.text,
-            isCorrect: opt.isCorrect,
-          })),
+          mainText: visual.question || interaction.question || 'Responda:',
+          title: visual.title || interaction.title || 'Avaliação',
+          options: quizOptions,
+          correctFeedback: interaction.correctFeedback || visual.correctFeedback || 'Correto! 🎉',
+          incorrectFeedback: interaction.incorrectFeedback || visual.incorrectFeedback || 'Tente novamente',
+          revealGoodMessage: interaction.revealGoodMessage || visual.revealGoodMessage || '',
+          revealBadMessage: interaction.revealBadMessage || visual.revealBadMessage || '',
+          ...commonFields,
         },
         animation: 'slide-up',
       });
       break;
 
     case 'playground':
+      // Extract playground-specific fields
+      const playgroundVisual = visual.playground || visual;
+      
       scenes.push({
         id: `${act.id}-playground`,
         type: 'playground',
         startTime,
         duration,
         content: {
-          mainText: 'DESAFIO PRÁTICO',
-          subtitle: act.title,
+          mainText: playgroundVisual.title || 'DESAFIO PRÁTICO',
+          subtitle: playgroundVisual.subtitle || act.title,
+          challenge: playgroundVisual.challenge || playgroundVisual.description || '',
+          
+          // Amateur vs Professional comparison
+          amateurPrompt: playgroundVisual.amateurPrompt || playgroundVisual.amateur?.prompt || '',
+          professionalPrompt: playgroundVisual.professionalPrompt || playgroundVisual.professional?.prompt || '',
+          amateurResult: playgroundVisual.amateurResult || playgroundVisual.amateur?.result || {
+            title: 'Resultado Amador',
+            content: '',
+            score: 40,
+            maxScore: 100,
+            verdict: 'fraco',
+          },
+          professionalResult: playgroundVisual.professionalResult || playgroundVisual.professional?.result || {
+            title: 'Resultado Profissional',
+            content: '',
+            score: 95,
+            maxScore: 100,
+            verdict: 'excelente',
+          },
+          
+          // Additional playground context
+          context: playgroundVisual.context || '',
+          hints: playgroundVisual.hints || [],
+          successCriteria: playgroundVisual.successCriteria || [],
+          ...commonFields,
         },
         animation: 'fade',
       });
@@ -301,6 +362,9 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
           mainText: visual.mainValue || '✨',
           subtitle: visual.subtitle || act.title,
           highlightWord: visual.highlightWord,
+          items: visual.items || visual.bullets || [],
+          metrics: visual.metrics || [],
+          ...commonFields,
         },
         animation: 'explode',
       });
@@ -310,11 +374,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         startTime: startTime + duration * 0.5,
         duration: duration * 0.5,
         content: {
-          mainText: 'Próximos Passos',
-          options: [
+          mainText: visual.ctaTitle || 'Próximos Passos',
+          options: visual.ctaOptions || [
             { label: 'Revisar', emoji: '📚', variant: 'secondary' },
             { label: 'Continuar', emoji: '🚀', variant: 'primary' },
           ],
+          ...commonFields,
         },
         animation: 'fade',
       });
@@ -329,6 +394,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         content: {
           mainText: act.title || 'Conteúdo',
           subtitle: visual.subtitle || '',
+          ...commonFields,
         },
         animation: 'fade',
       });

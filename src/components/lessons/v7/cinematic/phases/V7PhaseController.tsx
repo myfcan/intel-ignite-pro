@@ -3,6 +3,58 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
+export interface V7SceneContent {
+  // Basic text fields
+  mainText?: string;
+  subtitle?: string;
+  number?: string;
+  highlightWord?: string;
+  title?: string;
+  
+  // Lists and collections
+  items?: any[];
+  options?: any[];
+  metrics?: any[];
+  hints?: string[];
+  successCriteria?: string[];
+  
+  // Playground comparison fields
+  challenge?: string;
+  context?: string;
+  amateurPrompt?: string;
+  professionalPrompt?: string;
+  amateurResult?: {
+    title?: string;
+    content?: string;
+    score?: number;
+    maxScore?: number;
+    verdict?: string;
+  } | string;
+  professionalResult?: {
+    title?: string;
+    content?: string;
+    score?: number;
+    maxScore?: number;
+    verdict?: string;
+  } | string;
+  amateurScore?: number;
+  professionalScore?: number;
+  
+  // Quiz/Interaction fields
+  correctFeedback?: string;
+  incorrectFeedback?: string;
+  revealGoodMessage?: string;
+  revealBadMessage?: string;
+  
+  // Additional context
+  narration?: string;
+  explanation?: string;
+  tip?: string;
+  warning?: string;
+  ctaTitle?: string;
+  ctaOptions?: any[];
+}
+
 export interface V7Scene {
   id: string;
   startWord?: number; // Word index to start this scene
@@ -10,15 +62,7 @@ export interface V7Scene {
   duration?: number;  // Duration in seconds
   type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' | 
         'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification';
-  content: {
-    mainText?: string;
-    subtitle?: string;
-    number?: string;
-    highlightWord?: string;
-    items?: any[];
-    options?: any[];
-    metrics?: any[];
-  };
+  content: V7SceneContent;
   animation: 'fade' | 'slide-up' | 'slide-left' | 'explode' | 'count-up' | 'letter-by-letter';
 }
 
