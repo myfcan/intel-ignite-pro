@@ -27,6 +27,28 @@ interface V7PipelineInput {
   order_index?: number;
   voice_id?: string;
   generate_audio?: boolean;
+  // Support for rich cinematic_flow.acts structure
+  cinematic_flow?: {
+    acts: Array<{
+      id?: string;
+      type: string;
+      title?: string;
+      duration?: number;
+      visual?: {
+        instruction?: string; // NOT narrated - screen direction only
+        [key: string]: any;
+      };
+      audio?: {
+        narration?: string; // NARRATED by TTS
+        [key: string]: any;
+      };
+      interaction?: any;
+      content?: any;
+    }>;
+    timeline?: {
+      totalDuration?: number;
+    };
+  };
 }
 
 // V7 Cinematic Act Types (matching frontend components)
@@ -163,19 +185,82 @@ Deno.serve(async (req) => {
 
     const input: V7PipelineInput = await req.json();
     console.log('[V7Pipeline] Starting pipeline for:', input.title);
-    console.log('[V7Pipeline] Narrative script length:', input.narrativeScript.length);
+    
+    // Check if using cinematic_flow.acts (rich structure) or narrativeScript (flat)
+    const hasCinematicFlow = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
+    
+    if (hasCinematicFlow) {
+      console.log('[V7Pipeline] Using cinematic_flow.acts structure with', input.cinematic_flow!.acts.length, 'acts');
+    } else {
+      console.log('[V7Pipeline] Using flat narrativeScript, length:', input.narrativeScript?.length || 0);
+    }
 
-    if (!input.title || !input.narrativeScript) {
-      throw new Error('Title and narrative script are required');
+    if (!input.title) {
+      throw new Error('Title is required');
+    }
+    
+    if (!hasCinematicFlow && !input.narrativeScript) {
+      throw new Error('Either cinematic_flow.acts or narrativeScript is required');
     }
 
     // ========================================================================
-    // STEP 1: AI-Powered Act Generation
+    // STEP 1: Process Acts (from cinematic_flow or AI generation)
     // ========================================================================
-    console.log('[V7Pipeline] Step 1: Generating cinematic acts with AI...');
+    let aiGeneratedActs: AIGeneratedActs;
+    let narrativeForAudio = '';
     
-    const aiGeneratedActs = await generateActsWithAI(input.narrativeScript, input.title);
-    console.log('[V7Pipeline] AI generated', aiGeneratedActs.acts.length, 'acts');
+    if (hasCinematicFlow) {
+      // Use provided cinematic_flow.acts directly
+      console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts...');
+      
+      // Extract ONLY audio.narration for TTS (not visual.instruction)
+      const narrations: string[] = [];
+      
+      aiGeneratedActs = {
+        acts: input.cinematic_flow!.acts.map((act, index) => {
+          // Extract narration for TTS
+          const narration = act.audio?.narration || '';
+          if (narration) {
+            narrations.push(narration);
+          }
+          
+          return {
+            type: (act.type || 'dramatic') as V7ActType,
+            title: act.title || `Ato ${index + 1}`,
+            narrativeSegment: narration, // Only narration, not visual instruction
+            content: {
+              // Preserve visual instruction as metadata (not for TTS)
+              visualInstruction: act.visual?.instruction || '',
+              // Pass through all visual content
+              ...act.visual,
+              // Pass through interaction content
+              ...act.interaction,
+              // Pass through any existing content
+              ...act.content,
+            },
+            visualEffects: {
+              mood: act.visual?.mood || 'dramatic',
+              particles: true,
+              glow: true,
+            },
+          };
+        }),
+        summary: `Aula V7 Cinematográfica: ${input.title}`,
+      };
+      
+      // Combine all narrations for TTS
+      narrativeForAudio = narrations.join('\n\n');
+      console.log('[V7Pipeline] Extracted', narrations.length, 'narration segments for TTS');
+      console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
+      
+    } else {
+      // Use AI to generate acts from flat narrativeScript
+      console.log('[V7Pipeline] Step 1: Generating cinematic acts with AI...');
+      aiGeneratedActs = await generateActsWithAI(input.narrativeScript, input.title);
+      narrativeForAudio = input.narrativeScript;
+    }
+    
+    console.log('[V7Pipeline] Processed', aiGeneratedActs.acts.length, 'acts');
 
     // ========================================================================
     // STEP 2: Build V7 Cinematic Acts Structure
@@ -186,18 +271,19 @@ Deno.serve(async (req) => {
     console.log('[V7Pipeline] Built', cinematicActs.length, 'cinematic acts');
 
     // ========================================================================
-    // STEP 3: Generate Audio with ElevenLabs
+    // STEP 3: Generate Audio with ElevenLabs (ONLY from narration, not visual instructions)
     // ========================================================================
     let audioUrl = '';
     let wordTimestamps: WordTimestamp[] = [];
     
-    const shouldGenerateAudio = input.generate_audio !== false;
+    const shouldGenerateAudio = input.generate_audio !== false && narrativeForAudio.length > 0;
     
     if (shouldGenerateAudio) {
       console.log('[V7Pipeline] Step 3: Generating audio with ElevenLabs...');
+      console.log('[V7Pipeline] Audio text length:', narrativeForAudio.length, '(only narration, not visual instructions)');
       
       const audioResult = await generateAudioWithElevenLabs(
-        input.narrativeScript,
+        narrativeForAudio, // Only narration text, not visual instructions
         input.voice_id,
         supabase
       );
@@ -213,14 +299,14 @@ Deno.serve(async (req) => {
           recalculateActTimingsFromWordTimestamps(
             cinematicActs,
             wordTimestamps,
-            input.narrativeScript
+            narrativeForAudio
           );
         }
       } else {
         console.warn('[V7Pipeline] Audio generation failed:', audioResult.error);
       }
     } else {
-      console.log('[V7Pipeline] Step 3: Skipping audio generation (disabled)');
+      console.log('[V7Pipeline] Step 3: Skipping audio generation (disabled or no narration)');
     }
 
     // ========================================================================
@@ -232,6 +318,24 @@ Deno.serve(async (req) => {
       ? Math.ceil(wordTimestamps[wordTimestamps.length - 1].end)
       : input.duration;
     
+    // Preserve original cinematic_flow if provided (for useV7PhaseScript to use)
+    const cinematic_flow = hasCinematicFlow ? {
+      acts: input.cinematic_flow!.acts.map((act, index) => ({
+        ...act,
+        id: act.id || `act-${index + 1}`,
+        // Ensure visual and audio are properly structured
+        visual: {
+          instruction: act.visual?.instruction || '', // Screen direction (NOT narrated)
+          ...act.visual,
+        },
+        audio: {
+          narration: act.audio?.narration || '', // TTS content
+          ...act.audio,
+        },
+      })),
+      timeline: input.cinematic_flow!.timeline || { totalDuration },
+    } : undefined;
+
     const lessonContent = {
       model: 'v7-cinematic',
       version: '2.0.0',
@@ -245,7 +349,8 @@ Deno.serve(async (req) => {
         totalDuration: totalDuration,
         actCount: cinematicActs.length,
         createdAt: new Date().toISOString(),
-        generatedBy: 'v7-pipeline-ai',
+        generatedBy: hasCinematicFlow ? 'v7-pipeline-cinematic-flow' : 'v7-pipeline-ai',
+        hasCinematicFlow: hasCinematicFlow,
       },
       audioConfig: {
         url: audioUrl,
@@ -253,6 +358,9 @@ Deno.serve(async (req) => {
         sampleRate: 44100,
         hasWordTimestamps: wordTimestamps.length > 0,
       },
+      // Store the original cinematic_flow for frontend to use
+      cinematic_flow: cinematic_flow,
+      // Also store the processed structure for backward compatibility
       cinematicStructure: {
         acts: cinematicActs,
         totalDuration: totalDuration,
