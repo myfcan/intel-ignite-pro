@@ -34,16 +34,19 @@ interface V7PipelineInput {
       type: string;
       title?: string;
       duration?: number;
-      visual?: {
-        instruction?: string; // NOT narrated - screen direction only
+      content?: {
+        visual?: {
+          instruction?: string; // NOT narrated - screen direction only
+          text?: string;
+          [key: string]: any;
+        };
+        audio?: {
+          narration?: string; // NARRATED by TTS
+          [key: string]: any;
+        };
+        interaction?: any;
         [key: string]: any;
       };
-      audio?: {
-        narration?: string; // NARRATED by TTS
-        [key: string]: any;
-      };
-      interaction?: any;
-      content?: any;
     }>;
     timeline?: {
       totalDuration?: number;
@@ -218,28 +221,28 @@ Deno.serve(async (req) => {
       
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // Extract narration for TTS
-          const narration = act.audio?.narration || '';
+          // Extract narration for TTS from act.content.audio.narration
+          const narration = act.content?.audio?.narration || '';
           if (narration) {
             narrations.push(narration);
           }
-          
+
           return {
             type: (act.type || 'dramatic') as V7ActType,
             title: act.title || `Ato ${index + 1}`,
             narrativeSegment: narration, // Only narration, not visual instruction
             content: {
               // Preserve visual instruction as metadata (not for TTS)
-              visualInstruction: act.visual?.instruction || '',
+              visualInstruction: act.content?.visual?.instruction || '',
               // Pass through all visual content
-              ...act.visual,
+              ...act.content?.visual,
               // Pass through interaction content
-              ...act.interaction,
+              ...act.content?.interaction,
               // Pass through any existing content
               ...act.content,
             },
             visualEffects: {
-              mood: act.visual?.mood || 'dramatic',
+              mood: act.content?.visual?.mood || 'dramatic',
               particles: true,
               glow: true,
             },
@@ -323,14 +326,17 @@ Deno.serve(async (req) => {
       acts: input.cinematic_flow!.acts.map((act, index) => ({
         ...act,
         id: act.id || `act-${index + 1}`,
-        // Ensure visual and audio are properly structured
-        visual: {
-          instruction: act.visual?.instruction || '', // Screen direction (NOT narrated)
-          ...act.visual,
-        },
-        audio: {
-          narration: act.audio?.narration || '', // TTS content
-          ...act.audio,
+        // Ensure content.visual and content.audio are properly structured
+        content: {
+          ...act.content,
+          visual: {
+            instruction: act.content?.visual?.instruction || '', // Screen direction (NOT narrated)
+            ...act.content?.visual,
+          },
+          audio: {
+            narration: act.content?.audio?.narration || '', // TTS content
+            ...act.content?.audio,
+          },
         },
       })),
       timeline: input.cinematic_flow!.timeline || { totalDuration },

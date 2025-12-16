@@ -148,7 +148,7 @@ export default function AdminV7Create() {
       let narrationCount = 0;
       if (hasCinematicFlow) {
         narrationCount = parsed.cinematic_flow.acts.filter(
-          (act: any) => act.audio?.narration
+          (act: any) => act.content?.audio?.narration
         ).length;
       }
 

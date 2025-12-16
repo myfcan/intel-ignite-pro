@@ -1,0 +1,170 @@
+{
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "98% brinca. 2% lucra. Você decide.",
+  "difficulty": "intermediate",
+  "category": "prompts",
+  "duration": 480,
+  "tags": ["prompts", "profissional", "método-perfeito"],
+  "learningObjectives": [
+    "Identificar a diferença entre uso amador e profissional de IA",
+    "Dominar o Método PERFEITO de prompting",
+    "Aplicar técnicas avançadas com 7 IAs diferentes"
+  ],
+  "cinematic_flow": {
+    "timeline": {
+      "totalDuration": 480
+    },
+    "acts": [
+      {
+        "id": "act-1-dramatic",
+        "type": "dramatic",
+        "title": "98% vs 2%: A Diferença Brutal",
+        "duration": 60,
+        "content": {
+          "visual": {
+            "text": "98% DAS PESSOAS BRINCAM COM IA\n\n2% LUCRAM R$ 30 MIL POR MÊS",
+            "background": "dark-gradient",
+            "effects": ["dramatic-zoom", "particles"]
+          },
+          "audio": {
+            "narration": "Enquanto noventa e oito porcento das pessoas tratam inteligência artificial como um brinquedo, gerando memes e respostas genéricas, uma minoria de dois porcento está faturando entre vinte e cinquenta mil reais por mês. A diferença? Eles sabem exatamente como fazer as perguntas certas. Eles dominam a arte do prompting profissional."
+          }
+        }
+      },
+      {
+        "id": "act-2-narrative",
+        "type": "comparison",
+        "title": "Amador vs Profissional: Veja a Diferença",
+        "duration": 90,
+        "content": {
+          "visual": {
+            "text": "AMADOR:\n'Crie um post para Instagram sobre marketing digital'\n\nVERSUS\n\nPROFISSIONAL:\n'Atue como especialista em copywriting com 10 anos de experiência. Crie um carrossel de 5 slides...'",
+            "layout": "split-screen"
+          },
+          "audio": {
+            "narration": "Veja a diferença brutal. Um amador pede: crie um post para Instagram sobre marketing digital. Um profissional estrutura: atue como especialista em copywriting com dez anos de experiência. Crie um carrossel de cinco slides para Instagram focado em empreendedores iniciantes, usando gatilhos de urgência e prova social, com call to action direto para captura de lead. A diferença nos resultados? Astronômica. Enquanto o amador recebe uma postagem genérica que ninguém vai salvar, o profissional recebe um conteúdo que gera mil leads em uma semana."
+          }
+        }
+      },
+      {
+        "id": "act-3-interaction",
+        "type": "quiz",
+        "title": "Quiz: Você é 98% ou 2%?",
+        "duration": 45,
+        "content": {
+          "visual": {
+            "question": "Como você geralmente faz prompts para IA?",
+            "options": [
+              {
+                "id": "opt-1",
+                "text": "Perguntas simples e diretas, sem contexto",
+                "correct": false,
+                "feedback": "Esse é o jeito amador! Mas não se preocupe, vamos te ensinar a profissionalizar seus prompts."
+              },
+              {
+                "id": "opt-2",
+                "text": "Estruturados com contexto, objetivo e formato específico",
+                "correct": true,
+                "feedback": "Excelente! Você já está no caminho certo dos 2% que realmente lucram! 🎯"
+              },
+              {
+                "id": "opt-3",
+                "text": "Copio prompts prontos da internet",
+                "correct": false,
+                "feedback": "Prompts genéricos geram resultados genéricos. Hora de criar seus próprios prompts profissionais!"
+              }
+            ],
+            "hint": "Pense: profissionais estruturam com contexto, amadores improvisam",
+            "points": 50,
+            "successMessage": "Isso mesmo! Contexto e estrutura são TUDO em prompts profissionais! 🚀",
+            "errorMessage": "Não se preocupe, você vai aprender o método certo agora mesmo!"
+          },
+          "audio": {
+            "narration": "Pausa para reflexão. Como você está usando inteligência artificial agora? Seja honesto com você mesmo. Essa autoavaliação é o primeiro passo para sair dos noventa e oito porcento e entrar nos dois porcento que realmente lucram com IA. Responda com sinceridade."
+          }
+        }
+      },
+      {
+        "id": "act-4-playground",
+        "type": "playground",
+        "title": "Desafio: Transforme Prompt Amador em PRO",
+        "duration": 120,
+        "content": {
+          "visual": {
+            "question": "Transforme este prompt amador em um prompt profissional",
+            "challenge": "Prompt Amador:\n'Me ajude a vender mais'\n\nSua missão: Reescrever usando estrutura profissional com contexto, objetivo e formato",
+            "initialCode": "// Prompt Amador\n'Me ajude a vender mais'\n\n// Seu Prompt Profissional:\n",
+            "solution": "Atue como consultor de vendas B2B especializado em SaaS para pequenas e médias empresas.\n\nContexto: Empresa com 50 clientes ativos, ticket médio de R$ 500 por mês, taxa de conversão atual de 2% em demos.\n\nObjetivo: Criar sequência completa de follow-up pós-demo para aumentar taxa de conversão de 2% para 5% em um período de 60 dias.\n\nFormato esperado: 5 emails sequenciais + 3 mensagens personalizadas para WhatsApp, cada uma com gatilhos de urgência específicos e elementos de prova social.\n\nTom de comunicação: Consultivo e orientado a dados, focando sempre no ROI tangível para o cliente.",
+            "language": "text",
+            "points": 100
+          },
+          "audio": {
+            "narration": "Agora é sua vez de praticar! Pegue esse prompt amador e transforme em um prompt profissional completo. Aplique estrutura, adicione contexto relevante e defina objetivo claro. Essa é a diferença que separa quem lucra de quem apenas brinca com IA. Pense como um profissional."
+          }
+        }
+      },
+      {
+        "id": "act-5-revelation",
+        "type": "revelation",
+        "title": "Método PERFEITO: A Fórmula Exata dos 2%",
+        "duration": 90,
+        "content": {
+          "visual": {
+            "text": "MÉTODO PERFEITO\n\nP - Persona ou Papel específico\nE - Especificidade máxima\nR - Resultado esperado claro\nF - Formato de saída definido\nE - Exemplos concretos\nI - Instruções detalhadas\nT - Tom e estilo de comunicação\nO - Otimização iterativa contínua",
+            "layout": "reveal-sequence"
+          },
+          "audio": {
+            "narration": "Aqui está o método secreto que os dois porcento utilizam. O método PERFEITO. P de Persona: defina exatamente quem a IA deve ser. E de Especificidade: elimine toda ambiguidade possível. R de Resultado: deixe cristalino qual é o objetivo final. F de Formato: estruture exatamente como a saída deve ser. E de Exemplos: forneça referências concretas para guiar a direção. I de Instruções: detalhe cada passo do processo. T de Tom: defina a personalidade da comunicação. O de Otimização: refine iterativamente até a perfeição. Domine esse acrônimo e você estará oficialmente entre os dois porcento."
+          }
+        }
+      },
+      {
+        "id": "act-6-cta",
+        "type": "cta",
+        "title": "Sua Escolha: Qual Caminho Você Vai Seguir?",
+        "duration": 45,
+        "content": {
+          "visual": {
+            "question": "O que você vai fazer AGORA com esse conhecimento?",
+            "prompt": "Você tem três opções. Escolha com sabedoria:",
+            "choices": [
+              {
+                "id": "choice-1",
+                "text": "🎯 Aplicar o Método PERFEITO imediatamente",
+                "action": "next-lesson",
+                "highlight": true
+              },
+              {
+                "id": "choice-2",
+                "text": "📚 Revisar todos os exemplos primeiro",
+                "action": "review"
+              },
+              {
+                "id": "choice-3",
+                "text": "🚀 Testar com as 7 IAs mais poderosas agora",
+                "action": "practice"
+              }
+            ]
+          },
+          "audio": {
+            "narration": "Momento da verdade. Você pode continuar fazendo parte dos noventa e oito porcento que apenas brincam com IA, ou pode tomar a decisão de entrar para os dois porcento que lucram milhares de reais por mês. A diferença está na ação que você toma agora. Não amanhã. Não na próxima semana. Agora mesmo. O que você escolhe?"
+          }
+        }
+      },
+      {
+        "id": "act-7-gamification",
+        "type": "gamification",
+        "title": "Conquistas Desbloqueadas!",
+        "duration": 30,
+        "content": {
+          "visual": {
+            "text": "🏆 CONQUISTAS DESBLOQUEADAS\n\n✅ Revelação Completa dos 2%\n✅ Primeiro Prompt Profissional Criado\n✅ Método PERFEITO Dominado\n\n+150 XP Ganhos\nNível Atual: Prompting Avançado"
+          },
+          "audio": {
+            "narration": "Parabéns! Você completou com sucesso a jornada do fim da brincadeira com IA. Agora você conhece exatamente o método que separa os noventa e oito porcento dos dois porcento. O próximo passo? Aplicar esse conhecimento com as sete IAs mais poderosas do mercado. Nos vemos na próxima aula para dominar Claude, ChatGPT, Gemini e todas as outras ferramentas profissionais!"
+          }
+        }
+      }
+    ]
+  }
+}
