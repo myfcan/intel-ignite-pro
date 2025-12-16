@@ -141,6 +141,7 @@ const App = () => (
               } />
               <Route path="/lessons/:id" element={<Lesson />} />
               <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
+              <Route path="/v7/:lessonId" element={<V7CinematicPlayer />} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/admin/pipeline" element={<ProtectedRoute><AdminPipelineHub /></ProtectedRoute>} />
               <Route path="/admin/pipeline/create-single" element={<ProtectedRoute><AdminPipelineCreateSingle /></ProtectedRoute>} />
