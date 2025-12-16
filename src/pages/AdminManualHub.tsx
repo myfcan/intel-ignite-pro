@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Clock, Zap, TestTube, Bug, FlaskConical,
-  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings
+  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings, Film
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -35,10 +35,10 @@ export default function AdminManualHub() {
               Criação de Aulas
             </CardTitle>
             <CardDescription>
-              Ferramentas para criar novas aulas V3 e V5
+              Ferramentas para criar novas aulas V3, V5 e V7
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          <CardContent className="grid gap-4 md:grid-cols-3">
             {/* Criação Aula V3 */}
             <Card className="border border-purple-500/30 hover:border-purple-500/50 transition-colors">
               <CardHeader className="pb-2">
@@ -81,6 +81,29 @@ export default function AdminManualHub() {
                 >
                   <Wand2 className="w-4 h-4 mr-2" />
                   Configurar V5 Cards
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Criação Aula V7 Cinematic */}
+            <Card className="border border-amber-500/30 hover:border-amber-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Film className="w-5 h-5 text-amber-600" />
+                  Criação Aula V7 Cinematic
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Crie aulas cinematográficas imersivas com 7 fases e sincronização de áudio
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/v7-create')}
+                  className="w-full bg-amber-600 hover:bg-amber-700"
+                  size="sm"
+                >
+                  <Film className="w-4 h-4 mr-2" />
+                  Criar Aula V7
                 </Button>
               </CardContent>
             </Card>
