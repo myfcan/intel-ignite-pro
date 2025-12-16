@@ -43,8 +43,17 @@ export const V7ImmersivePlayer = ({
   const [currentActIndex, setCurrentActIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
 
-  const totalActs = acts.length;
-  const currentAct = acts[currentActIndex];
+  const totalActs = acts?.length || 0;
+  const currentAct = acts?.[currentActIndex];
+
+  // Guard against empty acts
+  if (!acts || acts.length === 0) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-slate-950">
+        <p className="text-muted-foreground">Nenhum ato encontrado na aula</p>
+      </div>
+    );
+  }
 
   // Sound effects hook
   const { playSound, unlockAudio } = useV7SoundEffects();
@@ -187,7 +196,7 @@ export const V7ImmersivePlayer = ({
     >
       {/* Cinematic Canvas Background */}
       <V7CinematicCanvas 
-        mood={getCanvasMood(currentAct.type)}
+        mood={getCanvasMood(currentAct?.type || 'dramatic')}
         intensity={audio.isPlaying ? "high" : "medium"}
       />
 
@@ -220,16 +229,18 @@ export const V7ImmersivePlayer = ({
 
       {/* Acts Container */}
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentAct.id}
-          className="absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {currentAct.content}
-        </motion.div>
+        {currentAct && (
+          <motion.div
+            key={currentAct.id}
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {currentAct.content}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Word-Level Synchronized Captions */}
