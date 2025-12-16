@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Film } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { V7LessonsList } from '@/components/admin/V7LessonsList';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
@@ -91,43 +90,6 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
-
-        {/* V7 Cinematic System - New Feature - Rebuild 2025-12-15 */}
-        <Card className="border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-cyan-500/20" onClick={() => navigate('/admin/v7/create')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Film className="w-8 h-8 text-cyan-500" />
-              V7 Cinematic
-            </CardTitle>
-            <CardDescription className="text-base">
-              Sistema cinematográfico de nova geração para experiências imersivas
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm space-y-2">
-              <p>🎬 Experiência cinema-like (Netflix Documentary)</p>
-              <p>🎭 Atos cinematográficos com transições</p>
-              <p>⚔️ Playground Amateur vs Professional</p>
-              <p>🎵 Narração contínua sincronizada</p>
-              <p>🎮 Gamificação integrada com XP e achievements</p>
-              <p>📊 Análise em tempo real com IA</p>
-            </div>
-            <Button
-              size="lg"
-              className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/admin/v7/create');
-              }}
-            >
-              <Film className="w-4 h-4 mr-2" />
-              Criar Lição V7 🚀
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Lista de Aulas V7 */}
-        <V7LessonsList />
 
         {/* Cards de acesso rápido */}
         <div className="grid gap-6 md:grid-cols-3">
