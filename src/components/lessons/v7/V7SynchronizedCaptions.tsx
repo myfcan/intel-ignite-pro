@@ -18,6 +18,39 @@ interface V7SynchronizedCaptionsProps {
   maxWords?: number; // Max words to show at once
 }
 
+// Clean markdown and filter non-spoken words
+const cleanWord = (word: string): string | null => {
+  // Skip markdown headers
+  if (word.startsWith('#')) return null;
+  // Skip markdown bold/italic markers
+  if (word === '**' || word === '*' || word === '__' || word === '_') return null;
+  // Skip markdown links
+  if (word.startsWith('[') && word.endsWith(']')) return null;
+  // Skip pure brackets
+  if (word === '[' || word === ']' || word === '(' || word === ')') return null;
+  // Skip stage directions like [ATO 1:]
+  if (word.startsWith('[') || word.endsWith(']')) return null;
+  // Skip template markers
+  if (word.includes('**') || word.includes('###') || word.includes('---')) return null;
+  // Skip metadata-like text
+  if (word.includes('Título') || word.includes('Subtítulo') || word.includes('Categoria') || 
+      word.includes('Duração') || word.includes('Roteiro') || word.includes('Template')) return null;
+  
+  // Clean remaining markdown from word
+  let cleaned = word
+    .replace(/^\*\*|\*\*$/g, '') // Remove bold markers
+    .replace(/^\*|\*$/g, '')     // Remove italic markers
+    .replace(/^_|_$/g, '')       // Remove underscores
+    .replace(/^`|`$/g, '')       // Remove code markers
+    .replace(/\[|\]/g, '')       // Remove brackets
+    .trim();
+  
+  // Skip if empty after cleaning
+  if (!cleaned || cleaned.length === 0) return null;
+  
+  return cleaned;
+};
+
 export const V7SynchronizedCaptions = ({
   wordTimestamps,
   currentTime,
@@ -25,12 +58,23 @@ export const V7SynchronizedCaptions = ({
   className = '',
   maxWords = 12,
 }: V7SynchronizedCaptionsProps) => {
+  // Filter and clean words
+  const cleanedTimestamps = useMemo(() => {
+    return wordTimestamps
+      .map((w, index) => {
+        const cleaned = cleanWord(w.word);
+        if (!cleaned) return null;
+        return { ...w, word: cleaned, originalIndex: index };
+      })
+      .filter(Boolean) as (WordTimestamp & { originalIndex: number })[];
+  }, [wordTimestamps]);
+
   // Find current word index based on currentTime
   const currentWordIndex = useMemo(() => {
-    return wordTimestamps.findIndex(
+    return cleanedTimestamps.findIndex(
       (word) => currentTime >= word.start && currentTime < word.end
     );
-  }, [wordTimestamps, currentTime]);
+  }, [cleanedTimestamps, currentTime]);
 
   // Get visible words window (centered on current word)
   const visibleWords = useMemo(() => {
@@ -38,18 +82,18 @@ export const V7SynchronizedCaptions = ({
 
     const halfWindow = Math.floor(maxWords / 2);
     let startIdx = Math.max(0, currentWordIndex - halfWindow);
-    let endIdx = Math.min(wordTimestamps.length, startIdx + maxWords);
+    let endIdx = Math.min(cleanedTimestamps.length, startIdx + maxWords);
 
     // Adjust if we're near the end
     if (endIdx - startIdx < maxWords) {
       startIdx = Math.max(0, endIdx - maxWords);
     }
 
-    return wordTimestamps.slice(startIdx, endIdx).map((word, idx) => ({
+    return cleanedTimestamps.slice(startIdx, endIdx).map((word, idx) => ({
       ...word,
       absoluteIndex: startIdx + idx,
     }));
-  }, [wordTimestamps, currentWordIndex, maxWords]);
+  }, [cleanedTimestamps, currentWordIndex, maxWords]);
 
   // Calculate which words are past, current, future
   const getWordState = (absoluteIndex: number): 'past' | 'current' | 'future' => {
@@ -107,7 +151,7 @@ export const V7SynchronizedCaptions = ({
             className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
             initial={{ width: 0 }}
             animate={{ 
-              width: `${((currentWordIndex + 1) / wordTimestamps.length) * 100}%` 
+              width: `${((currentWordIndex + 1) / cleanedTimestamps.length) * 100}%` 
             }}
             transition={{ duration: 0.1 }}
           />

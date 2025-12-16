@@ -101,20 +101,22 @@ function renderActContent(
 
     case 'comparison':
       const compItems = act.content.comparisonItems || [];
+      const leftItem = compItems[0];
+      const rightItem = compItems[1];
       return (
         <V7ActComparison
           title={act.title}
           leftCard={{
-            label: compItems[0]?.label || 'Antes',
-            value: compItems[0]?.highlight ? '✗' : '→',
-            isPositive: false,
-            details: [compItems[0]?.description || 'Abordagem básica'],
+            label: leftItem?.label || 'Opção A',
+            value: leftItem?.highlight ? '✓' : '✗',
+            isPositive: leftItem?.highlight ?? false,
+            details: [leftItem?.description || 'Detalhes'],
           }}
           rightCard={{
-            label: compItems[1]?.label || 'Depois',
-            value: compItems[1]?.highlight ? '✓' : '→',
-            isPositive: true,
-            details: [compItems[1]?.description || 'Abordagem avançada'],
+            label: rightItem?.label || 'Opção B',
+            value: rightItem?.highlight ? '✓' : '✗',
+            isPositive: rightItem?.highlight ?? true,
+            details: [rightItem?.description || 'Detalhes'],
           }}
         />
       );
@@ -144,7 +146,7 @@ function renderActContent(
         <V7ActResult
           emoji="🎉"
           title={act.title || 'Resultado'}
-          message="Você completou esta etapa com sucesso!"
+          message={act.content.narrative || 'Você completou esta etapa com sucesso!'}
           metrics={metrics.map(m => ({
             label: m.label,
             value: m.value,
