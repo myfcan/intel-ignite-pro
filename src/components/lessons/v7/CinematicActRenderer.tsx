@@ -49,8 +49,9 @@ export const CinematicActRenderer = ({
   // Determine which animations should be active
   useEffect(() => {
     const newActiveAnimations = new Set<string>();
+    const animations = act.content?.animations || [];
 
-    act.content.animations.forEach((animation) => {
+    animations.forEach((animation) => {
       const animStart = (animation.delay || 0) / 1000;
       const animEnd = animStart + animation.duration / 1000;
 
@@ -60,7 +61,7 @@ export const CinematicActRenderer = ({
     });
 
     setActiveAnimations(newActiveAnimations);
-  }, [actTime, act.content.animations]);
+  }, [actTime, act.content?.animations]);
 
   // Determine camera effect based on act type and timing
   useEffect(() => {
@@ -94,7 +95,7 @@ export const CinematicActRenderer = ({
   // ============================================================================
 
   const renderBackground = () => {
-    const bg = act.content.visual.background;
+    const bg = act.content?.visual?.background;
     if (!bg) return null;
 
     switch (bg.type) {
@@ -282,7 +283,7 @@ export const CinematicActRenderer = ({
   };
 
   const renderParticles = () => {
-    if (!act.content.particles) return null;
+    if (!act.content?.particles) return null;
 
     return (
       <div className="absolute inset-0 pointer-events-none z-50">
@@ -299,7 +300,7 @@ export const CinematicActRenderer = ({
   };
 
   const renderOverlay = () => {
-    if (!act.content.overlay) return null;
+    if (!act.content?.overlay) return null;
 
     const overlay = act.content.overlay;
     const positionClasses = {
@@ -416,7 +417,7 @@ export const CinematicActRenderer = ({
         {renderBackground()}
 
         {/* Visual layers - render directly without extra wrapper */}
-        {act.content.visual.layers
+        {(act.content?.visual?.layers || [])
           .sort((a, b) => a.zIndex - b.zIndex)
           .map((layer, index) => (
             <motion.div

@@ -124,7 +124,7 @@ function adaptAct(adminAct: AdminAct, startTime: number): CinematicAct {
   };
 
   // Extract visual content from admin act
-  const visualData = adminAct.content.visual || {};
+  const visualData = adminAct.content?.visual || {};
 
   // Create appropriate layers based on available data
   const layers: any[] = [];
@@ -207,7 +207,7 @@ function generateAudioTrack(
       duration: totalDuration,
       format: 'mp3',
       transcription: acts
-        .map((act) => act.content.audio.narrationSegment?.text || '')
+        .map((act) => act.content?.audio?.narrationSegment?.text || '')
         .join(' '),
     },
     backgroundMusic: {
@@ -242,7 +242,7 @@ function generateInteractionPoints(acts: CinematicAct[]): InteractionPoint[] {
     let visualContent: any = null;
 
     // Find the layer with interaction data
-    for (const layer of act.content.visual.layers) {
+    for (const layer of act.content?.visual?.layers || []) {
       if (
         typeof layer.content === 'object' &&
         layer.content !== null &&
