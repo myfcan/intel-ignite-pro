@@ -1,5 +1,11 @@
 # 🔍 AUDITORIA COMPLETA - Pipeline V7
 
+## ❌ PROBLEMAS IDENTIFICADOS (6 Bugs Críticos Encontrados)
+
+**Resumo Executivo:** Encontrados **6 bugs críticos** deixados pelo Lovable em diferentes partes do sistema V7. Todos relacionados à mesma causa raiz: acesso incorreto à estrutura `act.content.audio.narration` e `act.content.visual`.
+
+---
+
 ## ❌ PROBLEMAS IDENTIFICADOS (Bugs do Lovable)
 
 ### **BUG #1: Interface TypeScript Incorreta**
@@ -120,19 +126,100 @@ content: {
 
 ---
 
+### **BUG #5: useV7PhaseScript - Acesso Condicional Incorreto** ⚠️ CRÍTICO
+**Arquivo:** `src/hooks/useV7PhaseScript.ts` (linhas 124-126)
+**Descoberto por:** Lovable durante auditoria
+
+**Problema:**
+```typescript
+// ❌ ERRADO - Lógica condicional incorreta
+const visualData = hasCinematicFlow ? act.visual : act.content?.visual;
+const audioData = hasCinematicFlow ? act.audio : act.content?.audio;
+const interactionData = hasCinematicFlow ? act.interaction : act.content?.interaction;
+```
+
+**CAUSA RAIZ:** O código assumia que quando `hasCinematicFlow=true`, os dados estariam em `act.visual`, `act.audio` diretamente. Mas a estrutura JSON SEMPRE tem `act.content.visual` e `act.content.audio`, independente de ter cinematic_flow ou não.
+
+**IMPACTO:**
+- ❌ Preview de lições V7 **não funcionava**
+- ❌ Dados visuais não eram carregados
+- ❌ Narrações não eram processadas no player
+
+**Solução:**
+```typescript
+// ✅ CORRETO - Sempre usar act.content
+const visualData = act.content?.visual;
+const audioData = act.content?.audio;
+const interactionData = act.content?.interaction;
+```
+
+---
+
+### **BUG #6: v7-regenerate-audio - Extração de Narração** ⚠️ CRÍTICO
+**Arquivo:** `supabase/functions/v7-regenerate-audio/index.ts` (linhas 60-61)
+**Descoberto por:** Lovable durante auditoria
+
+**Problema:**
+```typescript
+// ❌ ERRADO
+if (act.audio?.narration) {
+  narrations.push(act.audio.narration);
+}
+```
+
+**IMPACTO:**
+- ❌ Função "Regenerar Áudio" **não funcionava**
+- ❌ Extraía 0 narrações mesmo com JSON correto
+- ❌ ElevenLabs não recebia texto para gerar áudio
+
+**Solução:**
+```typescript
+// ✅ CORRETO
+if (act.content?.audio?.narration) {
+  narrations.push(act.content.audio.narration);
+}
+```
+
+---
+
 ## ✅ CORREÇÕES APLICADAS
 
-### Commit: `054d599`
+### Commit 1: `054d599`
 **Mensagem:** "fix: Corrigir extração de narrações no Pipeline V7"
 
 **Arquivos Modificados:**
 - `supabase/functions/v7-pipeline/index.ts` (29 inserções, 23 deleções)
 
 **Mudanças:**
-1. ✅ Interface TypeScript corrigida
-2. ✅ Extração de narração usando caminho correto
-3. ✅ Acesso a visual.instruction corrigido
-4. ✅ Reconstrução do cinematic_flow corrigida
+1. ✅ Interface TypeScript corrigida (Bug #1)
+2. ✅ Extração de narração usando caminho correto (Bug #2)
+3. ✅ Acesso a visual.instruction corrigido (Bug #3)
+4. ✅ Reconstrução do cinematic_flow corrigida (Bug #4)
+
+---
+
+### Commit 2: `83c2e1c`
+**Mensagem:** "fix: Corrigir contagem de narrações no AdminV7Create"
+
+**Arquivos Modificados:**
+- `src/pages/AdminV7Create.tsx` (1 inserção, 1 deleção)
+
+**Mudanças:**
+1. ✅ Linha 151: Contagem de narrações no monitor corrigida
+
+---
+
+### Commit 3: `1aca2ae`
+**Mensagem:** "fix: Corrigir caminhos de acesso em useV7PhaseScript e v7-regenerate-audio"
+**Descoberto por:** Lovable durante auditoria
+
+**Arquivos Modificados:**
+- `src/hooks/useV7PhaseScript.ts` (3 inserções, 3 deleções)
+- `supabase/functions/v7-regenerate-audio/index.ts` (2 inserções, 2 deleções)
+
+**Mudanças:**
+1. ✅ useV7PhaseScript: Removida lógica condicional incorreta (Bug #5)
+2. ✅ v7-regenerate-audio: Extração de narração corrigida (Bug #6)
 
 ---
 
