@@ -8,3 +8,5 @@ export { default as V7PhaseNarrative } from './V7PhaseNarrative';
 export { default as V7PhaseQuiz } from './V7PhaseQuiz';
 export { default as V7PhasePlayground } from './V7PhasePlayground';
 export { default as V7PhaseGamification } from './V7PhaseGamification';
+export { default as V7PhaseLoading } from './V7PhaseLoading';
+export { default as V7PhaseCTA } from './V7PhaseCTA';
