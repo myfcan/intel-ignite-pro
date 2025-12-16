@@ -19,6 +19,7 @@ interface Lesson {
   difficulty_level: string;
   is_active: boolean;
   lesson_type?: string;
+  model?: string;
 }
 
 interface Trail {
@@ -144,6 +145,12 @@ const TrailDetail = () => {
         description: "Complete a aula anterior para desbloquear.",
         variant: "destructive",
       });
+      return;
+    }
+    
+    // V7 Cinematic lessons use dedicated route
+    if (lesson.model === 'v7' || lesson.lesson_type === 'v7-cinematic') {
+      navigate(`/v7/${lesson.id}`);
       return;
     }
     
