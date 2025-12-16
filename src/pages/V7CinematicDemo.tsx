@@ -32,7 +32,8 @@ const V7CinematicDemo = () => {
         <em style="color: #ff6b6b;">❌ Genérico, sem personalidade, sem valor</em>
       `,
       scoreLabel: "Valor Comercial:",
-      scoreValue: "R$ 0",
+      scoreValue: 0,
+      maxScore: 500,
       isHighScore: false
     };
   }, []);
@@ -53,7 +54,8 @@ const V7CinematicDemo = () => {
         <em style="color: #4ecdc4;">✅ Sofisticado, vendedor, pronto para usar</em>
       `,
       scoreLabel: "Valor Comercial:",
-      scoreValue: "R$ 500",
+      scoreValue: 500,
+      maxScore: 500,
       isHighScore: true
     };
   }, []);

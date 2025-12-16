@@ -168,13 +168,15 @@ function renderActContent(
           onGenerateLeft={(prompt) => ({
             text: `Resultado para: "${prompt.slice(0, 50)}..."`,
             scoreLabel: 'Score',
-            scoreValue: '65%',
+            scoreValue: 65,
+            maxScore: 100,
             isHighScore: false,
           })}
           onGenerateRight={(prompt) => ({
             text: `Resultado profissional para: "${prompt.slice(0, 50)}..."`,
             scoreLabel: 'Score',
-            scoreValue: '95%',
+            scoreValue: 95,
+            maxScore: 100,
             isHighScore: true,
           })}
         />
