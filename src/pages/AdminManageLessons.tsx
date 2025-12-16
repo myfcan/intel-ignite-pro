@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug, Wrench, FolderInput, Plus } from 'lucide-react';
+import { ArrowLeft, Trash2, Filter, AlertTriangle, Bug, Wrench, FolderInput, Plus, Power } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +65,7 @@ export default function AdminManageLessons() {
   const [targetOrderIndex, setTargetOrderIndex] = useState<number>(1);
   const [createNewTrail, setCreateNewTrail] = useState(false);
   const [newTrailName, setNewTrailName] = useState('');
+  const [activating, setActivating] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -292,6 +293,35 @@ export default function AdminManageLessons() {
     }
   }
 
+  // Função para ativar/desativar lição
+  async function handleToggleActive(lessonId: string, currentActive: boolean) {
+    setActivating(lessonId);
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .update({ is_active: !currentActive })
+        .eq('id', lessonId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentActive ? 'Lição desativada' : 'Lição ativada',
+        description: currentActive ? 'A lição foi desativada com sucesso' : 'A lição está agora ativa e visível',
+      });
+
+      await loadData();
+    } catch (error: any) {
+      console.error('Erro ao alterar status:', error);
+      toast({
+        title: 'Erro ao alterar status',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setActivating(null);
+    }
+  }
+
   const filteredLessons = lessons.filter(lesson => {
     if (filterTrail !== 'all' && lesson.trail_id !== filterTrail) {
       return false;
@@ -445,15 +475,25 @@ export default function AdminManageLessons() {
                       </div>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/admin/pipeline/lesson-debug/${lesson.id}`)}
-                      className="flex-shrink-0"
-                    >
-                      <Bug className="w-4 h-4 mr-2" />
-                      Debug
-                    </Button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        variant={lesson.is_active ? 'secondary' : 'default'}
+                        size="sm"
+                        onClick={() => handleToggleActive(lesson.id, lesson.is_active)}
+                        disabled={activating === lesson.id}
+                      >
+                        <Power className="w-4 h-4 mr-2" />
+                        {activating === lesson.id ? 'Aguarde...' : lesson.is_active ? 'Desativar' : 'Ativar'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/pipeline/lesson-debug/${lesson.id}`)}
+                      >
+                        <Bug className="w-4 h-4 mr-2" />
+                        Debug
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
