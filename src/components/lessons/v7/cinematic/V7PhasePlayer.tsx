@@ -181,58 +181,75 @@ export const V7PhasePlayer = ({
     return <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />;
   }
 
-  // Render current phase content
+  // Extract scene content with fallbacks (cast to any for flexible DB data)
+  const getSceneContent = (sceneIndex: number = 0): any => {
+    const scene = currentPhase?.scenes?.[sceneIndex];
+    return scene?.content || {};
+  };
+
+  // Render current phase content using DYNAMIC data from database
   const renderPhaseContent = () => {
     if (!currentPhase) return null;
+
+    const content = getSceneContent(currentSceneIndex);
+    const firstSceneContent = getSceneContent(0);
 
     switch (currentPhase.type) {
       case 'dramatic':
         return (
           <V7PhaseDramatic
-            mainNumber="98%"
-            subtitle="das pessoas usam IA como"
-            highlightWord="IA"
-            impactWord="BRINQUEDO"
+            mainNumber={String(content.number || firstSceneContent.number || '01')}
+            subtitle={content.subtitle || firstSceneContent.subtitle || currentPhase.title}
+            highlightWord={content.highlightWord || firstSceneContent.highlightWord}
+            impactWord={content.mainText || firstSceneContent.mainText || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
-            mood="danger"
+            mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}
           />
         );
 
       case 'narrative':
+        const items = content.items || firstSceneContent.items || [];
+        const leftItem = items[0] || {};
+        const rightItem = items[1] || {};
+        
         return (
           <V7PhaseNarrative
-            leftTitle="98% BRINCANDO"
-            rightTitle="2% DOMINANDO"
-            leftEmoji="😂"
-            rightEmoji="💰"
+            leftTitle={leftItem.label || 'Opção A'}
+            rightTitle={rightItem.label || 'Opção B'}
+            leftEmoji={leftItem.isNegative ? '❌' : '✅'}
+            rightEmoji={rightItem.isPositive ? '✅' : '❌'}
             comparisons={[
-              { label: 'Renda mensal', leftValue: 'R$ 0', rightValue: 'R$ 30.000', leftColor: '#ff6b6b', rightColor: '#4ecdc4' },
-              { label: 'Horas trabalhadas', leftValue: '8h', rightValue: '2h', leftColor: '#ff6b6b', rightColor: '#4ecdc4' },
-              { label: 'Produtividade', leftValue: '1x', rightValue: '10x', leftColor: '#ff6b6b', rightColor: '#4ecdc4' }
+              { 
+                label: 'Característica', 
+                leftValue: leftItem.value || '', 
+                rightValue: rightItem.value || '', 
+                leftColor: leftItem.isNegative ? '#ff6b6b' : '#4ecdc4', 
+                rightColor: rightItem.isPositive ? '#4ecdc4' : '#ff6b6b' 
+              }
             ]}
-            warningTitle="EM 7 ANOS"
-            warningSubtitle="Quem não dominar IA será dominado por ela"
+            warningTitle={content.mainText || firstSceneContent.mainText || currentPhase.title}
+            warningSubtitle={content.subtitle || firstSceneContent.subtitle || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
           />
         );
 
       case 'interaction':
+        const quizOptions = (content.options || firstSceneContent.options || []).map((opt: any) => ({
+          id: opt.id || String(Math.random()),
+          text: opt.label || opt.text || '',
+          category: (opt.isCorrect ? 'good' : 'bad') as 'good' | 'bad'
+        }));
+        
         return (
           <V7PhaseQuiz
-            title="Suas últimas 5 interações com IA foram para quê?"
-            subtitle="Seja honesto na sua avaliação"
-            options={[
-              { id: 'problem', text: 'Resolver problema real de trabalho', category: 'good' },
-              { id: 'automate', text: 'Automatizar uma tarefa repetitiva', category: 'good' },
-              { id: 'money', text: 'Criar conteúdo para ganhar dinheiro', category: 'good' },
-              { id: 'time', text: 'Economizar tempo significativo', category: 'good' },
-              { id: 'curiosity', text: 'Curiosidade / Teste / Brincadeira', category: 'bad' }
-            ]}
-            revealTitle="ALERTA"
-            revealMessage="Perdendo R$ 2.000/mês"
-            revealValue="R$ 24.000/ano"
+            title={content.mainText || firstSceneContent.mainText || 'Responda:'}
+            subtitle={content.subtitle || ''}
+            options={quizOptions}
+            revealTitle="RESULTADO"
+            revealMessage={content.explanation || ''}
+            revealValue=""
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
           />
@@ -241,27 +258,20 @@ export const V7PhasePlayer = ({
       case 'playground':
         return (
           <V7PhasePlayground
-            challengeTitle="DESAFIO DOS R$ 500"
-            challengeSubtitle="Vou provar que em 30 segundos você pode cobrar R$ 500"
-            amateurPrompt="me ajuda com posts para loja"
+            challengeTitle={content.mainText || firstSceneContent.mainText || 'DESAFIO PRÁTICO'}
+            challengeSubtitle={content.subtitle || firstSceneContent.subtitle || currentPhase.title}
+            amateurPrompt={content.amateurPrompt || 'prompt simples'}
             amateurResult={{
               title: 'Resultado Amador',
-              content: '"Compre agora!"\n"Promoção imperdível!"\n"Novidades chegaram!"\n"Não perca!"\n"Aproveite!"',
+              content: content.amateurResult || 'Resultado genérico...',
               score: 0,
               maxScore: 500,
               verdict: 'bad'
             }}
-            professionalPrompt={`P - PAPEL: Especialista em moda feminina
-E - ESPECIFICIDADE: 5 posts Instagram
-R - REFERÊNCIA: Mulheres 25-40 anos
-F - FORMATO: Emoji + título + CTA sutil
-E - EXEMPLO: Tom Vogue Brasil
-I - INTENÇÃO: Despertar desejo
-T - TOM: Sofisticado, íntimo
-O - OBSTÁCULOS: Evitar "compre agora"`}
+            professionalPrompt={content.professionalPrompt || 'prompt profissional estruturado'}
             professionalResult={{
               title: 'Resultado Profissional',
-              content: '🌙 O Pretinho Que Não É Básico\nAquele vestido que transita do board meeting para o happy hour sem pedir licença.\nQuantos pretinhos cabem em uma vida?',
+              content: content.professionalResult || 'Resultado otimizado...',
               score: 500,
               maxScore: 500,
               verdict: 'excellent'
@@ -273,13 +283,19 @@ O - OBSTÁCULOS: Evitar "compre agora"`}
         );
 
       case 'revelation':
+        const ctaOptions = (content.options || []).map((opt: any) => ({
+          label: opt.label || '',
+          emoji: opt.emoji || '🎯',
+          variant: opt.variant || 'primary'
+        }));
+        
         return (
           <V7PhaseCTA
-            title="ESCOLHA SEU DESTINO:"
-            subtitle="A escolha é agora"
-            options={[
-              { label: 'CONTINUAR 98%', emoji: '😴', variant: 'negative' },
-              { label: 'ENTRAR NOS 2%', emoji: '🚀', variant: 'positive' }
+            title={content.mainText || firstSceneContent.mainText || currentPhase.title}
+            subtitle={content.subtitle || firstSceneContent.subtitle || ''}
+            options={ctaOptions.length > 0 ? ctaOptions : [
+              { label: 'Revisar', emoji: '📚', variant: 'secondary' },
+              { label: 'Continuar', emoji: '🚀', variant: 'positive' }
             ]}
             duration={currentPhase.endTime - currentPhase.startTime}
             onChoice={handleCTAChoice}
@@ -287,17 +303,21 @@ O - OBSTÁCULOS: Evitar "compre agora"`}
         );
 
       case 'gamification':
+        const metrics = content.metrics || firstSceneContent.metrics || [];
+        const xp = metrics.find((m: any) => m.label?.includes('XP'))?.value || '+100';
+        
         return (
           <V7PhaseGamification
-            achievements={[
-              { id: '1', icon: '✅', title: 'Saiu da Matrix', unlocked: true },
-              { id: '2', icon: '✅', title: 'Primeiro R$ 500', unlocked: true },
-              { id: '3', icon: '✅', title: 'Método PERFEITO', unlocked: true }
-            ]}
-            xpEarned={250}
-            levelName="DESPERTO"
-            nextLessonTitle="ChatGPT: O Camaleão Digital"
-            nextLessonCountdown="03:59:58"
+            achievements={(content.items || firstSceneContent.items || []).map((item: any, idx: number) => ({
+              id: String(idx),
+              icon: item.emoji || '✅',
+              title: item.text || 'Conquista',
+              unlocked: true
+            }))}
+            xpEarned={parseInt(xp.replace(/\D/g, '')) || 100}
+            levelName={content.mainText || 'COMPLETO'}
+            nextLessonTitle={content.subtitle || 'Próxima Aula'}
+            nextLessonCountdown=""
             sceneIndex={currentSceneIndex}
             onContinue={() => onComplete?.()}
           />
