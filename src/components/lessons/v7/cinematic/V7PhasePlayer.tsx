@@ -231,46 +231,61 @@ export const V7PhasePlayer = ({
         );
 
       case 'narrative':
-        const items = content.items || firstSceneContent.items || [];
-        const leftItem = items[0] || {};
-        const rightItem = items[1] || {};
-        
+        // Combine content from ALL scenes (left card from scene 2, right card from scene 3)
+        const narrativeContent = getCombinedSceneContent();
+        const scene2Content = getSceneContent(2); // Left card scene
+        const scene3Content = getSceneContent(3); // Right card scene
+
+        // Extract left and right items from their respective scenes
+        const leftItems = scene2Content.items || [];
+        const rightItems = scene3Content.items || [];
+        const leftItem = leftItems[0] || {};
+        const rightItem = rightItems[0] || {};
+
+        // Also check for direct amateurPrompt/professionalPrompt in combined content
+        const leftLabel = leftItem.label || narrativeContent.leftCard?.label || 'AMADOR';
+        const rightLabel = rightItem.label || narrativeContent.rightCard?.label || 'PROFISSIONAL';
+        const leftValue = leftItem.value || narrativeContent.amateurPrompt || narrativeContent.leftCard?.value || '';
+        const rightValue = rightItem.value || narrativeContent.professionalPrompt || narrativeContent.rightCard?.value || '';
+
         return (
           <V7PhaseNarrative
-            leftTitle={leftItem.label || 'Opção A'}
-            rightTitle={rightItem.label || 'Opção B'}
+            leftTitle={leftLabel}
+            rightTitle={rightLabel}
             leftEmoji={leftItem.isNegative ? '❌' : '✅'}
             rightEmoji={rightItem.isPositive ? '✅' : '❌'}
             comparisons={[
-              { 
-                label: 'Característica', 
-                leftValue: leftItem.value || '', 
-                rightValue: rightItem.value || '', 
-                leftColor: leftItem.isNegative ? '#ff6b6b' : '#4ecdc4', 
-                rightColor: rightItem.isPositive ? '#4ecdc4' : '#ff6b6b' 
+              {
+                label: narrativeContent.mainText || 'Comparação',
+                leftValue: leftValue,
+                rightValue: rightValue,
+                leftColor: leftItem.isNegative ? '#ff6b6b' : '#4ecdc4',
+                rightColor: rightItem.isPositive ? '#4ecdc4' : '#ff6b6b'
               }
             ]}
-            warningTitle={content.mainText || firstSceneContent.mainText || currentPhase.title}
-            warningSubtitle={content.subtitle || firstSceneContent.subtitle || ''}
+            warningTitle={narrativeContent.mainText || currentPhase.title}
+            warningSubtitle={narrativeContent.subtitle || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
           />
         );
 
       case 'interaction':
-        const quizOptions = (content.options || firstSceneContent.options || []).map((opt: any) => ({
+        // Combine content from ALL interaction scenes
+        const interactionContent = getCombinedSceneContent();
+        const quizOptions = (interactionContent.options || content.options || firstSceneContent.options || []).map((opt: any) => ({
           id: opt.id || String(Math.random()),
           text: opt.label || opt.text || '',
           category: (opt.isCorrect ? 'good' : 'bad') as 'good' | 'bad'
         }));
-        
+
         return (
           <V7PhaseQuiz
-            title={content.mainText || firstSceneContent.mainText || 'Responda:'}
-            subtitle={content.subtitle || ''}
+            title={interactionContent.mainText || content.mainText || 'Responda:'}
+            subtitle={interactionContent.subtitle || content.subtitle || ''}
             options={quizOptions}
             revealTitle="RESULTADO"
-            revealMessage={content.explanation || ''}
+            revealMessage={interactionContent.explanation || content.explanation || ''}
             revealValue=""
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
@@ -279,13 +294,16 @@ export const V7PhasePlayer = ({
         );
 
       case 'playground':
-        // Extract playground scores from content with proper fallbacks
-        const amateurScore = typeof content.amateurScore === 'number'
-          ? content.amateurScore
-          : (firstSceneContent.amateurScore || 10);
-        const professionalScore = typeof content.professionalScore === 'number'
-          ? content.professionalScore
-          : (firstSceneContent.professionalScore || 95);
+        // Combine content from ALL playground scenes
+        const playgroundContent = getCombinedSceneContent();
+
+        // Extract playground scores from combined content with proper fallbacks
+        const amateurScore = typeof playgroundContent.amateurScore === 'number'
+          ? playgroundContent.amateurScore
+          : (typeof content.amateurScore === 'number' ? content.amateurScore : 10);
+        const professionalScore = typeof playgroundContent.professionalScore === 'number'
+          ? playgroundContent.professionalScore
+          : (typeof content.professionalScore === 'number' ? content.professionalScore : 95);
         const maxScore = 100;
 
         // Determine verdict based on score
@@ -304,20 +322,20 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhasePlayground
-            challengeTitle={content.mainText || firstSceneContent.mainText || 'DESAFIO PRÁTICO'}
-            challengeSubtitle={content.subtitle || firstSceneContent.subtitle || currentPhase.title}
-            amateurPrompt={content.amateurPrompt || firstSceneContent.amateurPrompt || 'prompt simples'}
+            challengeTitle={playgroundContent.mainText || content.mainText || 'DESAFIO PRÁTICO'}
+            challengeSubtitle={playgroundContent.subtitle || content.subtitle || currentPhase.title}
+            amateurPrompt={playgroundContent.amateurPrompt || content.amateurPrompt || 'prompt simples'}
             amateurResult={{
               title: 'Resultado Amador',
-              content: getResultContent(content.amateurResult || firstSceneContent.amateurResult) || 'Resultado genérico...',
+              content: getResultContent(playgroundContent.amateurResult || content.amateurResult) || 'Resultado genérico...',
               score: amateurScore,
               maxScore,
               verdict: getVerdict(amateurScore)
             }}
-            professionalPrompt={content.professionalPrompt || firstSceneContent.professionalPrompt || 'prompt profissional estruturado'}
+            professionalPrompt={playgroundContent.professionalPrompt || content.professionalPrompt || 'prompt profissional estruturado'}
             professionalResult={{
               title: 'Resultado Profissional',
-              content: getResultContent(content.professionalResult || firstSceneContent.professionalResult) || 'Resultado otimizado...',
+              content: getResultContent(playgroundContent.professionalResult || content.professionalResult) || 'Resultado otimizado...',
               score: professionalScore,
               maxScore,
               verdict: getVerdict(professionalScore)
@@ -330,16 +348,18 @@ export const V7PhasePlayer = ({
         );
 
       case 'revelation':
-        const ctaOptions = (content.options || []).map((opt: any) => ({
+        // Combine content from ALL revelation scenes
+        const revelationContent = getCombinedSceneContent();
+        const ctaOptions = (revelationContent.options || content.options || []).map((opt: any) => ({
           label: opt.label || '',
           emoji: opt.emoji || '🎯',
           variant: opt.variant || 'primary'
         }));
-        
+
         return (
           <V7PhaseCTA
-            title={content.mainText || firstSceneContent.mainText || currentPhase.title}
-            subtitle={content.subtitle || firstSceneContent.subtitle || ''}
+            title={revelationContent.mainText || content.mainText || currentPhase.title}
+            subtitle={revelationContent.subtitle || content.subtitle || ''}
             options={ctaOptions.length > 0 ? ctaOptions : [
               { label: 'Revisar', emoji: '📚', variant: 'secondary' },
               { label: 'Continuar', emoji: '🚀', variant: 'positive' }
@@ -350,20 +370,22 @@ export const V7PhasePlayer = ({
         );
 
       case 'gamification':
-        const metrics = content.metrics || firstSceneContent.metrics || [];
+        // Combine content from ALL gamification scenes
+        const gamificationContent = getCombinedSceneContent();
+        const metrics = gamificationContent.metrics || content.metrics || [];
         const xp = metrics.find((m: any) => m.label?.includes('XP'))?.value || '+100';
-        
+
         return (
           <V7PhaseGamification
-            achievements={(content.items || firstSceneContent.items || []).map((item: any, idx: number) => ({
+            achievements={(gamificationContent.items || content.items || []).map((item: any, idx: number) => ({
               id: String(idx),
               icon: item.emoji || '✅',
               title: item.text || 'Conquista',
               unlocked: true
             }))}
             xpEarned={parseInt(xp.replace(/\D/g, '')) || 100}
-            levelName={content.mainText || 'COMPLETO'}
-            nextLessonTitle={content.subtitle || 'Próxima Aula'}
+            levelName={gamificationContent.mainText || content.mainText || 'COMPLETO'}
+            nextLessonTitle={gamificationContent.subtitle || content.subtitle || 'Próxima Aula'}
             nextLessonCountdown=""
             sceneIndex={currentSceneIndex}
             onContinue={() => onComplete?.()}
