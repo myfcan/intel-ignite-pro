@@ -188,6 +188,24 @@ export const V7PhasePlayer = ({
     return scene?.content || {};
   };
 
+  // Combine ALL scene content for progressive reveal phases (dramatic, etc.)
+  const getCombinedSceneContent = (): any => {
+    if (!currentPhase?.scenes) return {};
+
+    // Merge all scenes' content, prioritizing later scenes for conflicts
+    const combined: any = {};
+    currentPhase.scenes.forEach((scene, idx) => {
+      const content = scene.content || {};
+      Object.keys(content).forEach(key => {
+        // Keep first non-empty value for each key
+        if (!combined[key] && content[key]) {
+          combined[key] = content[key];
+        }
+      });
+    });
+    return combined;
+  };
+
   // Render current phase content using DYNAMIC data from database
   const renderPhaseContent = () => {
     if (!currentPhase) return null;
@@ -197,12 +215,15 @@ export const V7PhasePlayer = ({
 
     switch (currentPhase.type) {
       case 'dramatic':
+        // Use combined content from ALL scenes for progressive reveal
+        const dramaticContent = getCombinedSceneContent();
         return (
           <V7PhaseDramatic
-            mainNumber={String(content.number || firstSceneContent.number || '01')}
-            subtitle={content.subtitle || firstSceneContent.subtitle || currentPhase.title}
-            highlightWord={content.highlightWord || firstSceneContent.highlightWord}
-            impactWord={content.mainText || firstSceneContent.mainText || ''}
+            mainNumber={String(dramaticContent.number || '01')}
+            subtitle={dramaticContent.subtitle || currentPhase.title}
+            highlightWord={dramaticContent.highlightWord}
+            impactWord={dramaticContent.mainText || dramaticContent.highlightWord || ''}
+            hookQuestion={dramaticContent.hookQuestion || firstSceneContent.mainText || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}

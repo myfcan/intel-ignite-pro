@@ -10,6 +10,7 @@ export interface V7SceneContent {
   number?: string;
   highlightWord?: string;
   title?: string;
+  hookQuestion?: string; // "VOCÊ SABIA?" - teaser question for dramatic scenes
   
   // Lists and collections
   items?: any[];

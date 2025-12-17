@@ -9,6 +9,7 @@ interface V7PhaseDramaticProps {
   subtitle: string;
   highlightWord?: string;
   impactWord?: string;
+  hookQuestion?: string; // "VOCÊ SABIA?" - shown during letterbox
   sceneIndex: number;
   phaseProgress: number;
   mood?: 'danger' | 'success' | 'neutral';
@@ -37,6 +38,7 @@ export const V7PhaseDramatic = ({
   subtitle,
   highlightWord,
   impactWord,
+  hookQuestion,
   sceneIndex,
   phaseProgress,
   mood = 'danger',
@@ -190,7 +192,7 @@ export const V7PhaseDramatic = ({
 
   return (
     <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
-      {/* Scene 0: Letterbox cinematic bars */}
+      {/* Scene 0: Letterbox cinematic bars + Hook Question */}
       <AnimatePresence>
         {showLetterbox && (
           <>
@@ -208,6 +210,23 @@ export const V7PhaseDramatic = ({
               exit={{ height: 0 }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             />
+            {/* Hook Question - appears during letterbox */}
+            {hookQuestion && (
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center z-40"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h2
+                  className="text-3xl sm:text-5xl md:text-6xl font-bold text-white/90 tracking-wide"
+                  style={{ textShadow: `0 0 40px ${colors.glow}` }}
+                >
+                  {hookQuestion}
+                </h2>
+              </motion.div>
+            )}
           </>
         )}
       </AnimatePresence>

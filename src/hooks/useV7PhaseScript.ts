@@ -238,14 +238,22 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
   switch (phaseType) {
     case 'dramatic':
       // 🎬 6 CINEMATIC SCENES (Netflix Bandersnatch-inspired)
-      // Scene 0: Fade in black screen with letterbox (10%)
+      // Extract all dramatic content from visual
+      const dramaticNumber = String(visual.mainValue || visual.number || '01');
+      const dramaticSubtitle = visual.subtitle || act.title || '';
+      const dramaticHighlight = visual.highlightWord || '';
+      const dramaticImpact = visual.impactWord || visual.mainText || dramaticHighlight || 'IMPACTO';
+      const dramaticHook = visual.hookQuestion || visual.hook || '';
+
+      // Scene 0: Fade in black screen with letterbox + optional hook (10%)
       scenes.push({
         id: `${act.id}-black`,
         type: 'letterbox',
         startTime,
         duration: duration * 0.1,
         content: {
-          mainText: '',
+          mainText: dramaticHook, // "VOCÊ SABIA?" or similar hook
+          hookQuestion: dramaticHook, // Also pass as hookQuestion for V7PhaseDramatic
           subtitle: '',
           backgroundColor: 'black',
           aspectRatio: 'cinematic',
@@ -261,25 +269,25 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         startTime: startTime + duration * 0.1,
         duration: duration * 0.15,
         content: {
-          number: String(visual.mainValue || '01'),
-          subtitle: '',
-          highlightWord: visual.highlightWord,
+          number: dramaticNumber,
+          subtitle: '', // No subtitle yet - builds suspense
+          highlightWord: dramaticHighlight,
           glowEffect: true,
           ...commonFields,
         },
         animation: 'scale-up',
       });
 
-      // Scene 2: Number count-up animation (15%)
+      // Scene 2: Number count-up animation + subtitle reveal (15%)
       scenes.push({
         id: `${act.id}-count-up`,
         type: 'number-reveal',
         startTime: startTime + duration * 0.25,
         duration: duration * 0.15,
         content: {
-          number: String(visual.mainValue || '01'),
-          subtitle: visual.subtitle || act.title,
-          highlightWord: visual.highlightWord,
+          number: dramaticNumber,
+          subtitle: dramaticSubtitle,
+          highlightWord: dramaticHighlight,
           countUpAnimation: true,
           ...commonFields,
         },
@@ -293,22 +301,26 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         startTime: startTime + duration * 0.4,
         duration: duration * 0.1,
         content: {
+          number: dramaticNumber,
+          subtitle: dramaticSubtitle,
           particleType: 'sparks',
-          particleColor: '#22D3EE',
+          particleColor: visual.mood === 'danger' ? '#ff0040' : '#22D3EE',
           ...commonFields,
         },
         animation: 'particle-burst',
       });
 
-      // Scene 4: Subtitle reveal letter-by-letter (30%)
+      // Scene 4: Subtitle reveal letter-by-letter with highlight (30%)
       scenes.push({
         id: `${act.id}-subtitle`,
         type: 'text-reveal',
         startTime: startTime + duration * 0.5,
         duration: duration * 0.3,
         content: {
-          mainText: visual.subtitle || act.title,
-          subtitle: visual.highlightWord ? `${visual.highlightWord}` : '',
+          number: dramaticNumber,
+          mainText: dramaticSubtitle,
+          subtitle: dramaticHighlight,
+          highlightWord: dramaticHighlight,
           letterByLetter: true,
           ...commonFields,
         },
@@ -322,8 +334,10 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         startTime: startTime + duration * 0.8,
         duration: duration * 0.2,
         content: {
-          mainText: visual.mainText || visual.highlightWord || '',
-          subtitle: '',
+          number: dramaticNumber,
+          subtitle: dramaticSubtitle,
+          mainText: dramaticImpact,
+          highlightWord: dramaticHighlight,
           cameraZoom: true,
           cameraShake: true,
           particleEffect: 'confetti',
