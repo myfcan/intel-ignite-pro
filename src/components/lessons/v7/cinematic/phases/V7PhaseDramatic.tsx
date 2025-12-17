@@ -1,5 +1,5 @@
 // V7PhaseDramatic - Dramatic entry phase with number reveal and text animation
-// Based on the spec: 98% appears giant, text reveals letter by letter
+// 6 CINEMATIC SCENES: letterbox → number-glow → count-up → explosion → subtitle → impact
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,17 +43,42 @@ export const V7PhaseDramatic = ({
 }: V7PhaseDramaticProps) => {
   const colors = MOOD_COLORS[mood];
   const [countValue, setCountValue] = useState('0');
+  const [showLetterbox, setShowLetterbox] = useState(true);
+  const [showNumberGlow, setShowNumberGlow] = useState(false);
+  const [showCountUp, setShowCountUp] = useState(false);
+  const [showExplosion, setShowExplosion] = useState(false);
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showImpact, setShowImpact] = useState(false);
   const [revealedLetters, setRevealedLetters] = useState(0);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; angle: number }[]>([]);
 
-  // Scene 0: Fade in with number counting up
-  // Scene 1: Show subtitle letter by letter
-  // Scene 2: Show impact word with explosion
+  // 6 CINEMATIC SCENES:
+  // Scene 0: Letterbox black fade in (cinematic aspect ratio)
+  // Scene 1: Number appears with glow effect
+  // Scene 2: Number count-up animation
+  // Scene 3: Particle explosion transition
+  // Scene 4: Subtitle reveals letter by letter
+  // Scene 5: Impact word with camera zoom + shake
 
+  // Scene 0: Letterbox effect
   useEffect(() => {
-    if (sceneIndex >= 0) {
+    if (sceneIndex >= 1) {
+      setShowLetterbox(false);
+    }
+  }, [sceneIndex]);
+
+  // Scene 1: Number appears with glow
+  useEffect(() => {
+    if (sceneIndex >= 1) {
+      setShowNumberGlow(true);
+      setCountValue(mainNumber); // Show number immediately with glow
+    }
+  }, [sceneIndex, mainNumber]);
+
+  // Scene 2: Count-up animation
+  useEffect(() => {
+    if (sceneIndex >= 2) {
+      setShowCountUp(true);
       // Count up animation
       const numericMatch = mainNumber.match(/^(\d+)/);
       if (numericMatch) {
@@ -83,9 +108,24 @@ export const V7PhaseDramatic = ({
     }
   }, [mainNumber, sceneIndex]);
 
-  // Reveal subtitle letter by letter
+  // Scene 3: Particle explosion
   useEffect(() => {
-    if (sceneIndex >= 1) {
+    if (sceneIndex >= 3) {
+      setShowExplosion(true);
+      // Create particle burst
+      const newParticles = Array.from({ length: 40 }, (_, i) => ({
+        id: i,
+        x: 50,
+        y: 50,
+        angle: (i / 40) * Math.PI * 2,
+      }));
+      setParticles(newParticles);
+    }
+  }, [sceneIndex]);
+
+  // Scene 4: Subtitle reveals letter by letter
+  useEffect(() => {
+    if (sceneIndex >= 4) {
       setShowSubtitle(true);
       let letterIndex = 0;
       const interval = setInterval(() => {
@@ -99,18 +139,18 @@ export const V7PhaseDramatic = ({
     }
   }, [sceneIndex, subtitle]);
 
-  // Show impact word with particles
+  // Scene 5: Impact word with camera shake
   useEffect(() => {
-    if (sceneIndex >= 2) {
+    if (sceneIndex >= 5) {
       setShowImpact(true);
-      // Create particle burst
-      const newParticles = Array.from({ length: 30 }, (_, i) => ({
-        id: i,
+      // Create more particles for impact
+      const impactParticles = Array.from({ length: 50 }, (_, i) => ({
+        id: i + 100,
         x: 50,
         y: 60,
-        angle: (i / 30) * Math.PI * 2,
+        angle: (i / 50) * Math.PI * 2,
       }));
-      setParticles(newParticles);
+      setParticles(prev => [...prev, ...impactParticles]);
     }
   }, [sceneIndex]);
 
@@ -150,11 +190,33 @@ export const V7PhaseDramatic = ({
 
   return (
     <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
-      {/* Background glow */}
+      {/* Scene 0: Letterbox cinematic bars */}
+      <AnimatePresence>
+        {showLetterbox && (
+          <>
+            <motion.div
+              className="absolute top-0 left-0 right-0 bg-black z-50"
+              initial={{ height: '50%' }}
+              animate={{ height: '12%' }}
+              exit={{ height: 0 }}
+              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 bg-black z-50"
+              initial={{ height: '50%' }}
+              animate={{ height: '12%' }}
+              exit={{ height: 0 }}
+              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Background glow - appears in scene 1 */}
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 0 }}
-        animate={{ opacity: sceneIndex >= 0 ? 1 : 0 }}
+        animate={{ opacity: showNumberGlow ? 1 : 0 }}
         transition={{ duration: 1.5 }}
         style={{
           background: `radial-gradient(circle at center, ${colors.glow} 0%, transparent 60%)`,
@@ -198,27 +260,31 @@ export const V7PhaseDramatic = ({
 
       {/* Main content */}
       <div className="relative text-center z-10">
-        {/* Main Number */}
-        <motion.div
-          className="text-[20vw] sm:text-[25vw] font-black leading-none select-none"
-          style={{
-            background: colors.gradient,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: sceneIndex >= 1 ? `drop-shadow(0 0 60px ${colors.glow})` : 'none',
-          }}
-          initial={{ scale: 0.3, opacity: 0 }}
-          animate={{
-            scale: sceneIndex >= 1 ? [1, 1.02, 1] : 1,
-            opacity: 1,
-          }}
-          transition={{
-            scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
-            opacity: { duration: 0.8 },
-          }}
-        >
-          {countValue}
-        </motion.div>
+        {/* Main Number - appears in scene 1, animates in scene 2 */}
+        <AnimatePresence>
+          {showNumberGlow && (
+            <motion.div
+              className="text-[20vw] sm:text-[25vw] font-black leading-none select-none"
+              style={{
+                background: colors.gradient,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: showCountUp ? `drop-shadow(0 0 60px ${colors.glow})` : `drop-shadow(0 0 30px ${colors.glow})`,
+              }}
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{
+                scale: showCountUp ? [1, 1.02, 1] : 1,
+                opacity: 1,
+              }}
+              transition={{
+                scale: { duration: 2, repeat: showCountUp ? Infinity : 0, ease: 'easeInOut' },
+                opacity: { duration: 0.8 },
+              }}
+            >
+              {countValue}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Subtitle - reveals letter by letter */}
         <AnimatePresence>
