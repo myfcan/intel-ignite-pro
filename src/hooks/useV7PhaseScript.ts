@@ -119,6 +119,8 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
     const duration = act.duration || act.endTime - act.startTime || 60;
     const endTime = currentTime + duration;
     const phaseType = mapActTypeToPhaseType(act.type);
+
+    console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${currentTime}s - ${endTime}s)`);
     
     // For cinematic_flow, extract visual and audio from act.content
     const visualData = act.content?.visual;
@@ -188,16 +190,22 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
 // Map database act type to V7 phase type
 function mapActTypeToPhaseType(type: string): V7Phase['type'] {
   const typeMap: Record<string, V7Phase['type']> = {
+    // Core types
     'dramatic': 'dramatic',
+    'narrative': 'narrative',
+    'interaction': 'interaction',
+    'playground': 'playground',
+    'revelation': 'revelation',
+    'gamification': 'gamification',
+    // Aliases from JSON
     'comparison': 'narrative',
     'quiz': 'interaction',
-    'interaction': 'interaction',
     'result': 'revelation',
-    'playground': 'playground',
-    'narrative': 'narrative',
     'reveal': 'revelation',
     'challenge': 'interaction',
+    'cta': 'revelation', // CTA uses revelation phase (V7PhaseCTA)
   };
+  console.log(`[mapActTypeToPhaseType] "${type}" → "${typeMap[type] || 'dramatic'}"`);
   return typeMap[type] || 'dramatic';
 }
 
@@ -760,6 +768,58 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
           ...commonFields,
         },
         animation: 'fade',
+      });
+      break;
+
+    case 'gamification':
+      // 🎬 3 CINEMATIC SCENES (Achievement celebration)
+      // Scene 0: Title with celebration effect (20%)
+      scenes.push({
+        id: `${act.id}-title`,
+        type: 'text-reveal',
+        startTime,
+        duration: duration * 0.2,
+        content: {
+          mainText: visual.mainText || '🏆 CONQUISTAS',
+          subtitle: visual.subtitle || 'Parabéns!',
+          glowEffect: true,
+          particles: 'confetti',
+          ...commonFields,
+        },
+        animation: 'scale-up',
+      });
+
+      // Scene 1: Achievements list (50%)
+      scenes.push({
+        id: `${act.id}-achievements`,
+        type: 'result',
+        startTime: startTime + duration * 0.2,
+        duration: duration * 0.5,
+        content: {
+          mainText: visual.mainText || 'CONQUISTAS',
+          subtitle: visual.subtitle || '',
+          items: visual.items || [],
+          staggerChildren: 0.2,
+          iconBounce: true,
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 2: XP and metrics (30%)
+      scenes.push({
+        id: `${act.id}-metrics`,
+        type: 'result',
+        startTime: startTime + duration * 0.7,
+        duration: duration * 0.3,
+        content: {
+          mainText: 'RECOMPENSAS',
+          subtitle: '',
+          metrics: visual.metrics || [{ label: 'XP Ganho', value: '+100' }],
+          particles: 'sparks',
+          ...commonFields,
+        },
+        animation: 'explode',
       });
       break;
 
