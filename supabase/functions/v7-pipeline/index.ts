@@ -71,6 +71,8 @@ interface V7DramaticContent {
   mainValue: string;
   subtitle: string;
   highlightWord?: string;
+  hookQuestion?: string;  // "VOCÊ SABIA?" - teaser shown during letterbox
+  impactWord?: string;    // "FRACASSO" - impact word shown at end
   mood?: 'danger' | 'success' | 'warning' | 'neutral';
 }
 
@@ -510,7 +512,13 @@ async function generateActsWithAI(narrativeScript: string, title: string): Promi
 
 1. **ATO 1 - DRAMATIC (Hook)**: O gancho inicial que captura atenção com um dado impactante ou estatística chocante
    - Tipo: "dramatic"
-   - Deve ter: mainValue (ex: "98%"), subtitle, highlightWord, mood (danger/success/warning)
+   - Deve ter:
+     - hookQuestion: pergunta teaser que aparece na abertura (ex: "VOCÊ SABIA?", "E SE EU TE DISSER...")
+     - mainValue: estatística/número impactante (ex: "78%", "3x", "R$ 30K")
+     - subtitle: frase que contextualiza o número (ex: "dos profissionais não sabem usar IA")
+     - highlightWord: palavra-chave para destacar (ex: "não sabem")
+     - impactWord: palavra de impacto final (ex: "FRACASSO", "REVOLUÇÃO", "OPORTUNIDADE")
+     - mood: tom emocional (danger/success/warning/neutral)
 
 2. **ATO 2 - COMPARISON (Conflito)**: Comparação lado a lado mostrando dois caminhos/grupos diferentes
    - Tipo: "comparison"
@@ -534,6 +542,7 @@ async function generateActsWithAI(narrativeScript: string, title: string): Promi
 - Mantenha o tom dramático e cinematográfico
 - Os valores/números devem vir do roteiro original
 - Responda APENAS com JSON válido, sem markdown
+- Para o ATO DRAMATIC: hookQuestion deve ser uma pergunta provocativa, impactWord deve ser UMA palavra de impacto
 
 ## FORMATO DE RESPOSTA:
 {
@@ -542,7 +551,14 @@ async function generateActsWithAI(narrativeScript: string, title: string): Promi
       "type": "dramatic",
       "title": "O Choque Inicial",
       "narrativeSegment": "Trecho do roteiro...",
-      "content": { ... conteúdo específico do tipo ... },
+      "content": {
+        "hookQuestion": "VOCÊ SABIA?",
+        "mainValue": "78%",
+        "subtitle": "dos prompts falham por serem mal escritos",
+        "highlightWord": "mal escritos",
+        "impactWord": "FRACASSO",
+        "mood": "danger"
+      },
       "visualEffects": { "mood": "dramatic", "particles": true, "glow": true }
     },
     ... mais 4 atos ...
@@ -631,9 +647,11 @@ function createDefaultAct(index: number, narrativeScript: string): AIGeneratedAc
 
   const defaultContents: Record<V7ActType, any> = {
     dramatic: {
+      hookQuestion: 'VOCÊ SABIA?',
       mainValue: '98%',
       subtitle: 'das pessoas não sabem usar IA corretamente',
       highlightWord: 'não sabem',
+      impactWord: 'OPORTUNIDADE',
       mood: 'danger'
     },
     narrative: {
