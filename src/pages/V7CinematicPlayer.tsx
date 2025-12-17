@@ -21,7 +21,7 @@ export default function V7CinematicPlayer() {
       title: '🎉 Aula Completa!',
       description: 'Você completou a experiência cinematográfica!',
     });
-    setTimeout(() => navigate('/'), 2000);
+    setTimeout(() => navigate('/dashboard'), 2000);
   };
 
   // Render loading state
