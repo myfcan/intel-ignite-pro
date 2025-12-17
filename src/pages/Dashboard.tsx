@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,31 +64,34 @@ const Dashboard = () => {
   // REMOVIDO: refreshGamification duplicado que causava múltiplos fetches
   // O useUserGamification já faz fetch automaticamente via onAuthStateChange
 
-  // Derivar progresso das trilhas COM status de admin
-  // CRITICAL: Calcula status dinamicamente baseado em isAdmin
-  // NOTE: loading já espera adminLoading terminar, então isAdmin é confiável aqui
-  
-  const trailsProgressWithStatus = trailsProgress.map((tp, index) => {
-    const trail = trails.find(t => t.id === tp.trailId);
-    if (!trail) return tp;
+  // CRITICAL FIX: useMemo recalcula quando isAdmin muda
+  // Isso garante que as trilhas são recalculadas APÓS admin status ser confirmado
+  const trailsProgressWithStatus = useMemo(() => {
+    console.log('[Dashboard] Recalculando trailsProgressWithStatus. isAdmin:', isAdmin, 'adminLoading:', adminLoading);
+    
+    return trailsProgress.map((tp, index) => {
+      const trail = trails.find(t => t.id === tp.trailId);
+      if (!trail) return tp;
 
-    let status: 'active' | 'completed' | 'locked';
-    if (tp.progress === 100) {
-      status = 'completed';
-    } else if (isAdmin) {
-      // Admin tem acesso a todas as trilhas
-      status = 'active';
-    } else if (trail.order_index === 1) {
-      // Primeira trilha sempre desbloqueada
-      status = 'active';
-    } else {
-      // Trilhas seguintes dependem da anterior
-      const previousProgress = trailsProgress[index - 1];
-      status = previousProgress?.progress === 100 ? 'active' : 'locked';
-    }
+      let status: 'active' | 'completed' | 'locked';
+      if (tp.progress === 100) {
+        status = 'completed';
+      } else if (isAdmin) {
+        // Admin tem acesso a todas as trilhas
+        console.log('[Dashboard] Admin bypass - trilha desbloqueada:', trail.title);
+        status = 'active';
+      } else if (trail.order_index === 1) {
+        // Primeira trilha sempre desbloqueada
+        status = 'active';
+      } else {
+        // Trilhas seguintes dependem da anterior
+        const previousProgress = trailsProgress[index - 1];
+        status = previousProgress?.progress === 100 ? 'active' : 'locked';
+      }
 
-    return { ...tp, status };
-  });
+      return { ...tp, status };
+    });
+  }, [trailsProgress, trails, isAdmin, adminLoading]);
 
   const checkAuth = async () => {
     try {
