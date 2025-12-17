@@ -104,6 +104,13 @@ export const TRANSITIONS = {
     transition: { duration: TIMING.medium, ease: EASING.easeOut },
   },
 
+  slideRight: {
+    initial: { opacity: 0, x: -100 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 100 },
+    transition: { duration: TIMING.medium, ease: EASING.easeOut },
+  },
+
   scaleUp: {
     initial: { opacity: 0, scale: 0.8 },
     animate: { opacity: 1, scale: 1 },

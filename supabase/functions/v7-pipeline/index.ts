@@ -636,6 +636,12 @@ function createDefaultAct(index: number, narrativeScript: string): AIGeneratedAc
       highlightWord: 'não sabem',
       mood: 'danger'
     },
+    narrative: {
+      title: 'A História',
+      subtitle: 'Entenda o contexto completo',
+      content: 'Narrativa de contextualização',
+      mood: 'neutral'
+    },
     comparison: {
       title: 'A Diferença',
       leftCard: {
@@ -661,6 +667,15 @@ function createDefaultAct(index: number, narrativeScript: string): AIGeneratedAc
       ],
       buttonText: 'Ver Resultado'
     },
+    quiz: {
+      title: 'Quiz Rápido',
+      subtitle: 'Teste seu conhecimento',
+      options: [
+        { id: 'opt1', text: 'Opção correta', isCorrect: true },
+        { id: 'opt2', text: 'Opção incorreta', isCorrect: false }
+      ],
+      buttonText: 'Verificar'
+    },
     playground: {
       title: 'Desafio Prático',
       subtitle: 'Compare as duas abordagens',
@@ -685,6 +700,28 @@ function createDefaultAct(index: number, narrativeScript: string): AIGeneratedAc
         { label: 'Próximo Passo', value: 'AGORA' }
       ],
       ctaText: 'Começar Agora',
+      celebrationLevel: 'high'
+    },
+    revelation: {
+      emoji: '💡',
+      title: 'A Revelação',
+      message: 'Agora você entende o método.',
+      insights: ['Insight 1', 'Insight 2', 'Insight 3']
+    },
+    cta: {
+      title: 'Próximo Passo',
+      subtitle: 'Continue sua jornada',
+      buttonText: 'Continuar',
+      options: [
+        { label: 'Próxima Aula', action: 'next-lesson' },
+        { label: 'Praticar Mais', action: 'playground' }
+      ]
+    },
+    gamification: {
+      xpEarned: 100,
+      coinsEarned: 25,
+      badges: ['first-lesson'],
+      message: 'Parabéns! Você concluiu a aula.',
       celebrationLevel: 'high'
     }
   };
@@ -789,10 +826,15 @@ function mapMood(actType: V7ActType, aiMood?: string): 'dramatic' | 'calm' | 'en
 function getSoundForAct(actType: V7ActType, trigger: 'enter' | 'action'): string {
   const sounds: Record<V7ActType, { enter: string; action: string }> = {
     dramatic: { enter: 'transition-dramatic', action: 'dramatic-hit' },
+    narrative: { enter: 'transition-whoosh', action: 'reveal' },
     comparison: { enter: 'transition-whoosh', action: 'reveal' },
     interaction: { enter: 'transition-whoosh', action: 'click-confirm' },
+    quiz: { enter: 'transition-whoosh', action: 'click-confirm' },
     playground: { enter: 'transition-whoosh', action: 'success' },
     result: { enter: 'reveal', action: 'completion' },
+    revelation: { enter: 'reveal', action: 'success' },
+    cta: { enter: 'transition-whoosh', action: 'click-confirm' },
+    gamification: { enter: 'celebration', action: 'completion' },
   };
   
   return sounds[actType]?.[trigger] || 'transition-whoosh';
