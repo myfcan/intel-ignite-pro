@@ -66,6 +66,8 @@ const Dashboard = () => {
 
   // Derivar progresso das trilhas COM status de admin
   // CRITICAL: Calcula status dinamicamente baseado em isAdmin
+  // NOTE: loading já espera adminLoading terminar, então isAdmin é confiável aqui
+  
   const trailsProgressWithStatus = trailsProgress.map((tp, index) => {
     const trail = trails.find(t => t.id === tp.trailId);
     if (!trail) return tp;
@@ -230,7 +232,8 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  if (loading) {
+  // Esperar loading do dashboard E do status de admin
+  if (loading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
