@@ -252,33 +252,58 @@ export const V7PhasePlayer = ({
             revealValue=""
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
+            audioControl={audio}
           />
         );
 
       case 'playground':
+        // Extract playground scores from content with proper fallbacks
+        const amateurScore = typeof content.amateurScore === 'number'
+          ? content.amateurScore
+          : (firstSceneContent.amateurScore || 10);
+        const professionalScore = typeof content.professionalScore === 'number'
+          ? content.professionalScore
+          : (firstSceneContent.professionalScore || 95);
+        const maxScore = 100;
+
+        // Determine verdict based on score
+        const getVerdict = (score: number): 'bad' | 'good' | 'excellent' => {
+          if (score < 30) return 'bad';
+          if (score < 70) return 'good';
+          return 'excellent';
+        };
+
+        // Parse result content (handle both string and object formats)
+        const getResultContent = (result: any): string => {
+          if (typeof result === 'string') return result;
+          if (typeof result === 'object' && result?.content) return result.content;
+          return '';
+        };
+
         return (
           <V7PhasePlayground
             challengeTitle={content.mainText || firstSceneContent.mainText || 'DESAFIO PRÁTICO'}
             challengeSubtitle={content.subtitle || firstSceneContent.subtitle || currentPhase.title}
-            amateurPrompt={content.amateurPrompt || 'prompt simples'}
+            amateurPrompt={content.amateurPrompt || firstSceneContent.amateurPrompt || 'prompt simples'}
             amateurResult={{
               title: 'Resultado Amador',
-              content: content.amateurResult || 'Resultado genérico...',
-              score: 0,
-              maxScore: 500,
-              verdict: 'bad'
+              content: getResultContent(content.amateurResult || firstSceneContent.amateurResult) || 'Resultado genérico...',
+              score: amateurScore,
+              maxScore,
+              verdict: getVerdict(amateurScore)
             }}
-            professionalPrompt={content.professionalPrompt || 'prompt profissional estruturado'}
+            professionalPrompt={content.professionalPrompt || firstSceneContent.professionalPrompt || 'prompt profissional estruturado'}
             professionalResult={{
               title: 'Resultado Profissional',
-              content: content.professionalResult || 'Resultado otimizado...',
-              score: 500,
-              maxScore: 500,
-              verdict: 'excellent'
+              content: getResultContent(content.professionalResult || firstSceneContent.professionalResult) || 'Resultado otimizado...',
+              score: professionalScore,
+              maxScore,
+              verdict: getVerdict(professionalScore)
             }}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             onComplete={handlePlaygroundComplete}
+            audioControl={audio}
           />
         );
 

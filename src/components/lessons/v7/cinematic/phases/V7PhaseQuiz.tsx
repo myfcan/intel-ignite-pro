@@ -1,7 +1,7 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface QuizOption {
@@ -19,6 +19,12 @@ interface V7PhaseQuizProps {
   revealValue?: string;
   sceneIndex: number;
   onComplete?: (selectedIds: string[]) => void;
+  audioControl?: {
+    pause: () => void;
+    play: () => void;
+    togglePlayPause: () => void;
+    isPlaying: boolean;
+  };
 }
 
 export const V7PhaseQuiz = ({
@@ -30,10 +36,27 @@ export const V7PhaseQuiz = ({
   revealValue,
   sceneIndex,
   onComplete,
+  audioControl,
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
+
+  // Auto-pause audio when quiz appears (Bug #13 fix)
+  useEffect(() => {
+    if (audioControl && audioControl.isPlaying) {
+      audioControl.pause();
+      console.log('[V7PhaseQuiz] Audio paused for interaction');
+    }
+
+    // Resume audio when component unmounts (user navigated away)
+    return () => {
+      if (audioControl && !audioControl.isPlaying) {
+        audioControl.play();
+        console.log('[V7PhaseQuiz] Audio resumed after quiz exit');
+      }
+    };
+  }, [audioControl]);
 
   // Scene 0: Show title and quiz icon
   // Scene 1: Show options with animation
@@ -53,8 +76,17 @@ export const V7PhaseQuiz = ({
   const handleReveal = useCallback(() => {
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
+
+    // Resume audio after showing result (2 seconds delay for user to see feedback)
+    setTimeout(() => {
+      if (audioControl && !audioControl.isPlaying) {
+        audioControl.play();
+        console.log('[V7PhaseQuiz] Audio resumed after quiz completion');
+      }
+    }, 2500);
+
     onComplete?.(selectedIds);
-  }, [selectedIds, onComplete]);
+  }, [selectedIds, onComplete, audioControl]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'

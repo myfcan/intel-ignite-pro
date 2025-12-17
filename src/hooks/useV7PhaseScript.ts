@@ -229,11 +229,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
   
   switch (phaseType) {
     case 'dramatic':
+      // Scene 0: Number reveal (30% of duration)
       scenes.push({
         id: `${act.id}-number`,
         type: 'number-reveal',
         startTime,
-        duration: duration * 0.4,
+        duration: duration * 0.3,
         content: {
           number: String(visual.mainValue || '01'),
           subtitle: visual.subtitle || act.title,
@@ -242,11 +243,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         },
         animation: 'count-up',
       });
+      // Scene 1: Subtitle reveal letter-by-letter (40% of duration)
       scenes.push({
-        id: `${act.id}-text`,
+        id: `${act.id}-subtitle`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.4,
-        duration: duration * 0.6,
+        startTime: startTime + duration * 0.3,
+        duration: duration * 0.4,
         content: {
           mainText: visual.subtitle || act.title,
           subtitle: visual.highlightWord ? `${visual.highlightWord}` : '',
@@ -254,26 +256,40 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         },
         animation: 'letter-by-letter',
       });
+      // Scene 2: Impact word with particle explosion (30% of duration)
+      scenes.push({
+        id: `${act.id}-impact`,
+        type: 'text-reveal',
+        startTime: startTime + duration * 0.7,
+        duration: duration * 0.3,
+        content: {
+          mainText: visual.mainText || visual.highlightWord || '',
+          subtitle: '',
+          ...commonFields,
+        },
+        animation: 'explode',
+      });
       break;
 
     case 'narrative':
+      // Scene 0: Split screen header (30% of duration)
       scenes.push({
         id: `${act.id}-split`,
         type: 'split-screen',
         startTime,
-        duration: duration * 0.4,
+        duration: duration * 0.3,
         content: {
           mainText: visual.title || act.title,
           items: [
-            { 
-              label: visual.leftCard?.label || 'Opção A', 
-              value: visual.leftCard?.value || '', 
-              isNegative: !visual.leftCard?.isPositive 
+            {
+              label: visual.leftCard?.label || 'Opção A',
+              value: visual.leftCard?.value || '',
+              isNegative: !visual.leftCard?.isPositive
             },
-            { 
-              label: visual.rightCard?.label || 'Opção B', 
-              value: visual.rightCard?.value || '', 
-              isPositive: visual.rightCard?.isPositive 
+            {
+              label: visual.rightCard?.label || 'Opção B',
+              value: visual.rightCard?.value || '',
+              isPositive: visual.rightCard?.isPositive
             },
           ],
           // Playground comparison fields
@@ -287,23 +303,38 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         },
         animation: 'slide-left',
       });
+      // Scene 1: Comparison rows animate in (40% of duration)
       scenes.push({
         id: `${act.id}-comparison`,
         type: 'comparison',
-        startTime: startTime + duration * 0.4,
-        duration: duration * 0.6,
+        startTime: startTime + duration * 0.3,
+        duration: duration * 0.4,
         content: {
           mainText: visual.subtitle || '',
           items: [
-            { 
-              label: 'Detalhes', 
-              left: visual.leftCard?.details || '', 
-              right: visual.rightCard?.details || '' 
+            {
+              label: 'Detalhes',
+              left: visual.leftCard?.details || '',
+              right: visual.rightCard?.details || ''
             },
           ],
           ...commonFields,
         },
         animation: 'fade',
+      });
+      // Scene 2: Warning/urgency section (30% of duration)
+      scenes.push({
+        id: `${act.id}-warning`,
+        type: 'text-reveal',
+        startTime: startTime + duration * 0.7,
+        duration: duration * 0.3,
+        content: {
+          mainText: visual.mainText || act.title,
+          subtitle: visual.subtitle || '',
+          warning: visual.warning || '',
+          ...commonFields,
+        },
+        animation: 'slide-up',
       });
       break;
 

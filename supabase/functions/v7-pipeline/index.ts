@@ -798,31 +798,49 @@ function recalculateActTimingsFromWordTimestamps(
   narrativeScript: string
 ): void {
   if (acts.length === 0 || wordTimestamps.length === 0) return;
-  
+
   console.log('[V7Pipeline] Recalculating act timings from', wordTimestamps.length, 'word timestamps');
-  
-  // Calculate total words and assign proportionally
+
+  // ✅ FIX BUG #8: Distribute words PROPORTIONALLY to act duration (not uniformly)
   const totalWords = wordTimestamps.length;
-  const wordsPerAct = Math.ceil(totalWords / acts.length);
-  
+  const totalAudioDuration = wordTimestamps[totalWords - 1].end;
+
+  // Calculate each act's proportion of total duration
+  const actProportions = acts.map(act => {
+    const actDuration = act.endTime - act.startTime;
+    return actDuration / totalAudioDuration;
+  });
+
+  let currentWordIndex = 0;
+
   acts.forEach((act, index) => {
-    const startWordIndex = index * wordsPerAct;
-    const endWordIndex = Math.min((index + 1) * wordsPerAct - 1, totalWords - 1);
-    
+    // Calculate how many words this act should get based on its duration
+    const actWordCount = Math.floor(totalWords * actProportions[index]);
+    const startWordIndex = currentWordIndex;
+    let endWordIndex = Math.min(
+      currentWordIndex + actWordCount - 1,
+      totalWords - 1
+    );
+
+    // For last act, use all remaining words
+    if (index === acts.length - 1) {
+      endWordIndex = totalWords - 1;
+    }
+
+    // Assign timing from word timestamps
     if (startWordIndex < totalWords) {
       act.startTime = wordTimestamps[startWordIndex].start;
     }
-    
-    if (endWordIndex < totalWords) {
+
+    if (endWordIndex < totalWords && endWordIndex >= startWordIndex) {
       act.endTime = wordTimestamps[endWordIndex].end;
     }
-    
-    // Ensure last act goes to the very end
-    if (index === acts.length - 1) {
-      act.endTime = wordTimestamps[totalWords - 1].end;
-    }
-    
-    console.log(`[V7Pipeline] Act ${index + 1}: ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s`);
+
+    // Move to next batch of words
+    currentWordIndex = endWordIndex + 1;
+
+    const wordsAssigned = endWordIndex - startWordIndex + 1;
+    console.log(`[V7Pipeline] Act ${index + 1}: ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s (${wordsAssigned} words, ${actProportions[index].toFixed(1)}% duration)`);
   });
 }
 
