@@ -9,6 +9,7 @@ import { V7CinematicCanvas } from './V7CinematicCanvas';
 import { useV7CinematicAudio } from './useV7CinematicAudio';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
+import { V7DebugPanel } from '../V7DebugPanel';
 
 import V7PhaseLoading from './phases/V7PhaseLoading';
 import V7PhaseDramatic from './phases/V7PhaseDramatic';
@@ -431,6 +432,18 @@ export const V7PhasePlayer = ({
           showSkip={currentPhaseIndex < script.phases.length - 2}
         />
       </motion.div>
+
+      {/* Debug Panel */}
+      <V7DebugPanel
+        currentPhase={currentPhase}
+        currentPhaseIndex={currentPhaseIndex}
+        currentScene={currentPhase?.scenes?.[currentSceneIndex] || null}
+        currentSceneIndex={currentSceneIndex}
+        currentTime={audio.currentTime}
+        isPlaying={audio.isPlaying}
+        audioUrl={audioUrl || null}
+        wordTimestamps={wordTimestamps}
+      />
     </div>
   );
 };
