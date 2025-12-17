@@ -229,109 +229,213 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
   
   switch (phaseType) {
     case 'dramatic':
-      // Scene 0: Number reveal (30% of duration)
+      // 🎬 6 CINEMATIC SCENES (Netflix Bandersnatch-inspired)
+      // Scene 0: Fade in black screen with letterbox (10%)
       scenes.push({
-        id: `${act.id}-number`,
-        type: 'number-reveal',
+        id: `${act.id}-black`,
+        type: 'letterbox',
         startTime,
-        duration: duration * 0.3,
+        duration: duration * 0.1,
+        content: {
+          mainText: '',
+          subtitle: '',
+          backgroundColor: 'black',
+          aspectRatio: 'cinematic',
+          ...commonFields,
+        },
+        animation: 'letterbox',
+      });
+
+      // Scene 1: Number appears with glow effect (15%)
+      scenes.push({
+        id: `${act.id}-number-appear`,
+        type: 'number-reveal',
+        startTime: startTime + duration * 0.1,
+        duration: duration * 0.15,
+        content: {
+          number: String(visual.mainValue || '01'),
+          subtitle: '',
+          highlightWord: visual.highlightWord,
+          glowEffect: true,
+          ...commonFields,
+        },
+        animation: 'scale-up',
+      });
+
+      // Scene 2: Number count-up animation (15%)
+      scenes.push({
+        id: `${act.id}-count-up`,
+        type: 'number-reveal',
+        startTime: startTime + duration * 0.25,
+        duration: duration * 0.15,
         content: {
           number: String(visual.mainValue || '01'),
           subtitle: visual.subtitle || act.title,
           highlightWord: visual.highlightWord,
+          countUpAnimation: true,
           ...commonFields,
         },
         animation: 'count-up',
       });
-      // Scene 1: Subtitle reveal letter-by-letter (40% of duration)
+
+      // Scene 3: Particle explosion transition (10%)
+      scenes.push({
+        id: `${act.id}-explosion`,
+        type: 'particle-effect',
+        startTime: startTime + duration * 0.4,
+        duration: duration * 0.1,
+        content: {
+          particleType: 'sparks',
+          particleColor: '#22D3EE',
+          ...commonFields,
+        },
+        animation: 'particle-burst',
+      });
+
+      // Scene 4: Subtitle reveal letter-by-letter (30%)
       scenes.push({
         id: `${act.id}-subtitle`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.3,
-        duration: duration * 0.4,
+        startTime: startTime + duration * 0.5,
+        duration: duration * 0.3,
         content: {
           mainText: visual.subtitle || act.title,
           subtitle: visual.highlightWord ? `${visual.highlightWord}` : '',
+          letterByLetter: true,
           ...commonFields,
         },
         animation: 'letter-by-letter',
       });
-      // Scene 2: Impact word with particle explosion (30% of duration)
+
+      // Scene 5: Impact word with camera zoom + shake (20%)
       scenes.push({
         id: `${act.id}-impact`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.7,
-        duration: duration * 0.3,
+        startTime: startTime + duration * 0.8,
+        duration: duration * 0.2,
         content: {
           mainText: visual.mainText || visual.highlightWord || '',
           subtitle: '',
+          cameraZoom: true,
+          cameraShake: true,
+          particleEffect: 'confetti',
           ...commonFields,
         },
-        animation: 'explode',
+        animation: 'zoom-in',
       });
       break;
 
     case 'narrative':
-      // Scene 0: Split screen header (30% of duration)
+      // 🎬 6 CINEMATIC SCENES (Split-screen comparisons)
+      // Scene 0: Title fade in with letterboxing (10%)
+      scenes.push({
+        id: `${act.id}-title`,
+        type: 'letterbox',
+        startTime,
+        duration: duration * 0.1,
+        content: {
+          mainText: visual.title || act.title,
+          subtitle: visual.subtitle || '',
+          aspectRatio: 'cinematic',
+          ...commonFields,
+        },
+        animation: 'letterbox',
+      });
+
+      // Scene 1: Split-screen slide transition (15%)
       scenes.push({
         id: `${act.id}-split`,
         type: 'split-screen',
-        startTime,
-        duration: duration * 0.3,
+        startTime: startTime + duration * 0.1,
+        duration: duration * 0.15,
         content: {
           mainText: visual.title || act.title,
-          items: [
-            {
-              label: visual.leftCard?.label || 'Opção A',
-              value: visual.leftCard?.value || '',
-              isNegative: !visual.leftCard?.isPositive
-            },
-            {
-              label: visual.rightCard?.label || 'Opção B',
-              value: visual.rightCard?.value || '',
-              isPositive: visual.rightCard?.isPositive
-            },
-          ],
-          // Playground comparison fields
-          amateurPrompt: visual.amateurPrompt || visual.leftCard?.prompt || '',
-          professionalPrompt: visual.professionalPrompt || visual.rightCard?.prompt || '',
-          amateurResult: visual.amateurResult || visual.leftCard?.result || '',
-          professionalResult: visual.professionalResult || visual.rightCard?.result || '',
-          amateurScore: visual.amateurScore || visual.leftCard?.score || 0,
-          professionalScore: visual.professionalScore || visual.rightCard?.score || 100,
+          splitPosition: 0.5,
+          dividerAnimation: true,
           ...commonFields,
         },
         animation: 'slide-left',
       });
-      // Scene 1: Comparison rows animate in (40% of duration)
+
+      // Scene 2: Left card details animate in (20%)
       scenes.push({
-        id: `${act.id}-comparison`,
+        id: `${act.id}-left-card`,
         type: 'comparison',
-        startTime: startTime + duration * 0.3,
-        duration: duration * 0.4,
+        startTime: startTime + duration * 0.25,
+        duration: duration * 0.2,
         content: {
-          mainText: visual.subtitle || '',
+          mainText: visual.leftCard?.label || 'AMADOR',
           items: [
             {
-              label: 'Detalhes',
-              left: visual.leftCard?.details || '',
-              right: visual.rightCard?.details || ''
+              label: visual.leftCard?.label || 'Opção A',
+              value: visual.leftCard?.value || '',
+              details: visual.leftCard?.details || '',
+              isNegative: !visual.leftCard?.isPositive,
             },
           ],
+          amateurPrompt: visual.amateurPrompt || visual.leftCard?.prompt || '',
+          amateurScore: visual.amateurScore || visual.leftCard?.score || 0,
+          ...commonFields,
+        },
+        animation: 'slide-left',
+      });
+
+      // Scene 3: Right card details animate in (20%)
+      scenes.push({
+        id: `${act.id}-right-card`,
+        type: 'comparison',
+        startTime: startTime + duration * 0.45,
+        duration: duration * 0.2,
+        content: {
+          mainText: visual.rightCard?.label || 'PROFISSIONAL',
+          items: [
+            {
+              label: visual.rightCard?.label || 'Opção B',
+              value: visual.rightCard?.value || '',
+              details: visual.rightCard?.details || '',
+              isPositive: visual.rightCard?.isPositive,
+            },
+          ],
+          professionalPrompt: visual.professionalPrompt || visual.rightCard?.prompt || '',
+          professionalScore: visual.professionalScore || visual.rightCard?.score || 100,
+          ...commonFields,
+        },
+        animation: 'slide-right',
+      });
+
+      // Scene 4: Comparison highlight effects (20%)
+      scenes.push({
+        id: `${act.id}-highlight`,
+        type: 'comparison',
+        startTime: startTime + duration * 0.65,
+        duration: duration * 0.2,
+        content: {
+          mainText: visual.subtitle || 'DIFERENÇA BRUTAL',
+          items: [
+            {
+              label: 'Comparação',
+              left: visual.leftCard?.details || '',
+              right: visual.rightCard?.details || '',
+            },
+          ],
+          pulseEffect: true,
+          glowColor: '#22D3EE',
           ...commonFields,
         },
         animation: 'fade',
       });
-      // Scene 2: Warning/urgency section (30% of duration)
+
+      // Scene 5: Warning/urgency with color shift (15%)
       scenes.push({
         id: `${act.id}-warning`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.7,
-        duration: duration * 0.3,
+        startTime: startTime + duration * 0.85,
+        duration: duration * 0.15,
         content: {
           mainText: visual.mainText || act.title,
-          subtitle: visual.subtitle || '',
+          subtitle: visual.warning || '',
           warning: visual.warning || '',
+          backgroundColor: 'from-black to-red-900/20',
           ...commonFields,
         },
         animation: 'slide-up',
@@ -339,6 +443,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       break;
 
     case 'interaction':
+      // 🎬 5 CINEMATIC SCENES (Interactive quiz with feedback)
       // Extract quiz-specific fields
       const quizOptions = (visual.options || interaction.options || []).map((opt: any) => ({
         id: opt.id || `opt-${Math.random().toString(36).substr(2, 9)}`,
@@ -349,11 +454,57 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         feedback: opt.feedback || '',
       }));
 
+      // Scene 0: Quiz title with icon bounce (10%)
       scenes.push({
-        id: `${act.id}-quiz`,
-        type: 'quiz',
+        id: `${act.id}-title`,
+        type: 'quiz-intro',
         startTime,
-        duration,
+        duration: duration * 0.1,
+        content: {
+          mainText: visual.title || interaction.title || 'AUTO-AVALIAÇÃO',
+          subtitle: '',
+          iconBounce: true,
+          ...commonFields,
+        },
+        animation: 'scale-up',
+      });
+
+      // Scene 1: Question reveal (15%)
+      scenes.push({
+        id: `${act.id}-question`,
+        type: 'quiz-question',
+        startTime: startTime + duration * 0.1,
+        duration: duration * 0.15,
+        content: {
+          mainText: visual.question || interaction.question || 'Responda:',
+          subtitle: visual.subtitle || '',
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 2: Options slide in one by one (20%)
+      scenes.push({
+        id: `${act.id}-options`,
+        type: 'quiz-options',
+        startTime: startTime + duration * 0.25,
+        duration: duration * 0.2,
+        content: {
+          mainText: visual.question || interaction.question || 'Responda:',
+          title: visual.title || interaction.title || 'Avaliação',
+          options: quizOptions,
+          staggerChildren: 0.15,
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 3: User interaction pause (40%)
+      scenes.push({
+        id: `${act.id}-interaction`,
+        type: 'quiz',
+        startTime: startTime + duration * 0.45,
+        duration: duration * 0.4,
         content: {
           mainText: visual.question || interaction.question || 'Responda:',
           title: visual.title || interaction.title || 'Avaliação',
@@ -362,27 +513,140 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
           incorrectFeedback: interaction.incorrectFeedback || visual.incorrectFeedback || 'Tente novamente',
           revealGoodMessage: interaction.revealGoodMessage || visual.revealGoodMessage || '',
           revealBadMessage: interaction.revealBadMessage || visual.revealBadMessage || '',
+          highlightOnHover: true,
+          scaleOnHover: 1.02,
           ...commonFields,
         },
-        animation: 'slide-up',
+        animation: 'fade',
+      });
+
+      // Scene 4: Result reveal with feedback glow (15%)
+      scenes.push({
+        id: `${act.id}-result`,
+        type: 'quiz-result',
+        startTime: startTime + duration * 0.85,
+        duration: duration * 0.15,
+        content: {
+          mainText: visual.correctFeedback || 'Excelente!',
+          subtitle: visual.revealGoodMessage || '',
+          particles: 'confetti',
+          glowEffect: true,
+          ...commonFields,
+        },
+        animation: 'explode',
       });
       break;
 
     case 'playground':
+      // 🎬 6 CINEMATIC SCENES (Code typing + results comparison)
       // Extract playground-specific fields
       const playgroundVisual = visual.playground || visual;
-      
+
+      // Scene 0: Challenge title with code effect (10%)
       scenes.push({
-        id: `${act.id}-playground`,
-        type: 'playground',
+        id: `${act.id}-title`,
+        type: 'playground-intro',
         startTime,
-        duration,
+        duration: duration * 0.1,
         content: {
           mainText: playgroundVisual.title || 'DESAFIO PRÁTICO',
           subtitle: playgroundVisual.subtitle || act.title,
-          challenge: playgroundVisual.challenge || playgroundVisual.description || '',
-          
-          // Amateur vs Professional comparison
+          challenge: playgroundVisual.challenge || '',
+          glitchEffect: true,
+          ...commonFields,
+        },
+        animation: 'glitch',
+      });
+
+      // Scene 1: Amateur prompt typewriter (15%)
+      scenes.push({
+        id: `${act.id}-amateur-prompt`,
+        type: 'playground-code',
+        startTime: startTime + duration * 0.1,
+        duration: duration * 0.15,
+        content: {
+          mainText: 'PROMPT AMADOR',
+          subtitle: '',
+          amateurPrompt: playgroundVisual.amateurPrompt || playgroundVisual.amateur?.prompt || '',
+          typewriterSpeed: 50,
+          cursor: true,
+          ...commonFields,
+        },
+        animation: 'fade',
+      });
+
+      // Scene 2: Amateur result with score animation (15%)
+      scenes.push({
+        id: `${act.id}-amateur-result`,
+        type: 'playground-result',
+        startTime: startTime + duration * 0.25,
+        duration: duration * 0.15,
+        content: {
+          mainText: 'RESULTADO',
+          amateurResult: playgroundVisual.amateurResult || playgroundVisual.amateur?.result || {
+            title: 'Resultado Amador',
+            content: '',
+            score: 40,
+            maxScore: 100,
+            verdict: 'fraco',
+          },
+          countUpAnimation: true,
+          scoreColor: 'red',
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 3: Professional prompt typewriter (15%)
+      scenes.push({
+        id: `${act.id}-professional-prompt`,
+        type: 'playground-code',
+        startTime: startTime + duration * 0.4,
+        duration: duration * 0.15,
+        content: {
+          mainText: 'PROMPT PROFISSIONAL',
+          subtitle: '',
+          professionalPrompt: playgroundVisual.professionalPrompt || playgroundVisual.professional?.prompt || '',
+          typewriterSpeed: 30, // Faster = more professional
+          cursor: true,
+          ...commonFields,
+        },
+        animation: 'fade',
+      });
+
+      // Scene 4: Professional result with score animation (15%)
+      scenes.push({
+        id: `${act.id}-professional-result`,
+        type: 'playground-result',
+        startTime: startTime + duration * 0.55,
+        duration: duration * 0.15,
+        content: {
+          mainText: 'RESULTADO',
+          professionalResult: playgroundVisual.professionalResult || playgroundVisual.professional?.result || {
+            title: 'Resultado Profissional',
+            content: '',
+            score: 95,
+            maxScore: 100,
+            verdict: 'excelente',
+          },
+          countUpAnimation: true,
+          scoreColor: 'green',
+          particles: 'sparks',
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 5: Comparison bars with winner effect (30%)
+      scenes.push({
+        id: `${act.id}-comparison`,
+        type: 'playground',
+        startTime: startTime + duration * 0.7,
+        duration: duration * 0.3,
+        content: {
+          mainText: playgroundVisual.title || 'COMPARAÇÃO FINAL',
+          subtitle: playgroundVisual.subtitle || act.title,
+          challenge: playgroundVisual.challenge || '',
           amateurPrompt: playgroundVisual.amateurPrompt || playgroundVisual.amateur?.prompt || '',
           professionalPrompt: playgroundVisual.professionalPrompt || playgroundVisual.professional?.prompt || '',
           amateurResult: playgroundVisual.amateurResult || playgroundVisual.amateur?.result || {
@@ -399,8 +663,8 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
             maxScore: 100,
             verdict: 'excelente',
           },
-          
-          // Additional playground context
+          raceAnimation: true,
+          winnerEffect: 'confetti',
           context: playgroundVisual.context || '',
           hints: playgroundVisual.hints || [],
           successCriteria: playgroundVisual.successCriteria || [],
@@ -411,32 +675,88 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       break;
 
     case 'revelation':
+      // 🎬 5 CINEMATIC SCENES (Method reveal + CTA)
+      // Scene 0: Dramatic pause with black screen (5%)
       scenes.push({
-        id: `${act.id}-reveal`,
-        type: 'text-reveal',
+        id: `${act.id}-pause`,
+        type: 'letterbox',
         startTime,
-        duration: duration * 0.5,
+        duration: duration * 0.05,
         content: {
-          mainText: visual.mainValue || '✨',
-          subtitle: visual.subtitle || act.title,
-          highlightWord: visual.highlightWord,
-          items: visual.items || visual.bullets || [],
-          metrics: visual.metrics || [],
+          mainText: '',
+          subtitle: '',
+          backgroundColor: 'black',
           ...commonFields,
         },
-        animation: 'explode',
+        animation: 'fade',
       });
+
+      // Scene 1: Method name reveal with glow (15%)
       scenes.push({
-        id: `${act.id}-cta`,
-        type: 'cta',
-        startTime: startTime + duration * 0.5,
+        id: `${act.id}-method-name`,
+        type: 'text-reveal',
+        startTime: startTime + duration * 0.05,
+        duration: duration * 0.15,
+        content: {
+          mainText: visual.title || visual.mainValue || '✨ REVELAÇÃO',
+          subtitle: visual.subtitle || act.title,
+          highlightWord: visual.highlightWord,
+          glowEffect: true,
+          ...commonFields,
+        },
+        animation: 'zoom-in',
+      });
+
+      // Scene 2: Items reveal sequentially (50%)
+      scenes.push({
+        id: `${act.id}-items`,
+        type: 'text-reveal',
+        startTime: startTime + duration * 0.2,
         duration: duration * 0.5,
         content: {
+          mainText: visual.subtitle || act.title,
+          subtitle: '',
+          items: visual.items || visual.bullets || [],
+          metrics: visual.metrics || [],
+          staggerChildren: 0.25,
+          iconBounce: true,
+          ...commonFields,
+        },
+        animation: 'slide-left',
+      });
+
+      // Scene 3: CTA options slide in (20%)
+      scenes.push({
+        id: `${act.id}-cta-slide`,
+        type: 'cta',
+        startTime: startTime + duration * 0.7,
+        duration: duration * 0.2,
+        content: {
+          mainText: visual.ctaTitle || 'O QUE VOCÊ VAI FAZER AGORA?',
+          subtitle: 'Escolha seu caminho',
+          options: visual.options || visual.ctaOptions || [
+            { label: 'Aplicar AGORA', emoji: '🎯', variant: 'primary' },
+            { label: 'Revisar Tudo', emoji: '📚', variant: 'secondary' },
+          ],
+          staggerChildren: 0.15,
+          ...commonFields,
+        },
+        animation: 'slide-up',
+      });
+
+      // Scene 4: Final CTA pulse effect (10%)
+      scenes.push({
+        id: `${act.id}-cta-pulse`,
+        type: 'cta',
+        startTime: startTime + duration * 0.9,
+        duration: duration * 0.1,
+        content: {
           mainText: visual.ctaTitle || 'Próximos Passos',
-          options: visual.ctaOptions || [
+          options: visual.options || visual.ctaOptions || [
             { label: 'Revisar', emoji: '📚', variant: 'secondary' },
             { label: 'Continuar', emoji: '🚀', variant: 'primary' },
           ],
+          pulseAnimation: true,
           ...commonFields,
         },
         animation: 'fade',
