@@ -53,6 +53,40 @@ export interface V7SceneContent {
   warning?: string;
   ctaTitle?: string;
   ctaOptions?: any[];
+
+  // Animation/Visual effect properties
+  backgroundColor?: string;
+  aspectRatio?: string;
+  glowEffect?: boolean;
+  glowColor?: string;
+  countUpAnimation?: boolean | string;
+  particleType?: string;
+  particleColor?: string;
+  letterByLetter?: boolean;
+  cameraZoom?: boolean;
+  cameraShake?: boolean;
+  particleEffect?: string;
+  splitPosition?: number;
+  dividerAnimation?: boolean;
+  pulseEffect?: boolean;
+  pulseColor?: string;
+  iconBounce?: boolean;
+  staggerChildren?: boolean | number;
+  staggerDelay?: number;
+  highlightOnHover?: boolean;
+  scaleOnHover?: boolean | number;
+  particles?: boolean | string;
+  confettiOnSelect?: boolean;
+  glitchEffect?: boolean;
+  typewriterSpeed?: number;
+  typewriterHighlight?: boolean;
+  cursor?: boolean;
+  raceAnimation?: boolean;
+  victoryAnimation?: boolean;
+  winnerEffect?: boolean | string;
+  pulseAnimation?: boolean;
+  scoreRevealDelay?: number;
+  scoreColor?: string;
 }
 
 export interface V7Scene {
@@ -61,9 +95,12 @@ export interface V7Scene {
   startTime?: number; // Time in seconds to start
   duration?: number;  // Duration in seconds
   type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' | 
-        'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification';
+        'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification' |
+        'letterbox' | 'particle-effect' | 'quiz-intro' | 'quiz-question' | 'quiz-options' | 
+        'quiz-result' | 'playground-intro' | 'playground-code' | 'playground-result';
   content: V7SceneContent;
-  animation: 'fade' | 'slide-up' | 'slide-left' | 'explode' | 'count-up' | 'letter-by-letter';
+  animation: 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'explode' | 'count-up' | 
+             'letter-by-letter' | 'scale-up' | 'particle-burst' | 'zoom-in' | 'letterbox' | 'glitch';
 }
 
 export interface V7Phase {
