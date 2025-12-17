@@ -55,7 +55,17 @@ interface V7PipelineInput {
 }
 
 // V7 Cinematic Act Types (matching frontend components)
-type V7ActType = 'dramatic' | 'comparison' | 'interaction' | 'playground' | 'result';
+type V7ActType =
+  | 'dramatic'
+  | 'comparison'
+  | 'narrative'
+  | 'interaction'
+  | 'quiz'           // Same as interaction, but explicit
+  | 'playground'
+  | 'result'
+  | 'revelation'     // Same as result, but explicit
+  | 'cta'            // Call-to-action phase
+  | 'gamification';  // Final gamification phase
 
 interface V7DramaticContent {
   mainValue: string;
