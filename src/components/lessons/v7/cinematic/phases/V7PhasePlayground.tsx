@@ -22,6 +22,12 @@ interface V7PhasePlaygroundProps {
   sceneIndex: number;
   phaseProgress: number;
   onComplete?: () => void;
+  audioControl?: {
+    pause: () => void;
+    play: () => void;
+    togglePlayPause: () => void;
+    isPlaying: boolean;
+  };
 }
 
 export const V7PhasePlayground = ({
@@ -34,6 +40,7 @@ export const V7PhasePlayground = ({
   sceneIndex,
   phaseProgress,
   onComplete,
+  audioControl,
 }: V7PhasePlaygroundProps) => {
   const [showAmateur, setShowAmateur] = useState(false);
   const [showAmateurResult, setShowAmateurResult] = useState(false);
@@ -43,6 +50,22 @@ export const V7PhasePlayground = ({
   const [amateurTyped, setAmateurTyped] = useState('');
   const [professionalTyped, setProfessionalTyped] = useState('');
 
+  // Auto-pause audio when playground appears (Bug #13 fix)
+  useEffect(() => {
+    if (audioControl && audioControl.isPlaying) {
+      audioControl.pause();
+      console.log('[V7PhasePlayground] Audio paused for interaction');
+    }
+
+    // Resume audio when component unmounts
+    return () => {
+      if (audioControl && !audioControl.isPlaying) {
+        audioControl.play();
+        console.log('[V7PhasePlayground] Audio resumed after playground exit');
+      }
+    };
+  }, [audioControl]);
+
   // Scene progression
   useEffect(() => {
     if (sceneIndex >= 1) setShowAmateur(true);
@@ -51,9 +74,18 @@ export const V7PhasePlayground = ({
     if (sceneIndex >= 4) setShowProfessionalResult(true);
     if (sceneIndex >= 5) {
       setShowComparison(true);
+
+      // Resume audio when playground completes
+      setTimeout(() => {
+        if (audioControl && !audioControl.isPlaying) {
+          audioControl.play();
+          console.log('[V7PhasePlayground] Audio resumed after playground completion');
+        }
+      }, 2000);
+
       onComplete?.();
     }
-  }, [sceneIndex, onComplete]);
+  }, [sceneIndex, onComplete, audioControl]);
 
   // Typing animation for amateur prompt
   useEffect(() => {

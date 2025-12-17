@@ -109,51 +109,81 @@ export const V7SynchronizedCaptions = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
       className={`v7-synchronized-captions absolute bottom-24 left-0 right-0 flex justify-center z-30 px-4 sm:px-8 ${className}`}
     >
       <div className="bg-black/80 backdrop-blur-md rounded-lg px-4 sm:px-6 py-3 sm:py-4 max-w-4xl w-full sm:w-auto">
-        <div className="flex flex-wrap justify-center gap-1 sm:gap-1.5">
-          <AnimatePresence mode="popLayout">
-            {visibleWords.map((word) => {
+        <motion.div
+          className="flex flex-wrap justify-center gap-1 sm:gap-1.5"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.02,
+              },
+            },
+          }}
+        >
+          <AnimatePresence mode="sync">
+            {visibleWords.map((word, idx) => {
               const state = getWordState(word.absoluteIndex);
-              
+
               return (
                 <motion.span
                   key={`${word.absoluteIndex}-${word.word}`}
                   layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ 
+                  layoutId={`word-${word.absoluteIndex}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{
                     opacity: state === 'future' ? 0.4 : 1,
-                    scale: state === 'current' ? 1.15 : 1,
+                    scale: state === 'current' ? 1.08 : 1,
+                    y: 0,
                   }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1], // easeOutCubic
+                    layout: {
+                      duration: 0.4,
+                      ease: [0.22, 1, 0.36, 1],
+                    },
+                  }}
                   className={`
-                    text-sm sm:text-base md:text-lg font-medium transition-colors duration-150
-                    ${state === 'current' 
-                      ? 'text-cyan-400 bg-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded' 
+                    text-sm sm:text-base md:text-lg font-medium transition-colors duration-300
+                    ${state === 'current'
+                      ? 'text-cyan-400 bg-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded'
                       : state === 'past'
                         ? 'text-white/70'
                         : 'text-white/40'
                     }
                   `}
+                  style={{
+                    filter: state === 'current' ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.5))' : 'none',
+                  }}
                 >
                   {word.word}
                 </motion.span>
               );
             })}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         {/* Progress indicator */}
         <div className="mt-2 sm:mt-3 h-0.5 sm:h-1 bg-white/10 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
             initial={{ width: 0 }}
-            animate={{ 
-              width: `${((currentWordIndex + 1) / cleanedTimestamps.length) * 100}%` 
+            animate={{
+              width: `${((currentWordIndex + 1) / cleanedTimestamps.length) * 100}%`
             }}
-            transition={{ duration: 0.1 }}
+            transition={{
+              duration: 0.25,
+              ease: [0.22, 1, 0.36, 1], // easeOutCubic for smooth progress
+            }}
+            style={{
+              boxShadow: '0 0 10px rgba(34, 211, 238, 0.6)',
+            }}
           />
         </div>
       </div>
