@@ -217,13 +217,18 @@ export const V7PhasePlayer = ({
       case 'dramatic':
         // Use combined content from ALL scenes for progressive reveal
         const dramaticContent = getCombinedSceneContent();
+        // Get impactWord from scene 5 specifically (impact scene)
+        const impactScene = getSceneContent(5);
+        // Get hookQuestion from scene 0 specifically (letterbox scene)
+        const letterboxScene = getSceneContent(0);
+
         return (
           <V7PhaseDramatic
             mainNumber={String(dramaticContent.number || '01')}
             subtitle={dramaticContent.subtitle || currentPhase.title}
             highlightWord={dramaticContent.highlightWord}
-            impactWord={dramaticContent.mainText || dramaticContent.highlightWord || ''}
-            hookQuestion={dramaticContent.hookQuestion || firstSceneContent.mainText || ''}
+            impactWord={impactScene.mainText || dramaticContent.highlightWord || ''}
+            hookQuestion={letterboxScene.hookQuestion || letterboxScene.mainText || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}
