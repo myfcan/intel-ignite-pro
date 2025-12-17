@@ -173,6 +173,8 @@ const App = () => (
               <Route path="/admin/v7/preview/:lessonId?" element={<ProtectedRoute><AdminV7Preview /></ProtectedRoute>} />
               <Route path="/admin/v7/demo" element={<ProtectedRoute><V7CinematicDemo /></ProtectedRoute>} />
               <Route path="/admin/v7/play/:lessonId" element={<ProtectedRoute><V7CinematicPlayer /></ProtectedRoute>} />
+              {/* PUBLIC V7 DEMO FOR TESTING */}
+              <Route path="/v7-demo" element={<V7CinematicDemo />} />
               {/* NEW FEATURES ROUTES */}
               <Route path="/guides" element={<Guides />} />
               <Route path="/guides/:guideId" element={<GuideDetail />} />

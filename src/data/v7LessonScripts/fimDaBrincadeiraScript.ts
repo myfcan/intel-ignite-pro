@@ -21,47 +21,97 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 2: ENTRADA DRAMÁTICA (3-30s)
+    // 6 SCENES with progressive content reveal
     {
       id: 'dramatic-entry',
       title: 'Entrada Dramática',
       startTime: 3,
       endTime: 30,
       type: 'dramatic',
-      mood: 'dramatic',
+      mood: 'danger',
       scenes: [
         {
-          id: 'scene-number',
-          type: 'number-reveal',
+          id: 'scene-letterbox',
+          type: 'letterbox',
           startTime: 3,
-          duration: 7,
+          duration: 3,
+          content: {
+            hookQuestion: 'VOCÊ SABIA?',
+            mainText: '',
+            subtitle: '',
+            backgroundColor: 'black',
+            aspectRatio: 'cinematic'
+          },
+          animation: 'letterbox'
+        },
+        {
+          id: 'scene-number-glow',
+          type: 'number-reveal',
+          startTime: 6,
+          duration: 4,
           content: {
             number: '98%',
-            subtitle: ''
+            subtitle: '',
+            highlightWord: 'BRINQUEDO',
+            glowEffect: true
+          },
+          animation: 'scale-up'
+        },
+        {
+          id: 'scene-count-up',
+          type: 'number-reveal',
+          startTime: 10,
+          duration: 4,
+          content: {
+            number: '98%',
+            subtitle: 'das pessoas usam IA como BRINQUEDO',
+            highlightWord: 'BRINQUEDO',
+            countUpAnimation: true
           },
           animation: 'count-up'
         },
         {
-          id: 'scene-text-reveal',
-          type: 'text-reveal',
-          startTime: 10,
-          duration: 10,
+          id: 'scene-explosion',
+          type: 'particle-effect',
+          startTime: 14,
+          duration: 3,
           content: {
-            mainText: 'das pessoas usam IA como',
-            subtitle: ''
+            number: '98%',
+            subtitle: 'das pessoas usam IA como BRINQUEDO',
+            particleType: 'sparks',
+            particleColor: '#ff0040'
+          },
+          animation: 'particle-burst'
+        },
+        {
+          id: 'scene-subtitle',
+          type: 'text-reveal',
+          startTime: 17,
+          duration: 8,
+          content: {
+            number: '98%',
+            mainText: 'das pessoas usam IA como BRINQUEDO',
+            subtitle: 'BRINQUEDO',
+            highlightWord: 'BRINQUEDO',
+            letterByLetter: true
           },
           animation: 'letter-by-letter'
         },
         {
           id: 'scene-impact',
           type: 'text-reveal',
-          startTime: 20,
-          duration: 10,
+          startTime: 25,
+          duration: 5,
           content: {
-            mainText: 'BRINQUEDO',
+            number: '98%',
+            subtitle: 'das pessoas usam IA como BRINQUEDO',
+            mainText: 'DESPERDIÇAM',
             highlightWord: 'BRINQUEDO',
-            subtitle: '"Conta uma piada." "Faz um poema sobre batata." "Escreve como pirata."'
+            cameraZoom: true,
+            cameraShake: true,
+            particleEffect: 'confetti'
           },
-          animation: 'explode'
+          animation: 'zoom-in'
         }
       ]
     },
