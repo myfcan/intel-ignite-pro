@@ -60,10 +60,13 @@ export interface V7Scene {
   startWord?: number; // Word index to start this scene
   startTime?: number; // Time in seconds to start
   duration?: number;  // Duration in seconds
-  type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' | 
-        'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification';
+  type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' |
+        'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification' |
+        'letterbox' | 'particle-effect' | 'quiz-intro' | 'quiz-question' | 'quiz-options' | 'quiz-result' |
+        'playground-intro' | 'playground-code' | 'playground-result';
   content: V7SceneContent;
-  animation: 'fade' | 'slide-up' | 'slide-left' | 'explode' | 'count-up' | 'letter-by-letter';
+  animation: 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'explode' | 'count-up' | 'letter-by-letter' |
+             'scale-up' | 'zoom-in' | 'letterbox' | 'particle-burst' | 'glitch';
 }
 
 export interface V7Phase {

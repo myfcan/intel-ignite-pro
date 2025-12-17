@@ -3,6 +3,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { V7LetterboxEffect } from '../effects/V7LetterboxEffect';
+import { V7Confetti } from '../effects/V7ParticleSystem';
+import { V7GlowEffect } from '../effects/V7GlowEffect';
 
 interface V7PhaseDramaticProps {
   mainNumber: string;
@@ -47,6 +50,8 @@ export const V7PhaseDramatic = ({
   const [showImpact, setShowImpact] = useState(false);
   const [revealedLetters, setRevealedLetters] = useState(0);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; angle: number }[]>([]);
+  const [showLetterbox, setShowLetterbox] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Scene 0: Fade in with number counting up
   // Scene 1: Show subtitle letter by letter
@@ -103,6 +108,10 @@ export const V7PhaseDramatic = ({
   useEffect(() => {
     if (sceneIndex >= 2) {
       setShowImpact(true);
+      // Trigger confetti effect
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+
       // Create particle burst
       const newParticles = Array.from({ length: 30 }, (_, i) => ({
         id: i,
@@ -111,6 +120,14 @@ export const V7PhaseDramatic = ({
         angle: (i / 30) * Math.PI * 2,
       }));
       setParticles(newParticles);
+    }
+  }, [sceneIndex]);
+
+  // Hide letterbox after initial scene
+  useEffect(() => {
+    if (sceneIndex >= 1) {
+      const timer = setTimeout(() => setShowLetterbox(false), 1000);
+      return () => clearTimeout(timer);
     }
   }, [sceneIndex]);
 
@@ -148,7 +165,7 @@ export const V7PhaseDramatic = ({
     );
   };
 
-  return (
+  const content = (
     <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
       {/* Background glow */}
       <motion.div
@@ -289,6 +306,22 @@ export const V7PhaseDramatic = ({
         />
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Confetti effect on impact */}
+      {showConfetti && <V7Confetti trigger={showConfetti} />}
+
+      {/* Letterbox effect for cinematic feel */}
+      {showLetterbox ? (
+        <V7LetterboxEffect aspectRatio="cinematic" animate={true}>
+          {content}
+        </V7LetterboxEffect>
+      ) : (
+        content
+      )}
+    </>
   );
 };
 
