@@ -141,9 +141,19 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   // Available time after loading phase (3s)
   const availableTime = totalDuration - 3;
 
-  // Scale factor: only needed if acts DON'T have pre-scaled timings
-  const scaleFactor = hasPreScaledTimings ? 1 : (totalActsDuration > 0 ? availableTime / totalActsDuration : 1);
+  // ✅ CRITICAL FIX: Even if acts have pre-scaled timings, check if they match the actual audio duration
+  // If the pre-scaled timings are from old pipeline (wrong duration), we need to RE-SCALE them
+  const preScaledTotal = hasPreScaledTimings ? totalActsDuration : 0;
+  const needsReScaling = hasPreScaledTimings && Math.abs(preScaledTotal - availableTime) > 5;
+
+  // Scale factor: needed if acts DON'T have pre-scaled timings OR if pre-scaled timings are wrong
+  const scaleFactor = (!hasPreScaledTimings || needsReScaling)
+    ? (totalActsDuration > 0 ? availableTime / totalActsDuration : 1)
+    : 1;
+
   console.log(`[transformActsToPhases] Pre-scaled timings: ${hasPreScaledTimings}`);
+  console.log(`[transformActsToPhases] Pre-scaled total: ${preScaledTotal}s, Available time: ${availableTime}s`);
+  console.log(`[transformActsToPhases] Needs re-scaling: ${needsReScaling}`);
   console.log(`[transformActsToPhases] Scale factor: ${scaleFactor.toFixed(2)} (${totalActsDuration}s acts → ${availableTime}s audio)`);
 
   // Add loading phase first
@@ -161,27 +171,51 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   acts.forEach((act, index) => {
     const phaseType = mapActTypeToPhaseType(act.type);
 
-    // ✅ Use pre-scaled timings if available, otherwise calculate
+    // ✅ Calculate timings - ALWAYS apply scaleFactor if re-scaling is needed
     let startTime: number;
     let endTime: number;
     let duration: number;
 
+    // Minimum duration per phase type to ensure content is visible
+    const minDurations: Record<string, number> = {
+      dramatic: 8,
+      narrative: 8,
+      interaction: 10,
+      playground: 15,
+      revelation: 8,
+      gamification: 5,
+    };
+    const minDuration = minDurations[phaseType] || 5;
+
     if (hasPreScaledTimings && act.startTime !== undefined && act.endTime !== undefined) {
-      // Pipeline v2.0+: timings already correct, just add loading phase offset
-      startTime = 3 + act.startTime; // Add 3s loading phase offset
-      endTime = 3 + act.endTime;
-      duration = act.endTime - act.startTime;
+      if (needsReScaling) {
+        // Pre-scaled timings exist but are WRONG - re-scale them
+        const scaledStart = act.startTime * scaleFactor;
+        const scaledEnd = act.endTime * scaleFactor;
+        startTime = 3 + scaledStart; // Add 3s loading phase offset
+        endTime = 3 + scaledEnd;
+        duration = Math.max(minDuration, scaledEnd - scaledStart);
+        // Adjust endTime if we hit minimum
+        if (duration > scaledEnd - scaledStart) {
+          endTime = startTime + duration;
+        }
+      } else {
+        // Pipeline v2.0+: timings already correct, just add loading phase offset
+        startTime = 3 + act.startTime;
+        endTime = 3 + act.endTime;
+        duration = Math.max(minDuration, act.endTime - act.startTime);
+      }
     } else {
       // Legacy: scale manually
       const originalDuration = act.duration || 60;
-      duration = Math.max(5, originalDuration * scaleFactor);
+      duration = Math.max(minDuration, originalDuration * scaleFactor);
       startTime = currentTime;
       endTime = currentTime + duration;
     }
 
     console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s) [duration: ${duration.toFixed(1)}s]`);
 
-    currentTime = endTime; // Update for next iteration (legacy mode)
+    currentTime = endTime; // Update for next iteration
     
     // For cinematic_flow, extract visual and audio from act.content
     const visualData = act.content?.visual;
