@@ -46,25 +46,36 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // Check if using rich cinematic_flow structure
       const hasCinematicFlow = content?.cinematic_flow?.acts?.length > 0;
 
-      // CRITICAL: Use ACTUAL audio duration from word_timestamps (last word end time)
-      // This ensures scenes are timed correctly with the real audio
+      // Get raw acts from either source
+      const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || [];
+
+      // ✅ PRIORITY ORDER for total duration:
+      // 1. word_timestamps (actual audio length) - most accurate
+      // 2. cinematic_flow.timeline.totalDuration (pipeline-calculated)
+      // 3. metadata.totalDuration
+      // 4. Sum of act durations (may be pre-scaled by pipeline)
+      // 5. estimated_time in minutes (fallback)
       const audioDurationFromTimestamps = timestamps.length > 0
         ? Math.ceil(timestamps[timestamps.length - 1].end)
         : null;
 
-      // Calculate total duration - PRIORITIZE actual audio duration
-      const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || [];
-      const totalDuration = audioDurationFromTimestamps || // Use real audio duration first!
+      const totalDuration = audioDurationFromTimestamps ||
         content?.cinematic_flow?.timeline?.totalDuration ||
         content?.metadata?.totalDuration ||
-        rawActs.reduce((sum: number, act: any) => sum + (act.duration || 60), 0) ||
         (data.estimated_time || 8) * 60;
+
+      // Check if acts already have scaled durations from pipeline
+      // (Pipeline v2.0+ stores startTime/endTime directly on acts)
+      const actsHaveScaledTimings = rawActs.length > 0 &&
+        rawActs[0].startTime !== undefined &&
+        rawActs[0].endTime !== undefined;
 
       console.log('[useV7PhaseScript] Loading lesson:', data.id);
       console.log('[useV7PhaseScript] Has cinematic_flow:', hasCinematicFlow);
       console.log('[useV7PhaseScript] Acts count:', rawActs.length);
       console.log('[useV7PhaseScript] Audio duration from timestamps:', audioDurationFromTimestamps);
       console.log('[useV7PhaseScript] Total duration used:', totalDuration);
+      console.log('[useV7PhaseScript] Acts have pre-scaled timings:', actsHaveScaledTimings);
 
       // Transform database acts to V7 phases
       const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow);
@@ -112,16 +123,27 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   let currentTime = 0;
   const phases: V7Phase[] = [];
 
-  // Calculate total duration from acts to scale proportionally
-  const totalActsDuration = acts.reduce((sum, act) => {
-    return sum + (act.duration || act.endTime - act.startTime || 60);
-  }, 0);
+  // ✅ Check if acts already have pre-scaled timings from pipeline v2.0+
+  const hasPreScaledTimings = acts[0]?.startTime !== undefined && acts[0]?.endTime !== undefined;
+
+  // Calculate total duration from acts
+  let totalActsDuration: number;
+  if (hasPreScaledTimings) {
+    // Use the last act's endTime as total
+    totalActsDuration = acts[acts.length - 1].endTime || totalDuration;
+  } else {
+    // Legacy: sum up durations
+    totalActsDuration = acts.reduce((sum, act) => {
+      return sum + (act.duration || 60);
+    }, 0);
+  }
 
   // Available time after loading phase (3s)
   const availableTime = totalDuration - 3;
 
-  // Scale factor to fit acts into actual audio duration
-  const scaleFactor = totalActsDuration > 0 ? availableTime / totalActsDuration : 1;
+  // Scale factor: only needed if acts DON'T have pre-scaled timings
+  const scaleFactor = hasPreScaledTimings ? 1 : (totalActsDuration > 0 ? availableTime / totalActsDuration : 1);
+  console.log(`[transformActsToPhases] Pre-scaled timings: ${hasPreScaledTimings}`);
   console.log(`[transformActsToPhases] Scale factor: ${scaleFactor.toFixed(2)} (${totalActsDuration}s acts → ${availableTime}s audio)`);
 
   // Add loading phase first
@@ -137,13 +159,29 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   currentTime = 3;
 
   acts.forEach((act, index) => {
-    // Scale duration proportionally to actual audio length
-    const originalDuration = act.duration || act.endTime - act.startTime || 60;
-    const duration = Math.max(5, originalDuration * scaleFactor); // Minimum 5 seconds per act
-    const endTime = currentTime + duration;
     const phaseType = mapActTypeToPhaseType(act.type);
 
-    console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${currentTime.toFixed(1)}s - ${endTime.toFixed(1)}s) [scaled from ${originalDuration}s]`);
+    // ✅ Use pre-scaled timings if available, otherwise calculate
+    let startTime: number;
+    let endTime: number;
+    let duration: number;
+
+    if (hasPreScaledTimings && act.startTime !== undefined && act.endTime !== undefined) {
+      // Pipeline v2.0+: timings already correct, just add loading phase offset
+      startTime = 3 + act.startTime; // Add 3s loading phase offset
+      endTime = 3 + act.endTime;
+      duration = act.endTime - act.startTime;
+    } else {
+      // Legacy: scale manually
+      const originalDuration = act.duration || 60;
+      duration = Math.max(5, originalDuration * scaleFactor);
+      startTime = currentTime;
+      endTime = currentTime + duration;
+    }
+
+    console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s) [duration: ${duration.toFixed(1)}s]`);
+
+    currentTime = endTime; // Update for next iteration (legacy mode)
     
     // For cinematic_flow, extract visual and audio from act.content
     const visualData = act.content?.visual;
@@ -153,45 +191,45 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
     const phase: V7Phase = {
       id: act.id || `phase-${index + 1}`,
       title: act.title || `Fase ${index + 1}`,
-      startTime: currentTime,
+      startTime,
       endTime,
       type: phaseType,
       mood: extractMood(visualData),
       autoAdvance: phaseType !== 'interaction' && phaseType !== 'playground',
       scenes: generateScenesForPhase(
-        { 
-          ...act, 
-          content: { 
-            visual: visualData, 
-            audio: audioData, 
+        {
+          ...act,
+          content: {
+            visual: visualData,
+            audio: audioData,
             interaction: interactionData,
             // Pass visual.instruction as screen direction metadata
             screenDirection: visualData?.instruction || '',
-          } 
-        }, 
-        phaseType, 
-        currentTime, 
+          }
+        },
+        phaseType,
+        startTime, // Use calculated startTime
         duration
       ),
     };
 
     phases.push(phase);
-    currentTime = endTime;
   });
 
-  // Add gamification phase at the end
+  // Add gamification phase at the end (using the last phase's endTime)
+  const lastPhaseEndTime = phases.length > 1 ? phases[phases.length - 1].endTime : currentTime;
   phases.push({
     id: 'gamification',
     title: 'Gamificação',
-    startTime: currentTime,
-    endTime: currentTime + 60,
+    startTime: lastPhaseEndTime,
+    endTime: lastPhaseEndTime + 10, // Short gamification phase
     type: 'gamification',
     mood: 'success',
     scenes: [{
       id: 'scene-achievements',
       type: 'result',
-      startTime: currentTime,
-      duration: 60,
+      startTime: lastPhaseEndTime,
+      duration: 10,
       content: {
         mainText: '🎊 PARABÉNS!',
         subtitle: 'Aula completa!',
