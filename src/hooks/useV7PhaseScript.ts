@@ -333,6 +333,8 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
   switch (phaseType) {
     case 'dramatic':
       // 🎬 6 CINEMATIC SCENES (Netflix Bandersnatch-inspired)
+      // ✅ SYNC FIX: Timings adjusted to match typical narration flow
+      // Narration typically says "98%" in the first 2-3 seconds
       // Extract all dramatic content from visual
       const dramaticNumber = String(visual.mainValue || visual.number || '01');
       const dramaticSubtitle = visual.subtitle || act.title || '';
@@ -340,12 +342,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       const dramaticImpact = visual.impactWord || visual.mainText || dramaticHighlight || 'IMPACTO';
       const dramaticHook = visual.hookQuestion || visual.hook || '';
 
-      // Scene 0: Fade in black screen with letterbox + optional hook (10%)
+      // Scene 0: Fade in black screen with letterbox + optional hook (5% - SHORTER for faster hook)
       scenes.push({
         id: `${act.id}-black`,
         type: 'letterbox',
         startTime,
-        duration: duration * 0.1,
+        duration: duration * 0.05,
         content: {
           mainText: dramaticHook, // "VOCÊ SABIA?" or similar hook
           hookQuestion: dramaticHook, // Also pass as hookQuestion for V7PhaseDramatic
@@ -357,12 +359,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letterbox',
       });
 
-      // Scene 1: Number appears with glow effect (15%)
+      // Scene 1: Number appears with glow effect (10% - EARLIER to sync with "98%" in narration)
       scenes.push({
         id: `${act.id}-number-appear`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.1,
-        duration: duration * 0.15,
+        startTime: startTime + duration * 0.05,
+        duration: duration * 0.10,
         content: {
           number: dramaticNumber,
           subtitle: '', // No subtitle yet - builds suspense
@@ -377,7 +379,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       scenes.push({
         id: `${act.id}-count-up`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.25,
+        startTime: startTime + duration * 0.15,
         duration: duration * 0.15,
         content: {
           number: dramaticNumber,
@@ -393,8 +395,8 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       scenes.push({
         id: `${act.id}-explosion`,
         type: 'particle-effect',
-        startTime: startTime + duration * 0.4,
-        duration: duration * 0.1,
+        startTime: startTime + duration * 0.30,
+        duration: duration * 0.10,
         content: {
           number: dramaticNumber,
           subtitle: dramaticSubtitle,
@@ -409,8 +411,8 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       scenes.push({
         id: `${act.id}-subtitle`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.5,
-        duration: duration * 0.3,
+        startTime: startTime + duration * 0.40,
+        duration: duration * 0.30,
         content: {
           number: dramaticNumber,
           mainText: dramaticSubtitle,
@@ -422,12 +424,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letter-by-letter',
       });
 
-      // Scene 5: Impact word with camera zoom + shake (20%)
+      // Scene 5: Impact word with camera zoom + shake (30% - LONGER for more impact)
       scenes.push({
         id: `${act.id}-impact`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.8,
-        duration: duration * 0.2,
+        startTime: startTime + duration * 0.70,
+        duration: duration * 0.30,
         content: {
           number: dramaticNumber,
           subtitle: dramaticSubtitle,
