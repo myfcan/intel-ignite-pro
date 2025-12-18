@@ -42,21 +42,32 @@ export const V7PhaseQuiz = ({
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
+  // Track if we paused the audio (so we only resume what we paused)
+  const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
+
   // Auto-pause audio when quiz appears (Bug #13 fix)
+  // Use stable references to avoid re-running on every render
   useEffect(() => {
-    if (audioControl && audioControl.isPlaying) {
+    if (audioControl?.isPlaying) {
       audioControl.pause();
+      setAudioPausedByQuiz(true);
       console.log('[V7PhaseQuiz] Audio paused for interaction');
     }
+    // Only run on mount - empty deps since we only want this once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Resume audio when component unmounts (user navigated away)
+  // Resume audio when component unmounts (only if we paused it)
+  useEffect(() => {
     return () => {
-      if (audioControl && !audioControl.isPlaying) {
+      if (audioPausedByQuiz && audioControl && !audioControl.isPlaying) {
         audioControl.play();
         console.log('[V7PhaseQuiz] Audio resumed after quiz exit');
       }
     };
-  }, [audioControl]);
+    // Include audioControl methods but not the object itself
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioPausedByQuiz]);
 
   // Scene 0: Show title and quiz icon
   // Scene 1: Show options with animation
@@ -79,14 +90,15 @@ export const V7PhaseQuiz = ({
 
     // Resume audio after showing result (2 seconds delay for user to see feedback)
     setTimeout(() => {
-      if (audioControl && !audioControl.isPlaying) {
+      if (audioPausedByQuiz && audioControl && !audioControl.isPlaying) {
         audioControl.play();
+        setAudioPausedByQuiz(false); // Mark as resumed so cleanup doesn't double-resume
         console.log('[V7PhaseQuiz] Audio resumed after quiz completion');
       }
     }, 2500);
 
     onComplete?.(selectedIds);
-  }, [selectedIds, onComplete, audioControl]);
+  }, [selectedIds, onComplete, audioControl, audioPausedByQuiz]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'

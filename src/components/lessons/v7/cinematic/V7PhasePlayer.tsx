@@ -449,10 +449,17 @@ export const V7PhasePlayer = ({
       case 'revelation':
         // Combine content from ALL revelation scenes
         const revelationContent = getCombinedSceneContent();
+
+        // Map variant: 'primary'/'secondary' from JSON to 'positive'/'negative' expected by component
+        const mapVariant = (v: string): 'negative' | 'positive' => {
+          if (v === 'primary' || v === 'positive') return 'positive';
+          return 'negative';
+        };
+
         const ctaOptions = (revelationContent.options || content.options || []).map((opt: any) => ({
           label: opt.label || '',
           emoji: opt.emoji || '🎯',
-          variant: opt.variant || 'primary'
+          variant: mapVariant(opt.variant || 'primary')
         }));
 
         return (
@@ -460,7 +467,7 @@ export const V7PhasePlayer = ({
             title={revelationContent.mainText || content.mainText || currentPhase.title}
             subtitle={revelationContent.subtitle || content.subtitle || ''}
             options={ctaOptions.length > 0 ? ctaOptions : [
-              { label: 'Revisar', emoji: '📚', variant: 'secondary' },
+              { label: 'Revisar', emoji: '📚', variant: 'negative' },
               { label: 'Continuar', emoji: '🚀', variant: 'positive' }
             ]}
             duration={currentPhase.endTime - currentPhase.startTime}

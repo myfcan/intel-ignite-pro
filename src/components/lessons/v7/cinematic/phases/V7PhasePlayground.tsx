@@ -49,22 +49,30 @@ export const V7PhasePlayground = ({
   const [showComparison, setShowComparison] = useState(false);
   const [amateurTyped, setAmateurTyped] = useState('');
   const [professionalTyped, setProfessionalTyped] = useState('');
+  const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
 
   // Auto-pause audio when playground appears (Bug #13 fix)
+  // Use stable references to avoid re-running on every render
   useEffect(() => {
-    if (audioControl && audioControl.isPlaying) {
+    if (audioControl?.isPlaying) {
       audioControl.pause();
+      setAudioPausedByPlayground(true);
       console.log('[V7PhasePlayground] Audio paused for interaction');
     }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Resume audio when component unmounts
+  // Resume audio when component unmounts (only if we paused it)
+  useEffect(() => {
     return () => {
-      if (audioControl && !audioControl.isPlaying) {
+      if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
         audioControl.play();
         console.log('[V7PhasePlayground] Audio resumed after playground exit');
       }
     };
-  }, [audioControl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioPausedByPlayground]);
 
   // Scene progression
   useEffect(() => {
@@ -75,17 +83,18 @@ export const V7PhasePlayground = ({
     if (sceneIndex >= 5) {
       setShowComparison(true);
 
-      // Resume audio when playground completes
+      // Resume audio when playground completes (only if we paused it)
       setTimeout(() => {
-        if (audioControl && !audioControl.isPlaying) {
+        if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
           audioControl.play();
+          setAudioPausedByPlayground(false); // Mark as resumed so cleanup doesn't double-resume
           console.log('[V7PhasePlayground] Audio resumed after playground completion');
         }
       }, 2000);
 
       onComplete?.();
     }
-  }, [sceneIndex, onComplete, audioControl]);
+  }, [sceneIndex, onComplete, audioControl, audioPausedByPlayground]);
 
   // Typing animation for amateur prompt
   useEffect(() => {
@@ -167,7 +176,8 @@ export const V7PhasePlayground = ({
               {/* Prompt Box */}
               <div className="bg-black/40 rounded-xl p-4 mb-4 min-h-[100px] font-mono text-sm">
                 <span className="text-red-300">{amateurTyped}</span>
-                {amateurTyped.length < amateurPrompt.length && (
+                {/* Cursor only shows while typing is in progress */}
+                {showAmateur && amateurTyped.length < amateurPrompt.length && (
                   <motion.span
                     className="inline-block w-2 h-4 bg-red-400 ml-0.5"
                     animate={{ opacity: [1, 0] }}
@@ -218,7 +228,8 @@ export const V7PhasePlayground = ({
               {/* Prompt Box */}
               <div className="bg-black/40 rounded-xl p-4 mb-4 min-h-[100px] font-mono text-xs sm:text-sm max-h-[200px] overflow-y-auto">
                 <span className="text-green-300 whitespace-pre-line">{professionalTyped}</span>
-                {professionalTyped.length < professionalPrompt.length && (
+                {/* Cursor only shows while typing is in progress */}
+                {showProfessional && professionalTyped.length < professionalPrompt.length && (
                   <motion.span
                     className="inline-block w-2 h-4 bg-green-400 ml-0.5"
                     animate={{ opacity: [1, 0] }}
