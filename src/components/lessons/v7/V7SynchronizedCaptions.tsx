@@ -1,12 +1,12 @@
 // src/components/lessons/v7/V7SynchronizedCaptions.tsx
-// ✅ REFACTORED: Clean, minimal captions that don't block interaction
-// - Removed progress bar
-// - Added pointer-events-none
-// - Positioned higher to not overlap buttons
-// - Reduced animations for stability
+// ✅ ULTRA-MINIMAL: Single line captions that don't block UI
+// - Single line only (no wrapping)
+// - Very compact height
+// - Positioned at bottom edge
+// - Only shows current word + small context
 
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WordTimestamp {
   word: string;
@@ -24,34 +24,24 @@ interface V7SynchronizedCaptionsProps {
 
 // Clean markdown and filter non-spoken words
 const cleanWord = (word: string): string | null => {
-  // Skip markdown headers
   if (word.startsWith('#')) return null;
-  // Skip markdown bold/italic markers
   if (word === '**' || word === '*' || word === '__' || word === '_') return null;
-  // Skip markdown links
   if (word.startsWith('[') && word.endsWith(']')) return null;
-  // Skip pure brackets
   if (word === '[' || word === ']' || word === '(' || word === ')') return null;
-  // Skip stage directions like [ATO 1:]
   if (word.startsWith('[') || word.endsWith(']')) return null;
-  // Skip template markers
   if (word.includes('**') || word.includes('###') || word.includes('---')) return null;
-  // Skip metadata-like text
-  if (word.includes('Título') || word.includes('Subtítulo') || word.includes('Categoria') || 
+  if (word.includes('Título') || word.includes('Subtítulo') || word.includes('Categoria') ||
       word.includes('Duração') || word.includes('Roteiro') || word.includes('Template')) return null;
-  
-  // Clean remaining markdown from word
+
   let cleaned = word
-    .replace(/^\*\*|\*\*$/g, '') // Remove bold markers
-    .replace(/^\*|\*$/g, '')     // Remove italic markers
-    .replace(/^_|_$/g, '')       // Remove underscores
-    .replace(/^`|`$/g, '')       // Remove code markers
-    .replace(/\[|\]/g, '')       // Remove brackets
+    .replace(/^\*\*|\*\*$/g, '')
+    .replace(/^\*|\*$/g, '')
+    .replace(/^_|_$/g, '')
+    .replace(/^`|`$/g, '')
+    .replace(/\[|\]/g, '')
     .trim();
-  
-  // Skip if empty after cleaning
+
   if (!cleaned || cleaned.length === 0) return null;
-  
   return cleaned;
 };
 
@@ -60,9 +50,8 @@ export const V7SynchronizedCaptions = ({
   currentTime,
   isVisible = true,
   className = '',
-  maxWords = 12,
+  maxWords = 6, // Reduced from 12 to 6 for single line
 }: V7SynchronizedCaptionsProps) => {
-  // Filter and clean words
   const cleanedTimestamps = useMemo(() => {
     return wordTimestamps
       .map((w, index) => {
@@ -73,14 +62,13 @@ export const V7SynchronizedCaptions = ({
       .filter(Boolean) as (WordTimestamp & { originalIndex: number })[];
   }, [wordTimestamps]);
 
-  // Find current word index based on currentTime
   const currentWordIndex = useMemo(() => {
     return cleanedTimestamps.findIndex(
       (word) => currentTime >= word.start && currentTime < word.end
     );
   }, [cleanedTimestamps, currentTime]);
 
-  // Get visible words window (centered on current word)
+  // Get visible words - fewer words, centered on current
   const visibleWords = useMemo(() => {
     if (currentWordIndex < 0) return [];
 
@@ -88,7 +76,6 @@ export const V7SynchronizedCaptions = ({
     let startIdx = Math.max(0, currentWordIndex - halfWindow);
     let endIdx = Math.min(cleanedTimestamps.length, startIdx + maxWords);
 
-    // Adjust if we're near the end
     if (endIdx - startIdx < maxWords) {
       startIdx = Math.max(0, endIdx - maxWords);
     }
@@ -99,7 +86,6 @@ export const V7SynchronizedCaptions = ({
     }));
   }, [cleanedTimestamps, currentWordIndex, maxWords]);
 
-  // Calculate which words are past, current, future
   const getWordState = (absoluteIndex: number): 'past' | 'current' | 'future' => {
     if (absoluteIndex < currentWordIndex) return 'past';
     if (absoluteIndex === currentWordIndex) return 'current';
@@ -109,36 +95,39 @@ export const V7SynchronizedCaptions = ({
   if (!isVisible || visibleWords.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`v7-captions fixed bottom-36 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none ${className}`}
-    >
-      <div className="bg-black/70 backdrop-blur-sm rounded-lg px-5 py-3 max-w-3xl">
-        <p className="text-center text-base sm:text-lg leading-relaxed flex flex-wrap justify-center gap-x-1.5 gap-y-1">
-          {visibleWords.map((word) => {
-            const state = getWordState(word.absoluteIndex);
-            return (
-              <span
-                key={`${word.absoluteIndex}-${word.word}`}
-                className={`
-                  transition-colors duration-200
-                  ${state === 'current'
-                    ? 'text-cyan-400 font-semibold bg-cyan-500/20 px-1 rounded'
-                    : state === 'past'
-                      ? 'text-white/60'
-                      : 'text-white/40'
-                  }
-                `}
-              >
-                {word.word}
-              </span>
-            );
-          })}
-        </p>
-      </div>
-    </motion.div>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+        className={`v7-captions fixed bottom-4 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none ${className}`}
+      >
+        {/* Ultra-compact single-line caption */}
+        <div className="bg-black/80 backdrop-blur-sm rounded-full px-4 py-1.5 max-w-lg">
+          <p className="text-center text-sm whitespace-nowrap overflow-hidden flex items-center justify-center gap-1">
+            {visibleWords.map((word) => {
+              const state = getWordState(word.absoluteIndex);
+              return (
+                <span
+                  key={`${word.absoluteIndex}-${word.word}`}
+                  className={`
+                    transition-all duration-150
+                    ${state === 'current'
+                      ? 'text-cyan-400 font-semibold scale-105'
+                      : state === 'past'
+                        ? 'text-white/50'
+                        : 'text-white/30'
+                    }
+                  `}
+                >
+                  {word.word}
+                </span>
+              );
+            })}
+          </p>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };

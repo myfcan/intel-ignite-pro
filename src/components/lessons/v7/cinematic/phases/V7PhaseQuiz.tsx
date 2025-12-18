@@ -66,33 +66,21 @@ export const V7PhaseQuiz = ({
     return () => clearTimeout(timer);
   }, [isRevealed, selectedIds.length]);
 
-  // Auto-pause audio when quiz appears (Bug #13 fix)
-  // ✅ Add 2 second delay to let current narration sentence finish
+  // Auto-pause audio IMMEDIATELY when quiz appears
+  // ✅ User must interact before audio resumes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const ctrl = audioControlRef.current;
-      if (ctrl?.isPlaying) {
-        ctrl.pause();
-        setAudioPausedByQuiz(true);
-        console.log('[V7PhaseQuiz] Audio paused for interaction (after 2s delay)');
-      }
-    }, 2000); // Wait 2 seconds for narration to finish current sentence
-
-    return () => clearTimeout(timer);
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying) {
+      ctrl.pause();
+      setAudioPausedByQuiz(true);
+      console.log('[V7PhaseQuiz] Audio paused immediately - waiting for user interaction');
+    }
     // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Resume audio when component unmounts (only if we paused it)
-  useEffect(() => {
-    return () => {
-      const ctrl = audioControlRef.current;
-      if (audioPausedByQuiz && ctrl && !ctrl.isPlaying) {
-        ctrl.play();
-        console.log('[V7PhaseQuiz] Audio resumed after quiz exit');
-      }
-    };
-  }, [audioPausedByQuiz]);
+  // DON'T auto-resume on unmount - only resume after user reveals
+  // This prevents narration from continuing before user interacts
 
   // Scene 0: Show title and quiz icon
   // Scene 1: Show options with animation

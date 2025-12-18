@@ -494,6 +494,7 @@ export const V7PhasePlayer = ({
             ]}
             duration={currentPhase.endTime - currentPhase.startTime}
             onChoice={handleCTAChoice}
+            audioControl={audio}
           />
         );
 

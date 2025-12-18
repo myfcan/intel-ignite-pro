@@ -1,6 +1,7 @@
 // V7PhaseCTA - Call to Action final phase
+// ✅ FIXED: Pauses audio and waits for user selection
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface V7PhaseCTAProps {
   title: string;
@@ -13,6 +14,12 @@ interface V7PhaseCTAProps {
   }[];
   duration: number;
   onChoice: (choice: 'negative' | 'positive') => void;
+  audioControl?: {
+    pause: () => void;
+    play: () => void;
+    togglePlayPause: () => void;
+    isPlaying: boolean;
+  };
 }
 
 export default function V7PhaseCTA({
@@ -20,13 +27,39 @@ export default function V7PhaseCTA({
   subtitle,
   options,
   duration,
-  onChoice
+  onChoice,
+  audioControl
 }: V7PhaseCTAProps) {
   const [selected, setSelected] = useState<'negative' | 'positive' | null>(null);
+  const [audioPausedByCTA, setAudioPausedByCTA] = useState(false);
+
+  // Use ref to ensure stable reference
+  const audioControlRef = useRef(audioControl);
+  audioControlRef.current = audioControl;
+
+  // Pause audio IMMEDIATELY when CTA appears - wait for user choice
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying) {
+      ctrl.pause();
+      setAudioPausedByCTA(true);
+      console.log('[V7PhaseCTA] Audio paused - waiting for user choice');
+    }
+  }, []);
 
   const handleSelect = (variant: 'negative' | 'positive') => {
     setSelected(variant);
-    setTimeout(() => onChoice(variant), 500);
+
+    // Resume audio after selection
+    setTimeout(() => {
+      const ctrl = audioControlRef.current;
+      if (audioPausedByCTA && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
+        setAudioPausedByCTA(false);
+        console.log('[V7PhaseCTA] Audio resumed after choice');
+      }
+      onChoice(variant);
+    }, 500);
   };
 
   return (
