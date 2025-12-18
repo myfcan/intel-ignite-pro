@@ -1,6 +1,6 @@
 // V7PhaseLoading - Cinematic loading phase
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface V7PhaseLoadingProps {
   onComplete: () => void;
@@ -9,6 +9,10 @@ interface V7PhaseLoadingProps {
 
 export default function V7PhaseLoading({ onComplete, duration = 3000 }: V7PhaseLoadingProps) {
   const [progress, setProgress] = useState(0);
+
+  // ✅ FIX: Use ref to store onComplete so the effect doesn't re-run when callback changes
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -20,14 +24,14 @@ export default function V7PhaseLoading({ onComplete, duration = 3000 }: V7PhaseL
 
     const timer = setTimeout(() => {
       setProgress(100);
-      setTimeout(onComplete, 300);
+      setTimeout(() => onCompleteRef.current(), 300);
     }, duration);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, [duration, onComplete]);
+  }, [duration]); // ✅ Only depend on duration, not onComplete
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
