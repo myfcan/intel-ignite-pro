@@ -18,6 +18,7 @@ import V7PhaseQuiz from './phases/V7PhaseQuiz';
 import V7PhasePlayground from './phases/V7PhasePlayground';
 import V7PhaseGamification from './phases/V7PhaseGamification';
 import V7PhaseCTA from './phases/V7PhaseCTA';
+import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import { V7LessonScript, V7Phase, usePhaseController } from './phases/V7PhaseController';
 
 interface WordTimestamp {
@@ -333,6 +334,13 @@ export const V7PhasePlayer = ({
         // Get hookQuestion from scene 0 specifically (letterbox scene)
         const letterboxScene = getSceneContent(0);
 
+        // ✅ CRITICAL: Ensure hookQuestion is always shown at start
+        // Fallback to "VOCÊ SABIA?" if not defined in database
+        const extractedHook = letterboxScene.hookQuestion || letterboxScene.mainText || dramaticContent.hookQuestion || '';
+        const hookQuestion = extractedHook || 'VOCÊ SABIA?';
+
+        console.log('[V7PhasePlayer] Dramatic phase - hookQuestion:', hookQuestion, 'sceneIndex:', currentSceneIndex);
+
         return (
           <V7PhaseDramatic
             mainNumber={String(dramaticContent.number || '98%')}
@@ -340,7 +348,7 @@ export const V7PhasePlayer = ({
             subtitle={dramaticContent.subtitle || currentPhase.title}
             highlightWord={dramaticContent.highlightWord}
             impactWord={impactScene.mainText || dramaticContent.highlightWord || ''}
-            hookQuestion={letterboxScene.hookQuestion || letterboxScene.mainText || ''}
+            hookQuestion={hookQuestion}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}
@@ -471,6 +479,24 @@ export const V7PhasePlayer = ({
       case 'revelation':
         // Combine content from ALL revelation scenes
         const revelationContent = getCombinedSceneContent();
+
+        // ✅ Show PERFEITO typewriter during first 3 scenes (0-2), then CTA (3-4)
+        const showPerfeitoSlide = currentSceneIndex < 3;
+
+        // Check if this is a "PERFEITO" method reveal
+        const isPerfeitoMethod =
+          revelationContent.mainText?.toLowerCase().includes('perfeito') ||
+          revelationContent.title?.toLowerCase().includes('perfeito') ||
+          currentPhase.title?.toLowerCase().includes('perfeito');
+
+        if (showPerfeitoSlide && isPerfeitoMethod) {
+          return (
+            <V7PhasePERFEITO
+              onComplete={goToNextPhase}
+              autoAdvance={false}
+            />
+          );
+        }
 
         // Map variant: 'primary'/'secondary' from JSON to 'positive'/'negative' expected by component
         const mapVariant = (v: string): 'negative' | 'positive' => {

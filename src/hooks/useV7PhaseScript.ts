@@ -351,15 +351,15 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         }
       }
 
-      // Scene 0: Fade in black screen with letterbox + hook question (10% - give time for "VOCÊ SABIA?")
+      // Scene 0: Letterbox with hook question "VOCÊ SABIA?" (15% - give more time)
       scenes.push({
-        id: `${act.id}-black`,
+        id: `${act.id}-hook`,
         type: 'letterbox',
         startTime,
-        duration: duration * 0.10,
+        duration: duration * 0.15,
         content: {
-          mainText: dramaticHook, // "VOCÊ SABIA?" or similar hook
-          hookQuestion: dramaticHook, // Also pass as hookQuestion for V7PhaseDramatic
+          mainText: dramaticHook,
+          hookQuestion: dramaticHook,
           subtitle: '',
           backgroundColor: 'black',
           aspectRatio: 'cinematic',
@@ -368,14 +368,27 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letterbox',
       });
 
+      // Scene 1: Hook question continues with glow (10% - more time for "VOCÊ SABIA?")
+      scenes.push({
+        id: `${act.id}-hook-glow`,
+        type: 'hook-glow',
+        startTime: startTime + duration * 0.15,
+        duration: duration * 0.10,
+        content: {
+          hookQuestion: dramaticHook,
+          ...commonFields,
+        },
+        animation: 'glow',
+      });
+
       // ✅ Extract secondary number (2%) from visual or use default
       const dramaticSecondaryNumber = visual.secondaryNumber || visual.contrastValue || '2%';
 
-      // Scene 1: Number appears with glow effect (10% - synced with "98%" in narration)
+      // Scene 2: Number appears with glow effect (10% - 98% appears here)
       scenes.push({
         id: `${act.id}-number-appear`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.10,
+        startTime: startTime + duration * 0.25,
         duration: duration * 0.10,
         content: {
           number: dramaticNumber,
@@ -388,11 +401,11 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'scale-up',
       });
 
-      // Scene 2: Number count-up animation + subtitle reveal (15%)
+      // Scene 3: Number count-up animation + subtitle reveal (15%)
       scenes.push({
         id: `${act.id}-count-up`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.20,
+        startTime: startTime + duration * 0.35,
         duration: duration * 0.15,
         content: {
           number: dramaticNumber,
@@ -404,11 +417,11 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'count-up',
       });
 
-      // Scene 3: Particle explosion transition (10%)
+      // Scene 4: Particle explosion transition (10%)
       scenes.push({
         id: `${act.id}-explosion`,
         type: 'particle-effect',
-        startTime: startTime + duration * 0.35,
+        startTime: startTime + duration * 0.50,
         duration: duration * 0.10,
         content: {
           number: dramaticNumber,
@@ -420,12 +433,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'particle-burst',
       });
 
-      // Scene 4: Subtitle reveal letter-by-letter with highlight (25%)
+      // Scene 5: Subtitle reveal letter-by-letter with highlight (20%)
       scenes.push({
         id: `${act.id}-subtitle`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.45,
-        duration: duration * 0.25,
+        startTime: startTime + duration * 0.60,
+        duration: duration * 0.20,
         content: {
           number: dramaticNumber,
           mainText: dramaticSubtitle,
@@ -437,12 +450,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letter-by-letter',
       });
 
-      // Scene 5: Impact word with camera zoom + shake (30% - LONGER for more impact)
+      // Scene 6: Impact with 98% VS 2% (20% - show contrast)
       scenes.push({
         id: `${act.id}-impact`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.70,
-        duration: duration * 0.30,
+        startTime: startTime + duration * 0.80,
+        duration: duration * 0.20,
         content: {
           number: dramaticNumber,
           subtitle: dramaticSubtitle,

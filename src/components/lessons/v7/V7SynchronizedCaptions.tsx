@@ -101,7 +101,7 @@ export const V7SynchronizedCaptions = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.2 }}
-        className={`v7-captions fixed bottom-4 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none ${className}`}
+        className={`v7-captions fixed bottom-16 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none ${className}`}
       >
         {/* Ultra-compact single-line caption */}
         <div className="bg-black/80 backdrop-blur-sm rounded-full px-4 py-1.5 max-w-lg">

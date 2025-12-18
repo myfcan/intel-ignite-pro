@@ -66,18 +66,10 @@ export const V7PhaseQuiz = ({
     return () => clearTimeout(timer);
   }, [isRevealed, selectedIds.length]);
 
-  // Auto-pause audio IMMEDIATELY when quiz appears
-  // ✅ User must interact before audio resumes
-  useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] Audio paused immediately - waiting for user interaction');
-    }
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ✅ DON'T pause audio immediately - let the current sentence finish
+  // The user will see options and can interact when ready
+  // Audio will keep playing until user clicks "REVELAR VERDADE"
+  // This prevents cutting the narrator mid-sentence
 
   // DON'T auto-resume on unmount - only resume after user reveals
   // This prevents narration from continuing before user interacts
@@ -98,18 +90,26 @@ export const V7PhaseQuiz = ({
   }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
+    // Pause audio when user clicks reveal (not before)
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying) {
+      ctrl.pause();
+      setAudioPausedByQuiz(true);
+      console.log('[V7PhaseQuiz] Audio paused on reveal click');
+    }
+
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // Resume audio after showing result (2 seconds delay for user to see feedback)
+    // Resume audio after showing result (3 seconds delay for user to see feedback)
     setTimeout(() => {
       const ctrl = audioControlRef.current;
       if (audioPausedByQuiz && ctrl && !ctrl.isPlaying) {
         ctrl.play();
-        setAudioPausedByQuiz(false); // Mark as resumed so cleanup doesn't double-resume
+        setAudioPausedByQuiz(false);
         console.log('[V7PhaseQuiz] Audio resumed after quiz completion');
       }
-    }, 2500);
+    }, 3000);
 
     onComplete?.(selectedIds);
   }, [selectedIds, onComplete, audioPausedByQuiz]);
@@ -121,7 +121,7 @@ export const V7PhaseQuiz = ({
   const isInBadGroup = badCount >= selectedIds.length / 2;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 pb-24 relative overflow-hidden">
       <div className="w-full max-w-2xl">
         {/* Quiz Header */}
         <motion.div
