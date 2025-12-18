@@ -66,13 +66,16 @@ export const V7PhaseQuiz = ({
     return () => clearTimeout(timer);
   }, [isRevealed, selectedIds.length]);
 
-  // ✅ DON'T pause audio immediately - let the current sentence finish
-  // The user will see options and can interact when ready
-  // Audio will keep playing until user clicks "REVELAR VERDADE"
-  // This prevents cutting the narrator mid-sentence
-
-  // DON'T auto-resume on unmount - only resume after user reveals
-  // This prevents narration from continuing before user interacts
+  // ✅ REGRA: Interação = Audio PAUSA imediatamente
+  // O usuário precisa de silêncio para ler e responder
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying) {
+      ctrl.pause();
+      setAudioPausedByQuiz(true);
+      console.log('[V7PhaseQuiz] 🔇 Audio pausado - aguardando interação do usuário');
+    }
+  }, []);
 
   // Scene 0: Show title and quiz icon
   // Scene 1: Show options with animation
@@ -281,18 +284,18 @@ export const V7PhaseQuiz = ({
           )}
         </AnimatePresence>
 
-        {/* Result Reveal */}
+        {/* Result Reveal - Posicionado acima dos controles */}
         <AnimatePresence>
           {showResult && (
             <motion.div
-              className="text-center mt-8"
+              className="text-center mt-6 mb-16"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
+              transition={{ duration: 0.4 }}
             >
               <motion.div
                 className={`
-                  inline-block px-8 py-6 rounded-2xl border-2
+                  inline-block px-6 py-5 rounded-2xl border-2
                   ${isInBadGroup
                     ? 'bg-red-500/10 border-red-500/30'
                     : 'bg-green-500/10 border-green-500/30'
