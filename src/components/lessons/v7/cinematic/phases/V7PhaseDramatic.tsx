@@ -384,8 +384,8 @@ export const V7PhaseDramatic = ({
                   filter: `drop-shadow(0 0 30px ${SUCCESS_COLORS.glow})`,
                 }}
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: [0, 1.3, 1], opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.6, type: 'spring' }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6, type: 'spring', stiffness: 200, damping: 15 }}
               >
                 {secondaryNumber}
               </motion.div>
