@@ -236,40 +236,44 @@ export const V7PhasePlayer = ({
         );
 
       case 'narrative':
-        // Combine content from ALL scenes (left card from scene 2, right card from scene 3)
+        // CORRECT: Scene 0 has main comparison items, Scene 1 has detailed comparisons, Scene 2 has warning
+        const scene0Content = getSceneContent(0); // Main comparison items
+        const scene1Content = getSceneContent(1); // Detailed comparisons
+        const scene2Warning = getSceneContent(2); // Warning/urgency section
         const narrativeContent = getCombinedSceneContent();
-        const scene2Content = getSceneContent(2); // Left card scene
-        const scene3Content = getSceneContent(3); // Right card scene
 
-        // Extract left and right items from their respective scenes
-        const leftItems = scene2Content.items || [];
-        const rightItems = scene3Content.items || [];
-        const leftItem = leftItems[0] || {};
-        const rightItem = rightItems[0] || {};
+        // Extract left/right from scene 0 items (format: {label, value, isNegative/isPositive})
+        const mainItems = scene0Content.items || [];
+        const leftItem = mainItems.find((item: any) => item.isNegative) || mainItems[0] || {};
+        const rightItem = mainItems.find((item: any) => item.isPositive) || mainItems[1] || {};
 
-        // Also check for direct amateurPrompt/professionalPrompt in combined content
-        const leftLabel = leftItem.label || narrativeContent.leftCard?.label || 'AMADOR';
-        const rightLabel = rightItem.label || narrativeContent.rightCard?.label || 'PROFISSIONAL';
-        const leftValue = leftItem.value || narrativeContent.amateurPrompt || narrativeContent.leftCard?.value || '';
-        const rightValue = rightItem.value || narrativeContent.professionalPrompt || narrativeContent.rightCard?.value || '';
+        // Build comparisons array from scene 1 items (format: {label, left, right})
+        const detailedItems = scene1Content.items || [];
+        const comparisons = detailedItems.length > 0
+          ? detailedItems.map((item: any) => ({
+              label: item.label || '',
+              leftValue: item.left || '',
+              rightValue: item.right || '',
+              leftColor: '#ff6b6b',
+              rightColor: '#4ecdc4'
+            }))
+          : [{
+              label: scene0Content.mainText || 'Comparação',
+              leftValue: leftItem.value || '',
+              rightValue: rightItem.value || '',
+              leftColor: '#ff6b6b',
+              rightColor: '#4ecdc4'
+            }];
 
         return (
           <V7PhaseNarrative
-            leftTitle={leftLabel}
-            rightTitle={rightLabel}
-            leftEmoji={leftItem.isNegative ? '❌' : '✅'}
-            rightEmoji={rightItem.isPositive ? '✅' : '❌'}
-            comparisons={[
-              {
-                label: narrativeContent.mainText || 'Comparação',
-                leftValue: leftValue,
-                rightValue: rightValue,
-                leftColor: leftItem.isNegative ? '#ff6b6b' : '#4ecdc4',
-                rightColor: rightItem.isPositive ? '#4ecdc4' : '#ff6b6b'
-              }
-            ]}
-            warningTitle={narrativeContent.mainText || currentPhase.title}
-            warningSubtitle={narrativeContent.subtitle || ''}
+            leftTitle={leftItem.label || '98% BRINCANDO'}
+            rightTitle={rightItem.label || '2% DOMINANDO'}
+            leftEmoji="😂"
+            rightEmoji="💰"
+            comparisons={comparisons}
+            warningTitle={scene2Warning.mainText || scene2Warning.highlightWord || ''}
+            warningSubtitle={scene2Warning.subtitle || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
           />

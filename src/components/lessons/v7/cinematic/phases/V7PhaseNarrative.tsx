@@ -80,13 +80,20 @@ export const V7PhaseNarrative = ({
   }, [sceneIndex]);
 
   const getDisplayValue = (value: string, index: number, side: 'left' | 'right') => {
+    // If no value provided, show placeholder
+    if (!value) return side === 'left' ? 'R$ 0' : 'R$ 30K';
+
     const animatedValue = animatedValues.get(index);
-    if (!animatedValue) return '0';
-    
+    // If no animation yet, show the original value
+    if (!animatedValue) return value;
+
+    // Try to extract and animate numeric parts
     const numericPart = value.replace(/\D/g, '');
+    if (!numericPart) return value; // No numbers to animate, return as-is
+
     const prefix = value.match(/^[^\d]*/)?.[0] || '';
     const suffix = value.match(/[^\d]*$/)?.[0] || '';
-    
+
     const currentNum = side === 'left' ? animatedValue.left : animatedValue.right;
     return `${prefix}${currentNum.toLocaleString()}${suffix}`;
   };
@@ -156,9 +163,9 @@ export const V7PhaseNarrative = ({
             key={index}
             className="grid grid-cols-3 gap-4 items-center"
             initial={{ opacity: 0, x: -50 }}
-            animate={{ 
-              opacity: sceneIndex >= 1 && index <= (sceneIndex - 1) * 2 + 1 ? 1 : 0,
-              x: sceneIndex >= 1 && index <= (sceneIndex - 1) * 2 + 1 ? 0 : -50,
+            animate={{
+              opacity: sceneIndex >= 1 ? 1 : 0,
+              x: sceneIndex >= 1 ? 0 : -50,
             }}
             transition={{ duration: 0.5, delay: index * 0.2 }}
           >
