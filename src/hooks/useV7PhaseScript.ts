@@ -351,12 +351,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         }
       }
 
-      // Scene 0: Fade in black screen with letterbox + optional hook (5% - SHORTER for faster hook)
+      // Scene 0: Fade in black screen with letterbox + hook question (10% - give time for "VOCÊ SABIA?")
       scenes.push({
         id: `${act.id}-black`,
         type: 'letterbox',
         startTime,
-        duration: duration * 0.05,
+        duration: duration * 0.10,
         content: {
           mainText: dramaticHook, // "VOCÊ SABIA?" or similar hook
           hookQuestion: dramaticHook, // Also pass as hookQuestion for V7PhaseDramatic
@@ -371,11 +371,11 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       // ✅ Extract secondary number (2%) from visual or use default
       const dramaticSecondaryNumber = visual.secondaryNumber || visual.contrastValue || '2%';
 
-      // Scene 1: Number appears with glow effect (10% - EARLIER to sync with "98%" in narration)
+      // Scene 1: Number appears with glow effect (10% - synced with "98%" in narration)
       scenes.push({
         id: `${act.id}-number-appear`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.05,
+        startTime: startTime + duration * 0.10,
         duration: duration * 0.10,
         content: {
           number: dramaticNumber,
@@ -392,7 +392,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       scenes.push({
         id: `${act.id}-count-up`,
         type: 'number-reveal',
-        startTime: startTime + duration * 0.15,
+        startTime: startTime + duration * 0.20,
         duration: duration * 0.15,
         content: {
           number: dramaticNumber,
@@ -408,7 +408,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       scenes.push({
         id: `${act.id}-explosion`,
         type: 'particle-effect',
-        startTime: startTime + duration * 0.30,
+        startTime: startTime + duration * 0.35,
         duration: duration * 0.10,
         content: {
           number: dramaticNumber,
@@ -420,12 +420,12 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'particle-burst',
       });
 
-      // Scene 4: Subtitle reveal letter-by-letter with highlight (30%)
+      // Scene 4: Subtitle reveal letter-by-letter with highlight (25%)
       scenes.push({
         id: `${act.id}-subtitle`,
         type: 'text-reveal',
-        startTime: startTime + duration * 0.40,
-        duration: duration * 0.30,
+        startTime: startTime + duration * 0.45,
+        duration: duration * 0.25,
         content: {
           number: dramaticNumber,
           mainText: dramaticSubtitle,
