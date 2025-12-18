@@ -44,17 +44,14 @@ export const V7PhaseDramatic = ({
   mood = 'danger',
 }: V7PhaseDramaticProps) => {
   const colors = MOOD_COLORS[mood];
-  const [countValue, setCountValue] = useState('0');
-  const [showLetterbox, setShowLetterbox] = useState(true);
-  const [showNumberGlow, setShowNumberGlow] = useState(false);
-  const [showCountUp, setShowCountUp] = useState(false);
-  const [showExplosion, setShowExplosion] = useState(false);
-  const [showSubtitle, setShowSubtitle] = useState(false);
-  const [showImpact, setShowImpact] = useState(false);
+  const [countValue, setCountValue] = useState(mainNumber);
   const [revealedLetters, setRevealedLetters] = useState(0);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; angle: number }[]>([]);
+  const [countUpStarted, setCountUpStarted] = useState(false);
+  const [subtitleStarted, setSubtitleStarted] = useState(false);
+  const [explosionTriggered, setExplosionTriggered] = useState(false);
 
-  // 6 CINEMATIC SCENES:
+  // 🎬 DERIVE VISIBILITY DIRECTLY FROM sceneIndex (no complex useEffects)
   // Scene 0: Letterbox black fade in (cinematic aspect ratio)
   // Scene 1: Number appears with glow effect
   // Scene 2: Number count-up animation
@@ -62,31 +59,26 @@ export const V7PhaseDramatic = ({
   // Scene 4: Subtitle reveals letter by letter
   // Scene 5: Impact word with camera zoom + shake
 
-  // Scene 0: Letterbox effect
-  useEffect(() => {
-    if (sceneIndex >= 1) {
-      setShowLetterbox(false);
-    }
-  }, [sceneIndex]);
+  const showLetterbox = sceneIndex < 1;
+  const showNumberGlow = sceneIndex >= 1;
+  const showCountUp = sceneIndex >= 2;
+  const showExplosion = sceneIndex >= 3;
+  const showSubtitle = sceneIndex >= 4;
+  const showImpact = sceneIndex >= 5;
 
-  // Scene 1: Number appears with glow
+  // Debug log for scene transitions
   useEffect(() => {
-    if (sceneIndex >= 1) {
-      setShowNumberGlow(true);
-      setCountValue(mainNumber); // Show number immediately with glow
-    }
-  }, [sceneIndex, mainNumber]);
+    console.log(`[V7PhaseDramatic] Scene ${sceneIndex}: letterbox=${showLetterbox}, number=${showNumberGlow}, countUp=${showCountUp}, explosion=${showExplosion}, subtitle=${showSubtitle}, impact=${showImpact}`);
+  }, [sceneIndex, showLetterbox, showNumberGlow, showCountUp, showExplosion, showSubtitle, showImpact]);
 
-  // Scene 2: Count-up animation
+  // Scene 2: Count-up animation (only trigger once)
   useEffect(() => {
-    if (sceneIndex >= 2) {
-      setShowCountUp(true);
-      // Count up animation
+    if (showCountUp && !countUpStarted) {
+      setCountUpStarted(true);
       const numericMatch = mainNumber.match(/^(\d+)/);
       if (numericMatch) {
         const targetNum = parseInt(numericMatch[1]);
         const suffix = mainNumber.replace(/^\d+/, '');
-        let current = 0;
         const duration = 1500;
         const startTime = Date.now();
 
@@ -94,7 +86,7 @@ export const V7PhaseDramatic = ({
           const elapsed = Date.now() - startTime;
           const progress = Math.min(elapsed / duration, 1);
           const eased = 1 - Math.pow(1 - progress, 3);
-          current = Math.floor(eased * targetNum);
+          const current = Math.floor(eased * targetNum);
           setCountValue(`${current}${suffix}`);
 
           if (progress < 1) {
@@ -104,17 +96,14 @@ export const V7PhaseDramatic = ({
           }
         };
         requestAnimationFrame(animate);
-      } else {
-        setCountValue(mainNumber);
       }
     }
-  }, [mainNumber, sceneIndex]);
+  }, [showCountUp, countUpStarted, mainNumber]);
 
-  // Scene 3: Particle explosion
+  // Scene 3: Particle explosion (only trigger once)
   useEffect(() => {
-    if (sceneIndex >= 3) {
-      setShowExplosion(true);
-      // Create particle burst
+    if (showExplosion && !explosionTriggered) {
+      setExplosionTriggered(true);
       const newParticles = Array.from({ length: 40 }, (_, i) => ({
         id: i,
         x: 50,
@@ -123,12 +112,12 @@ export const V7PhaseDramatic = ({
       }));
       setParticles(newParticles);
     }
-  }, [sceneIndex]);
+  }, [showExplosion, explosionTriggered]);
 
-  // Scene 4: Subtitle reveals letter by letter
+  // Scene 4: Subtitle letter-by-letter reveal (only trigger once)
   useEffect(() => {
-    if (sceneIndex >= 4) {
-      setShowSubtitle(true);
+    if (showSubtitle && !subtitleStarted) {
+      setSubtitleStarted(true);
       let letterIndex = 0;
       const interval = setInterval(() => {
         letterIndex++;
@@ -139,22 +128,24 @@ export const V7PhaseDramatic = ({
       }, 50);
       return () => clearInterval(interval);
     }
-  }, [sceneIndex, subtitle]);
+  }, [showSubtitle, subtitleStarted, subtitle]);
 
-  // Scene 5: Impact word with camera shake
+  // Scene 5: Impact particles
   useEffect(() => {
-    if (sceneIndex >= 5) {
-      setShowImpact(true);
-      // Create more particles for impact
+    if (showImpact) {
       const impactParticles = Array.from({ length: 50 }, (_, i) => ({
         id: i + 100,
         x: 50,
         y: 60,
         angle: (i / 50) * Math.PI * 2,
       }));
-      setParticles(prev => [...prev, ...impactParticles]);
+      setParticles(prev => {
+        // Only add if not already added
+        if (prev.some(p => p.id >= 100)) return prev;
+        return [...prev, ...impactParticles];
+      });
     }
-  }, [sceneIndex]);
+  }, [showImpact]);
 
   // Animate particles
   useEffect(() => {

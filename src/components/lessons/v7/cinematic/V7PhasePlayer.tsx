@@ -33,6 +33,13 @@ interface V7PhasePlayerProps {
   onComplete?: () => void;
 }
 
+// Helper to format time in mm:ss
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const V7PhasePlayer = ({
   script,
   audioUrl,
@@ -41,6 +48,7 @@ export const V7PhasePlayer = ({
 }: V7PhasePlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false); // Fallback for no-audio mode
 
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
@@ -53,17 +61,25 @@ export const V7PhasePlayer = ({
     }
   });
 
-  // Phase controller
+  // Detect if audio is available
+  const hasAudio = Boolean(audioUrl && audioUrl.length > 0);
+
+  // Effective isPlaying state (works with or without audio)
+  const effectiveIsPlaying = hasAudio ? audio.isPlaying : isPlayingWithoutAudio;
+
+  // Phase controller with fallback timer for no-audio scenarios
   const {
     currentPhase,
     currentPhaseIndex,
     currentSceneIndex,
     phaseProgress,
-    goToPhase
+    goToPhase,
+    internalTime
   } = usePhaseController({
     script,
     currentTime: audio.currentTime,
-    isPlaying: audio.isPlaying
+    isPlaying: effectiveIsPlaying,
+    hasAudio
   });
 
   // Load audio
@@ -123,8 +139,13 @@ export const V7PhasePlayer = ({
 
   const handleLoadingComplete = useCallback(() => {
     setIsLoading(false);
-    audio.togglePlayPause();
-  }, [audio]);
+    if (hasAudio) {
+      audio.togglePlayPause();
+    } else {
+      // Start internal timer when no audio
+      setIsPlayingWithoutAudio(true);
+    }
+  }, [audio, hasAudio]);
 
   const goToNextPhase = useCallback(() => {
     if (currentPhaseIndex < script.phases.length - 1) {
@@ -413,22 +434,22 @@ export const V7PhasePlayer = ({
       onMouseMove={() => setShowControls(true)}
     >
       {/* Canvas Background */}
-      <V7CinematicCanvas 
+      <V7CinematicCanvas
         mood={getCanvasMood(currentPhase?.type)}
-        intensity={audio.isPlaying ? 'high' : 'medium'}
+        intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
 
-      {/* Timeline */}
+      {/* Timeline - show internalTime when no audio */}
       <V7MinimalTimeline
         currentAct={currentPhaseIndex + 1}
         totalActs={script.phases.length}
-        currentTime={audio.formattedCurrentTime}
+        currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
         totalTime={totalDuration}
         isVisible={showControls}
       />
 
-      {/* Audio Indicator */}
-      <V7AudioIndicator isPlaying={audio.isPlaying} />
+      {/* Audio/Play Indicator */}
+      <V7AudioIndicator isPlaying={effectiveIsPlaying} />
 
       {/* Audio Controls */}
       {audioUrl && (
@@ -491,8 +512,8 @@ export const V7PhasePlayer = ({
         currentPhaseIndex={currentPhaseIndex}
         currentScene={currentPhase?.scenes?.[currentSceneIndex] || null}
         currentSceneIndex={currentSceneIndex}
-        currentTime={audio.currentTime}
-        isPlaying={audio.isPlaying}
+        currentTime={hasAudio ? audio.currentTime : internalTime}
+        isPlaying={effectiveIsPlaying}
         audioUrl={audioUrl || null}
         wordTimestamps={wordTimestamps}
       />

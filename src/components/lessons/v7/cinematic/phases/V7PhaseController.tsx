@@ -128,6 +128,7 @@ interface UsePhaseControllerProps {
   script: V7LessonScript;
   currentTime: number;
   isPlaying: boolean;
+  hasAudio?: boolean; // Whether audio is available
 }
 
 interface UsePhaseControllerReturn {
@@ -139,44 +140,89 @@ interface UsePhaseControllerReturn {
   phaseProgress: number;
   goToPhase: (index: number) => void;
   goToScene: (phaseIndex: number, sceneIndex: number) => void;
+  internalTime: number; // For debugging
 }
 
 export function usePhaseController({
   script,
   currentTime,
   isPlaying,
+  hasAudio = true,
 }: UsePhaseControllerProps): UsePhaseControllerReturn {
   const [manualPhaseIndex, setManualPhaseIndex] = useState<number | null>(null);
 
-  // Find current phase based on time
+  // FALLBACK TIMER: Internal timer when no audio is available
+  const [internalTime, setInternalTime] = useState(0);
+  const [isInternalTimerActive, setIsInternalTimerActive] = useState(false);
+
+  // Activate internal timer when no audio and isPlaying
+  useEffect(() => {
+    if (!hasAudio && isPlaying && !isInternalTimerActive) {
+      setIsInternalTimerActive(true);
+    }
+  }, [hasAudio, isPlaying, isInternalTimerActive]);
+
+  // Internal timer tick - advances time every 100ms
+  useEffect(() => {
+    if (!isInternalTimerActive || !isPlaying) return;
+
+    const interval = setInterval(() => {
+      setInternalTime(prev => {
+        const newTime = prev + 0.1;
+        // Stop at end of script
+        if (newTime >= script.totalDuration) {
+          setIsInternalTimerActive(false);
+          return script.totalDuration;
+        }
+        return newTime;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isInternalTimerActive, isPlaying, script.totalDuration]);
+
+  // Reset internal timer when phase changes manually
+  useEffect(() => {
+    if (manualPhaseIndex !== null && !hasAudio) {
+      const phase = script.phases[manualPhaseIndex];
+      if (phase) {
+        setInternalTime(phase.startTime);
+      }
+    }
+  }, [manualPhaseIndex, hasAudio, script.phases]);
+
+  // Use internal time when no audio, otherwise use audio time
+  const effectiveTime = hasAudio ? currentTime : internalTime;
+
+  // Find current phase based on time (uses effectiveTime for fallback support)
   const currentPhaseIndex = useMemo(() => {
     if (manualPhaseIndex !== null) return manualPhaseIndex;
-    
+
     const index = script.phases.findIndex(
-      (phase) => currentTime >= phase.startTime && currentTime < phase.endTime
+      (phase) => effectiveTime >= phase.startTime && effectiveTime < phase.endTime
     );
     return index === -1 ? 0 : index;
-  }, [script.phases, currentTime, manualPhaseIndex]);
+  }, [script.phases, effectiveTime, manualPhaseIndex]);
 
   const currentPhase = script.phases[currentPhaseIndex] || null;
 
-  // Find current scene within phase based on time
+  // Find current scene within phase based on time (uses effectiveTime for fallback support)
   const currentSceneIndex = useMemo(() => {
     if (!currentPhase) return 0;
-    
-    const phaseElapsed = currentTime - currentPhase.startTime;
+
+    const phaseElapsed = effectiveTime - currentPhase.startTime;
     let accumulatedTime = 0;
 
     for (let i = 0; i < currentPhase.scenes.length; i++) {
       const scene = currentPhase.scenes[i];
-      const sceneDuration = scene.duration || 
+      const sceneDuration = scene.duration ||
         (currentPhase.endTime - currentPhase.startTime) / currentPhase.scenes.length;
-      
+
       if (scene.startTime !== undefined) {
-        if (currentTime >= scene.startTime) {
+        if (effectiveTime >= scene.startTime) {
           // Check if this is the last matching scene
           const nextScene = currentPhase.scenes[i + 1];
-          if (!nextScene || (nextScene.startTime && currentTime < nextScene.startTime)) {
+          if (!nextScene || (nextScene.startTime && effectiveTime < nextScene.startTime)) {
             return i;
           }
         }
@@ -189,35 +235,35 @@ export function usePhaseController({
     }
 
     return currentPhase.scenes.length - 1;
-  }, [currentPhase, currentTime]);
+  }, [currentPhase, effectiveTime]);
 
   const currentScene = currentPhase?.scenes[currentSceneIndex] || null;
 
-  // Calculate overall progress
+  // Calculate overall progress (uses effectiveTime for fallback support)
   const progress = useMemo(() => {
-    return (currentTime / script.totalDuration) * 100;
-  }, [currentTime, script.totalDuration]);
+    return (effectiveTime / script.totalDuration) * 100;
+  }, [effectiveTime, script.totalDuration]);
 
-  // Calculate phase progress
+  // Calculate phase progress (uses effectiveTime for fallback support)
   const phaseProgress = useMemo(() => {
     if (!currentPhase) return 0;
     const phaseDuration = currentPhase.endTime - currentPhase.startTime;
-    const elapsed = currentTime - currentPhase.startTime;
+    const elapsed = effectiveTime - currentPhase.startTime;
     return Math.min(100, (elapsed / phaseDuration) * 100);
-  }, [currentPhase, currentTime]);
+  }, [currentPhase, effectiveTime]);
 
   // Reset manual override when time changes significantly
   useEffect(() => {
     if (manualPhaseIndex !== null && isPlaying) {
       const expectedPhase = script.phases.findIndex(
-        (phase) => currentTime >= phase.startTime && currentTime < phase.endTime
+        (phase) => effectiveTime >= phase.startTime && effectiveTime < phase.endTime
       );
       if (expectedPhase !== -1 && expectedPhase !== manualPhaseIndex) {
         // Time has moved to a different phase, clear manual override
         setManualPhaseIndex(null);
       }
     }
-  }, [currentTime, manualPhaseIndex, script.phases, isPlaying]);
+  }, [effectiveTime, manualPhaseIndex, script.phases, isPlaying]);
 
   const goToPhase = useCallback((index: number) => {
     if (index >= 0 && index < script.phases.length) {
@@ -241,6 +287,7 @@ export function usePhaseController({
     phaseProgress,
     goToPhase,
     goToScene,
+    internalTime: effectiveTime, // For debugging - shows which time source is being used
   };
 }
 
