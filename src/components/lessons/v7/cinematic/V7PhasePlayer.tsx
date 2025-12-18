@@ -335,7 +335,8 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhaseDramatic
-            mainNumber={String(dramaticContent.number || '01')}
+            mainNumber={String(dramaticContent.number || '98%')}
+            secondaryNumber={dramaticContent.secondaryNumber || '2%'}
             subtitle={dramaticContent.subtitle || currentPhase.title}
             highlightWord={dramaticContent.highlightWord}
             impactWord={impactScene.mainText || dramaticContent.highlightWord || ''}
@@ -577,12 +578,16 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions */}
+      {/* Captions - HIDE during interactive phases (quiz/playground) to avoid overlap */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
           currentTime={audio.currentTime}
-          isVisible={audio.isPlaying || audio.currentTime > 0}
+          isVisible={
+            (audio.isPlaying || audio.currentTime > 0) &&
+            currentPhase?.type !== 'interaction' &&
+            currentPhase?.type !== 'playground'
+          }
           maxWords={15}
         />
       )}

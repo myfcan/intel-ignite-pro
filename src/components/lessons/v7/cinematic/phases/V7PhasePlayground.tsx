@@ -1,7 +1,7 @@
 // V7PhasePlayground - Split screen playground: Amateur vs Professional
 // Based on spec: Shows contrast between simple and PERFEITO method prompts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PlaygroundResult {
@@ -51,14 +51,25 @@ export const V7PhasePlayground = ({
   const [professionalTyped, setProfessionalTyped] = useState('');
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
 
-  // Auto-pause audio when playground appears (Bug #13 fix)
-  // Use stable references to avoid re-running on every render
+  // ✅ Use refs to ensure stable audioControl reference in callbacks
+  const audioControlRef = useRef(audioControl);
+  audioControlRef.current = audioControl;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  // Auto-pause audio when playground appears
+  // ✅ Add 2 second delay to let current narration sentence finish
   useEffect(() => {
-    if (audioControl?.isPlaying) {
-      audioControl.pause();
-      setAudioPausedByPlayground(true);
-      console.log('[V7PhasePlayground] Audio paused for interaction');
-    }
+    const timer = setTimeout(() => {
+      const ctrl = audioControlRef.current;
+      if (ctrl?.isPlaying) {
+        ctrl.pause();
+        setAudioPausedByPlayground(true);
+        console.log('[V7PhasePlayground] Audio paused for interaction (after 2s delay)');
+      }
+    }, 2000); // Wait 2 seconds for narration to finish current sentence
+
+    return () => clearTimeout(timer);
     // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -66,12 +77,12 @@ export const V7PhasePlayground = ({
   // Resume audio when component unmounts (only if we paused it)
   useEffect(() => {
     return () => {
-      if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
-        audioControl.play();
+      const ctrl = audioControlRef.current;
+      if (audioPausedByPlayground && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
         console.log('[V7PhasePlayground] Audio resumed after playground exit');
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioPausedByPlayground]);
 
   // ✅ Show content immediately on mount - no waiting for sceneIndex
@@ -84,12 +95,13 @@ export const V7PhasePlayground = ({
     const timer5 = setTimeout(() => {
       setShowComparison(true);
       // Resume audio when playground completes
-      if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
-        audioControl.play();
+      const ctrl = audioControlRef.current;
+      if (audioPausedByPlayground && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
         setAudioPausedByPlayground(false);
         console.log('[V7PhasePlayground] Audio resumed after playground completion');
       }
-      onComplete?.();
+      onCompleteRef.current?.();
     }, 7000);
 
     return () => {
@@ -99,7 +111,7 @@ export const V7PhasePlayground = ({
       clearTimeout(timer4);
       clearTimeout(timer5);
     };
-  }, [audioPausedByPlayground, audioControl, onComplete]);
+  }, [audioPausedByPlayground]);
 
   // Typing animation for amateur prompt
   useEffect(() => {

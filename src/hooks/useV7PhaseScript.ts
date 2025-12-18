@@ -340,7 +340,16 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
       const dramaticSubtitle = visual.subtitle || act.title || '';
       const dramaticHighlight = visual.highlightWord || '';
       const dramaticImpact = visual.impactWord || visual.mainText || dramaticHighlight || 'IMPACTO';
-      const dramaticHook = visual.hookQuestion || visual.hook || '';
+
+      // ✅ Extract hookQuestion from visual, or detect from narration, or use default
+      let dramaticHook = visual.hookQuestion || visual.hook || '';
+      if (!dramaticHook && commonFields.narration) {
+        // Check if narration starts with "Você sabia" pattern
+        const narrationLower = commonFields.narration.toLowerCase();
+        if (narrationLower.includes('você sabia') || narrationLower.includes('voce sabia')) {
+          dramaticHook = 'VOCÊ SABIA?';
+        }
+      }
 
       // Scene 0: Fade in black screen with letterbox + optional hook (5% - SHORTER for faster hook)
       scenes.push({
@@ -359,6 +368,9 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letterbox',
       });
 
+      // ✅ Extract secondary number (2%) from visual or use default
+      const dramaticSecondaryNumber = visual.secondaryNumber || visual.contrastValue || '2%';
+
       // Scene 1: Number appears with glow effect (10% - EARLIER to sync with "98%" in narration)
       scenes.push({
         id: `${act.id}-number-appear`,
@@ -367,6 +379,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         duration: duration * 0.10,
         content: {
           number: dramaticNumber,
+          secondaryNumber: dramaticSecondaryNumber,
           subtitle: '', // No subtitle yet - builds suspense
           highlightWord: dramaticHighlight,
           glowEffect: true,
