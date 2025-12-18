@@ -112,6 +112,18 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   let currentTime = 0;
   const phases: V7Phase[] = [];
 
+  // Calculate total duration from acts to scale proportionally
+  const totalActsDuration = acts.reduce((sum, act) => {
+    return sum + (act.duration || act.endTime - act.startTime || 60);
+  }, 0);
+
+  // Available time after loading phase (3s)
+  const availableTime = totalDuration - 3;
+
+  // Scale factor to fit acts into actual audio duration
+  const scaleFactor = totalActsDuration > 0 ? availableTime / totalActsDuration : 1;
+  console.log(`[transformActsToPhases] Scale factor: ${scaleFactor.toFixed(2)} (${totalActsDuration}s acts → ${availableTime}s audio)`);
+
   // Add loading phase first
   phases.push({
     id: 'loading',
@@ -125,11 +137,13 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   currentTime = 3;
 
   acts.forEach((act, index) => {
-    const duration = act.duration || act.endTime - act.startTime || 60;
+    // Scale duration proportionally to actual audio length
+    const originalDuration = act.duration || act.endTime - act.startTime || 60;
+    const duration = Math.max(5, originalDuration * scaleFactor); // Minimum 5 seconds per act
     const endTime = currentTime + duration;
     const phaseType = mapActTypeToPhaseType(act.type);
 
-    console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${currentTime}s - ${endTime}s)`);
+    console.log(`[transformActsToPhases] Act ${index + 1}: "${act.type}" → phase "${phaseType}" (${currentTime.toFixed(1)}s - ${endTime.toFixed(1)}s) [scaled from ${originalDuration}s]`);
     
     // For cinematic_flow, extract visual and audio from act.content
     const visualData = act.content?.visual;
