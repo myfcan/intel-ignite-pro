@@ -305,11 +305,14 @@ export const V7PhaseDramatic = ({
               animate={{ opacity: 1 }}
             >
               {renderHighlightedSubtitle()}
-              <motion.span
-                className="inline-block w-[2px] h-6 bg-white/80 ml-1"
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-              />
+              {/* Cursor only shows while typing, disappears when complete */}
+              {revealedLetters < subtitle.length && (
+                <motion.span
+                  className="inline-block w-[2px] h-6 bg-white/80 ml-1"
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
