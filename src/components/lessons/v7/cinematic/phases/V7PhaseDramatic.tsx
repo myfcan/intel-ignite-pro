@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface V7PhaseDramaticProps {
   mainNumber: string;
+  secondaryNumber?: string; // "2%" - shown as contrast during impact scene
   subtitle: string;
   highlightWord?: string;
   impactWord?: string;
@@ -33,8 +34,15 @@ const MOOD_COLORS = {
   },
 };
 
+const SUCCESS_COLORS = {
+  gradient: 'linear-gradient(45deg, #00d9a6, #22D3EE)',
+  glow: 'rgba(34, 211, 238, 0.5)',
+  particle: '#22D3EE',
+};
+
 export const V7PhaseDramatic = ({
   mainNumber,
+  secondaryNumber,
   subtitle,
   highlightWord,
   impactWord,
@@ -317,9 +325,62 @@ export const V7PhaseDramatic = ({
           )}
         </AnimatePresence>
 
-        {/* Impact word - explodes on screen */}
+        {/* Secondary Number (2%) - shows as contrast during impact scene */}
         <AnimatePresence>
-          {showImpact && impactWord && (
+          {showImpact && secondaryNumber && (
+            <motion.div
+              className="mt-6 flex items-center justify-center gap-4 sm:gap-8"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              {/* Main number shrinks and moves left */}
+              <motion.div
+                className="text-4xl sm:text-6xl md:text-7xl font-black"
+                style={{
+                  background: colors.gradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: `drop-shadow(0 0 20px ${colors.glow})`,
+                }}
+                initial={{ scale: 1 }}
+                animate={{ scale: 0.6, opacity: 0.7 }}
+              >
+                {mainNumber}
+              </motion.div>
+
+              {/* VS divider */}
+              <motion.span
+                className="text-white/50 text-2xl font-bold"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                VS
+              </motion.span>
+
+              {/* Secondary number appears with success colors */}
+              <motion.div
+                className="text-5xl sm:text-7xl md:text-8xl font-black"
+                style={{
+                  background: SUCCESS_COLORS.gradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: `drop-shadow(0 0 30px ${SUCCESS_COLORS.glow})`,
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1.3, 1], opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6, type: 'spring' }}
+              >
+                {secondaryNumber}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Impact word - explodes on screen (only if no secondary number) */}
+        <AnimatePresence>
+          {showImpact && impactWord && !secondaryNumber && (
             <motion.div
               className="mt-8 text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-widest"
               style={{
@@ -329,12 +390,12 @@ export const V7PhaseDramatic = ({
                 filter: `drop-shadow(0 0 30px ${colors.glow})`,
               }}
               initial={{ scale: 0, opacity: 0, rotate: -10 }}
-              animate={{ 
+              animate={{
                 scale: [0, 1.2, 1],
                 opacity: 1,
                 rotate: 0,
               }}
-              transition={{ 
+              transition={{
                 duration: 0.6,
                 type: 'spring',
                 stiffness: 200,

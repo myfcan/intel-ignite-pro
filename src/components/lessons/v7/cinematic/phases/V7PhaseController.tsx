@@ -8,6 +8,7 @@ export interface V7SceneContent {
   mainText?: string;
   subtitle?: string;
   number?: string;
+  secondaryNumber?: string; // "2%" - contrast number for dramatic scenes
   highlightWord?: string;
   title?: string;
   hookQuestion?: string; // "VOCÊ SABIA?" - teaser question for dramatic scenes

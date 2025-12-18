@@ -1,7 +1,7 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface QuizOption {
@@ -46,6 +46,10 @@ export const V7PhaseQuiz = ({
   // Track if we paused the audio (so we only resume what we paused)
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
 
+  // ✅ Use refs to ensure stable audioControl reference in callbacks
+  const audioControlRef = useRef(audioControl);
+  audioControlRef.current = audioControl;
+
   // ✅ Show reminder if user doesn't interact within 7 seconds
   useEffect(() => {
     if (isRevealed || selectedIds.length > 0) {
@@ -63,27 +67,31 @@ export const V7PhaseQuiz = ({
   }, [isRevealed, selectedIds.length]);
 
   // Auto-pause audio when quiz appears (Bug #13 fix)
-  // Use stable references to avoid re-running on every render
+  // ✅ Add 2 second delay to let current narration sentence finish
   useEffect(() => {
-    if (audioControl?.isPlaying) {
-      audioControl.pause();
-      setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] Audio paused for interaction');
-    }
-    // Only run on mount - empty deps since we only want this once
+    const timer = setTimeout(() => {
+      const ctrl = audioControlRef.current;
+      if (ctrl?.isPlaying) {
+        ctrl.pause();
+        setAudioPausedByQuiz(true);
+        console.log('[V7PhaseQuiz] Audio paused for interaction (after 2s delay)');
+      }
+    }, 2000); // Wait 2 seconds for narration to finish current sentence
+
+    return () => clearTimeout(timer);
+    // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Resume audio when component unmounts (only if we paused it)
   useEffect(() => {
     return () => {
-      if (audioPausedByQuiz && audioControl && !audioControl.isPlaying) {
-        audioControl.play();
+      const ctrl = audioControlRef.current;
+      if (audioPausedByQuiz && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
         console.log('[V7PhaseQuiz] Audio resumed after quiz exit');
       }
     };
-    // Include audioControl methods but not the object itself
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioPausedByQuiz]);
 
   // Scene 0: Show title and quiz icon
@@ -107,15 +115,16 @@ export const V7PhaseQuiz = ({
 
     // Resume audio after showing result (2 seconds delay for user to see feedback)
     setTimeout(() => {
-      if (audioPausedByQuiz && audioControl && !audioControl.isPlaying) {
-        audioControl.play();
+      const ctrl = audioControlRef.current;
+      if (audioPausedByQuiz && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
         setAudioPausedByQuiz(false); // Mark as resumed so cleanup doesn't double-resume
         console.log('[V7PhaseQuiz] Audio resumed after quiz completion');
       }
     }, 2500);
 
     onComplete?.(selectedIds);
-  }, [selectedIds, onComplete, audioControl, audioPausedByQuiz]);
+  }, [selectedIds, onComplete, audioPausedByQuiz]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
