@@ -1,0 +1,242 @@
+{
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "98% brinca. 2% lucra R$ 30K/mês.",
+  "difficulty": "intermediate",
+  "category": "prompts",
+  "duration": 180,
+  "tags": ["prompts", "profissional", "ia", "chatgpt"],
+  "learningObjectives": [
+    "Identificar a diferença entre uso amador e profissional de IA",
+    "Dominar o Método PERFEITO de prompting",
+    "Aplicar prompts estruturados na prática"
+  ],
+  "cinematic_flow": {
+    "timeline": { "totalDuration": 180 },
+    "acts": [
+      {
+        "id": "act-1-dramatic",
+        "type": "dramatic",
+        "title": "A Realidade Brutal",
+        "duration": 25,
+        "content": {
+          "visual": {
+            "mainValue": "98%",
+            "subtitle": "das pessoas brincam com IA",
+            "highlightWord": "brincam",
+            "hookQuestion": "VOCÊ SABIA?",
+            "impactWord": "FRACASSO",
+            "mood": "danger"
+          },
+          "audio": {
+            "narration": "Você sabia que noventa e oito porcento das pessoas tratam inteligência artificial como brinquedo? Enquanto isso, dois porcento estão faturando trinta mil reais por mês. A diferença entre eles? Método."
+          }
+        }
+      },
+      {
+        "id": "act-2-comparison",
+        "type": "comparison",
+        "title": "Amador vs Profissional",
+        "duration": 30,
+        "content": {
+          "visual": {
+            "title": "A DIFERENÇA BRUTAL",
+            "subtitle": "Veja o abismo entre os dois grupos",
+            "leftCard": {
+              "label": "AMADOR 98%",
+              "value": "R$ 0/mês",
+              "isPositive": false,
+              "details": [
+                "Prompts de uma linha",
+                "Zero contexto",
+                "Resultados genéricos"
+              ]
+            },
+            "rightCard": {
+              "label": "PROFISSIONAL 2%",
+              "value": "R$ 30K/mês",
+              "isPositive": true,
+              "details": [
+                "Prompts estruturados",
+                "Contexto rico",
+                "Resultados lucrativos"
+              ]
+            },
+            "warning": "Você está em qual grupo?"
+          },
+          "audio": {
+            "narration": "Observe a diferença. O amador pede: crie um post para Instagram. O profissional estrutura com persona, contexto e objetivo claro. O resultado? O amador recebe texto genérico. O profissional recebe ouro."
+          }
+        }
+      },
+      {
+        "id": "act-3-quiz",
+        "type": "quiz",
+        "title": "Auto-Avaliação",
+        "duration": 25,
+        "content": {
+          "visual": {
+            "title": "AUTO-AVALIAÇÃO",
+            "question": "Como você faz prompts hoje?",
+            "options": [
+              {
+                "id": "opt-1",
+                "text": "Perguntas simples e diretas",
+                "isCorrect": false,
+                "category": "bad",
+                "feedback": "Esse é o jeito amador!"
+              },
+              {
+                "id": "opt-2",
+                "text": "Com contexto, persona e objetivo",
+                "isCorrect": true,
+                "category": "good",
+                "feedback": "Você está nos 2%!"
+              },
+              {
+                "id": "opt-3",
+                "text": "Copio prompts da internet",
+                "isCorrect": false,
+                "category": "bad",
+                "feedback": "Prompts genéricos dão resultados genéricos"
+              }
+            ],
+            "correctFeedback": "Excelente! Você já entende o poder da estrutura!",
+            "incorrectFeedback": "Sem problemas! Vou te ensinar o método agora.",
+            "revealGoodMessage": "Continue assim! Você já pensa como profissional.",
+            "revealBadMessage": "Relaxa! Em 2 minutos você vai dominar o método."
+          },
+          "audio": {
+            "narration": "Momento de verdade. Como você está usando IA hoje? Seja honesto. Essa autoavaliação é o primeiro passo para sair dos noventa e oito porcento."
+          },
+          "interaction": {
+            "type": "quiz",
+            "pauseAudio": true
+          }
+        }
+      },
+      {
+        "id": "act-4-playground",
+        "type": "playground",
+        "title": "Desafio Prático",
+        "duration": 35,
+        "content": {
+          "visual": {
+            "title": "DESAFIO PRÁTICO",
+            "subtitle": "Veja a transformação ao vivo",
+            "challenge": "Compare o prompt amador com o profissional",
+            "amateurPrompt": "Me ajude a vender mais",
+            "professionalPrompt": "Atue como consultor de vendas B2B com 15 anos de experiência.\n\nContexto: Minha empresa vende software para restaurantes. Ticket médio R$ 500/mês. Conversão atual 2%.\n\nObjetivo: Criar sequência de 5 emails de follow-up para aumentar conversão para 5%.\n\nFormato: Cada email com assunto chamativo + corpo persuasivo + CTA claro.",
+            "amateurResult": {
+              "title": "Resultado Amador",
+              "content": "Para vender mais, você pode:\n1. Fazer promoções\n2. Usar redes sociais\n3. Melhorar atendimento",
+              "score": 15,
+              "maxScore": 100,
+              "verdict": "fraco"
+            },
+            "professionalResult": {
+              "title": "Resultado Profissional",
+              "content": "EMAIL 1: O segredo dos restaurantes que triplicaram faturamento\n\nOlá [Nome],\n\nNotei que você fez uma demo do nosso software mas ainda não fechou...\n\n[Sequência completa de 5 emails personalizados]",
+              "score": 95,
+              "maxScore": 100,
+              "verdict": "excelente"
+            },
+            "amateurScore": 15,
+            "professionalScore": 95
+          },
+          "audio": {
+            "narration": "Olha a diferença na prática! O prompt amador gera conselhos genéricos que qualquer um poderia dar. O prompt profissional gera uma sequência completa de emails prontos para usar. Essa é a diferença entre brincar e lucrar."
+          },
+          "interaction": {
+            "type": "playground",
+            "pauseAudio": true
+          }
+        }
+      },
+      {
+        "id": "act-5-revelation",
+        "type": "revelation",
+        "title": "Método PERFEITO",
+        "duration": 30,
+        "content": {
+          "visual": {
+            "title": "MÉTODO PERFEITO",
+            "mainValue": "P.E.R.F.E.I.T.O",
+            "subtitle": "A fórmula dos 2% revelada",
+            "highlightWord": "PERFEITO",
+            "items": [
+              { "emoji": "👤", "text": "P - Persona: Defina quem a IA deve ser" },
+              { "emoji": "🎯", "text": "E - Especificidade: Elimine ambiguidade" },
+              { "emoji": "✅", "text": "R - Resultado: Deixe claro o objetivo" },
+              { "emoji": "📋", "text": "F - Formato: Estruture a saída" },
+              { "emoji": "💡", "text": "E - Exemplos: Forneça referências" },
+              { "emoji": "📝", "text": "I - Instruções: Detalhe cada passo" },
+              { "emoji": "🎭", "text": "T - Tom: Defina a personalidade" },
+              { "emoji": "🔄", "text": "O - Otimização: Refine sempre" }
+            ],
+            "metrics": [
+              { "label": "Em 30 dias", "value": "R$ 500/post" },
+              { "label": "Em 90 dias", "value": "R$ 5K/mês extras" }
+            ]
+          },
+          "audio": {
+            "narration": "Aqui está o segredo. Método PERFEITO. P de Persona. E de Especificidade. R de Resultado. F de Formato. E de Exemplos. I de Instruções. T de Tom. O de Otimização. Grave esse acrônimo. Ele vale ouro."
+          }
+        }
+      },
+      {
+        "id": "act-6-cta",
+        "type": "cta",
+        "title": "Sua Escolha",
+        "duration": 20,
+        "content": {
+          "visual": {
+            "title": "O QUE VOCÊ VAI FAZER AGORA?",
+            "subtitle": "A decisão é sua",
+            "options": [
+              {
+                "id": "apply",
+                "label": "Aplicar AGORA",
+                "emoji": "🎯",
+                "variant": "primary"
+              },
+              {
+                "id": "review",
+                "label": "Revisar Exemplos",
+                "emoji": "📚",
+                "variant": "secondary"
+              }
+            ]
+          },
+          "audio": {
+            "narration": "Momento da decisão. Você pode continuar nos noventa e oito porcento ou tomar ação agora e entrar para os dois porcento. O que separa os dois grupos? A ação que você toma neste momento."
+          }
+        }
+      },
+      {
+        "id": "act-7-gamification",
+        "type": "gamification",
+        "title": "Conquistas",
+        "duration": 15,
+        "content": {
+          "visual": {
+            "title": "PARABÉNS!",
+            "mainText": "AULA COMPLETA",
+            "subtitle": "Você agora conhece o método dos 2%",
+            "items": [
+              { "emoji": "✅", "text": "Revelação dos 2% Completa" },
+              { "emoji": "✅", "text": "Método PERFEITO Dominado" },
+              { "emoji": "✅", "text": "Pronto para Lucrar" }
+            ],
+            "metrics": [
+              { "label": "XP Ganho", "value": "+150", "isHighlight": true },
+              { "label": "Nível", "value": "Prompting PRO" }
+            ]
+          },
+          "audio": {
+            "narration": "Parabéns! Você completou a jornada. Agora você conhece o método que separa quem brinca de quem lucra. O próximo passo? Aplicar esse conhecimento. Nos vemos na próxima aula!"
+          }
+        }
+      }
+    ]
+  }
+}
