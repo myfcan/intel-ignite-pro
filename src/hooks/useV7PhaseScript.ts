@@ -42,13 +42,20 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       const content = data.content as any;
       const timestamps = data.word_timestamps as any[] || [];
-      
+
       // Check if using rich cinematic_flow structure
       const hasCinematicFlow = content?.cinematic_flow?.acts?.length > 0;
-      
-      // Calculate total duration from acts or default
+
+      // CRITICAL: Use ACTUAL audio duration from word_timestamps (last word end time)
+      // This ensures scenes are timed correctly with the real audio
+      const audioDurationFromTimestamps = timestamps.length > 0
+        ? Math.ceil(timestamps[timestamps.length - 1].end)
+        : null;
+
+      // Calculate total duration - PRIORITIZE actual audio duration
       const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || [];
-      const totalDuration = content?.cinematic_flow?.timeline?.totalDuration || 
+      const totalDuration = audioDurationFromTimestamps || // Use real audio duration first!
+        content?.cinematic_flow?.timeline?.totalDuration ||
         content?.metadata?.totalDuration ||
         rawActs.reduce((sum: number, act: any) => sum + (act.duration || 60), 0) ||
         (data.estimated_time || 8) * 60;
@@ -56,6 +63,8 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] Loading lesson:', data.id);
       console.log('[useV7PhaseScript] Has cinematic_flow:', hasCinematicFlow);
       console.log('[useV7PhaseScript] Acts count:', rawActs.length);
+      console.log('[useV7PhaseScript] Audio duration from timestamps:', audioDurationFromTimestamps);
+      console.log('[useV7PhaseScript] Total duration used:', totalDuration);
 
       // Transform database acts to V7 phases
       const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow);
