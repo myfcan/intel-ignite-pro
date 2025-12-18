@@ -223,14 +223,15 @@ Deno.serve(async (req) => {
     // ========================================================================
     let aiGeneratedActs: AIGeneratedActs;
     let narrativeForAudio = '';
-    
+    let narrationCount = 0; // Track narration count for stats
+
     if (hasCinematicFlow) {
       // Use provided cinematic_flow.acts directly
       console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts...');
-      
+
       // Extract ONLY audio.narration for TTS (not visual.instruction)
       const narrations: string[] = [];
-      
+
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
           // Extract narration for TTS from act.content.audio.narration
@@ -262,10 +263,11 @@ Deno.serve(async (req) => {
         }),
         summary: `Aula V7 Cinematográfica: ${input.title}`,
       };
-      
+
       // Combine all narrations for TTS
       narrativeForAudio = narrations.join('\n\n');
-      console.log('[V7Pipeline] Extracted', narrations.length, 'narration segments for TTS');
+      narrationCount = narrations.length;
+      console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments for TTS');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
       
     } else {
@@ -461,6 +463,7 @@ Deno.serve(async (req) => {
       wordTimestampsCount: wordTimestamps.length,
       stats: {
         actCount: cinematicActs.length,
+        narrationCount: narrationCount, // Number of audio.narration segments extracted
         actTypes: {
           dramatic: cinematicActs.filter(a => a.type === 'dramatic').length,
           comparison: cinematicActs.filter(a => a.type === 'comparison').length,
@@ -471,6 +474,7 @@ Deno.serve(async (req) => {
         totalDuration: totalDuration,
         hasAudio: !!audioUrl,
         hasWordTimestamps: wordTimestamps.length > 0,
+        audioSource: hasCinematicFlow ? (narrationCount > 0 ? 'audio.narration' : 'narrativeScript') : 'narrativeScript',
       },
       aiSummary: aiGeneratedActs.summary,
     };

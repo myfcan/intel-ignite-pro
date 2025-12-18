@@ -258,12 +258,22 @@ export default function AdminV7Create() {
 
       // Update completed steps
       updateStep('process-acts', 'completed', `${data.stats?.actCount || 0} atos`);
-      updateStep('extract-narration', 'completed', `${data.stats?.narrationCount || 0} narrações`);
+
+      // Show narration source info
+      const narrationMsg = data.stats?.narrationCount > 0
+        ? `${data.stats.narrationCount} narrações`
+        : data.stats?.audioSource === 'narrativeScript'
+          ? 'via narrativeScript'
+          : '0 narrações';
+      updateStep('extract-narration', 'completed', narrationMsg);
       setPipelineProgress(60);
-      
+
       if (data.stats?.hasAudio) {
-        updateStep('generate-audio', 'completed', 'Áudio gerado');
-        addLog('success', 'Áudio gerado via ElevenLabs');
+        const audioSourceMsg = data.stats?.audioSource === 'narrativeScript'
+          ? 'Áudio (narrativeScript)'
+          : 'Áudio gerado';
+        updateStep('generate-audio', 'completed', audioSourceMsg);
+        addLog('success', `Áudio gerado via ElevenLabs (fonte: ${data.stats?.audioSource || 'unknown'})`);
       } else {
         updateStep('generate-audio', 'completed', 'Sem áudio');
         addLog('info', 'Geração de áudio pulada (desabilitada ou sem narração)');
