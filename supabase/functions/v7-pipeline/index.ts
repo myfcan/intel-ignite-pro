@@ -280,11 +280,13 @@ Deno.serve(async (req) => {
     console.log('[V7Pipeline] Processed', aiGeneratedActs.acts.length, 'acts');
 
     // ========================================================================
-    // STEP 2: Build V7 Cinematic Acts Structure
+    // STEP 2: Build V7 Cinematic Acts Structure (with input act durations)
     // ========================================================================
     console.log('[V7Pipeline] Step 2: Building cinematic act structure...');
-    
-    const cinematicActs = buildCinematicActs(aiGeneratedActs, input.duration);
+
+    // Pass input acts to preserve their duration ratios
+    const inputActsForScaling = hasCinematicFlow ? input.cinematic_flow!.acts : undefined;
+    const cinematicActs = buildCinematicActs(aiGeneratedActs, input.duration, inputActsForScaling);
     console.log('[V7Pipeline] Built', cinematicActs.length, 'cinematic acts');
 
     // ========================================================================
@@ -335,30 +337,50 @@ Deno.serve(async (req) => {
       ? Math.ceil(wordTimestamps[wordTimestamps.length - 1].end)
       : input.duration;
     
-    // Preserve original cinematic_flow if provided (for useV7PhaseScript to use)
+    // ✅ CRITICAL FIX: Save cinematic_flow with SCALED durations from cinematicActs
+    // This ensures the frontend receives correct timings that match the actual audio
     const cinematic_flow = hasCinematicFlow ? {
-      acts: input.cinematic_flow!.acts.map((act, index) => ({
-        ...act,
-        id: act.id || `act-${index + 1}`,
-        // Ensure content.visual and content.audio are properly structured
-        content: {
-          ...act.content,
-          visual: {
-            instruction: act.content?.visual?.instruction || '', // Screen direction (NOT narrated)
-            ...act.content?.visual,
+      acts: input.cinematic_flow!.acts.map((act, index) => {
+        // Get the scaled timing from cinematicActs
+        const scaledAct = cinematicActs[index];
+        const scaledDuration = scaledAct ? scaledAct.endTime - scaledAct.startTime : act.duration || 60;
+        const scaledStartTime = scaledAct ? scaledAct.startTime : 0;
+        const scaledEndTime = scaledAct ? scaledAct.endTime : scaledDuration;
+
+        return {
+          ...act,
+          id: act.id || `act-${index + 1}`,
+          // ✅ OVERRIDE original durations with SCALED values
+          duration: scaledDuration,
+          startTime: scaledStartTime,
+          endTime: scaledEndTime,
+          // Ensure content.visual and content.audio are properly structured
+          content: {
+            ...act.content,
+            visual: {
+              instruction: act.content?.visual?.instruction || '', // Screen direction (NOT narrated)
+              ...act.content?.visual,
+            },
+            audio: {
+              narration: act.content?.audio?.narration || '', // TTS content
+              ...act.content?.audio,
+            },
           },
-          audio: {
-            narration: act.content?.audio?.narration || '', // TTS content
-            ...act.content?.audio,
-          },
-        },
-      })),
-      timeline: input.cinematic_flow!.timeline || { totalDuration },
+        };
+      }),
+      timeline: {
+        ...input.cinematic_flow!.timeline,
+        totalDuration, // ✅ Use actual audio duration
+      },
     } : undefined;
+
+    console.log('[V7Pipeline] Cinematic flow acts with SCALED durations:',
+      cinematic_flow?.acts.map((a, i) => `Act ${i+1}: ${a.startTime?.toFixed(1)}s-${a.endTime?.toFixed(1)}s (${a.duration?.toFixed(1)}s)`)
+    );
 
     const lessonContent = {
       model: 'v7-cinematic',
-      version: '2.0.0',
+      version: '2.1.0', // v2.1.0: Fixed act timing scaling to match actual audio duration
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
@@ -788,19 +810,57 @@ function fallbackActParsing(narrativeScript: string, title: string): AIGenerated
 }
 
 // ============================================================================
-// BUILD CINEMATIC ACTS
+// BUILD CINEMATIC ACTS (with CORRECT proportional scaling)
 // ============================================================================
 
-function buildCinematicActs(aiActs: AIGeneratedActs, totalDuration: number): V7CinematicAct[] {
-  const timePerAct = totalDuration / aiActs.acts.length;
-  
+function buildCinematicActs(
+  aiActs: AIGeneratedActs,
+  totalDuration: number,
+  inputActs?: Array<{ duration?: number; startTime?: number; endTime?: number }>
+): V7CinematicAct[] {
+  // Calculate total duration from input acts (if they have durations)
+  let totalInputDuration = 0;
+  if (inputActs && inputActs.length > 0) {
+    totalInputDuration = inputActs.reduce((sum, act) => {
+      return sum + (act.duration || (act.endTime && act.startTime ? act.endTime - act.startTime : 60));
+    }, 0);
+  }
+
+  // If input acts have durations, calculate scale factor
+  // Otherwise, distribute time equally
+  const hasInputDurations = totalInputDuration > 0 && inputActs && inputActs.length > 0;
+  const scaleFactor = hasInputDurations ? totalDuration / totalInputDuration : 1;
+  const equalTimePerAct = totalDuration / aiActs.acts.length;
+
+  console.log(`[V7Pipeline:BuildActs] Total duration: ${totalDuration}s`);
+  console.log(`[V7Pipeline:BuildActs] Input acts duration: ${totalInputDuration}s`);
+  console.log(`[V7Pipeline:BuildActs] Scale factor: ${scaleFactor.toFixed(3)}`);
+
+  let currentTime = 0;
+
   return aiActs.acts.map((act, index) => {
-    const startTime = Math.floor(index * timePerAct);
-    const endTime = Math.floor((index + 1) * timePerAct);
-    
+    // Get original duration from input acts if available
+    const inputAct = inputActs?.[index];
+    const originalDuration = inputAct?.duration ||
+      (inputAct?.endTime && inputAct?.startTime ? inputAct.endTime - inputAct.startTime : 0);
+
+    // Calculate scaled duration
+    let duration: number;
+    if (hasInputDurations && originalDuration > 0) {
+      duration = Math.max(5, originalDuration * scaleFactor); // Scale with minimum 5s
+    } else {
+      duration = equalTimePerAct; // Equal distribution fallback
+    }
+
+    const startTime = currentTime;
+    const endTime = currentTime + duration;
+    currentTime = endTime;
+
+    console.log(`[V7Pipeline:BuildActs] Act ${index + 1} "${act.type}": ${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s (${duration.toFixed(1)}s, original: ${originalDuration}s)`);
+
     // Auto-advance for dramatic acts (hook)
-    const autoAdvanceMs = act.type === 'dramatic' ? 4000 : 
-                          act.type === 'comparison' ? 6000 : 
+    const autoAdvanceMs = act.type === 'dramatic' ? 4000 :
+                          act.type === 'comparison' ? 6000 :
                           undefined;
 
     const cinematicAct: V7CinematicAct = {
@@ -863,7 +923,7 @@ function getSoundForAct(actType: V7ActType, trigger: 'enter' | 'action'): string
 }
 
 // ============================================================================
-// RECALCULATE TIMINGS FROM WORD TIMESTAMPS
+// RECALCULATE TIMINGS FROM WORD TIMESTAMPS (CORRECTLY!)
 // ============================================================================
 
 function recalculateActTimingsFromWordTimestamps(
@@ -875,47 +935,42 @@ function recalculateActTimingsFromWordTimestamps(
 
   console.log('[V7Pipeline] Recalculating act timings from', wordTimestamps.length, 'word timestamps');
 
-  // ✅ FIX BUG #8: Distribute words PROPORTIONALLY to act duration (not uniformly)
   const totalWords = wordTimestamps.length;
   const totalAudioDuration = wordTimestamps[totalWords - 1].end;
 
-  // Calculate each act's proportion of total duration
-  const actProportions = acts.map(act => {
-    const actDuration = act.endTime - act.startTime;
-    return actDuration / totalAudioDuration;
-  });
+  // The acts ALREADY have correct proportional timings from buildCinematicActs
+  // Here we just need to distribute words to match those proportions
 
-  let currentWordIndex = 0;
+  // Calculate total duration from acts (should already match audio duration)
+  const totalActsDuration = acts.reduce((sum, act) => sum + (act.endTime - act.startTime), 0);
+
+  console.log(`[V7Pipeline:Recalculate] Total audio duration: ${totalAudioDuration.toFixed(2)}s`);
+  console.log(`[V7Pipeline:Recalculate] Total acts duration: ${totalActsDuration.toFixed(2)}s`);
+
+  // Calculate each act's proportion based on its ALREADY SCALED duration
+  let currentTime = 0;
 
   acts.forEach((act, index) => {
-    // Calculate how many words this act should get based on its duration
-    const actWordCount = Math.floor(totalWords * actProportions[index]);
-    const startWordIndex = currentWordIndex;
-    let endWordIndex = Math.min(
-      currentWordIndex + actWordCount - 1,
-      totalWords - 1
-    );
+    const actDuration = act.endTime - act.startTime;
+    const proportion = actDuration / totalActsDuration;
 
-    // For last act, use all remaining words
-    if (index === acts.length - 1) {
-      endWordIndex = totalWords - 1;
-    }
+    // Find words that fall within this act's time range (scaled to audio)
+    const actStartInAudio = (currentTime / totalActsDuration) * totalAudioDuration;
+    const actEndInAudio = ((currentTime + actDuration) / totalActsDuration) * totalAudioDuration;
 
-    // Assign timing from word timestamps
-    if (startWordIndex < totalWords) {
-      act.startTime = wordTimestamps[startWordIndex].start;
-    }
+    // Update act timing to match audio
+    act.startTime = actStartInAudio;
+    act.endTime = actEndInAudio;
 
-    if (endWordIndex < totalWords && endWordIndex >= startWordIndex) {
-      act.endTime = wordTimestamps[endWordIndex].end;
-    }
+    currentTime += actDuration;
 
-    // Move to next batch of words
-    currentWordIndex = endWordIndex + 1;
-
-    const wordsAssigned = endWordIndex - startWordIndex + 1;
-    console.log(`[V7Pipeline] Act ${index + 1}: ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s (${wordsAssigned} words, ${actProportions[index].toFixed(1)}% duration)`);
+    console.log(`[V7Pipeline:Recalculate] Act ${index + 1} "${act.type}": ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s (${(proportion * 100).toFixed(1)}%)`);
   });
+
+  // Ensure last act ends exactly at audio end
+  if (acts.length > 0) {
+    acts[acts.length - 1].endTime = totalAudioDuration;
+  }
 }
 
 // ============================================================================
