@@ -242,12 +242,33 @@ export const V7PhasePlayer = ({
     setTimeout(goToNextPhase, 2000);
   };
 
-  const handleCTAChoice = (choice: 'negative' | 'positive') => {
+  // Track if CTA was already clicked to prevent double navigation
+  const [ctaClicked, setCtaClicked] = useState(false);
+
+  // Reset ctaClicked when phase changes (in case user navigates back)
+  useEffect(() => {
+    setCtaClicked(false);
+  }, [currentPhaseIndex]);
+
+  const handleCTAChoice = useCallback((choice: 'negative' | 'positive') => {
+    // Prevent multiple clicks
+    if (ctaClicked) {
+      console.log('[V7PhasePlayer] CTA already clicked, ignoring');
+      return;
+    }
+
+    setCtaClicked(true);
+    console.log('[V7PhasePlayer] CTA choice:', choice);
+
     if (choice === 'positive') {
       playSound('success');
     }
-    goToNextPhase();
-  };
+
+    // Small delay to show selection animation before navigating
+    setTimeout(() => {
+      goToNextPhase();
+    }, 800);
+  }, [ctaClicked, playSound, goToNextPhase]);
 
   // Get canvas mood based on phase type
   const getCanvasMood = (type?: V7Phase['type']): 'dramatic' | 'calm' | 'energetic' | 'mysterious' => {

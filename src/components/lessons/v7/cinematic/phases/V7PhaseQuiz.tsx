@@ -41,9 +41,26 @@ export const V7PhaseQuiz = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
 
   // Track if we paused the audio (so we only resume what we paused)
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
+
+  // ✅ Show reminder if user doesn't interact within 7 seconds
+  useEffect(() => {
+    if (isRevealed || selectedIds.length > 0) {
+      setShowReminder(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (!isRevealed && selectedIds.length === 0) {
+        setShowReminder(true);
+      }
+    }, 7000);
+
+    return () => clearTimeout(timer);
+  }, [isRevealed, selectedIds.length]);
 
   // Auto-pause audio when quiz appears (Bug #13 fix)
   // Use stable references to avoid re-running on every render
@@ -246,6 +263,26 @@ export const V7PhaseQuiz = ({
             <span className="relative z-10">REVELAR VERDADE</span>
           </motion.button>
         )}
+
+        {/* Reminder message after 7 seconds of no interaction */}
+        <AnimatePresence>
+          {showReminder && !isRevealed && (
+            <motion.div
+              className="text-center mt-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.p
+                className="text-amber-400 text-sm font-medium"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                👆 Estou esperando sua resposta... Selecione as opções acima!
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Result Reveal */}
         <AnimatePresence>

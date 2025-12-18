@@ -74,27 +74,32 @@ export const V7PhasePlayground = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioPausedByPlayground]);
 
-  // Scene progression
+  // ✅ Show content immediately on mount - no waiting for sceneIndex
   useEffect(() => {
-    if (sceneIndex >= 1) setShowAmateur(true);
-    if (sceneIndex >= 2) setShowAmateurResult(true);
-    if (sceneIndex >= 3) setShowProfessional(true);
-    if (sceneIndex >= 4) setShowProfessionalResult(true);
-    if (sceneIndex >= 5) {
+    // Start showing amateur side immediately
+    const timer1 = setTimeout(() => setShowAmateur(true), 300);
+    const timer2 = setTimeout(() => setShowAmateurResult(true), 2000);
+    const timer3 = setTimeout(() => setShowProfessional(true), 3500);
+    const timer4 = setTimeout(() => setShowProfessionalResult(true), 5500);
+    const timer5 = setTimeout(() => {
       setShowComparison(true);
-
-      // Resume audio when playground completes (only if we paused it)
-      setTimeout(() => {
-        if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
-          audioControl.play();
-          setAudioPausedByPlayground(false); // Mark as resumed so cleanup doesn't double-resume
-          console.log('[V7PhasePlayground] Audio resumed after playground completion');
-        }
-      }, 2000);
-
+      // Resume audio when playground completes
+      if (audioPausedByPlayground && audioControl && !audioControl.isPlaying) {
+        audioControl.play();
+        setAudioPausedByPlayground(false);
+        console.log('[V7PhasePlayground] Audio resumed after playground completion');
+      }
       onComplete?.();
-    }
-  }, [sceneIndex, onComplete, audioControl, audioPausedByPlayground]);
+    }, 7000);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+      clearTimeout(timer5);
+    };
+  }, [audioPausedByPlayground, audioControl, onComplete]);
 
   // Typing animation for amateur prompt
   useEffect(() => {
