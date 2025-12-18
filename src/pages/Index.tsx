@@ -1,3 +1,4 @@
+// Index page - Landing page (v1.0.1)
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
