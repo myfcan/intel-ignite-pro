@@ -137,11 +137,12 @@ export const V7PhaseQuiz = ({
           )}
         </motion.div>
 
-        {/* Options */}
+        {/* Options - show immediately for user interaction */}
         <motion.div
           className="space-y-3 mb-8"
           initial={{ opacity: 0 }}
-          animate={{ opacity: sceneIndex >= 1 ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
         >
           {options.map((option, index) => {
             const isSelected = selectedIds.includes(option.id);
@@ -227,7 +228,8 @@ export const V7PhaseQuiz = ({
               boxShadow: '0 10px 30px rgba(102, 126, 234, 0.4)',
             }}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: sceneIndex >= 1 ? 1 : 0, y: sceneIndex >= 1 ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleReveal}

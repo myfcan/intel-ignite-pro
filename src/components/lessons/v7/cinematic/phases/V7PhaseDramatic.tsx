@@ -298,15 +298,15 @@ export const V7PhaseDramatic = ({
 
         {/* Subtitle - reveals letter by letter */}
         <AnimatePresence>
-          {showSubtitle && (
+          {showSubtitle && subtitle && subtitle.length > 0 && (
             <motion.div
               className="mt-4 text-lg sm:text-2xl md:text-3xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
               {renderHighlightedSubtitle()}
-              {/* Cursor only shows while typing, disappears when complete */}
-              {revealedLetters < subtitle.length && (
+              {/* Cursor ONLY shows while actively typing (not after completion) */}
+              {subtitleStarted && revealedLetters > 0 && revealedLetters < subtitle.length && (
                 <motion.span
                   className="inline-block w-[2px] h-6 bg-white/80 ml-1"
                   animate={{ opacity: [1, 0] }}

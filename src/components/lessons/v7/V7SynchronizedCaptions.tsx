@@ -1,8 +1,12 @@
 // src/components/lessons/v7/V7SynchronizedCaptions.tsx
-// Synchronized captions that highlight words as audio plays
+// ✅ REFACTORED: Clean, minimal captions that don't block interaction
+// - Removed progress bar
+// - Added pointer-events-none
+// - Positioned higher to not overlap buttons
+// - Reduced animations for stability
 
 import { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface WordTimestamp {
   word: string;
@@ -15,7 +19,7 @@ interface V7SynchronizedCaptionsProps {
   currentTime: number;
   isVisible?: boolean;
   className?: string;
-  maxWords?: number; // Max words to show at once
+  maxWords?: number;
 }
 
 // Clean markdown and filter non-spoken words
@@ -106,86 +110,34 @@ export const V7SynchronizedCaptions = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className={`v7-synchronized-captions absolute bottom-24 left-0 right-0 flex justify-center z-30 px-4 sm:px-8 ${className}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`v7-captions fixed bottom-36 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none ${className}`}
     >
-      <div className="bg-black/80 backdrop-blur-md rounded-lg px-4 sm:px-6 py-3 sm:py-4 max-w-4xl w-full sm:w-auto">
-        <motion.div
-          className="flex flex-wrap justify-center gap-1 sm:gap-1.5"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: {
-              transition: {
-                staggerChildren: 0.02,
-              },
-            },
-          }}
-        >
-          <AnimatePresence mode="sync">
-            {visibleWords.map((word, idx) => {
-              const state = getWordState(word.absoluteIndex);
-
-              return (
-                <motion.span
-                  key={`${word.absoluteIndex}-${word.word}`}
-                  layout
-                  layoutId={`word-${word.absoluteIndex}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{
-                    opacity: state === 'future' ? 0.4 : 1,
-                    scale: state === 'current' ? 1.08 : 1,
-                    y: 0,
-                  }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{
-                    duration: 0.3,
-                    ease: [0.22, 1, 0.36, 1], // easeOutCubic
-                    layout: {
-                      duration: 0.4,
-                      ease: [0.22, 1, 0.36, 1],
-                    },
-                  }}
-                  className={`
-                    text-sm sm:text-base md:text-lg font-medium transition-colors duration-300
-                    ${state === 'current'
-                      ? 'text-cyan-400 bg-cyan-500/20 px-1.5 sm:px-2 py-0.5 rounded'
-                      : state === 'past'
-                        ? 'text-white/70'
-                        : 'text-white/40'
-                    }
-                  `}
-                  style={{
-                    filter: state === 'current' ? 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.5))' : 'none',
-                  }}
-                >
-                  {word.word}
-                </motion.span>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Progress indicator */}
-        <div className="mt-2 sm:mt-3 h-0.5 sm:h-1 bg-white/10 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
-            initial={{ width: 0 }}
-            animate={{
-              width: `${((currentWordIndex + 1) / cleanedTimestamps.length) * 100}%`
-            }}
-            transition={{
-              duration: 0.25,
-              ease: [0.22, 1, 0.36, 1], // easeOutCubic for smooth progress
-            }}
-            style={{
-              boxShadow: '0 0 10px rgba(34, 211, 238, 0.6)',
-            }}
-          />
-        </div>
+      <div className="bg-black/70 backdrop-blur-sm rounded-lg px-5 py-3 max-w-3xl">
+        <p className="text-center text-base sm:text-lg leading-relaxed flex flex-wrap justify-center gap-x-1.5 gap-y-1">
+          {visibleWords.map((word) => {
+            const state = getWordState(word.absoluteIndex);
+            return (
+              <span
+                key={`${word.absoluteIndex}-${word.word}`}
+                className={`
+                  transition-colors duration-200
+                  ${state === 'current'
+                    ? 'text-cyan-400 font-semibold bg-cyan-500/20 px-1 rounded'
+                    : state === 'past'
+                      ? 'text-white/60'
+                      : 'text-white/40'
+                  }
+                `}
+              >
+                {word.word}
+              </span>
+            );
+          })}
+        </p>
       </div>
     </motion.div>
   );
