@@ -1,5 +1,5 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { V7MinimalTimeline } from './V7MinimalTimeline';
 import { V7AudioIndicator } from './V7AudioIndicator';
@@ -40,6 +40,47 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+// ✅ CRITICAL FIX: Scale phases to match actual audio duration at runtime
+function scaleScriptToAudioDuration(script: V7LessonScript, actualAudioDuration: number): V7LessonScript {
+  const scriptDuration = script.totalDuration;
+
+  // Don't scale if durations are similar (within 5 seconds)
+  if (Math.abs(scriptDuration - actualAudioDuration) < 5) {
+    return script;
+  }
+
+  const scaleFactor = actualAudioDuration / scriptDuration;
+  console.log(`[V7PhasePlayer] ⚡ RUNTIME SCALING: ${scriptDuration}s → ${actualAudioDuration}s (scale: ${scaleFactor.toFixed(3)})`);
+
+  // Scale all phase timings
+  const scaledPhases = script.phases.map((phase, index) => {
+    const scaledStartTime = phase.startTime * scaleFactor;
+    const scaledEndTime = phase.endTime * scaleFactor;
+
+    // Scale scene timings within the phase
+    const scaledScenes = phase.scenes.map(scene => ({
+      ...scene,
+      startTime: scene.startTime !== undefined ? scene.startTime * scaleFactor : undefined,
+      duration: scene.duration !== undefined ? scene.duration * scaleFactor : undefined,
+    }));
+
+    console.log(`[V7PhasePlayer] Phase ${index + 1} "${phase.type}": ${phase.startTime.toFixed(1)}s-${phase.endTime.toFixed(1)}s → ${scaledStartTime.toFixed(1)}s-${scaledEndTime.toFixed(1)}s`);
+
+    return {
+      ...phase,
+      startTime: scaledStartTime,
+      endTime: scaledEndTime,
+      scenes: scaledScenes,
+    };
+  });
+
+  return {
+    ...script,
+    totalDuration: actualAudioDuration,
+    phases: scaledPhases,
+  };
+}
+
 export const V7PhasePlayer = ({
   script,
   audioUrl,
@@ -64,10 +105,20 @@ export const V7PhasePlayer = ({
   // Detect if audio is available
   const hasAudio = Boolean(audioUrl && audioUrl.length > 0);
 
+  // ✅ CRITICAL FIX: Scale script to actual audio duration when audio loads
+  const scaledScript = useMemo(() => {
+    // Only scale when we have audio with known duration
+    if (hasAudio && audio.duration > 0) {
+      return scaleScriptToAudioDuration(script, audio.duration);
+    }
+    return script;
+  }, [script, audio.duration, hasAudio]);
+
   // Effective isPlaying state (works with or without audio)
   const effectiveIsPlaying = hasAudio ? audio.isPlaying : isPlayingWithoutAudio;
 
   // Phase controller with fallback timer for no-audio scenarios
+  // ✅ Uses scaledScript which has correct timings based on actual audio duration
   const {
     currentPhase,
     currentPhaseIndex,
@@ -76,7 +127,7 @@ export const V7PhasePlayer = ({
     goToPhase,
     internalTime
   } = usePhaseController({
-    script,
+    script: scaledScript, // Use scaled script with correct timings
     currentTime: audio.currentTime,
     isPlaying: effectiveIsPlaying,
     hasAudio
@@ -148,13 +199,13 @@ export const V7PhasePlayer = ({
   }, [audio, hasAudio]);
 
   const goToNextPhase = useCallback(() => {
-    if (currentPhaseIndex < script.phases.length - 1) {
+    if (currentPhaseIndex < scaledScript.phases.length - 1) {
       playSound('transition-whoosh');
       goToPhase(currentPhaseIndex + 1);
     } else {
       onComplete?.();
     }
-  }, [currentPhaseIndex, script.phases.length, playSound, goToPhase, onComplete]);
+  }, [currentPhaseIndex, scaledScript.phases.length, playSound, goToPhase, onComplete]);
 
   const goToPreviousPhase = useCallback(() => {
     if (currentPhaseIndex > 0) {
@@ -193,9 +244,9 @@ export const V7PhasePlayer = ({
     }
   };
 
-  // Calculate duration string
-  const minutes = Math.floor(script.totalDuration / 60);
-  const seconds = script.totalDuration % 60;
+  // Calculate duration string (use scaled duration for accurate display)
+  const minutes = Math.floor(scaledScript.totalDuration / 60);
+  const seconds = Math.floor(scaledScript.totalDuration % 60);
   const totalDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
   // Show loading screen
@@ -442,7 +493,7 @@ export const V7PhasePlayer = ({
       {/* Timeline - show internalTime when no audio */}
       <V7MinimalTimeline
         currentAct={currentPhaseIndex + 1}
-        totalActs={script.phases.length}
+        totalActs={scaledScript.phases.length}
         currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
         totalTime={totalDuration}
         isVisible={showControls}
@@ -499,10 +550,10 @@ export const V7PhasePlayer = ({
         <V7DiscreteNavigation
           onPrevious={goToPreviousPhase}
           onNext={goToNextPhase}
-          onSkip={() => goToPhase(script.phases.length - 1)}
+          onSkip={() => goToPhase(scaledScript.phases.length - 1)}
           canGoPrevious={currentPhaseIndex > 0}
-          canGoNext={currentPhaseIndex < script.phases.length - 1}
-          showSkip={currentPhaseIndex < script.phases.length - 2}
+          canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
+          showSkip={currentPhaseIndex < scaledScript.phases.length - 2}
         />
       </motion.div>
 
