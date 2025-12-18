@@ -252,15 +252,20 @@ export function usePhaseController({
     return Math.min(100, (elapsed / phaseDuration) * 100);
   }, [currentPhase, effectiveTime]);
 
-  // Reset manual override when time changes significantly
+  // Reset manual override ONLY when time naturally catches up to or passes the manual phase
+  // This prevents the race condition where navigating forward gets reset by audio resuming
   useEffect(() => {
     if (manualPhaseIndex !== null && isPlaying) {
-      const expectedPhase = script.phases.findIndex(
-        (phase) => effectiveTime >= phase.startTime && effectiveTime < phase.endTime
-      );
-      if (expectedPhase !== -1 && expectedPhase !== manualPhaseIndex) {
-        // Time has moved to a different phase, clear manual override
-        setManualPhaseIndex(null);
+      const manualPhase = script.phases[manualPhaseIndex];
+      if (manualPhase) {
+        // Only clear manual override if time has PASSED the end of the manual phase
+        // This allows forward navigation to stick until audio catches up
+        if (effectiveTime >= manualPhase.endTime) {
+          console.log(`[V7PhaseController] Time (${effectiveTime.toFixed(1)}s) passed manual phase end (${manualPhase.endTime.toFixed(1)}s), clearing override`);
+          setManualPhaseIndex(null);
+        }
+        // If time is BEFORE the manual phase, keep the override (user navigated forward)
+        // If time is WITHIN the manual phase, keep the override (correct)
       }
     }
   }, [effectiveTime, manualPhaseIndex, script.phases, isPlaying]);
@@ -268,8 +273,14 @@ export function usePhaseController({
   const goToPhase = useCallback((index: number) => {
     if (index >= 0 && index < script.phases.length) {
       setManualPhaseIndex(index);
+      // Also update internal timer to match the new phase start
+      const targetPhase = script.phases[index];
+      if (targetPhase && !hasAudio) {
+        setInternalTime(targetPhase.startTime);
+      }
+      console.log(`[V7PhaseController] Manual navigation to phase ${index} (${script.phases[index]?.type})`);
     }
-  }, [script.phases.length]);
+  }, [script.phases, hasAudio]);
 
   const goToScene = useCallback((phaseIndex: number, sceneIndex: number) => {
     if (phaseIndex >= 0 && phaseIndex < script.phases.length) {

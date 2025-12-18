@@ -201,18 +201,36 @@ export const V7PhasePlayer = ({
   const goToNextPhase = useCallback(() => {
     if (currentPhaseIndex < scaledScript.phases.length - 1) {
       playSound('transition-whoosh');
-      goToPhase(currentPhaseIndex + 1);
+      const nextPhaseIndex = currentPhaseIndex + 1;
+      const nextPhase = scaledScript.phases[nextPhaseIndex];
+
+      // Seek audio to next phase start time to keep in sync
+      if (hasAudio && nextPhase) {
+        audio.seekTo(nextPhase.startTime);
+        console.log(`[V7PhasePlayer] Seeking audio to phase ${nextPhaseIndex} start: ${nextPhase.startTime.toFixed(1)}s`);
+      }
+
+      goToPhase(nextPhaseIndex);
     } else {
       onComplete?.();
     }
-  }, [currentPhaseIndex, scaledScript.phases.length, playSound, goToPhase, onComplete]);
+  }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, onComplete, hasAudio, audio]);
 
   const goToPreviousPhase = useCallback(() => {
     if (currentPhaseIndex > 0) {
       playSound('click-soft');
-      goToPhase(currentPhaseIndex - 1);
+      const prevPhaseIndex = currentPhaseIndex - 1;
+      const prevPhase = scaledScript.phases[prevPhaseIndex];
+
+      // Seek audio to previous phase start time
+      if (hasAudio && prevPhase) {
+        audio.seekTo(prevPhase.startTime);
+        console.log(`[V7PhasePlayer] Seeking audio to phase ${prevPhaseIndex} start: ${prevPhase.startTime.toFixed(1)}s`);
+      }
+
+      goToPhase(prevPhaseIndex);
     }
-  }, [currentPhaseIndex, playSound, goToPhase]);
+  }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio]);
 
   const handleQuizComplete = (selectedIds: string[]) => {
     playSound('success');
