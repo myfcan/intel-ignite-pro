@@ -60,19 +60,20 @@ export const V7PhaseDramatic = ({
   const [explosionTriggered, setExplosionTriggered] = useState(false);
 
   // 🎬 DERIVE VISIBILITY DIRECTLY FROM sceneIndex (no complex useEffects)
-  // Scene 0: Letterbox black fade in (cinematic aspect ratio)
-  // Scene 1: Number appears with glow effect
-  // Scene 2: Number count-up animation
-  // Scene 3: Particle explosion transition
-  // Scene 4: Subtitle reveals letter by letter
-  // Scene 5: Impact word with camera zoom + shake
+  // Scene 0-1: VOCÊ SABIA? with letterbox (give more time to show)
+  // Scene 2: Number appears with glow effect (98%)
+  // Scene 3: Number count-up animation
+  // Scene 4: Particle explosion transition
+  // Scene 5: Subtitle reveals letter by letter
+  // Scene 6: Impact (98% VS 2%)
 
+  const showHookQuestion = sceneIndex <= 1; // Show "VOCÊ SABIA?" during scenes 0 and 1
   const showLetterbox = sceneIndex < 1;
-  const showNumberGlow = sceneIndex >= 1;
-  const showCountUp = sceneIndex >= 2;
-  const showExplosion = sceneIndex >= 3;
-  const showSubtitle = sceneIndex >= 4;
-  const showImpact = sceneIndex >= 5;
+  const showNumberGlow = sceneIndex >= 2;
+  const showCountUp = sceneIndex >= 3;
+  const showExplosion = sceneIndex >= 4;
+  const showSubtitle = sceneIndex >= 5;
+  const showImpact = sceneIndex >= 6;
 
   // Debug log for scene transitions
   useEffect(() => {
@@ -191,41 +192,55 @@ export const V7PhaseDramatic = ({
 
   return (
     <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
-      {/* Scene 0: Letterbox cinematic bars + Hook Question */}
+      {/* Scene 0-1: Hook Question "VOCÊ SABIA?" - shown prominently */}
+      <AnimatePresence>
+        {showHookQuestion && hookQuestion && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center z-40"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.2 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.h2
+              className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-wide text-center px-4"
+              style={{
+                textShadow: `0 0 60px ${colors.glow}, 0 0 120px ${colors.glow}`,
+              }}
+              animate={{
+                scale: [1, 1.05, 1],
+                textShadow: [
+                  `0 0 60px ${colors.glow}, 0 0 120px ${colors.glow}`,
+                  `0 0 80px ${colors.glow}, 0 0 160px ${colors.glow}`,
+                  `0 0 60px ${colors.glow}, 0 0 120px ${colors.glow}`,
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              {hookQuestion}
+            </motion.h2>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Letterbox cinematic bars */}
       <AnimatePresence>
         {showLetterbox && (
           <>
             <motion.div
               className="absolute top-0 left-0 right-0 bg-black z-50"
               initial={{ height: '50%' }}
-              animate={{ height: '12%' }}
+              animate={{ height: '10%' }}
               exit={{ height: 0 }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             />
             <motion.div
               className="absolute bottom-0 left-0 right-0 bg-black z-50"
               initial={{ height: '50%' }}
-              animate={{ height: '12%' }}
+              animate={{ height: '10%' }}
               exit={{ height: 0 }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             />
-            {/* Hook Question - appears during letterbox */}
-            {hookQuestion && (
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center z-40"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <h2
-                  className="text-3xl sm:text-5xl md:text-6xl font-bold text-white/90 tracking-wide"
-                  style={{ textShadow: `0 0 40px ${colors.glow}` }}
-                >
-                  {hookQuestion}
-                </h2>
-              </motion.div>
-            )}
           </>
         )}
       </AnimatePresence>

@@ -1,10 +1,10 @@
 // V7PhasePlayground - Split screen playground: Amateur vs Professional
 // ✅ REFACTORED: User-driven progression with continue button
-// - NO auto-pause of narration - let it play
-// - User clicks "Continue" to see next step
-// - Slower, more readable transitions
+// - PAUSES audio when entering playground
+// - User clicks pulsing button to see next step
+// - Audio stays paused until user completes all steps
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PlaygroundResult {
@@ -44,19 +44,39 @@ export const V7PhasePlayground = ({
   professionalPrompt,
   professionalResult,
   onComplete,
+  audioControl,
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
+  const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const audioControlRef = useRef(audioControl);
+  audioControlRef.current = audioControl;
+
+  // ✅ PAUSE audio immediately when playground appears
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying) {
+      ctrl.pause();
+      setAudioPausedByPlayground(true);
+      console.log('[V7PhasePlayground] Audio paused - waiting for user to complete all steps');
+    }
+  }, []);
 
   const handleContinue = useCallback(() => {
     if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // Final step - complete the playground
+      // Final step - resume audio and complete the playground
+      const ctrl = audioControlRef.current;
+      if (audioPausedByPlayground && ctrl && !ctrl.isPlaying) {
+        ctrl.play();
+        setAudioPausedByPlayground(false);
+        console.log('[V7PhasePlayground] Audio resumed after completing all steps');
+      }
       onCompleteRef.current?.();
     }
-  }, [currentStep]);
+  }, [currentStep, audioPausedByPlayground]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {
@@ -97,7 +117,7 @@ export const V7PhasePlayground = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 pb-24 overflow-y-auto">
       <div className="w-full max-w-2xl">
         {/* Challenge Header */}
         <motion.div
@@ -291,30 +311,54 @@ export const V7PhasePlayground = ({
           )}
         </AnimatePresence>
 
-        {/* Continue Button */}
+        {/* Continue Button - PULSING to draw attention */}
         <motion.button
           className="w-full mt-6 py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
           style={{
             background: currentStep === 5
               ? 'linear-gradient(135deg, #00d9a6, #4ecdc4)'
               : 'linear-gradient(135deg, #667eea, #764ba2)',
-            boxShadow: currentStep === 5
-              ? '0 10px 30px rgba(0, 217, 166, 0.4)'
-              : '0 10px 30px rgba(102, 126, 234, 0.4)',
           }}
-          whileHover={{ scale: 1.02 }}
+          animate={{
+            scale: [1, 1.03, 1],
+            boxShadow: currentStep === 5
+              ? [
+                  '0 10px 30px rgba(0, 217, 166, 0.4)',
+                  '0 15px 50px rgba(0, 217, 166, 0.7)',
+                  '0 10px 30px rgba(0, 217, 166, 0.4)',
+                ]
+              : [
+                  '0 10px 30px rgba(102, 126, 234, 0.4)',
+                  '0 15px 50px rgba(102, 126, 234, 0.7)',
+                  '0 10px 30px rgba(102, 126, 234, 0.4)',
+                ],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleContinue}
         >
           <motion.div
             className="absolute inset-0 opacity-50"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
             }}
             animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={{ duration: 1.5, repeat: Infinity }}
           />
-          <span className="relative z-10">{getButtonText()}</span>
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {getButtonText()}
+            <motion.span
+              animate={{ x: [0, 5, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              →
+            </motion.span>
+          </span>
         </motion.button>
       </div>
     </div>

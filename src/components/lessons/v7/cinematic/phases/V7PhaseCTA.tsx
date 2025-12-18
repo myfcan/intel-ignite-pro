@@ -63,7 +63,7 @@ export default function V7PhaseCTA({
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center p-8">
+    <div className="w-full h-full flex items-center justify-center p-8 pb-24">
       <div className="max-w-2xl w-full text-center space-y-12">
         {/* Title */}
         <motion.div
@@ -91,18 +91,22 @@ export default function V7PhaseCTA({
             <motion.button
               key={option.variant}
               initial={{ opacity: 0, x: index === 0 ? -50 : 50 }}
-              animate={{ 
-                opacity: 1, 
+              animate={{
+                opacity: 1,
                 x: 0,
-                scale: selected === option.variant ? 1.1 : (selected ? 0.9 : 1)
+                scale: selected === option.variant ? 1.1 : (selected ? 0.9 : [1, 1.05, 1])
               }}
-              transition={{ delay: 0.8 + index * 0.2, duration: 0.6 }}
+              transition={{
+                delay: 0.8 + index * 0.2,
+                duration: 0.6,
+                scale: { duration: 1.5, repeat: selected ? 0 : Infinity, ease: 'easeInOut' }
+              }}
               onClick={() => handleSelect(option.variant)}
               disabled={selected !== null}
               className={`
                 relative px-8 py-6 rounded-2xl text-xl font-bold
                 transition-all duration-300 overflow-hidden
-                ${option.variant === 'negative' 
+                ${option.variant === 'negative'
                   ? 'bg-muted/20 text-muted-foreground hover:bg-muted/30 border border-muted/30'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 }
@@ -110,23 +114,36 @@ export default function V7PhaseCTA({
                 disabled:cursor-not-allowed
               `}
             >
-              {/* Glow effect for positive option */}
-              {option.variant === 'positive' && (
+              {/* Pulsing glow effect for ALL options when not selected */}
+              {!selected && (
                 <motion.div
-                  className="absolute inset-0 bg-primary/30 rounded-2xl"
+                  className={`absolute inset-0 rounded-2xl ${
+                    option.variant === 'positive' ? 'bg-primary/20' : 'bg-white/10'
+                  }`}
                   animate={{
-                    boxShadow: [
-                      '0 0 20px rgba(var(--primary), 0.3)',
-                      '0 0 40px rgba(var(--primary), 0.5)',
-                      '0 0 20px rgba(var(--primary), 0.3)'
-                    ]
+                    boxShadow: option.variant === 'positive'
+                      ? [
+                          '0 0 20px rgba(0, 217, 166, 0.3)',
+                          '0 0 40px rgba(0, 217, 166, 0.6)',
+                          '0 0 20px rgba(0, 217, 166, 0.3)'
+                        ]
+                      : [
+                          '0 0 10px rgba(255, 255, 255, 0.1)',
+                          '0 0 25px rgba(255, 255, 255, 0.2)',
+                          '0 0 10px rgba(255, 255, 255, 0.1)'
+                        ]
                   }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 />
               )}
-              
+
               <span className="relative z-10 flex items-center gap-3">
-                <span>{option.emoji}</span>
+                <motion.span
+                  animate={!selected ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 1, repeat: selected ? 0 : Infinity }}
+                >
+                  {option.emoji}
+                </motion.span>
                 <span>{option.label}</span>
               </span>
             </motion.button>
