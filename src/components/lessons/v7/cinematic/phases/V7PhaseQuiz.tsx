@@ -1,5 +1,7 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
+// ✅ FIXED: Does NOT pause audio on appear - lets narration complete first
+// ✅ Audio pauses only when user interacts (selects option or clicks reveal)
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,16 +68,9 @@ export const V7PhaseQuiz = ({
     return () => clearTimeout(timer);
   }, [isRevealed, selectedIds.length]);
 
-  // ✅ REGRA: Interação = Audio PAUSA imediatamente
-  // O usuário precisa de silêncio para ler e responder
-  useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] 🔇 Audio pausado - aguardando interação do usuário');
-    }
-  }, []);
+  // ✅ FIXED: Do NOT pause audio on appear
+  // Let the narration complete naturally: "Momento de verdade. Como você está usando IA hoje?..."
+  // Audio will pause only when user starts interacting (selecting options)
 
   // Scene 0: Show title and quiz icon
   // Scene 1: Show options with animation
@@ -85,20 +80,28 @@ export const V7PhaseQuiz = ({
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
     
+    // ✅ Pause audio when user starts selecting options (first interaction)
+    const ctrl = audioControlRef.current;
+    if (ctrl?.isPlaying && !audioPausedByQuiz) {
+      ctrl.pause();
+      setAudioPausedByQuiz(true);
+      console.log('[V7PhaseQuiz] 🔇 Audio pausado - usuário começou a interagir');
+    }
+    
     setSelectedIds(prev => 
       prev.includes(id) 
         ? prev.filter(i => i !== id)
         : [...prev, id]
     );
-  }, [isRevealed]);
+  }, [isRevealed, audioPausedByQuiz]);
 
   const handleReveal = useCallback(() => {
-    // Pause audio when user clicks reveal (keep paused until playground completes)
+    // ✅ Ensure audio is paused on reveal (in case user clicked reveal without selecting)
     const ctrl = audioControlRef.current;
     if (ctrl?.isPlaying) {
       ctrl.pause();
       setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] Audio paused on reveal click - will stay paused for playground');
+      console.log('[V7PhaseQuiz] Audio paused on reveal click');
     }
 
     setIsRevealed(true);
