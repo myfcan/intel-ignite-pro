@@ -1,8 +1,8 @@
 // V7PhasePlayground - Split screen playground: Amateur vs Professional
-// ✅ REFACTORED: User-driven progression with continue button
-// - PAUSES audio when entering playground
+// ✅ FINAL FIX: Audio is already paused (by Quiz) - we just RESUME at end
+// - Does NOT pause audio on enter (already paused)
 // - User clicks pulsing button to see next step
-// - Audio stays paused until user completes all steps
+// - Audio RESUMES when user completes all 6 steps
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,41 +47,34 @@ export const V7PhasePlayground = ({
   audioControl,
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
-  const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
+  const [hasResumedAudio, setHasResumedAudio] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
 
-  // ✅ PAUSE audio when playground appears (if still playing)
-  // Audio might already be paused by the quiz phase
+  // ✅ DO NOT PAUSE AUDIO on enter - it's already paused by Quiz
+  // Just log that we're starting
   useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      setAudioPausedByPlayground(true);
-      console.log('[V7PhasePlayground] Audio paused - waiting for user to complete all steps');
-    } else {
-      // Audio was already paused (by quiz), we should still resume it at the end
-      setAudioPausedByPlayground(true);
-      console.log('[V7PhasePlayground] Audio already paused - will resume after completion');
-    }
+    console.log('[V7PhasePlayground] Started - audio should already be paused by Quiz');
   }, []);
 
   const handleContinue = useCallback(() => {
     if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // Final step - ALWAYS resume audio and complete the playground
-      const ctrl = audioControlRef.current;
-      if (ctrl && !ctrl.isPlaying) {
-        ctrl.play();
-        console.log('[V7PhasePlayground] ✅ Audio RESUMED after completing all steps');
+      // ✅ Final step - RESUME audio and notify completion
+      if (!hasResumedAudio) {
+        const ctrl = audioControlRef.current;
+        if (ctrl && !ctrl.isPlaying) {
+          ctrl.play();
+          console.log('[V7PhasePlayground] ✅ Audio RESUMED after completing all 6 steps');
+        }
+        setHasResumedAudio(true);
       }
-      setAudioPausedByPlayground(false);
       onCompleteRef.current?.();
     }
-  }, [currentStep]);
+  }, [currentStep, hasResumedAudio]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {
