@@ -114,6 +114,11 @@ export interface V7Phase {
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
+  // ✅ NEW: Keywords that trigger audio pause when spoken
+  // When any of these words are detected in wordTimestamps, audio pauses
+  pauseKeywords?: string[];
+  // ✅ NEW: Keywords that trigger audio resume when spoken  
+  resumeKeywords?: string[];
 }
 
 export interface V7LessonScript {
