@@ -202,16 +202,24 @@ export const V7PhasePlayer = ({
     }
   }, [audio, hasAudio]);
 
-  const goToNextPhase = useCallback(() => {
+  // ✅ CRITICAL FIX: Don't seek audio when coming from interactive phases (quiz/playground)
+  // These phases pause audio manually and should resume from current position
+  const goToNextPhase = useCallback((skipAudioSeek: boolean = false) => {
     if (currentPhaseIndex < scaledScript.phases.length - 1) {
       playSound('transition-whoosh');
       const nextPhaseIndex = currentPhaseIndex + 1;
       const nextPhase = scaledScript.phases[nextPhaseIndex];
+      const currentPhaseType = scaledScript.phases[currentPhaseIndex]?.type;
 
-      // Seek audio to next phase start time to keep in sync
-      if (hasAudio && nextPhase) {
+      // Don't seek if coming from interactive phases or if explicitly told to skip
+      const isInteractivePhase = currentPhaseType === 'interaction' || currentPhaseType === 'playground';
+      const shouldSeek = hasAudio && nextPhase && !skipAudioSeek && !isInteractivePhase;
+
+      if (shouldSeek) {
         audio.seekTo(nextPhase.startTime);
         console.log(`[V7PhasePlayer] Seeking audio to phase ${nextPhaseIndex} start: ${nextPhase.startTime.toFixed(1)}s`);
+      } else if (isInteractivePhase) {
+        console.log(`[V7PhasePlayer] ⏭️ Advancing from ${currentPhaseType} - NOT seeking audio (will resume from paused position)`);
       }
 
       goToPhase(nextPhaseIndex);
