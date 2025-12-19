@@ -101,11 +101,11 @@ export const V7SynchronizedCaptions = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.2 }}
-        className={`v7-captions fixed bottom-20 left-0 right-0 flex justify-center z-20 px-6 pointer-events-none ${className}`}
+        className={`v7-captions fixed bottom-28 sm:bottom-32 left-0 right-0 flex justify-center z-10 px-4 sm:px-6 pointer-events-none ${className}`}
       >
-        {/* Clean minimal caption - above controls */}
-        <div className="bg-black/70 backdrop-blur-md rounded-2xl px-5 py-2.5 max-w-xl border border-white/5">
-          <p className="text-center text-base whitespace-nowrap overflow-hidden flex items-center justify-center gap-1.5">
+        {/* Clean minimal caption - positioned above navigation controls */}
+        <div className="bg-black/80 backdrop-blur-lg rounded-xl px-4 py-2 sm:px-5 sm:py-2.5 max-w-[90vw] sm:max-w-xl border border-white/10 shadow-lg">
+          <p className="text-center text-sm sm:text-base whitespace-nowrap overflow-hidden flex items-center justify-center gap-1 sm:gap-1.5">
             {visibleWords.map((word) => {
               const state = getWordState(word.absoluteIndex);
               return (

@@ -93,29 +93,22 @@ export const V7PhaseQuiz = ({
   }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
-    // Pause audio when user clicks reveal (not before)
+    // Pause audio when user clicks reveal (keep paused until playground completes)
     const ctrl = audioControlRef.current;
     if (ctrl?.isPlaying) {
       ctrl.pause();
       setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] Audio paused on reveal click');
+      console.log('[V7PhaseQuiz] Audio paused on reveal click - will stay paused for playground');
     }
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // Resume audio after showing result (3 seconds delay for user to see feedback)
-    setTimeout(() => {
-      const ctrl = audioControlRef.current;
-      if (audioPausedByQuiz && ctrl && !ctrl.isPlaying) {
-        ctrl.play();
-        setAudioPausedByQuiz(false);
-        console.log('[V7PhaseQuiz] Audio resumed after quiz completion');
-      }
-    }, 3000);
-
+    // ✅ IMPORTANT: Do NOT auto-resume audio here
+    // Audio will be resumed by the PLAYGROUND phase when user completes all steps
+    // Notify parent immediately so it can advance to playground
     onComplete?.(selectedIds);
-  }, [selectedIds, onComplete, audioPausedByQuiz]);
+  }, [selectedIds, onComplete]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
