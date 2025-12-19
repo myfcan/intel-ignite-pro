@@ -238,9 +238,9 @@ export const V7PhasePlayer = ({
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    // ✅ Wait for user to see result, then advance to playground
+    // ✅ Quiz already waited 1500ms before calling this, advance immediately
     // Audio stays paused - will resume when playground completes
-    setTimeout(goToNextPhase, 1500);
+    goToNextPhase();
   }, [playSound, goToNextPhase]);
 
   const handlePlaygroundComplete = useCallback(() => {

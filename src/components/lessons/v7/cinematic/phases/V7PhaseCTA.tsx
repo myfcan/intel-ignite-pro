@@ -1,6 +1,7 @@
 // V7PhaseCTA - Call to Action final phase
-// ✅ FIXED: Pauses audio and waits for user selection
-// ✅ FIXED: Prevents double-click navigation issue
+// ✅ FINAL FIX: Pauses audio, waits for selection, resumes and navigates
+// ✅ Prevents double-click with isProcessing guard + disabled state
+
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -33,7 +34,8 @@ export default function V7PhaseCTA({
 }: V7PhaseCTAProps) {
   const [selected, setSelected] = useState<'negative' | 'positive' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [audioPausedByCTA, setAudioPausedByCTA] = useState(false);
+  const hasPausedAudio = useRef(false);
+  const hasCalledChoice = useRef(false);
 
   // Use ref to ensure stable reference
   const audioControlRef = useRef(audioControl);
@@ -41,39 +43,41 @@ export default function V7PhaseCTA({
   const onChoiceRef = useRef(onChoice);
   onChoiceRef.current = onChoice;
 
-  // ✅ Pause audio IMMEDIATELY when CTA appears - wait for user choice
+  // ✅ Pause audio ONCE when CTA appears - wait for user choice
   useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      setAudioPausedByCTA(true);
-      console.log('[V7PhaseCTA] Audio paused - waiting for user choice');
+    if (!hasPausedAudio.current) {
+      const ctrl = audioControlRef.current;
+      if (ctrl?.isPlaying) {
+        ctrl.pause();
+        console.log('[V7PhaseCTA] 🔇 Audio paused - waiting for user choice');
+      }
+      hasPausedAudio.current = true;
     }
   }, []);
 
-  // ✅ FIXED: Prevent double-click with isProcessing guard
+  // ✅ FINAL FIX: Prevent any duplicate navigation
   const handleSelect = useCallback((variant: 'negative' | 'positive') => {
-    // Guard against multiple clicks
-    if (isProcessing || selected !== null) {
-      console.log('[V7PhaseCTA] Click ignored - already processing');
+    // Triple guard: isProcessing, selected, and hasCalledChoice
+    if (isProcessing || selected !== null || hasCalledChoice.current) {
+      console.log('[V7PhaseCTA] Click ignored - already processing or selected');
       return;
     }
 
     setIsProcessing(true);
     setSelected(variant);
+    hasCalledChoice.current = true;
     console.log('[V7PhaseCTA] Choice selected:', variant);
 
-    // Resume audio after selection with small delay for animation
+    // Resume audio and call onChoice after animation
     setTimeout(() => {
       const ctrl = audioControlRef.current;
-      if (audioPausedByCTA && ctrl && !ctrl.isPlaying) {
+      if (ctrl && !ctrl.isPlaying) {
         ctrl.play();
-        setAudioPausedByCTA(false);
-        console.log('[V7PhaseCTA] Audio resumed after choice');
+        console.log('[V7PhaseCTA] ▶️ Audio resumed after choice');
       }
       onChoiceRef.current(variant);
     }, 600);
-  }, [isProcessing, selected, audioPausedByCTA]);
+  }, [isProcessing, selected]);
 
   return (
     <div className="w-full h-full flex items-center justify-center p-8 pb-24">

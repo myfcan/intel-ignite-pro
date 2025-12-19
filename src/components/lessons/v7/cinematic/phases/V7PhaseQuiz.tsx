@@ -1,7 +1,7 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
-// ✅ FIXED: Does NOT pause audio on appear - lets narration complete first
-// ✅ Audio pauses only when user interacts (selects option or clicks reveal)
+// ✅ FINAL FIX: Audio ONLY pauses when user clicks "REVELAR VERDADE"
+// ✅ Audio does NOT resume here - the PLAYGROUND phase will resume it
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,9 +45,6 @@ export const V7PhaseQuiz = ({
   const [showResult, setShowResult] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
 
-  // Track if we paused the audio (so we only resume what we paused)
-  const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
-
   // ✅ Use refs to ensure stable audioControl reference in callbacks
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
@@ -68,49 +65,36 @@ export const V7PhaseQuiz = ({
     return () => clearTimeout(timer);
   }, [isRevealed, selectedIds.length]);
 
-  // ✅ FIXED: Do NOT pause audio on appear
-  // Let the narration complete naturally: "Momento de verdade. Como você está usando IA hoje?..."
-  // Audio will pause only when user starts interacting (selecting options)
-
-  // Scene 0: Show title and quiz icon
-  // Scene 1: Show options with animation
-  // Scene 2: User selects options (interaction)
-  // Scene 3: Reveal result
+  // ✅ DO NOT PAUSE AUDIO ON APPEAR OR ON OPTION SELECTION
+  // Audio continues playing - narration completes naturally
+  // "Momento de verdade. Como você está usando IA hoje? Seja honesto..."
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
-    
-    // ✅ Pause audio when user starts selecting options (first interaction)
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying && !audioPausedByQuiz) {
-      ctrl.pause();
-      setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] 🔇 Audio pausado - usuário começou a interagir');
-    }
-    
+    // ✅ Do NOT pause audio on option selection - let narration continue
     setSelectedIds(prev => 
       prev.includes(id) 
         ? prev.filter(i => i !== id)
         : [...prev, id]
     );
-  }, [isRevealed, audioPausedByQuiz]);
+  }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
-    // ✅ Ensure audio is paused on reveal (in case user clicked reveal without selecting)
+    // ✅ ONLY pause audio when user clicks REVEAL button
     const ctrl = audioControlRef.current;
     if (ctrl?.isPlaying) {
       ctrl.pause();
-      setAudioPausedByQuiz(true);
-      console.log('[V7PhaseQuiz] Audio paused on reveal click');
+      console.log('[V7PhaseQuiz] 🔇 Audio PAUSED on REVEAL click - will resume in playground');
     }
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // ✅ IMPORTANT: Do NOT auto-resume audio here
-    // Audio will be resumed by the PLAYGROUND phase when user completes all steps
-    // Notify parent immediately so it can advance to playground
-    onComplete?.(selectedIds);
+    // ✅ Notify parent to advance to playground after brief delay
+    // Audio will be resumed by V7PhasePlayground when user completes all steps
+    setTimeout(() => {
+      onComplete?.(selectedIds);
+    }, 1500);
   }, [selectedIds, onComplete]);
 
   const badCount = selectedIds.filter(id => 
