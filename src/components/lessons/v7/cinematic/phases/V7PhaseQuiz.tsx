@@ -1,7 +1,7 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
-// ✅ FINAL FIX: Audio ONLY pauses when user clicks "REVELAR VERDADE"
-// ✅ Audio does NOT resume here - the PLAYGROUND phase will resume it
+// ✅ SIMPLIFIED: Audio is auto-paused by V7PhasePlayer when narration ends
+// Quiz just shows UI and calls onComplete when user finishes
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,18 +80,14 @@ export const V7PhaseQuiz = ({
   }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
-    // ✅ ONLY pause audio when user clicks REVEAL button
-    const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      console.log('[V7PhaseQuiz] 🔇 Audio PAUSED on REVEAL click - will resume in playground');
-    }
+    // ✅ SIMPLIFIED: Audio is already paused by V7PhasePlayer auto-pause
+    // Just log and proceed with reveal animation
+    console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // ✅ Notify parent to advance to playground after brief delay
-    // Audio will be resumed by V7PhasePlayground when user completes all steps
+    // ✅ Notify parent to advance after brief delay
     setTimeout(() => {
       onComplete?.(selectedIds);
     }, 1500);

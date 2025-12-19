@@ -1,5 +1,5 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { V7MinimalTimeline } from './V7MinimalTimeline';
@@ -177,6 +177,40 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, isLoading, playSound]);
 
+  // ✅ CRITICAL FIX: Auto-pause audio when INTERACTIVE phases reach their endTime
+  // This ensures narration completes before waiting for user interaction
+  const interactivePauseRef = useRef<{ phaseId: string; paused: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!hasAudio || !currentPhase) return;
+
+    const isInteractivePhase = currentPhase.type === 'interaction' || currentPhase.type === 'playground';
+    if (!isInteractivePhase) {
+      // Reset for non-interactive phases
+      interactivePauseRef.current = null;
+      return;
+    }
+
+    // Check if we already paused for this phase
+    if (interactivePauseRef.current?.phaseId === currentPhase.id && interactivePauseRef.current.paused) {
+      return;
+    }
+
+    // Calculate time until phase ends (narration should end here)
+    const timeUntilEnd = currentPhase.endTime - audio.currentTime;
+
+    // If within 0.5 seconds of phase end and audio is still playing, PAUSE
+    // This means narration for this phase has completed
+    if (timeUntilEnd <= 0.5 && timeUntilEnd > -1 && audio.isPlaying) {
+      console.log(`[V7PhasePlayer] ⏸️ AUTO-PAUSE: ${currentPhase.type} phase "${currentPhase.id}" narration complete (endTime: ${currentPhase.endTime.toFixed(1)}s)`);
+      audio.pause();
+      interactivePauseRef.current = { phaseId: currentPhase.id, paused: true };
+
+      // Use manualPhaseIndex to KEEP this phase active until user completes interaction
+      goToPhase(currentPhaseIndex);
+    }
+  }, [hasAudio, currentPhase, audio.currentTime, audio.isPlaying, currentPhaseIndex, goToPhase]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -246,16 +280,35 @@ export const V7PhasePlayer = ({
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    // ✅ Quiz already waited 1500ms before calling this, advance immediately
-    // Audio stays paused - will resume when playground completes
+    console.log('[V7PhasePlayer] Quiz complete - advancing to playground');
+
+    // ✅ Clear the auto-pause ref so playground can be auto-paused later
+    interactivePauseRef.current = null;
+
+    // ✅ Resume audio so playground narration plays
+    if (hasAudio && !audio.isPlaying) {
+      audio.play();
+      console.log('[V7PhasePlayer] ▶️ Audio resumed for playground narration');
+    }
+
     goToNextPhase();
-  }, [playSound, goToNextPhase]);
+  }, [playSound, goToNextPhase, hasAudio, audio]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
-    // Audio was resumed by V7PhasePlayground component
+    console.log('[V7PhasePlayer] Playground complete - advancing');
+
+    // ✅ Clear the auto-pause ref for next interactive phase
+    interactivePauseRef.current = null;
+
+    // ✅ Resume audio for next phase narration
+    if (hasAudio && !audio.isPlaying) {
+      audio.play();
+      console.log('[V7PhasePlayer] ▶️ Audio resumed after playground');
+    }
+
     setTimeout(goToNextPhase, 1000);
-  }, [playSound, goToNextPhase]);
+  }, [playSound, goToNextPhase, hasAudio, audio]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
