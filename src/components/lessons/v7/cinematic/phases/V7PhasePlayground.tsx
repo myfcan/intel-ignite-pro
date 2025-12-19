@@ -53,13 +53,18 @@ export const V7PhasePlayground = ({
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
 
-  // ✅ PAUSE audio immediately when playground appears
+  // ✅ PAUSE audio when playground appears (if still playing)
+  // Audio might already be paused by the quiz phase
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (ctrl?.isPlaying) {
       ctrl.pause();
       setAudioPausedByPlayground(true);
       console.log('[V7PhasePlayground] Audio paused - waiting for user to complete all steps');
+    } else {
+      // Audio was already paused (by quiz), we should still resume it at the end
+      setAudioPausedByPlayground(true);
+      console.log('[V7PhasePlayground] Audio already paused - will resume after completion');
     }
   }, []);
 
@@ -67,16 +72,16 @@ export const V7PhasePlayground = ({
     if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // Final step - resume audio and complete the playground
+      // Final step - ALWAYS resume audio and complete the playground
       const ctrl = audioControlRef.current;
-      if (audioPausedByPlayground && ctrl && !ctrl.isPlaying) {
+      if (ctrl && !ctrl.isPlaying) {
         ctrl.play();
-        setAudioPausedByPlayground(false);
-        console.log('[V7PhasePlayground] Audio resumed after completing all steps');
+        console.log('[V7PhasePlayground] ✅ Audio RESUMED after completing all steps');
       }
+      setAudioPausedByPlayground(false);
       onCompleteRef.current?.();
     }
-  }, [currentStep, audioPausedByPlayground]);
+  }, [currentStep]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {

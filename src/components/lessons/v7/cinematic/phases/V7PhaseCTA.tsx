@@ -1,7 +1,8 @@
 // V7PhaseCTA - Call to Action final phase
 // ✅ FIXED: Pauses audio and waits for user selection
+// ✅ FIXED: Prevents double-click navigation issue
 import { motion } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface V7PhaseCTAProps {
   title: string;
@@ -31,13 +32,16 @@ export default function V7PhaseCTA({
   audioControl
 }: V7PhaseCTAProps) {
   const [selected, setSelected] = useState<'negative' | 'positive' | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [audioPausedByCTA, setAudioPausedByCTA] = useState(false);
 
   // Use ref to ensure stable reference
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
+  const onChoiceRef = useRef(onChoice);
+  onChoiceRef.current = onChoice;
 
-  // Pause audio IMMEDIATELY when CTA appears - wait for user choice
+  // ✅ Pause audio IMMEDIATELY when CTA appears - wait for user choice
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (ctrl?.isPlaying) {
@@ -47,10 +51,19 @@ export default function V7PhaseCTA({
     }
   }, []);
 
-  const handleSelect = (variant: 'negative' | 'positive') => {
-    setSelected(variant);
+  // ✅ FIXED: Prevent double-click with isProcessing guard
+  const handleSelect = useCallback((variant: 'negative' | 'positive') => {
+    // Guard against multiple clicks
+    if (isProcessing || selected !== null) {
+      console.log('[V7PhaseCTA] Click ignored - already processing');
+      return;
+    }
 
-    // Resume audio after selection
+    setIsProcessing(true);
+    setSelected(variant);
+    console.log('[V7PhaseCTA] Choice selected:', variant);
+
+    // Resume audio after selection with small delay for animation
     setTimeout(() => {
       const ctrl = audioControlRef.current;
       if (audioPausedByCTA && ctrl && !ctrl.isPlaying) {
@@ -58,9 +71,9 @@ export default function V7PhaseCTA({
         setAudioPausedByCTA(false);
         console.log('[V7PhaseCTA] Audio resumed after choice');
       }
-      onChoice(variant);
-    }, 500);
-  };
+      onChoiceRef.current(variant);
+    }, 600);
+  }, [isProcessing, selected, audioPausedByCTA]);
 
   return (
     <div className="w-full h-full flex items-center justify-center p-8 pb-24">
@@ -102,7 +115,7 @@ export default function V7PhaseCTA({
                 scale: { duration: 1.5, repeat: selected ? 0 : Infinity, ease: 'easeInOut' }
               }}
               onClick={() => handleSelect(option.variant)}
-              disabled={selected !== null}
+              disabled={isProcessing || selected !== null}
               className={`
                 relative px-8 py-6 rounded-2xl text-xl font-bold
                 transition-all duration-300 overflow-hidden
@@ -111,11 +124,11 @@ export default function V7PhaseCTA({
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 }
                 ${selected && selected !== option.variant ? 'opacity-30' : ''}
-                disabled:cursor-not-allowed
+                ${isProcessing || selected !== null ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
             >
               {/* Pulsing glow effect for ALL options when not selected */}
-              {!selected && (
+              {!selected && !isProcessing && (
                 <motion.div
                   className={`absolute inset-0 rounded-2xl ${
                     option.variant === 'positive' ? 'bg-primary/20' : 'bg-white/10'
@@ -139,8 +152,8 @@ export default function V7PhaseCTA({
 
               <span className="relative z-10 flex items-center gap-3">
                 <motion.span
-                  animate={!selected ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 1, repeat: selected ? 0 : Infinity }}
+                  animate={!selected && !isProcessing ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 1, repeat: selected || isProcessing ? 0 : Infinity }}
                 >
                   {option.emoji}
                 </motion.span>
