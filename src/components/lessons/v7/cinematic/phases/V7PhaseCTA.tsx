@@ -43,40 +43,51 @@ export default function V7PhaseCTA({
   const onChoiceRef = useRef(onChoice);
   onChoiceRef.current = onChoice;
 
-  // ✅ Pause audio ONCE when CTA appears - wait for user choice
+  // ✅ FIXED: Don't pause immediately - let narration play for a bit first
+  // The phase has its own narration that should complete before we wait for choice
+  // After 5 seconds (enough for CTA narration), pause and wait for user
   useEffect(() => {
-    if (!hasPausedAudio.current) {
-      const ctrl = audioControlRef.current;
-      if (ctrl?.isPlaying) {
-        ctrl.pause();
-        console.log('[V7PhaseCTA] 🔇 Audio paused - waiting for user choice');
+    const timer = setTimeout(() => {
+      if (!hasPausedAudio.current && !hasCalledChoice.current) {
+        const ctrl = audioControlRef.current;
+        if (ctrl?.isPlaying) {
+          ctrl.pause();
+          console.log('[V7PhaseCTA] 🔇 Audio paused after narration delay - waiting for user choice');
+        }
+        hasPausedAudio.current = true;
       }
-      hasPausedAudio.current = true;
-    }
+    }, 5000); // Wait 5s for CTA narration to complete
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // ✅ FINAL FIX: Prevent any duplicate navigation
+  // ✅ SIMPLIFIED: Immediate navigation, no delays that could cause issues
   const handleSelect = useCallback((variant: 'negative' | 'positive') => {
     // Triple guard: isProcessing, selected, and hasCalledChoice
     if (isProcessing || selected !== null || hasCalledChoice.current) {
-      console.log('[V7PhaseCTA] Click ignored - already processing or selected');
+      console.log('[V7PhaseCTA] Click ignored - already processing');
       return;
     }
 
+    // Lock immediately
+    hasCalledChoice.current = true;
     setIsProcessing(true);
     setSelected(variant);
-    hasCalledChoice.current = true;
-    console.log('[V7PhaseCTA] Choice selected:', variant);
+    console.log('[V7PhaseCTA] Choice locked:', variant);
 
-    // Resume audio and call onChoice after animation
-    setTimeout(() => {
+    // Resume audio safely
+    try {
       const ctrl = audioControlRef.current;
       if (ctrl && !ctrl.isPlaying) {
         ctrl.play();
-        console.log('[V7PhaseCTA] ▶️ Audio resumed after choice');
+        console.log('[V7PhaseCTA] ▶️ Audio resumed');
       }
-      onChoiceRef.current(variant);
-    }, 600);
+    } catch (e) {
+      console.log('[V7PhaseCTA] Audio resume failed:', e);
+    }
+
+    // Call onChoice immediately - let parent handle any delays
+    onChoiceRef.current(variant);
   }, [isProcessing, selected]);
 
   return (
