@@ -43,6 +43,7 @@ interface TrailProgress {
   status: 'active' | 'completed' | 'locked';
 }
 
+// Dashboard component - main user dashboard
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();

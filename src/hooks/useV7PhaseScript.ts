@@ -368,7 +368,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         animation: 'letterbox',
       });
 
-      // Scene 1: Hook question continues with glow (10% - more time for "VOCÊ SABIA?")
+      // Scene 1: Hook question continues with glow effect (10% - more time for "VOCÊ SABIA?")
       scenes.push({
         id: `${act.id}-hook-glow`,
         type: 'text-reveal',
@@ -376,6 +376,7 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
         duration: duration * 0.10,
         content: {
           hookQuestion: dramaticHook,
+          glowEffect: true,
           ...commonFields,
         },
         animation: 'scale-up',
