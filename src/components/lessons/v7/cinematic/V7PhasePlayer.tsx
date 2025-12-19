@@ -9,6 +9,7 @@ import { V7DiscreteNavigation } from './V7DiscreteNavigation';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
 import { useV7CinematicAudio } from './useV7CinematicAudio';
 import { useV7SoundEffects } from './useV7SoundEffects';
+import { useKeywordSync } from './useKeywordSync';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
 
@@ -177,39 +178,30 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, isLoading, playSound]);
 
-  // ✅ CRITICAL FIX: Auto-pause audio when INTERACTIVE phases reach their endTime
-  // This ensures narration completes before waiting for user interaction
-  const interactivePauseRef = useRef<{ phaseId: string; paused: boolean } | null>(null);
-
-  useEffect(() => {
-    if (!hasAudio || !currentPhase) return;
-
-    const isInteractivePhase = currentPhase.type === 'interaction' || currentPhase.type === 'playground';
-    if (!isInteractivePhase) {
-      // Reset for non-interactive phases
-      interactivePauseRef.current = null;
-      return;
-    }
-
-    // Check if we already paused for this phase
-    if (interactivePauseRef.current?.phaseId === currentPhase.id && interactivePauseRef.current.paused) {
-      return;
-    }
-
-    // Calculate time until phase ends (narration should end here)
-    const timeUntilEnd = currentPhase.endTime - audio.currentTime;
-
-    // If within 0.5 seconds of phase end and audio is still playing, PAUSE
-    // This means narration for this phase has completed
-    if (timeUntilEnd <= 0.5 && timeUntilEnd > -1 && audio.isPlaying) {
-      console.log(`[V7PhasePlayer] ⏸️ AUTO-PAUSE: ${currentPhase.type} phase "${currentPhase.id}" narration complete (endTime: ${currentPhase.endTime.toFixed(1)}s)`);
-      audio.pause();
-      interactivePauseRef.current = { phaseId: currentPhase.id, paused: true };
-
-      // Use manualPhaseIndex to KEEP this phase active until user completes interaction
-      goToPhase(currentPhaseIndex);
-    }
-  }, [hasAudio, currentPhase, audio.currentTime, audio.isPlaying, currentPhaseIndex, goToPhase]);
+  // ✅ NEW SYSTEM: Keyword-based audio sync
+  // Pauses audio when specific words are spoken (from wordTimestamps)
+  // This replaces the timing-based system which was inaccurate
+  const { isPausedByKeyword, triggerResume } = useKeywordSync({
+    wordTimestamps: wordTimestamps,
+    currentTime: audio.currentTime,
+    pauseKeywords: currentPhase?.pauseKeywords || [],
+    resumeKeywords: currentPhase?.resumeKeywords || [],
+    isPlaying: audio.isPlaying,
+    onPause: () => {
+      if (audio.isPlaying) {
+        audio.pause();
+        console.log(`[V7PhasePlayer] ⏸️ KEYWORD PAUSE for phase "${currentPhase?.id}"`);
+      }
+    },
+    onResume: () => {
+      if (!audio.isPlaying) {
+        audio.play();
+        console.log(`[V7PhasePlayer] ▶️ KEYWORD RESUME for phase "${currentPhase?.id}"`);
+      }
+    },
+    phaseId: currentPhase?.id || '',
+    enabled: hasAudio && (currentPhase?.type === 'interaction' || currentPhase?.type === 'playground'),
+  });
 
   // Keyboard navigation
   useEffect(() => {
@@ -282,8 +274,8 @@ export const V7PhasePlayer = ({
     playSound('success');
     console.log('[V7PhasePlayer] Quiz complete - advancing to playground');
 
-    // ✅ Clear the auto-pause ref so playground can be auto-paused later
-    interactivePauseRef.current = null;
+    // ✅ Trigger resume via keyword sync system
+    triggerResume();
 
     // ✅ Resume audio so playground narration plays
     if (hasAudio && !audio.isPlaying) {
@@ -292,14 +284,14 @@ export const V7PhasePlayer = ({
     }
 
     goToNextPhase();
-  }, [playSound, goToNextPhase, hasAudio, audio]);
+  }, [playSound, goToNextPhase, hasAudio, audio, triggerResume]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
     console.log('[V7PhasePlayer] Playground complete - advancing');
 
-    // ✅ Clear the auto-pause ref for next interactive phase
-    interactivePauseRef.current = null;
+    // ✅ Trigger resume via keyword sync system
+    triggerResume();
 
     // ✅ Resume audio for next phase narration
     if (hasAudio && !audio.isPlaying) {
@@ -308,7 +300,7 @@ export const V7PhasePlayer = ({
     }
 
     setTimeout(goToNextPhase, 1000);
-  }, [playSound, goToNextPhase, hasAudio, audio]);
+  }, [playSound, goToNextPhase, hasAudio, audio, triggerResume]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
@@ -483,6 +475,8 @@ export const V7PhasePlayer = ({
             revealTitle="RESULTADO"
             revealMessage={interactionContent.explanation || content.explanation || ''}
             revealValue=""
+            correctFeedback={interactionContent.correctFeedback || content.correctFeedback}
+            incorrectFeedback={interactionContent.incorrectFeedback || content.incorrectFeedback}
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
             audioControl={audio}

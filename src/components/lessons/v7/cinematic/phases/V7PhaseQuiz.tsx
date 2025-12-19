@@ -19,6 +19,9 @@ interface V7PhaseQuizProps {
   revealTitle: string;
   revealMessage: string;
   revealValue?: string;
+  // ✅ NEW: Separate feedback messages for correct/incorrect results
+  correctFeedback?: string;
+  incorrectFeedback?: string;
   sceneIndex: number;
   onComplete?: (selectedIds: string[]) => void;
   audioControl?: {
@@ -36,6 +39,8 @@ export const V7PhaseQuiz = ({
   revealTitle,
   revealMessage,
   revealValue,
+  correctFeedback,
+  incorrectFeedback,
   sceneIndex,
   onComplete,
   audioControl,
@@ -301,11 +306,12 @@ export const V7PhaseQuiz = ({
                 <div className="text-2xl font-bold text-white mb-2">
                   {isInBadGroup ? 'VOCÊ ESTÁ NO GRUPO 98%' : 'VOCÊ ESTÁ NO GRUPO 2%'}
                 </div>
-                {revealValue && (
-                  <div className="text-white/70">
-                    {revealMessage}
-                  </div>
-                )}
+                {/* ✅ Show appropriate feedback message based on result */}
+                <div className="text-white/70 text-sm mt-2">
+                  {isInBadGroup 
+                    ? (incorrectFeedback || revealMessage || 'Vou te ensinar o método agora.')
+                    : (correctFeedback || revealMessage || 'Continue assim!')}
+                </div>
               </motion.div>
             </motion.div>
           )}

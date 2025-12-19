@@ -169,6 +169,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO (90-150s)
+    // ✅ pauseKeywords: Audio pauses when "honesto" is spoken (end of quiz intro narration)
     {
       id: 'interaction-quiz',
       title: 'Autoavaliação',
@@ -177,6 +178,8 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'interaction',
       mood: 'danger',
       autoAdvance: false,
+      pauseKeywords: ['honesto'], // Pauses after "Seja honesto."
+      resumeKeywords: ['calma'], // Resumes when quiz completes and narration says "Mas calma..."
       scenes: [
         {
           id: 'scene-quiz-intro',
@@ -202,7 +205,11 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
               { id: 'money', label: 'Ganhar dinheiro', isCorrect: true },
               { id: 'curiosity', label: 'Curiosidade', isCorrect: false, isDefault: true },
               { id: 'play', label: 'Brincadeira', isCorrect: false, isDefault: true }
-            ]
+            ],
+            // ✅ Feedback messages for quiz results
+            explanation: 'Sem problemas! Vou te ensinar o método agora.',
+            correctFeedback: 'Continue assim! Você já pensa como profissional.',
+            incorrectFeedback: 'Esse é o jeito amador! Mas calma, vou te mostrar como mudar isso.'
           },
           animation: 'slide-up'
         },
@@ -225,6 +232,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 5: DESAFIO PLAYGROUND (150-300s)
+    // ✅ pauseKeywords: Audio pauses when "observe" is spoken (before playground starts)
     {
       id: 'playground-challenge',
       title: 'Desafio Playground',
@@ -233,6 +241,8 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'playground',
       mood: 'success',
       autoAdvance: false,
+      pauseKeywords: ['observe'], // Pauses after "Observe." - user interacts with playground
+      resumeKeywords: ['diferença'], // Resumes when playground completes - "Viu a diferença?"
       scenes: [
         {
           id: 'scene-challenge-intro',
