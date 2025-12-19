@@ -9,7 +9,7 @@ import { V7DiscreteNavigation } from './V7DiscreteNavigation';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
 import { useV7CinematicAudio } from './useV7CinematicAudio';
 import { useV7SoundEffects } from './useV7SoundEffects';
-import { useKeywordSync } from './useKeywordSync';
+import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
 
@@ -178,29 +178,67 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, isLoading, playSound]);
 
-  // ✅ NEW SYSTEM: Keyword-based audio sync
-  // Pauses audio when specific words are spoken (from wordTimestamps)
-  // This replaces the timing-based system which was inaccurate
-  const { isPausedByKeyword, triggerResume } = useKeywordSync({
+  // ✅ ANCHOR TEXT SYSTEM: Flexible keyword-based sync (V5-inspired)
+  // Supports multiple action types: pause, resume, show, hide, highlight, trigger
+  const anchorActions = useMemo((): AnchorAction[] => {
+    if (!currentPhase) return [];
+    
+    // Priority 1: Use anchorActions if defined
+    if (currentPhase.anchorActions && currentPhase.anchorActions.length > 0) {
+      return currentPhase.anchorActions;
+    }
+    
+    // Priority 2: Convert legacy pauseKeywords to actions
+    if (currentPhase.pauseKeywords && currentPhase.pauseKeywords.length > 0) {
+      return convertPauseKeywordsToActions(currentPhase.pauseKeywords);
+    }
+    
+    return [];
+  }, [currentPhase]);
+
+  const handleAnchorEvent = useCallback((event: AnchorEvent) => {
+    console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
+  }, []);
+
+  const { 
+    isPausedByAnchor, 
+    manualResume,
+    isElementVisible,
+    isElementHighlighted,
+    visibleElements,
+    highlightedElements
+  } = useAnchorText({
     wordTimestamps: wordTimestamps,
     currentTime: audio.currentTime,
-    pauseKeywords: currentPhase?.pauseKeywords || [],
-    resumeKeywords: currentPhase?.resumeKeywords || [],
+    actions: anchorActions,
     isPlaying: audio.isPlaying,
+    phaseId: currentPhase?.id || '',
+    enabled: hasAudio && (currentPhase?.type === 'interaction' || currentPhase?.type === 'playground'),
     onPause: () => {
       if (audio.isPlaying) {
         audio.pause();
-        console.log(`[V7PhasePlayer] ⏸️ KEYWORD PAUSE for phase "${currentPhase?.id}"`);
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE for phase "${currentPhase?.id}"`);
       }
     },
     onResume: () => {
       if (!audio.isPlaying) {
         audio.play();
-        console.log(`[V7PhasePlayer] ▶️ KEYWORD RESUME for phase "${currentPhase?.id}"`);
+        console.log(`[V7PhasePlayer] ▶️ ANCHOR RESUME for phase "${currentPhase?.id}"`);
       }
     },
-    phaseId: currentPhase?.id || '',
-    enabled: hasAudio && (currentPhase?.type === 'interaction' || currentPhase?.type === 'playground'),
+    onShow: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] 👁️ SHOW element: ${targetId}`, payload);
+    },
+    onHide: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] 🙈 HIDE element: ${targetId}`, payload);
+    },
+    onHighlight: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] ✨ HIGHLIGHT element: ${targetId}`, payload);
+    },
+    onTrigger: (action) => {
+      console.log(`[V7PhasePlayer] 🎬 TRIGGER action: ${action.id}`, action.payload);
+    },
+    onAnchorEvent: handleAnchorEvent,
   });
 
   // Keyboard navigation
@@ -274,8 +312,8 @@ export const V7PhasePlayer = ({
     playSound('success');
     console.log('[V7PhasePlayer] Quiz complete - advancing to playground');
 
-    // ✅ Trigger resume via keyword sync system
-    triggerResume();
+    // ✅ Trigger resume via anchor text system
+    manualResume();
 
     // ✅ Resume audio so playground narration plays
     if (hasAudio && !audio.isPlaying) {
@@ -284,14 +322,14 @@ export const V7PhasePlayer = ({
     }
 
     goToNextPhase();
-  }, [playSound, goToNextPhase, hasAudio, audio, triggerResume]);
+  }, [playSound, goToNextPhase, hasAudio, audio, manualResume]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
     console.log('[V7PhasePlayer] Playground complete - advancing');
 
-    // ✅ Trigger resume via keyword sync system
-    triggerResume();
+    // ✅ Trigger resume via anchor text system
+    manualResume();
 
     // ✅ Resume audio for next phase narration
     if (hasAudio && !audio.isPlaying) {
@@ -300,7 +338,7 @@ export const V7PhasePlayer = ({
     }
 
     setTimeout(goToNextPhase, 1000);
-  }, [playSound, goToNextPhase, hasAudio, audio, triggerResume]);
+  }, [playSound, goToNextPhase, hasAudio, audio, manualResume]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);

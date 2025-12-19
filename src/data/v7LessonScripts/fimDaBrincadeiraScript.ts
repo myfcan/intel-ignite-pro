@@ -2,6 +2,7 @@
 // Complete cinematic experience with 7 phases
 
 import { V7LessonScript } from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
+import { AnchorAction } from '@/components/lessons/v7/cinematic/useAnchorText';
 
 export const fimDaBrincadeiraScript: V7LessonScript = {
   id: 'fim-da-brincadeira-ia',
@@ -169,7 +170,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO (90-150s)
-    // ✅ pauseKeywords: Audio pauses when "honesto" is spoken (end of quiz intro narration)
+    // ✅ anchorActions: Flexible keyword-based sync (V5-inspired)
     {
       id: 'interaction-quiz',
       title: 'Autoavaliação',
@@ -178,8 +179,12 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'interaction',
       mood: 'danger',
       autoAdvance: false,
-      pauseKeywords: ['honesto'], // Pauses after "Seja honesto."
-      resumeKeywords: ['calma'], // Resumes when quiz completes and narration says "Mas calma..."
+      // ✅ NEW: anchorActions with multiple action types
+      anchorActions: [
+        { id: 'pause-quiz', keyword: 'honesto', type: 'pause', once: true },
+        // Future: Could add show/highlight actions here
+        // { id: 'show-quiz', keyword: 'teste', type: 'show', targetId: 'quiz-container' },
+      ] as AnchorAction[],
       scenes: [
         {
           id: 'scene-quiz-intro',
@@ -232,7 +237,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 5: DESAFIO PLAYGROUND (150-300s)
-    // ✅ pauseKeywords: Audio pauses when "observe" is spoken (before playground starts)
+    // ✅ anchorActions: Flexible keyword-based sync
     {
       id: 'playground-challenge',
       title: 'Desafio Playground',
@@ -241,8 +246,13 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'playground',
       mood: 'success',
       autoAdvance: false,
-      pauseKeywords: ['observe'], // Pauses after "Observe." - user interacts with playground
-      resumeKeywords: ['diferença'], // Resumes when playground completes - "Viu a diferença?"
+      // ✅ NEW: anchorActions with multiple action types
+      anchorActions: [
+        { id: 'pause-playground', keyword: 'observe', type: 'pause', once: true },
+        // Future: Could add show/highlight actions here
+        // { id: 'highlight-amateur', keyword: 'amador', type: 'highlight', targetId: 'amateur-pane' },
+        // { id: 'highlight-pro', keyword: 'profissional', type: 'highlight', targetId: 'pro-pane' },
+      ] as AnchorAction[],
       scenes: [
         {
           id: 'scene-challenge-intro',
