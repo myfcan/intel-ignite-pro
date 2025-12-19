@@ -1,8 +1,7 @@
 // V7PhasePlayground - Split screen playground: Amateur vs Professional
-// ✅ FINAL FIX: Audio is already paused (by Quiz) - we just RESUME at end
-// - Does NOT pause audio on enter (already paused)
-// - User clicks pulsing button to see next step
-// - Audio RESUMES when user completes all 6 steps
+// ✅ SIMPLIFIED: Audio is auto-paused by V7PhasePlayer when narration ends
+// User clicks through 6 steps, then onComplete is called
+// Parent (V7PhasePlayer) handles audio resume
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,37 +43,25 @@ export const V7PhasePlayground = ({
   professionalPrompt,
   professionalResult,
   onComplete,
-  audioControl,
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
-  const [hasResumedAudio, setHasResumedAudio] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
-  const audioControlRef = useRef(audioControl);
-  audioControlRef.current = audioControl;
 
-  // ✅ DO NOT PAUSE AUDIO on enter - it's already paused by Quiz
-  // Just log that we're starting
+  // ✅ Just log that we're starting - audio handled by parent
   useEffect(() => {
-    console.log('[V7PhasePlayground] Started - audio should already be paused by Quiz');
+    console.log('[V7PhasePlayground] Started - waiting for user to complete 6 steps');
   }, []);
 
   const handleContinue = useCallback(() => {
     if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // ✅ Final step - RESUME audio and notify completion
-      if (!hasResumedAudio) {
-        const ctrl = audioControlRef.current;
-        if (ctrl && !ctrl.isPlaying) {
-          ctrl.play();
-          console.log('[V7PhasePlayground] ✅ Audio RESUMED after completing all 6 steps');
-        }
-        setHasResumedAudio(true);
-      }
+      // ✅ Final step - just call onComplete, parent handles audio
+      console.log('[V7PhasePlayground] All 6 steps complete - calling onComplete');
       onCompleteRef.current?.();
     }
-  }, [currentStep, hasResumedAudio]);
+  }, [currentStep]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {
