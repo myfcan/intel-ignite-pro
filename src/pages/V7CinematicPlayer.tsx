@@ -24,6 +24,11 @@ export default function V7CinematicPlayer() {
     setTimeout(() => navigate('/dashboard'), 2000);
   };
 
+  // Handle exit
+  const handleExit = () => {
+    navigate('/dashboard');
+  };
+
   // Render loading state
   if (isLoading) {
     return (
@@ -43,6 +48,7 @@ export default function V7CinematicPlayer() {
       <V7PhasePlayer
         script={fimDaBrincadeiraScript}
         onComplete={handleComplete}
+        onExit={handleExit}
       />
     );
   }
@@ -53,6 +59,7 @@ export default function V7CinematicPlayer() {
       audioUrl={audioUrl || undefined}
       wordTimestamps={wordTimestamps}
       onComplete={handleComplete}
+      onExit={handleExit}
     />
   );
 }

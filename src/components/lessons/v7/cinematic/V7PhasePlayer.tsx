@@ -1,6 +1,7 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { V7MinimalTimeline } from './V7MinimalTimeline';
 import { V7AudioIndicator } from './V7AudioIndicator';
 import { V7AudioControls } from './V7AudioControls';
@@ -32,6 +33,7 @@ interface V7PhasePlayerProps {
   audioUrl?: string;
   wordTimestamps?: WordTimestamp[];
   onComplete?: () => void;
+  onExit?: () => void;
 }
 
 // Helper to format time in mm:ss
@@ -86,7 +88,8 @@ export const V7PhasePlayer = ({
   script,
   audioUrl,
   wordTimestamps = [],
-  onComplete
+  onComplete,
+  onExit
 }: V7PhasePlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
@@ -233,15 +236,18 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio]);
 
-  const handleQuizComplete = (selectedIds: string[]) => {
+  const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    setTimeout(goToNextPhase, 2000);
-  };
+    // ✅ Wait for user to see result, then advance to playground
+    // Audio stays paused - will resume when playground completes
+    setTimeout(goToNextPhase, 1500);
+  }, [playSound, goToNextPhase]);
 
-  const handlePlaygroundComplete = () => {
+  const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
-    setTimeout(goToNextPhase, 2000);
-  };
+    // Audio was resumed by V7PhasePlayground component
+    setTimeout(goToNextPhase, 1000);
+  }, [playSound, goToNextPhase]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
@@ -563,6 +569,24 @@ export const V7PhasePlayer = ({
         mood={getCanvasMood(currentPhase?.type)}
         intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
+
+      {/* Exit Button - Top Left */}
+      {onExit && (
+        <motion.button
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[200] w-10 h-10 sm:w-12 sm:h-12 
+                     rounded-full bg-black/40 backdrop-blur-md border border-white/10
+                     flex items-center justify-center text-white/60 hover:text-white 
+                     hover:bg-black/60 hover:border-white/20 transition-all duration-200"
+          onClick={onExit}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: showControls ? 1 : 0.3, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          title="Sair da aula"
+        >
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+      )}
 
       {/* Timeline - show internalTime when no audio */}
       <V7MinimalTimeline
