@@ -576,7 +576,7 @@ export const V7PhasePlayer = ({
       {/* Audio/Play Indicator */}
       <V7AudioIndicator isPlaying={effectiveIsPlaying} />
 
-      {/* Audio Controls */}
+      {/* Audio Controls - Minimal centered pill */}
       {audioUrl && (
         <V7AudioControls
           isPlaying={audio.isPlaying}
@@ -588,6 +588,10 @@ export const V7PhasePlayer = ({
           onToggleMute={audio.toggleMute}
           onVolumeChange={audio.setVolume}
           isVisible={showControls}
+          onPrevious={goToPreviousPhase}
+          onNext={goToNextPhase}
+          canGoPrevious={currentPhaseIndex > 0}
+          canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
         />
       )}
 
@@ -605,7 +609,7 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions - HIDE during interactive phases (quiz/playground) to avoid overlap */}
+      {/* Captions - HIDE during all interactive phases */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
@@ -613,9 +617,11 @@ export const V7PhasePlayer = ({
           isVisible={
             (audio.isPlaying || audio.currentTime > 0) &&
             currentPhase?.type !== 'interaction' &&
-            currentPhase?.type !== 'playground'
+            currentPhase?.type !== 'playground' &&
+            currentPhase?.type !== 'revelation' &&
+            currentPhase?.type !== 'gamification'
           }
-          maxWords={15}
+          maxWords={10}
         />
       )}
 
