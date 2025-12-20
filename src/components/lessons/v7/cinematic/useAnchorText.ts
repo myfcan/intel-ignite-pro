@@ -131,19 +131,28 @@ export function useAnchorText({
       
       const normalizedWord = normalizeWord(ts.word);
       
-      // Match exato ou parcial
-      if (normalizedWord === normalizedKeyword || 
-          normalizedWord.includes(normalizedKeyword) || 
-          normalizedKeyword.includes(normalizedWord)) {
+      // Match exato ou parcial (mais flexível)
+      const isMatch = 
+        normalizedWord === normalizedKeyword || 
+        normalizedWord.includes(normalizedKeyword) || 
+        normalizedKeyword.includes(normalizedWord) ||
+        // Also check if keyword is at the start of the word (for compound words)
+        normalizedWord.startsWith(normalizedKeyword) ||
+        normalizedKeyword.startsWith(normalizedWord);
+        
+      if (isMatch) {
+        console.log(`[AnchorText] 🔍 Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
         return ts;
       }
     }
     
+    console.log(`[AnchorText] ⚠️ Keyword "${keyword}" not found in wordTimestamps (searched ${wordTimestamps.length} words)`);
     return null;
   }, [wordTimestamps, normalizeWord]);
 
   // Verifica se o tempo atual está próximo de uma palavra
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 500): boolean => {
+  // Increased window from 500ms to 800ms for more reliable triggering
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 800): boolean => {
     const windowSec = windowMs / 1000;
     return time >= wordTs.start - windowSec && time <= wordTs.end + windowSec;
   }, []);
