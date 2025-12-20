@@ -228,9 +228,35 @@ export function useAnchorText({
     }
   }, [phaseId, currentTime, onPause, onResume, onShow, onHide, onHighlight, onTrigger, onAnchorEvent]);
 
+  // ✅ DEBUG: Log every time currentTime changes
+  const lastLoggedTimeRef = useRef(-1);
+  useEffect(() => {
+    if (!enabled || !actions.length) return;
+    
+    // Log every second for debugging
+    const roundedTime = Math.floor(currentTime);
+    if (roundedTime !== lastLoggedTimeRef.current && roundedTime % 2 === 0) {
+      lastLoggedTimeRef.current = roundedTime;
+      console.log(`[AnchorText] ⏱️ Time: ${currentTime.toFixed(1)}s | Actions: ${actions.map(a => a.keyword).join(', ')} | WordTimestamps: ${wordTimestamps.length}`);
+    }
+  }, [enabled, actions, currentTime, wordTimestamps.length]);
+
   // Monitora ações
   useEffect(() => {
-    if (!enabled || !actions.length || !wordTimestamps.length) return;
+    if (!enabled) {
+      console.log(`[AnchorText] ⚠️ System DISABLED`);
+      return;
+    }
+    
+    if (!actions.length) {
+      console.log(`[AnchorText] ⚠️ No actions to monitor`);
+      return;
+    }
+    
+    if (!wordTimestamps.length) {
+      console.log(`[AnchorText] ⚠️ No wordTimestamps available - anchor system cannot work!`);
+      return;
+    }
 
     for (const action of actions) {
       const actionKey = `${phaseId}-${action.id}`;
@@ -252,6 +278,7 @@ export function useAnchorText({
 
       // Verifica se o tempo atual está próximo
       if (isTimeNearWord(wordTs, currentTime)) {
+        console.log(`[AnchorText] 🎯 MATCH! Keyword "${action.keyword}" near time ${currentTime.toFixed(1)}s (word at ${wordTs.start.toFixed(1)}s)`);
         executeAction(action, wordTs);
       }
     }

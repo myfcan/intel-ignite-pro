@@ -109,6 +109,15 @@ export const V7PhasePlayer = ({
 
   // Detect if audio is available
   const hasAudio = Boolean(audioUrl && audioUrl.length > 0);
+  
+  // ✅ DEBUG: Log wordTimestamps on mount
+  useEffect(() => {
+    console.log(`[V7PhasePlayer] 🎧 INIT - hasAudio: ${hasAudio}, wordTimestamps: ${wordTimestamps.length}`);
+    if (wordTimestamps.length > 0) {
+      console.log(`[V7PhasePlayer] 📝 First 5 words:`, wordTimestamps.slice(0, 5).map(w => `"${w.word}"@${w.start.toFixed(1)}s`));
+      console.log(`[V7PhasePlayer] 📝 Last 5 words:`, wordTimestamps.slice(-5).map(w => `"${w.word}"@${w.start.toFixed(1)}s`));
+    }
+  }, [hasAudio, wordTimestamps]);
 
   // ✅ CRITICAL FIX: Scale script to actual audio duration when audio loads
   const scaledScript = useMemo(() => {
@@ -204,23 +213,26 @@ export const V7PhasePlayer = ({
   }, []);
 
   // ✅ Check if we should enable anchor text system
-  // Enable for interactive phases that have anchor actions defined
   const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'playground';
   const hasAnchorActions = anchorActions.length > 0;
   const hasWordTimestamps = wordTimestamps.length > 0;
   
+  // ✅ CRITICAL: Enable anchor system whenever we have actions and wordTimestamps
+  // Not just for interactive phases - any phase can have anchor actions
+  const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
+  
   // Log anchor system status for debugging
   useEffect(() => {
-    if (isInteractivePhase && hasAnchorActions) {
-      console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}":`, {
-        enabled: hasAudio && hasWordTimestamps,
-        hasAudio,
-        hasWordTimestamps,
-        anchorCount: anchorActions.length,
-        wordTimestampCount: wordTimestamps.length
-      });
-    }
-  }, [currentPhase?.id, isInteractivePhase, hasAnchorActions, hasAudio, hasWordTimestamps, anchorActions.length, wordTimestamps.length]);
+    console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
+      shouldEnableAnchors,
+      hasAudio,
+      hasWordTimestamps,
+      hasAnchorActions,
+      anchorCount: anchorActions.length,
+      wordTimestampCount: wordTimestamps.length,
+      actions: anchorActions.map(a => `${a.id}:${a.keyword}`)
+    });
+  }, [currentPhase?.id, currentPhase?.type, shouldEnableAnchors, hasAudio, hasWordTimestamps, hasAnchorActions, anchorActions]);
 
   const { 
     isPausedByAnchor, 
@@ -235,8 +247,8 @@ export const V7PhasePlayer = ({
     actions: anchorActions,
     isPlaying: audio.isPlaying,
     phaseId: currentPhase?.id || '',
-    // ✅ Enable for interactive phases that have anchor actions AND wordTimestamps
-    enabled: hasAudio && isInteractivePhase && hasAnchorActions && hasWordTimestamps,
+    // ✅ CRITICAL: Enable whenever we have the required data
+    enabled: shouldEnableAnchors,
     onPause: () => {
       if (audio.isPlaying) {
         audio.pause();
