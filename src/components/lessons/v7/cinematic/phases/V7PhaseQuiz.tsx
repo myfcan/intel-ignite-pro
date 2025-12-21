@@ -1,7 +1,6 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
-// ✅ SIMPLIFIED: Audio is auto-paused by V7PhasePlayer when narration ends
-// Quiz just shows UI and calls onComplete when user finishes
+// ✅ V7-v2: Suporta fade in/out de áudio e hints progressivos
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +9,17 @@ interface QuizOption {
   id: string;
   text: string;
   category: 'good' | 'bad';
+}
+
+interface AudioControl {
+  pause: () => void;
+  play: () => void;
+  togglePlayPause: () => void;
+  isPlaying: boolean;
+  // V7-v2: Novos métodos com fade
+  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
+  pauseWithFade?: (duration?: number) => Promise<void>;
+  resumeWithFade?: (duration?: number) => Promise<void>;
 }
 
 interface V7PhaseQuizProps {
@@ -24,11 +34,13 @@ interface V7PhaseQuizProps {
   incorrectFeedback?: string;
   sceneIndex: number;
   onComplete?: (selectedIds: string[]) => void;
-  audioControl?: {
-    pause: () => void;
-    play: () => void;
-    togglePlayPause: () => void;
-    isPlaying: boolean;
+  audioControl?: AudioControl;
+  // V7-v2: Configuração de timeouts
+  timeoutConfig?: {
+    soft: number;    // 7s - primeira dica
+    medium: number;  // 15s - segunda dica
+    hard: number;    // 30s - auto-avanço
+    hints: string[];
   };
 }
 
@@ -44,35 +56,94 @@ export const V7PhaseQuiz = ({
   sceneIndex,
   onComplete,
   audioControl,
+  timeoutConfig = {
+    soft: 7,
+    medium: 15,
+    hard: 30,
+    hints: [
+      '👆 Estou esperando sua resposta... Selecione as opções acima!',
+      '🤔 Pense com calma... Qual mais combina com você?',
+      '⏰ Vamos continuar a jornada...'
+    ]
+  }
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [showReminder, setShowReminder] = useState(false);
+  const [currentHint, setCurrentHint] = useState<string | null>(null);
+  const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
+  const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
 
   // ✅ Use refs to ensure stable audioControl reference in callbacks
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // ✅ Show reminder if user doesn't interact within 7 seconds
+  // ✅ V7-v2: Sistema de hints progressivos
   useEffect(() => {
     if (isRevealed || selectedIds.length > 0) {
-      setShowReminder(false);
+      // Limpar hints se usuário interagiu
+      setCurrentHint(null);
+      setHintLevel(0);
       return;
     }
 
-    const timer = setTimeout(() => {
+    // Soft hint (7s)
+    const softTimer = setTimeout(() => {
       if (!isRevealed && selectedIds.length === 0) {
-        setShowReminder(true);
+        setCurrentHint(timeoutConfig.hints[0]);
+        setHintLevel(1);
       }
-    }, 7000);
+    }, timeoutConfig.soft * 1000);
 
-    return () => clearTimeout(timer);
-  }, [isRevealed, selectedIds.length]);
+    // Medium hint (15s)
+    const mediumTimer = setTimeout(() => {
+      if (!isRevealed && selectedIds.length === 0) {
+        setCurrentHint(timeoutConfig.hints[1]);
+        setHintLevel(2);
+      }
+    }, timeoutConfig.medium * 1000);
 
-  // ✅ DO NOT PAUSE AUDIO ON APPEAR OR ON OPTION SELECTION
-  // Audio continues playing - narration completes naturally
-  // "Momento de verdade. Como você está usando IA hoje? Seja honesto..."
+    // Hard timeout - auto avançar (30s)
+    const hardTimer = setTimeout(() => {
+      if (!isRevealed && selectedIds.length === 0) {
+        setCurrentHint(timeoutConfig.hints[2]);
+        // Auto-revelar após 2s mostrando o hint final
+        setTimeout(() => {
+          if (!isRevealed) {
+            handleReveal();
+          }
+        }, 2000);
+      }
+    }, timeoutConfig.hard * 1000);
+
+    timersRef.current = [softTimer, mediumTimer, hardTimer];
+
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+    };
+  }, [isRevealed, selectedIds.length, timeoutConfig]);
+
+  // ✅ V7-v2: Pausar áudio com FADE (não abrupto)
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (!ctrl) return;
+
+    const pauseAudio = async () => {
+      if (ctrl.isPlaying) {
+        // Usar fade se disponível, senão pause normal
+        if (ctrl.fadeToVolume) {
+          await ctrl.fadeToVolume(0.15, 500);
+        } else {
+          ctrl.pause();
+        }
+        setAudioPausedByQuiz(true);
+        console.log('[V7PhaseQuiz] 🔇 Audio em background - aguardando interação');
+      }
+    };
+
+    pauseAudio();
+  }, []);
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
@@ -85,18 +156,29 @@ export const V7PhaseQuiz = ({
   }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
-    // ✅ SIMPLIFIED: Audio is already paused by V7PhasePlayer auto-pause
-    // Just log and proceed with reveal animation
+    // Limpar timers
+    timersRef.current.forEach(timer => clearTimeout(timer));
     console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // ✅ Notify parent to advance after brief delay
-    setTimeout(() => {
+    // ✅ V7-v2: Resume com fade após mostrar resultado
+    setTimeout(async () => {
+      const ctrl = audioControlRef.current;
+      if (audioPausedByQuiz && ctrl) {
+        if (ctrl.fadeToVolume) {
+          // Usar fade in suave
+          await ctrl.fadeToVolume(1, 500);
+        } else if (!ctrl.isPlaying) {
+          ctrl.play();
+        }
+        setAudioPausedByQuiz(false);
+        console.log('[V7PhaseQuiz] 🔊 Audio retomado com fade');
+      }
       onComplete?.(selectedIds);
-    }, 1500);
-  }, [selectedIds, onComplete]);
+    }, 3000);
+  }, [selectedIds, onComplete, audioPausedByQuiz]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
@@ -245,21 +327,26 @@ export const V7PhaseQuiz = ({
           </motion.button>
         )}
 
-        {/* Reminder message after 7 seconds of no interaction */}
-        <AnimatePresence>
-          {showReminder && !isRevealed && (
+        {/* Hint progressivo - V7-v2 */}
+        <AnimatePresence mode="wait">
+          {currentHint && !isRevealed && (
             <motion.div
+              key={currentHint}
               className="text-center mt-4"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
             >
               <motion.p
-                className="text-amber-400 text-sm font-medium"
-                animate={{ opacity: [0.5, 1, 0.5] }}
+                className={`text-sm font-medium ${
+                  hintLevel === 1 ? 'text-amber-400' :
+                  hintLevel === 2 ? 'text-orange-400' : 'text-red-400'
+                }`}
+                animate={{ opacity: [0.6, 1, 0.6] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                👆 Estou esperando sua resposta... Selecione as opções acima!
+                {currentHint}
               </motion.p>
             </motion.div>
           )}

@@ -1,9 +1,19 @@
 // V7PhaseCTA - Call to Action final phase
-// ✅ FINAL FIX: Pauses audio, waits for selection, resumes and navigates
+// ✅ V7-v2: Suporta fade in/out de áudio e hints progressivos
 // ✅ Prevents double-click with isProcessing guard + disabled state
-
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
+
+interface AudioControl {
+  pause: () => void;
+  play: () => void;
+  togglePlayPause: () => void;
+  isPlaying: boolean;
+  // V7-v2: Novos métodos com fade
+  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
+  pauseWithFade?: (duration?: number) => Promise<void>;
+  resumeWithFade?: (duration?: number) => Promise<void>;
+}
 
 interface V7PhaseCTAProps {
   title: string;
@@ -16,11 +26,13 @@ interface V7PhaseCTAProps {
   }[];
   duration: number;
   onChoice: (choice: 'negative' | 'positive') => void;
-  audioControl?: {
-    pause: () => void;
-    play: () => void;
-    togglePlayPause: () => void;
-    isPlaying: boolean;
+  audioControl?: AudioControl;
+  // V7-v2: Configuração de timeouts
+  timeoutConfig?: {
+    soft: number;    // 5s - primeira dica
+    medium: number;  // 12s - segunda dica
+    hard: number;    // 25s - auto-escolha
+    hints: string[];
   };
 }
 
@@ -30,38 +42,99 @@ export default function V7PhaseCTA({
   options,
   duration,
   onChoice,
-  audioControl
+  audioControl,
+  timeoutConfig = {
+    soft: 5,
+    medium: 12,
+    hard: 25,
+    hints: [
+      '⏳ Este é o momento da decisão...',
+      '🤔 Qual caminho você escolhe?',
+      '⚡ Escolhendo automaticamente...'
+    ]
+  }
 }: V7PhaseCTAProps) {
   const [selected, setSelected] = useState<'negative' | 'positive' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentHint, setCurrentHint] = useState<string | null>(null);
+  const [hintLevel, setHintLevel] = useState(0);
   const hasPausedAudio = useRef(false);
   const hasCalledChoice = useRef(false);
 
   // Use ref to ensure stable reference
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
   const onChoiceRef = useRef(onChoice);
   onChoiceRef.current = onChoice;
 
-  // ✅ FIXED: Don't pause immediately - let narration play for a bit first
-  // The phase has its own narration that should complete before we wait for choice
-  // After 5 seconds (enough for CTA narration), pause and wait for user
+  // ✅ V7-v2: Sistema de hints progressivos
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!hasPausedAudio.current && !hasCalledChoice.current) {
-        const ctrl = audioControlRef.current;
-        if (ctrl?.isPlaying) {
-          ctrl.pause();
-          console.log('[V7PhaseCTA] 🔇 Audio paused after narration delay - waiting for user choice');
-        }
-        hasPausedAudio.current = true;
+    if (selected || isProcessing) {
+      // Limpar hints se usuário escolheu
+      setCurrentHint(null);
+      setHintLevel(0);
+      return;
+    }
+
+    // Soft hint
+    const softTimer = setTimeout(() => {
+      if (!selected && !hasCalledChoice.current) {
+        setCurrentHint(timeoutConfig.hints[0]);
+        setHintLevel(1);
       }
-    }, 5000); // Wait 5s for CTA narration to complete
+    }, timeoutConfig.soft * 1000);
+
+    // Medium hint
+    const mediumTimer = setTimeout(() => {
+      if (!selected && !hasCalledChoice.current) {
+        setCurrentHint(timeoutConfig.hints[1]);
+        setHintLevel(2);
+      }
+    }, timeoutConfig.medium * 1000);
+
+    // Hard timeout - auto-escolher positivo
+    const hardTimer = setTimeout(() => {
+      if (!selected && !hasCalledChoice.current) {
+        setCurrentHint(timeoutConfig.hints[2]);
+        // Auto-selecionar a opção positiva após 2s
+        setTimeout(() => {
+          if (!selected && !hasCalledChoice.current) {
+            handleSelect('positive');
+          }
+        }, 2000);
+      }
+    }, timeoutConfig.hard * 1000);
+
+    timersRef.current = [softTimer, mediumTimer, hardTimer];
+
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+    };
+  }, [selected, isProcessing, timeoutConfig]);
+
+  // ✅ V7-v2: Pausar áudio com FADE após delay para narração
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (hasPausedAudio.current || hasCalledChoice.current) return;
+
+      const ctrl = audioControlRef.current;
+      if (ctrl?.isPlaying) {
+        // Usar fade se disponível, senão pause normal
+        if (ctrl.fadeToVolume) {
+          await ctrl.fadeToVolume(0.2, 500);
+        } else {
+          ctrl.pause();
+        }
+        console.log('[V7PhaseCTA] 🔇 Audio em background - aguardando escolha');
+      }
+      hasPausedAudio.current = true;
+    }, 3000); // Wait 3s for CTA narration intro
 
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ SIMPLIFIED: Immediate navigation, no delays that could cause issues
+  // ✅ Combined: handleSelect with double-click guard AND fade audio
   const handleSelect = useCallback((variant: 'negative' | 'positive') => {
     // Triple guard: isProcessing, selected, and hasCalledChoice
     if (isProcessing || selected !== null || hasCalledChoice.current) {
@@ -73,21 +146,30 @@ export default function V7PhaseCTA({
     hasCalledChoice.current = true;
     setIsProcessing(true);
     setSelected(variant);
+
+    // Limpar timers de hints
+    timersRef.current.forEach(timer => clearTimeout(timer));
+    setCurrentHint(null);
     console.log('[V7PhaseCTA] Choice locked:', variant);
 
-    // Resume audio safely
-    try {
-      const ctrl = audioControlRef.current;
-      if (ctrl && !ctrl.isPlaying) {
-        ctrl.play();
-        console.log('[V7PhaseCTA] ▶️ Audio resumed');
+    // ✅ V7-v2: Resume com fade após seleção
+    setTimeout(async () => {
+      try {
+        const ctrl = audioControlRef.current;
+        if (hasPausedAudio.current && ctrl) {
+          if (ctrl.fadeToVolume) {
+            await ctrl.fadeToVolume(1, 500);
+          } else if (!ctrl.isPlaying) {
+            ctrl.play();
+          }
+          console.log('[V7PhaseCTA] 🔊 Audio retomado com fade');
+        }
+      } catch (e) {
+        console.log('[V7PhaseCTA] Audio resume failed:', e);
       }
-    } catch (e) {
-      console.log('[V7PhaseCTA] Audio resume failed:', e);
-    }
 
-    // Call onChoice immediately - let parent handle any delays
-    onChoiceRef.current(variant);
+      onChoiceRef.current(variant);
+    }, 300);
   }, [isProcessing, selected]);
 
   return (
@@ -178,20 +260,45 @@ export default function V7PhaseCTA({
           ))}
         </motion.div>
 
-        {/* Countdown hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.5 }}
-          className="text-muted-foreground text-sm"
-        >
-          <motion.span
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            A escolha é sua. E é agora.
-          </motion.span>
-        </motion.div>
+        {/* Hint progressivo - V7-v2 */}
+        <AnimatePresence mode="wait">
+          {currentHint && !selected ? (
+            <motion.div
+              key={currentHint}
+              className="text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.p
+                className={`text-sm font-medium ${
+                  hintLevel === 1 ? 'text-amber-400' :
+                  hintLevel === 2 ? 'text-orange-400' : 'text-red-400'
+                }`}
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {currentHint}
+              </motion.p>
+            </motion.div>
+          ) : !selected ? (
+            <motion.div
+              key="default-hint"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5, duration: 0.5 }}
+              className="text-muted-foreground text-sm"
+            >
+              <motion.span
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                A escolha é sua. E é agora.
+              </motion.span>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     </div>
   );
