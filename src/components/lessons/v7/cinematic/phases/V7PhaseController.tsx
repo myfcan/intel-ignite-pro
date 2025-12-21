@@ -1,7 +1,9 @@
 // V7PhaseController - Manages phase/scene synchronization with audio
 // Central controller for the cinematic experience
+// ✅ V7-v2: Suporta audioBehavior, timeout, e configurações por interação
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
 
 export interface V7SceneContent {
   // Basic text fields
@@ -96,13 +98,41 @@ export interface V7Scene {
   startWord?: number; // Word index to start this scene
   startTime?: number; // Time in seconds to start
   duration?: number;  // Duration in seconds
-  type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' | 
+  type: 'text-reveal' | 'number-reveal' | 'split-screen' | 'comparison' |
         'quiz' | 'result' | 'playground' | 'cards-reveal' | 'cta' | 'gamification' |
-        'letterbox' | 'particle-effect' | 'quiz-intro' | 'quiz-question' | 'quiz-options' | 
+        'letterbox' | 'particle-effect' | 'quiz-intro' | 'quiz-question' | 'quiz-options' |
         'quiz-result' | 'playground-intro' | 'playground-code' | 'playground-result';
   content: V7SceneContent;
-  animation: 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'explode' | 'count-up' | 
+  animation: 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'explode' | 'count-up' |
              'letter-by-letter' | 'scale-up' | 'particle-burst' | 'zoom-in' | 'letterbox' | 'glitch';
+}
+
+// ✅ V7-v2: Contextual audio loop during interactions
+export interface V7ContextualLoop {
+  triggerAfter: number;  // Seconds after interaction starts
+  text: string;          // Text to speak (TTS) or audio to play
+  volume: number;        // Volume level (0-1)
+  loop?: boolean;        // Whether to loop the audio
+}
+
+// ✅ V7-v2: Audio behavior configuration per interaction
+export interface V7AudioBehavior {
+  onStart: 'pause' | 'fadeToBackground' | 'continue' | 'switch';
+  duringInteraction: {
+    mainVolume: number;      // Main narration volume (0-1)
+    ambientVolume: number;   // Ambient audio volume (0-1)
+    contextualLoops?: V7ContextualLoop[];
+  };
+  onComplete: 'resume' | 'fadeIn' | 'next';
+}
+
+// ✅ V7-v2: Timeout configuration for progressive hints
+export interface V7TimeoutConfig {
+  soft: number;          // First hint (seconds)
+  medium: number;        // Second hint (seconds)
+  hard: number;          // Auto-action (seconds)
+  hints: string[];       // Hint messages [soft, medium, hard]
+  autoAction?: 'skip' | 'selectDefault' | 'continue';
 }
 
 export interface V7Phase {
@@ -114,13 +144,56 @@ export interface V7Phase {
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
-// ✅ Anchor Actions: Flexible keyword-based synchronization (V5-inspired)
+
+  // ✅ Anchor Actions: Flexible keyword-based synchronization (V5-inspired)
   // Supports multiple action types: pause, resume, show, hide, highlight, trigger
   anchorActions?: import('../useAnchorText').AnchorAction[];
   // Legacy: pauseKeywords (will be converted to anchorActions)
   pauseKeywords?: string[];
-  // Legacy: resumeKeywords  
+  // Legacy: resumeKeywords
   resumeKeywords?: string[];
+
+  // ✅ V7-v2: New interaction configuration fields
+  audioBehavior?: V7AudioBehavior;
+  timeout?: V7TimeoutConfig;
+}
+
+// ✅ V7-v2: Sound effects configuration
+export interface V7SoundEffectsConfig {
+  click?: string;      // Path to click sound
+  select?: string;     // Path to select sound
+  success?: string;    // Path to success sound
+  error?: string;      // Path to error sound
+  hint?: string;       // Path to hint sound
+  timeout?: string;    // Path to timeout sound
+  whoosh?: string;     // Path to whoosh/transition sound
+  reveal?: string;     // Path to reveal sound
+}
+
+// ✅ V7-v2: Audio configuration
+export interface V7AudioConfig {
+  mainAudioUrl?: string;           // Main narration audio
+  ambientAudioUrl?: string;        // Background ambient audio
+  soundEffects?: V7SoundEffectsConfig;
+}
+
+// ✅ V7-v2: Fallback configuration
+export interface V7FallbacksConfig {
+  noWordTimestamps?: {
+    pauseAfterSeconds: number;    // When to pause if no word sync
+    pauseAfterProgress: number;   // Or pause after this % of phase
+  };
+  audioLoadError?: 'continue' | 'retry' | 'showError';
+}
+
+// ✅ V7-v2: Global anchor points (alternative to per-phase anchorActions)
+export interface V7AnchorPoint {
+  id: string;
+  keyword: string;
+  phaseId: string;           // Which phase this anchor belongs to
+  action: 'pause' | 'show' | 'highlight' | 'trigger';
+  targetId?: string;
+  once?: boolean;
 }
 
 export interface V7LessonScript {
@@ -130,6 +203,11 @@ export interface V7LessonScript {
   phases: V7Phase[];
   audioUrl?: string;
   wordTimestamps?: { word: string; start: number; end: number }[];
+
+  // ✅ V7-v2: New lesson-level configuration
+  audioConfig?: V7AudioConfig;
+  fallbacks?: V7FallbacksConfig;
+  anchorPoints?: V7AnchorPoint[];
 }
 
 interface UsePhaseControllerProps {

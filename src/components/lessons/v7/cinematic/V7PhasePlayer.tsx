@@ -23,7 +23,13 @@ import V7PhasePlayground from './phases/V7PhasePlayground';
 import V7PhaseGamification from './phases/V7PhaseGamification';
 import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
-import { V7LessonScript, V7Phase, usePhaseController } from './phases/V7PhaseController';
+import {
+  V7LessonScript,
+  V7Phase,
+  V7TimeoutConfig,
+  V7AudioBehavior,
+  usePhaseController
+} from './phases/V7PhaseController';
 
 interface WordTimestamp {
   word: string;
@@ -586,6 +592,14 @@ export const V7PhasePlayer = ({
           category: (opt.isCorrect ? 'good' : 'bad') as 'good' | 'bad'
         }));
 
+        // ✅ V7-v2: Extract timeout config from phase
+        const quizTimeoutConfig = currentPhase.timeout ? {
+          soft: currentPhase.timeout.soft,
+          medium: currentPhase.timeout.medium,
+          hard: currentPhase.timeout.hard,
+          hints: currentPhase.timeout.hints
+        } : undefined;
+
         return (
           <V7PhaseQuiz
             title={interactionContent.mainText || content.mainText || 'Responda:'}
@@ -599,6 +613,7 @@ export const V7PhasePlayer = ({
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
             audioControl={audio}
+            timeoutConfig={quizTimeoutConfig}
           />
         );
 
@@ -629,6 +644,12 @@ export const V7PhasePlayer = ({
           return '';
         };
 
+        // ✅ V7-v2: Extract timeout config for playground (uses perStep)
+        const playgroundTimeoutConfig = currentPhase.timeout ? {
+          perStep: currentPhase.timeout.soft, // Use soft timeout as perStep
+          hints: currentPhase.timeout.hints
+        } : undefined;
+
         return (
           <V7PhasePlayground
             challengeTitle={playgroundContent.mainText || content.mainText || 'DESAFIO PRÁTICO'}
@@ -653,6 +674,7 @@ export const V7PhasePlayer = ({
             phaseProgress={phaseProgress}
             onComplete={handlePlaygroundComplete}
             audioControl={audio}
+            timeoutConfig={playgroundTimeoutConfig}
           />
         );
 
@@ -690,6 +712,14 @@ export const V7PhasePlayer = ({
           variant: mapVariant(opt.variant || 'primary')
         }));
 
+        // ✅ V7-v2: Extract timeout config for CTA
+        const ctaTimeoutConfig = currentPhase.timeout ? {
+          soft: currentPhase.timeout.soft,
+          medium: currentPhase.timeout.medium,
+          hard: currentPhase.timeout.hard,
+          hints: currentPhase.timeout.hints
+        } : undefined;
+
         return (
           <V7PhaseCTA
             title={revelationContent.mainText || content.mainText || currentPhase.title}
@@ -701,6 +731,7 @@ export const V7PhasePlayer = ({
             duration={currentPhase.endTime - currentPhase.startTime}
             onChoice={handleCTAChoice}
             audioControl={audio}
+            timeoutConfig={ctaTimeoutConfig}
           />
         );
 
