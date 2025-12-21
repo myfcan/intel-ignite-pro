@@ -29,6 +29,9 @@ interface V7PhaseQuizProps {
   revealTitle: string;
   revealMessage: string;
   revealValue?: string;
+  // ✅ NEW: Separate feedback messages for correct/incorrect results
+  correctFeedback?: string;
+  incorrectFeedback?: string;
   sceneIndex: number;
   onComplete?: (selectedIds: string[]) => void;
   audioControl?: AudioControl;
@@ -48,6 +51,8 @@ export const V7PhaseQuiz = ({
   revealTitle,
   revealMessage,
   revealValue,
+  correctFeedback,
+  incorrectFeedback,
   sceneIndex,
   onComplete,
   audioControl,
@@ -67,8 +72,6 @@ export const V7PhaseQuiz = ({
   const [showResult, setShowResult] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
-
-  // Track if we paused the audio (so we only resume what we paused)
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
 
   // ✅ Use refs to ensure stable audioControl reference in callbacks
@@ -142,14 +145,9 @@ export const V7PhaseQuiz = ({
     pauseAudio();
   }, []);
 
-  // Scene 0: Show title and quiz icon
-  // Scene 1: Show options with animation
-  // Scene 2: User selects options (interaction)
-  // Scene 3: Reveal result
-
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
-    
+    // ✅ Do NOT pause audio on option selection - let narration continue
     setSelectedIds(prev => 
       prev.includes(id) 
         ? prev.filter(i => i !== id)
@@ -160,6 +158,7 @@ export const V7PhaseQuiz = ({
   const handleReveal = useCallback(() => {
     // Limpar timers
     timersRef.current.forEach(timer => clearTimeout(timer));
+    console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
@@ -177,9 +176,8 @@ export const V7PhaseQuiz = ({
         setAudioPausedByQuiz(false);
         console.log('[V7PhaseQuiz] 🔊 Audio retomado com fade');
       }
+      onComplete?.(selectedIds);
     }, 3000);
-
-    onComplete?.(selectedIds);
   }, [selectedIds, onComplete, audioPausedByQuiz]);
 
   const badCount = selectedIds.filter(id => 
@@ -395,11 +393,12 @@ export const V7PhaseQuiz = ({
                 <div className="text-2xl font-bold text-white mb-2">
                   {isInBadGroup ? 'VOCÊ ESTÁ NO GRUPO 98%' : 'VOCÊ ESTÁ NO GRUPO 2%'}
                 </div>
-                {revealValue && (
-                  <div className="text-white/70">
-                    {revealMessage}
-                  </div>
-                )}
+                {/* ✅ Show appropriate feedback message based on result */}
+                <div className="text-white/70 text-sm mt-2">
+                  {isInBadGroup 
+                    ? (incorrectFeedback || revealMessage || 'Vou te ensinar o método agora.')
+                    : (correctFeedback || revealMessage || 'Continue assim!')}
+                </div>
               </motion.div>
             </motion.div>
           )}

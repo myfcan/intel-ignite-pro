@@ -2,6 +2,7 @@
 // Complete cinematic experience with 7 phases
 
 import { V7LessonScript } from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
+import { AnchorAction } from '@/components/lessons/v7/cinematic/useAnchorText';
 
 export const fimDaBrincadeiraScript: V7LessonScript = {
   id: 'fim-da-brincadeira-ia',
@@ -169,6 +170,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO (90-150s)
+    // ✅ anchorActions: Flexible keyword-based sync (V5-inspired)
     {
       id: 'interaction-quiz',
       title: 'Autoavaliação',
@@ -177,6 +179,12 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'interaction',
       mood: 'danger',
       autoAdvance: false,
+      // ✅ NEW: anchorActions with multiple action types
+      anchorActions: [
+        { id: 'pause-quiz', keyword: 'honesto', type: 'pause', once: true },
+        // Future: Could add show/highlight actions here
+        // { id: 'show-quiz', keyword: 'teste', type: 'show', targetId: 'quiz-container' },
+      ] as AnchorAction[],
       scenes: [
         {
           id: 'scene-quiz-intro',
@@ -202,7 +210,11 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
               { id: 'money', label: 'Ganhar dinheiro', isCorrect: true },
               { id: 'curiosity', label: 'Curiosidade', isCorrect: false, isDefault: true },
               { id: 'play', label: 'Brincadeira', isCorrect: false, isDefault: true }
-            ]
+            ],
+            // ✅ Feedback messages for quiz results
+            explanation: 'Sem problemas! Vou te ensinar o método agora.',
+            correctFeedback: 'Continue assim! Você já pensa como profissional.',
+            incorrectFeedback: 'Esse é o jeito amador! Mas calma, vou te mostrar como mudar isso.'
           },
           animation: 'slide-up'
         },
@@ -225,6 +237,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 5: DESAFIO PLAYGROUND (150-300s)
+    // ✅ anchorActions: Flexible keyword-based sync
     {
       id: 'playground-challenge',
       title: 'Desafio Playground',
@@ -233,6 +246,13 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'playground',
       mood: 'success',
       autoAdvance: false,
+      // ✅ NEW: anchorActions with multiple action types
+      anchorActions: [
+        { id: 'pause-playground', keyword: 'observe', type: 'pause', once: true },
+        // Future: Could add show/highlight actions here
+        // { id: 'highlight-amateur', keyword: 'amador', type: 'highlight', targetId: 'amateur-pane' },
+        // { id: 'highlight-pro', keyword: 'profissional', type: 'highlight', targetId: 'pro-pane' },
+      ] as AnchorAction[],
       scenes: [
         {
           id: 'scene-challenge-intro',

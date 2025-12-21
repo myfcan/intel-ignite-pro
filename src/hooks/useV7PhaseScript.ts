@@ -78,7 +78,8 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] Acts have pre-scaled timings:', actsHaveScaledTimings);
 
       // Transform database acts to V7 phases
-      const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow);
+      // ✅ Pass wordTimestamps so we can auto-generate pauseKeywords for interactive phases
+      const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
 
       // Create script
       const lessonScript: V7LessonScript = {
@@ -114,7 +115,13 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 }
 
 // Transform database acts to V7 phase format
-function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicFlow: boolean = false): V7Phase[] {
+// ✅ Now receives wordTimestamps to auto-generate pauseKeywords for interactive phases
+function transformActsToPhases(
+  acts: any[], 
+  totalDuration: number, 
+  hasCinematicFlow: boolean = false,
+  wordTimestamps: Array<{ word: string; start: number; end: number }> = []
+): V7Phase[] {
   if (!acts || acts.length === 0) {
     // Return default phases if no acts
     return getDefaultPhases(totalDuration);
@@ -222,6 +229,38 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
     const audioData = act.content?.audio;
     const interactionData = act.content?.interaction;
     
+    // ✅ CRITICAL: Extract anchorActions from act for pause/show/highlight functionality
+    // Can be at act level OR in interaction.anchorActions
+    let anchorActions = act.anchorActions || 
+                        interactionData?.anchorActions || 
+                        act.content?.anchorActions ||
+                        [];
+    
+    // ✅ Also support legacy pauseKeywords for backward compatibility
+    let pauseKeywords = act.pauseKeywords || 
+                        interactionData?.pauseKeywords || 
+                        act.content?.pauseKeywords ||
+                        [];
+    
+    // ✅ AUTO-GENERATE pauseKeywords for interactive phases if none defined
+    // This ensures the audio pauses even without explicit anchorActions in DB
+    const isInteractivePhase = phaseType === 'interaction' || phaseType === 'playground';
+    if (isInteractivePhase && anchorActions.length === 0 && pauseKeywords.length === 0 && wordTimestamps.length > 0) {
+      // Find keywords in the audio that occur within/near this phase
+      const generatedKeywords = findPauseKeywordsForPhase(
+        wordTimestamps, 
+        startTime, 
+        endTime,
+        phaseType
+      );
+      if (generatedKeywords.length > 0) {
+        pauseKeywords = generatedKeywords;
+        console.log(`[transformActsToPhases] ✨ AUTO-GENERATED pauseKeywords for ${phaseType} phase: [${pauseKeywords.join(', ')}]`);
+      }
+    }
+    
+    console.log(`[transformActsToPhases] Act ${index + 1}: anchorActions=${anchorActions.length}, pauseKeywords=${pauseKeywords.length}`);
+    
     const phase: V7Phase = {
       id: act.id || `phase-${index + 1}`,
       title: act.title || `Fase ${index + 1}`,
@@ -230,6 +269,9 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
       type: phaseType,
       mood: extractMood(visualData),
       autoAdvance: phaseType !== 'interaction' && phaseType !== 'playground',
+      // ✅ Add anchorActions and pauseKeywords to phase
+      anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
+      pauseKeywords: pauseKeywords.length > 0 ? pauseKeywords : undefined,
       scenes: generateScenesForPhase(
         {
           ...act,
@@ -280,6 +322,95 @@ function transformActsToPhases(acts: any[], totalDuration: number, hasCinematicF
   });
 
   return phases;
+}
+
+/**
+ * ✅ AUTO-GENERATE pauseKeywords for interactive phases
+ * Searches for common pause-triggering words in the narration
+ * Based on typical lesson flow patterns
+ */
+function findPauseKeywordsForPhase(
+  wordTimestamps: Array<{ word: string; start: number; end: number }>,
+  phaseStartTime: number,
+  phaseEndTime: number,
+  phaseType: string
+): string[] {
+  // Keywords that typically indicate a pause point in the narration
+  // Priority order matters - first match wins
+  const pauseIndicators: Record<string, string[]> = {
+    interaction: [
+      // Direct commands to pause/reflect
+      'honesto', 'verdade', 'reflita', 'pense', 'avalie', 'responda',
+      // Quiz/test indicators
+      'teste', 'quiz', 'autoavaliação', 'pergunta', 'escolha',
+      // Transition words before interaction
+      'agora', 'momento', 'vez', 'hora'
+    ],
+    playground: [
+      // Observation/comparison indicators  
+      'observe', 'veja', 'compare', 'analise', 'note', 'perceba',
+      // Challenge indicators
+      'desafio', 'prática', 'exercício', 'pratique',
+      // Result indicators
+      'resultado', 'diferença'
+    ]
+  };
+  
+  const indicators = pauseIndicators[phaseType] || pauseIndicators['interaction'];
+  
+  // Search a bit before the phase starts (narration often sets up before UI shows)
+  const searchStartTime = Math.max(0, phaseStartTime - 10);
+  // Only search first 30% of the phase (pause should happen early)
+  const searchEndTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.4;
+  
+  // Find words in the search window
+  const wordsInWindow = wordTimestamps.filter(
+    w => w.start >= searchStartTime && w.start <= searchEndTime
+  );
+  
+  console.log(`[findPauseKeywords] Searching ${phaseType} phase (${phaseStartTime.toFixed(1)}s-${phaseEndTime.toFixed(1)}s), window: ${searchStartTime.toFixed(1)}s-${searchEndTime.toFixed(1)}s, found ${wordsInWindow.length} words`);
+  
+  // Normalize function
+  const normalize = (word: string) => 
+    word.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,!?;:'"()[\]{}]/g, '')
+      .trim();
+  
+  // Find matches in priority order
+  const foundKeywords: string[] = [];
+  
+  for (const indicator of indicators) {
+    const normalizedIndicator = normalize(indicator);
+    
+    for (const wordTs of wordsInWindow) {
+      const normalizedWord = normalize(wordTs.word);
+      
+      if (normalizedWord === normalizedIndicator || 
+          normalizedWord.includes(normalizedIndicator) ||
+          normalizedIndicator.includes(normalizedWord)) {
+        
+        console.log(`[findPauseKeywords] ✓ Found "${wordTs.word}" (matched "${indicator}") at ${wordTs.start.toFixed(1)}s`);
+        foundKeywords.push(wordTs.word);
+        break; // Only need one match per phase
+      }
+    }
+    
+    if (foundKeywords.length > 0) break; // Stop after first match
+  }
+  
+  // Fallback: if no specific keyword found, use a word around 30% into phase
+  if (foundKeywords.length === 0 && wordsInWindow.length > 0) {
+    const targetTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.3;
+    const closestWord = wordsInWindow.reduce((closest, w) => 
+      Math.abs(w.start - targetTime) < Math.abs(closest.start - targetTime) ? w : closest
+    );
+    console.log(`[findPauseKeywords] ⚠️ No indicator found, using fallback word "${closestWord.word}" at ${closestWord.start.toFixed(1)}s`);
+    foundKeywords.push(closestWord.word);
+  }
+  
+  return foundKeywords;
 }
 
 // Map database act type to V7 phase type

@@ -1,5 +1,6 @@
 // V7PhaseCTA - Call to Action final phase
 // ✅ V7-v2: Suporta fade in/out de áudio e hints progressivos
+// ✅ Prevents double-click with isProcessing guard + disabled state
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -54,18 +55,22 @@ export default function V7PhaseCTA({
   }
 }: V7PhaseCTAProps) {
   const [selected, setSelected] = useState<'negative' | 'positive' | null>(null);
-  const [audioPausedByCTA, setAudioPausedByCTA] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
+  const hasPausedAudio = useRef(false);
+  const hasCalledChoice = useRef(false);
 
   // Use ref to ensure stable reference
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const onChoiceRef = useRef(onChoice);
+  onChoiceRef.current = onChoice;
 
   // ✅ V7-v2: Sistema de hints progressivos
   useEffect(() => {
-    if (selected) {
+    if (selected || isProcessing) {
       // Limpar hints se usuário escolheu
       setCurrentHint(null);
       setHintLevel(0);
@@ -74,7 +79,7 @@ export default function V7PhaseCTA({
 
     // Soft hint
     const softTimer = setTimeout(() => {
-      if (!selected) {
+      if (!selected && !hasCalledChoice.current) {
         setCurrentHint(timeoutConfig.hints[0]);
         setHintLevel(1);
       }
@@ -82,7 +87,7 @@ export default function V7PhaseCTA({
 
     // Medium hint
     const mediumTimer = setTimeout(() => {
-      if (!selected) {
+      if (!selected && !hasCalledChoice.current) {
         setCurrentHint(timeoutConfig.hints[1]);
         setHintLevel(2);
       }
@@ -90,11 +95,11 @@ export default function V7PhaseCTA({
 
     // Hard timeout - auto-escolher positivo
     const hardTimer = setTimeout(() => {
-      if (!selected) {
+      if (!selected && !hasCalledChoice.current) {
         setCurrentHint(timeoutConfig.hints[2]);
         // Auto-selecionar a opção positiva após 2s
         setTimeout(() => {
-          if (!selected) {
+          if (!selected && !hasCalledChoice.current) {
             handleSelect('positive');
           }
         }, 2000);
@@ -106,52 +111,66 @@ export default function V7PhaseCTA({
     return () => {
       timersRef.current.forEach(timer => clearTimeout(timer));
     };
-  }, [selected, timeoutConfig]);
+  }, [selected, isProcessing, timeoutConfig]);
 
-  // ✅ V7-v2: Pausar áudio com FADE (não abrupto)
+  // ✅ V7-v2: Pausar áudio com FADE após delay para narração
   useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (!ctrl) return;
+    const timer = setTimeout(async () => {
+      if (hasPausedAudio.current || hasCalledChoice.current) return;
 
-    const pauseAudio = async () => {
-      if (ctrl.isPlaying) {
+      const ctrl = audioControlRef.current;
+      if (ctrl?.isPlaying) {
         // Usar fade se disponível, senão pause normal
         if (ctrl.fadeToVolume) {
           await ctrl.fadeToVolume(0.2, 500);
         } else {
           ctrl.pause();
         }
-        setAudioPausedByCTA(true);
         console.log('[V7PhaseCTA] 🔇 Audio em background - aguardando escolha');
       }
-    };
+      hasPausedAudio.current = true;
+    }, 3000); // Wait 3s for CTA narration intro
 
-    pauseAudio();
+    return () => clearTimeout(timer);
   }, []);
 
+  // ✅ Combined: handleSelect with double-click guard AND fade audio
   const handleSelect = useCallback((variant: 'negative' | 'positive') => {
-    if (selected) return; // Evitar duplo clique
+    // Triple guard: isProcessing, selected, and hasCalledChoice
+    if (isProcessing || selected !== null || hasCalledChoice.current) {
+      console.log('[V7PhaseCTA] Click ignored - already processing');
+      return;
+    }
 
-    // Limpar timers
+    // Lock immediately
+    hasCalledChoice.current = true;
+    setIsProcessing(true);
+    setSelected(variant);
+
+    // Limpar timers de hints
     timersRef.current.forEach(timer => clearTimeout(timer));
     setCurrentHint(null);
-    setSelected(variant);
+    console.log('[V7PhaseCTA] Choice locked:', variant);
 
     // ✅ V7-v2: Resume com fade após seleção
     setTimeout(async () => {
-      const ctrl = audioControlRef.current;
-      if (audioPausedByCTA && ctrl) {
-        if (ctrl.fadeToVolume) {
-          await ctrl.fadeToVolume(1, 500);
-        } else if (!ctrl.isPlaying) {
-          ctrl.play();
+      try {
+        const ctrl = audioControlRef.current;
+        if (hasPausedAudio.current && ctrl) {
+          if (ctrl.fadeToVolume) {
+            await ctrl.fadeToVolume(1, 500);
+          } else if (!ctrl.isPlaying) {
+            ctrl.play();
+          }
+          console.log('[V7PhaseCTA] 🔊 Audio retomado com fade');
         }
-        setAudioPausedByCTA(false);
-        console.log('[V7PhaseCTA] 🔊 Audio retomado com fade');
+      } catch (e) {
+        console.log('[V7PhaseCTA] Audio resume failed:', e);
       }
-      onChoice(variant);
-    }, 500);
-  }, [selected, audioPausedByCTA, onChoice]);
+
+      onChoiceRef.current(variant);
+    }, 300);
+  }, [isProcessing, selected]);
 
   return (
     <div className="w-full h-full flex items-center justify-center p-8 pb-24">
@@ -193,7 +212,7 @@ export default function V7PhaseCTA({
                 scale: { duration: 1.5, repeat: selected ? 0 : Infinity, ease: 'easeInOut' }
               }}
               onClick={() => handleSelect(option.variant)}
-              disabled={selected !== null}
+              disabled={isProcessing || selected !== null}
               className={`
                 relative px-8 py-6 rounded-2xl text-xl font-bold
                 transition-all duration-300 overflow-hidden
@@ -202,11 +221,11 @@ export default function V7PhaseCTA({
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 }
                 ${selected && selected !== option.variant ? 'opacity-30' : ''}
-                disabled:cursor-not-allowed
+                ${isProcessing || selected !== null ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
             >
               {/* Pulsing glow effect for ALL options when not selected */}
-              {!selected && (
+              {!selected && !isProcessing && (
                 <motion.div
                   className={`absolute inset-0 rounded-2xl ${
                     option.variant === 'positive' ? 'bg-primary/20' : 'bg-white/10'
@@ -230,8 +249,8 @@ export default function V7PhaseCTA({
 
               <span className="relative z-10 flex items-center gap-3">
                 <motion.span
-                  animate={!selected ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 1, repeat: selected ? 0 : Infinity }}
+                  animate={!selected && !isProcessing ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 1, repeat: selected || isProcessing ? 0 : Infinity }}
                 >
                   {option.emoji}
                 </motion.span>

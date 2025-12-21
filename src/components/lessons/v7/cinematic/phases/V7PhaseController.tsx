@@ -114,6 +114,13 @@ export interface V7Phase {
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
+// ✅ Anchor Actions: Flexible keyword-based synchronization (V5-inspired)
+  // Supports multiple action types: pause, resume, show, hide, highlight, trigger
+  anchorActions?: import('../useAnchorText').AnchorAction[];
+  // Legacy: pauseKeywords (will be converted to anchorActions)
+  pauseKeywords?: string[];
+  // Legacy: resumeKeywords  
+  resumeKeywords?: string[];
 }
 
 export interface V7LessonScript {

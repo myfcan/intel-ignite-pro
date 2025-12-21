@@ -127,6 +127,7 @@ export const V7PhasePlayground = ({
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
       // ✅ V7-v2: Final step - resume audio with FADE
+      console.log('[V7PhasePlayground] All 6 steps complete');
       const ctrl = audioControlRef.current;
       if (audioPausedByPlayground && ctrl) {
         if (ctrl.resumeWithFade) {

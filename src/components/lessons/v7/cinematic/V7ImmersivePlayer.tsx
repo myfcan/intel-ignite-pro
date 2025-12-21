@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 import { V7MinimalTimeline } from "./V7MinimalTimeline";
 import { V7AudioIndicator } from "./V7AudioIndicator";
 import { V7AudioControls } from "./V7AudioControls";
@@ -8,7 +9,6 @@ import { V7CinematicCanvas } from "./V7CinematicCanvas";
 import { useV7CinematicAudio } from "./useV7CinematicAudio";
 import { useV7SoundEffects } from "./useV7SoundEffects";
 import { V7SynchronizedCaptions } from "../V7SynchronizedCaptions";
-
 interface WordTimestamp {
   word: string;
   start: number;
@@ -30,6 +30,7 @@ interface V7ImmersivePlayerProps {
   wordTimestamps?: WordTimestamp[];
   onComplete?: () => void;
   onActChange?: (actIndex: number) => void;
+  onExit?: () => void;
 }
 
 export const V7ImmersivePlayer = ({
@@ -38,7 +39,8 @@ export const V7ImmersivePlayer = ({
   audioUrl,
   wordTimestamps = [],
   onComplete,
-  onActChange
+  onActChange,
+  onExit
 }: V7ImmersivePlayerProps) => {
   const [currentActIndex, setCurrentActIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
@@ -199,6 +201,24 @@ export const V7ImmersivePlayer = ({
         mood={getCanvasMood(currentAct?.type || 'dramatic')}
         intensity={audio.isPlaying ? "high" : "medium"}
       />
+
+      {/* Exit Button - Top Left */}
+      {onExit && (
+        <motion.button
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[200] w-10 h-10 sm:w-12 sm:h-12 
+                     rounded-full bg-black/40 backdrop-blur-md border border-white/10
+                     flex items-center justify-center text-white/60 hover:text-white 
+                     hover:bg-black/60 hover:border-white/20 transition-all duration-200"
+          onClick={onExit}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: showControls ? 1 : 0.3, scale: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          title="Sair da aula"
+        >
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+      )}
 
       {/* Timeline */}
       <V7MinimalTimeline

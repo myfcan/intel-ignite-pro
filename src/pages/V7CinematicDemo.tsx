@@ -12,10 +12,15 @@ const V7CinematicDemo = () => {
     setTimeout(() => navigate('/'), 2000);
   };
 
+  const handleExit = () => {
+    navigate('/');
+  };
+
   return (
     <V7PhasePlayer
       script={fimDaBrincadeiraScript}
       onComplete={handleComplete}
+      onExit={handleExit}
     />
   );
 };
