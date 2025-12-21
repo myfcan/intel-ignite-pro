@@ -1,14 +1,130 @@
 // V7 Lesson Script: "O Fim da Brincadeira com IA"
 // Complete cinematic experience with 7 phases
+// ✅ V7-v2: Estrutura completa com audioBehavior, timeout, e configurações por interação
 
-import { V7LessonScript } from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
+import {
+  V7LessonScript,
+  V7AudioBehavior,
+  V7TimeoutConfig,
+  V7AudioConfig,
+  V7FallbacksConfig
+} from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
 import { AnchorAction } from '@/components/lessons/v7/cinematic/useAnchorText';
+
+// ✅ V7-v2: Configurações de áudio da aula
+const audioConfig: V7AudioConfig = {
+  soundEffects: {
+    click: '/sounds/click.mp3',
+    select: '/sounds/select.mp3',
+    success: '/sounds/success.mp3',
+    error: '/sounds/error.mp3',
+    hint: '/sounds/hint.mp3',
+    timeout: '/sounds/timeout.mp3',
+    whoosh: '/sounds/whoosh.mp3',
+    reveal: '/sounds/reveal.mp3'
+  }
+};
+
+// ✅ V7-v2: Configurações de fallback
+const fallbacks: V7FallbacksConfig = {
+  noWordTimestamps: {
+    pauseAfterSeconds: 3,     // Pausar após 3s se não houver wordTimestamps
+    pauseAfterProgress: 0.3   // Ou após 30% da fase
+  },
+  audioLoadError: 'continue'
+};
+
+// ✅ V7-v2: Comportamento de áudio padrão para quiz
+const quizAudioBehavior: V7AudioBehavior = {
+  onStart: 'fadeToBackground',
+  duringInteraction: {
+    mainVolume: 0.15,
+    ambientVolume: 0.4,
+    contextualLoops: [
+      { triggerAfter: 7, text: 'Pense com calma...', volume: 0.4 },
+      { triggerAfter: 15, text: 'Qual opção mais combina com você?', volume: 0.4 },
+      { triggerAfter: 25, text: 'Tome seu tempo...', volume: 0.3 }
+    ]
+  },
+  onComplete: 'fadeIn'
+};
+
+// ✅ V7-v2: Comportamento de áudio padrão para playground
+const playgroundAudioBehavior: V7AudioBehavior = {
+  onStart: 'pause',
+  duringInteraction: {
+    mainVolume: 0,
+    ambientVolume: 0.3,
+    contextualLoops: [
+      { triggerAfter: 10, text: 'Continue acompanhando...', volume: 0.3 },
+      { triggerAfter: 30, text: 'Você está indo bem!', volume: 0.3 }
+    ]
+  },
+  onComplete: 'resume'
+};
+
+// ✅ V7-v2: Comportamento de áudio padrão para CTA
+const ctaAudioBehavior: V7AudioBehavior = {
+  onStart: 'fadeToBackground',
+  duringInteraction: {
+    mainVolume: 0.2,
+    ambientVolume: 0.4,
+    contextualLoops: [
+      { triggerAfter: 5, text: 'A escolha é sua...', volume: 0.3 }
+    ]
+  },
+  onComplete: 'next'
+};
+
+// ✅ V7-v2: Timeout padrão para quiz
+const quizTimeout: V7TimeoutConfig = {
+  soft: 7,
+  medium: 15,
+  hard: 30,
+  hints: [
+    '⏳ Pense com calma...',
+    '🤔 Qual opção mais combina com você?',
+    '⚡ Escolhendo automaticamente...'
+  ],
+  autoAction: 'selectDefault'
+};
+
+// ✅ V7-v2: Timeout padrão para playground
+const playgroundTimeout: V7TimeoutConfig = {
+  soft: 10,
+  medium: 25,
+  hard: 45,
+  hints: [
+    '⏳ Continue acompanhando...',
+    '🔄 Avançando em breve...',
+    '⚡ Avançando automaticamente...'
+  ],
+  autoAction: 'continue'
+};
+
+// ✅ V7-v2: Timeout padrão para CTA
+const ctaTimeout: V7TimeoutConfig = {
+  soft: 5,
+  medium: 12,
+  hard: 25,
+  hints: [
+    '⏳ Este é o momento da decisão...',
+    '🤔 Qual caminho você escolhe?',
+    '⚡ Escolhendo automaticamente...'
+  ],
+  autoAction: 'selectDefault'
+};
 
 export const fimDaBrincadeiraScript: V7LessonScript = {
   id: 'fim-da-brincadeira-ia',
   title: 'O Fim da Brincadeira com IA',
   totalDuration: 480, // 8 minutes
   audioUrl: '', // Will be populated from database
+
+  // ✅ V7-v2: Configurações globais
+  audioConfig,
+  fallbacks,
+
   phases: [
     // FASE 1: LOADING (0-3s)
     {
@@ -170,7 +286,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO (90-150s)
-    // ✅ anchorActions: Flexible keyword-based sync (V5-inspired)
+    // ✅ V7-v2: anchorActions + audioBehavior + timeout
     {
       id: 'interaction-quiz',
       title: 'Autoavaliação',
@@ -179,11 +295,14 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'interaction',
       mood: 'danger',
       autoAdvance: false,
-      // ✅ NEW: anchorActions with multiple action types
+
+      // ✅ V7-v2: Comportamento de áudio durante quiz
+      audioBehavior: quizAudioBehavior,
+      timeout: quizTimeout,
+
+      // ✅ anchorActions: keyword-based sync (V5-inspired)
       anchorActions: [
         { id: 'pause-quiz', keyword: 'honesto', type: 'pause', once: true },
-        // Future: Could add show/highlight actions here
-        // { id: 'show-quiz', keyword: 'teste', type: 'show', targetId: 'quiz-container' },
       ] as AnchorAction[],
       scenes: [
         {
@@ -237,7 +356,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 5: DESAFIO PLAYGROUND (150-300s)
-    // ✅ anchorActions: Flexible keyword-based sync
+    // ✅ V7-v2: anchorActions + audioBehavior + timeout
     {
       id: 'playground-challenge',
       title: 'Desafio Playground',
@@ -246,12 +365,14 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       type: 'playground',
       mood: 'success',
       autoAdvance: false,
-      // ✅ NEW: anchorActions with multiple action types
+
+      // ✅ V7-v2: Comportamento de áudio durante playground
+      audioBehavior: playgroundAudioBehavior,
+      timeout: playgroundTimeout,
+
+      // ✅ anchorActions: keyword-based sync
       anchorActions: [
         { id: 'pause-playground', keyword: 'observe', type: 'pause', once: true },
-        // Future: Could add show/highlight actions here
-        // { id: 'highlight-amateur', keyword: 'amador', type: 'highlight', targetId: 'amateur-pane' },
-        // { id: 'highlight-pro', keyword: 'profissional', type: 'highlight', targetId: 'pro-pane' },
       ] as AnchorAction[],
       scenes: [
         {
@@ -326,6 +447,7 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
     },
 
     // FASE 6: REVELAÇÃO E TRANSFORMAÇÃO (300-420s)
+    // ✅ V7-v2: Inclui CTA com audioBehavior + timeout
     {
       id: 'revelation',
       title: 'Revelação',
@@ -333,6 +455,11 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       endTime: 420,
       type: 'revelation',
       mood: 'success',
+
+      // ✅ V7-v2: Comportamento de áudio durante CTA (scene-cta)
+      audioBehavior: ctaAudioBehavior,
+      timeout: ctaTimeout,
+
       scenes: [
         {
           id: 'scene-truth',
