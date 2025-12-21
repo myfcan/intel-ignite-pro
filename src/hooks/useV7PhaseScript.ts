@@ -94,6 +94,14 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ✅ Pass wordTimestamps so we can auto-generate pauseKeywords for interactive phases
       const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
 
+      // ✅ V7-v2: Extract lesson-level configs
+      const audioConfig = content?.audioConfig || {};
+      const fallbacks = content?.fallbacks || {
+        noWordTimestamps: { strategy: 'percentage', pauseAt: 0.3, duration: 3000 },
+        audioLoadError: { showSubtitles: true, continueWithText: true },
+      };
+      const globalAnchorPoints = content?.anchorPoints || [];
+
       // Create script
       const lessonScript: V7LessonScript = {
         id: data.id,
@@ -102,6 +110,14 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         audioUrl: data.audio_url || '',
         wordTimestamps: timestamps,
         phases,
+        // ✅ V7-v2: Lesson-level configs
+        audioConfig: {
+          mainAudioUrl: data.audio_url || audioConfig.url,
+          soundEffects: audioConfig.soundEffects,
+          ...audioConfig,
+        },
+        fallbacks,
+        anchorPoints: globalAnchorPoints,
       };
 
       setScript(lessonScript);
@@ -237,10 +253,16 @@ function transformActsToPhases(
 
     currentTime = endTime; // Update for next iteration
     
-    // For cinematic_flow, extract visual and audio from act.content
-    const visualData = act.content?.visual;
-    const audioData = act.content?.audio;
-    const interactionData = act.content?.interaction;
+    // ✅ V7-v2: Extract visual and audio from BOTH act level and act.content
+    // V7-v2 format has visual/audio at act level
+    // Legacy format has them nested in content
+    const visualData = act.visual || act.content?.visual;
+    const audioData = act.audio || act.content?.audio;
+    const interactionData = act.interaction || act.content?.interaction;
+
+    // ✅ V7-v2: Extract audioBehavior and timeout configs
+    const audioBehavior = act.audioBehavior || act.content?.audioBehavior || interactionData?.audioBehavior;
+    const timeout = act.timeout || act.content?.timeout || interactionData?.timeout;
     
     // ✅ CRITICAL: Extract anchorActions from act for pause/show/highlight functionality
     // Can be at act level OR in interaction.anchorActions
@@ -285,6 +307,9 @@ function transformActsToPhases(
       // ✅ Add anchorActions and pauseKeywords to phase
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
       pauseKeywords: pauseKeywords.length > 0 ? pauseKeywords : undefined,
+      // ✅ V7-v2: Add audioBehavior and timeout configs
+      audioBehavior: audioBehavior || undefined,
+      timeout: timeout || undefined,
       scenes: generateScenesForPhase(
         {
           ...act,
