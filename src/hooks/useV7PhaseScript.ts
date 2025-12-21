@@ -41,20 +41,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       if (!data) throw new Error('Aula não encontrada');
 
       const content = data.content as any;
-      const rawTimestamps = data.word_timestamps as any[] || [];
-      
-      // ✅ CRITICAL FIX: Normalize timestamps - some lessons use start_time/end_time, others use start/end
-      const timestamps = rawTimestamps.map(ts => ({
-        word: ts.word,
-        start: ts.start ?? ts.start_time ?? 0,
-        end: ts.end ?? ts.end_time ?? 0
-      }));
-      
-      console.log('[useV7PhaseScript] ✅ Normalized timestamps:', timestamps.length, 'words');
-      if (timestamps.length > 0) {
-        console.log('[useV7PhaseScript] First word:', timestamps[0]);
-        console.log('[useV7PhaseScript] Last word:', timestamps[timestamps.length - 1]);
-      }
+      const timestamps = data.word_timestamps as any[] || [];
 
       // Check if using rich cinematic_flow structure
       const hasCinematicFlow = content?.cinematic_flow?.acts?.length > 0;
