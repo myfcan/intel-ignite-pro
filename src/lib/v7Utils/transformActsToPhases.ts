@@ -290,8 +290,9 @@ function buildScenesFromAct(act: V7Act, actIndex: number): V7Scene[] {
         type: 'quiz-options',
         content: {
           options: interaction.options,
-          question: interaction.question,
-          feedbackMessages: interaction.feedbackMessages,
+          mainText: interaction.question, // ✅ FIX: Use mainText (exists in V7SceneContent), not question
+          correctFeedback: interaction.feedbackMessages?.correct,
+          incorrectFeedback: interaction.feedbackMessages?.incorrect,
         },
         animation: 'slide-up',
       });
