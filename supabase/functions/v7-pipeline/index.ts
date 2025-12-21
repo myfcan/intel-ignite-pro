@@ -27,21 +27,69 @@ interface V7PipelineInput {
   order_index?: number;
   voice_id?: string;
   generate_audio?: boolean;
-  // Support for rich cinematic_flow.acts structure
+
+  // ✅ V7-v2: Audio config and fallbacks
+  audioConfig?: {
+    narrationVoice?: string;
+    voiceSettings?: any;
+    backgroundMusic?: any;
+    soundEffects?: any[];
+  };
+  fallbacks?: {
+    noWordTimestamps?: any;
+    audioLoadError?: any;
+    interactionTimeout?: any;
+  };
+  anchorPoints?: Array<{
+    keyword: string;
+    action: string;
+    phase?: string;
+    [key: string]: any;
+  }>;
+
+  // Support for rich cinematic_flow.acts structure (V7-v2 format)
   cinematic_flow?: {
     acts: Array<{
       id?: string;
       type: string;
       title?: string;
+      startTime?: number;
       duration?: number;
+
+      // ✅ V7-v2: narration directly at act level
+      narration?: string;
+
+      // ✅ V7-v2: Visual and audio configs at act level
+      visual?: any;
+      audio?: any;
+      transitions?: any;
+      anchorPoints?: any[];
+
+      // ✅ V7-v2: Interaction config
+      interaction?: any;
+      audioBehavior?: {
+        onStart?: string;
+        duringInteraction?: any;
+        onComplete?: string;
+      };
+      timeout?: {
+        soft?: number;
+        medium?: number;
+        hard?: number;
+        hints?: any[];
+        autoAction?: any;
+      };
+      tracking?: any;
+
+      // Legacy content structure (also supported)
       content?: {
         visual?: {
-          instruction?: string; // NOT narrated - screen direction only
+          instruction?: string;
           text?: string;
           [key: string]: any;
         };
         audio?: {
-          narration?: string; // NARRATED by TTS
+          narration?: string;
           [key: string]: any;
         };
         interaction?: any;
@@ -50,6 +98,7 @@ interface V7PipelineInput {
     }>;
     timeline?: {
       totalDuration?: number;
+      chapters?: any[];
     };
   };
 }
@@ -229,44 +278,67 @@ Deno.serve(async (req) => {
       // Use provided cinematic_flow.acts directly
       console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts...');
 
-      // Extract ONLY audio.narration for TTS (not visual.instruction)
+      // ✅ V7-v2: Extract narration from BOTH formats:
+      // - act.narration (V7-v2 format)
+      // - act.content.audio.narration (legacy format)
       const narrations: string[] = [];
 
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // Extract narration for TTS from act.content.audio.narration
-          const narration = act.content?.audio?.narration || '';
+          // ✅ V7-v2: Try both narration locations
+          const narration = act.narration ||                    // V7-v2 format (direct)
+                           act.content?.audio?.narration ||    // Legacy nested format
+                           '';
+
           if (narration) {
             narrations.push(narration);
           }
 
+          // ✅ V7-v2: Preserve ALL act-level configurations
           return {
             type: (act.type || 'dramatic') as V7ActType,
             title: act.title || `Ato ${index + 1}`,
-            narrativeSegment: narration, // Only narration, not visual instruction
+            narrativeSegment: narration,
             content: {
-              // Preserve visual instruction as metadata (not for TTS)
-              visualInstruction: act.content?.visual?.instruction || '',
-              // Pass through all visual content
-              ...act.content?.visual,
-              // Pass through interaction content
-              ...act.content?.interaction,
-              // Pass through any existing content
+              // Preserve visual (V7-v2 has visual at act level)
+              visual: act.visual || act.content?.visual || {},
+              // Preserve interaction (V7-v2 has interaction at act level)
+              interaction: act.interaction || act.content?.interaction || null,
+              // Preserve audio config
+              audio: act.audio || act.content?.audio || {},
+              // ✅ V7-v2: Preserve audioBehavior and timeout
+              audioBehavior: act.audioBehavior || null,
+              timeout: act.timeout || null,
+              // Preserve transitions
+              transitions: act.transitions || null,
+              // Preserve anchorPoints per act
+              anchorPoints: act.anchorPoints || null,
+              // Preserve tracking config
+              tracking: act.tracking || null,
+              // Pass through any other content
               ...act.content,
             },
             visualEffects: {
-              mood: act.content?.visual?.mood || 'dramatic',
-              particles: true,
-              glow: true,
+              mood: act.visual?.mood || act.content?.visual?.mood || 'dramatic',
+              particles: act.visual?.particles?.enabled ?? true,
+              glow: act.visual?.glow ?? true,
             },
           };
         }),
         summary: `Aula V7 Cinematográfica: ${input.title}`,
       };
 
-      // Combine all narrations for TTS
-      narrativeForAudio = narrations.join('\n\n');
-      narrationCount = narrations.length;
+      // ✅ V7-v2: If no narrations in acts, try global narrativeScript
+      if (narrations.length === 0 && input.narrativeScript) {
+        console.log('[V7Pipeline] No act-level narrations found, using global narrativeScript');
+        narrativeForAudio = input.narrativeScript;
+        narrationCount = 1;
+      } else {
+        // Combine all narrations for TTS
+        narrativeForAudio = narrations.join('\n\n');
+        narrationCount = narrations.length;
+      }
+
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments for TTS');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
       
@@ -337,34 +409,67 @@ Deno.serve(async (req) => {
       ? Math.ceil(wordTimestamps[wordTimestamps.length - 1].end)
       : input.duration;
     
-    // ✅ CRITICAL FIX: Save cinematic_flow with SCALED durations from cinematicActs
+    // ✅ V7-v2: Save cinematic_flow with SCALED durations and ALL V7-v2 fields
     // This ensures the frontend receives correct timings that match the actual audio
     const cinematic_flow = hasCinematicFlow ? {
       acts: input.cinematic_flow!.acts.map((act, index) => {
         // Get the scaled timing from cinematicActs
         const scaledAct = cinematicActs[index];
         const scaledDuration = scaledAct ? scaledAct.endTime - scaledAct.startTime : act.duration || 60;
-        const scaledStartTime = scaledAct ? scaledAct.startTime : 0;
-        const scaledEndTime = scaledAct ? scaledAct.endTime : scaledDuration;
+        const scaledStartTime = scaledAct ? scaledAct.startTime : act.startTime || 0;
+        const scaledEndTime = scaledAct ? scaledAct.endTime : scaledStartTime + scaledDuration;
+
+        // ✅ V7-v2: Get narration from both formats
+        const narration = act.narration || act.content?.audio?.narration || '';
 
         return {
-          ...act,
+          // ✅ V7-v2: Preserve ALL act-level fields
           id: act.id || `act-${index + 1}`,
+          type: act.type,
+          title: act.title,
+          subtype: (act as any).subtype, // quiz, playground, cta, celebration
+
           // ✅ OVERRIDE original durations with SCALED values
           duration: scaledDuration,
           startTime: scaledStartTime,
           endTime: scaledEndTime,
-          // Ensure content.visual and content.audio are properly structured
+
+          // ✅ V7-v2: Narration at act level (preferred format)
+          narration: narration,
+
+          // ✅ V7-v2: Visual config at act level
+          visual: act.visual || act.content?.visual || {},
+
+          // ✅ V7-v2: Audio config at act level
+          audio: act.audio || act.content?.audio || {},
+
+          // ✅ V7-v2: Transitions config
+          transitions: act.transitions || {},
+
+          // ✅ V7-v2: Interaction config (quiz, playground, cta)
+          interaction: act.interaction || act.content?.interaction || null,
+
+          // ✅ V7-v2: Audio behavior during interaction
+          audioBehavior: act.audioBehavior || null,
+
+          // ✅ V7-v2: Timeout with hints
+          timeout: act.timeout || null,
+
+          // ✅ V7-v2: Anchor points per act
+          anchorPoints: act.anchorPoints || null,
+
+          // ✅ V7-v2: Tracking config
+          tracking: act.tracking || null,
+
+          // Legacy content structure (for backward compatibility)
           content: {
             ...act.content,
-            visual: {
-              instruction: act.content?.visual?.instruction || '', // Screen direction (NOT narrated)
-              ...act.content?.visual,
-            },
+            visual: act.visual || act.content?.visual || {},
             audio: {
-              narration: act.content?.audio?.narration || '', // TTS content
+              narration: narration,
               ...act.content?.audio,
             },
+            interaction: act.interaction || act.content?.interaction || null,
           },
         };
       }),
@@ -380,7 +485,7 @@ Deno.serve(async (req) => {
 
     const lessonContent = {
       model: 'v7-cinematic',
-      version: '2.1.0', // v2.1.0: Fixed act timing scaling to match actual audio duration
+      version: '2.2.0', // v2.2.0: Full V7-v2 support with audioBehavior, timeout, anchorPoints
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
@@ -394,37 +499,78 @@ Deno.serve(async (req) => {
         generatedBy: hasCinematicFlow ? 'v7-pipeline-cinematic-flow' : 'v7-pipeline-ai',
         hasCinematicFlow: hasCinematicFlow,
       },
+
+      // ✅ V7-v2: Enhanced audio config
       audioConfig: {
         url: audioUrl,
         format: 'mp3',
         sampleRate: 44100,
         hasWordTimestamps: wordTimestamps.length > 0,
+        // ✅ V7-v2: Include user's audio config
+        narrationVoice: input.audioConfig?.narrationVoice,
+        voiceSettings: input.audioConfig?.voiceSettings,
+        backgroundMusic: input.audioConfig?.backgroundMusic,
+        soundEffects: input.audioConfig?.soundEffects,
       },
+
+      // ✅ V7-v2: Fallback configurations
+      fallbacks: input.fallbacks || {
+        noWordTimestamps: {
+          strategy: 'percentage',
+          pauseAt: 0.3,
+          duration: 3000,
+        },
+        audioLoadError: {
+          showSubtitles: true,
+          continueWithText: true,
+        },
+      },
+
+      // ✅ V7-v2: Global anchor points
+      anchorPoints: input.anchorPoints || [],
+
       // Store the original cinematic_flow for frontend to use
       cinematic_flow: cinematic_flow,
+
       // Also store the processed structure for backward compatibility
       cinematicStructure: {
         acts: cinematicActs,
         totalDuration: totalDuration,
         actTypes: cinematicActs.map(a => a.type),
       },
+
       interactivity: {
         pausePoints: cinematicActs
-          .filter(a => a.type === 'interaction' || a.type === 'playground')
+          .filter(a => a.type === 'interaction' || a.type === 'playground' || a.type === 'cta')
           .map(a => ({ actId: a.id, time: a.startTime, type: a.type })),
         quizzes: cinematicActs
-          .filter(a => a.type === 'interaction')
+          .filter(a => a.type === 'interaction' || a.type === 'quiz')
           .map(a => ({
             actId: a.id,
             options: (a.content as V7InteractionContent).options,
+            // ✅ V7-v2: Include audioBehavior and timeout
+            audioBehavior: (a.content as any).audioBehavior,
+            timeout: (a.content as any).timeout,
           })),
         playgrounds: cinematicActs
           .filter(a => a.type === 'playground')
           .map(a => ({
             actId: a.id,
             config: a.content as V7PlaygroundContent,
+            // ✅ V7-v2: Include audioBehavior and timeout
+            audioBehavior: (a.content as any).audioBehavior,
+            timeout: (a.content as any).timeout,
+          })),
+        ctas: cinematicActs
+          .filter(a => a.type === 'cta' || a.type === 'revelation')
+          .map(a => ({
+            actId: a.id,
+            config: a.content,
+            audioBehavior: (a.content as any).audioBehavior,
+            timeout: (a.content as any).timeout,
           })),
       },
+
       visualTheme: {
         primaryColor: '#667eea',
         secondaryColor: '#764ba2',
@@ -434,6 +580,7 @@ Deno.serve(async (req) => {
         glowEffects: true,
         cinematicCanvas: true,
       },
+
       soundConfig: {
         transitionSounds: true,
         interactionFeedback: true,
