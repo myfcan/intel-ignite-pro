@@ -1,9 +1,10 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
-// ✅ V7-v2: Suporta fade in/out de áudio e hints progressivos
+// ✅ V7-v2.1: Sistema de estados de interação + efeitos sonoros
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
 
 interface QuizOption {
   id: string;
@@ -20,6 +21,10 @@ interface AudioControl {
   fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
   pauseWithFade?: (duration?: number) => Promise<void>;
   resumeWithFade?: (duration?: number) => Promise<void>;
+  // V7-v2.1: Estado de interação e efeitos sonoros
+  interactionState?: InteractionState;
+  updateInteractionState?: (state: InteractionState) => void;
+  playSoundEffect?: (effect: SoundEffectType, volume?: number) => void;
 }
 
 interface V7PhaseQuizProps {
@@ -79,35 +84,48 @@ export const V7PhaseQuiz = ({
   audioControlRef.current = audioControl;
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  // ✅ V7-v2: Sistema de hints progressivos
+  // ✅ V7-v2.1: Sistema de hints progressivos com estados de interação
   useEffect(() => {
+    const ctrl = audioControlRef.current;
+
     if (isRevealed || selectedIds.length > 0) {
       // Limpar hints se usuário interagiu
       setCurrentHint(null);
       setHintLevel(0);
+      // Atualizar estado para "thinking"
+      ctrl?.updateInteractionState?.('thinking');
       return;
     }
 
-    // Soft hint (7s)
+    // Iniciar como "waiting"
+    ctrl?.updateInteractionState?.('waiting');
+
+    // Soft hint (7s) - estado: stuck
     const softTimer = setTimeout(() => {
       if (!isRevealed && selectedIds.length === 0) {
         setCurrentHint(timeoutConfig.hints[0]);
         setHintLevel(1);
+        ctrl?.updateInteractionState?.('stuck');
+        ctrl?.playSoundEffect?.('hint', 0.3);
       }
     }, timeoutConfig.soft * 1000);
 
-    // Medium hint (15s)
+    // Medium hint (15s) - estado: struggling
     const mediumTimer = setTimeout(() => {
       if (!isRevealed && selectedIds.length === 0) {
         setCurrentHint(timeoutConfig.hints[1]);
         setHintLevel(2);
+        ctrl?.updateInteractionState?.('struggling');
+        ctrl?.playSoundEffect?.('hint', 0.4);
       }
     }, timeoutConfig.medium * 1000);
 
-    // Hard timeout - auto avançar (30s)
+    // Hard timeout - auto avançar (30s) - estado: abandoned
     const hardTimer = setTimeout(() => {
       if (!isRevealed && selectedIds.length === 0) {
         setCurrentHint(timeoutConfig.hints[2]);
+        ctrl?.updateInteractionState?.('abandoned');
+        ctrl?.playSoundEffect?.('timeout', 0.5);
         // Auto-revelar após 2s mostrando o hint final
         setTimeout(() => {
           if (!isRevealed) {
@@ -147,9 +165,14 @@ export const V7PhaseQuiz = ({
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
+
+    // 🆕 V7-v2.1: Tocar efeito sonoro de seleção
+    const ctrl = audioControlRef.current;
+    ctrl?.playSoundEffect?.('click', 0.3);
+
     // ✅ Do NOT pause audio on option selection - let narration continue
-    setSelectedIds(prev => 
-      prev.includes(id) 
+    setSelectedIds(prev =>
+      prev.includes(id)
         ? prev.filter(i => i !== id)
         : [...prev, id]
     );
@@ -159,6 +182,11 @@ export const V7PhaseQuiz = ({
     // Limpar timers
     timersRef.current.forEach(timer => clearTimeout(timer));
     console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
+
+    // 🆕 V7-v2.1: Tocar efeito de revelação
+    const ctrl = audioControlRef.current;
+    ctrl?.playSoundEffect?.('reveal', 0.5);
+    ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
@@ -176,6 +204,8 @@ export const V7PhaseQuiz = ({
         setAudioPausedByQuiz(false);
         console.log('[V7PhaseQuiz] 🔊 Audio retomado com fade');
       }
+      // Tocar som de sucesso antes de completar
+      ctrl?.playSoundEffect?.('success', 0.4);
       onComplete?.(selectedIds);
     }, 3000);
   }, [selectedIds, onComplete, audioPausedByQuiz]);
