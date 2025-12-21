@@ -1,8 +1,9 @@
 // V7PhasePlayground - Split screen playground: Amateur vs Professional
-// ✅ REFACTORED: User-driven progression with continue button
-// - PAUSES audio when entering playground
+// ✅ V7-v2: User-driven progression with continue button
+// - PAUSES audio with FADE when entering playground
 // - User clicks pulsing button to see next step
-// - Audio stays paused until user completes all steps
+// - Audio resumes with FADE after completion
+// - Hints progressivos após timeout
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +16,17 @@ interface PlaygroundResult {
   verdict: 'bad' | 'good' | 'excellent';
 }
 
+interface AudioControl {
+  pause: () => void;
+  play: () => void;
+  togglePlayPause: () => void;
+  isPlaying: boolean;
+  // V7-v2: Novos métodos com fade
+  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
+  pauseWithFade?: (duration?: number) => Promise<void>;
+  resumeWithFade?: (duration?: number) => Promise<void>;
+}
+
 interface V7PhasePlaygroundProps {
   challengeTitle: string;
   challengeSubtitle?: string;
@@ -25,11 +37,11 @@ interface V7PhasePlaygroundProps {
   sceneIndex: number;
   phaseProgress: number;
   onComplete?: () => void;
-  audioControl?: {
-    pause: () => void;
-    play: () => void;
-    togglePlayPause: () => void;
-    isPlaying: boolean;
+  audioControl?: AudioControl;
+  // V7-v2: Configuração de timeouts
+  timeoutConfig?: {
+    perStep: number;   // segundos por step sem interação
+    hints: string[];
   };
 }
 
@@ -45,34 +57,85 @@ export const V7PhasePlayground = ({
   professionalResult,
   onComplete,
   audioControl,
+  timeoutConfig = {
+    perStep: 10,
+    hints: [
+      '👆 Clique no botão para continuar...',
+      '⏳ Não se apresse, analise com calma...',
+      '💡 Perceba a diferença na estrutura...'
+    ]
+  }
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
+  const [currentHint, setCurrentHint] = useState<string | null>(null);
+
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
+  const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ PAUSE audio immediately when playground appears
+  // ✅ V7-v2: PAUSE audio with FADE when playground appears
   useEffect(() => {
     const ctrl = audioControlRef.current;
-    if (ctrl?.isPlaying) {
-      ctrl.pause();
-      setAudioPausedByPlayground(true);
-      console.log('[V7PhasePlayground] Audio paused - waiting for user to complete all steps');
-    }
+    if (!ctrl) return;
+
+    const pauseAudio = async () => {
+      if (ctrl.isPlaying) {
+        // Usar pauseWithFade se disponível
+        if (ctrl.pauseWithFade) {
+          await ctrl.pauseWithFade(300);
+        } else {
+          ctrl.pause();
+        }
+        setAudioPausedByPlayground(true);
+        console.log('[V7PhasePlayground] 🔇 Audio pausado com fade');
+      }
+    };
+
+    pauseAudio();
   }, []);
 
-  const handleContinue = useCallback(() => {
+  // ✅ V7-v2: Hints por step
+  useEffect(() => {
+    // Limpar hint anterior
+    setCurrentHint(null);
+
+    // Configurar novo timer
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+    }
+
+    hintTimerRef.current = setTimeout(() => {
+      const hintIndex = currentStep % timeoutConfig.hints.length;
+      setCurrentHint(timeoutConfig.hints[hintIndex]);
+    }, timeoutConfig.perStep * 1000);
+
+    return () => {
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+      }
+    };
+  }, [currentStep, timeoutConfig]);
+
+  const handleContinue = useCallback(async () => {
+    // Limpar hint ao interagir
+    setCurrentHint(null);
+
     if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // Final step - resume audio and complete the playground
+      // ✅ V7-v2: Final step - resume audio with FADE
       const ctrl = audioControlRef.current;
-      if (audioPausedByPlayground && ctrl && !ctrl.isPlaying) {
-        ctrl.play();
+      if (audioPausedByPlayground && ctrl) {
+        if (ctrl.resumeWithFade) {
+          await ctrl.resumeWithFade(500);
+        } else if (!ctrl.isPlaying) {
+          ctrl.play();
+        }
         setAudioPausedByPlayground(false);
-        console.log('[V7PhasePlayground] Audio resumed after completing all steps');
+        console.log('[V7PhasePlayground] 🔊 Audio retomado com fade');
       }
       onCompleteRef.current?.();
     }
@@ -360,6 +423,27 @@ export const V7PhasePlayground = ({
             </motion.span>
           </span>
         </motion.button>
+
+        {/* Hint progressivo - V7-v2 */}
+        <AnimatePresence>
+          {currentHint && (
+            <motion.div
+              className="text-center mt-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.p
+                className="text-amber-400 text-sm font-medium"
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {currentHint}
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
+// ✅ V7-v2: Uses useV7AudioManager with fade capabilities for interactions
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { V7MinimalTimeline } from './V7MinimalTimeline';
@@ -6,7 +7,7 @@ import { V7AudioIndicator } from './V7AudioIndicator';
 import { V7AudioControls } from './V7AudioControls';
 import { V7DiscreteNavigation } from './V7DiscreteNavigation';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
-import { useV7CinematicAudio } from './useV7CinematicAudio';
+import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
@@ -95,8 +96,8 @@ export const V7PhasePlayer = ({
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
 
-  // Audio hook
-  const audio = useV7CinematicAudio({
+  // ✅ V7-v2: Audio hook with fade capabilities
+  const audio = useV7AudioManager({
     onEnded: () => {
       playSound('completion');
       onComplete?.();
