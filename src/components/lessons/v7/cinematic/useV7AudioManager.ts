@@ -1,7 +1,17 @@
 // V7 Audio Manager - Sistema de áudio inteligente com fade in/out
 // Suporta: narração principal, áudio ambiente, áudio contextual para interações
+// ✅ V7-v2.1: Sistema de estados de interação + feedback sonoro
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+
+// 🆕 Sistema de estados de interação
+export type InteractionState =
+  | 'idle'         // Não está em interação
+  | 'waiting'      // Aguardando primeira ação
+  | 'thinking'     // Usuário interagiu mas não completou
+  | 'stuck'        // Passou do soft timeout
+  | 'struggling'   // Passou do medium timeout
+  | 'abandoned';   // Vai ser auto-completado
 
 interface ContextualLoop {
   triggerAfter: number;
@@ -20,14 +30,27 @@ interface AudioBehavior {
   onComplete: 'resume' | 'fadeIn' | 'next';
 }
 
+// 🆕 Tipos de efeitos sonoros
+export type SoundEffectType =
+  | 'click'        // Clique em opção
+  | 'select'       // Seleção confirmada
+  | 'success'      // Acerto/conclusão
+  | 'error'        // Erro
+  | 'hint'         // Hint aparecendo
+  | 'timeout'      // Timeout warning
+  | 'whoosh'       // Transição
+  | 'reveal';      // Revelação
+
 interface UseV7AudioManagerProps {
   onTimeUpdate?: (currentTime: number) => void;
   onEnded?: () => void;
+  onStateChange?: (state: InteractionState) => void;
 }
 
 export const useV7AudioManager = ({
   onTimeUpdate,
-  onEnded
+  onEnded,
+  onStateChange
 }: UseV7AudioManagerProps = {}) => {
   // State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,6 +59,7 @@ export const useV7AudioManager = ({
   const [volume, setVolumeState] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [interactionState, setInteractionState] = useState<InteractionState>('idle');
 
   // Refs
   const mainAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -44,6 +68,85 @@ export const useV7AudioManager = ({
   const contextualTimersRef = useRef<NodeJS.Timeout[]>([]);
   const savedVolumeRef = useRef<number>(0.8);
   const savedTimeRef = useRef<number>(0);
+
+  // 🆕 Refs para efeitos sonoros (pré-carregados)
+  const soundEffectsRef = useRef<Map<SoundEffectType, HTMLAudioElement>>(new Map());
+
+  // 🆕 Inicializar efeitos sonoros
+  useEffect(() => {
+    const effects: [SoundEffectType, string][] = [
+      ['click', '/sounds/click.mp3'],
+      ['select', '/sounds/select.mp3'],
+      ['success', '/sounds/success.mp3'],
+      ['error', '/sounds/error.mp3'],
+      ['hint', '/sounds/hint.mp3'],
+      ['timeout', '/sounds/timeout.mp3'],
+      ['whoosh', '/sounds/whoosh.mp3'],
+      ['reveal', '/sounds/reveal.mp3'],
+    ];
+
+    effects.forEach(([type, url]) => {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.volume = 0.5;
+      // Fallback para som vazio se arquivo não existir
+      audio.src = url;
+      audio.onerror = () => {
+        console.log(`[V7AudioManager] Sound effect "${type}" not found, using fallback`);
+      };
+      soundEffectsRef.current.set(type, audio);
+    });
+
+    return () => {
+      soundEffectsRef.current.forEach(audio => {
+        audio.pause();
+        audio.src = '';
+      });
+      soundEffectsRef.current.clear();
+    };
+  }, []);
+
+  // 🆕 Tocar efeito sonoro
+  const playSoundEffect = useCallback((effect: SoundEffectType, volumeOverride?: number) => {
+    const audio = soundEffectsRef.current.get(effect);
+    if (audio) {
+      audio.currentTime = 0;
+      audio.volume = volumeOverride ?? 0.5;
+      audio.play().catch(() => {
+        // Ignorar erros silenciosamente (autoplay blocked, etc)
+      });
+      console.log(`[V7AudioManager] 🔊 Sound effect: ${effect}`);
+    }
+  }, []);
+
+  // 🆕 Atualizar estado de interação com callback
+  const updateInteractionState = useCallback((newState: InteractionState) => {
+    setInteractionState(newState);
+    onStateChange?.(newState);
+    console.log(`[V7AudioManager] 🎮 Interaction state: ${newState}`);
+
+    // Ajustar volume baseado no estado
+    if (mainAudioRef.current && isInteracting) {
+      switch (newState) {
+        case 'waiting':
+          fadeToVolume(0.15, 300);
+          break;
+        case 'thinking':
+          fadeToVolume(0.10, 200);
+          break;
+        case 'stuck':
+          fadeToVolume(0.08, 200);
+          playSoundEffect('hint', 0.3);
+          break;
+        case 'struggling':
+          fadeToVolume(0.05, 200);
+          break;
+        case 'abandoned':
+          playSoundEffect('timeout', 0.4);
+          break;
+      }
+    }
+  }, [onStateChange, isInteracting]);
 
   // Initialize audio elements
   useEffect(() => {
@@ -171,6 +274,7 @@ export const useV7AudioManager = ({
   // 🎭 START INTERACTION - Inicia modo interação com comportamento de áudio específico
   const startInteraction = useCallback(async (behavior: AudioBehavior) => {
     setIsInteracting(true);
+    updateInteractionState('waiting');
     savedTimeRef.current = mainAudioRef.current?.currentTime || 0;
 
     switch (behavior.onStart) {
@@ -202,13 +306,16 @@ export const useV7AudioManager = ({
     }
 
     console.log('[V7AudioManager] 🎭 Interação iniciada:', behavior.onStart);
-  }, [pauseWithFade, fadeToVolume]);
+  }, [pauseWithFade, fadeToVolume, updateInteractionState]);
 
   // 🎬 END INTERACTION - Finaliza modo interação
   const endInteraction = useCallback(async (behavior: AudioBehavior) => {
     // Limpar timers contextuais
     contextualTimersRef.current.forEach(timer => clearTimeout(timer));
     contextualTimersRef.current = [];
+
+    // Tocar som de sucesso
+    playSoundEffect('success', 0.4);
 
     switch (behavior.onComplete) {
       case 'resume':
@@ -233,8 +340,9 @@ export const useV7AudioManager = ({
     }
 
     setIsInteracting(false);
+    updateInteractionState('idle');
     console.log('[V7AudioManager] 🎬 Interação finalizada:', behavior.onComplete);
-  }, [resumeWithFade, fadeToVolume, volume]);
+  }, [resumeWithFade, fadeToVolume, volume, playSoundEffect, updateInteractionState]);
 
   // 💬 START CONTEXTUAL LOOPS - Inicia áudios contextuais durante interação
   const startContextualLoops = useCallback((loops: ContextualLoop[]) => {
@@ -337,6 +445,7 @@ export const useV7AudioManager = ({
     volume,
     isMuted,
     isInteracting,
+    interactionState,
 
     // Basic actions
     loadAudio,
@@ -353,6 +462,10 @@ export const useV7AudioManager = ({
     resumeWithFade,
     startInteraction,
     endInteraction,
+
+    // 🆕 Interaction state management
+    updateInteractionState,
+    playSoundEffect,
 
     // Helpers
     formatTime,
