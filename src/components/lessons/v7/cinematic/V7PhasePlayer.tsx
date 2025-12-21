@@ -1,6 +1,6 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
 // ✅ V7-v2: Uses useV7AudioManager with fade capabilities for interactions
-// ✅ V7-v2: Simple time-based pause for interactive phases
+// ✅ V7-v2: Uses useAnchorText for keyword-based pause sync
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -11,6 +11,7 @@ import { V7DiscreteNavigation } from './V7DiscreteNavigation';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
+import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
 
@@ -188,67 +189,138 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, isLoading, playSound]);
 
-  // ✅ SIMPLIFIED: Remove complex anchorText for now - use time-based pause instead
-  // The anchorText system can be re-enabled later when wordTimestamps are reliable
-  const manualResume = useCallback(() => {
-    if (!audio.isPlaying) {
-      audio.play();
-      console.log(`[V7PhasePlayer] ▶️ Manual resume triggered`);
+  // ✅ ANCHOR TEXT SYSTEM: Flexible keyword-based sync (V5-inspired)
+  // Supports multiple action types: pause, resume, show, hide, highlight, trigger
+  const anchorActions = useMemo((): AnchorAction[] => {
+    if (!currentPhase) return [];
+    
+    // Priority 1: Use anchorActions if defined
+    if (currentPhase.anchorActions && currentPhase.anchorActions.length > 0) {
+      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" has ${currentPhase.anchorActions.length} anchorActions:`, 
+        currentPhase.anchorActions.map(a => `${a.id}:${a.keyword}`));
+      return currentPhase.anchorActions;
     }
-  }, [audio]);
+    
+    // Priority 2: Convert legacy pauseKeywords to actions
+    if (currentPhase.pauseKeywords && currentPhase.pauseKeywords.length > 0) {
+      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" using legacy pauseKeywords:`, currentPhase.pauseKeywords);
+      return convertPauseKeywordsToActions(currentPhase.pauseKeywords);
+    }
+    
+    return [];
+  }, [currentPhase]);
+
+  const handleAnchorEvent = useCallback((event: AnchorEvent) => {
+    console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
+  }, []);
+
+  // ✅ Check if we should enable anchor text system
+  const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'playground';
+  const hasAnchorActions = anchorActions.length > 0;
+  const hasWordTimestamps = wordTimestamps.length > 0;
   
-  // ✅ SIMPLE TIME-BASED PAUSE SYSTEM
-  // Pauses audio at 30% into interactive phases - ALWAYS WORKS, no dependencies
-  const pauseTriggeredRef = useRef<Set<string>>(new Set());
+  // ✅ CRITICAL: Enable anchor system whenever we have actions and wordTimestamps
+  // Not just for interactive phases - any phase can have anchor actions
+  const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
+  
+  // Log anchor system status for debugging
+  useEffect(() => {
+    console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
+      shouldEnableAnchors,
+      hasAudio,
+      hasWordTimestamps,
+      hasAnchorActions,
+      anchorCount: anchorActions.length,
+      wordTimestampCount: wordTimestamps.length,
+      actions: anchorActions.map(a => `${a.id}:${a.keyword}`)
+    });
+  }, [currentPhase?.id, currentPhase?.type, shouldEnableAnchors, hasAudio, hasWordTimestamps, hasAnchorActions, anchorActions]);
+
+  const { 
+    isPausedByAnchor, 
+    manualResume,
+    isElementVisible,
+    isElementHighlighted,
+    visibleElements,
+    highlightedElements
+  } = useAnchorText({
+    wordTimestamps: wordTimestamps,
+    currentTime: audio.currentTime,
+    actions: anchorActions,
+    isPlaying: audio.isPlaying,
+    phaseId: currentPhase?.id || '',
+    // ✅ CRITICAL: Enable whenever we have the required data
+    enabled: shouldEnableAnchors,
+    onPause: () => {
+      if (audio.isPlaying) {
+        audio.pause();
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE for phase "${currentPhase?.id}"`);
+      }
+    },
+    onResume: () => {
+      if (!audio.isPlaying) {
+        audio.play();
+        console.log(`[V7PhasePlayer] ▶️ ANCHOR RESUME for phase "${currentPhase?.id}"`);
+      }
+    },
+    onShow: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] 👁️ SHOW element: ${targetId}`, payload);
+    },
+    onHide: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] 🙈 HIDE element: ${targetId}`, payload);
+    },
+    onHighlight: (targetId, payload) => {
+      console.log(`[V7PhasePlayer] ✨ HIGHLIGHT element: ${targetId}`, payload);
+    },
+    onTrigger: (action) => {
+      console.log(`[V7PhasePlayer] 🎬 TRIGGER action: ${action.id}`, action.payload);
+    },
+    onAnchorEvent: handleAnchorEvent,
+  });
+  
+  // ✅ FALLBACK: Auto-pause for interactive phases when there are NO wordTimestamps
+  // This ensures the lesson flow works even without precise word-level sync
+  const fallbackPauseTriggeredRef = useRef<Set<string>>(new Set());
   
   useEffect(() => {
-    // Early exits
-    if (!currentPhase) return;
+    // Only use fallback if:
+    // 1. We're in an interactive phase
+    // 2. We have anchor actions that include a pause
+    // 3. We DON'T have wordTimestamps (so anchor system won't work)
+    // 4. Audio is playing
+    if (!isInteractivePhase || !hasAnchorActions || hasWordTimestamps || !audio.isPlaying) {
+      return;
+    }
     
-    const phaseId = currentPhase.id;
-    const phaseType = currentPhase.type;
-    const isInteractive = phaseType === 'interaction' || phaseType === 'playground';
+    const phaseId = currentPhase?.id || '';
+    const hasPauseAction = anchorActions.some(a => a.type === 'pause');
     
-    // Log every interactive phase check
-    if (isInteractive && audio.isPlaying) {
-      const phaseStart = currentPhase.startTime;
-      const phaseDuration = currentPhase.endTime - phaseStart;
-      const timeIntoPhase = audio.currentTime - phaseStart;
-      const progress = timeIntoPhase / phaseDuration;
+    // Only trigger fallback once per phase
+    if (hasPauseAction && !fallbackPauseTriggeredRef.current.has(phaseId)) {
+      // Calculate when to pause: after 80% of phase narration time
+      // This gives time for intro narration before showing UI
+      const phaseDuration = (currentPhase?.endTime || 0) - (currentPhase?.startTime || 0);
+      const timeInPhase = audio.currentTime - (currentPhase?.startTime || 0);
+      const progressInPhase = timeInPhase / phaseDuration;
       
-      console.log(`[V7PhasePlayer] 🔍 Interactive phase "${phaseId}": ${(progress * 100).toFixed(0)}% (time: ${audio.currentTime.toFixed(1)}s, phase: ${phaseStart.toFixed(1)}s-${currentPhase.endTime.toFixed(1)}s)`);
+      // Pause after first 3-5 seconds or 30% of phase, whichever comes first
+      const shouldPause = timeInPhase >= 3 || progressInPhase >= 0.3;
+      
+      if (shouldPause) {
+        console.log(`[V7PhasePlayer] ⏸️ FALLBACK PAUSE for "${phaseId}" (no wordTimestamps, ${timeInPhase.toFixed(1)}s into phase)`);
+        fallbackPauseTriggeredRef.current.add(phaseId);
+        audio.pause();
+      }
     }
-    
-    // Only process interactive phases
-    if (!isInteractive) return;
-    
-    // Must be playing
-    if (!audio.isPlaying) return;
-    
-    // Only trigger once per phase
-    if (pauseTriggeredRef.current.has(phaseId)) return;
-    
-    // Calculate progress into phase
-    const phaseStart = currentPhase.startTime;
-    const phaseEnd = currentPhase.endTime;
-    const phaseDuration = phaseEnd - phaseStart;
-    const timeIntoPhase = audio.currentTime - phaseStart;
-    const progress = timeIntoPhase / phaseDuration;
-    
-    // ✅ PAUSE at 30% into the phase (gives time for intro narration)
-    if (progress >= 0.30 && timeIntoPhase >= 2) { // At least 2 seconds into phase
-      console.log(`[V7PhasePlayer] ⏸️ AUTO-PAUSE at ${(progress * 100).toFixed(0)}% of "${phaseId}" (${phaseType}) - ${timeIntoPhase.toFixed(1)}s into phase`);
-      pauseTriggeredRef.current.add(phaseId);
-      audio.pause();
-    }
-  }, [audio.isPlaying, audio.currentTime, currentPhase]);
+  }, [isInteractivePhase, hasAnchorActions, hasWordTimestamps, audio.isPlaying, audio.currentTime, currentPhase, anchorActions]);
   
-  // Log phase entry
+  // Reset fallback tracker when phase changes
   useEffect(() => {
+    // Clear fallback when entering a new phase
     if (currentPhase?.id) {
-      console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type}) at ${currentPhase.startTime.toFixed(1)}s-${currentPhase.endTime.toFixed(1)}s`);
+      console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);
     }
-  }, [currentPhase?.id]);
+  }, [currentPhase?.id, currentPhase?.type]);
 
   // Keyboard navigation
   useEffect(() => {
