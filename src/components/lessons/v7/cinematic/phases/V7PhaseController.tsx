@@ -57,6 +57,7 @@ export interface V7SceneContent {
   warning?: string;
   ctaTitle?: string;
   ctaOptions?: any[];
+  pauseKeyword?: string; // ✅ V7-v4: Keyword to pause narration
 
   // Animation/Visual effect properties
   backgroundColor?: string;
@@ -140,7 +141,7 @@ export interface V7Phase {
   title: string;
   startTime: number;
   endTime: number;
-  type: 'loading' | 'dramatic' | 'narrative' | 'interaction' | 'playground' | 'revelation' | 'gamification';
+  type: 'loading' | 'dramatic' | 'narrative' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
