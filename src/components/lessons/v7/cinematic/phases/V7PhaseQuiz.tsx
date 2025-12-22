@@ -2,11 +2,14 @@
 // Features: Checkboxes with animation, result reveal, personalized feedback
 // ✅ V7-v2.1: Sistema de estados de interação + efeitos sonoros
 // ✅ V7-v2.2: TTS contextual com ElevenLabs para sussurros durante interação
+// ✅ V7-v3.1: TTS para feedback + confetti explosion
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
 import { useV7ContextualTTS } from '../useV7ContextualTTS';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuizOption {
   id: string;
@@ -275,6 +278,75 @@ export const V7PhaseQuiz = ({
     setOptionsRevealed(true);
   }, []);
 
+  // ✅ V7-v3.1: Função para falar o feedback com TTS
+  const speakFeedback = useCallback(async (text: string) => {
+    try {
+      console.log('[V7PhaseQuiz] 🎤 Falando feedback:', text);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            hints: [{ text, volume: 0.8 }],
+            whisper: false // Voz normal, não sussurro
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate feedback audio');
+      }
+
+      const data = await response.json();
+      if (data.audios && data.audios.length > 0) {
+        const audioUrl = `data:audio/mpeg;base64,${data.audios[0].audioContent}`;
+        const audio = new Audio(audioUrl);
+        audio.volume = 0.8;
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('[V7PhaseQuiz] ❌ Erro ao falar feedback:', error);
+    }
+  }, []);
+
+  // ✅ V7-v3.1: Função para disparar confetti
+  const fireConfetti = useCallback((isPositive: boolean) => {
+    const colors = isPositive 
+      ? ['#22c55e', '#4ade80', '#86efac', '#ffffff'] // Verde
+      : ['#a855f7', '#c084fc', '#e879f9', '#ffffff']; // Roxo (encorajador)
+
+    // Explosão central
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors,
+    });
+
+    // Explosões laterais
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors,
+      });
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors,
+      });
+    }, 150);
+  }, []);
+
   // ✅ FASE 1: Segundo clique confirma a resposta
   const handleConfirm = useCallback(() => {
     // Limpar timers (hints visuais) e parar TTS
@@ -290,7 +362,24 @@ export const V7PhaseQuiz = ({
     ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
-    setTimeout(() => setShowResult(true), 500);
+    setTimeout(() => {
+      setShowResult(true);
+      
+      // ✅ V7-v3.1: Calcular resultado e disparar confetti + TTS
+      const badCount = selectedIds.filter(id => 
+        options.find(o => o.id === id)?.category === 'bad'
+      ).length;
+      const isPositiveResult = badCount < selectedIds.length / 2;
+      
+      // Disparar confetti
+      fireConfetti(isPositiveResult);
+      
+      // Falar feedback
+      const feedbackText = isPositiveResult 
+        ? (correctFeedback || 'Você já tem bases sólidas para dominar IA!')
+        : (incorrectFeedback || 'Não se preocupe - você está aqui para mudar isso!');
+      speakFeedback(feedbackText);
+    }, 500);
 
     // ✅ V7-v2 FIX: RETOMAR narração de onde parou após mostrar resultado
     setTimeout(async () => {
@@ -307,8 +396,8 @@ export const V7PhaseQuiz = ({
         setAudioPausedByQuiz(false);
       }
       onComplete?.(selectedIds);
-    }, 3000);
-  }, [selectedIds, onComplete, audioPausedByQuiz]);
+    }, 4500); // Aumentar delay para dar tempo do feedback ser falado
+  }, [selectedIds, onComplete, audioPausedByQuiz, options, correctFeedback, incorrectFeedback, fireConfetti, speakFeedback]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
