@@ -409,7 +409,9 @@ function transformActsToPhases(
         },
         phaseType,
         startTime, // Use calculated startTime
-        duration
+        duration,
+        wordTimestamps, // ✅ V7-v2.3: Pass word timestamps for micro-scene generation
+        true // enableMicroScenes
       ),
     };
 
@@ -570,13 +572,231 @@ function extractMood(visual: any): V7Phase['mood'] {
   return 'neutral';
 }
 
+// ============================================================================
+// MICRO-SCENE GENERATION (V7-v2.3)
+// Creates granular 2-5 second scenes aligned with narration for cinematic feel
+// ============================================================================
+
+interface MicroSceneSegment {
+  text: string;
+  startTime: number;
+  endTime: number;
+  type: 'hook' | 'statement' | 'question' | 'emphasis' | 'pause' | 'number' | 'reveal';
+}
+
+/**
+ * Detect sentence boundaries and types from narration text
+ * Returns segments with timing info when word timestamps available
+ */
+function segmentNarrationForMicroScenes(
+  narration: string,
+  wordTimestamps: Array<{ word: string; start: number; end: number }>,
+  actStartTime: number,
+  actEndTime: number
+): MicroSceneSegment[] {
+  if (!narration || narration.trim().length === 0) {
+    return [];
+  }
+
+  const segments: MicroSceneSegment[] = [];
+
+  // Get word timestamps within this act's time range
+  const actWords = wordTimestamps.filter(
+    w => w.start >= actStartTime && w.end <= actEndTime
+  );
+
+  // Split narration into sentences/phrases
+  const sentences = narration
+    .split(/([.!?]+)/)
+    .reduce((acc: string[], curr, i, arr) => {
+      // Combine sentence with its punctuation
+      if (i % 2 === 0) {
+        const punct = arr[i + 1] || '';
+        const combined = (curr + punct).trim();
+        if (combined) acc.push(combined);
+      }
+      return acc;
+    }, [])
+    .filter(s => s.length > 0);
+
+  if (sentences.length === 0) {
+    // Fallback: treat entire narration as one segment
+    sentences.push(narration.trim());
+  }
+
+  // Create segments with timing from word timestamps
+  let currentWordIndex = 0;
+
+  sentences.forEach((sentence, sentenceIndex) => {
+    // Estimate how many words in this sentence
+    const sentenceWords = sentence.split(/\s+/).filter(w => w.length > 0);
+    const wordCount = sentenceWords.length;
+
+    // Find matching words in timestamps
+    const segmentStartWord = actWords[currentWordIndex];
+    const segmentEndWordIndex = Math.min(currentWordIndex + wordCount - 1, actWords.length - 1);
+    const segmentEndWord = actWords[segmentEndWordIndex];
+
+    // Determine segment type
+    let segmentType: MicroSceneSegment['type'] = 'statement';
+    const lowerSentence = sentence.toLowerCase();
+
+    if (lowerSentence.includes('você sabia') || lowerSentence.includes('voce sabia')) {
+      segmentType = 'hook';
+    } else if (sentence.includes('?')) {
+      segmentType = 'question';
+    } else if (/\d+%/.test(sentence) || /\b\d{2,}\b/.test(sentence)) {
+      segmentType = 'number';
+    } else if (lowerSentence.includes('importante') || lowerSentence.includes('crucial') ||
+               lowerSentence.includes('atenção') || sentence.includes('!')) {
+      segmentType = 'emphasis';
+    }
+
+    // Calculate timing
+    const segmentStart = segmentStartWord?.start ?? (actStartTime + (sentenceIndex / sentences.length) * (actEndTime - actStartTime));
+    const segmentEnd = segmentEndWord?.end ?? (actStartTime + ((sentenceIndex + 1) / sentences.length) * (actEndTime - actStartTime));
+
+    segments.push({
+      text: sentence,
+      startTime: segmentStart,
+      endTime: segmentEnd,
+      type: segmentType,
+    });
+
+    currentWordIndex = segmentEndWordIndex + 1;
+  });
+
+  return segments;
+}
+
+/**
+ * Generate micro-scenes from narration segments
+ * Creates 2-5 second scenes for a cinematic feel
+ */
+function generateMicroScenesFromNarration(
+  act: any,
+  segments: MicroSceneSegment[],
+  actStartTime: number,
+  actDuration: number,
+  phaseType: V7Phase['type']
+): V7Scene[] {
+  const scenes: V7Scene[] = [];
+  const visual = act.content?.visual || {};
+  const audio = act.content?.audio || {};
+
+  const commonFields = {
+    narration: audio.narration || act.narration || '',
+    explanation: visual.explanation || '',
+    tip: visual.tip || '',
+  };
+
+  // Animation types for variety
+  const animations: Array<V7Scene['animation']> = ['fade', 'slide-up', 'scale-up', 'zoom-in', 'letter-by-letter'];
+  const sceneTypes: Array<V7Scene['type']> = ['text-reveal', 'letterbox', 'number-reveal'];
+
+  segments.forEach((segment, index) => {
+    const duration = Math.max(2, segment.endTime - segment.startTime); // Min 2 seconds
+
+    // Choose scene type based on segment type
+    let sceneType: V7Scene['type'] = 'text-reveal';
+    let animation: V7Scene['animation'] = animations[index % animations.length];
+    let content: V7Scene['content'] = {};
+
+    switch (segment.type) {
+      case 'hook':
+        sceneType = 'letterbox';
+        animation = 'letterbox';
+        content = {
+          mainText: segment.text,
+          hookQuestion: segment.text,
+          aspectRatio: 'cinematic',
+          backgroundColor: 'black',
+          glowEffect: true,
+        };
+        break;
+
+      case 'question':
+        sceneType = 'text-reveal';
+        animation = 'scale-up';
+        content = {
+          mainText: segment.text,
+          glowEffect: true,
+          pulseEffect: true,
+          pulseColor: '#22D3EE',
+        };
+        break;
+
+      case 'number':
+        sceneType = 'number-reveal';
+        animation = 'count-up';
+        // Extract number from text
+        const numberMatch = segment.text.match(/(\d+%?)/);
+        content = {
+          mainText: segment.text,
+          number: numberMatch ? numberMatch[1] : '',
+          countUpAnimation: true,
+          glowEffect: true,
+        };
+        break;
+
+      case 'emphasis':
+        sceneType = 'text-reveal';
+        animation = 'zoom-in';
+        content = {
+          mainText: segment.text,
+          cameraShake: true,
+          particleEffect: 'sparks',
+        };
+        break;
+
+      case 'reveal':
+        sceneType = 'text-reveal';
+        animation = 'letter-by-letter';
+        content = {
+          mainText: segment.text,
+          letterByLetter: true,
+          typewriterSpeed: 50,
+        };
+        break;
+
+      default:
+        // Statement - default styling with alternating animations
+        sceneType = 'text-reveal';
+        content = {
+          mainText: segment.text,
+        };
+    }
+
+    scenes.push({
+      id: `${act.id || 'act'}-micro-${index}`,
+      type: sceneType,
+      startTime: segment.startTime,
+      duration,
+      content: {
+        ...content,
+        ...commonFields,
+      },
+      animation,
+    });
+  });
+
+  return scenes;
+}
+
 // Generate scenes for a phase based on act content
-function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime: number, duration: number): V7Scene[] {
+function generateScenesForPhase(
+  act: any,
+  phaseType: V7Phase['type'],
+  startTime: number,
+  duration: number,
+  wordTimestamps: Array<{ word: string; start: number; end: number }> = [],
+  enableMicroScenes: boolean = true
+): V7Scene[] {
   const visual = act.content?.visual || {};
   const interaction = act.content?.interaction || {};
   const audio = act.content?.audio || {};
   const scenes: V7Scene[] = [];
-  
+
   // Extract common fields that can appear in any act
   const commonFields = {
     narration: audio.narration || act.narration || '',
@@ -584,7 +804,40 @@ function generateScenesForPhase(act: any, phaseType: V7Phase['type'], startTime:
     tip: visual.tip || interaction.tip || '',
     warning: visual.warning || '',
   };
-  
+
+  // ✅ V7-v2.3: MICRO-SCENE GENERATION
+  // Generate fine-grained scenes aligned with narration for cinematic feel
+  // Only for dramatic and narrative phases (interaction phases keep their structure)
+  if (enableMicroScenes && wordTimestamps.length > 0 && (phaseType === 'dramatic' || phaseType === 'narrative')) {
+    const narration = commonFields.narration;
+    const endTime = startTime + duration;
+
+    const segments = segmentNarrationForMicroScenes(
+      narration,
+      wordTimestamps,
+      startTime,
+      endTime
+    );
+
+    if (segments.length >= 2) {
+      // Enough segments to create micro-scenes
+      const microScenes = generateMicroScenesFromNarration(
+        act,
+        segments,
+        startTime,
+        duration,
+        phaseType
+      );
+
+      if (microScenes.length > 0) {
+        console.log(`[generateScenesForPhase] ✨ Generated ${microScenes.length} micro-scenes for ${phaseType} phase (was ${7} fixed scenes)`);
+        return microScenes;
+      }
+    }
+
+    console.log(`[generateScenesForPhase] ⚠️ Not enough segments for micro-scenes (${segments.length}), falling back to fixed scenes`);
+  }
+
   switch (phaseType) {
     case 'dramatic':
       // 🎬 6 CINEMATIC SCENES (Netflix Bandersnatch-inspired)
