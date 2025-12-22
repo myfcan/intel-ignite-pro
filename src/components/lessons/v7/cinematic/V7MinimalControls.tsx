@@ -95,7 +95,7 @@ export const V7MinimalControls = ({
 
       {/* Unified Control Bar - Bottom Center */}
       <motion.div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4"
+        className="fixed bottom-4 left-0 right-0 z-[100] flex justify-center px-4"
         initial={{ opacity: 0, y: 30 }}
         animate={{ 
           opacity: isVisible ? 1 : 0, 
@@ -103,7 +103,7 @@ export const V7MinimalControls = ({
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <div className="bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+        <div className="w-full max-w-sm bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
           {/* Progress Bar - Clickable */}
           <div 
             className="h-1 bg-white/10 cursor-pointer group relative"
