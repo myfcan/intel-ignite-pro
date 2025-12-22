@@ -25,6 +25,16 @@ interface AudioControl {
   interactionState?: InteractionState;
   updateInteractionState?: (state: InteractionState) => void;
   playSoundEffect?: (effect: SoundEffectType, volume?: number) => void;
+  // V7-v2.2: Contextual loops (TTS para hints audíveis)
+  speakText?: (text: string, volume?: number) => Promise<void>;
+  stopSpeech?: () => void;
+}
+
+// V7-v2.2: Configuração de loops contextuais (TTS durante espera)
+interface ContextualLoopConfig {
+  triggerAfter: number; // Segundos após início da interação
+  text: string;         // Texto a ser falado
+  volume: number;       // Volume (0-1)
 }
 
 interface V7PhaseQuizProps {
@@ -40,13 +50,15 @@ interface V7PhaseQuizProps {
   sceneIndex: number;
   onComplete?: (selectedIds: string[]) => void;
   audioControl?: AudioControl;
-  // V7-v2: Configuração de timeouts
+  // V7-v2: Configuração de timeouts (visual hints)
   timeoutConfig?: {
     soft: number;    // 7s - primeira dica
     medium: number;  // 15s - segunda dica
     hard: number;    // 30s - auto-avanço
     hints: string[];
   };
+  // V7-v2.2: Contextual audio loops (TTS)
+  contextualLoops?: ContextualLoopConfig[];
 }
 
 export const V7PhaseQuiz = ({
@@ -70,7 +82,13 @@ export const V7PhaseQuiz = ({
       '🤔 Pense com calma... Qual mais combina com você?',
       '⏰ Vamos continuar a jornada...'
     ]
-  }
+  },
+  // V7-v2.2: Loops contextuais com voz (TTS)
+  contextualLoops = [
+    { triggerAfter: 7, text: 'Reflita com calma...', volume: 0.5 },
+    { triggerAfter: 15, text: 'Pense bem antes de responder.', volume: 0.5 },
+    { triggerAfter: 25, text: 'Tome seu tempo...', volume: 0.4 }
+  ]
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -83,6 +101,7 @@ export const V7PhaseQuiz = ({
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
   const timersRef = useRef<NodeJS.Timeout[]>([]);
+  const contextualTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // ✅ V7-v2.1: Sistema de hints progressivos com estados de interação
   useEffect(() => {
@@ -142,26 +161,57 @@ export const V7PhaseQuiz = ({
     };
   }, [isRevealed, selectedIds.length, timeoutConfig]);
 
-  // ✅ V7-v2: Pausar áudio com FADE (não abrupto)
+  // ✅ V7-v2 FIX: PAUSAR narração completamente (não apenas baixar volume!)
+  // A ideia é: Quiz aparece → Narração PAUSA → Loops contextuais tocam → Resposta → Narração RETOMA
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (!ctrl) return;
 
-    const pauseAudio = async () => {
+    const pauseNarration = async () => {
       if (ctrl.isPlaying) {
-        // Usar fade se disponível, senão pause normal
-        if (ctrl.fadeToVolume) {
-          await ctrl.fadeToVolume(0.15, 500);
+        // ✅ CORRETO: Usar pauseWithFade para PARAR completamente (não apenas baixar volume!)
+        if (ctrl.pauseWithFade) {
+          await ctrl.pauseWithFade(500);
+          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA (não apenas volume baixo!)');
         } else {
           ctrl.pause();
+          console.log('[V7PhaseQuiz] 🔇 Narração pausada (fallback)');
         }
         setAudioPausedByQuiz(true);
-        console.log('[V7PhaseQuiz] 🔇 Audio em background - aguardando interação');
       }
     };
 
-    pauseAudio();
+    pauseNarration();
   }, []);
+
+  // ✅ V7-v2.2: Contextual audio loops (TTS) - Fala frases de incentivo durante a espera
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (!ctrl?.speakText || isRevealed || selectedIds.length > 0) {
+      // Não fala se não tiver TTS, se já revelou ou se usuário já interagiu
+      return;
+    }
+
+    // Agendar cada loop contextual
+    contextualLoops.forEach((loop) => {
+      const timer = setTimeout(() => {
+        // Só fala se ainda não interagiu
+        if (!isRevealed && selectedIds.length === 0) {
+          ctrl.speakText?.(loop.text, loop.volume);
+          console.log(`[V7PhaseQuiz] 🗣️ Contextual loop: "${loop.text}"`);
+        }
+      }, loop.triggerAfter * 1000);
+
+      contextualTimersRef.current.push(timer);
+    });
+
+    return () => {
+      // Limpar timers e parar qualquer fala
+      contextualTimersRef.current.forEach(timer => clearTimeout(timer));
+      contextualTimersRef.current = [];
+      ctrl?.stopSpeech?.();
+    };
+  }, [isRevealed, selectedIds.length, contextualLoops]);
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
@@ -179,30 +229,35 @@ export const V7PhaseQuiz = ({
   }, [isRevealed]);
 
   const handleReveal = useCallback(() => {
-    // Limpar timers
+    // Limpar timers (hints visuais e loops contextuais)
     timersRef.current.forEach(timer => clearTimeout(timer));
+    contextualTimersRef.current.forEach(timer => clearTimeout(timer));
+    contextualTimersRef.current = [];
     console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
 
     // 🆕 V7-v2.1: Tocar efeito de revelação
     const ctrl = audioControlRef.current;
+    // Parar qualquer TTS em andamento
+    ctrl?.stopSpeech?.();
     ctrl?.playSoundEffect?.('reveal', 0.5);
     ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
     setTimeout(() => setShowResult(true), 500);
 
-    // ✅ V7-v2: Resume com fade após mostrar resultado
+    // ✅ V7-v2 FIX: RETOMAR narração de onde parou após mostrar resultado
     setTimeout(async () => {
       const ctrl = audioControlRef.current;
       if (audioPausedByQuiz && ctrl) {
-        if (ctrl.fadeToVolume) {
-          // Usar fade in suave
-          await ctrl.fadeToVolume(1, 500);
+        // ✅ CORRETO: Usar resumeWithFade para retomar de onde parou
+        if (ctrl.resumeWithFade) {
+          await ctrl.resumeWithFade(500);
+          console.log('[V7PhaseQuiz] 🔊 Narração RETOMADA de onde parou!');
         } else if (!ctrl.isPlaying) {
           ctrl.play();
+          console.log('[V7PhaseQuiz] 🔊 Narração retomada (fallback)');
         }
         setAudioPausedByQuiz(false);
-        console.log('[V7PhaseQuiz] 🔊 Audio retomado com fade');
       }
       // Tocar som de sucesso antes de completar
       ctrl?.playSoundEffect?.('success', 0.4);

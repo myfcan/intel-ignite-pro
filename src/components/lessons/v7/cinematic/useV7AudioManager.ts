@@ -344,18 +344,68 @@ export const useV7AudioManager = ({
     console.log('[V7AudioManager] 🎬 Interação finalizada:', behavior.onComplete);
   }, [resumeWithFade, fadeToVolume, volume, playSoundEffect, updateInteractionState]);
 
+  // 🗣️ SPEAK TEXT - Fala texto usando Web Speech API (para loops contextuais)
+  const speakText = useCallback((text: string, volume: number = 0.5): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // Verificar se Web Speech API está disponível
+      if (!('speechSynthesis' in window)) {
+        console.warn('[V7AudioManager] Web Speech API não disponível');
+        resolve();
+        return;
+      }
+
+      // Cancelar qualquer fala anterior
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.9; // Velocidade um pouco mais lenta para reflexão
+      utterance.pitch = 1.0;
+      utterance.volume = volume;
+
+      // Tentar usar voz feminina portuguesa se disponível
+      const voices = window.speechSynthesis.getVoices();
+      const ptVoice = voices.find(v =>
+        v.lang.startsWith('pt') && v.name.toLowerCase().includes('female')
+      ) || voices.find(v => v.lang.startsWith('pt'));
+
+      if (ptVoice) {
+        utterance.voice = ptVoice;
+      }
+
+      utterance.onend = () => {
+        console.log(`[V7AudioManager] 🗣️ Falou: "${text}"`);
+        resolve();
+      };
+
+      utterance.onerror = (e) => {
+        console.error('[V7AudioManager] Erro TTS:', e);
+        resolve(); // Não rejeita, apenas continua
+      };
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }, []);
+
+  // 🛑 STOP SPEECH - Para qualquer fala em andamento
+  const stopSpeech = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
   // 💬 START CONTEXTUAL LOOPS - Inicia áudios contextuais durante interação
   const startContextualLoops = useCallback((loops: ContextualLoop[]) => {
-    loops.forEach((loop, index) => {
+    loops.forEach((loop) => {
       const timer = setTimeout(() => {
-        // Aqui você pode implementar TTS ou tocar áudio pré-gravado
-        console.log(`[V7AudioManager] 💬 Contextual: "${loop.text}"`);
-        // TODO: Integrar com TTS para falar o texto
+        // ✅ Agora fala o texto usando Web Speech API!
+        speakText(loop.text, loop.volume);
+        console.log(`[V7AudioManager] 💬 Contextual loop triggered: "${loop.text}"`);
       }, loop.triggerAfter * 1000);
 
       contextualTimersRef.current.push(timer);
     });
-  }, []);
+  }, [speakText]);
 
   // Play básico
   const play = useCallback(async () => {
@@ -426,6 +476,8 @@ export const useV7AudioManager = ({
         clearInterval(fadeIntervalRef.current);
       }
       contextualTimersRef.current.forEach(timer => clearTimeout(timer));
+      // Parar qualquer fala em andamento
+      stopSpeech();
       if (mainAudioRef.current) {
         mainAudioRef.current.pause();
         mainAudioRef.current.src = '';
@@ -435,7 +487,7 @@ export const useV7AudioManager = ({
         ambientAudioRef.current.src = '';
       }
     };
-  }, []);
+  }, [stopSpeech]);
 
   return {
     // State
@@ -463,6 +515,11 @@ export const useV7AudioManager = ({
     startInteraction,
     endInteraction,
 
+    // 🆕 Contextual loops (TTS)
+    speakText,
+    stopSpeech,
+    startContextualLoops,
+
     // 🆕 Interaction state management
     updateInteractionState,
     playSoundEffect,
@@ -475,36 +532,38 @@ export const useV7AudioManager = ({
   };
 };
 
-// Comportamentos padrão para cada tipo de interação
+// ✅ V7-v2 FIX: Comportamentos padrão CORRETOS para cada tipo de interação
+// Quiz/Playground = PAUSAR narração (não apenas baixar volume!)
+// CTA = Continuar normal (não pausa)
 export const DEFAULT_AUDIO_BEHAVIORS: Record<string, AudioBehavior> = {
   quiz: {
-    onStart: 'fadeToBackground',
+    onStart: 'pause',           // ✅ CORRIGIDO: PAUSA a narração (não fadeToBackground!)
     duringInteraction: {
-      mainVolume: 0.15,
-      ambientVolume: 0.4,
-      contextualLoops: [
+      mainVolume: 0,            // ✅ CORRIGIDO: Volume ZERO (narração pausada)
+      ambientVolume: 0.3,       // Música ambiente continua baixinha
+      contextualLoops: [        // Loops contextuais (visual hints por enquanto)
         { triggerAfter: 7, text: 'Pense com calma...', volume: 0.4 },
         { triggerAfter: 15, text: 'Qual opção mais combina com você?', volume: 0.4 },
         { triggerAfter: 25, text: 'Tome seu tempo...', volume: 0.3 }
       ]
     },
-    onComplete: 'fadeIn'
+    onComplete: 'resume'        // ✅ CORRIGIDO: RETOMA de onde parou
   },
 
   playground: {
-    onStart: 'pause',
+    onStart: 'pause',           // PAUSA total (digitação precisa de silêncio)
     duringInteraction: {
       mainVolume: 0,
-      ambientVolume: 0.3,
+      ambientVolume: 0,         // Silêncio total para playground
       contextualLoops: []
     },
     onComplete: 'resume'
   },
 
   checkboxes: {
-    onStart: 'fadeToBackground',
+    onStart: 'fadeToBackground', // Checkboxes são rápidos, só baixa volume
     duringInteraction: {
-      mainVolume: 0.3,
+      mainVolume: 0.2,
       ambientVolume: 0.3,
       contextualLoops: []
     },
@@ -512,14 +571,12 @@ export const DEFAULT_AUDIO_BEHAVIORS: Record<string, AudioBehavior> = {
   },
 
   cta: {
-    onStart: 'fadeToBackground',
+    onStart: 'continue',        // ✅ CORRIGIDO: CTA continua normal (não pausa!)
     duringInteraction: {
-      mainVolume: 0.2,
+      mainVolume: 1.0,          // ✅ Volume total (CTA não interrompe)
       ambientVolume: 0.4,
-      contextualLoops: [
-        { triggerAfter: 5, text: 'A escolha é sua...', volume: 0.3 }
-      ]
+      contextualLoops: []       // Sem loops contextuais para CTA
     },
-    onComplete: 'next'
+    onComplete: 'continue'      // ✅ Continua fluxo normal
   }
 };
