@@ -280,9 +280,9 @@ export const V7PhaseQuiz = ({
   }, []);
 
   // ✅ V7-v3.1: Função para falar o feedback com TTS
-  const speakFeedback = useCallback(async (text: string) => {
+  const speakFeedback = useCallback(async (feedbackText: string) => {
     try {
-      console.log('[V7PhaseQuiz] 🎤 Falando feedback:', text);
+      console.log('[V7PhaseQuiz] 🎤 Falando feedback:', feedbackText);
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
         {
@@ -293,19 +293,20 @@ export const V7PhaseQuiz = ({
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            hints: [{ text, volume: 0.8 }],
+            text: feedbackText, // ✅ Corrigido: usar 'text' ao invés de 'hints'
             whisper: false // Voz normal, não sussurro
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to generate feedback audio');
+        const errorData = await response.text();
+        throw new Error(`Failed to generate feedback audio: ${errorData}`);
       }
 
       const data = await response.json();
-      if (data.audios && data.audios.length > 0) {
-        const audioUrl = `data:audio/mpeg;base64,${data.audios[0].audioContent}`;
+      if (data.audioBase64) {
+        const audioUrl = `data:audio/mpeg;base64,${data.audioBase64}`;
         const audio = new Audio(audioUrl);
         audio.volume = 0.8;
         await audio.play();
