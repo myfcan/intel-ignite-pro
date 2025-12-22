@@ -716,8 +716,9 @@ export const V7PhasePlayer = ({
         const showPerfeitoSlide = currentSceneIndex < 3;
 
         // Check if this is a "PERFEITO" method reveal
+        const mainTextStr = extractTextFromContent(revelationContent.mainText);
         const isPerfeitoMethod =
-          revelationContent.mainText?.toLowerCase().includes('perfeito') ||
+          mainTextStr?.toLowerCase().includes('perfeito') ||
           revelationContent.title?.toLowerCase().includes('perfeito') ||
           currentPhase.title?.toLowerCase().includes('perfeito');
 
