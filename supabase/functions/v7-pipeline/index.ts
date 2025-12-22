@@ -1210,6 +1210,22 @@ function recalculateActTimingsFromWordTimestamps(
 // ELEVENLABS AUDIO GENERATION
 // ============================================================================
 
+// ✅ FIX: Clean pause tags and contextual markers from text before TTS
+function cleanTextForTTS(text: string): string {
+  return text
+    // Remove [pause:X] tags (e.g., [pause:2000], [pause:500])
+    .replace(/\[pause:\d+\]/gi, '')
+    // Remove [contextual] markers
+    .replace(/\[contextual[^\]]*\]/gi, '')
+    // Remove any remaining bracket tags
+    .replace(/\[[^\]]*\]/g, '')
+    // Clean up multiple spaces
+    .replace(/\s+/g, ' ')
+    // Clean up spaces before punctuation
+    .replace(/\s+([.,!?;:])/g, '$1')
+    .trim();
+}
+
 async function generateAudioWithElevenLabs(
   text: string,
   voiceId?: string,
@@ -1226,12 +1242,16 @@ async function generateAudioWithElevenLabs(
     return { success: false, error: 'ELEVENLABS_API_KEY not configured' };
   }
   
+  // ✅ FIX: Clean text before sending to TTS
+  const cleanedText = cleanTextForTTS(text);
+  
   const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - good for Portuguese
   const modelId = 'eleven_multilingual_v2';
   
   console.log('[V7Pipeline:Audio] Generating audio (with retry)...');
   console.log('[V7Pipeline:Audio] Voice ID:', voice);
-  console.log('[V7Pipeline:Audio] Text length:', text.length);
+  console.log('[V7Pipeline:Audio] Original text length:', text.length);
+  console.log('[V7Pipeline:Audio] Cleaned text length:', cleanedText.length);
 
   try {
     // ✅ P1 FIX: Use fetchWithRetry for transient failure recovery
@@ -1245,7 +1265,7 @@ async function generateAudioWithElevenLabs(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: text,
+          text: cleanedText, // ✅ FIX: Use cleaned text without [pause:X] tags
           model_id: modelId,
           voice_settings: {
             stability: 0.5,

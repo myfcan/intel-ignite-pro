@@ -574,9 +574,11 @@ function mapActTypeToPhaseType(type: string): V7Phase['type'] {
     // Aliases from JSON
     'comparison': 'narrative',
     'quiz': 'interaction',
+    'interactive': 'interaction', // ✅ FIX: Map 'interactive' to 'interaction' for quiz/playground acts
     'result': 'revelation',
     'reveal': 'revelation',
     'challenge': 'interaction',
+    'celebration': 'revelation', // ✅ FIX: Map 'celebration' to revelation
     'cta': 'revelation', // CTA uses revelation phase (V7PhaseCTA)
   };
   console.log(`[mapActTypeToPhaseType] "${type}" → "${typeMap[type] || 'dramatic'}"`);
