@@ -107,6 +107,9 @@ export function useAnchorText({
     lastEventTime: -1,
   });
   
+  // ✅ V7-v5 FIX: Usar useState para pausedByAnchor para causar re-render
+  const [isPausedByAnchorState, setIsPausedByAnchorState] = useState(false);
+  
   const [visibleElements, setVisibleElements] = useState<Set<string>>(new Set());
   const [highlightedElements, setHighlightedElements] = useState<Set<string>>(new Set());
 
@@ -228,11 +231,13 @@ export function useAnchorText({
       switch (action.type) {
         case 'pause':
           stateRef.current.pausedByAnchor = true;
+          setIsPausedByAnchorState(true); // ✅ V7-v5: Atualiza state para causar re-render
           onPause?.();
           break;
           
         case 'resume':
           stateRef.current.pausedByAnchor = false;
+          setIsPausedByAnchorState(false); // ✅ V7-v5: Atualiza state para causar re-render
           onResume?.();
           break;
           
@@ -365,12 +370,13 @@ export function useAnchorText({
 
   // Funções manuais de controle
   const manualResume = useCallback(() => {
-    if (stateRef.current.pausedByAnchor) {
+    if (stateRef.current.pausedByAnchor || isPausedByAnchorState) {
       console.log(`[AnchorText] 🟢 Manual resume triggered for phase: ${phaseId}`);
       stateRef.current.pausedByAnchor = false;
+      setIsPausedByAnchorState(false); // ✅ V7-v5: Atualiza state
       onResume?.();
     }
-  }, [phaseId, onResume]);
+  }, [phaseId, onResume, isPausedByAnchorState]);
 
   const resetActions = useCallback(() => {
     stateRef.current.executedActions.clear();
@@ -386,7 +392,7 @@ export function useAnchorText({
 
   return {
     // Estado
-    isPausedByAnchor: stateRef.current.pausedByAnchor,
+    isPausedByAnchor: isPausedByAnchorState, // ✅ V7-v5: Usar state que causa re-render
     visibleElements,
     highlightedElements,
     
