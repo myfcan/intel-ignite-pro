@@ -122,10 +122,17 @@ export function useAnchorText({
 
   // Encontra timestamp de uma palavra-chave (suporta frases com múltiplas palavras)
   const findKeywordTimestamp = useCallback((keyword: string, afterTime: number = 0): WordTimestamp | null => {
-    if (!wordTimestamps.length) return null;
+    if (!wordTimestamps.length) {
+      console.log(`[AnchorText] ❌ findKeywordTimestamp: No wordTimestamps!`);
+      return null;
+    }
+    
+    console.log(`[AnchorText] 🔎 Searching for keyword: "${keyword}" (afterTime: ${afterTime.toFixed(1)}s)`);
     
     const keywordParts = keyword.toLowerCase().split(/\s+/).map(w => normalizeWord(w));
     const isMultiWord = keywordParts.length > 1;
+    
+    console.log(`[AnchorText] 📝 Keyword parts: [${keywordParts.join(', ')}] (isMultiWord: ${isMultiWord})`);
     
     // Para keywords com múltiplas palavras, procurar sequência exata
     if (isMultiWord) {
@@ -147,16 +154,21 @@ export function useAnchorText({
         if (allMatch) {
           // Retorna o timestamp da ÚLTIMA palavra da frase (momento exato do trigger)
           const lastWordTs = wordTimestamps[i + keywordParts.length - 1];
-          console.log(`[AnchorText] 🔍 Found multi-word keyword "${keyword}" at ${lastWordTs.start.toFixed(1)}s-${lastWordTs.end.toFixed(1)}s`);
+          console.log(`[AnchorText] ✅ Found multi-word keyword "${keyword}" at ${lastWordTs.start.toFixed(1)}s-${lastWordTs.end.toFixed(1)}s`);
           return lastWordTs;
         }
       }
-      console.log(`[AnchorText] ⚠️ Multi-word keyword "${keyword}" not found`);
+      console.log(`[AnchorText] ⚠️ Multi-word keyword "${keyword}" not found in ${wordTimestamps.length} words`);
       return null;
     }
     
     // Para keywords de uma só palavra, match EXATO apenas
     const normalizedKeyword = keywordParts[0];
+    
+    // ✅ DEBUG: Log all words in wordTimestamps for debugging
+    const allWords = wordTimestamps.map(ts => normalizeWord(ts.word));
+    console.log(`[AnchorText] 📋 All normalized words: [${allWords.join(', ')}]`);
+    console.log(`[AnchorText] 🎯 Looking for exact match: "${normalizedKeyword}"`);
     
     for (const ts of wordTimestamps) {
       if (ts.start < afterTime) continue;
@@ -165,12 +177,12 @@ export function useAnchorText({
       
       // ✅ CORRIGIDO: Match EXATO apenas (sem matches parciais que causavam falsos positivos)
       if (normalizedWord === normalizedKeyword) {
-        console.log(`[AnchorText] 🔍 Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
+        console.log(`[AnchorText] ✅ Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
         return ts;
       }
     }
     
-    console.log(`[AnchorText] ⚠️ Keyword "${keyword}" not found in wordTimestamps (searched ${wordTimestamps.length} words)`);
+    console.log(`[AnchorText] ❌ Keyword "${keyword}" NOT FOUND (searched ${wordTimestamps.length} words)`);
     return null;
   }, [wordTimestamps, normalizeWord]);
 
@@ -267,19 +279,33 @@ export function useAnchorText({
 
   // Monitora ações
   useEffect(() => {
+    // ✅ DEBUG: Log on every check
+    const timeStr = currentTime.toFixed(1);
+    
     if (!enabled) {
-      console.log(`[AnchorText] ⚠️ System DISABLED`);
+      if (Math.floor(currentTime) % 5 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
+        console.log(`[AnchorText] ⚠️ System DISABLED at ${timeStr}s`);
+      }
       return;
     }
     
     if (!actions.length) {
-      console.log(`[AnchorText] ⚠️ No actions to monitor`);
+      if (Math.floor(currentTime) % 5 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
+        console.log(`[AnchorText] ⚠️ No actions to monitor at ${timeStr}s`);
+      }
       return;
     }
     
     if (!wordTimestamps.length) {
-      console.log(`[AnchorText] ⚠️ No wordTimestamps available - anchor system cannot work!`);
+      if (Math.floor(currentTime) % 5 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
+        console.log(`[AnchorText] ⚠️ No wordTimestamps at ${timeStr}s - anchor system CANNOT work!`);
+      }
       return;
+    }
+
+    // ✅ DEBUG: Log current monitoring state every 2 seconds
+    if (Math.floor(currentTime) % 2 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
+      console.log(`[AnchorText] 🔄 Monitoring at ${timeStr}s | Phase: ${phaseId} | Actions: ${actions.map(a => `${a.keyword}(${a.type})`).join(', ')} | Playing: ${isPlaying}`);
     }
 
     for (const action of actions) {
@@ -291,18 +317,27 @@ export function useAnchorText({
       }
 
       // Para ações de pause, só monitora se estiver tocando
-      if (action.type === 'pause' && !isPlaying) continue;
+      if (action.type === 'pause' && !isPlaying) {
+        console.log(`[AnchorText] ⏸️ Skipping pause action "${action.keyword}" - not playing`);
+        continue;
+      }
       
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
       // Encontra o timestamp da palavra-chave
       const wordTs = findKeywordTimestamp(action.keyword);
-      if (!wordTs) continue;
+      if (!wordTs) {
+        console.log(`[AnchorText] ❌ Action "${action.keyword}" - keyword not found in timestamps`);
+        continue;
+      }
 
       // Verifica se o tempo atual está próximo
-      if (isTimeNearWord(wordTs, currentTime)) {
-        console.log(`[AnchorText] 🎯 MATCH! Keyword "${action.keyword}" near time ${currentTime.toFixed(1)}s (word at ${wordTs.start.toFixed(1)}s)`);
+      const isNear = isTimeNearWord(wordTs, currentTime);
+      console.log(`[AnchorText] 📍 Action "${action.keyword}" | wordTs: ${wordTs.start.toFixed(1)}s-${wordTs.end.toFixed(1)}s | currentTime: ${timeStr}s | isNear: ${isNear}`);
+      
+      if (isNear) {
+        console.log(`[AnchorText] 🎯🎯🎯 MATCH! Keyword "${action.keyword}" near time ${timeStr}s (word at ${wordTs.start.toFixed(1)}s)`);
         executeAction(action, wordTs);
       }
     }
