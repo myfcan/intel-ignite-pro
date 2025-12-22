@@ -103,6 +103,10 @@ export const V7PhasePlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false); // Fallback for no-audio mode
+  
+  // ✅ FASE 3: Sistema de trigger de fase por AnchorText
+  // Quiz só aparece quando a palavra-gatilho é detectada, não por timing
+  const [anchorTriggeredPhase, setAnchorTriggeredPhase] = useState<string | null>(null);
 
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
@@ -216,14 +220,66 @@ export const V7PhasePlayer = ({
     return [];
   }, [currentPhase]);
 
+  // ✅ Check if we have word timestamps (needed before globalAnchorActions)
+  const hasWordTimestamps = wordTimestamps.length > 0;
+
+  // ✅ FASE 3: GLOBAL ANCHOR ACTIONS - Monitora palavras-gatilho para TODAS as fases
+  // Isso permite que o quiz seja triggerado quando a narração chega na palavra certa,
+  // mesmo que o sistema de timing coloque em outra fase
+  const globalAnchorActions = useMemo((): AnchorAction[] => {
+    if (!hasWordTimestamps) return [];
+    
+    const actions: AnchorAction[] = [];
+    
+    // Procura em TODAS as fases por anchorActions do tipo 'pause' em fases interativas
+    scaledScript.phases.forEach((phase, phaseIndex) => {
+      if (phase.type === 'interaction' && phase.anchorActions) {
+        phase.anchorActions.forEach(action => {
+          if (action.type === 'pause') {
+            actions.push({
+              ...action,
+              id: `global-trigger-${phase.id}-${action.id}`,
+              type: 'trigger', // Muda para trigger para não pausar diretamente
+              payload: { targetPhaseId: phase.id, targetPhaseIndex: phaseIndex },
+            });
+          }
+        });
+      }
+    });
+    
+    if (actions.length > 0) {
+      console.log(`[V7PhasePlayer] 🌐 GLOBAL anchor actions:`, actions.map(a => `${a.keyword} → ${a.payload?.targetPhaseId}`));
+    }
+    
+    return actions;
+  }, [scaledScript.phases, hasWordTimestamps]);
+
   const handleAnchorEvent = useCallback((event: AnchorEvent) => {
     console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
-  }, []);
+    
+    // ✅ FASE 3: Se for um trigger global, muda para a fase alvo
+    if (event.action.type === 'trigger' && event.action.payload?.targetPhaseId) {
+      const targetPhaseId = event.action.payload.targetPhaseId;
+      const targetPhaseIndex = event.action.payload.targetPhaseIndex;
+      
+      console.log(`[V7PhasePlayer] 🎬 GLOBAL TRIGGER: Switching to phase "${targetPhaseId}" (index: ${targetPhaseIndex})`);
+      
+      // Pausa o áudio
+      if (audio.isPlaying) {
+        audio.pause();
+      }
+      
+      // Muda para a fase alvo
+      setAnchorTriggeredPhase(targetPhaseId);
+      goToPhase(targetPhaseIndex);
+      playSound('transition-whoosh');
+    }
+  }, [audio, goToPhase, playSound]);
 
   // ✅ Check if we should enable anchor text system
   const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'playground';
   const hasAnchorActions = anchorActions.length > 0;
-  const hasWordTimestamps = wordTimestamps.length > 0;
+  const hasGlobalAnchorActions = globalAnchorActions.length > 0;
   
   // ✅ LOGIC:
   // - TEM wordTimestamps → useAnchorText (keyword sync)
@@ -304,6 +360,42 @@ export const V7PhasePlayer = ({
       console.log(`[V7PhasePlayer] 🎬 TRIGGER action: ${action.id}`, action.payload);
     },
     onAnchorEvent: handleAnchorEvent,
+  });
+  
+  // ✅ FASE 3: GLOBAL ANCHOR TEXT - Monitora palavras-gatilho em TODAS as fases
+  // Isso roda em paralelo com o anchor local e pode triggerar mudança de fase
+  useAnchorText({
+    wordTimestamps: wordTimestamps,
+    currentTime: audio.currentTime,
+    actions: globalAnchorActions,
+    isPlaying: audio.isPlaying,
+    phaseId: 'global',
+    enabled: hasGlobalAnchorActions && hasWordTimestamps && hasAudio,
+    onTrigger: (action) => {
+      // ✅ FASE 3: Trigger global detectado - muda para a fase do quiz
+      if (action.payload?.targetPhaseId && action.payload?.targetPhaseIndex !== undefined) {
+        const targetPhaseId = action.payload.targetPhaseId;
+        const targetPhaseIndex = action.payload.targetPhaseIndex;
+        
+        // Só triggera se ainda não está nessa fase
+        if (currentPhase?.id !== targetPhaseId) {
+          console.log(`[V7PhasePlayer] 🎬 GLOBAL TRIGGER: Switching to phase "${targetPhaseId}" (index: ${targetPhaseIndex})`);
+          
+          // Pausa o áudio
+          if (audio.isPlaying) {
+            audio.pause();
+          }
+          
+          // Muda para a fase alvo
+          setAnchorTriggeredPhase(targetPhaseId);
+          goToPhase(targetPhaseIndex);
+          playSound('transition-whoosh');
+        }
+      }
+    },
+    onAnchorEvent: (event) => {
+      console.log(`[V7PhasePlayer] 🌐 GLOBAL anchor event: "${event.action.id}" at ${event.timestamp.toFixed(1)}s`);
+    },
   });
   
   // ✅ FALLBACK: Auto-pause for interactive phases when there are NO wordTimestamps
