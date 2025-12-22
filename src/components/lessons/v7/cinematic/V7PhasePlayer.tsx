@@ -223,36 +223,13 @@ export const V7PhasePlayer = ({
   // ✅ Check if we have word timestamps (needed before globalAnchorActions)
   const hasWordTimestamps = wordTimestamps.length > 0;
 
-  // ✅ FASE 3: GLOBAL ANCHOR ACTIONS - Monitora palavras-gatilho para TODAS as fases
-  // Isso permite que o quiz seja triggerado quando a narração chega na palavra certa,
-  // mesmo que o sistema de timing coloque em outra fase
+  // ✅ DISABLED: Global anchor actions was causing quiz to appear at wrong time
+  // The phase controller should handle timing based on scaled script
+  // Global triggers were matching too early due to common words like "e", "mesmo"
   const globalAnchorActions = useMemo((): AnchorAction[] => {
-    if (!hasWordTimestamps) return [];
-    
-    const actions: AnchorAction[] = [];
-    
-    // Procura em TODAS as fases por anchorActions do tipo 'pause' em fases interativas
-    scaledScript.phases.forEach((phase, phaseIndex) => {
-      if (phase.type === 'interaction' && phase.anchorActions) {
-        phase.anchorActions.forEach(action => {
-          if (action.type === 'pause') {
-            actions.push({
-              ...action,
-              id: `global-trigger-${phase.id}-${action.id}`,
-              type: 'trigger', // Muda para trigger para não pausar diretamente
-              payload: { targetPhaseId: phase.id, targetPhaseIndex: phaseIndex },
-            });
-          }
-        });
-      }
-    });
-    
-    if (actions.length > 0) {
-      console.log(`[V7PhasePlayer] 🌐 GLOBAL anchor actions:`, actions.map(a => `${a.keyword} → ${a.payload?.targetPhaseId}`));
-    }
-    
-    return actions;
-  }, [scaledScript.phases, hasWordTimestamps]);
+    // DISABLED - rely on phase controller timing only
+    return [];
+  }, []);
 
   const handleAnchorEvent = useCallback((event: AnchorEvent) => {
     console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
@@ -281,32 +258,12 @@ export const V7PhasePlayer = ({
   const hasAnchorActions = anchorActions.length > 0;
   const hasGlobalAnchorActions = globalAnchorActions.length > 0;
   
-  // ✅ LOGIC:
-  // - TEM wordTimestamps → useAnchorText (keyword sync)
-  // - NÃO TEM wordTimestamps → Fallback 30% (pause at 30% of audio duration)
-  const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
-  const shouldUseFallback30 = hasAudio && isInteractivePhase && !hasWordTimestamps;
-  
-  // ✅ FALLBACK 30%: Pause at 30% of audio duration when no wordTimestamps
+  // All fallbacks DISABLED to prevent premature pauses
+  const shouldUseFallback30 = false;
   const fallback30TriggeredRef = useRef(false);
   
-  useEffect(() => {
-    // Reset fallback trigger when phase changes
-    fallback30TriggeredRef.current = false;
-  }, [currentPhase?.id]);
-  
-  useEffect(() => {
-    if (!shouldUseFallback30 || fallback30TriggeredRef.current) return;
-    if (!audio.duration || audio.duration <= 0) return;
-    
-    const triggerPoint = audio.duration * 0.30; // 30% of audio
-    
-    if (audio.currentTime >= triggerPoint && audio.isPlaying) {
-      console.log(`[V7PhasePlayer] ⏸️ FALLBACK 30% PAUSE at ${audio.currentTime.toFixed(1)}s (trigger: ${triggerPoint.toFixed(1)}s)`);
-      fallback30TriggeredRef.current = true;
-      audio.pause();
-    }
-  }, [shouldUseFallback30, audio.currentTime, audio.duration, audio.isPlaying]);
+  // Enable anchors only when we have word timestamps
+  const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
   
   // Log anchor system status for debugging
   useEffect(() => {
@@ -362,77 +319,13 @@ export const V7PhasePlayer = ({
     onAnchorEvent: handleAnchorEvent,
   });
   
-  // ✅ FASE 3: GLOBAL ANCHOR TEXT - Monitora palavras-gatilho em TODAS as fases
-  // Isso roda em paralelo com o anchor local e pode triggerar mudança de fase
-  useAnchorText({
-    wordTimestamps: wordTimestamps,
-    currentTime: audio.currentTime,
-    actions: globalAnchorActions,
-    isPlaying: audio.isPlaying,
-    phaseId: 'global',
-    enabled: hasGlobalAnchorActions && hasWordTimestamps && hasAudio,
-    onTrigger: (action) => {
-      // ✅ FASE 3: Trigger global detectado - muda para a fase do quiz
-      if (action.payload?.targetPhaseId && action.payload?.targetPhaseIndex !== undefined) {
-        const targetPhaseId = action.payload.targetPhaseId;
-        const targetPhaseIndex = action.payload.targetPhaseIndex;
-        
-        // Só triggera se ainda não está nessa fase
-        if (currentPhase?.id !== targetPhaseId) {
-          console.log(`[V7PhasePlayer] 🎬 GLOBAL TRIGGER: Switching to phase "${targetPhaseId}" (index: ${targetPhaseIndex})`);
-          
-          // Pausa o áudio
-          if (audio.isPlaying) {
-            audio.pause();
-          }
-          
-          // Muda para a fase alvo
-          setAnchorTriggeredPhase(targetPhaseId);
-          goToPhase(targetPhaseIndex);
-          playSound('transition-whoosh');
-        }
-      }
-    },
-    onAnchorEvent: (event) => {
-      console.log(`[V7PhasePlayer] 🌐 GLOBAL anchor event: "${event.action.id}" at ${event.timestamp.toFixed(1)}s`);
-    },
-  });
+  // DISABLED: Global anchor text was triggering phase changes too early
+  // The phase controller timing should handle when phases appear
   
-  // ✅ FALLBACK: Auto-pause for interactive phases when there are NO wordTimestamps
-  // This ensures the lesson flow works even without precise word-level sync
+  // ✅ DISABLED: Fallback auto-pause was triggering too early
+  // Interactive phases will pause when user enters them via normal phase progression
+  // Not by forcing early pauses based on arbitrary time thresholds
   const fallbackPauseTriggeredRef = useRef<Set<string>>(new Set());
-  
-  useEffect(() => {
-    // Only use fallback if:
-    // 1. We're in an interactive phase
-    // 2. We have anchor actions that include a pause
-    // 3. We DON'T have wordTimestamps (so anchor system won't work)
-    // 4. Audio is playing
-    if (!isInteractivePhase || !hasAnchorActions || hasWordTimestamps || !audio.isPlaying) {
-      return;
-    }
-    
-    const phaseId = currentPhase?.id || '';
-    const hasPauseAction = anchorActions.some(a => a.type === 'pause');
-    
-    // Only trigger fallback once per phase
-    if (hasPauseAction && !fallbackPauseTriggeredRef.current.has(phaseId)) {
-      // Calculate when to pause: after 80% of phase narration time
-      // This gives time for intro narration before showing UI
-      const phaseDuration = (currentPhase?.endTime || 0) - (currentPhase?.startTime || 0);
-      const timeInPhase = audio.currentTime - (currentPhase?.startTime || 0);
-      const progressInPhase = timeInPhase / phaseDuration;
-      
-      // Pause after first 3-5 seconds or 30% of phase, whichever comes first
-      const shouldPause = timeInPhase >= 3 || progressInPhase >= 0.3;
-      
-      if (shouldPause) {
-        console.log(`[V7PhasePlayer] ⏸️ FALLBACK PAUSE for "${phaseId}" (no wordTimestamps, ${timeInPhase.toFixed(1)}s into phase)`);
-        fallbackPauseTriggeredRef.current.add(phaseId);
-        audio.pause();
-      }
-    }
-  }, [isInteractivePhase, hasAnchorActions, hasWordTimestamps, audio.isPlaying, audio.currentTime, currentPhase, anchorActions]);
   
   // Reset fallback tracker when phase changes
   useEffect(() => {
