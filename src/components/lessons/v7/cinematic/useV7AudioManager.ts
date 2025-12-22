@@ -431,14 +431,20 @@ export const useV7AudioManager = ({
     }
   }, []);
 
-  // Toggle play/pause
+  // Toggle play/pause - RESPEITA estado de interação
   const togglePlayPause = useCallback(() => {
+    // ✅ Se está em modo interação (quiz, playground), não permite dar play manualmente
+    if (isInteracting) {
+      console.log('[V7AudioManager] ⚠️ togglePlayPause bloqueado - em modo interação');
+      return;
+    }
+    
     if (isPlaying) {
       pause();
     } else {
       play();
     }
-  }, [isPlaying, play, pause]);
+  }, [isPlaying, isInteracting, play, pause]);
 
   // Seek to time
   const seekTo = useCallback((time: number) => {
