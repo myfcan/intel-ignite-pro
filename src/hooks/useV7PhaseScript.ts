@@ -269,9 +269,10 @@ function transformActsToPhases(
   hasCinematicFlow: boolean = false,
   wordTimestamps: Array<{ word: string; start: number; end: number }> = []
 ): V7Phase[] {
+  // ⚠️ NO FALLBACK - If no acts, throw error immediately
   if (!acts || acts.length === 0) {
-    // Return default phases if no acts
-    return getDefaultPhases(totalDuration);
+    console.error('[transformActsToPhases] ❌ ERRO CRÍTICO: Nenhum act encontrado no banco de dados!');
+    throw new Error('Nenhum act encontrado na aula. Verifique o conteúdo no banco de dados.');
   }
 
   let currentTime = 0;
@@ -1648,67 +1649,5 @@ function generateScenesForPhase(
   return scenes;
 }
 
-// Default phases when no acts are available
-function getDefaultPhases(totalDuration: number): V7Phase[] {
-  const phaseDuration = totalDuration / 5;
-  
-  return [
-    {
-      id: 'loading',
-      title: 'Carregando',
-      startTime: 0,
-      endTime: 3,
-      type: 'loading',
-      scenes: [],
-      mood: 'neutral',
-    },
-    {
-      id: 'intro',
-      title: 'Introdução',
-      startTime: 3,
-      endTime: 3 + phaseDuration,
-      type: 'dramatic',
-      mood: 'dramatic',
-      scenes: [{
-        id: 'intro-scene',
-        type: 'text-reveal',
-        startTime: 3,
-        duration: phaseDuration,
-        content: { mainText: 'Bem-vindo!', subtitle: 'Vamos começar sua jornada' },
-        animation: 'fade',
-      }],
-    },
-    {
-      id: 'content',
-      title: 'Conteúdo',
-      startTime: 3 + phaseDuration,
-      endTime: 3 + phaseDuration * 3,
-      type: 'narrative',
-      mood: 'neutral',
-      scenes: [{
-        id: 'content-scene',
-        type: 'text-reveal',
-        startTime: 3 + phaseDuration,
-        duration: phaseDuration * 2,
-        content: { mainText: 'Conteúdo Principal', subtitle: '' },
-        animation: 'fade',
-      }],
-    },
-    {
-      id: 'gamification',
-      title: 'Conclusão',
-      startTime: 3 + phaseDuration * 3,
-      endTime: totalDuration,
-      type: 'gamification',
-      mood: 'success',
-      scenes: [{
-        id: 'conclusion-scene',
-        type: 'result',
-        startTime: 3 + phaseDuration * 3,
-        duration: phaseDuration * 2 - 3,
-        content: { mainText: 'Parabéns!', subtitle: 'Aula completa!' },
-        animation: 'fade',
-      }],
-    },
-  ];
-}
+// ❌ getDefaultPhases REMOVIDO - SEM FALLBACK
+// Se não houver acts, o sistema DEVE falhar para forçar correção do banco de dados
