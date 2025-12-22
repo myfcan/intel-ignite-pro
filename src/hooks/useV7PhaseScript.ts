@@ -359,10 +359,28 @@ function transformActsToPhases(
     
     // ✅ CRITICAL: Extract anchorActions from act for pause/show/highlight functionality
     // Can be at act level OR in interaction.anchorActions
-    let anchorActions = act.anchorActions || 
-                        interactionData?.anchorActions || 
-                        act.content?.anchorActions ||
-                        [];
+    let rawAnchorActions = act.anchorActions || 
+                           interactionData?.anchorActions || 
+                           act.content?.anchorActions ||
+                           [];
+    
+    // ✅ NORMALIZE anchorActions - support both "keyword" and "pauseKeyword" formats
+    let anchorActions = rawAnchorActions.map((action: any, idx: number) => {
+      const keyword = action.keyword || action.pauseKeyword || '';
+      const type = action.type || (action.action?.includes('pause') ? 'pause' : 'trigger');
+      const id = action.id || `anchor-${idx}`;
+      const normalized = {
+        id,
+        keyword,
+        type,
+        targetId: action.targetId || action.targetPhase,
+        payload: action.payload,
+        once: action.once ?? true,
+        delayMs: action.delayMs
+      };
+      console.log(`[transformActsToPhases] 🔄 Normalized anchorAction: ${JSON.stringify(normalized)}`);
+      return normalized;
+    });
     
     // ✅ Also support legacy pauseKeywords for backward compatibility
     let pauseKeywords = act.pauseKeywords || 
@@ -377,7 +395,7 @@ function transformActsToPhases(
                           act.content?.narration ||
                           '';
 
-    // ✅ AUTO-GENERATE pauseKeywords for interactive phases if none defined
+    // ✅ AUTO-GENERATE pauseKeywords for interactive phases if NONE defined (no anchorActions AND no pauseKeywords)
     // This ensures the audio pauses even without explicit anchorActions in DB
     const isInteractivePhase = phaseType === 'interaction' || phaseType === 'playground';
     if (isInteractivePhase && anchorActions.length === 0 && pauseKeywords.length === 0 && wordTimestamps.length > 0) {
@@ -394,6 +412,8 @@ function transformActsToPhases(
         pauseKeywords = generatedKeywords;
         console.log(`[transformActsToPhases] ✨ AUTO-GENERATED pauseKeywords for ${phaseType} phase: [${pauseKeywords.join(', ')}]`);
       }
+    } else if (anchorActions.length > 0) {
+      console.log(`[transformActsToPhases] ✅ Using EXPLICIT anchorActions for ${phaseType} phase: [${anchorActions.map((a: any) => a.keyword).join(', ')}]`);
     }
     
     console.log(`[transformActsToPhases] Act ${index + 1}: anchorActions=${anchorActions.length}, pauseKeywords=${pauseKeywords.length}`);
@@ -532,12 +552,13 @@ function findPauseKeywordsForPhase(
   }
 
   // ✅ STRATEGY 3: Look for natural pause indicators (context words)
+  // ⚠️ REMOVED words like "honesto" that appear in the middle of narration (causes false positives)
   const pauseIndicators: Record<string, string[]> = {
     interaction: [
       // Words that often end intro sentences before a question/quiz
       'pessoas', 'população', 'usuários', 'profissionais', 'empresas',
-      // Direct commands to pause/reflect
-      'honesto', 'verdade', 'reflita', 'pense', 'avalie', 'responda',
+      // Direct commands to pause/reflect - REMOVED "honesto" as it appears mid-sentence
+      'reflita', 'pense', 'avalie', 'responda',
       // Quiz/test indicators
       'teste', 'autoavaliação', 'pergunta', 'escolha',
       // Transition words
