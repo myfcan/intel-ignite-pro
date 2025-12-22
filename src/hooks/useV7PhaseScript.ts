@@ -113,7 +113,10 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
   const { toast } = useToast();
 
   const fetchLesson = useCallback(async () => {
+    console.log('[useV7PhaseScript] 🚀 Starting fetch for lessonId:', lessonId);
+    
     if (!lessonId) {
+      console.log('[useV7PhaseScript] ❌ No lessonId provided');
       setIsLoading(false);
       return;
     }
@@ -122,14 +125,36 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
     setError(null);
 
     try {
+      console.log('[useV7PhaseScript] 📡 Fetching from Supabase...');
       const { data, error: fetchError } = await supabase
         .from('lessons')
         .select('*')
         .eq('id', lessonId)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
-      if (!data) throw new Error('Aula não encontrada');
+      console.log('[useV7PhaseScript] 📦 Supabase response:', {
+        hasData: !!data,
+        error: fetchError?.message,
+        dataId: data?.id,
+        dataTitle: data?.title
+      });
+
+      if (fetchError) {
+        console.error('[useV7PhaseScript] ❌ Fetch error:', fetchError);
+        throw fetchError;
+      }
+      if (!data) {
+        console.error('[useV7PhaseScript] ❌ No data returned for lessonId:', lessonId);
+        throw new Error('Aula não encontrada');
+      }
+
+      console.log('[useV7PhaseScript] ✅ Lesson data received:', {
+        id: data.id,
+        title: data.title,
+        hasContent: !!data.content,
+        hasTimestamps: !!data.word_timestamps,
+        hasAudioUrl: !!data.audio_url
+      });
 
       // ✅ P1 FIX: Use typed interfaces instead of 'as any'
       const content = data.content as V7LessonContent | null;
