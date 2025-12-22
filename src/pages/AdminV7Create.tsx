@@ -70,12 +70,13 @@ export default function AdminV7Create() {
     isValid: boolean;
     error?: string;
     data?: any;
-    stats?: { 
-      sections: number; 
+    stats?: {
+      sections: number;
       duration: number;
       actCount?: number;
       narrationCount?: number;
       hasCinematicFlow?: boolean;
+      pauseKeywordCount?: number; // ✅ V7.1: Track pause keywords
     };
   }>({ isValid: false });
 
@@ -147,21 +148,41 @@ export default function AdminV7Create() {
       // Extract narration count for cinematic_flow
       // ✅ V7-v2 FIX: Check BOTH formats (V7-v2 direct + legacy nested)
       let narrationCount = 0;
+      let pauseKeywordCount = 0;
+      let interactiveActsWithoutPauseKeyword: string[] = [];
+
       if (hasCinematicFlow) {
         narrationCount = parsed.cinematic_flow.acts.filter(
           (act: any) => act.narration || act.content?.audio?.narration
         ).length;
+
+        // ✅ V7.1: Check pauseKeyword for interactive acts
+        parsed.cinematic_flow.acts.forEach((act: any, index: number) => {
+          if (act.pauseKeyword || act.pauseKeywords?.length > 0) {
+            pauseKeywordCount++;
+          } else if (act.type === 'interaction' || act.type === 'playground' || act.type === 'quiz') {
+            interactiveActsWithoutPauseKeyword.push(act.id || `act-${index + 1}`);
+          }
+        });
+      }
+
+      // ✅ V7.1: Warn if interactive acts don't have pauseKeyword
+      let warning: string | undefined;
+      if (interactiveActsWithoutPauseKeyword.length > 0) {
+        warning = `Atos interativos sem pauseKeyword: ${interactiveActsWithoutPauseKeyword.join(', ')}. O sistema tentará detectar automaticamente.`;
       }
 
       setJsonValidation({
         isValid: true,
         data: parsed,
-        stats: { 
-          sections: actCount || sections, 
+        error: warning, // Use error field for warnings too
+        stats: {
+          sections: actCount || sections,
           duration,
           actCount,
           narrationCount,
           hasCinematicFlow,
+          pauseKeywordCount, // ✅ V7.1: Track pause keywords
         }
       });
     } catch (e: any) {
