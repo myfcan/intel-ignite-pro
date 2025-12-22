@@ -34,19 +34,20 @@ const fallbacks: V7FallbacksConfig = {
   audioLoadError: 'continue'
 };
 
-// ✅ V7-v2: Comportamento de áudio padrão para quiz
+// ✅ V7-v2 + FASE 3 FIX: Comportamento de áudio padrão para quiz
+// CORRETO: onStart = 'pause' (PAUSA TOTAL, não apenas baixa volume!)
 const quizAudioBehavior: V7AudioBehavior = {
-  onStart: 'fadeToBackground',
+  onStart: 'pause',  // ✅ PAUSA TOTAL - não 'fadeToBackground'!
   duringInteraction: {
-    mainVolume: 0.15,
-    ambientVolume: 0.4,
+    mainVolume: 0,   // ✅ ZERO - silêncio total durante quiz
+    ambientVolume: 0.3,
     contextualLoops: [
-      { triggerAfter: 7, text: 'Pense com calma...', volume: 0.4 },
-      { triggerAfter: 15, text: 'Qual opção mais combina com você?', volume: 0.4 },
+      { triggerAfter: 7, text: 'Reflita com calma...', volume: 0.4 },
+      { triggerAfter: 15, text: 'Seja honesto consigo mesmo...', volume: 0.4 },
       { triggerAfter: 25, text: 'Tome seu tempo...', volume: 0.3 }
     ]
   },
-  onComplete: 'fadeIn'
+  onComplete: 'resume'  // ✅ RESUME - retoma de onde parou
 };
 
 // ✅ V7-v2: Comportamento de áudio padrão para playground
@@ -300,9 +301,11 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       audioBehavior: quizAudioBehavior,
       timeout: quizTimeout,
 
-      // ✅ anchorActions: keyword-based sync (V5-inspired)
+      // ✅ FASE 3 FIX: anchorActions com palavra-gatilho CORRETA
+      // Quiz deve aparecer quando narração diz "consigo mesmo" (~38s no áudio)
       anchorActions: [
-        { id: 'pause-quiz', keyword: 'honesto', type: 'pause', once: true },
+        { id: 'pause-quiz', keyword: 'mesmo', type: 'pause', once: true },
+        { id: 'pause-quiz-alt', keyword: 'honesto', type: 'pause', once: true },
       ] as AnchorAction[],
       scenes: [
         {
