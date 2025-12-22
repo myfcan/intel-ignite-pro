@@ -293,10 +293,9 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       timeout: quizTimeout,
 
       // ✅ FASE 3 FIX: anchorActions com palavra-gatilho CORRETA
-      // Quiz deve aparecer quando narração diz "consigo mesmo" (~38s no áudio)
+      // Quiz deve aparecer quando narração diz "atual de IA." - NÃO em "honesto"
       anchorActions: [
-        { id: 'pause-quiz', keyword: 'mesmo', type: 'pause', once: true },
-        { id: 'pause-quiz-alt', keyword: 'honesto', type: 'pause', once: true },
+        { id: 'pause-quiz', keyword: 'atual de IA', type: 'pause', once: true },
       ] as AnchorAction[],
       scenes: [
         {
