@@ -91,9 +91,9 @@ export const V7PhaseQuiz = ({
   },
   // V7-v2.2: Loops contextuais com voz (TTS)
   contextualLoops = [
-    { triggerAfter: 5, text: 'Vamos lá, agora é com você!', volume: 0.5 },
-    { triggerAfter: 15, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
-    { triggerAfter: 25, text: 'Mas não precisa ter pressa!', volume: 0.4 }
+    { triggerAfter: 5, text: 'Vamos lá agora é com você!', volume: 0.5 },
+    { triggerAfter: 12, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
+    { triggerAfter: 22, text: 'Tá pensando muito hein! Brincadeira, não precisa ter pressa! Vou tirar um cochilo aqui.', volume: 0.4 }
   ]
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
