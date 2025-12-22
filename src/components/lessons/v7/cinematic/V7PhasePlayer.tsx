@@ -737,6 +737,7 @@ export const V7PhasePlayer = ({
         onNext={goToNextPhase}
         onExit={onExit}
         isVisible={showControls}
+        isLocked={audio.isInteracting}
       />
 
       {/* Audio/Play Indicator */}

@@ -39,8 +39,9 @@ interface V7MinimalControlsProps {
   onExit?: () => void;
   onSeek?: (progress: number) => void;
   
-  // Visibility
+  // Visibility & State
   isVisible?: boolean;
+  isLocked?: boolean; // ✅ Bloqueia controles durante interação
 }
 
 export const V7MinimalControls = ({
@@ -61,7 +62,8 @@ export const V7MinimalControls = ({
   onNext,
   onExit,
   onSeek,
-  isVisible = true
+  isVisible = true,
+  isLocked = false
 }: V7MinimalControlsProps) => {
   
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -146,14 +148,20 @@ export const V7MinimalControls = ({
               {/* Play/Pause - Primary */}
               <button
                 onClick={onTogglePlay}
-                className="w-12 h-12 rounded-full bg-white flex items-center justify-center
-                           hover:bg-white/90 active:scale-95 transition-all shadow-lg"
-                aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+                disabled={isLocked}
+                className={`w-12 h-12 rounded-full flex items-center justify-center
+                           transition-all shadow-lg
+                           ${isLocked 
+                             ? 'bg-white/30 cursor-not-allowed' 
+                             : 'bg-white hover:bg-white/90 active:scale-95'
+                           }`}
+                aria-label={isLocked ? 'Aguardando interação' : isPlaying ? 'Pausar' : 'Reproduzir'}
+                title={isLocked ? 'Complete a interação para continuar' : undefined}
               >
                 {isPlaying ? (
-                  <Pause className="w-5 h-5 text-black" />
+                  <Pause className={`w-5 h-5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
                 ) : (
-                  <Play className="w-5 h-5 text-black ml-0.5" />
+                  <Play className={`w-5 h-5 ml-0.5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
                 )}
               </button>
 
