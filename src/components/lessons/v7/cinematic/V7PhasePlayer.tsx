@@ -506,6 +506,14 @@ export const V7PhasePlayer = ({
     return scene?.content || {};
   };
 
+  // ✅ FIX: Extract string from possibly object content (e.g., {text, fontSize, animation})
+  const extractTextFromContent = (value: any): string => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value?.text) return value.text;
+    if (typeof value === 'object' && value?.content) return value.content;
+    return '';
+  };
+
   // Combine ALL scene content for progressive reveal phases (dramatic, etc.)
   const getCombinedSceneContent = (): any => {
     if (!currentPhase?.scenes) return {};
@@ -624,14 +632,14 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhaseQuiz
-            title={interactionContent.mainText || content.mainText || 'Responda:'}
-            subtitle={interactionContent.subtitle || content.subtitle || ''}
+            title={extractTextFromContent(interactionContent.mainText || content.mainText) || 'Responda:'}
+            subtitle={extractTextFromContent(interactionContent.subtitle || content.subtitle) || ''}
             options={quizOptions}
             revealTitle="RESULTADO"
-            revealMessage={interactionContent.explanation || content.explanation || ''}
+            revealMessage={extractTextFromContent(interactionContent.explanation || content.explanation) || ''}
             revealValue=""
-            correctFeedback={interactionContent.correctFeedback || content.correctFeedback}
-            incorrectFeedback={interactionContent.incorrectFeedback || content.incorrectFeedback}
+            correctFeedback={extractTextFromContent(interactionContent.correctFeedback || content.correctFeedback)}
+            incorrectFeedback={extractTextFromContent(interactionContent.incorrectFeedback || content.incorrectFeedback)}
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
             audioControl={audio}
