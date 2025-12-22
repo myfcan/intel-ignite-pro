@@ -13,11 +13,13 @@ export type InteractionState =
   | 'struggling'   // Passou do medium timeout
   | 'abandoned';   // Vai ser auto-completado
 
+// ✅ FASE 2: Contextual loops agora suportam URLs de áudio ElevenLabs
 interface ContextualLoop {
   triggerAfter: number;
-  text: string;
+  text: string;         // Texto para log (não mais usado para TTS!)
   volume: number;
   loop?: boolean;
+  audioUrl?: string;    // ✅ URL do áudio ElevenLabs (opcional)
 }
 
 interface AudioBehavior {
@@ -120,33 +122,23 @@ export const useV7AudioManager = ({
   }, []);
 
   // 🆕 Atualizar estado de interação com callback
+  // ✅ V7-v2 FIX: NÃO ajusta volume aqui! O quiz/playground controla pause/resume diretamente
   const updateInteractionState = useCallback((newState: InteractionState) => {
     setInteractionState(newState);
     onStateChange?.(newState);
     console.log(`[V7AudioManager] 🎮 Interaction state: ${newState}`);
 
-    // Ajustar volume baseado no estado
-    if (mainAudioRef.current && isInteracting) {
-      switch (newState) {
-        case 'waiting':
-          fadeToVolume(0.15, 300);
-          break;
-        case 'thinking':
-          fadeToVolume(0.10, 200);
-          break;
-        case 'stuck':
-          fadeToVolume(0.08, 200);
-          playSoundEffect('hint', 0.3);
-          break;
-        case 'struggling':
-          fadeToVolume(0.05, 200);
-          break;
-        case 'abandoned':
-          playSoundEffect('timeout', 0.4);
-          break;
-      }
+    // ✅ APENAS efeitos sonoros, SEM ajuste de volume (quiz controla isso)
+    switch (newState) {
+      case 'stuck':
+        playSoundEffect('hint', 0.3);
+        break;
+      case 'abandoned':
+        playSoundEffect('timeout', 0.4);
+        break;
+      // waiting, thinking, struggling: NÃO mexe no volume!
     }
-  }, [onStateChange, isInteracting]);
+  }, [onStateChange, playSoundEffect]);
 
   // Initialize audio elements
   useEffect(() => {
@@ -344,68 +336,82 @@ export const useV7AudioManager = ({
     console.log('[V7AudioManager] 🎬 Interação finalizada:', behavior.onComplete);
   }, [resumeWithFade, fadeToVolume, volume, playSoundEffect, updateInteractionState]);
 
-  // 🗣️ SPEAK TEXT - Fala texto usando Web Speech API (para loops contextuais)
-  const speakText = useCallback((text: string, volume: number = 0.5): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // Verificar se Web Speech API está disponível
-      if (!('speechSynthesis' in window)) {
-        console.warn('[V7AudioManager] Web Speech API não disponível');
-        resolve();
-        return;
+  // ✅ FASE 2: Ref para áudio contextual (ElevenLabs)
+  const contextualAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 🎵 PLAY CONTEXTUAL AUDIO - Toca áudio ElevenLabs pré-gravado (NÃO voz robô!)
+  const playContextualAudio = useCallback((audioUrl: string, volumeLevel: number = 0.5): Promise<void> => {
+    return new Promise((resolve) => {
+      // Parar áudio contextual anterior se existir
+      if (contextualAudioRef.current) {
+        contextualAudioRef.current.pause();
+        contextualAudioRef.current = null;
       }
 
-      // Cancelar qualquer fala anterior
-      window.speechSynthesis.cancel();
+      const audio = new Audio(audioUrl);
+      audio.volume = volumeLevel;
+      contextualAudioRef.current = audio;
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.9; // Velocidade um pouco mais lenta para reflexão
-      utterance.pitch = 1.0;
-      utterance.volume = volume;
-
-      // Tentar usar voz feminina portuguesa se disponível
-      const voices = window.speechSynthesis.getVoices();
-      const ptVoice = voices.find(v =>
-        v.lang.startsWith('pt') && v.name.toLowerCase().includes('female')
-      ) || voices.find(v => v.lang.startsWith('pt'));
-
-      if (ptVoice) {
-        utterance.voice = ptVoice;
-      }
-
-      utterance.onend = () => {
-        console.log(`[V7AudioManager] 🗣️ Falou: "${text}"`);
+      audio.onended = () => {
+        console.log(`[V7AudioManager] 🎵 Contextual audio finished: ${audioUrl}`);
+        contextualAudioRef.current = null;
         resolve();
       };
 
-      utterance.onerror = (e) => {
-        console.error('[V7AudioManager] Erro TTS:', e);
-        resolve(); // Não rejeita, apenas continua
+      audio.onerror = (e) => {
+        console.error('[V7AudioManager] ❌ Erro ao tocar áudio contextual:', e);
+        contextualAudioRef.current = null;
+        resolve();
       };
 
-      window.speechSynthesis.speak(utterance);
+      audio.play().catch((e) => {
+        console.error('[V7AudioManager] ❌ Não conseguiu tocar áudio contextual:', e);
+        resolve();
+      });
+
+      console.log(`[V7AudioManager] 🎵 Playing contextual audio: ${audioUrl}`);
     });
   }, []);
 
-  // 🛑 STOP SPEECH - Para qualquer fala em andamento
-  const stopSpeech = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+  // 🛑 STOP CONTEXTUAL AUDIO - Para áudio contextual em andamento
+  const stopContextualAudio = useCallback(() => {
+    if (contextualAudioRef.current) {
+      contextualAudioRef.current.pause();
+      contextualAudioRef.current = null;
+      console.log('[V7AudioManager] 🛑 Contextual audio stopped');
     }
   }, []);
 
-  // 💬 START CONTEXTUAL LOOPS - Inicia áudios contextuais durante interação
+  // ❌ FASE 2: REMOVIDO speakText (voz robô do browser)
+  // A função agora apenas loga - NÃO usa mais Web Speech API!
+  const speakText = useCallback((text: string, volume: number = 0.5): Promise<void> => {
+    // ✅ DESABILITADO: Não usa mais voz robô!
+    console.log(`[V7AudioManager] 📝 Contextual hint (text only, no TTS): "${text}"`);
+    // TODO: Quando tiver URLs de áudio ElevenLabs, usar playContextualAudio() aqui
+    return Promise.resolve();
+  }, []);
+
+  // 🛑 STOP SPEECH - Agora para áudio contextual (não mais Web Speech)
+  const stopSpeech = useCallback(() => {
+    stopContextualAudio();
+  }, [stopContextualAudio]);
+
+  // 💬 START CONTEXTUAL LOOPS - ✅ FASE 2: Suporta URLs de áudio ElevenLabs
   const startContextualLoops = useCallback((loops: ContextualLoop[]) => {
     loops.forEach((loop) => {
       const timer = setTimeout(() => {
-        // ✅ Agora fala o texto usando Web Speech API!
-        speakText(loop.text, loop.volume);
-        console.log(`[V7AudioManager] 💬 Contextual loop triggered: "${loop.text}"`);
+        // ✅ FASE 2: Se tiver URL de áudio, usa ElevenLabs; senão, apenas loga
+        if (loop.audioUrl) {
+          playContextualAudio(loop.audioUrl, loop.volume);
+        } else {
+          // Apenas loga - NÃO usa voz robô!
+          console.log(`[V7AudioManager] 💬 Contextual hint (no audio): "${loop.text}"`);
+        }
       }, loop.triggerAfter * 1000);
 
       contextualTimersRef.current.push(timer);
     });
-  }, [speakText]);
+  }, [playContextualAudio]);
 
   // Play básico
   const play = useCallback(async () => {
@@ -515,8 +521,10 @@ export const useV7AudioManager = ({
     startInteraction,
     endInteraction,
 
-    // 🆕 Contextual loops (TTS)
-    speakText,
+    // ✅ FASE 2: Contextual audio (ElevenLabs, não mais voz robô!)
+    playContextualAudio,
+    stopContextualAudio,
+    speakText,        // Mantido para compatibilidade, mas não usa TTS
     stopSpeech,
     startContextualLoops,
 

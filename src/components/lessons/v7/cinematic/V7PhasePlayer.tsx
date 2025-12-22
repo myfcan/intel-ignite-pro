@@ -102,7 +102,7 @@ export const V7PhasePlayer = ({
 }: V7PhasePlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
-  const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false); // Fallback for no-audio mode
+  const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
 
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
@@ -195,51 +195,41 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, isLoading, playSound]);
 
-  // ✅ ANCHOR TEXT SYSTEM: Flexible keyword-based sync (V5-inspired)
-  // Supports multiple action types: pause, resume, show, hide, highlight, trigger
+  // ============================================
+  // ÚNICO SISTEMA DE CONTROLE: AnchorText
+  // NENHUM fallback, NENHUM timer, NENHUM % 
+  // ============================================
+  
+  // Coleta anchor actions da fase atual (se tiver)
   const anchorActions = useMemo((): AnchorAction[] => {
     if (!currentPhase) return [];
     
-    // Priority 1: Use anchorActions if defined
     if (currentPhase.anchorActions && currentPhase.anchorActions.length > 0) {
-      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" has ${currentPhase.anchorActions.length} anchorActions:`, 
-        currentPhase.anchorActions.map(a => `${a.id}:${a.keyword}`));
+      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" anchorActions:`, 
+        currentPhase.anchorActions.map(a => `${a.keyword}`));
       return currentPhase.anchorActions;
     }
     
-    // Priority 2: Convert legacy pauseKeywords to actions
     if (currentPhase.pauseKeywords && currentPhase.pauseKeywords.length > 0) {
-      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" using legacy pauseKeywords:`, currentPhase.pauseKeywords);
       return convertPauseKeywordsToActions(currentPhase.pauseKeywords);
     }
     
     return [];
   }, [currentPhase]);
 
-  const handleAnchorEvent = useCallback((event: AnchorEvent) => {
-    console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
-  }, []);
-
-  // ✅ V7.1: AnchorText is the ONLY sync mechanism - NO FALLBACKS
-  const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'playground';
-  const hasAnchorActions = anchorActions.length > 0;
+  // Verificações simples
   const hasWordTimestamps = wordTimestamps.length > 0;
-
-  // ✅ V7.1: Enable AnchorText when we have audio + actions + timestamps
-  // If any of these are missing, the phase will play through without pausing
+  const hasAnchorActions = anchorActions.length > 0;
+  
+  // AnchorText habilitado APENAS quando temos wordTimestamps E anchorActions
   const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
-
-  // Log anchor system status for debugging
+  
+  // Log simples do status
   useEffect(() => {
-    console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
-      enabled: shouldEnableAnchors,
-      hasWordTimestamps,
-      hasAnchorActions,
-      isInteractivePhase,
-      wordTimestampCount: wordTimestamps.length
-    });
-  }, [currentPhase?.id, currentPhase?.type, hasWordTimestamps, hasAnchorActions, isInteractivePhase, shouldEnableAnchors]);
+    console.log(`[V7PhasePlayer] 🎯 Phase "${currentPhase?.id}": AnchorText ${shouldEnableAnchors ? 'ENABLED' : 'DISABLED'} (words: ${wordTimestamps.length}, actions: ${anchorActions.length})`);
+  }, [currentPhase?.id, shouldEnableAnchors, wordTimestamps.length, anchorActions.length]);
 
+  // ÚNICO useAnchorText - sem fallbacks, sem triggers globais
   const { 
     isPausedByAnchor, 
     manualResume,
@@ -248,41 +238,27 @@ export const V7PhasePlayer = ({
     visibleElements,
     highlightedElements
   } = useAnchorText({
-    wordTimestamps: wordTimestamps,
+    wordTimestamps,
     currentTime: audio.currentTime,
     actions: anchorActions,
     isPlaying: audio.isPlaying,
     phaseId: currentPhase?.id || '',
-    // ✅ CRITICAL: Enable whenever we have the required data
     enabled: shouldEnableAnchors,
     onPause: () => {
       if (audio.isPlaying) {
         audio.pause();
-        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE for phase "${currentPhase?.id}"`);
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE - palavra detectada!`);
       }
     },
     onResume: () => {
       if (!audio.isPlaying) {
         audio.play();
-        console.log(`[V7PhasePlayer] ▶️ ANCHOR RESUME for phase "${currentPhase?.id}"`);
+        console.log(`[V7PhasePlayer] ▶️ ANCHOR RESUME`);
       }
     },
-    onShow: (targetId, payload) => {
-      console.log(`[V7PhasePlayer] 👁️ SHOW element: ${targetId}`, payload);
-    },
-    onHide: (targetId, payload) => {
-      console.log(`[V7PhasePlayer] 🙈 HIDE element: ${targetId}`, payload);
-    },
-    onHighlight: (targetId, payload) => {
-      console.log(`[V7PhasePlayer] ✨ HIGHLIGHT element: ${targetId}`, payload);
-    },
-    onTrigger: (action) => {
-      console.log(`[V7PhasePlayer] 🎬 TRIGGER action: ${action.id}`, action.payload);
-    },
-    onAnchorEvent: handleAnchorEvent,
   });
 
-  // ✅ V7.1: Log phase changes (no fallback logic - AnchorText only)
+  // Log de entrada na fase
   useEffect(() => {
     if (currentPhase?.id) {
       console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);

@@ -91,11 +91,18 @@ export const V7PhaseQuiz = ({
   ]
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [optionsRevealed, setOptionsRevealed] = useState(false); // ✅ FASE 1: Opções só aparecem após clicar botão
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
+
+  // ✅ Debug: Log options on mount
+  useEffect(() => {
+    console.log('[V7PhaseQuiz] 🎯 Mounted with options:', options);
+    console.log('[V7PhaseQuiz] 🎯 Title:', title, 'Subtitle:', subtitle);
+  }, [options, title, subtitle]);
 
   // ✅ Use refs to ensure stable audioControl reference in callbacks
   const audioControlRef = useRef(audioControl);
@@ -147,8 +154,8 @@ export const V7PhaseQuiz = ({
         ctrl?.playSoundEffect?.('timeout', 0.5);
         // Auto-revelar após 2s mostrando o hint final
         setTimeout(() => {
-          if (!isRevealed) {
-            handleReveal();
+          if (!isRevealed && !optionsRevealed) {
+            setOptionsRevealed(true); // Revela opções automaticamente no timeout
           }
         }, 2000);
       }
@@ -228,18 +235,27 @@ export const V7PhaseQuiz = ({
     );
   }, [isRevealed]);
 
-  const handleReveal = useCallback(() => {
+  // ✅ FASE 1: Primeiro clique revela as opções
+  const handleRevealOptions = useCallback(() => {
+    console.log('[V7PhaseQuiz] 🎯 REVELAR VERDADE clicked - showing options');
+    const ctrl = audioControlRef.current;
+    ctrl?.playSoundEffect?.('reveal', 0.5);
+    setOptionsRevealed(true);
+  }, []);
+
+  // ✅ FASE 1: Segundo clique confirma a resposta
+  const handleConfirm = useCallback(() => {
     // Limpar timers (hints visuais e loops contextuais)
     timersRef.current.forEach(timer => clearTimeout(timer));
     contextualTimersRef.current.forEach(timer => clearTimeout(timer));
     contextualTimersRef.current = [];
-    console.log('[V7PhaseQuiz] REVEAL clicked - showing results');
+    console.log('[V7PhaseQuiz] ✅ CONFIRMAR clicked - showing results');
 
     // 🆕 V7-v2.1: Tocar efeito de revelação
     const ctrl = audioControlRef.current;
     // Parar qualquer TTS em andamento
     ctrl?.stopSpeech?.();
-    ctrl?.playSoundEffect?.('reveal', 0.5);
+    ctrl?.playSoundEffect?.('success', 0.5);
     ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
@@ -259,8 +275,6 @@ export const V7PhaseQuiz = ({
         }
         setAudioPausedByQuiz(false);
       }
-      // Tocar som de sucesso antes de completar
-      ctrl?.playSoundEffect?.('success', 0.4);
       onComplete?.(selectedIds);
     }, 3000);
   }, [selectedIds, onComplete, audioPausedByQuiz]);
@@ -302,90 +316,95 @@ export const V7PhaseQuiz = ({
           )}
         </motion.div>
 
-        {/* Options - show immediately for user interaction */}
-        <motion.div
-          className="space-y-3 mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {options.map((option, index) => {
-            const isSelected = selectedIds.includes(option.id);
-            const showFeedback = isRevealed;
-            const isBad = option.category === 'bad';
+        {/* ✅ FASE 1: Options - só aparecem APÓS clicar "REVELAR VERDADE" */}
+        <AnimatePresence>
+          {optionsRevealed && (
+            <motion.div
+              className="space-y-3 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+            >
+              {options.map((option, index) => {
+                const isSelected = selectedIds.includes(option.id);
+                const showFeedback = isRevealed;
+                const isBad = option.category === 'bad';
 
-            return (
-              <motion.div
-                key={option.id}
-                className={`
-                  relative flex items-center gap-4 p-4 rounded-xl cursor-pointer
-                  border-2 transition-all overflow-hidden
-                  ${showFeedback && isSelected && isBad
-                    ? 'border-red-500/50 bg-red-500/10'
-                    : showFeedback && isSelected && !isBad
-                      ? 'border-green-500/50 bg-green-500/10'
-                      : isSelected
-                        ? 'border-purple-500/50 bg-purple-500/10'
-                        : 'border-white/10 bg-white/[0.02] hover:border-white/30'
-                  }
-                  ${isRevealed ? 'pointer-events-none' : ''}
-                `}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={() => toggleOption(option.id)}
-                whileHover={{ scale: isRevealed ? 1 : 1.01 }}
-                whileTap={{ scale: isRevealed ? 1 : 0.99 }}
-              >
-                {/* Checkbox */}
-                <motion.div
-                  className={`
-                    w-6 h-6 rounded-md border-2 flex items-center justify-center
-                    transition-colors flex-shrink-0
-                    ${showFeedback && isSelected && isBad
-                      ? 'bg-red-500 border-red-500'
-                      : showFeedback && isSelected && !isBad
-                        ? 'bg-green-500 border-green-500'
-                        : isSelected
-                          ? 'bg-purple-500 border-purple-500'
-                          : 'border-white/30'
-                    }
-                  `}
-                  animate={{ scale: isSelected ? [1, 1.2, 1] : 1 }}
-                >
-                  <AnimatePresence>
-                    {isSelected && (
+                return (
+                  <motion.div
+                    key={option.id}
+                    className={`
+                      relative flex items-center gap-4 p-4 rounded-xl cursor-pointer
+                      border-2 transition-all overflow-hidden
+                      ${showFeedback && isSelected && isBad
+                        ? 'border-red-500/50 bg-red-500/10'
+                        : showFeedback && isSelected && !isBad
+                          ? 'border-green-500/50 bg-green-500/10'
+                          : isSelected
+                            ? 'border-purple-500/50 bg-purple-500/10'
+                            : 'border-white/10 bg-white/[0.02] hover:border-white/30'
+                      }
+                      ${isRevealed ? 'pointer-events-none' : ''}
+                    `}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => toggleOption(option.id)}
+                    whileHover={{ scale: isRevealed ? 1 : 1.01 }}
+                    whileTap={{ scale: isRevealed ? 1 : 0.99 }}
+                  >
+                    {/* Checkbox */}
+                    <motion.div
+                      className={`
+                        w-6 h-6 rounded-md border-2 flex items-center justify-center
+                        transition-colors flex-shrink-0
+                        ${showFeedback && isSelected && isBad
+                          ? 'bg-red-500 border-red-500'
+                          : showFeedback && isSelected && !isBad
+                            ? 'bg-green-500 border-green-500'
+                            : isSelected
+                              ? 'bg-purple-500 border-purple-500'
+                              : 'border-white/30'
+                        }
+                      `}
+                      animate={{ scale: isSelected ? [1, 1.2, 1] : 1 }}
+                    >
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.span
+                            className="text-white text-sm font-bold"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                          >
+                            {showFeedback && isBad ? '✗' : '✓'}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+
+                    <span className="text-white/90">{option.text}</span>
+
+                    {/* Feedback indicator */}
+                    {showFeedback && isSelected && (
                       <motion.span
-                        className="text-white text-sm font-bold"
+                        className="ml-auto text-lg"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
                       >
-                        {showFeedback && isBad ? '✗' : '✓'}
+                        {isBad ? '😬' : '✨'}
                       </motion.span>
                     )}
-                  </AnimatePresence>
-                </motion.div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                <span className="text-white/90">{option.text}</span>
-
-                {/* Feedback indicator */}
-                {showFeedback && isSelected && (
-                  <motion.span
-                    className="ml-auto text-lg"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                  >
-                    {isBad ? '😬' : '✨'}
-                  </motion.span>
-                )}
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {/* Reveal Button */}
-        {!isRevealed && (
+        {/* ✅ FASE 1: Botão REVELAR VERDADE - sempre clicável, revela opções */}
+        {!optionsRevealed && !isRevealed && (
           <motion.button
             className="w-full py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
             style={{
@@ -397,8 +416,7 @@ export const V7PhaseQuiz = ({
             transition={{ delay: 0.4 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handleReveal}
-            disabled={selectedIds.length === 0}
+            onClick={handleRevealOptions}
           >
             <motion.div
               className="absolute inset-0 opacity-50"
@@ -409,6 +427,40 @@ export const V7PhaseQuiz = ({
               transition={{ duration: 2, repeat: Infinity }}
             />
             <span className="relative z-10">REVELAR VERDADE</span>
+          </motion.button>
+        )}
+
+        {/* ✅ FASE 1: Botão CONFIRMAR - aparece após selecionar opções */}
+        {optionsRevealed && !isRevealed && (
+          <motion.button
+            className="w-full py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: selectedIds.length > 0 
+                ? 'linear-gradient(135deg, #10b981, #059669)' 
+                : 'linear-gradient(135deg, #6b7280, #4b5563)',
+              boxShadow: selectedIds.length > 0 
+                ? '0 10px 30px rgba(16, 185, 129, 0.4)' 
+                : 'none',
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: selectedIds.length > 0 ? 1.02 : 1 }}
+            whileTap={{ scale: selectedIds.length > 0 ? 0.98 : 1 }}
+            onClick={handleConfirm}
+            disabled={selectedIds.length === 0}
+          >
+            <motion.div
+              className="absolute inset-0 opacity-50"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+              }}
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            <span className="relative z-10">
+              {selectedIds.length > 0 ? '✓ CONFIRMAR RESPOSTA' : 'SELECIONE UMA OPÇÃO'}
+            </span>
           </motion.button>
         )}
 
