@@ -129,13 +129,13 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       mood: 'neutral'
     },
 
-    // FASE 2: ENTRADA DRAMÁTICA (3-30s)
-    // 6 SCENES with progressive content reveal
+    // FASE 2: ENTRADA DRAMÁTICA (3-10s)
+    // Narração: "Noventa e oito por cento... Brinquedo."
     {
       id: 'dramatic-entry',
       title: 'Entrada Dramática',
       startTime: 3,
-      endTime: 30,
+      endTime: 10,  // ✅ CORRIGIDO baseado no áudio real
       type: 'dramatic',
       mood: 'danger',
       scenes: [
@@ -225,20 +225,21 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       ]
     },
 
-    // FASE 3: NARRATIVA COMPARATIVA (30-90s)
+    // FASE 3: NARRATIVA COMPARATIVA (10-20s)
+    // Narração: "Conta uma piada sobre banana... trinta mil reais por mês"
     {
       id: 'narrative-comparison',
       title: 'Narrativa Comparativa',
-      startTime: 30,
-      endTime: 90,
+      startTime: 10,  // ✅ CORRIGIDO baseado no áudio real
+      endTime: 20,    // ✅ CORRIGIDO
       type: 'narrative',
       mood: 'warning',
       scenes: [
         {
           id: 'scene-transition',
           type: 'split-screen',
-          startTime: 30,
-          duration: 15,
+          startTime: 10,
+          duration: 10,
           content: {
             mainText: '98% 😂 vs 2% 💰',
             items: [
@@ -247,43 +248,20 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
             ]
           },
           animation: 'slide-left'
-        },
-        {
-          id: 'scene-comparison-details',
-          type: 'comparison',
-          startTime: 45,
-          duration: 15,
-          content: {
-            items: [
-              { label: 'Trabalho', left: '8h/dia', right: '2h/dia' },
-              { label: 'Resultado', left: 'Mesmo', right: '10x produtividade' },
-              { label: 'Renda extra', left: 'R$ 0', right: 'R$ 30.000' }
-            ]
-          },
-          animation: 'slide-up'
-        },
-        {
-          id: 'scene-urgency',
-          type: 'text-reveal',
-          startTime: 60,
-          duration: 30,
-          content: {
-            mainText: '⚠️ EM 7 ANOS',
-            subtitle: 'Quem não dominar IA será dominado por ela',
-            highlightWord: '7 ANOS'
-          },
-          animation: 'fade'
         }
       ]
     },
 
-    // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO (90-150s)
+    // FASE 4: INTERAÇÃO - AUTOAVALIAÇÃO
+    // ✅ TIMINGS CORRIGIDOS para corresponder ao áudio real:
+    // - "Seja honesto consigo mesmo" está em ~23s
+    // - "IA" (trigger do quiz) está em ~33.3s
     // ✅ V7-v2: anchorActions + audioBehavior + timeout
     {
       id: 'interaction-quiz',
       title: 'Autoavaliação',
-      startTime: 90,
-      endTime: 150,
+      startTime: 20,  // ✅ CORRIGIDO: Fase começa quando narração sobre o quiz inicia (~20s)
+      endTime: 60,    // ✅ CORRIGIDO: Fase termina em ~60s
       type: 'interaction',
       mood: 'danger',
       autoAdvance: false,
@@ -292,28 +270,18 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       audioBehavior: quizAudioBehavior,
       timeout: quizTimeout,
 
-      // ✅ FASE 3 FIX: anchorActions com palavra-gatilho CORRETA
-      // Quiz deve aparecer quando narração diz "atual de IA." - NÃO em "honesto"
+      // ✅ CORRIGIDO: keyword é APENAS "IA" - última palavra da frase
+      // Frase: "Selecione as opções que representam seu uso atual de IA."
+      // A palavra "IA" está em 33.297s-33.831s no áudio
       anchorActions: [
-        { id: 'pause-quiz', keyword: 'atual de IA', type: 'pause', once: true },
+        { id: 'pause-quiz', keyword: 'IA', type: 'pause', once: true },
       ] as AnchorAction[],
       scenes: [
         {
-          id: 'scene-quiz-intro',
-          type: 'text-reveal',
-          startTime: 90,
-          duration: 10,
-          content: {
-            mainText: '⚡ TESTE RELÂMPAGO',
-            subtitle: 'Vamos descobrir em qual grupo você está'
-          },
-          animation: 'fade'
-        },
-        {
           id: 'scene-quiz-options',
           type: 'quiz',
-          startTime: 100,
-          duration: 30,
+          startTime: 33.3,  // ✅ CORRIGIDO: Quiz aparece quando "IA" é falado
+          duration: 25,
           content: {
             mainText: 'Suas últimas 5 vezes com IA:',
             options: [
@@ -329,21 +297,6 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
             incorrectFeedback: 'Esse é o jeito amador! Mas calma, vou te mostrar como mudar isso.'
           },
           animation: 'slide-up'
-        },
-        {
-          id: 'scene-quiz-result',
-          type: 'result',
-          startTime: 130,
-          duration: 20,
-          content: {
-            mainText: '😱 ALERTA',
-            subtitle: 'VOCÊ ESTÁ NO GRUPO 98%',
-            metrics: [
-              { label: 'Perda mensal', value: 'R$ 2.000' },
-              { label: 'Perda anual', value: 'R$ 24.000' }
-            ]
-          },
-          animation: 'fade'
         }
       ]
     },
