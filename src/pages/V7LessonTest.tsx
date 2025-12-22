@@ -1,6 +1,7 @@
 // V7 Lesson Test Page - Debug and preview lessons without full pipeline
 // Features: JSON input, audio generation, database loading, full visualization
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Play, Pause, SkipForward, SkipBack, AlertTriangle, CheckCircle, XCircle,
-  Upload, Database, Mic, RefreshCw, Volume2, VolumeX
+  Upload, Database, Mic, RefreshCw, Volume2, VolumeX, ArrowLeft
 } from 'lucide-react';
 import { fimDaBrincadeiraScript } from '@/data/v7LessonScripts/fimDaBrincadeiraScript';
 
@@ -46,6 +47,7 @@ interface LessonScript {
 }
 
 const V7LessonTest = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Script source
@@ -349,9 +351,20 @@ const V7LessonTest = () => {
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">🧪 V7 Lesson Test</h1>
-          <p className="text-gray-400">Debug completo de aulas V7 - JSON, Audio, WordTimestamps</p>
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/admin/manual-hub')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">🧪 V7 Lesson Test</h1>
+            <p className="text-gray-400">Teste e debug de aulas V7 com visualização de fases e sincronização</p>
+          </div>
         </div>
 
         {/* Source Selection */}
