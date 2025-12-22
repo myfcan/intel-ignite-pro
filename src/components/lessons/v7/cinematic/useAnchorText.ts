@@ -187,10 +187,21 @@ export function useAnchorText({
   }, [wordTimestamps, normalizeWord]);
 
   // Verifica se o tempo atual está próximo de uma palavra
-  // Increased window from 500ms to 800ms for more reliable triggering
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 800): boolean => {
+  // ✅ V7-v3 FIX: Para multi-word, só trigger APÓS a palavra terminar (usar end time)
+  // Window de 300ms APÓS o end da palavra para garantir que a frase completa foi falada
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 300): boolean => {
     const windowSec = windowMs / 1000;
-    return time >= wordTs.start - windowSec && time <= wordTs.end + windowSec;
+    // ✅ CRÍTICO: Tempo atual deve ser >= end da palavra (frase completa falada)
+    // E dentro de uma janela razoável após o end
+    const isAfterWordEnd = time >= wordTs.end;
+    const isWithinWindow = time <= wordTs.end + windowSec;
+    const result = isAfterWordEnd && isWithinWindow;
+    
+    if (result) {
+      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s is AFTER word end ${wordTs.end.toFixed(2)}s (within ${windowMs}ms window)`);
+    }
+    
+    return result;
   }, []);
 
   // Executa uma ação
