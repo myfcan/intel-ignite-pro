@@ -1,10 +1,12 @@
 // V7PhaseQuiz - Interactive self-assessment quiz phase
 // Features: Checkboxes with animation, result reveal, personalized feedback
 // ✅ V7-v2.1: Sistema de estados de interação + efeitos sonoros
+// ✅ V7-v2.2: TTS contextual com ElevenLabs para sussurros durante interação
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
+import { useV7ContextualTTS } from '../useV7ContextualTTS';
 
 interface QuizOption {
   id: string;
@@ -97,6 +99,23 @@ export const V7PhaseQuiz = ({
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
+  const [ttsStarted, setTtsStarted] = useState(false);
+
+  // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
+  const {
+    isGenerating: isTtsGenerating,
+    startContextualHints,
+    stopAll: stopTts,
+    cleanup: cleanupTts
+  } = useV7ContextualTTS({
+    hints: contextualLoops.map(loop => ({
+      triggerAfter: loop.triggerAfter,
+      text: loop.text,
+      volume: loop.volume
+    })),
+    whisper: true, // Usar voz sussurrada
+    enabled: true
+  });
 
   // ✅ Debug: Log options on mount
   useEffect(() => {
@@ -108,7 +127,6 @@ export const V7PhaseQuiz = ({
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
   const timersRef = useRef<NodeJS.Timeout[]>([]);
-  const contextualTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // ✅ V7-v2.1: Sistema de hints progressivos com estados de interação
   useEffect(() => {
@@ -191,34 +209,40 @@ export const V7PhaseQuiz = ({
     pauseNarration();
   }, []);
 
-  // ✅ V7-v2.2: Contextual audio loops (TTS) - Fala frases de incentivo durante a espera
+  // ✅ V7-v2.2: TTS Contextual com ElevenLabs - Inicia sussurros após narração pausar
   useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (!ctrl?.speakText || isRevealed || selectedIds.length > 0) {
-      // Não fala se não tiver TTS, se já revelou ou se usuário já interagiu
+    if (isRevealed || selectedIds.length > 0 || ttsStarted) {
+      // Não inicia se já revelou, interagiu ou já iniciou TTS
       return;
     }
 
-    // Agendar cada loop contextual
-    contextualLoops.forEach((loop) => {
-      const timer = setTimeout(() => {
-        // Só fala se ainda não interagiu
-        if (!isRevealed && selectedIds.length === 0) {
-          ctrl.speakText?.(loop.text, loop.volume);
-          console.log(`[V7PhaseQuiz] 🗣️ Contextual loop: "${loop.text}"`);
-        }
-      }, loop.triggerAfter * 1000);
-
-      contextualTimersRef.current.push(timer);
-    });
+    // Aguardar 1s após pausar narração para iniciar TTS
+    const startTimer = setTimeout(async () => {
+      if (!isRevealed && selectedIds.length === 0) {
+        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual via ElevenLabs...');
+        setTtsStarted(true);
+        await startContextualHints();
+      }
+    }, 1000);
 
     return () => {
-      // Limpar timers e parar qualquer fala
-      contextualTimersRef.current.forEach(timer => clearTimeout(timer));
-      contextualTimersRef.current = [];
-      ctrl?.stopSpeech?.();
+      clearTimeout(startTimer);
     };
-  }, [isRevealed, selectedIds.length, contextualLoops]);
+  }, [isRevealed, selectedIds.length, ttsStarted, startContextualHints]);
+
+  // ✅ Parar TTS quando usuário interagir
+  useEffect(() => {
+    if (selectedIds.length > 0 || isRevealed) {
+      stopTts();
+    }
+  }, [selectedIds.length, isRevealed, stopTts]);
+
+  // ✅ Cleanup TTS ao desmontar
+  useEffect(() => {
+    return () => {
+      cleanupTts();
+    };
+  }, [cleanupTts]);
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
@@ -245,10 +269,9 @@ export const V7PhaseQuiz = ({
 
   // ✅ FASE 1: Segundo clique confirma a resposta
   const handleConfirm = useCallback(() => {
-    // Limpar timers (hints visuais e loops contextuais)
+    // Limpar timers (hints visuais) e parar TTS
     timersRef.current.forEach(timer => clearTimeout(timer));
-    contextualTimersRef.current.forEach(timer => clearTimeout(timer));
-    contextualTimersRef.current = [];
+    stopTts();
     console.log('[V7PhaseQuiz] ✅ CONFIRMAR clicked - showing results');
 
     // 🆕 V7-v2.1: Tocar efeito de revelação
