@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Clock, Zap, TestTube, Bug, FlaskConical,
-  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings, Film
+  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings, Film, Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,7 +38,7 @@ export default function AdminManualHub() {
               Ferramentas para criar novas aulas V3, V5 e V7
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Criação Aula V3 */}
             <Card className="border border-purple-500/30 hover:border-purple-500/50 transition-colors">
               <CardHeader className="pb-2">
@@ -104,6 +104,29 @@ export default function AdminManualHub() {
                 >
                   <Film className="w-4 h-4 mr-2" />
                   Criar Aula V7
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Teste V7 Cinematic */}
+            <Card className="border border-emerald-500/30 hover:border-emerald-500/50 transition-colors">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Play className="w-5 h-5 text-emerald-600" />
+                  Teste V7 Cinematic
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Teste e debug de aulas V7 com visualização de fases e sincronização
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/v7-test')}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  size="sm"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Testar V7
                 </Button>
               </CardContent>
             </Card>
