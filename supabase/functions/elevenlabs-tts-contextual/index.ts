@@ -91,9 +91,9 @@ async function generateAudio(
   apiKey?: string
 ): Promise<string> {
   // ✅ V7-v3: Usar a MESMA voz da narração principal
-  // Roger (CwhRBWXzGAHq8TQ4Fs17) - voz masculina usada na narração
-  // Se voiceId for passado, usar ele; senão usar Roger
-  const voice = voiceId || 'CwhRBWXzGAHq8TQ4Fs17'; // Roger - mesma voz da narração
+  // Alice (Xb7hH8MSUJpSbSDYk0k2) - voz feminina usada na narração principal
+  // Se voiceId for passado, usar ele; senão usar Alice
+  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - mesma voz da narração principal
   
   // Voice settings para efeito de sussurro (mesma voz, configurações diferentes)
   const voiceSettings = whisper 
