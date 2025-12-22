@@ -120,33 +120,23 @@ export const useV7AudioManager = ({
   }, []);
 
   // 🆕 Atualizar estado de interação com callback
+  // ✅ V7-v2 FIX: NÃO ajusta volume aqui! O quiz/playground controla pause/resume diretamente
   const updateInteractionState = useCallback((newState: InteractionState) => {
     setInteractionState(newState);
     onStateChange?.(newState);
     console.log(`[V7AudioManager] 🎮 Interaction state: ${newState}`);
 
-    // Ajustar volume baseado no estado
-    if (mainAudioRef.current && isInteracting) {
-      switch (newState) {
-        case 'waiting':
-          fadeToVolume(0.15, 300);
-          break;
-        case 'thinking':
-          fadeToVolume(0.10, 200);
-          break;
-        case 'stuck':
-          fadeToVolume(0.08, 200);
-          playSoundEffect('hint', 0.3);
-          break;
-        case 'struggling':
-          fadeToVolume(0.05, 200);
-          break;
-        case 'abandoned':
-          playSoundEffect('timeout', 0.4);
-          break;
-      }
+    // ✅ APENAS efeitos sonoros, SEM ajuste de volume (quiz controla isso)
+    switch (newState) {
+      case 'stuck':
+        playSoundEffect('hint', 0.3);
+        break;
+      case 'abandoned':
+        playSoundEffect('timeout', 0.4);
+        break;
+      // waiting, thinking, struggling: NÃO mexe no volume!
     }
-  }, [onStateChange, isInteracting]);
+  }, [onStateChange, playSoundEffect]);
 
   // Initialize audio elements
   useEffect(() => {

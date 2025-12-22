@@ -97,6 +97,12 @@ export const V7PhaseQuiz = ({
   const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
 
+  // ✅ Debug: Log options on mount
+  useEffect(() => {
+    console.log('[V7PhaseQuiz] 🎯 Mounted with options:', options);
+    console.log('[V7PhaseQuiz] 🎯 Title:', title, 'Subtitle:', subtitle);
+  }, [options, title, subtitle]);
+
   // ✅ Use refs to ensure stable audioControl reference in callbacks
   const audioControlRef = useRef(audioControl);
   audioControlRef.current = audioControl;
