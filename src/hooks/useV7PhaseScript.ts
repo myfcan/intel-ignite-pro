@@ -709,6 +709,7 @@ function mapActTypeToPhaseType(type: string): V7Phase['type'] {
     'playground': 'playground',
     'revelation': 'revelation',
     'gamification': 'gamification',
+    'secret-reveal': 'secret-reveal', // ✅ V7-v4: Secret reveal phase with ElevenLabs narration
     // Aliases from JSON
     'comparison': 'narrative',
     'quiz': 'interaction',
