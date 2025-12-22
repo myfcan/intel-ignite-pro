@@ -120,27 +120,51 @@ export function useAnchorText({
       .trim();
   }, []);
 
-  // Encontra timestamp de uma palavra-chave
+  // Encontra timestamp de uma palavra-chave (suporta frases com múltiplas palavras)
   const findKeywordTimestamp = useCallback((keyword: string, afterTime: number = 0): WordTimestamp | null => {
     if (!wordTimestamps.length) return null;
     
-    const normalizedKeyword = normalizeWord(keyword);
+    const keywordParts = keyword.toLowerCase().split(/\s+/).map(w => normalizeWord(w));
+    const isMultiWord = keywordParts.length > 1;
+    
+    // Para keywords com múltiplas palavras, procurar sequência exata
+    if (isMultiWord) {
+      for (let i = 0; i <= wordTimestamps.length - keywordParts.length; i++) {
+        const ts = wordTimestamps[i];
+        if (ts.start < afterTime) continue;
+        
+        // Verificar se as próximas palavras formam a frase
+        let allMatch = true;
+        for (let j = 0; j < keywordParts.length; j++) {
+          const wordTs = wordTimestamps[i + j];
+          const normalizedWord = normalizeWord(wordTs.word);
+          if (normalizedWord !== keywordParts[j]) {
+            allMatch = false;
+            break;
+          }
+        }
+        
+        if (allMatch) {
+          // Retorna o timestamp da ÚLTIMA palavra da frase (momento exato do trigger)
+          const lastWordTs = wordTimestamps[i + keywordParts.length - 1];
+          console.log(`[AnchorText] 🔍 Found multi-word keyword "${keyword}" at ${lastWordTs.start.toFixed(1)}s-${lastWordTs.end.toFixed(1)}s`);
+          return lastWordTs;
+        }
+      }
+      console.log(`[AnchorText] ⚠️ Multi-word keyword "${keyword}" not found`);
+      return null;
+    }
+    
+    // Para keywords de uma só palavra, match EXATO apenas
+    const normalizedKeyword = keywordParts[0];
     
     for (const ts of wordTimestamps) {
       if (ts.start < afterTime) continue;
       
       const normalizedWord = normalizeWord(ts.word);
       
-      // Match exato ou parcial (mais flexível)
-      const isMatch = 
-        normalizedWord === normalizedKeyword || 
-        normalizedWord.includes(normalizedKeyword) || 
-        normalizedKeyword.includes(normalizedWord) ||
-        // Also check if keyword is at the start of the word (for compound words)
-        normalizedWord.startsWith(normalizedKeyword) ||
-        normalizedKeyword.startsWith(normalizedWord);
-        
-      if (isMatch) {
+      // ✅ CORRIGIDO: Match EXATO apenas (sem matches parciais que causavam falsos positivos)
+      if (normalizedWord === normalizedKeyword) {
         console.log(`[AnchorText] 🔍 Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
         return ts;
       }
