@@ -1,0 +1,444 @@
+{
+  "version": "7.1",
+  "model": "v7-cinematic",
+
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "Como sair dos 98% que brincam e entrar para os 2% que dominam",
+  "difficulty": "beginner",
+  "category": "prompts",
+  "tags": ["ia", "prompts", "produtividade", "método-perfeito"],
+  "learningObjectives": [
+    "Entender a diferença entre uso amador e profissional de IA",
+    "Conhecer o método PERFEITO para prompts",
+    "Identificar seu nível atual de uso de IA"
+  ],
+  "duration": 300,
+
+  "voice_id": "EXAVITQu4vr4xnSDxMaL",
+  "generate_audio": true,
+
+  "audioConfig": {
+    "narrationVoice": "Rachel",
+    "voiceSettings": {
+      "stability": 0.75,
+      "similarity_boost": 0.85,
+      "speed": 0.95
+    }
+  },
+
+  "cinematic_flow": {
+    "acts": [
+      {
+        "id": "act-1-dramatic",
+        "type": "dramatic",
+        "title": "O Número Chocante",
+        "narration": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo. Sim. Você ouviu bem. Brinquedo.",
+
+        "visual": {
+          "hookQuestion": "VOCÊ SABIA?",
+          "mainValue": "98%",
+          "secondaryNumber": "2%",
+          "subtitle": "das pessoas usam IA como brinquedo",
+          "highlightWord": "brinquedo",
+          "mood": "danger"
+        },
+
+        "transitions": {
+          "enter": "letterbox",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "act-2-narrative",
+        "type": "narrative",
+        "title": "A Grande Divisão",
+        "narration": "Conta uma piada sobre banana. Escreve como pirata. Faz um poema sobre meu gato. Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês.",
+
+        "visual": {
+          "title": "A GRANDE DIVISÃO",
+          "leftCard": {
+            "label": "98% BRINCANDO",
+            "value": "Prompts de brinquedo",
+            "details": [
+              "Conta uma piada sobre banana",
+              "Escreve como pirata",
+              "Faz um poema sobre meu gato"
+            ],
+            "isPositive": false,
+            "icon": "😂"
+          },
+          "rightCard": {
+            "label": "2% DOMINANDO",
+            "value": "R$ 30.000/mês",
+            "details": [
+              "Prompts estruturados",
+              "Método PERFEITO",
+              "Resultados consistentes"
+            ],
+            "isPositive": true,
+            "icon": "💰"
+          },
+          "mood": "dramatic"
+        }
+      },
+
+      {
+        "id": "act-3-interaction",
+        "type": "interaction",
+        "title": "Auto-Avaliação Honesta",
+        "narration": "Seja honesto consigo mesmo. Você faz parte dos noventa e oito por cento ou dos dois por cento? Selecione as opções que representam seu uso atual de IA.",
+
+        "pauseKeyword": "honesto",
+
+        "visual": {
+          "title": "AUTO-AVALIAÇÃO",
+          "subtitle": "Seja honesto - não há julgamento aqui",
+          "mood": "energetic"
+        },
+
+        "interaction": {
+          "type": "quiz",
+          "question": "Como você usa IA no seu dia a dia?",
+          "options": [
+            {
+              "id": "opt-1",
+              "text": "Peço piadas e curiosidades",
+              "isCorrect": false,
+              "category": "bad",
+              "feedback": "Uso recreativo - você está nos 98%"
+            },
+            {
+              "id": "opt-2",
+              "text": "Tenho prompts salvos que uso sempre",
+              "isCorrect": true,
+              "category": "good",
+              "feedback": "Ótimo! Você já começou a sistematizar"
+            },
+            {
+              "id": "opt-3",
+              "text": "Escrevo prompts genéricos sem estrutura",
+              "isCorrect": false,
+              "category": "bad",
+              "feedback": "Prompts genéricos = resultados genéricos"
+            },
+            {
+              "id": "opt-4",
+              "text": "Documento e melhoro meus prompts",
+              "isCorrect": true,
+              "category": "good",
+              "feedback": "Excelente! Iteração é chave do método PERFEITO"
+            },
+            {
+              "id": "opt-5",
+              "text": "Uso para tarefas sérias de trabalho",
+              "isCorrect": true,
+              "category": "good",
+              "feedback": "Bom caminho! Agora é hora de otimizar"
+            }
+          ],
+          "correctFeedback": "Você já tem bases sólidas para dominar IA!",
+          "incorrectFeedback": "Não se preocupe - você está aqui para mudar isso!"
+        },
+
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.3,
+            "contextualLoops": [
+              {
+                "triggerAfter": 8,
+                "text": "Reflita com calma sobre suas últimas interações com inteligência artificial...",
+                "volume": 0.25,
+                "voice": "whisper"
+              },
+              {
+                "triggerAfter": 18,
+                "text": "Seja honesto consigo mesmo... Não há julgamento aqui...",
+                "volume": 0.2,
+                "voice": "whisper"
+              },
+              {
+                "triggerAfter": 28,
+                "text": "Escolha as opções que mais representam sua realidade...",
+                "volume": 0.2,
+                "voice": "whisper"
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+
+        "timeout": {
+          "soft": 10,
+          "medium": 20,
+          "hard": 35,
+          "hints": [
+            "Pense nas últimas vezes que usou ChatGPT...",
+            "Seja honesto - não há resposta errada aqui!",
+            "Vamos continuar? Você pode refletir depois."
+          ],
+          "autoAction": "continue"
+        }
+      },
+
+      {
+        "id": "act-4-revelation",
+        "type": "revelation",
+        "title": "O Segredo Revelado",
+        "narration": "Eles conhecem o segredo. O método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante.",
+
+        "visual": {
+          "title": "MÉTODO PERFEITO",
+          "subtitle": "O segredo dos 2% que dominam",
+          "highlightWord": "PERFEITO",
+          "items": [
+            { "emoji": "🎭", "text": "P - Persona específica" },
+            { "emoji": "📋", "text": "E - Estrutura clara" },
+            { "emoji": "🎯", "text": "R - Resultado esperado" },
+            { "emoji": "📝", "text": "F - Formato definido" },
+            { "emoji": "💡", "text": "E - Exemplos práticos" },
+            { "emoji": "🔄", "text": "I - Iteração contínua" },
+            { "emoji": "🗣️", "text": "T - Tom adequado" },
+            { "emoji": "⚡", "text": "O - Otimização constante" }
+          ],
+          "mood": "success"
+        },
+
+        "transitions": {
+          "enter": "zoom-in",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "act-5-playground",
+        "type": "playground",
+        "title": "A Diferença na Prática",
+        "narration": "Observe a diferença brutal entre um prompt amador e um prompt profissional usando o método PERFEITO.",
+
+        "pauseKeyword": "observe",
+
+        "visual": {
+          "title": "DESAFIO PRÁTICO",
+          "subtitle": "Veja a diferença na prática",
+          "mood": "energetic"
+        },
+
+        "interaction": {
+          "type": "playground",
+          "challenge": "Criar um plano de estudos para aprender programação",
+          "context": "Você quer aprender Python em 3 meses, com 2 horas por dia disponíveis",
+          "amateurPrompt": "Me dá um plano de estudos de programação",
+          "professionalPrompt": "PERSONA: Atue como um mentor de programação sênior com 15 anos de experiência ensinando iniciantes.\n\nESTRUTURA: Crie um plano de estudos em formato de semanas.\n\nRESULTADO: Plano para aprender Python do zero ao nível de criar aplicações web.\n\nFORMATO: Tabela com semanas, tópicos, exercícios práticos e marcos de progresso.\n\nEXEMPLO: Semana 1 - Variáveis e tipos de dados - Exercício: Calculadora - Marco: Primeiro programa funcionando.\n\nCONTEXTO: 2 horas diárias disponíveis, objetivo em 3 meses, nível iniciante absoluto.\n\nTOM: Didático e encorajador, com dicas práticas.",
+          "amateurResult": {
+            "title": "Resultado Amador",
+            "content": "1. Aprenda o básico de Python\n2. Faça alguns exercícios\n3. Crie projetos\n4. Continue praticando\n5. Aprenda frameworks",
+            "score": 12,
+            "maxScore": 100,
+            "verdict": "bad"
+          },
+          "professionalResult": {
+            "title": "Resultado Profissional",
+            "content": "📅 PLANO DE 12 SEMANAS\n\n**FASE 1: FUNDAMENTOS (Semanas 1-3)**\n| Semana | Tópico | Exercício | Marco |\n|--------|--------|-----------|-------|\n| 1 | Variáveis, tipos | Calculadora | Primeiro código |\n| 2 | Condicionais, loops | Jogo adivinhação | Lógica dominada |\n| 3 | Funções, módulos | Organizador tarefas | Código modular |\n\n**FASE 2: ESTRUTURAS (Semanas 4-6)**\n| 4 | Listas, dicionários | Sistema cadastro | CRUD básico |\n| 5 | Arquivos, exceções | Gerador relatórios | Persistência |\n| 6 | POO básico | Mini-sistema vendas | OOP funcionando |\n\n**FASE 3: WEB (Semanas 7-12)**\n...",
+            "score": 94,
+            "maxScore": 100,
+            "verdict": "excellent"
+          }
+        },
+
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.2,
+            "contextualLoops": [
+              {
+                "triggerAfter": 5,
+                "text": "Observe a diferença entre um prompt amador e um profissional...",
+                "volume": 0.3,
+                "voice": "main"
+              },
+              {
+                "triggerAfter": 15,
+                "text": "Veja como o método PERFEITO transforma resultados...",
+                "volume": 0.25,
+                "voice": "whisper"
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+
+        "timeout": {
+          "soft": 10,
+          "medium": 25,
+          "hard": 40,
+          "hints": [
+            "Compare os dois prompts com calma...",
+            "Note a estrutura do prompt profissional...",
+            "Vamos avançar para a conclusão?"
+          ],
+          "autoAction": "continue"
+        }
+      },
+
+      {
+        "id": "act-6-transformation",
+        "type": "narrative",
+        "title": "A Transformação",
+        "narration": "Este método transforma amadores em profissionais. Transforma curiosos em especialistas. Transforma brincadeira em negócio sério.",
+
+        "visual": {
+          "title": "TRANSFORMAÇÃO",
+          "leftCard": {
+            "label": "ANTES",
+            "value": "Amador",
+            "details": ["Curioso", "Brincadeira", "Resultados aleatórios"],
+            "isPositive": false
+          },
+          "rightCard": {
+            "label": "DEPOIS",
+            "value": "Profissional",
+            "details": ["Especialista", "Negócio sério", "Resultados consistentes"],
+            "isPositive": true
+          },
+          "mood": "success"
+        }
+      },
+
+      {
+        "id": "act-7-cta",
+        "type": "revelation",
+        "title": "A Escolha é Sua",
+        "narration": "A pergunta é: você quer continuar nos noventa e oito por cento ou entrar para os dois por cento que dominam?",
+
+        "pauseKeyword": "dominam",
+
+        "visual": {
+          "title": "A ESCOLHA É SUA",
+          "subtitle": "Onde você quer estar?",
+          "mood": "dramatic"
+        },
+
+        "interaction": {
+          "type": "cta",
+          "ctaTitle": "O que você vai fazer agora?",
+          "ctaOptions": [
+            {
+              "label": "Continuar brincando",
+              "emoji": "😅",
+              "variant": "secondary",
+              "action": "review"
+            },
+            {
+              "label": "Dominar IA AGORA!",
+              "emoji": "🚀",
+              "variant": "primary",
+              "action": "next"
+            }
+          ]
+        },
+
+        "audioBehavior": {
+          "onStart": "fadeToBackground",
+          "duringInteraction": {
+            "mainVolume": 0.2,
+            "ambientVolume": 0.4,
+            "contextualLoops": [
+              {
+                "triggerAfter": 8,
+                "text": "O tempo está acabando...",
+                "volume": 0.3,
+                "voice": "whisper"
+              },
+              {
+                "triggerAfter": 15,
+                "text": "Faça sua escolha agora...",
+                "volume": 0.35,
+                "voice": "whisper"
+              },
+              {
+                "triggerAfter": 22,
+                "text": "Decidindo por você em três... dois...",
+                "volume": 0.4,
+                "voice": "main"
+              }
+            ]
+          },
+          "onComplete": "next"
+        },
+
+        "timeout": {
+          "soft": 8,
+          "medium": 15,
+          "hard": 25,
+          "hints": [
+            "O tempo está acabando...",
+            "Faça sua escolha agora...",
+            "Decidindo por você..."
+          ],
+          "autoAction": "selectDefault"
+        }
+      },
+
+      {
+        "id": "act-8-gamification",
+        "type": "gamification",
+        "title": "Conquistas Desbloqueadas",
+        "narration": "Parabéns! Você deu o primeiro passo para sair dos noventa e oito por cento. O método PERFEITO agora está nas suas mãos.",
+
+        "visual": {
+          "title": "🎊 PARABÉNS!",
+          "subtitle": "Você está no caminho dos 2%",
+          "items": [
+            { "emoji": "✅", "text": "Aula Completada" },
+            { "emoji": "🧠", "text": "Método PERFEITO Aprendido" },
+            { "emoji": "🎯", "text": "Auto-avaliação Realizada" },
+            { "emoji": "💡", "text": "Diferença Amador vs Pro Vista" }
+          ],
+          "metrics": [
+            { "label": "XP Ganho", "value": "+200" },
+            { "label": "Nível", "value": "Aprendiz IA" },
+            { "label": "Próxima Aula", "value": "Aplicando PERFEITO" }
+          ],
+          "mood": "success"
+        }
+      }
+    ],
+
+    "timeline": {
+      "totalDuration": 300
+    }
+  },
+
+  "fallbacks": {
+    "noWordTimestamps": {
+      "pauseAfterSeconds": 5,
+      "pauseAfterProgress": 0.3
+    },
+    "audioLoadError": "continue"
+  },
+
+  "anchorPoints": [
+    {
+      "id": "anchor-quiz",
+      "keyword": "brinquedo",
+      "action": "pause",
+      "phaseId": "act-3-interaction"
+    },
+    {
+      "id": "anchor-playground",
+      "keyword": "observe",
+      "action": "pause",
+      "phaseId": "act-5-playground"
+    },
+    {
+      "id": "anchor-cta",
+      "keyword": "dominam",
+      "action": "pause",
+      "phaseId": "act-7-cta"
+    }
+  ]
+}
