@@ -90,17 +90,19 @@ async function generateAudio(
   whisper?: boolean,
   apiKey?: string
 ): Promise<string> {
-  // Default voice: Lily (soft, feminine, good for whispers)
-  // Alternative voices for whispers: Alice, Sarah
-  const voice = voiceId || 'pFZP5JQG7iQjIQuC4Bku'; // Lily
+  // ✅ V7-v3: Usar a MESMA voz da narração principal
+  // Roger (CwhRBWXzGAHq8TQ4Fs17) - voz masculina usada na narração
+  // Se voiceId for passado, usar ele; senão usar Roger
+  const voice = voiceId || 'CwhRBWXzGAHq8TQ4Fs17'; // Roger - mesma voz da narração
   
-  // Voice settings for whisper effect
+  // Voice settings para efeito de sussurro (mesma voz, configurações diferentes)
   const voiceSettings = whisper 
     ? {
-        stability: 0.8,        // High stability for consistent whisper
-        similarity_boost: 0.6, // Lower similarity for softer sound
-        style: 0.3,           // Lower style for more neutral
-        use_speaker_boost: false // No boost for softer sound
+        stability: 0.85,       // Alta estabilidade para sussurro consistente
+        similarity_boost: 0.8, // Manter similaridade com a voz original
+        style: 0.2,           // Estilo baixo para tom mais intimista
+        use_speaker_boost: false, // Sem boost para som mais suave
+        speed: 0.9            // Levemente mais lento para sussurro
       }
     : {
         stability: 0.5,
@@ -135,7 +137,7 @@ async function generateAudio(
   const audioBuffer = await response.arrayBuffer();
   const audioBase64 = base64Encode(audioBuffer);
   
-  console.log(`[elevenlabs-tts-contextual] ✅ Generated ${(audioBuffer.byteLength / 1024).toFixed(1)}KB audio`);
+  console.log(`[elevenlabs-tts-contextual] ✅ Generated ${(audioBuffer.byteLength / 1024).toFixed(1)}KB audio (voice: ${voice})`);
   
   return audioBase64;
 }

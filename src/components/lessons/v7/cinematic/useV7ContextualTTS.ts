@@ -93,7 +93,9 @@ export const useV7ContextualTTS = ({
     }
   }, [enabled, hints, whisper, voiceId]);
 
-  // Inicia os timers para tocar os áudios nos momentos certos
+  // ✅ V7-v3: Inicia os timers para tocar os áudios em LOOP até o usuário responder
+  const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const startContextualHints = useCallback(async () => {
     if (!enabled || hints.length === 0) return;
     
@@ -111,19 +113,42 @@ export const useV7ContextualTTS = ({
     // Limpar timers anteriores
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];
+    if (loopIntervalRef.current) {
+      clearInterval(loopIntervalRef.current);
+    }
     
-    // Agendar cada áudio
-    hints.forEach((hint, index) => {
-      if (index >= audios.length) return;
-      
-      const timer = setTimeout(() => {
-        playAudio(audios[index].audioUrl, hint.volume);
-      }, hint.triggerAfter * 1000);
-      
-      timersRef.current.push(timer);
-    });
+    // Calcular duração total de um ciclo
+    const lastHint = hints[hints.length - 1];
+    const cycleDuration = lastHint.triggerAfter + 15; // +15s após último hint
     
-    console.log(`[useV7ContextualTTS] ⏰ Scheduled ${hints.length} contextual hints`);
+    // Função para agendar um ciclo de hints
+    const scheduleHintCycle = (cycleOffset: number = 0) => {
+      hints.forEach((hint, index) => {
+        if (index >= audios.length) return;
+        
+        const timer = setTimeout(() => {
+          playAudio(audios[index].audioUrl, hint.volume);
+        }, (hint.triggerAfter + cycleOffset) * 1000);
+        
+        timersRef.current.push(timer);
+      });
+    };
+    
+    // Primeiro ciclo
+    scheduleHintCycle(0);
+    
+    // ✅ V7-v3: Loop infinito - repetir hints a cada cycleDuration segundos
+    loopIntervalRef.current = setInterval(() => {
+      // Limpar timers antigos do ciclo anterior
+      timersRef.current.forEach(t => clearTimeout(t));
+      timersRef.current = [];
+      
+      // Agendar novo ciclo
+      scheduleHintCycle(0);
+      console.log('[useV7ContextualTTS] 🔄 Looping contextual hints...');
+    }, cycleDuration * 1000);
+    
+    console.log(`[useV7ContextualTTS] ⏰ Scheduled ${hints.length} contextual hints (looping every ${cycleDuration}s)`);
   }, [enabled, hints, generatedAudios, generateAllAudios]);
 
   // Toca um áudio específico
@@ -145,11 +170,17 @@ export const useV7ContextualTTS = ({
     console.log(`[useV7ContextualTTS] 🔊 Playing contextual audio (volume: ${volume})`);
   }, []);
 
-  // Para todos os áudios e timers
+  // Para todos os áudios, timers e loops
   const stopAll = useCallback(() => {
     // Parar timers
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];
+    
+    // Parar loop
+    if (loopIntervalRef.current) {
+      clearInterval(loopIntervalRef.current);
+      loopIntervalRef.current = null;
+    }
     
     // Parar áudio atual
     if (audioRef.current) {
@@ -157,7 +188,7 @@ export const useV7ContextualTTS = ({
       audioRef.current = null;
     }
     
-    console.log('[useV7ContextualTTS] 🛑 Stopped all contextual hints');
+    console.log('[useV7ContextualTTS] 🛑 Stopped all contextual hints and loops');
   }, []);
 
   // Limpar URLs ao desmontar
