@@ -8,7 +8,6 @@ import type {
   V7PipelineAct,
   V7AudioBehavior,
   V7TimeoutConfig,
-  V7FallbacksConfig,
   V7AnchorPoint,
   normalizeTimestamp,
   extractNarration
@@ -53,12 +52,7 @@ interface V7LessonContent {
       reveal?: string;
     };
   };
-  fallbacks?: {
-    noWordTimestamps?: {
-      pauseAfterSeconds?: number;
-      pauseAfterProgress?: number;
-    };
-  };
+  // ✅ V7.1: NO FALLBACKS - AnchorText is the ONLY sync mechanism
   anchorPoints?: Array<{
     id: string;
     keyword: string;
@@ -190,19 +184,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ✅ Pass wordTimestamps so we can auto-generate pauseKeywords for interactive phases
       const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
 
-      // ✅ V7-v2: Extract lesson-level configs
+      // ✅ V7.1: Extract lesson-level configs (NO FALLBACKS - AnchorText only)
       const audioConfig = content?.audioConfig || {};
-      const fallbacks: V7FallbacksConfig = content?.fallbacks?.noWordTimestamps ? {
-        noWordTimestamps: {
-          pauseAfterSeconds: content.fallbacks.noWordTimestamps.pauseAfterSeconds ?? 5,
-          pauseAfterProgress: content.fallbacks.noWordTimestamps.pauseAfterProgress ?? 0.3,
-        },
-        audioLoadError: 'continue',
-      } : {
-        noWordTimestamps: { pauseAfterSeconds: 5, pauseAfterProgress: 0.3 },
-        audioLoadError: 'continue',
-      };
-      
+
       const globalAnchorPoints: V7AnchorPoint[] = (content?.anchorPoints || []).map(ap => ({
         id: ap.id,
         keyword: ap.keyword,
@@ -220,13 +204,12 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         audioUrl: data.audio_url || '',
         wordTimestamps: timestamps,
         phases,
-        // ✅ V7-v2: Lesson-level configs
+        // ✅ V7.1: Lesson-level configs (NO FALLBACKS - AnchorText only)
         audioConfig: {
           mainAudioUrl: data.audio_url || audioConfig.mainAudioUrl,
           ambientAudioUrl: audioConfig.ambientAudioUrl,
           soundEffects: audioConfig.soundEffects,
         },
-        fallbacks,
         anchorPoints: globalAnchorPoints,
       };
 

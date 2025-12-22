@@ -6,8 +6,7 @@ import {
   V7LessonScript,
   V7AudioBehavior,
   V7TimeoutConfig,
-  V7AudioConfig,
-  V7FallbacksConfig
+  V7AudioConfig
 } from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
 import { AnchorAction } from '@/components/lessons/v7/cinematic/useAnchorText';
 
@@ -25,14 +24,7 @@ const audioConfig: V7AudioConfig = {
   }
 };
 
-// ✅ V7-v2: Configurações de fallback
-const fallbacks: V7FallbacksConfig = {
-  noWordTimestamps: {
-    pauseAfterSeconds: 3,     // Pausar após 3s se não houver wordTimestamps
-    pauseAfterProgress: 0.3   // Ou após 30% da fase
-  },
-  audioLoadError: 'continue'
-};
+// ✅ V7.1: NO FALLBACKS - AnchorText is the ONLY sync mechanism
 
 // ✅ V7-v2 + FASE 3 FIX: Comportamento de áudio padrão para quiz
 // CORRETO: onStart = 'pause' (PAUSA TOTAL, não apenas baixa volume!)
@@ -122,9 +114,8 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
   totalDuration: 480, // 8 minutes
   audioUrl: '', // Will be populated from database
 
-  // ✅ V7-v2: Configurações globais
+  // ✅ V7.1: Configurações globais (NO FALLBACKS - AnchorText only)
   audioConfig,
-  fallbacks,
 
   phases: [
     // FASE 1: LOADING (0-3s)
