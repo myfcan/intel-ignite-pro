@@ -555,6 +555,7 @@ export const V7PhasePlayer = ({
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
             audioControl={audio}
+            isPausedByAnchor={isPausedByAnchor}
             timeoutConfig={quizTimeoutConfig}
           />
         );
