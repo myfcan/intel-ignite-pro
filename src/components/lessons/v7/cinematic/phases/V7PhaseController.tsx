@@ -177,14 +177,11 @@ export interface V7AudioConfig {
   soundEffects?: V7SoundEffectsConfig;
 }
 
-// ✅ V7-v2: Fallback configuration
-export interface V7FallbacksConfig {
-  noWordTimestamps?: {
-    pauseAfterSeconds: number;    // When to pause if no word sync
-    pauseAfterProgress: number;   // Or pause after this % of phase
-  };
-  audioLoadError?: 'continue' | 'retry' | 'showError';
-}
+// ✅ V7.1: NO FALLBACKS - AnchorText is the ONLY sync mechanism
+// Fallback config has been removed. Interactive phases MUST have:
+// 1. wordTimestamps (from ElevenLabs TTS)
+// 2. anchorActions or pauseKeywords (to define when to pause)
+// Without these, the phase will play through without pausing.
 
 // ✅ V7-v2: Global anchor points (alternative to per-phase anchorActions)
 export interface V7AnchorPoint {
@@ -204,9 +201,8 @@ export interface V7LessonScript {
   audioUrl?: string;
   wordTimestamps?: { word: string; start: number; end: number }[];
 
-  // ✅ V7-v2: New lesson-level configuration
+  // ✅ V7.1: Lesson-level configuration (NO FALLBACKS - AnchorText only)
   audioConfig?: V7AudioConfig;
-  fallbacks?: V7FallbacksConfig;
   anchorPoints?: V7AnchorPoint[];
 }
 

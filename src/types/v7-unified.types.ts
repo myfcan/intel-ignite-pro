@@ -278,16 +278,12 @@ export interface V7AudioConfig {
 }
 
 // ============================================================================
-// FALLBACKS CONFIG
+// V7.1: NO FALLBACKS - AnchorText is the ONLY sync mechanism
 // ============================================================================
-
-export interface V7FallbacksConfig {
-  noWordTimestamps?: {
-    pauseAfterSeconds: number;
-    pauseAfterProgress: number;   // 0-1 percentage
-  };
-  audioLoadError?: 'continue' | 'retry' | 'showError';
-}
+// Fallback config has been removed. Interactive phases MUST have:
+// 1. wordTimestamps (from ElevenLabs TTS)
+// 2. anchorActions or pauseKeywords (to define when to pause)
+// Without these, the phase will play through without pausing.
 
 // ============================================================================
 // GLOBAL ANCHOR POINTS
@@ -314,9 +310,8 @@ export interface V7LessonScript {
   audioUrl?: string;
   wordTimestamps?: WordTimestamp[];
 
-  // V7-v2 configuration
+  // V7.1 configuration (NO FALLBACKS - AnchorText only)
   audioConfig?: V7AudioConfig;
-  fallbacks?: V7FallbacksConfig;
   anchorPoints?: V7AnchorPoint[];
 }
 
@@ -342,7 +337,7 @@ export interface V7PipelineInput {
   voice_id?: string;
   generate_audio?: boolean;
 
-  // V7-v2 audio config
+  // V7.1 audio config (NO FALLBACKS - AnchorText only)
   audioConfig?: {
     narrationVoice?: string;
     voiceSettings?: any;
@@ -350,7 +345,6 @@ export interface V7PipelineInput {
     soundEffects?: any[];
   };
 
-  fallbacks?: V7FallbacksConfig;
   anchorPoints?: V7AnchorPoint[];
 
   // Rich cinematic flow (V7-v2 format)

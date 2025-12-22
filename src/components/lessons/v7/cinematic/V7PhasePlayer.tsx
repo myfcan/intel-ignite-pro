@@ -220,49 +220,25 @@ export const V7PhasePlayer = ({
     console.log(`[V7PhasePlayer] 🎯 Anchor event: "${event.action.id}" (${event.action.type}) at ${event.timestamp.toFixed(1)}s`);
   }, []);
 
-  // ✅ Check if we should enable anchor text system
+  // ✅ V7.1: AnchorText is the ONLY sync mechanism - NO FALLBACKS
   const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'playground';
   const hasAnchorActions = anchorActions.length > 0;
   const hasWordTimestamps = wordTimestamps.length > 0;
-  
-  // ✅ LOGIC:
-  // - TEM wordTimestamps → useAnchorText (keyword sync)
-  // - NÃO TEM wordTimestamps → Fallback 30% (pause at 30% of audio duration)
+
+  // ✅ V7.1: Enable AnchorText when we have audio + actions + timestamps
+  // If any of these are missing, the phase will play through without pausing
   const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
-  const shouldUseFallback30 = hasAudio && isInteractivePhase && !hasWordTimestamps;
-  
-  // ✅ FALLBACK 30%: Pause at 30% of audio duration when no wordTimestamps
-  const fallback30TriggeredRef = useRef(false);
-  
-  useEffect(() => {
-    // Reset fallback trigger when phase changes
-    fallback30TriggeredRef.current = false;
-  }, [currentPhase?.id]);
-  
-  useEffect(() => {
-    if (!shouldUseFallback30 || fallback30TriggeredRef.current) return;
-    if (!audio.duration || audio.duration <= 0) return;
-    
-    const triggerPoint = audio.duration * 0.30; // 30% of audio
-    
-    if (audio.currentTime >= triggerPoint && audio.isPlaying) {
-      console.log(`[V7PhasePlayer] ⏸️ FALLBACK 30% PAUSE at ${audio.currentTime.toFixed(1)}s (trigger: ${triggerPoint.toFixed(1)}s)`);
-      fallback30TriggeredRef.current = true;
-      audio.pause();
-    }
-  }, [shouldUseFallback30, audio.currentTime, audio.duration, audio.isPlaying]);
-  
+
   // Log anchor system status for debugging
   useEffect(() => {
-    console.log(`[V7PhasePlayer] 🔊 System status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
-      system: hasWordTimestamps ? 'useAnchorText' : (shouldUseFallback30 ? 'Fallback30%' : 'none'),
+    console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
+      enabled: shouldEnableAnchors,
       hasWordTimestamps,
       hasAnchorActions,
       isInteractivePhase,
-      wordTimestampCount: wordTimestamps.length,
-      audioDuration: audio.duration?.toFixed(1)
+      wordTimestampCount: wordTimestamps.length
     });
-  }, [currentPhase?.id, currentPhase?.type, hasWordTimestamps, hasAnchorActions, isInteractivePhase, shouldUseFallback30, audio.duration]);
+  }, [currentPhase?.id, currentPhase?.type, hasWordTimestamps, hasAnchorActions, isInteractivePhase, shouldEnableAnchors]);
 
   const { 
     isPausedByAnchor, 
@@ -305,46 +281,9 @@ export const V7PhasePlayer = ({
     },
     onAnchorEvent: handleAnchorEvent,
   });
-  
-  // ✅ FALLBACK: Auto-pause for interactive phases when there are NO wordTimestamps
-  // This ensures the lesson flow works even without precise word-level sync
-  const fallbackPauseTriggeredRef = useRef<Set<string>>(new Set());
-  
+
+  // ✅ V7.1: Log phase changes (no fallback logic - AnchorText only)
   useEffect(() => {
-    // Only use fallback if:
-    // 1. We're in an interactive phase
-    // 2. We have anchor actions that include a pause
-    // 3. We DON'T have wordTimestamps (so anchor system won't work)
-    // 4. Audio is playing
-    if (!isInteractivePhase || !hasAnchorActions || hasWordTimestamps || !audio.isPlaying) {
-      return;
-    }
-    
-    const phaseId = currentPhase?.id || '';
-    const hasPauseAction = anchorActions.some(a => a.type === 'pause');
-    
-    // Only trigger fallback once per phase
-    if (hasPauseAction && !fallbackPauseTriggeredRef.current.has(phaseId)) {
-      // Calculate when to pause: after 80% of phase narration time
-      // This gives time for intro narration before showing UI
-      const phaseDuration = (currentPhase?.endTime || 0) - (currentPhase?.startTime || 0);
-      const timeInPhase = audio.currentTime - (currentPhase?.startTime || 0);
-      const progressInPhase = timeInPhase / phaseDuration;
-      
-      // Pause after first 3-5 seconds or 30% of phase, whichever comes first
-      const shouldPause = timeInPhase >= 3 || progressInPhase >= 0.3;
-      
-      if (shouldPause) {
-        console.log(`[V7PhasePlayer] ⏸️ FALLBACK PAUSE for "${phaseId}" (no wordTimestamps, ${timeInPhase.toFixed(1)}s into phase)`);
-        fallbackPauseTriggeredRef.current.add(phaseId);
-        audio.pause();
-      }
-    }
-  }, [isInteractivePhase, hasAnchorActions, hasWordTimestamps, audio.isPlaying, audio.currentTime, currentPhase, anchorActions]);
-  
-  // Reset fallback tracker when phase changes
-  useEffect(() => {
-    // Clear fallback when entering a new phase
     if (currentPhase?.id) {
       console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);
     }
