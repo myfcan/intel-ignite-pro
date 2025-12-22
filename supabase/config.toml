@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.v7-regenerate-audio]
 verify_jwt = false
+
+[functions.elevenlabs-tts-contextual]
+verify_jwt = false
