@@ -3,6 +3,91 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { V7LessonScript, V7Phase, V7Scene } from '@/components/lessons/v7/cinematic/phases/V7PhaseController';
+import type {
+  WordTimestamp,
+  V7PipelineAct,
+  V7AudioBehavior,
+  V7TimeoutConfig,
+  normalizeTimestamp,
+  extractNarration
+} from '@/types/v7-unified.types';
+
+// ============================================================================
+// DATABASE TYPES - For type-safe data fetching
+// ============================================================================
+
+/** Raw timestamp format from database (may have different field names) */
+interface RawWordTimestamp {
+  word: string;
+  start?: number;
+  end?: number;
+  start_time?: number;  // Legacy format
+  end_time?: number;    // Legacy format
+}
+
+/** V7 lesson content structure from database */
+interface V7LessonContent {
+  model?: string;
+  version?: string;
+  cinematic_flow?: {
+    acts: V7DatabaseAct[];
+    timeline?: { totalDuration?: number };
+  };
+  cinematicStructure?: {
+    acts: V7DatabaseAct[];
+    totalDuration?: number;
+  };
+  audioConfig?: {
+    mainAudioUrl?: string;
+    ambientAudioUrl?: string;
+  };
+  fallbacks?: {
+    noWordTimestamps?: {
+      pauseAfterSeconds?: number;
+      pauseAfterProgress?: number;
+    };
+  };
+  anchorPoints?: Array<{
+    id: string;
+    keyword: string;
+    phaseId: string;
+    action: string;
+  }>;
+}
+
+/** Act structure from database (supports both V7-v2 and legacy) */
+interface V7DatabaseAct {
+  id?: string;
+  type?: string;
+  title?: string;
+  startTime?: number;
+  endTime?: number;
+  duration?: number;
+
+  // V7-v2 format (direct)
+  narration?: string;
+  visual?: Record<string, unknown>;
+  audio?: Record<string, unknown>;
+  audioBehavior?: V7AudioBehavior;
+  timeout?: V7TimeoutConfig;
+  interaction?: Record<string, unknown>;
+  transitions?: Record<string, unknown>;
+  anchorPoints?: Array<{ keyword: string; action: string }>;
+
+  // Legacy format (nested in content)
+  content?: {
+    visual?: Record<string, unknown>;
+    audio?: {
+      narration?: string;
+      narrationSegment?: { text: string };
+    };
+    interaction?: Record<string, unknown>;
+    audioBehavior?: V7AudioBehavior;
+    timeout?: V7TimeoutConfig;
+  };
+  narrativeSegment?: string;
+  visualEffects?: Record<string, unknown>;
+}
 
 interface UseV7PhaseScriptResult {
   script: V7LessonScript | null;
@@ -40,12 +125,13 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       if (fetchError) throw fetchError;
       if (!data) throw new Error('Aula não encontrada');
 
-      const content = data.content as any;
-      const rawTimestamps = data.word_timestamps as any[] || [];
-      
+      // ✅ P1 FIX: Use typed interfaces instead of 'as any'
+      const content = data.content as V7LessonContent | null;
+      const rawTimestamps = (data.word_timestamps as RawWordTimestamp[] | null) || [];
+
       // ✅ CRITICAL FIX: Normalize timestamps - some lessons use start_time/end_time, others use start/end
-      const timestamps = rawTimestamps.map(ts => ({
-        word: ts.word,
+      const timestamps: WordTimestamp[] = rawTimestamps.map((ts: RawWordTimestamp) => ({
+        word: ts.word || '',
         start: ts.start ?? ts.start_time ?? 0,
         end: ts.end ?? ts.end_time ?? 0
       }));
