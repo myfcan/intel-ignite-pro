@@ -571,12 +571,12 @@ export const DEFAULT_AUDIO_BEHAVIORS: Record<string, AudioBehavior> = {
   },
 
   cta: {
-    onStart: 'continue',        // ✅ CORRIGIDO: CTA continua normal (não pausa!)
+    onStart: 'continue',        // ✅ CTA continua normal (não pausa!)
     duringInteraction: {
       mainVolume: 1.0,          // ✅ Volume total (CTA não interrompe)
       ambientVolume: 0.4,
       contextualLoops: []       // Sem loops contextuais para CTA
     },
-    onComplete: 'continue'      // ✅ Continua fluxo normal
+    onComplete: 'next'          // ✅ FIX: Continua para próximo (era 'continue' inválido)
   }
 };
