@@ -206,8 +206,14 @@ function generateAudioTrack(
       url: generatePlaceholderAudioURL(lessonId, totalDuration),
       duration: totalDuration,
       format: 'mp3',
+      // ✅ V7-v2 FIX: Check BOTH formats (V7-v2 direct + legacy nested)
       transcription: acts
-        .map((act) => act.content?.audio?.narrationSegment?.text || '')
+        .map((act: any) =>
+          act.narration ||                           // V7-v2 format (direct)
+          act.content?.audio?.narration ||           // V7-v2 nested
+          act.content?.audio?.narrationSegment?.text || // Legacy format
+          ''
+        )
         .join(' '),
     },
     backgroundMusic: {

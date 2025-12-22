@@ -145,10 +145,11 @@ export default function AdminV7Create() {
       const duration = parsed.duration || 300;
 
       // Extract narration count for cinematic_flow
+      // ✅ V7-v2 FIX: Check BOTH formats (V7-v2 direct + legacy nested)
       let narrationCount = 0;
       if (hasCinematicFlow) {
         narrationCount = parsed.cinematic_flow.acts.filter(
-          (act: any) => act.content?.audio?.narration
+          (act: any) => act.narration || act.content?.audio?.narration
         ).length;
       }
 
