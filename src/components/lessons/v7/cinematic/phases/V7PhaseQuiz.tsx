@@ -315,11 +315,9 @@ export const V7PhaseQuiz = ({
     }
   }, []);
 
-  // ✅ V7-v3.1: Função para disparar confetti
-  const fireConfetti = useCallback((isPositive: boolean) => {
-    const colors = isPositive 
-      ? ['#22c55e', '#4ade80', '#86efac', '#ffffff'] // Verde
-      : ['#a855f7', '#c084fc', '#e879f9', '#ffffff']; // Roxo (encorajador)
+  // ✅ V7-v3.1: Função para disparar confetti (só para acertos)
+  const fireConfetti = useCallback(() => {
+    const colors = ['#22c55e', '#4ade80', '#86efac', '#ffffff']; // Verde
 
     // Explosão central
     confetti({
@@ -348,6 +346,14 @@ export const V7PhaseQuiz = ({
     }, 150);
   }, []);
 
+  // ✅ V7-v3.2: Som de erro para respostas incorretas
+  const playErrorSound = useCallback(() => {
+    const ctrl = audioControlRef.current;
+    // Usar efeito sonoro de erro
+    ctrl?.playSoundEffect?.('error', 0.6);
+    console.log('[V7PhaseQuiz] 🔊 Som de erro tocado');
+  }, []);
+
   // ✅ FASE 1: Segundo clique confirma a resposta
   const handleConfirm = useCallback(() => {
     // Limpar timers (hints visuais) e parar TTS
@@ -366,20 +372,24 @@ export const V7PhaseQuiz = ({
     setTimeout(() => {
       setShowResult(true);
       
-      // ✅ V7-v3.1: Calcular resultado e disparar confetti + TTS
+      // ✅ V7-v3.2: Calcular resultado e disparar efeitos visuais/sonoros
       const badCount = selectedIds.filter(id => 
         options.find(o => o.id === id)?.category === 'bad'
       ).length;
       const isPositiveResult = badCount < selectedIds.length / 2;
       
-      // Disparar confetti
-      fireConfetti(isPositiveResult);
-      
-      // Falar feedback
-      const feedbackText = isPositiveResult 
-        ? (correctFeedback || 'Você já tem bases sólidas para dominar IA!')
-        : (incorrectFeedback || 'Não se preocupe - você está aqui para mudar isso!');
-      speakFeedback(feedbackText);
+      // Feedback diferenciado baseado no resultado
+      if (isPositiveResult) {
+        // ✅ CORRETO: Confetti verde + áudio positivo
+        fireConfetti();
+        const feedbackText = correctFeedback || 'Você já tem bases sólidas para dominar IA!';
+        speakFeedback(feedbackText);
+      } else {
+        // ✅ INCORRETO: Som de erro + áudio encorajador
+        playErrorSound();
+        const feedbackText = incorrectFeedback || 'Não se preocupe - você está aqui para mudar isso!';
+        speakFeedback(feedbackText);
+      }
     }, 500);
 
     // ✅ V7-v2 FIX: RETOMAR narração de onde parou após mostrar resultado
@@ -398,7 +408,7 @@ export const V7PhaseQuiz = ({
       }
       onComplete?.(selectedIds);
     }, 4500); // Aumentar delay para dar tempo do feedback ser falado
-  }, [selectedIds, onComplete, audioPausedByQuiz, options, correctFeedback, incorrectFeedback, fireConfetti, speakFeedback]);
+  }, [selectedIds, onComplete, audioPausedByQuiz, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
