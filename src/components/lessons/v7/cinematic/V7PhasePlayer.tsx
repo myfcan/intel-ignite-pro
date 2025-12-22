@@ -753,8 +753,8 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhaseCTA
-            title={revelationContent.mainText || content.mainText || currentPhase.title}
-            subtitle={revelationContent.subtitle || content.subtitle || ''}
+            title={extractTextFromContent(revelationContent.mainText) || extractTextFromContent(content.mainText) || currentPhase.title}
+            subtitle={extractTextFromContent(revelationContent.subtitle) || extractTextFromContent(content.subtitle) || ''}
             options={ctaOptions.length > 0 ? ctaOptions : [
               { label: 'Revisar', emoji: '📚', variant: 'negative' },
               { label: 'Continuar', emoji: '🚀', variant: 'positive' }
@@ -781,8 +781,8 @@ export const V7PhasePlayer = ({
               unlocked: true
             }))}
             xpEarned={parseInt(xp.replace(/\D/g, '')) || 100}
-            levelName={gamificationContent.mainText || content.mainText || 'COMPLETO'}
-            nextLessonTitle={gamificationContent.subtitle || content.subtitle || 'Próxima Aula'}
+            levelName={extractTextFromContent(gamificationContent.mainText) || extractTextFromContent(content.mainText) || 'COMPLETO'}
+            nextLessonTitle={extractTextFromContent(gamificationContent.subtitle) || extractTextFromContent(content.subtitle) || 'Próxima Aula'}
             nextLessonCountdown=""
             sceneIndex={currentSceneIndex}
             onContinue={() => onComplete?.()}
