@@ -1,0 +1,292 @@
+{
+  "$schema": "V7 Cinematic Lesson Schema v7.1",
+  "$description": "Exemplo de aula cinematográfica no formato V7.1 - WORD-BASED timing",
+
+  "version": "7.1",
+  "model": "v7-cinematic",
+
+  "cinematic_flow": {
+    "acts": [
+      {
+        "id": "act-1-dramatic",
+        "type": "dramatic",
+        "title": "Impacto Inicial",
+        "startTime": 0,
+        "endTime": 15.5,
+        "narration": "Você sabia que 98% das pessoas estão usando inteligência artificial como brinquedo?",
+        "visual": {
+          "hookQuestion": "VOCÊ SABIA?",
+          "mainValue": "98%",
+          "secondaryNumber": "2%",
+          "subtitle": "das pessoas usam IA como brinquedo",
+          "highlightWord": "brinquedo",
+          "mood": "danger"
+        },
+        "transitions": {
+          "enter": "letterbox",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-2-narrative",
+        "type": "narrative",
+        "title": "A Grande Divisão",
+        "startTime": 15.5,
+        "endTime": 35.2,
+        "narration": "Enquanto a maioria brinca, apenas 2% está dominando essa tecnologia para multiplicar resultados.",
+        "visual": {
+          "title": "A GRANDE DIVISÃO",
+          "leftCard": {
+            "label": "98% BRINCANDO",
+            "value": "Prompts genéricos",
+            "details": ["Resultados medíocres", "Tempo perdido", "Frustração"],
+            "isPositive": false
+          },
+          "rightCard": {
+            "label": "2% DOMINANDO",
+            "value": "Prompts estruturados",
+            "details": ["Resultados precisos", "Eficiência máxima", "Vantagem competitiva"],
+            "isPositive": true
+          }
+        }
+      },
+      {
+        "id": "act-3-interaction",
+        "type": "interaction",
+        "title": "Auto-Avaliação",
+        "startTime": 35.2,
+        "endTime": 55.0,
+        "narration": "Seja honesto consigo mesmo: você faz parte dos 98% ou dos 2%? Selecione todas as opções que representam você.",
+
+        "pauseKeyword": "honesto",
+        "anchorActions": [
+          {
+            "id": "pause-quiz",
+            "keyword": "honesto",
+            "type": "pause"
+          }
+        ],
+
+        "visual": {
+          "title": "AUTO-AVALIAÇÃO",
+          "subtitle": "Seja honesto consigo mesmo"
+        },
+
+        "interaction": {
+          "type": "quiz",
+          "question": "Você faz parte dos 98% ou dos 2%?",
+          "options": [
+            {
+              "id": "opt-1",
+              "text": "Uso ChatGPT só para curiosidades",
+              "isCorrect": false,
+              "category": "bad"
+            },
+            {
+              "id": "opt-2",
+              "text": "Tenho prompts salvos que uso sempre",
+              "isCorrect": true,
+              "category": "good"
+            },
+            {
+              "id": "opt-3",
+              "text": "Nunca estruturei meus prompts",
+              "isCorrect": false,
+              "category": "bad"
+            },
+            {
+              "id": "opt-4",
+              "text": "Documento e melhoro meus prompts",
+              "isCorrect": true,
+              "category": "good"
+            }
+          ],
+          "correctFeedback": "Excelente! Você já está no caminho certo!",
+          "incorrectFeedback": "Não se preocupe - você está aqui para mudar isso!"
+        },
+
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.3,
+            "contextualLoops": [
+              {
+                "triggerAfter": 10,
+                "text": "Pense com calma...",
+                "volume": 0.3,
+                "voice": "whisper"
+              },
+              {
+                "triggerAfter": 20,
+                "text": "Não há resposta errada, seja honesto!",
+                "volume": 0.3,
+                "voice": "whisper"
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+
+        "timeout": {
+          "soft": 7,
+          "medium": 15,
+          "hard": 30,
+          "hints": [
+            "Pense com calma...",
+            "Não há resposta errada!",
+            "Vamos continuar?"
+          ],
+          "autoAction": "continue"
+        }
+      },
+      {
+        "id": "act-4-playground",
+        "type": "playground",
+        "title": "A Diferença na Prática",
+        "startTime": 55.0,
+        "endTime": 85.0,
+        "narration": "Observe a diferença brutal entre um prompt amador e um prompt profissional.",
+
+        "pauseKeyword": "observe",
+        "anchorActions": [
+          {
+            "id": "pause-playground",
+            "keyword": "observe",
+            "type": "pause"
+          }
+        ],
+
+        "visual": {
+          "title": "DESAFIO PRÁTICO",
+          "subtitle": "Veja a diferença na prática"
+        },
+
+        "interaction": {
+          "type": "playground",
+          "challenge": "Criar um plano de estudos",
+          "context": "Você quer aprender programação em 3 meses",
+          "amateurPrompt": "Me dá um plano de estudos de programação",
+          "professionalPrompt": "Atue como um mentor de programação sênior. Crie um plano de estudos estruturado para aprender Python em 3 meses, considerando: 1) 2 horas diárias disponíveis, 2) Objetivo: criar aplicações web, 3) Nível: iniciante absoluto. Formate em semanas com marcos de progresso.",
+          "amateurResult": {
+            "title": "Resultado Amador",
+            "content": "1. Aprenda o básico\n2. Faça exercícios\n3. Crie projetos",
+            "score": 15,
+            "maxScore": 100,
+            "verdict": "bad"
+          },
+          "professionalResult": {
+            "title": "Resultado Profissional",
+            "content": "**Semana 1-2: Fundamentos**\n- Variáveis e tipos de dados\n- Estruturas condicionais\n- Marco: Calculadora funcional\n\n**Semana 3-4: Estruturas de Dados**\n- Listas, dicionários, tuplas\n- Loops e iteração\n- Marco: Sistema de cadastro\n\n...",
+            "score": 95,
+            "maxScore": 100,
+            "verdict": "excellent"
+          }
+        },
+
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0,
+            "contextualLoops": []
+          },
+          "onComplete": "resume"
+        }
+      },
+      {
+        "id": "act-5-revelation",
+        "type": "revelation",
+        "title": "O Método PERFEITO",
+        "startTime": 85.0,
+        "endTime": 115.0,
+        "narration": "Apresento a você o Método PERFEITO: Persona, Estrutura, Resultado, Formato, Exemplo, Iteração, Tom, Objetivo.",
+
+        "visual": {
+          "title": "MÉTODO PERFEITO",
+          "subtitle": "Sua arma secreta para prompts poderosos",
+          "items": [
+            { "emoji": "🎭", "text": "P - Persona" },
+            { "emoji": "📋", "text": "E - Estrutura" },
+            { "emoji": "🎯", "text": "R - Resultado" },
+            { "emoji": "📝", "text": "F - Formato" },
+            { "emoji": "💡", "text": "E - Exemplo" },
+            { "emoji": "🔄", "text": "I - Iteração" },
+            { "emoji": "🗣️", "text": "T - Tom" },
+            { "emoji": "🏆", "text": "O - Objetivo" }
+          ]
+        },
+
+        "interaction": {
+          "type": "cta",
+          "ctaTitle": "O que você vai fazer agora?",
+          "ctaOptions": [
+            {
+              "label": "Revisar o conteúdo",
+              "emoji": "📚",
+              "variant": "secondary"
+            },
+            {
+              "label": "Aplicar AGORA!",
+              "emoji": "🚀",
+              "variant": "primary"
+            }
+          ]
+        },
+
+        "audioBehavior": {
+          "onStart": "fadeToBackground",
+          "duringInteraction": {
+            "mainVolume": 0.3,
+            "ambientVolume": 0.4,
+            "contextualLoops": []
+          },
+          "onComplete": "next"
+        }
+      },
+      {
+        "id": "act-6-gamification",
+        "type": "gamification",
+        "title": "Conquistas",
+        "startTime": 115.0,
+        "endTime": 125.0,
+        "narration": "Parabéns! Você completou sua primeira aula e está no caminho para dominar a inteligência artificial.",
+
+        "visual": {
+          "title": "🎊 PARABÉNS!",
+          "subtitle": "Aula Completada",
+          "items": [
+            { "emoji": "✅", "text": "Aula Completada" },
+            { "emoji": "🧠", "text": "Método PERFEITO Aprendido" },
+            { "emoji": "🎯", "text": "Primeiro Passo Dado" }
+          ],
+          "metrics": [
+            { "label": "XP Ganho", "value": "+150" },
+            { "label": "Nível", "value": "Iniciante IA" }
+          ]
+        }
+      }
+    ],
+    "timeline": {
+      "totalDuration": 125.0
+    }
+  },
+
+  "audioConfig": {
+    "mainAudioUrl": "https://storage.example.com/lesson-audio.mp3",
+    "ambientAudioUrl": "https://storage.example.com/ambient-music.mp3",
+    "soundEffects": {
+      "click": "/sounds/click.mp3",
+      "success": "/sounds/success.mp3",
+      "whoosh": "/sounds/whoosh.mp3"
+    }
+  },
+
+  "fallbacks": {
+    "noWordTimestamps": {
+      "pauseAfterSeconds": 5,
+      "pauseAfterProgress": 0.3
+    },
+    "audioLoadError": "continue"
+  }
+}

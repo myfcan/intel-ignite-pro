@@ -456,11 +456,26 @@ Deno.serve(async (req) => {
 
         // Recalculate act timings based on word timestamps
         if (wordTimestamps.length > 0) {
+          // Legacy proportional recalculation (kept for compatibility)
           recalculateActTimingsFromWordTimestamps(
             cinematicActs,
             wordTimestamps,
             narrativeForAudio
           );
+
+          // ✅ V7.1: WORD-BASED timing - uses pauseKeywords for precise sync
+          if (hasCinematicFlow && input.cinematic_flow?.acts) {
+            calculateWordBasedTimings(
+              cinematicActs,
+              wordTimestamps,
+              input.cinematic_flow.acts.map(act => ({
+                pauseKeyword: (act as any).pauseKeyword,
+                pauseKeywords: (act as any).pauseKeywords,
+                narration: act.narration || (act.content as any)?.audio?.narration || '',
+                type: act.type,
+              }))
+            );
+          }
         }
       } else {
         // ✅ V7-v2 FIX: Track error instead of silent failure
@@ -494,6 +509,13 @@ Deno.serve(async (req) => {
         // ✅ V7-v2: Get narration from both formats
         const narration = act.narration || act.content?.audio?.narration || '';
 
+        // ✅ V7.1: Get pauseKeyword and pauseTime from calculated values
+        const pauseKeyword = (scaledAct as any)?.pauseKeyword ||
+                            (act as any).pauseKeyword ||
+                            (act as any).pauseKeywords?.[0] ||
+                            null;
+        const pauseTime = (scaledAct as any)?.pauseTime || null;
+
         return {
           // ✅ V7-v2: Preserve ALL act-level fields
           id: act.id || `act-${index + 1}`,
@@ -505,6 +527,11 @@ Deno.serve(async (req) => {
           duration: scaledDuration,
           startTime: scaledStartTime,
           endTime: scaledEndTime,
+
+          // ✅ V7.1: WORD-BASED sync fields
+          pauseKeyword: pauseKeyword,
+          pauseTime: pauseTime,
+          pauseKeywords: (act as any).pauseKeywords || (pauseKeyword ? [pauseKeyword] : []),
 
           // ✅ V7-v2: Narration at act level (preferred format)
           narration: narration,
@@ -542,6 +569,8 @@ Deno.serve(async (req) => {
               ...act.content?.audio,
             },
             interaction: act.interaction || act.content?.interaction || null,
+            // ✅ V7.1: Also include pauseKeyword in content for legacy support
+            pauseKeyword: pauseKeyword,
           },
         };
       }),
@@ -557,7 +586,7 @@ Deno.serve(async (req) => {
 
     const lessonContent = {
       model: 'v7-cinematic',
-      version: '2.2.0', // v2.2.0: Full V7-v2 support with audioBehavior, timeout, anchorPoints
+      version: '7.1', // v7.1: WORD-BASED timing with pauseKeyword support
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
@@ -1204,6 +1233,167 @@ function recalculateActTimingsFromWordTimestamps(
   if (acts.length > 0) {
     acts[acts.length - 1].endTime = totalAudioDuration;
   }
+}
+
+// ============================================================================
+// V7.1: WORD-BASED TIMING CALCULATION
+// ============================================================================
+
+/**
+ * ✅ V7.1: Calculate act timings based on KEYWORDS in wordTimestamps
+ *
+ * For each act with a pauseKeyword, find when that word is spoken
+ * and use it as the trigger point for the interaction.
+ *
+ * This replaces the old proportional scaling approach.
+ */
+function calculateWordBasedTimings(
+  acts: V7CinematicAct[],
+  wordTimestamps: WordTimestamp[],
+  inputActs?: Array<{
+    pauseKeyword?: string;
+    pauseKeywords?: string[];
+    narration?: string;
+    type?: string;
+  }>
+): void {
+  if (acts.length === 0 || wordTimestamps.length === 0) return;
+
+  console.log('[V7Pipeline:WordBased] ✅ Calculating WORD-BASED timings...');
+  console.log('[V7Pipeline:WordBased] Total words:', wordTimestamps.length);
+
+  const totalAudioDuration = wordTimestamps[wordTimestamps.length - 1].end;
+
+  // Normalize function for word matching
+  const normalize = (word: string): string =>
+    word.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,!?;:'"()[\]{}…]+/g, '')
+      .trim();
+
+  // Find keyword in wordTimestamps
+  const findKeywordTime = (keyword: string, afterTime: number = 0): number | null => {
+    const normalizedKeyword = normalize(keyword);
+
+    for (const ts of wordTimestamps) {
+      if (ts.start < afterTime) continue;
+
+      const normalizedWord = normalize(ts.word);
+
+      if (normalizedWord === normalizedKeyword ||
+          normalizedWord.includes(normalizedKeyword) ||
+          normalizedKeyword.includes(normalizedWord)) {
+        console.log(`[V7Pipeline:WordBased] Found keyword "${keyword}" at ${ts.start.toFixed(2)}s`);
+        return ts.start;
+      }
+    }
+
+    return null;
+  };
+
+  // Find the last word of the first sentence in narration
+  const findSentenceEndTime = (narration: string, afterTime: number = 0): number | null => {
+    // Split into sentences
+    const sentences = narration.split(/[.!?…]+/).filter(s => s.trim().length > 0);
+    if (sentences.length === 0) return null;
+
+    // Get words from first sentence
+    const firstSentence = sentences[0].trim();
+    const words = firstSentence.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return null;
+
+    // Find the last meaningful word
+    const commonWords = new Set(['que', 'de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'um', 'uma', 'os', 'as', 'e', 'a', 'o']);
+
+    for (let i = words.length - 1; i >= 0; i--) {
+      const word = words[i].replace(/[.,!?;:'"()[\]{}…]+/g, '');
+      const normalized = normalize(word);
+
+      if (normalized.length >= 3 && !commonWords.has(normalized)) {
+        const time = findKeywordTime(word, afterTime);
+        if (time !== null) {
+          console.log(`[V7Pipeline:WordBased] Found sentence end word "${word}" at ${time.toFixed(2)}s`);
+          return time;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Process each act
+  let lastEndTime = 0;
+
+  acts.forEach((act, index) => {
+    const inputAct = inputActs?.[index];
+    const isInteractive = act.type === 'interaction' || act.type === 'quiz' || act.type === 'playground';
+
+    // Start time is always after the previous act ends
+    act.startTime = lastEndTime;
+
+    // For interactive phases, find the pauseKeyword to determine when to pause
+    if (isInteractive && inputAct) {
+      // Priority 1: Explicit pauseKeyword
+      const pauseKeyword = inputAct.pauseKeyword || inputAct.pauseKeywords?.[0];
+
+      if (pauseKeyword) {
+        const keywordTime = findKeywordTime(pauseKeyword, act.startTime);
+        if (keywordTime !== null) {
+          // The pause happens AT the keyword, so act starts a bit before
+          // We keep startTime as is, but note the pause point
+          console.log(`[V7Pipeline:WordBased] Act ${index + 1} (${act.type}): pauseKeyword "${pauseKeyword}" at ${keywordTime.toFixed(2)}s`);
+
+          // Store pause time in act for frontend use
+          (act as any).pauseTime = keywordTime;
+          (act as any).pauseKeyword = pauseKeyword;
+        }
+      }
+      // Priority 2: Find from narration sentence structure
+      else if (inputAct.narration) {
+        const sentenceEndTime = findSentenceEndTime(inputAct.narration, act.startTime);
+        if (sentenceEndTime !== null) {
+          (act as any).pauseTime = sentenceEndTime;
+          console.log(`[V7Pipeline:WordBased] Act ${index + 1} (${act.type}): auto-detected pause at ${sentenceEndTime.toFixed(2)}s`);
+        }
+      }
+    }
+
+    // Calculate end time based on next act's start or audio end
+    if (index < acts.length - 1) {
+      // Look ahead to next act to determine this act's end
+      const nextInputAct = inputActs?.[index + 1];
+      const nextNarration = nextInputAct?.narration || '';
+
+      // Find first word of next narration to determine this act's end
+      if (nextNarration) {
+        const firstWords = nextNarration.split(/\s+/).slice(0, 5);
+        for (const word of firstWords) {
+          const cleanWord = word.replace(/[.,!?;:'"()[\]{}…]+/g, '');
+          if (cleanWord.length >= 3) {
+            const wordTime = findKeywordTime(cleanWord, act.startTime + 1);
+            if (wordTime !== null) {
+              act.endTime = wordTime;
+              console.log(`[V7Pipeline:WordBased] Act ${index + 1} ends at ${wordTime.toFixed(2)}s (next narration starts)`);
+              break;
+            }
+          }
+        }
+      }
+
+      // Fallback: use proportional timing if keyword not found
+      if (act.endTime <= act.startTime) {
+        act.endTime = act.startTime + (totalAudioDuration / acts.length);
+      }
+    } else {
+      // Last act ends at audio end
+      act.endTime = totalAudioDuration;
+    }
+
+    lastEndTime = act.endTime;
+
+    console.log(`[V7Pipeline:WordBased] Act ${index + 1} "${act.type}": ${act.startTime.toFixed(2)}s - ${act.endTime.toFixed(2)}s`);
+  });
 }
 
 // ============================================================================
