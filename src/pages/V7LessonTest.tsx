@@ -205,10 +205,17 @@ const V7LessonTest = () => {
       // Call the v7-pipeline edge function with just audio generation
       const { data, error } = await supabase.functions.invoke('v7-pipeline', {
         body: {
-          action: 'generate_audio_only',
+          title: script?.title || 'V7 Test Lesson',
+          subtitle: script?.subtitle || '',
+          difficulty: script?.difficulty || 'beginner',
+          category: script?.category || 'test',
+          tags: script?.tags || [],
+          learningObjectives: script?.learningObjectives || [],
           narrativeScript: narrationText,
-          voice_id: 'pFZP5JQG7iQjIQuC4Bku', // Default voice
-          generate_audio: true
+          duration: script?.duration || 300,
+          voice_id: script?.voice_id || 'pFZP5JQG7iQjIQuC4Bku',
+          generate_audio: true,
+          cinematic_flow: script?.cinematic_flow
         }
       });
 
