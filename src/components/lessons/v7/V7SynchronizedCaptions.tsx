@@ -109,8 +109,8 @@ export const V7SynchronizedCaptions = ({
         }}
       >
         {/* Clean minimal caption - safe distance above all controls */}
-        <div className="bg-black/85 backdrop-blur-lg rounded-xl px-3 py-1.5 sm:px-5 sm:py-2.5 max-w-[85vw] sm:max-w-lg md:max-w-xl border border-white/10 shadow-lg">
-          <p className="text-center text-xs sm:text-sm md:text-base whitespace-nowrap overflow-hidden flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5">
+        <div className="bg-black/85 backdrop-blur-lg rounded-xl px-3 py-2 sm:px-5 sm:py-2.5 max-w-[85vw] sm:max-w-lg md:max-w-xl border border-white/10 shadow-lg">
+          <p className="text-center text-sm sm:text-sm md:text-base whitespace-nowrap overflow-hidden flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5">
             {visibleWords.map((word) => {
               const state = getWordState(word.absoluteIndex);
               return (
