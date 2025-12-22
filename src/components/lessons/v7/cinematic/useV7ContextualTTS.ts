@@ -1,5 +1,6 @@
 // Hook para gerar e tocar áudios TTS contextuais via ElevenLabs
 // Usado durante Quiz e Playground para sussurros/hints
+// ✅ V7-v4: Cache persistente no Supabase Storage
 
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,17 @@ interface UseV7ContextualTTSProps {
   enabled?: boolean;
 }
 
+// ✅ Gerar hash único para o texto (para cache)
+function hashText(text: string): string {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
 export const useV7ContextualTTS = ({
   hints,
   whisper = true,
@@ -36,7 +48,62 @@ export const useV7ContextualTTS = ({
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const audioUrlsRef = useRef<string[]>([]);
 
-  // Gera todos os áudios de uma vez (batch)
+  // ✅ V7-v4: Verificar se áudio já existe no cache
+  const checkCachedAudio = useCallback(async (text: string): Promise<string | null> => {
+    const hash = hashText(text);
+    const fileName = `hint_${hash}.mp3`;
+    
+    // Verificar se arquivo existe no Storage
+    const { data } = await supabase.storage
+      .from('tts-cache')
+      .getPublicUrl(fileName);
+    
+    // Verificar se realmente existe fazendo HEAD request
+    try {
+      const response = await fetch(data.publicUrl, { method: 'HEAD' });
+      if (response.ok) {
+        console.log(`[useV7ContextualTTS] ✅ Cache HIT: "${text.substring(0, 30)}..."`);
+        return data.publicUrl;
+      }
+    } catch {
+      // Arquivo não existe
+    }
+    
+    return null;
+  }, []);
+
+  // ✅ V7-v4: Salvar áudio no cache
+  const cacheAudio = useCallback(async (text: string, audioBase64: string): Promise<string> => {
+    const hash = hashText(text);
+    const fileName = `hint_${hash}.mp3`;
+    
+    // Converter base64 para blob
+    const audioBlob = base64ToBlob(audioBase64, 'audio/mpeg');
+    
+    // Upload para Storage
+    const { error: uploadError } = await supabase.storage
+      .from('tts-cache')
+      .upload(fileName, audioBlob, {
+        contentType: 'audio/mpeg',
+        upsert: true
+      });
+    
+    if (uploadError) {
+      console.error('[useV7ContextualTTS] ❌ Cache upload error:', uploadError);
+      // Fallback: retornar blob URL local
+      return URL.createObjectURL(audioBlob);
+    }
+    
+    // Obter URL pública
+    const { data } = supabase.storage
+      .from('tts-cache')
+      .getPublicUrl(fileName);
+    
+    console.log(`[useV7ContextualTTS] 💾 Cached: "${text.substring(0, 30)}..."`);
+    return data.publicUrl;
+  }, []);
+
+  // Gera todos os áudios (usando cache quando disponível)
   const generateAllAudios = useCallback(async () => {
     if (!enabled || hints.length === 0) return;
     
@@ -44,44 +111,63 @@ export const useV7ContextualTTS = ({
     setError(null);
     
     try {
-      const texts = hints.map(h => h.text);
+      console.log(`[useV7ContextualTTS] 🎵 Checking cache for ${hints.length} hints...`);
       
-      console.log(`[useV7ContextualTTS] 🎵 Generating ${texts.length} contextual audios...`);
-      
-      const { data, error: fnError } = await supabase.functions.invoke('elevenlabs-tts-contextual', {
-        body: { texts, whisper, voiceId }
-      });
-      
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
-      
-      if (!data?.results) {
-        throw new Error('No results returned');
-      }
-      
-      // Converter base64 para URLs de áudio
       const audios: GeneratedAudio[] = [];
+      const textsToGenerate: { index: number; text: string }[] = [];
       
-      for (const result of data.results) {
-        if (result.success && result.audioBase64) {
-          // Criar blob URL a partir do base64
-          const audioBlob = base64ToBlob(result.audioBase64, 'audio/mpeg');
-          const audioUrl = URL.createObjectURL(audioBlob);
-          
-          audios.push({
-            text: result.text,
-            audioUrl
-          });
-          
-          audioUrlsRef.current.push(audioUrl);
+      // ✅ Primeiro, verificar quais já estão em cache
+      for (let i = 0; i < hints.length; i++) {
+        const hint = hints[i];
+        const cachedUrl = await checkCachedAudio(hint.text);
+        
+        if (cachedUrl) {
+          audios[i] = { text: hint.text, audioUrl: cachedUrl };
+        } else {
+          textsToGenerate.push({ index: i, text: hint.text });
         }
       }
       
-      setGeneratedAudios(audios);
-      console.log(`[useV7ContextualTTS] ✅ Generated ${audios.length} audios`);
+      // ✅ Gerar apenas os que não estão em cache
+      if (textsToGenerate.length > 0) {
+        console.log(`[useV7ContextualTTS] 🔄 Generating ${textsToGenerate.length} new audios...`);
+        
+        const { data, error: fnError } = await supabase.functions.invoke('elevenlabs-tts-contextual', {
+          body: { 
+            texts: textsToGenerate.map(t => t.text), 
+            whisper, 
+            voiceId 
+          }
+        });
+        
+        if (fnError) {
+          throw new Error(fnError.message);
+        }
+        
+        if (!data?.results) {
+          throw new Error('No results returned');
+        }
+        
+        // Processar resultados e salvar em cache
+        for (let i = 0; i < data.results.length; i++) {
+          const result = data.results[i];
+          const originalIndex = textsToGenerate[i].index;
+          
+          if (result.success && result.audioBase64) {
+            // Salvar no cache e obter URL
+            const audioUrl = await cacheAudio(result.text, result.audioBase64);
+            audios[originalIndex] = { text: result.text, audioUrl };
+          }
+        }
+      }
       
-      return audios;
+      // Filtrar nulls e ordenar
+      const finalAudios = audios.filter(Boolean);
+      setGeneratedAudios(finalAudios);
+      
+      console.log(`[useV7ContextualTTS] ✅ Ready: ${finalAudios.length} audios (${hints.length - textsToGenerate.length} from cache)`);
+      
+      return finalAudios;
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to generate audios';
@@ -91,7 +177,7 @@ export const useV7ContextualTTS = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [enabled, hints, whisper, voiceId]);
+  }, [enabled, hints, whisper, voiceId, checkCachedAudio, cacheAudio]);
 
   // ✅ V7-v3: Inicia os timers para tocar os áudios em LOOP até o usuário responder
   const loopIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -191,16 +277,9 @@ export const useV7ContextualTTS = ({
     console.log('[useV7ContextualTTS] 🛑 Stopped all contextual hints and loops');
   }, []);
 
-  // Limpar URLs ao desmontar
+  // Limpar URLs ao desmontar (não precisa mais revogar blob URLs pois usamos Storage)
   const cleanup = useCallback(() => {
     stopAll();
-    
-    // Revogar URLs de blob
-    audioUrlsRef.current.forEach(url => {
-      URL.revokeObjectURL(url);
-    });
-    audioUrlsRef.current = [];
-    
     setGeneratedAudios([]);
   }, [stopAll]);
 
