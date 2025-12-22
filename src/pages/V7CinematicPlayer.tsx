@@ -43,7 +43,7 @@ export default function V7CinematicPlayer() {
 
   // Render error state - fallback to demo script
   if (error || !script) {
-    console.log('[V7CinematicPlayer] Using fallback demo script');
+    console.log('[V7CinematicPlayer] ⚠️ Using fallback demo script. Error:', error, 'Script:', !!script);
     return (
       <V7PhasePlayer
         script={fimDaBrincadeiraScript}
