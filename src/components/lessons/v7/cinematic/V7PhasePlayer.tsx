@@ -20,6 +20,7 @@ import V7PhasePlayground from './phases/V7PhasePlayground';
 import V7PhaseGamification from './phases/V7PhaseGamification';
 import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
+import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import {
   V7LessonScript,
   V7Phase,
@@ -398,6 +399,7 @@ export const V7PhasePlayer = ({
       case 'playground': return 'calm';
       case 'revelation': return 'energetic';
       case 'gamification': return 'energetic';
+      case 'secret-reveal': return 'dramatic'; // ✅ Gold explosion mood
       default: return 'dramatic';
     }
   };
@@ -676,6 +678,29 @@ export const V7PhasePlayer = ({
             onChoice={handleCTAChoice}
             audioControl={audio}
             timeoutConfig={ctaTimeoutConfig}
+          />
+        );
+
+      case 'secret-reveal':
+        // ✅ V7-v4: Secret Reveal phase with ElevenLabs narration + cinematic effects
+        const secretContent = getCombinedSceneContent();
+        const defaultNarration = 'Agora vou te mostrar o segredo dos 2% que sabem usar a Inteligência Artificial de verdade, seja, para seus projetos, fazer renda extra ou simplesmente para se tornar 10X mais inteligente.';
+        
+        return (
+          <V7PhaseSecretReveal
+            narrationText={secretContent.narration || secretContent.mainText || defaultNarration}
+            pauseKeyword={secretContent.pauseKeyword || '10X mais inteligente'}
+            sceneIndex={currentSceneIndex}
+            onComplete={() => {
+              console.log('[V7PhasePlayer] Secret revealed - advancing');
+              manualResume();
+              goToNextPhase();
+            }}
+            onSecretClick={() => {
+              console.log('[V7PhasePlayer] 🔓 Secret button clicked!');
+            }}
+            audioControl={audio}
+            isPausedByAnchor={isPausedByAnchor}
           />
         );
 

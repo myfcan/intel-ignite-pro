@@ -301,7 +301,40 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       ]
     },
 
-    // FASE 5: DESAFIO PLAYGROUND (150-300s)
+    // FASE 5: SECRET REVEAL - Revelação cinematográfica com narração ElevenLabs
+    // ✅ V7-v4: Após o quiz, mostra o segredo dos 2%
+    {
+      id: 'secret-reveal',
+      title: 'O Segredo dos 2%',
+      startTime: 60,
+      endTime: 150,
+      type: 'secret-reveal' as const,
+      mood: 'success',
+      autoAdvance: false,
+
+      // ✅ anchorActions: pausar quando diz "10X mais inteligente"
+      anchorActions: [
+        { id: 'pause-secret', keyword: 'inteligente', type: 'pause', once: true },
+      ] as AnchorAction[],
+
+      scenes: [
+        {
+          id: 'scene-secret-intro',
+          type: 'text-reveal',
+          startTime: 60,
+          duration: 90,
+          content: {
+            narration: 'Agora vou te mostrar o segredo dos 2% que sabem usar a Inteligência Artificial de verdade, seja, para seus projetos, fazer renda extra ou simplesmente para se tornar 10X mais inteligente.',
+            pauseKeyword: '10X mais inteligente',
+            mainText: 'O SEGREDO DOS 2%',
+            subtitle: 'A diferença entre brincar e dominar a IA'
+          },
+          animation: 'explode'
+        }
+      ]
+    },
+
+    // FASE 6: DESAFIO PLAYGROUND (150-300s)
     // ✅ V7-v2: anchorActions + audioBehavior + timeout
     {
       id: 'playground-challenge',
