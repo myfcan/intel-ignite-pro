@@ -282,13 +282,16 @@ function extractNarrativeFromLesson(lesson: V7CinematicLesson | null): string {
   if (!lesson?.cinematicFlow?.acts) return '';
 
   return lesson.cinematicFlow.acts
-    .map((act) => {
+    .map((act: any) => {
       // Try to extract text content from visual layers
-      const textLayers = act.content?.visual?.layers?.filter((l) => l.type === 'text') || [];
-      const texts = textLayers.map((l) => l.content).filter(Boolean);
+      const textLayers = act.content?.visual?.layers?.filter((l: any) => l.type === 'text') || [];
+      const texts = textLayers.map((l: any) => l.content).filter(Boolean);
 
-      // Also get narration segment text if available
-      const narrationText = act.content?.audio?.narrationSegment?.text || '';
+      // ✅ V7-v2 FIX: Check BOTH formats (V7-v2 direct + legacy nested)
+      const narrationText = act.narration ||                           // V7-v2 format (direct)
+                           act.content?.audio?.narration ||           // V7-v2 nested
+                           act.content?.audio?.narrationSegment?.text || // Legacy format
+                           '';
 
       return [...texts, narrationText].join('\n');
     })
