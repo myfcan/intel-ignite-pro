@@ -59,21 +59,24 @@ export const V7PhaseDramatic = ({
   const [subtitleStarted, setSubtitleStarted] = useState(false);
   const [explosionTriggered, setExplosionTriggered] = useState(false);
 
-  // 🎬 DERIVE VISIBILITY DIRECTLY FROM sceneIndex (no complex useEffects)
-  // Scene 0-1: VOCÊ SABIA? with letterbox (give more time to show)
-  // Scene 2: Number appears with glow effect (98%)
-  // Scene 3: Number count-up animation
-  // Scene 4: Particle explosion transition
-  // Scene 5: Subtitle reveals letter by letter
-  // Scene 6: Impact (98% VS 2%)
+  // 🎬 V7-v2 CORRIGIDO: EXPLOSÃO VISUAL IMEDIATA - SEM TELA PRETA!
+  // Scene 0: Número 98% EXPLODE imediatamente com partículas
+  // Scene 1: Hook question "VOCÊ SABIA?" aparece junto
+  // Scene 2: Count-up animation
+  // Scene 3: Particle explosion intensifica
+  // Scene 4: Subtitle reveals letter by letter
+  // Scene 5: Impact (98% VS 2%)
+  //
+  // ❌ REMOVIDO: letterbox inicial (era tela preta)
+  // ✅ CORRIGIDO: Número visível desde o início
 
   const showHookQuestion = sceneIndex <= 1; // Show "VOCÊ SABIA?" during scenes 0 and 1
-  const showLetterbox = sceneIndex < 1;
-  const showNumberGlow = sceneIndex >= 2;
-  const showCountUp = sceneIndex >= 3;
-  const showExplosion = sceneIndex >= 4;
-  const showSubtitle = sceneIndex >= 5;
-  const showImpact = sceneIndex >= 6;
+  const showLetterbox = false; // ✅ CORRIGIDO: NUNCA mostrar letterbox na abertura!
+  const showNumberGlow = sceneIndex >= 0; // ✅ CORRIGIDO: Número visível IMEDIATAMENTE!
+  const showCountUp = sceneIndex >= 1; // ✅ Count-up começa mais cedo
+  const showExplosion = sceneIndex >= 0; // ✅ Partículas desde o início!
+  const showSubtitle = sceneIndex >= 3;
+  const showImpact = sceneIndex >= 4;
 
   // Debug log for scene transitions
   useEffect(() => {

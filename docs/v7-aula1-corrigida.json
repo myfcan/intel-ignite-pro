@@ -1,0 +1,272 @@
+{
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "98% brinca. 2% lucra R$ 30K/mês.",
+  "difficulty": "intermediate",
+  "category": "prompts",
+  "duration": 240,
+  "totalDuration": 240,
+  "tags": ["prompts", "profissional", "ia", "chatgpt"],
+  "learningObjectives": [
+    "Identificar a diferença entre uso amador e profissional de IA",
+    "Dominar o Método PERFEITO de prompting",
+    "Aplicar prompts estruturados na prática"
+  ],
+  "phases": [
+    {
+      "id": "phase-1-dramatic",
+      "type": "dramatic",
+      "title": "A Realidade Brutal",
+      "startTime": 0,
+      "endTime": 15,
+      "anchorActions": [
+        {
+          "id": "pause-quiz-brinquedo",
+          "keyword": "brinquedo",
+          "type": "pause",
+          "once": true
+        }
+      ],
+      "scenes": [
+        {
+          "id": "scene-explosion",
+          "startTime": 0,
+          "duration": 4,
+          "content": {
+            "number": "98%",
+            "hookQuestion": "VOCÊ SABIA?",
+            "mood": "danger"
+          }
+        },
+        {
+          "id": "scene-context",
+          "startTime": 4,
+          "duration": 11,
+          "content": {
+            "subtitle": "das pessoas tratam IA como brinquedo",
+            "highlightWord": "brinquedo",
+            "secondaryNumber": "2%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-2-quiz",
+      "type": "interaction",
+      "title": "Auto-Avaliação",
+      "startTime": 15,
+      "endTime": 60,
+      "pauseKeywords": [],
+      "contextualAudio": {
+        "enabled": true,
+        "whisper": true,
+        "hints": [
+          { "triggerAfter": 7, "text": "Reflita com calma...", "volume": 0.4 },
+          { "triggerAfter": 15, "text": "Seja honesto consigo mesmo...", "volume": 0.35 },
+          { "triggerAfter": 25, "text": "Escolha a opção que mais combina com você...", "volume": 0.3 }
+        ]
+      },
+      "scenes": [
+        {
+          "id": "scene-quiz",
+          "content": {
+            "title": "Suas últimas 5 interações com IA foram para:",
+            "subtitle": "AUTO-AVALIAÇÃO",
+            "options": [
+              { "id": "opt-1", "text": "Criar conteúdo profissional", "category": "good" },
+              { "id": "opt-2", "text": "Aprender algo específico", "category": "good" },
+              { "id": "opt-3", "text": "Curiosidade e brincadeira", "category": "bad" },
+              { "id": "opt-4", "text": "Não uso muito IA", "category": "bad" }
+            ],
+            "revealTitle": "Resultado",
+            "correctFeedback": "Você já está no caminho dos 2%!",
+            "incorrectFeedback": "Sem problemas! Vou te mostrar o método agora."
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-3-examples",
+      "type": "narrative",
+      "title": "Exemplos Amadores",
+      "startTime": 60,
+      "endTime": 75,
+      "scenes": [
+        {
+          "id": "scene-amateur-examples",
+          "content": {
+            "title": "O que os 98% pedem:",
+            "examples": [
+              "Conta uma piada sobre banana",
+              "Escreve como pirata",
+              "Faz um poema sobre meu gato"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-4-revelation-money",
+      "type": "dramatic",
+      "title": "Revelação R$ 30K",
+      "startTime": 75,
+      "endTime": 90,
+      "scenes": [
+        {
+          "id": "scene-money-explosion",
+          "content": {
+            "number": "R$ 30.000",
+            "subtitle": "por mês - é o que os 2% faturam",
+            "mood": "success",
+            "particles": "money"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-5-method-intro",
+      "type": "narrative",
+      "title": "Introdução ao Método",
+      "startTime": 90,
+      "endTime": 105,
+      "anchorActions": [
+        {
+          "id": "pause-playground-perfeito",
+          "keyword": "PERFEITO",
+          "type": "pause",
+          "once": true
+        }
+      ],
+      "scenes": [
+        {
+          "id": "scene-method-tease",
+          "content": {
+            "title": "Eles conhecem o segredo",
+            "subtitle": "O método PERFEITO",
+            "highlightWord": "PERFEITO"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-6-playground",
+      "type": "playground",
+      "title": "Desafio Prático",
+      "startTime": 105,
+      "endTime": 165,
+      "contextualAudio": {
+        "enabled": true,
+        "whisper": true,
+        "hints": [
+          { "triggerAfter": 5, "text": "Observe a diferença entre os dois prompts...", "volume": 0.4 },
+          { "triggerAfter": 20, "text": "Veja como o prompt estruturado gera resultados melhores...", "volume": 0.35 }
+        ]
+      },
+      "scenes": [
+        {
+          "id": "scene-playground",
+          "content": {
+            "title": "DESAFIO PRÁTICO",
+            "subtitle": "Compare os resultados",
+            "amateurPrompt": "Me ajude a vender mais",
+            "professionalPrompt": "Atue como consultor de vendas B2B com 15 anos de experiência.\n\nContexto: Minha empresa vende software para restaurantes. Ticket médio R$ 500/mês. Conversão atual 2%.\n\nObjetivo: Criar sequência de 5 emails de follow-up para aumentar conversão para 5%.\n\nFormato: Cada email com assunto chamativo + corpo persuasivo + CTA claro.",
+            "amateurScore": 15,
+            "professionalScore": 95
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-7-perfeito-method",
+      "type": "revelation",
+      "title": "Método PERFEITO",
+      "startTime": 165,
+      "endTime": 195,
+      "scenes": [
+        {
+          "id": "scene-perfeito",
+          "content": {
+            "title": "MÉTODO PERFEITO",
+            "mainValue": "P.E.R.F.E.I.T.O",
+            "items": [
+              { "letter": "P", "text": "Persona: Defina quem a IA deve ser" },
+              { "letter": "E", "text": "Especificidade: Elimine ambiguidade" },
+              { "letter": "R", "text": "Resultado: Deixe claro o objetivo" },
+              { "letter": "F", "text": "Formato: Estruture a saída" },
+              { "letter": "E", "text": "Exemplos: Forneça referências" },
+              { "letter": "I", "text": "Instruções: Detalhe cada passo" },
+              { "letter": "T", "text": "Tom: Defina a personalidade" },
+              { "letter": "O", "text": "Otimização: Refine sempre" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-8-transformation",
+      "type": "narrative",
+      "title": "Transformação",
+      "startTime": 195,
+      "endTime": 210,
+      "anchorActions": [
+        {
+          "id": "pause-cta-dominam",
+          "keyword": "dominam",
+          "type": "pause",
+          "once": true
+        }
+      ],
+      "scenes": [
+        {
+          "id": "scene-transformation",
+          "content": {
+            "title": "A diferença entre brincar e lucrar",
+            "subtitle": "Está no método. E você está prestes a dominá-lo."
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-9-cta",
+      "type": "cta",
+      "title": "Sua Escolha",
+      "startTime": 210,
+      "endTime": 225,
+      "scenes": [
+        {
+          "id": "scene-cta",
+          "content": {
+            "title": "O QUE VOCÊ VAI FAZER AGORA?",
+            "subtitle": "A decisão é sua",
+            "options": [
+              { "id": "continue", "label": "Continuar Aprendendo", "emoji": "🚀", "variant": "positive" },
+              { "id": "later", "label": "Voltar Depois", "emoji": "↩️", "variant": "negative" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-10-gamification",
+      "type": "gamification",
+      "title": "Conquistas",
+      "startTime": 225,
+      "endTime": 240,
+      "scenes": [
+        {
+          "id": "scene-achievements",
+          "content": {
+            "title": "PARABÉNS!",
+            "mainText": "AULA COMPLETA",
+            "subtitle": "Você agora conhece o método dos 2%",
+            "achievements": [
+              { "emoji": "✅", "text": "Revelação dos 2% Completa" },
+              { "emoji": "✅", "text": "Método PERFEITO Dominado" },
+              { "emoji": "✅", "text": "Pronto para Lucrar" }
+            ],
+            "xpGained": 150
+          }
+        }
+      ]
+    }
+  ]
+}
