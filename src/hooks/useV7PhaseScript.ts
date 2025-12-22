@@ -387,16 +387,25 @@ function transformActsToPhases(
                         act.content?.pauseKeywords ||
                         [];
     
+    // ✅ V7-v2.4: Extract narration text for intelligent pauseKeyword detection
+    const narrationText = act.narration ||
+                          audioData?.narration ||
+                          audioData?.narrationSegment?.text ||
+                          act.content?.narration ||
+                          '';
+
     // ✅ AUTO-GENERATE pauseKeywords for interactive phases if none defined
     // This ensures the audio pauses even without explicit anchorActions in DB
     const isInteractivePhase = phaseType === 'interaction' || phaseType === 'playground';
     if (isInteractivePhase && anchorActions.length === 0 && pauseKeywords.length === 0 && wordTimestamps.length > 0) {
       // Find keywords in the audio that occur within/near this phase
+      // ✅ V7-v2.4: Pass narration text for intelligent sentence-based detection
       const generatedKeywords = findPauseKeywordsForPhase(
-        wordTimestamps, 
-        startTime, 
+        wordTimestamps,
+        startTime,
         endTime,
-        phaseType
+        phaseType,
+        narrationText // Pass narration for intelligent analysis
       );
       if (generatedKeywords.length > 0) {
         pauseKeywords = generatedKeywords;
@@ -475,92 +484,189 @@ function transformActsToPhases(
 }
 
 /**
- * ✅ AUTO-GENERATE pauseKeywords for interactive phases
- * Searches for common pause-triggering words in the narration
- * Based on typical lesson flow patterns
+ * ✅ V7-v2.4: INTELLIGENT pauseKeyword auto-generation
+ *
+ * Uses sentence analysis to find the CORRECT pause point:
+ * 1. Reconstruct text from wordTimestamps in the intro window
+ * 2. Find the end of the FIRST complete sentence (intro sentence)
+ * 3. Use the LAST word of that sentence as the pause keyword
+ *
+ * Example: "Você sabia que 98% das pessoas..." → pause after "pessoas"
+ *
+ * This is much more accurate than searching for generic indicator words.
  */
 function findPauseKeywordsForPhase(
   wordTimestamps: Array<{ word: string; start: number; end: number }>,
   phaseStartTime: number,
   phaseEndTime: number,
-  phaseType: string
+  phaseType: string,
+  narrationText?: string
 ): string[] {
-  // Keywords that typically indicate a pause point in the narration
-  // Priority order matters - first match wins
-  const pauseIndicators: Record<string, string[]> = {
-    interaction: [
-      // Direct commands to pause/reflect
-      'honesto', 'verdade', 'reflita', 'pense', 'avalie', 'responda',
-      // Quiz/test indicators
-      'teste', 'quiz', 'autoavaliação', 'pergunta', 'escolha',
-      // Transition words before interaction
-      'agora', 'momento', 'vez', 'hora'
-    ],
-    playground: [
-      // Observation/comparison indicators  
-      'observe', 'veja', 'compare', 'analise', 'note', 'perceba',
-      // Challenge indicators
-      'desafio', 'prática', 'exercício', 'pratique',
-      // Result indicators
-      'resultado', 'diferença'
-    ]
-  };
-  
-  const indicators = pauseIndicators[phaseType] || pauseIndicators['interaction'];
-  
-  // Search a bit before the phase starts (narration often sets up before UI shows)
-  const searchStartTime = Math.max(0, phaseStartTime - 10);
-  // Only search first 30% of the phase (pause should happen early)
-  const searchEndTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.4;
-  
-  // Find words in the search window
-  const wordsInWindow = wordTimestamps.filter(
-    w => w.start >= searchStartTime && w.start <= searchEndTime
-  );
-  
-  console.log(`[findPauseKeywords] Searching ${phaseType} phase (${phaseStartTime.toFixed(1)}s-${phaseEndTime.toFixed(1)}s), window: ${searchStartTime.toFixed(1)}s-${searchEndTime.toFixed(1)}s, found ${wordsInWindow.length} words`);
-  
-  // Normalize function
-  const normalize = (word: string) => 
+  // Normalize function for word comparison
+  const normalize = (word: string) =>
     word.toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[.,!?;:'"()[\]{}]/g, '')
       .trim();
-  
-  // Find matches in priority order
-  const foundKeywords: string[] = [];
-  
+
+  // ✅ STRATEGY 1: Use narration text if provided (most accurate)
+  if (narrationText && narrationText.trim().length > 0) {
+    const pauseWord = findPauseWordFromNarration(narrationText, wordTimestamps, phaseStartTime);
+    if (pauseWord) {
+      console.log(`[findPauseKeywords] ✨ NARRATION STRATEGY: Found pause word "${pauseWord}" from narration text`);
+      return [pauseWord];
+    }
+  }
+
+  // ✅ STRATEGY 2: Reconstruct text from wordTimestamps and find sentence boundaries
+  // Search window: start at phase intro (before visual appears) to early phase
+  const searchStartTime = Math.max(0, phaseStartTime - 8);
+  const searchEndTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.35;
+
+  const wordsInWindow = wordTimestamps.filter(
+    w => w.start >= searchStartTime && w.start <= searchEndTime
+  );
+
+  console.log(`[findPauseKeywords] Searching ${phaseType} phase (${phaseStartTime.toFixed(1)}s-${phaseEndTime.toFixed(1)}s), window: ${searchStartTime.toFixed(1)}s-${searchEndTime.toFixed(1)}s, found ${wordsInWindow.length} words`);
+
+  if (wordsInWindow.length === 0) {
+    console.log(`[findPauseKeywords] ⚠️ No words in search window`);
+    return [];
+  }
+
+  // Reconstruct text and find sentence end (word ending with punctuation)
+  const sentenceEndWord = wordsInWindow.find(w => {
+    const hasEndPunctuation = /[.!?…]$/.test(w.word);
+    return hasEndPunctuation;
+  });
+
+  if (sentenceEndWord) {
+    // Clean the word (remove punctuation for matching)
+    const cleanWord = sentenceEndWord.word.replace(/[.,!?;:'"()[\]{}…]+$/, '');
+    console.log(`[findPauseKeywords] ✨ SENTENCE END STRATEGY: Found "${cleanWord}" at ${sentenceEndWord.start.toFixed(1)}s (with punctuation: "${sentenceEndWord.word}")`);
+    return [cleanWord];
+  }
+
+  // ✅ STRATEGY 3: Look for natural pause indicators (context words)
+  const pauseIndicators: Record<string, string[]> = {
+    interaction: [
+      // Words that often end intro sentences before a question/quiz
+      'pessoas', 'população', 'usuários', 'profissionais', 'empresas',
+      // Direct commands to pause/reflect
+      'honesto', 'verdade', 'reflita', 'pense', 'avalie', 'responda',
+      // Quiz/test indicators
+      'teste', 'autoavaliação', 'pergunta', 'escolha',
+      // Transition words
+      'agora', 'momento'
+    ],
+    playground: [
+      // Words that indicate comparison is starting
+      'diferença', 'comparação', 'resultado', 'amador', 'profissional',
+      // Observation indicators
+      'observe', 'veja', 'compare', 'analise', 'note', 'perceba',
+      // Challenge indicators
+      'desafio', 'prática', 'exercício'
+    ]
+  };
+
+  const indicators = pauseIndicators[phaseType] || pauseIndicators['interaction'];
+
   for (const indicator of indicators) {
     const normalizedIndicator = normalize(indicator);
-    
+
     for (const wordTs of wordsInWindow) {
       const normalizedWord = normalize(wordTs.word);
-      
-      if (normalizedWord === normalizedIndicator || 
+
+      if (normalizedWord === normalizedIndicator ||
           normalizedWord.includes(normalizedIndicator) ||
           normalizedIndicator.includes(normalizedWord)) {
-        
-        console.log(`[findPauseKeywords] ✓ Found "${wordTs.word}" (matched "${indicator}") at ${wordTs.start.toFixed(1)}s`);
-        foundKeywords.push(wordTs.word);
-        break; // Only need one match per phase
+
+        console.log(`[findPauseKeywords] ✓ INDICATOR STRATEGY: Found "${wordTs.word}" (matched "${indicator}") at ${wordTs.start.toFixed(1)}s`);
+        return [wordTs.word.replace(/[.,!?;:'"()[\]{}…]+$/, '')];
       }
     }
-    
-    if (foundKeywords.length > 0) break; // Stop after first match
   }
-  
-  // Fallback: if no specific keyword found, use a word around 30% into phase
-  if (foundKeywords.length === 0 && wordsInWindow.length > 0) {
-    const targetTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.3;
-    const closestWord = wordsInWindow.reduce((closest, w) => 
-      Math.abs(w.start - targetTime) < Math.abs(closest.start - targetTime) ? w : closest
+
+  // ✅ STRATEGY 4: Smart fallback - use a significant word at ~25% into phase
+  // Prefer longer words (more likely to be meaningful nouns/verbs)
+  const targetTime = phaseStartTime + (phaseEndTime - phaseStartTime) * 0.25;
+
+  // Find significant words (length >= 4, not common words)
+  const commonWords = new Set(['que', 'para', 'com', 'uma', 'são', 'não', 'por', 'mais', 'como', 'mas', 'dos', 'das', 'foi', 'ser', 'tem']);
+  const significantWords = wordsInWindow.filter(w => {
+    const clean = normalize(w.word);
+    return clean.length >= 4 && !commonWords.has(clean);
+  });
+
+  if (significantWords.length > 0) {
+    // Pick the significant word closest to target time
+    const bestWord = significantWords.reduce((best, w) =>
+      Math.abs(w.start - targetTime) < Math.abs(best.start - targetTime) ? w : best
     );
-    console.log(`[findPauseKeywords] ⚠️ No indicator found, using fallback word "${closestWord.word}" at ${closestWord.start.toFixed(1)}s`);
-    foundKeywords.push(closestWord.word);
+    console.log(`[findPauseKeywords] ⚠️ SMART FALLBACK: Using significant word "${bestWord.word}" at ${bestWord.start.toFixed(1)}s`);
+    return [bestWord.word.replace(/[.,!?;:'"()[\]{}…]+$/, '')];
   }
-  
-  return foundKeywords;
+
+  // Last resort: any word at target time
+  const closestWord = wordsInWindow.reduce((closest, w) =>
+    Math.abs(w.start - targetTime) < Math.abs(closest.start - targetTime) ? w : closest
+  );
+  console.log(`[findPauseKeywords] ⚠️ LAST RESORT: Using word "${closestWord.word}" at ${closestWord.start.toFixed(1)}s`);
+  return [closestWord.word.replace(/[.,!?;:'"()[\]{}…]+$/, '')];
+}
+
+/**
+ * Find pause word from narration text by analyzing sentence structure.
+ * Looks for the end of the intro sentence and returns the last meaningful word.
+ */
+function findPauseWordFromNarration(
+  narration: string,
+  wordTimestamps: Array<{ word: string; start: number; end: number }>,
+  phaseStartTime: number
+): string | null {
+  // Split narration into sentences
+  const sentences = narration.split(/([.!?…]+)/).filter(s => s.trim().length > 0);
+
+  if (sentences.length === 0) return null;
+
+  // Get the first sentence (intro sentence)
+  let introSentence = sentences[0].trim();
+  // If first part is just punctuation, use second part
+  if (/^[.!?…]+$/.test(introSentence) && sentences.length > 1) {
+    introSentence = sentences[1].trim();
+  }
+
+  // Extract words from the intro sentence
+  const introWords = introSentence
+    .split(/\s+/)
+    .map(w => w.replace(/[.,!?;:'"()[\]{}…]+/g, '').trim())
+    .filter(w => w.length > 0);
+
+  if (introWords.length === 0) return null;
+
+  // Get the last meaningful word (length >= 3, not a common word)
+  const commonWords = new Set(['que', 'de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'um', 'uma', 'os', 'as', 'ao', 'à', 'se', 'ou', 'e', 'a', 'o']);
+
+  for (let i = introWords.length - 1; i >= 0; i--) {
+    const word = introWords[i];
+    const normalized = word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (normalized.length >= 3 && !commonWords.has(normalized)) {
+      // Verify this word exists in wordTimestamps near the phase start
+      const matchingTs = wordTimestamps.find(ts => {
+        const tsNormalized = ts.word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,!?;:'"()[\]{}…]+/g, '');
+        return tsNormalized === normalized && ts.start <= phaseStartTime + 30;
+      });
+
+      if (matchingTs) {
+        console.log(`[findPauseWordFromNarration] Found "${word}" in intro sentence, timestamp at ${matchingTs.start.toFixed(1)}s`);
+        return word;
+      }
+    }
+  }
+
+  return null;
 }
 
 // Map database act type to V7 phase type
