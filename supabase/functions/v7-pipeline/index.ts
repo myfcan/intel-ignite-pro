@@ -11,6 +11,73 @@ const corsHeaders = {
 };
 
 // ============================================================================
+// RETRY UTILITY - Exponential backoff for transient API failures
+// ============================================================================
+
+interface RetryOptions {
+  maxRetries?: number;      // Default: 3
+  initialDelayMs?: number;  // Default: 1000 (1 second)
+  maxDelayMs?: number;      // Default: 10000 (10 seconds)
+  backoffFactor?: number;   // Default: 2
+  retryOn?: (error: any, response?: Response) => boolean;
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retryOptions: RetryOptions = {}
+): Promise<Response> {
+  const {
+    maxRetries = 3,
+    initialDelayMs = 1000,
+    maxDelayMs = 10000,
+    backoffFactor = 2,
+    retryOn = (error, response) => {
+      // Retry on network errors
+      if (error) return true;
+      // Retry on 429 (rate limit) and 5xx errors
+      if (response && (response.status === 429 || response.status >= 500)) return true;
+      return false;
+    }
+  } = retryOptions;
+
+  let lastError: any;
+  let lastResponse: Response | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Check if we should retry based on response
+      if (!retryOn(null, response) || attempt === maxRetries) {
+        return response;
+      }
+
+      lastResponse = response;
+      console.warn(`[V7Pipeline:Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed with status ${response.status}, retrying...`);
+
+    } catch (error) {
+      lastError = error;
+
+      if (!retryOn(error) || attempt === maxRetries) {
+        throw error;
+      }
+
+      console.warn(`[V7Pipeline:Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed with error: ${error.message}, retrying...`);
+    }
+
+    // Calculate delay with exponential backoff
+    const delay = Math.min(initialDelayMs * Math.pow(backoffFactor, attempt), maxDelayMs);
+    console.log(`[V7Pipeline:Retry] Waiting ${delay}ms before retry...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  // This should never be reached, but just in case
+  if (lastResponse) return lastResponse;
+  throw lastError || new Error('All retries exhausted');
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -762,24 +829,29 @@ ${narrativeScript}
 Gere os 5 atos (dramatic, comparison, interaction, playground, result) extraindo os dados reais do roteiro.`;
 
   try {
-    console.log('[V7Pipeline:AI] Calling OpenAI for act generation...');
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+    console.log('[V7Pipeline:AI] Calling OpenAI for act generation (with retry)...');
+
+    // ✅ P1 FIX: Use fetchWithRetry for transient failure recovery
+    const response = await fetchWithRetry(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: 4000,
+          temperature: 0.7,
+        }),
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 4000,
-        temperature: 0.7,
-      }),
-    });
+      { maxRetries: 2, initialDelayMs: 1000 }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1156,12 +1228,13 @@ async function generateAudioWithElevenLabs(
   const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - good for Portuguese
   const modelId = 'eleven_multilingual_v2';
   
-  console.log('[V7Pipeline:Audio] Generating audio...');
+  console.log('[V7Pipeline:Audio] Generating audio (with retry)...');
   console.log('[V7Pipeline:Audio] Voice ID:', voice);
   console.log('[V7Pipeline:Audio] Text length:', text.length);
-  
+
   try {
-    const response = await fetch(
+    // ✅ P1 FIX: Use fetchWithRetry for transient failure recovery
+    const response = await fetchWithRetry(
       `https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps`,
       {
         method: 'POST',
@@ -1180,7 +1253,8 @@ async function generateAudioWithElevenLabs(
             use_speaker_boost: true,
           },
         }),
-      }
+      },
+      { maxRetries: 3, initialDelayMs: 2000, maxDelayMs: 15000 }
     );
     
     if (!response.ok) {
