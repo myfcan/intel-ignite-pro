@@ -275,6 +275,16 @@ export default function AdminV7Create() {
           : 'Áudio gerado';
         updateStep('generate-audio', 'completed', audioSourceMsg);
         addLog('success', `Áudio gerado via ElevenLabs (fonte: ${data.stats?.audioSource || 'unknown'})`);
+      } else if (data.stats?.audioError) {
+        // ✅ V7-v2 FIX: Show audio generation error
+        updateStep('generate-audio', 'error', 'Falha no áudio');
+        addLog('error', `❌ ERRO: ${data.stats.audioError}`);
+        addLog('warning', '⚠️ Lição salva SEM áudio - regenere para adicionar áudio');
+        toast({
+          title: '⚠️ Áudio não gerado',
+          description: 'A lição foi salva, mas sem áudio. Você pode regenerar depois.',
+          variant: 'destructive',
+        });
       } else {
         updateStep('generate-audio', 'completed', 'Sem áudio');
         addLog('info', 'Geração de áudio pulada (desabilitada ou sem narração)');
@@ -358,10 +368,19 @@ export default function AdminV7Create() {
       if (error) throw error;
       if (!data.success) throw new Error(data.error || 'Pipeline failed');
 
-      toast({
-        title: '✨ Lição V7 gerada com sucesso!',
-        description: `${data.stats?.actCount || 0} atos criados, ${data.stats?.interactivePoints || 0} pontos interativos`,
-      });
+      // ✅ V7-v2 FIX: Check for audio generation warnings
+      if (data.stats?.audioError) {
+        toast({
+          title: '⚠️ Lição criada, mas sem áudio',
+          description: `Erro: ${data.stats.audioError}. Você pode regenerar o áudio depois.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: '✨ Lição V7 gerada com sucesso!',
+          description: `${data.stats?.actCount || 0} atos criados${data.stats?.hasAudio ? ', com áudio' : ''}`,
+        });
+      }
 
       setGeneratedLesson({
         id: data.lessonId || `v7-preview-${Date.now()}`,

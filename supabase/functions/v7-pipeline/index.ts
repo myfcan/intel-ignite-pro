@@ -368,23 +368,24 @@ Deno.serve(async (req) => {
     let wordTimestamps: WordTimestamp[] = [];
     
     const shouldGenerateAudio = input.generate_audio !== false && narrativeForAudio.length > 0;
-    
+    let audioGenerationError: string | null = null;  // ✅ Track audio errors
+
     if (shouldGenerateAudio) {
       console.log('[V7Pipeline] Step 3: Generating audio with ElevenLabs...');
       console.log('[V7Pipeline] Audio text length:', narrativeForAudio.length, '(only narration, not visual instructions)');
-      
+
       const audioResult = await generateAudioWithElevenLabs(
         narrativeForAudio, // Only narration text, not visual instructions
         input.voice_id,
         supabase
       );
-      
+
       if (audioResult.success) {
         audioUrl = audioResult.audioUrl || '';
         wordTimestamps = audioResult.wordTimestamps || [];
         console.log('[V7Pipeline] Audio generated:', audioUrl);
         console.log('[V7Pipeline] Word timestamps:', wordTimestamps.length);
-        
+
         // Recalculate act timings based on word timestamps
         if (wordTimestamps.length > 0) {
           recalculateActTimingsFromWordTimestamps(
@@ -394,7 +395,10 @@ Deno.serve(async (req) => {
           );
         }
       } else {
-        console.warn('[V7Pipeline] Audio generation failed:', audioResult.error);
+        // ✅ V7-v2 FIX: Track error instead of silent failure
+        audioGenerationError = audioResult.error || 'Unknown audio generation error';
+        console.error('[V7Pipeline] ❌ Audio generation FAILED:', audioGenerationError);
+        console.error('[V7Pipeline] ⚠️ Lesson will be saved WITHOUT audio - admin should regenerate');
       }
     } else {
       console.log('[V7Pipeline] Step 3: Skipping audio generation (disabled or no narration)');
@@ -630,6 +634,13 @@ Deno.serve(async (req) => {
       content: lessonContent,
       audioUrl,
       wordTimestampsCount: wordTimestamps.length,
+      // ✅ V7-v2 FIX: Include warnings so frontend can alert admin
+      warnings: audioGenerationError ? [{
+        type: 'audio_generation_failed',
+        message: `Audio generation failed: ${audioGenerationError}. Lesson saved without audio.`,
+        severity: 'high',
+        action: 'regenerate_audio'
+      }] : [],
       stats: {
         actCount: cinematicActs.length,
         narrationCount: narrationCount, // Number of audio.narration segments extracted
@@ -644,6 +655,8 @@ Deno.serve(async (req) => {
         hasAudio: !!audioUrl,
         hasWordTimestamps: wordTimestamps.length > 0,
         audioSource: hasCinematicFlow ? (narrationCount > 0 ? 'audio.narration' : 'narrativeScript') : 'narrativeScript',
+        // ✅ V7-v2: Include audio error for debugging
+        audioError: audioGenerationError || null,
       },
       aiSummary: aiGeneratedActs.summary,
     };
