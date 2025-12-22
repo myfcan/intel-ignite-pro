@@ -93,7 +93,7 @@ export const V7PhaseQuiz = ({
   ]
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [optionsRevealed, setOptionsRevealed] = useState(false); // ✅ FASE 1: Opções só aparecem após clicar botão
+  const [optionsRevealed, setOptionsRevealed] = useState(true); // ✅ CORRIGIDO: Opções aparecem IMEDIATAMENTE
   const [isRevealed, setIsRevealed] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
@@ -311,26 +311,12 @@ export const V7PhaseQuiz = ({
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 pb-24 relative overflow-hidden">
       <div className="w-full max-w-2xl">
-        {/* Quiz Header */}
+        {/* Quiz Header - Simplificado (sem TESTE RELÂMPAGO intro) */}
         <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -30 }}
+          className="text-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -20 }}
         >
-          <motion.div
-            className="inline-flex items-center gap-3 px-6 py-3 bg-purple-500/20 border border-purple-500/30 rounded-full mb-4"
-            animate={{ 
-              boxShadow: [
-                '0 0 0 0 rgba(168, 85, 247, 0.4)',
-                '0 0 0 20px rgba(168, 85, 247, 0)',
-              ],
-            }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <span className="text-2xl">⚡</span>
-            <span className="text-lg font-bold text-purple-300">TESTE RELÂMPAGO</span>
-          </motion.div>
-          
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
             {title}
           </h2>
