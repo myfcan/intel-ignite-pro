@@ -4,6 +4,7 @@ export { V7MinimalTimeline } from "./V7MinimalTimeline";
 export { V7AudioIndicator } from "./V7AudioIndicator";
 export { V7DiscreteNavigation } from "./V7DiscreteNavigation";
 export { V7CinematicCanvas } from "./V7CinematicCanvas";
+export { V7MinimalControls } from "./V7MinimalControls";
 
 // V7 Cinematic Components - Phase 2 (Acts)
 export { V7ActDramatic } from "./V7ActDramatic";

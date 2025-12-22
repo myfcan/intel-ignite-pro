@@ -3,11 +3,8 @@
 // ✅ V7-v2: Uses useAnchorText for keyword-based pause sync
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
-import { V7MinimalTimeline } from './V7MinimalTimeline';
+import { V7MinimalControls } from './V7MinimalControls';
 import { V7AudioIndicator } from './V7AudioIndicator';
-import { V7AudioControls } from './V7AudioControls';
-import { V7DiscreteNavigation } from './V7DiscreteNavigation';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
@@ -721,54 +718,29 @@ export const V7PhasePlayer = ({
         intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
 
-      {/* Exit Button - Top Left */}
-      {onExit && (
-        <motion.button
-          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[200] w-10 h-10 sm:w-12 sm:h-12 
-                     rounded-full bg-black/40 backdrop-blur-md border border-white/10
-                     flex items-center justify-center text-white/60 hover:text-white 
-                     hover:bg-black/60 hover:border-white/20 transition-all duration-200"
-          onClick={onExit}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: showControls ? 1 : 0.3, scale: 1 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Sair da aula"
-        >
-          <X className="w-5 h-5 sm:w-6 sm:h-6" />
-        </motion.button>
-      )}
-
-      {/* Timeline - show internalTime when no audio */}
-      <V7MinimalTimeline
-        currentAct={currentPhaseIndex + 1}
-        totalActs={scaledScript.phases.length}
+      {/* Minimal Unified Controls */}
+      <V7MinimalControls
+        isPlaying={effectiveIsPlaying}
         currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
-        totalTime={totalDuration}
+        duration={audio.formattedDuration || totalDuration}
+        progress={hasAudio && audio.duration > 0 ? audio.currentTime / audio.duration : 0}
+        isMuted={audio.isMuted}
+        volume={audio.volume}
+        canGoPrevious={currentPhaseIndex > 0}
+        canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
+        currentPhase={currentPhaseIndex}
+        totalPhases={scaledScript.phases.length}
+        onTogglePlay={audio.togglePlayPause}
+        onToggleMute={audio.toggleMute}
+        onVolumeChange={audio.setVolume}
+        onPrevious={goToPreviousPhase}
+        onNext={goToNextPhase}
+        onExit={onExit}
         isVisible={showControls}
       />
 
       {/* Audio/Play Indicator */}
       <V7AudioIndicator isPlaying={effectiveIsPlaying} />
-
-      {/* Audio Controls - Minimal centered pill */}
-      {audioUrl && (
-        <V7AudioControls
-          isPlaying={audio.isPlaying}
-          isMuted={audio.isMuted}
-          volume={audio.volume}
-          currentTime={audio.formattedCurrentTime}
-          duration={audio.formattedDuration}
-          onTogglePlay={audio.togglePlayPause}
-          onToggleMute={audio.toggleMute}
-          onVolumeChange={audio.setVolume}
-          isVisible={showControls}
-          onPrevious={goToPreviousPhase}
-          onNext={goToNextPhase}
-          canGoPrevious={currentPhaseIndex > 0}
-          canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
-        />
-      )}
 
       {/* Phase Content */}
       <AnimatePresence mode="wait">
@@ -800,21 +772,6 @@ export const V7PhasePlayer = ({
         />
       )}
 
-      {/* Navigation */}
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: showControls ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <V7DiscreteNavigation
-          onPrevious={goToPreviousPhase}
-          onNext={goToNextPhase}
-          onSkip={() => goToPhase(scaledScript.phases.length - 1)}
-          canGoPrevious={currentPhaseIndex > 0}
-          canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
-          showSkip={currentPhaseIndex < scaledScript.phases.length - 2}
-        />
-      </motion.div>
 
       {/* Debug Panel */}
       <V7DebugPanel
