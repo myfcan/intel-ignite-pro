@@ -194,44 +194,46 @@ export const V7PhaseQuiz = ({
     };
   }, [isRevealed, selectedIds.length, timeoutConfig]);
 
-  // ✅ V7-v3 FIX: NÃO pausar automaticamente ao montar!
-  // A pausa é controlada EXTERNAMENTE pelo isPausedByAnchor via useAnchorText
-  // Isso garante que o quiz só pausa quando a keyword "atual de IA" for detectada
+  // ✅ V7-v4 FIX: Pausar automaticamente ao montar OU quando anchorAction detectado
+  // O quiz PAUSA ao montar para garantir que o áudio não continue durante a interação
   useEffect(() => {
     const ctrl = audioControlRef.current;
-    if (!ctrl) return;
+    if (!ctrl || audioPausedByQuiz) return;
 
-    // ✅ CRÍTICO: Só pausa quando isPausedByAnchor = true (anchorAction detectado)
-    if (isPausedByAnchor && ctrl.isPlaying) {
-      const pauseNarration = async () => {
+    // ✅ Pausar imediatamente ao montar o quiz
+    const pauseNarration = async () => {
+      if (ctrl.isPlaying) {
         if (ctrl.pauseWithFade) {
           await ctrl.pauseWithFade(500);
-          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA por anchorAction!');
+          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA automaticamente ao montar!');
         } else {
           ctrl.pause();
-          console.log('[V7PhaseQuiz] 🔇 Narração pausada por anchorAction (fallback)');
+          console.log('[V7PhaseQuiz] 🔇 Narração pausada (fallback)');
         }
         setAudioPausedByQuiz(true);
-      };
-      pauseNarration();
-    }
-  }, [isPausedByAnchor]);
+      }
+    };
+    
+    // Pequeno delay para garantir que o componente está montado
+    const timer = setTimeout(pauseNarration, 100);
+    return () => clearTimeout(timer);
+  }, [audioPausedByQuiz]);
 
-  // ✅ V7-v3: TTS Contextual - Só inicia quando isPausedByAnchor = true
+  // ✅ V7-v4: TTS Contextual - Inicia após pausar o áudio
   useEffect(() => {
     if (isRevealed || selectedIds.length > 0 || ttsStarted) {
       return;
     }
     
-    // ✅ CRÍTICO: Só inicia TTS quando o áudio foi pausado pelo anchorAction
-    if (!isPausedByAnchor) {
+    // ✅ Só inicia TTS quando o áudio foi pausado
+    if (!audioPausedByQuiz) {
       return;
     }
 
     // Aguardar 1s após pausar narração para iniciar TTS
     const startTimer = setTimeout(async () => {
-      if (!isRevealed && selectedIds.length === 0 && isPausedByAnchor) {
-        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (áudio pausado por anchorAction)');
+      if (!isRevealed && selectedIds.length === 0 && audioPausedByQuiz) {
+        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (áudio pausado)');
         setTtsStarted(true);
         await startContextualHints();
       }
@@ -240,7 +242,7 @@ export const V7PhaseQuiz = ({
     return () => {
       clearTimeout(startTimer);
     };
-  }, [isRevealed, selectedIds.length, ttsStarted, isPausedByAnchor, startContextualHints]);
+  }, [isRevealed, selectedIds.length, ttsStarted, audioPausedByQuiz, startContextualHints]);
 
   // ✅ Parar TTS quando usuário interagir
   useEffect(() => {
