@@ -56,14 +56,15 @@ async function fetchWithRetry(
       lastResponse = response;
       console.warn(`[V7Pipeline:Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed with status ${response.status}, retrying...`);
 
-    } catch (error) {
+    } catch (error: unknown) {
       lastError = error;
 
       if (!retryOn(error) || attempt === maxRetries) {
         throw error;
       }
 
-      console.warn(`[V7Pipeline:Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed with error: ${error.message}, retrying...`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`[V7Pipeline:Retry] Attempt ${attempt + 1}/${maxRetries + 1} failed with error: ${errorMessage}, retrying...`);
     }
 
     // Calculate delay with exponential backoff

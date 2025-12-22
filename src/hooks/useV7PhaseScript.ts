@@ -8,6 +8,8 @@ import type {
   V7PipelineAct,
   V7AudioBehavior,
   V7TimeoutConfig,
+  V7FallbacksConfig,
+  V7AnchorPoint,
   normalizeTimestamp,
   extractNarration
 } from '@/types/v7-unified.types';
@@ -40,6 +42,16 @@ interface V7LessonContent {
   audioConfig?: {
     mainAudioUrl?: string;
     ambientAudioUrl?: string;
+    soundEffects?: {
+      click?: string;
+      select?: string;
+      success?: string;
+      error?: string;
+      hint?: string;
+      timeout?: string;
+      whoosh?: string;
+      reveal?: string;
+    };
   };
   fallbacks?: {
     noWordTimestamps?: {
@@ -127,7 +139,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       // ✅ P1 FIX: Use typed interfaces instead of 'as any'
       const content = data.content as V7LessonContent | null;
-      const rawTimestamps = (data.word_timestamps as RawWordTimestamp[] | null) || [];
+      const rawTimestamps = (data.word_timestamps as unknown as RawWordTimestamp[] | null) || [];
 
       // ✅ CRITICAL FIX: Normalize timestamps - some lessons use start_time/end_time, others use start/end
       const timestamps: WordTimestamp[] = rawTimestamps.map((ts: RawWordTimestamp) => ({
@@ -151,16 +163,14 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ✅ PRIORITY ORDER for total duration:
       // 1. word_timestamps (actual audio length) - most accurate
       // 2. cinematic_flow.timeline.totalDuration (pipeline-calculated)
-      // 3. metadata.totalDuration
-      // 4. Sum of act durations (may be pre-scaled by pipeline)
-      // 5. estimated_time in minutes (fallback)
+      // 3. Sum of act durations (may be pre-scaled by pipeline)
+      // 4. estimated_time in minutes (fallback)
       const audioDurationFromTimestamps = timestamps.length > 0
         ? Math.ceil(timestamps[timestamps.length - 1].end)
         : null;
 
       const totalDuration = audioDurationFromTimestamps ||
         content?.cinematic_flow?.timeline?.totalDuration ||
-        content?.metadata?.totalDuration ||
         (data.estimated_time || 8) * 60;
 
       // Check if acts already have scaled durations from pipeline
@@ -182,11 +192,25 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       // ✅ V7-v2: Extract lesson-level configs
       const audioConfig = content?.audioConfig || {};
-      const fallbacks = content?.fallbacks || {
-        noWordTimestamps: { strategy: 'percentage', pauseAt: 0.3, duration: 3000 },
-        audioLoadError: { showSubtitles: true, continueWithText: true },
+      const fallbacks: V7FallbacksConfig = content?.fallbacks?.noWordTimestamps ? {
+        noWordTimestamps: {
+          pauseAfterSeconds: content.fallbacks.noWordTimestamps.pauseAfterSeconds ?? 5,
+          pauseAfterProgress: content.fallbacks.noWordTimestamps.pauseAfterProgress ?? 0.3,
+        },
+        audioLoadError: 'continue',
+      } : {
+        noWordTimestamps: { pauseAfterSeconds: 5, pauseAfterProgress: 0.3 },
+        audioLoadError: 'continue',
       };
-      const globalAnchorPoints = content?.anchorPoints || [];
+      
+      const globalAnchorPoints: V7AnchorPoint[] = (content?.anchorPoints || []).map(ap => ({
+        id: ap.id,
+        keyword: ap.keyword,
+        phaseId: ap.phaseId,
+        action: (ap.action === 'pause' || ap.action === 'show' || ap.action === 'highlight' || ap.action === 'trigger') 
+          ? ap.action 
+          : 'pause' as const,
+      }));
 
       // Create script
       const lessonScript: V7LessonScript = {
@@ -198,9 +222,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         phases,
         // ✅ V7-v2: Lesson-level configs
         audioConfig: {
-          mainAudioUrl: data.audio_url || audioConfig.url,
+          mainAudioUrl: data.audio_url || audioConfig.mainAudioUrl,
+          ambientAudioUrl: audioConfig.ambientAudioUrl,
           soundEffects: audioConfig.soundEffects,
-          ...audioConfig,
         },
         fallbacks,
         anchorPoints: globalAnchorPoints,
