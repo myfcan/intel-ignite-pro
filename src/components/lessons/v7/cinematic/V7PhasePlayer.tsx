@@ -225,22 +225,44 @@ export const V7PhasePlayer = ({
   const hasAnchorActions = anchorActions.length > 0;
   const hasWordTimestamps = wordTimestamps.length > 0;
   
-  // ✅ CRITICAL: Enable anchor system whenever we have actions and wordTimestamps
-  // Not just for interactive phases - any phase can have anchor actions
+  // ✅ LOGIC:
+  // - TEM wordTimestamps → useAnchorText (keyword sync)
+  // - NÃO TEM wordTimestamps → Fallback 30% (pause at 30% of audio duration)
   const shouldEnableAnchors = hasAudio && hasAnchorActions && hasWordTimestamps;
+  const shouldUseFallback30 = hasAudio && isInteractivePhase && !hasWordTimestamps;
+  
+  // ✅ FALLBACK 30%: Pause at 30% of audio duration when no wordTimestamps
+  const fallback30TriggeredRef = useRef(false);
+  
+  useEffect(() => {
+    // Reset fallback trigger when phase changes
+    fallback30TriggeredRef.current = false;
+  }, [currentPhase?.id]);
+  
+  useEffect(() => {
+    if (!shouldUseFallback30 || fallback30TriggeredRef.current) return;
+    if (!audio.duration || audio.duration <= 0) return;
+    
+    const triggerPoint = audio.duration * 0.30; // 30% of audio
+    
+    if (audio.currentTime >= triggerPoint && audio.isPlaying) {
+      console.log(`[V7PhasePlayer] ⏸️ FALLBACK 30% PAUSE at ${audio.currentTime.toFixed(1)}s (trigger: ${triggerPoint.toFixed(1)}s)`);
+      fallback30TriggeredRef.current = true;
+      audio.pause();
+    }
+  }, [shouldUseFallback30, audio.currentTime, audio.duration, audio.isPlaying]);
   
   // Log anchor system status for debugging
   useEffect(() => {
-    console.log(`[V7PhasePlayer] 🔊 AnchorText status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
-      shouldEnableAnchors,
-      hasAudio,
+    console.log(`[V7PhasePlayer] 🔊 System status for "${currentPhase?.id}" (${currentPhase?.type}):`, {
+      system: hasWordTimestamps ? 'useAnchorText' : (shouldUseFallback30 ? 'Fallback30%' : 'none'),
       hasWordTimestamps,
       hasAnchorActions,
-      anchorCount: anchorActions.length,
+      isInteractivePhase,
       wordTimestampCount: wordTimestamps.length,
-      actions: anchorActions.map(a => `${a.id}:${a.keyword}`)
+      audioDuration: audio.duration?.toFixed(1)
     });
-  }, [currentPhase?.id, currentPhase?.type, shouldEnableAnchors, hasAudio, hasWordTimestamps, hasAnchorActions, anchorActions]);
+  }, [currentPhase?.id, currentPhase?.type, hasWordTimestamps, hasAnchorActions, isInteractivePhase, shouldUseFallback30, audio.duration]);
 
   const { 
     isPausedByAnchor, 
