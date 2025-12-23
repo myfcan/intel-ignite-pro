@@ -58,6 +58,8 @@ interface V7PhaseQuizProps {
   // ✅ V7-v3: isPaused é controlado EXTERNAMENTE pelo anchorText
   // O quiz NÃO pausa automaticamente ao montar - espera o anchorAction
   isPausedByAnchor?: boolean;
+  // ✅ V7-v9: Callback when result is shown (to hide player controls)
+  onResultShow?: (isShowing: boolean) => void;
   // V7-v2: Configuração de timeouts (visual hints)
   timeoutConfig?: {
     soft: number;    // 7s - primeira dica
@@ -82,6 +84,7 @@ export const V7PhaseQuiz = ({
   onComplete,
   audioControl,
   isPausedByAnchor = false, // ✅ V7-v3: Controlado externamente
+  onResultShow, // ✅ V7-v9: Callback when result is shown
   timeoutConfig = {
     soft: 7,
     medium: 15,
@@ -396,6 +399,9 @@ export const V7PhaseQuiz = ({
     setIsRevealed(true);
     setTimeout(() => {
       setShowResult(true);
+      
+      // ✅ V7-v9: Notify parent that result is showing (to hide player controls)
+      onResultShow?.(true);
       
       // ✅ V7-v3.2: Calcular resultado e disparar efeitos visuais/sonoros
       const badCount = selectedIds.filter(id => 

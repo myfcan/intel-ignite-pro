@@ -354,15 +354,46 @@ export const V7PhaseSecretReveal = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
+            {/* ✅ V7-v9: Gift box opening animation instead of crystal ball */}
             <motion.div
-              className="text-6xl mb-6"
+              className="text-6xl mb-6 relative"
+              initial={{ scale: 0.8 }}
               animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 10, -10, 0]
+                scale: [0.8, 1.1, 1],
               }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              transition={{ duration: 0.6 }}
             >
-              🔮
+              {/* Gift box base */}
+              <motion.div
+                animate={{ 
+                  y: [0, -5, 0],
+                }}
+                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              >
+                🎁
+              </motion.div>
+              {/* Sparkles around gift */}
+              <motion.div
+                className="absolute -top-2 -right-2 text-2xl"
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [0.5, 1.2, 0.5],
+                  rotate: [0, 15, 0]
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                ✨
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-1 -left-2 text-xl"
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [0.5, 1, 0.5],
+                }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
+              >
+                ⭐
+              </motion.div>
             </motion.div>
             <motion.h2
               className="text-2xl sm:text-3xl font-bold text-white/90 mb-4"
