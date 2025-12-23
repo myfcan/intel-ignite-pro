@@ -272,15 +272,20 @@ export const V7PhasePlayer = ({
   useEffect(() => {
     const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
     
-    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase interativa
-    // O áudio continua tocando até o anchorText detectar "IA."
-    // Sem esse lock, a fase mudaria para revelation antes do anchorText agir
-    if (isInteractivePhase && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) IMMEDIATELY - audio will continue until anchor`);
+    // ✅ V7-v12: Also lock revelation phases that show PERFEITO (requires animation to complete)
+    const isRevelationWithPERFEITO = currentPhase?.type === 'revelation' && 
+      (currentPhase?.title?.toLowerCase().includes('perfeito') || 
+       String((currentPhase?.scenes?.[0]?.content as Record<string, unknown>)?.mainText || '').toLowerCase().includes('perfeito'));
+    
+    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase interativa ou revelation PERFEITO
+    // O áudio continua tocando até o anchorText detectar "IA." ou animação PERFEITO terminar
+    // Sem esse lock, a fase mudaria automaticamente antes da interação/animação completar
+    if ((isInteractivePhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) IMMEDIATELY`);
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
-  }, [currentPhase?.type, currentPhaseIndex, lockedPhaseIndex]);
+  }, [currentPhase?.type, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex]);
 
   // ✅ V7-v6: Reset lock when interaction completes and advances manually
   useEffect(() => {
@@ -725,8 +730,19 @@ export const V7PhasePlayer = ({
         if (showPerfeitoSlide && isPerfeitoMethod) {
           return (
             <V7PhasePERFEITO
-              onComplete={goToNextPhase}
-              autoAdvance={false}
+              onComplete={() => {
+                console.log('[V7PhasePlayer] PERFEITO animation complete - advancing');
+                // ✅ V7-v12: Unlock and advance when PERFEITO animation completes
+                const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
+                if (lockedPhaseIndex !== null) {
+                  console.log('[V7PhasePlayer] 🔓 Unlocking revelation/PERFEITO phase');
+                  setLockedPhaseIndex(null);
+                }
+                setInteractionComplete(true);
+                goToNextPhase(false, fromIndex);
+              }}
+              autoAdvance={true}
+              advanceDelay={4000}
             />
           );
         }
