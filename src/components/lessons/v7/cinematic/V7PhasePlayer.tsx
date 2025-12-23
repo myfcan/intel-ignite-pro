@@ -135,7 +135,15 @@ export const V7PhasePlayer = ({
   }, [script, audio.duration, hasAudio]);
 
   // Effective isPlaying state (works with or without audio)
+  // ✅ V7-v16: Directly read from mainAudioRef for accurate state
   const effectiveIsPlaying = hasAudio ? audio.isPlaying : isPlayingWithoutAudio;
+  
+  // ✅ V7-v16 DEBUG: Log play state mismatch
+  useEffect(() => {
+    if (hasAudio) {
+      console.log(`[V7PhasePlayer] ▶️ Play state: audio.isPlaying=${audio.isPlaying}, effectiveIsPlaying=${effectiveIsPlaying}`);
+    }
+  }, [audio.isPlaying, effectiveIsPlaying, hasAudio]);
 
   // ✅ V7-v6 FIX: Track if we're in an interactive phase that should block progression
   const [lockedPhaseIndex, setLockedPhaseIndex] = useState<number | null>(null);
@@ -420,6 +428,9 @@ export const V7PhasePlayer = ({
       setInteractionComplete(false);
       setIsQuizResultShowing(false);
 
+      // ✅ V7-v16: Reset audio interaction state (so togglePlayPause works again)
+      audio.resetInteraction();
+
       // ✅ V7-v15: CRITICAL - Seek audio BEFORE navigation
       // Need to subtract 3 to account for the +3 offset in V7PhaseController
       if (hasAudio && prevPhase) {
@@ -428,13 +439,11 @@ export const V7PhasePlayer = ({
         audio.seekTo(seekTime);
         console.log(`  🔀 Seeking audio to ${seekTime.toFixed(1)}s (phase startTime: ${prevPhase.startTime.toFixed(1)}s)`);
         
-        // Resume audio if it was paused (from interaction phases)
-        if (!audio.isPlaying) {
-          setTimeout(() => {
-            audio.play();
-            console.log(`  ▶️ Audio resumed after navigation`);
-          }, 100);
-        }
+        // ✅ V7-v16: Always resume audio when going back
+        setTimeout(() => {
+          audio.play();
+          console.log(`  ▶️ Audio resumed after navigation`);
+        }, 100);
       }
 
       goToPhase(prevPhaseIndex);
@@ -963,18 +972,18 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions - HIDE during interactive phases but SHOW during secret-reveal narration */}
+      {/* Captions - HIDE during interactive phases but SHOW during secret-reveal and narration */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
           currentTime={audio.currentTime}
           isVisible={
-            (audio.isPlaying || audio.currentTime > 0) &&
+            // ✅ V7-v16: Show captions whenever audio has started (even if paused)
+            audio.currentTime > 0.1 &&
             currentPhase?.type !== 'interaction' &&
             currentPhase?.type !== 'playground' &&
-            currentPhase?.type !== 'revelation' &&
             currentPhase?.type !== 'gamification'
-            // ✅ V7-v8: Show captions during secret-reveal narration (removed from hide list)
+            // ✅ secret-reveal and revelation phases now SHOW captions
           }
           maxWords={10}
         />

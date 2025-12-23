@@ -501,6 +501,16 @@ export const useV7AudioManager = ({
     };
   }, [stopSpeech]);
 
+  // ✅ V7-v16: Reset interaction state (for navigation back)
+  const resetInteraction = useCallback(() => {
+    setIsInteracting(false);
+    setInteractionState('idle');
+    // Clear any pending contextual timers
+    contextualTimersRef.current.forEach(timer => clearTimeout(timer));
+    contextualTimersRef.current = [];
+    console.log('[V7AudioManager] 🔄 Interaction state reset');
+  }, []);
+
   return {
     // State
     isPlaying,
@@ -526,6 +536,7 @@ export const useV7AudioManager = ({
     resumeWithFade,
     startInteraction,
     endInteraction,
+    resetInteraction, // ✅ V7-v16: Reset interaction state
 
     // ✅ FASE 2: Contextual audio (ElevenLabs, não mais voz robô!)
     playContextualAudio,
