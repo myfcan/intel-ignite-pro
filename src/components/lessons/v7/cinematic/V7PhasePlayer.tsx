@@ -142,6 +142,8 @@ export const V7PhasePlayer = ({
   const [interactionComplete, setInteractionComplete] = useState(false);
   // ✅ V7-v9: Track when quiz result is showing to hide controls
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
+  // ✅ V7-v15: Track if we're navigating backwards to prevent re-locking
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
@@ -266,10 +268,17 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v10 FIX: Lock interactive phases IMMEDIATELY ao entrar
+  // ✅ V7-v15 FIX: Lock interactive phases IMMEDIATELY ao entrar
   // Isso impede que a fase avance pelo tempo, mas o áudio CONTINUA tocando
   // O lock aqui é sobre FASE, não sobre áudio!
+  // CRITICAL: Don't lock when navigating backwards!
   useEffect(() => {
+    // ✅ V7-v15: Skip locking if we're navigating backwards
+    if (isNavigatingBack) {
+      console.log(`[V7PhasePlayer] ⏭️ Skipping lock - navigating backwards`);
+      return;
+    }
+    
     const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
     
     // ✅ V7-v12: Also lock revelation phases that show PERFEITO (requires animation to complete)
@@ -285,7 +294,7 @@ export const V7PhasePlayer = ({
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
-  }, [currentPhase?.type, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex]);
+  }, [currentPhase?.type, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
   // ✅ V7-v6: Reset lock when interaction completes and advances manually
   useEffect(() => {
@@ -386,7 +395,7 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, onComplete, hasAudio, audio]);
 
-  // ✅ V7-v14 FIX: Improved back navigation - reset all states and properly sync audio
+  // ✅ V7-v15 FIX: Improved back navigation - reset all states and properly sync audio
   const goToPreviousPhase = useCallback(() => {
     // Use effective index considering locked state
     const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
@@ -400,7 +409,10 @@ export const V7PhasePlayer = ({
       console.log(`  From: [${effectiveIndex}] (locked: ${lockedPhaseIndex !== null})`);
       console.log(`  To:   [${prevPhaseIndex}] "${prevPhase?.id}" (${prevPhase?.type})`);
 
-      // ✅ V7-v14: Reset ALL interaction states
+      // ✅ V7-v15: Mark that we're navigating back (prevents re-locking)
+      setIsNavigatingBack(true);
+
+      // ✅ V7-v15: Reset ALL interaction states
       if (lockedPhaseIndex !== null) {
         console.log(`  🔓 Unlocking phase for back navigation`);
         setLockedPhaseIndex(null);
@@ -408,10 +420,13 @@ export const V7PhasePlayer = ({
       setInteractionComplete(false);
       setIsQuizResultShowing(false);
 
-      // ✅ V7-v14: Always seek and ensure audio is playing for narration phases
+      // ✅ V7-v15: CRITICAL - Seek audio BEFORE navigation
+      // Need to subtract 3 to account for the +3 offset in V7PhaseController
       if (hasAudio && prevPhase) {
-        audio.seekTo(prevPhase.startTime);
-        console.log(`  🔀 Seeking audio to ${prevPhase.startTime.toFixed(1)}s`);
+        // The startTime in the script already includes the offset, so seek directly
+        const seekTime = Math.max(0, prevPhase.startTime - 3);
+        audio.seekTo(seekTime);
+        console.log(`  🔀 Seeking audio to ${seekTime.toFixed(1)}s (phase startTime: ${prevPhase.startTime.toFixed(1)}s)`);
         
         // Resume audio if it was paused (from interaction phases)
         if (!audio.isPlaying) {
@@ -423,6 +438,11 @@ export const V7PhasePlayer = ({
       }
 
       goToPhase(prevPhaseIndex);
+      
+      // ✅ V7-v15: Clear navigation flag after a short delay
+      setTimeout(() => {
+        setIsNavigatingBack(false);
+      }, 500);
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio, lockedPhaseIndex]);
 
