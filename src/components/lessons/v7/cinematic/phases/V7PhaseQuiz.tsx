@@ -433,7 +433,7 @@ export const V7PhaseQuiz = ({
   const isInBadGroup = badCount >= selectedIds.length / 2;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start p-4 sm:p-6 pt-8 sm:pt-12 pb-24 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-start p-4 sm:p-6 pt-6 sm:pt-10 pb-32 sm:pb-28 relative overflow-y-auto overflow-x-hidden">
       <div className="w-full max-w-2xl">
         {/* Quiz Header - Simplificado (sem TESTE RELÂMPAGO intro) */}
         <motion.div
@@ -564,10 +564,10 @@ export const V7PhaseQuiz = ({
           </motion.button>
         )}
 
-        {/* ✅ FASE 1: Botão CONFIRMAR - aparece após selecionar opções */}
+        {/* ✅ Botão CONFIRMAR - Positioned with safe margin from player controls */}
         {optionsRevealed && !isRevealed && (
           <motion.button
-            className="w-full py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg font-bold text-white rounded-full relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed mb-6"
             style={{
               background: selectedIds.length > 0 
                 ? 'linear-gradient(135deg, #10b981, #059669)' 
@@ -623,11 +623,11 @@ export const V7PhaseQuiz = ({
           )}
         </AnimatePresence>
 
-        {/* Result Reveal - Posicionado acima dos controles */}
+        {/* Result Reveal - Positioned with safe bottom margin for mobile */}
         <AnimatePresence>
           {showResult && (
             <motion.div
-              className="text-center mt-6 mb-16"
+              className="text-center mt-4 sm:mt-6 mb-20 sm:mb-16"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
