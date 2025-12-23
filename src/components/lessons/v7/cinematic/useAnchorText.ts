@@ -360,9 +360,12 @@ export function useAnchorText({
 
   // Reset quando a fase muda
   useEffect(() => {
-    console.log(`[AnchorText] Phase changed to ${phaseId} - resetting state`);
+    console.log(`[AnchorText] 🔄 Phase changed to ${phaseId} - RESETTING ALL STATE`);
     stateRef.current.executedActions.clear();
     stateRef.current.pausedByAnchor = false;
+    // ✅ V7-v11 FIX: CRITICAL - Reset React state too, not just ref!
+    // Without this, isPausedByAnchor stays true when entering new phases
+    setIsPausedByAnchorState(false);
     setVisibleElements(new Set());
     setHighlightedElements(new Set());
   }, [phaseId]);
