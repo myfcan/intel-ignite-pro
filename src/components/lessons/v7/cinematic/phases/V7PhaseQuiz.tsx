@@ -194,15 +194,39 @@ export const V7PhaseQuiz = ({
     };
   }, [isRevealed, selectedIds.length, timeoutConfig]);
 
-  // ✅ V7-v3 FIX: NÃO pausar automaticamente ao montar!
-  // A pausa é controlada EXTERNAMENTE pelo isPausedByAnchor via useAnchorText
-  // Isso garante que o quiz só pausa quando a keyword "uso atual de IA" for detectada
+  // ✅ V7-v7 FIX: Pausar áudio IMEDIATAMENTE ao montar o quiz
+  // Não esperar pelo anchorAction - o lock de fase já garante que não avança
+  const hasPausedRef = useRef(false);
+  
+  useEffect(() => {
+    const ctrl = audioControlRef.current;
+    if (!ctrl || hasPausedRef.current) return;
+
+    // ✅ CRÍTICO: Pausar IMEDIATAMENTE ao montar (1 segundo de delay para dar tempo de mostrar)
+    const pauseTimer = setTimeout(async () => {
+      if (ctrl.isPlaying && !hasPausedRef.current) {
+        hasPausedRef.current = true;
+        if (ctrl.pauseWithFade) {
+          await ctrl.pauseWithFade(500);
+          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA ao entrar no quiz!');
+        } else {
+          ctrl.pause();
+          console.log('[V7PhaseQuiz] 🔇 Narração pausada ao entrar no quiz (fallback)');
+        }
+        setAudioPausedByQuiz(true);
+      }
+    }, 1000);
+
+    return () => clearTimeout(pauseTimer);
+  }, []);
+
+  // ✅ V7-v3 FIX: Também pausar se isPausedByAnchor mudar (fallback)
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (!ctrl) return;
 
-    // ✅ CRÍTICO: Só pausa quando isPausedByAnchor = true (anchorAction detectado)
-    if (isPausedByAnchor && ctrl.isPlaying) {
+    if (isPausedByAnchor && ctrl.isPlaying && !hasPausedRef.current) {
+      hasPausedRef.current = true;
       const pauseNarration = async () => {
         if (ctrl.pauseWithFade) {
           await ctrl.pauseWithFade(500);
@@ -217,21 +241,21 @@ export const V7PhaseQuiz = ({
     }
   }, [isPausedByAnchor]);
 
-  // ✅ V7-v3: TTS Contextual - Só inicia quando isPausedByAnchor = true
+  // ✅ V7-v7: TTS Contextual - Inicia quando o áudio for pausado
   useEffect(() => {
     if (isRevealed || selectedIds.length > 0 || ttsStarted) {
       return;
     }
     
-    // ✅ CRÍTICO: Só inicia TTS quando o áudio foi pausado pelo anchorAction
-    if (!isPausedByAnchor) {
+    // ✅ Iniciar TTS quando o áudio foi pausado (por qualquer método)
+    if (!audioPausedByQuiz) {
       return;
     }
 
     // Aguardar 1s após pausar narração para iniciar TTS
     const startTimer = setTimeout(async () => {
-      if (!isRevealed && selectedIds.length === 0 && isPausedByAnchor) {
-        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (áudio pausado por anchorAction)');
+      if (!isRevealed && selectedIds.length === 0 && audioPausedByQuiz) {
+        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (áudio pausado)');
         setTtsStarted(true);
         await startContextualHints();
       }
@@ -240,7 +264,7 @@ export const V7PhaseQuiz = ({
     return () => {
       clearTimeout(startTimer);
     };
-  }, [isRevealed, selectedIds.length, ttsStarted, isPausedByAnchor, startContextualHints]);
+  }, [isRevealed, selectedIds.length, ttsStarted, audioPausedByQuiz, startContextualHints]);
 
   // ✅ Parar TTS quando usuário interagir
   useEffect(() => {
@@ -393,23 +417,14 @@ export const V7PhaseQuiz = ({
       }
     }, 500);
 
-    // ✅ V7-v2 FIX: RETOMAR narração de onde parou após mostrar resultado
-    setTimeout(async () => {
-      const ctrl = audioControlRef.current;
-      if (audioPausedByQuiz && ctrl) {
-        // ✅ CORRETO: Usar resumeWithFade para retomar de onde parou
-        if (ctrl.resumeWithFade) {
-          await ctrl.resumeWithFade(500);
-          console.log('[V7PhaseQuiz] 🔊 Narração RETOMADA de onde parou!');
-        } else if (!ctrl.isPlaying) {
-          ctrl.play();
-          console.log('[V7PhaseQuiz] 🔊 Narração retomada (fallback)');
-        }
-        setAudioPausedByQuiz(false);
-      }
+    // ✅ V7-v7 FIX: NÃO retomar áudio aqui - deixar a próxima fase decidir
+    // Se a próxima fase for secret-reveal, ela vai pausar o áudio e tocar sua própria narração
+    // Apenas chamar onComplete após o delay do feedback
+    setTimeout(() => {
+      console.log('[V7PhaseQuiz] ✅ Feedback completo - chamando onComplete');
       onComplete?.(selectedIds);
-    }, 4500); // Aumentar delay para dar tempo do feedback ser falado
-  }, [selectedIds, onComplete, audioPausedByQuiz, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback]);
+    }, 4500); // Delay para dar tempo do feedback ser falado
+  }, [selectedIds, onComplete, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback, stopTts]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
