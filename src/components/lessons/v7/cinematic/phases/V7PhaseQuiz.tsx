@@ -227,28 +227,44 @@ export const V7PhaseQuiz = ({
     }
   }, [isPausedByAnchor]);
 
-  // ✅ V7-v7: TTS Contextual - Inicia quando o áudio for pausado
+  // ✅ V7-v17 FIX: TTS Contextual - Inicia quando:
+  // 1. O áudio foi pausado pelo anchor (audioPausedByQuiz), OU
+  // 2. O áudio já está pausado (!audioControl.isPlaying) após 2s de espera
+  // Isso garante que o sussurro sempre toque mesmo se o anchor falhar
   useEffect(() => {
     if (isRevealed || selectedIds.length > 0 || ttsStarted) {
       return;
     }
     
-    // ✅ Iniciar TTS quando o áudio foi pausado (por qualquer método)
-    if (!audioPausedByQuiz) {
-      return;
+    const ctrl = audioControlRef.current;
+    
+    // ✅ CASO 1: Áudio foi pausado pelo anchor - iniciar TTS imediatamente
+    if (audioPausedByQuiz) {
+      const startTimer = setTimeout(async () => {
+        if (!isRevealed && selectedIds.length === 0) {
+          console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (pausado por anchor)');
+          setTtsStarted(true);
+          await startContextualHints();
+        }
+      }, 1000);
+      return () => clearTimeout(startTimer);
     }
-
-    // Aguardar 1s após pausar narração para iniciar TTS
-    const startTimer = setTimeout(async () => {
-      if (!isRevealed && selectedIds.length === 0 && audioPausedByQuiz) {
-        console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (áudio pausado)');
-        setTtsStarted(true);
-        await startContextualHints();
+    
+    // ✅ CASO 2: Fallback - se o áudio não está tocando após 2s, iniciar TTS
+    // Isso cobre casos onde o anchor não funcionou ou o áudio já estava pausado
+    const fallbackTimer = setTimeout(async () => {
+      if (!isRevealed && selectedIds.length === 0 && !ttsStarted) {
+        const isAudioPaused = !ctrl?.isPlaying;
+        if (isAudioPaused) {
+          console.log('[V7PhaseQuiz] 🎵 Iniciando TTS contextual (fallback - áudio parado)');
+          setTtsStarted(true);
+          await startContextualHints();
+        }
       }
-    }, 1000);
+    }, 2000);
 
     return () => {
-      clearTimeout(startTimer);
+      clearTimeout(fallbackTimer);
     };
   }, [isRevealed, selectedIds.length, ttsStarted, audioPausedByQuiz, startContextualHints]);
 
