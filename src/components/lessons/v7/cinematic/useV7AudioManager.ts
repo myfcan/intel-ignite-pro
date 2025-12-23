@@ -140,7 +140,19 @@ export const useV7AudioManager = ({
     }
   }, [onStateChange, playSoundEffect]);
 
-  // Initialize audio elements
+  // Refs para callbacks (evita re-registro de listeners)
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  const onEndedRef = useRef(onEnded);
+  
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+  
+  useEffect(() => {
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
+
+  // Initialize audio elements - SEM dependências externas!
   useEffect(() => {
     if (!mainAudioRef.current) {
       mainAudioRef.current = new Audio();
@@ -158,7 +170,7 @@ export const useV7AudioManager = ({
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      onTimeUpdate?.(audio.currentTime);
+      onTimeUpdateRef.current?.(audio.currentTime);
     };
 
     const handleLoadedMetadata = () => {
@@ -167,11 +179,18 @@ export const useV7AudioManager = ({
 
     const handleEnded = () => {
       setIsPlaying(false);
-      onEnded?.();
+      onEndedRef.current?.();
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    // ✅ CRITICAL: Estes listeners sincronizam isPlaying com o estado REAL do áudio HTML
+    const handlePlay = () => {
+      console.log('[V7AudioManager] 🔊 HTML Audio Event: PLAY');
+      setIsPlaying(true);
+    };
+    const handlePause = () => {
+      console.log('[V7AudioManager] 🔇 HTML Audio Event: PAUSE');
+      setIsPlaying(false);
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -186,7 +205,7 @@ export const useV7AudioManager = ({
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
     };
-  }, [onTimeUpdate, onEnded]);
+  }, []); // ✅ SEM dependências - listeners estáveis
 
   // Load audio
   const loadAudio = useCallback((url: string) => {
