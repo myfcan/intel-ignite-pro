@@ -343,7 +343,7 @@ export const V7PhaseSecretReveal = ({
   }));
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-28">
       {/* Estado de loading enquanto gera áudio */}
       <AnimatePresence>
         {currentStage === 'loading' && (
@@ -502,7 +502,7 @@ export const V7PhaseSecretReveal = ({
       <AnimatePresence>
         {showMethodScreen && (
           <motion.div
-            className="absolute inset-0 flex flex-col items-center justify-center z-50 px-6"
+            className="absolute inset-0 flex flex-col items-center justify-center z-50 px-6 pb-28"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

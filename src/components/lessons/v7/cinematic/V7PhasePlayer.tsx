@@ -882,7 +882,7 @@ export const V7PhasePlayer = ({
         intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
 
-      {/* Minimal Unified Controls - ✅ V7-v9: Hide when quiz result is showing */}
+      {/* Minimal Unified Controls - ✅ V7-v13: ALWAYS show during revelation/secret-reveal/perfeito */}
       <V7MinimalControls
         isPlaying={effectiveIsPlaying}
         currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
@@ -900,7 +900,12 @@ export const V7PhasePlayer = ({
         onPrevious={goToPreviousPhase}
         onNext={goToNextPhase}
         onExit={onExit}
-        isVisible={showControls && !isQuizResultShowing}
+        isVisible={
+          // ✅ V7-v13: Always show controls during revelation/secret-reveal phases (PERFEITO, etc)
+          currentPhase?.type === 'revelation' || currentPhase?.type === 'secret-reveal'
+            ? true
+            : (showControls && !isQuizResultShowing)
+        }
         isLocked={audio.isInteracting}
       />
 
