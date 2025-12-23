@@ -264,11 +264,19 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v6 FIX: Lock phase when anchor pauses in interactive phases
+  // ✅ V7-v7 FIX: Lock ALL interactive phases IMMEDIATELY when they start
   // This prevents the phase controller from advancing based on audio time
   useEffect(() => {
     const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
     
+    // ✅ CRITICAL FIX: Lock IMMEDIATELY when entering interactive phase, not just when anchor pauses
+    if (isInteractivePhase && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - interactive phase entered`);
+      setLockedPhaseIndex(currentPhaseIndex);
+      setInteractionComplete(false);
+    }
+    
+    // Also lock if anchor pauses
     if (isPausedByAnchor && isInteractivePhase && lockedPhaseIndex === null) {
       console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - anchor paused`);
       setLockedPhaseIndex(currentPhaseIndex);
@@ -401,8 +409,11 @@ export const V7PhasePlayer = ({
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
 
-    // ✅ Trigger resume via anchor text system
-    manualResume();
+    // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
+    // The secret-reveal phase will handle its own audio flow
+    if (nextPhase?.type !== 'secret-reveal') {
+      manualResume();
+    }
 
     // ✅ V7-v4: Do NOT resume audio here - let the secret-reveal phase handle it
     // The secret-reveal phase will pause main audio and play its own ElevenLabs narration

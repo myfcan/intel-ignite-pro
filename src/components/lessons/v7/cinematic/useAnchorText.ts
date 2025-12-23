@@ -183,6 +183,12 @@ export function useAnchorText({
         console.log(`[AnchorText] ✅ Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
         return ts;
       }
+      
+      // ✅ V7-v7: Também tentar match parcial se a keyword está contida na palavra (para "IA" encontrar "IA.")
+      if (normalizedWord.includes(normalizedKeyword) && normalizedKeyword.length >= 2) {
+        console.log(`[AnchorText] ✅ Found keyword "${keyword}" via partial match at ${ts.start.toFixed(1)}s (word: "${ts.word}" contains "${normalizedKeyword}")`);
+        return ts;
+      }
     }
     
     console.log(`[AnchorText] ❌ Keyword "${keyword}" NOT FOUND (searched ${wordTimestamps.length} words)`);
