@@ -444,6 +444,9 @@ function transformActsToPhases(
     
     console.log(`[transformActsToPhases] Act ${index + 1}: anchorActions=${anchorActions.length}, pauseKeywords=${pauseKeywords.length}`);
     
+    // ✅ V7-v4: secret-reveal phase should NOT auto-advance (user clicks button to continue)
+    const isInteractivePhaseType = phaseType === 'interaction' || phaseType === 'playground' || phaseType === 'secret-reveal';
+    
     const phase: V7Phase = {
       id: act.id || `phase-${index + 1}`,
       title: act.title || `Fase ${index + 1}`,
@@ -451,13 +454,15 @@ function transformActsToPhases(
       endTime,
       type: phaseType,
       mood: extractMood(visualData),
-      autoAdvance: phaseType !== 'interaction' && phaseType !== 'playground',
+      autoAdvance: !isInteractivePhaseType,
       // ✅ Add anchorActions and pauseKeywords to phase
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
       pauseKeywords: pauseKeywords.length > 0 ? pauseKeywords : undefined,
       // ✅ V7-v2: Add audioBehavior and timeout configs
       audioBehavior: audioBehavior || undefined,
       timeout: timeout || undefined,
+      // ✅ V7-v4: Propagate interaction data to phase for secret-reveal access
+      interaction: phaseType === 'secret-reveal' ? interactionData : undefined,
       scenes: generateScenesForPhase(
         {
           ...act,

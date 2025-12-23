@@ -256,12 +256,19 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // Log de entrada na fase
+  // Log de entrada na fase + auto-pause para fases interativas
   useEffect(() => {
     if (currentPhase?.id) {
       console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);
+      
+      // ✅ V7-v4: Auto-pause audio when entering secret-reveal phase
+      // This phase will handle its own narration via ElevenLabs
+      if (currentPhase.type === 'secret-reveal' && hasAudio && audio.isPlaying) {
+        console.log('[V7PhasePlayer] ⏸️ Auto-pausing main audio for secret-reveal phase');
+        audio.pause();
+      }
     }
-  }, [currentPhase?.id, currentPhase?.type]);
+  }, [currentPhase?.id, currentPhase?.type, hasAudio, audio]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -288,7 +295,7 @@ export const V7PhasePlayer = ({
     }
   }, [audio, hasAudio]);
 
-  // ✅ CRITICAL FIX: Don't seek audio when coming from interactive phases (quiz/playground)
+  // ✅ CRITICAL FIX: Don't seek audio when coming from interactive phases (quiz/playground/secret-reveal)
   // These phases pause audio manually and should resume from current position
   const goToNextPhase = useCallback((skipAudioSeek: boolean = false) => {
     if (currentPhaseIndex < scaledScript.phases.length - 1) {
@@ -298,7 +305,8 @@ export const V7PhasePlayer = ({
       const currentPhaseType = scaledScript.phases[currentPhaseIndex]?.type;
 
       // Don't seek if coming from interactive phases or if explicitly told to skip
-      const isInteractivePhase = currentPhaseType === 'interaction' || currentPhaseType === 'playground';
+      // ✅ V7-v4: Added 'secret-reveal' to interactive phases list
+      const isInteractivePhase = currentPhaseType === 'interaction' || currentPhaseType === 'playground' || currentPhaseType === 'secret-reveal';
       const shouldSeek = hasAudio && nextPhase && !skipAudioSeek && !isInteractivePhase;
 
       if (shouldSeek) {
@@ -332,19 +340,17 @@ export const V7PhasePlayer = ({
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    console.log('[V7PhasePlayer] Quiz complete - advancing to playground');
+    console.log('[V7PhasePlayer] Quiz complete - advancing to next phase (secret-reveal or playground)');
 
     // ✅ Trigger resume via anchor text system
     manualResume();
 
-    // ✅ Resume audio so playground narration plays
-    if (hasAudio && !audio.isPlaying) {
-      audio.play();
-      console.log('[V7PhasePlayer] ▶️ Audio resumed for playground narration');
-    }
+    // ✅ V7-v4: Do NOT resume audio here - let the secret-reveal phase handle it
+    // The secret-reveal phase will pause main audio and play its own ElevenLabs narration
+    // Audio will be resumed when user clicks the button in secret-reveal
 
     goToNextPhase();
-  }, [playSound, goToNextPhase, hasAudio, audio, manualResume]);
+  }, [playSound, goToNextPhase, manualResume]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
@@ -684,16 +690,38 @@ export const V7PhasePlayer = ({
       case 'secret-reveal':
         // ✅ V7-v4: Secret Reveal phase with ElevenLabs narration + cinematic effects
         const secretContent = getCombinedSceneContent();
+        // ✅ Check interaction content from the phase (where the DB stores it)
+        const phaseInteraction = currentPhase.interaction as Record<string, any> | undefined;
+        const interactionNarration = phaseInteraction?.narration || 
+                                     content.interaction?.narration ||
+                                     content.narration;
+        const interactionPauseKeyword = phaseInteraction?.pauseKeyword ||
+                                        content.interaction?.pauseKeyword ||
+                                        content.pauseKeyword;
+        
         const defaultNarration = 'Agora vou te mostrar o segredo dos 2% que sabem usar a Inteligência Artificial de verdade, seja, para seus projetos, fazer renda extra ou simplesmente para se tornar 10X mais inteligente.';
+        
+        const finalNarration = interactionNarration || secretContent.narration || secretContent.mainText || defaultNarration;
+        const finalPauseKeyword = interactionPauseKeyword || secretContent.pauseKeyword || '10X mais inteligente';
+        
+        console.log('[V7PhasePlayer] 🔮 Secret-reveal phase interaction:', phaseInteraction);
+        console.log('[V7PhasePlayer] 🔮 Secret-reveal narration:', finalNarration.substring(0, 50) + '...');
         
         return (
           <V7PhaseSecretReveal
-            narrationText={secretContent.narration || secretContent.mainText || defaultNarration}
-            pauseKeyword={secretContent.pauseKeyword || '10X mais inteligente'}
+            narrationText={finalNarration}
+            pauseKeyword={finalPauseKeyword}
             sceneIndex={currentSceneIndex}
             onComplete={() => {
               console.log('[V7PhasePlayer] Secret revealed - advancing');
               manualResume();
+              
+              // ✅ Resume main audio for next phase
+              if (hasAudio && !audio.isPlaying) {
+                audio.play();
+                console.log('[V7PhasePlayer] ▶️ Audio resumed after secret-reveal');
+              }
+              
               goToNextPhase();
             }}
             onSecretClick={() => {

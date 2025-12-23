@@ -157,6 +157,9 @@ export interface V7Phase {
   // ✅ V7-v2: New interaction configuration fields
   audioBehavior?: V7AudioBehavior;
   timeout?: V7TimeoutConfig;
+  
+  // ✅ V7-v4: Interaction data for secret-reveal phase
+  interaction?: Record<string, unknown>;
 }
 
 // ✅ V7-v2: Sound effects configuration
