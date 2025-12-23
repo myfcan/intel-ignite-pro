@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.elevenlabs-tts-contextual]
 verify_jwt = false
+
+[functions.v7-generate-secret-audio]
+verify_jwt = false

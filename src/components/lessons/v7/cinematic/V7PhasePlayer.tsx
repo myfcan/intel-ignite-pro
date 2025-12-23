@@ -137,11 +137,15 @@ export const V7PhasePlayer = ({
   // Effective isPlaying state (works with or without audio)
   const effectiveIsPlaying = hasAudio ? audio.isPlaying : isPlayingWithoutAudio;
 
+  // ✅ V7-v6 FIX: Track if we're in an interactive phase that should block progression
+  const [lockedPhaseIndex, setLockedPhaseIndex] = useState<number | null>(null);
+  const [interactionComplete, setInteractionComplete] = useState(false);
+
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
   const {
-    currentPhase,
-    currentPhaseIndex,
+    currentPhase: rawCurrentPhase,
+    currentPhaseIndex: rawCurrentPhaseIndex,
     currentSceneIndex,
     phaseProgress,
     goToPhase,
@@ -152,6 +156,10 @@ export const V7PhasePlayer = ({
     isPlaying: effectiveIsPlaying,
     hasAudio
   });
+
+  // ✅ V7-v6: Override phase index when locked in interactive phase
+  const currentPhaseIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : rawCurrentPhaseIndex;
+  const currentPhase = scaledScript.phases[currentPhaseIndex] || null;
 
   // Load audio
   useEffect(() => {
@@ -256,7 +264,26 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // Log detalhado de entrada na fase - SEM auto-pause
+  // ✅ V7-v6 FIX: Lock phase when anchor pauses in interactive phases
+  // This prevents the phase controller from advancing based on audio time
+  useEffect(() => {
+    const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
+    
+    if (isPausedByAnchor && isInteractivePhase && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - anchor paused`);
+      setLockedPhaseIndex(currentPhaseIndex);
+      setInteractionComplete(false);
+    }
+  }, [isPausedByAnchor, currentPhase?.type, currentPhaseIndex, lockedPhaseIndex]);
+
+  // ✅ V7-v6: Reset lock when interaction completes and advances manually
+  useEffect(() => {
+    if (interactionComplete && lockedPhaseIndex !== null) {
+      console.log(`[V7PhasePlayer] 🔓 UNLOCKING phase - interaction complete`);
+      setLockedPhaseIndex(null);
+      setInteractionComplete(false);
+    }
+  }, [interactionComplete, lockedPhaseIndex]);
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
     if (currentPhase?.id) {
@@ -370,6 +397,9 @@ export const V7PhasePlayer = ({
     console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex})`);
     console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type})`);
     console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
+
+    // ✅ V7-v6: Mark interaction as complete to unlock phase
+    setInteractionComplete(true);
 
     // ✅ Trigger resume via anchor text system
     manualResume();
@@ -732,17 +762,24 @@ export const V7PhasePlayer = ({
         
         const finalNarration = interactionNarration || secretContent.narration || secretContent.mainText || defaultNarration;
         const finalPauseKeyword = interactionPauseKeyword || secretContent.pauseKeyword || '10X mais inteligente';
+        const narrationAudioUrl = phaseInteraction?.narrationAudioUrl || secretContent.narrationAudioUrl;
         
         console.log('[V7PhasePlayer] 🔮 Secret-reveal phase interaction:', phaseInteraction);
         console.log('[V7PhasePlayer] 🔮 Secret-reveal narration:', finalNarration.substring(0, 50) + '...');
+        console.log('[V7PhasePlayer] 🔮 Secret-reveal audioUrl:', narrationAudioUrl || 'NONE - will generate');
         
         return (
           <V7PhaseSecretReveal
             narrationText={finalNarration}
+            narrationAudioUrl={narrationAudioUrl}
             pauseKeyword={finalPauseKeyword}
             sceneIndex={currentSceneIndex}
             onComplete={() => {
               console.log('[V7PhasePlayer] Secret revealed - advancing');
+              
+              // ✅ V7-v6: Mark interaction as complete to unlock phase
+              setInteractionComplete(true);
+              
               manualResume();
               
               // ✅ Resume main audio for next phase

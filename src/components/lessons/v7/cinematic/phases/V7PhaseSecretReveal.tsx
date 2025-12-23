@@ -20,6 +20,7 @@ interface AudioControl {
 
 interface V7PhaseSecretRevealProps {
   narrationText: string;
+  narrationAudioUrl?: string; // ✅ V7-v6: URL do áudio pré-gerado (se disponível)
   pauseKeyword?: string;
   sceneIndex: number;
   onComplete?: () => void;
@@ -73,6 +74,7 @@ const GoldParticle = ({ angle, distance }: { angle: number; distance: number }) 
 
 export const V7PhaseSecretReveal = ({
   narrationText,
+  narrationAudioUrl, // ✅ V7-v6: URL do áudio pré-gerado
   pauseKeyword = '10X mais inteligente',
   sceneIndex,
   onComplete,
@@ -119,9 +121,6 @@ export const V7PhaseSecretReveal = ({
     setLoadingProgress(10);
 
     try {
-      console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Gerando narração via ElevenLabs...');
-      console.log('[V7PhaseSecretReveal] 📝 Texto:', narrationText.substring(0, 60) + '...');
-      
       // Garantir que o áudio principal está pausado
       if (audioControl && !hasPausedMainAudioRef.current) {
         if (audioControl.pauseWithFade) {
@@ -132,80 +131,88 @@ export const V7PhaseSecretReveal = ({
         hasPausedMainAudioRef.current = true;
       }
 
-      setLoadingProgress(30);
+      let audioUrl: string;
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({
-            text: narrationText,
-            whisper: false,
-          }),
-        }
-      );
-
-      setLoadingProgress(70);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[V7PhaseSecretReveal] ❌ Erro na API:', response.status, errorText);
-        throw new Error(`Falha ao gerar áudio: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setLoadingProgress(90);
-      
-      if (data.audioBase64) {
-        console.log('[V7PhaseSecretReveal] ✅ Áudio recebido, iniciando reprodução...');
-        const audioUrl = `data:audio/mpeg;base64,${data.audioBase64}`;
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-        audio.volume = 0.9;
-
-        // ETAPA 2: Iniciar efeitos visuais quando o áudio começar
-        audio.onplay = () => {
-          console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Disparando efeitos visuais');
-          setCurrentStage('effects');
-          setLoadingProgress(100);
-          triggerExplosion();
-        };
-
-        audio.onerror = (e) => {
-          console.error('[V7PhaseSecretReveal] ❌ Erro ao tocar áudio:', e);
-          // Fallback: ir para efeitos mesmo assim
-          setCurrentStage('effects');
-          triggerExplosion();
-          setTimeout(() => transitionToMethodScreen(), 4000);
-        };
-
-        // Quando terminar a narração, ir para ETAPA 3
-        audio.onended = () => {
-          console.log('[V7PhaseSecretReveal] ✅ Narração concluída - indo para ETAPA 3');
-          setIsNarrating(false);
-          transitionToMethodScreen();
-        };
-
-        await audio.play();
-        setCurrentStage('narrating');
+      // ✅ V7-v6: Usar URL pré-gerada se disponível
+      if (narrationAudioUrl) {
+        console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Usando áudio PRÉ-GERADO do banco');
+        audioUrl = narrationAudioUrl;
+        setLoadingProgress(90);
       } else {
-        console.error('[V7PhaseSecretReveal] ❌ Nenhum áudio retornado:', data);
-        throw new Error('Nenhum áudio retornado');
+        console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Gerando narração via ElevenLabs...');
+        console.log('[V7PhaseSecretReveal] 📝 Texto:', narrationText.substring(0, 60) + '...');
+        setLoadingProgress(30);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              text: narrationText,
+              whisper: false,
+            }),
+          }
+        );
+
+        setLoadingProgress(70);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[V7PhaseSecretReveal] ❌ Erro na API:', response.status, errorText);
+          throw new Error(`Falha ao gerar áudio: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setLoadingProgress(90);
+        
+        if (!data.audioBase64) {
+          throw new Error('Nenhum áudio retornado');
+        }
+        
+        audioUrl = `data:audio/mpeg;base64,${data.audioBase64}`;
       }
+
+      console.log('[V7PhaseSecretReveal] ✅ Áudio pronto, iniciando reprodução...');
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.volume = 0.9;
+
+      // ETAPA 2: Iniciar efeitos visuais quando o áudio começar
+      audio.onplay = () => {
+        console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Disparando efeitos visuais');
+        setCurrentStage('effects');
+        setLoadingProgress(100);
+        triggerExplosion();
+      };
+
+      audio.onerror = (e) => {
+        console.error('[V7PhaseSecretReveal] ❌ Erro ao tocar áudio:', e);
+        setCurrentStage('effects');
+        triggerExplosion();
+        setTimeout(() => transitionToMethodScreen(), 4000);
+      };
+
+      audio.onended = () => {
+        console.log('[V7PhaseSecretReveal] ✅ Narração concluída - indo para ETAPA 3');
+        setIsNarrating(false);
+        transitionToMethodScreen();
+      };
+
+      await audio.play();
+      setCurrentStage('narrating');
     } catch (error) {
       console.error('[V7PhaseSecretReveal] ❌ Erro na narração:', error);
       setIsNarrating(false);
-      // Fallback: mostrar efeitos mesmo sem áudio
       setCurrentStage('effects');
       triggerExplosion();
       setTimeout(() => transitionToMethodScreen(), 4000);
     }
-  }, [narrationText, audioControl]);
+  }, [narrationText, narrationAudioUrl, audioControl]);
 
   // ETAPA 2: Disparar efeitos visuais de explosão
   const triggerExplosion = useCallback(() => {
