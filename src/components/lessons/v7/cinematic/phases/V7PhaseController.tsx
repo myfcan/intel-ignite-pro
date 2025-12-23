@@ -278,7 +278,12 @@ export function usePhaseController({
   }, [manualPhaseIndex, hasAudio, script.phases]);
 
   // Use internal time when no audio, otherwise use audio time
-  const effectiveTime = hasAudio ? currentTime : internalTime;
+  const rawTime = hasAudio ? currentTime : internalTime;
+  
+  // ✅ V7-v11 FIX: Add 3s offset to audio time to compensate for loading phase offset in phases
+  // The phases have +3s offset added (loading phase is 0-3s), so audio time 0s = phase time 3s
+  // This ensures audio time 0s maps to the first content phase (startTime: 3s)
+  const effectiveTime = hasAudio ? rawTime + 3 : internalTime;
 
   // Find current phase based on time (uses effectiveTime for fallback support)
   const currentPhaseIndex = useMemo(() => {
