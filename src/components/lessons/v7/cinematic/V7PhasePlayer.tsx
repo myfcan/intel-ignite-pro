@@ -266,19 +266,21 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v8 FIX: Lock interactive phases ONLY when anchor pauses
-  // Don't lock immediately - let audio continue until anchorText keyword is detected
+  // ✅ V7-v10 FIX: Lock interactive phases IMMEDIATELY ao entrar
+  // Isso impede que a fase avance pelo tempo, mas o áudio CONTINUA tocando
+  // O lock aqui é sobre FASE, não sobre áudio!
   useEffect(() => {
     const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
     
-    // ✅ CRITICAL: Lock ONLY when isPausedByAnchor = true (keyword detected)
-    // This allows audio to continue playing until "IA." is spoken
-    if (isPausedByAnchor && isInteractivePhase && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - anchor paused by keyword`);
+    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase interativa
+    // O áudio continua tocando até o anchorText detectar "IA."
+    // Sem esse lock, a fase mudaria para revelation antes do anchorText agir
+    if (isInteractivePhase && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) IMMEDIATELY - audio will continue until anchor`);
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
-  }, [isPausedByAnchor, currentPhase?.type, currentPhaseIndex, lockedPhaseIndex]);
+  }, [currentPhase?.type, currentPhaseIndex, lockedPhaseIndex]);
 
   // ✅ V7-v6: Reset lock when interaction completes and advances manually
   useEffect(() => {
