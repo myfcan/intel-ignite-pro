@@ -238,6 +238,7 @@ export const useV7ContextualTTS = ({
   }, [enabled, hints, generatedAudios, generateAllAudios]);
 
   // Toca um áudio específico
+  // ✅ V7-v8: Volume base aumentado em 5%
   const playAudio = useCallback((audioUrl: string, volume: number = 0.5) => {
     // Parar áudio anterior
     if (audioRef.current) {
@@ -246,14 +247,15 @@ export const useV7ContextualTTS = ({
     }
     
     const audio = new Audio(audioUrl);
-    audio.volume = volume;
+    // ✅ Aumentar volume em 5% para melhor audibilidade dos sussurros
+    audio.volume = Math.min(1.0, volume + 0.05);
     audioRef.current = audio;
     
     audio.play().catch(err => {
       console.error('[useV7ContextualTTS] ❌ Failed to play:', err);
     });
     
-    console.log(`[useV7ContextualTTS] 🔊 Playing contextual audio (volume: ${volume})`);
+    console.log(`[useV7ContextualTTS] 🔊 Playing contextual audio (volume: ${Math.min(1.0, volume + 0.05)})`);
   }, []);
 
   // Para todos os áudios, timers e loops

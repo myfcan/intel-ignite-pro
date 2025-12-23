@@ -180,7 +180,7 @@ export const V7PhaseSecretReveal = ({
       console.log('[V7PhaseSecretReveal] ✅ Áudio pronto, iniciando reprodução...');
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
-      audio.volume = 0.9;
+      audio.volume = 1.0; // ✅ Volume máximo para narração principal
 
       // ETAPA 2: Iniciar efeitos visuais quando o áudio começar
       audio.onplay = () => {
@@ -237,10 +237,10 @@ export const V7PhaseSecretReveal = ({
     }));
     setParticles(newParticles);
 
-    // Iniciar chuva de dinheiro após 1s
+    // ✅ V7-v8: Iniciar chuva de dinheiro após 2.5s (mais devagar/fluido)
     setTimeout(() => {
       setShowMoneyRain(true);
-    }, 1000);
+    }, 2500);
 
     // Segunda explosão de confetti
     setTimeout(() => {
