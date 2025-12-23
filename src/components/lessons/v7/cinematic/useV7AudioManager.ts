@@ -431,20 +431,26 @@ export const useV7AudioManager = ({
     }
   }, []);
 
-  // Toggle play/pause - RESPEITA estado de interação
+  // Toggle play/pause - ✅ V7-v17: NÃO bloqueia mais durante interação
   const togglePlayPause = useCallback(() => {
-    // ✅ Se está em modo interação (quiz, playground), não permite dar play manualmente
+    // ✅ V7-v17 FIX: Permitir toggle mesmo durante interação!
+    // O bloqueio total estava causando o player "travar"
+    // Usuário PRECISA poder dar play/pause manualmente
     if (isInteracting) {
-      console.log('[V7AudioManager] ⚠️ togglePlayPause bloqueado - em modo interação');
-      return;
+      console.log('[V7AudioManager] ⚠️ Toggle durante interação - permitindo para não travar');
     }
     
     if (isPlaying) {
       pause();
     } else {
+      // ✅ V7-v17: Restaurar volume se estava em 0 (de fade out)
+      if (mainAudioRef.current && mainAudioRef.current.volume < 0.1) {
+        mainAudioRef.current.volume = savedVolumeRef.current || volume;
+        console.log('[V7AudioManager] 🔊 Restaurando volume para', savedVolumeRef.current || volume);
+      }
       play();
     }
-  }, [isPlaying, isInteracting, play, pause]);
+  }, [isPlaying, isInteracting, play, pause, volume]);
 
   // Seek to time
   const seekTo = useCallback((time: number) => {
@@ -501,15 +507,20 @@ export const useV7AudioManager = ({
     };
   }, [stopSpeech]);
 
-  // ✅ V7-v16: Reset interaction state (for navigation back)
+  // ✅ V7-v17: Reset interaction state completo (for navigation back)
   const resetInteraction = useCallback(() => {
     setIsInteracting(false);
     setInteractionState('idle');
     // Clear any pending contextual timers
     contextualTimersRef.current.forEach(timer => clearTimeout(timer));
     contextualTimersRef.current = [];
-    console.log('[V7AudioManager] 🔄 Interaction state reset');
-  }, []);
+    // ✅ V7-v17: Restaurar volume se estava em 0 (de fade out)
+    if (mainAudioRef.current && mainAudioRef.current.volume < 0.1) {
+      mainAudioRef.current.volume = savedVolumeRef.current || volume;
+      console.log('[V7AudioManager] 🔊 Restaurando volume:', savedVolumeRef.current || volume);
+    }
+    console.log('[V7AudioManager] 🔄 Interaction state reset (completo)');
+  }, [volume]);
 
   return {
     // State

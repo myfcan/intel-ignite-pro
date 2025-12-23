@@ -100,6 +100,15 @@ export const V7PhaseSecretReveal = ({
   const hasStartedRef = useRef(false);
   const hasPausedMainAudioRef = useRef(false);
 
+  // ✅ V7-v17: Reset state quando sceneIndex muda (ex: navegação para trás)
+  useEffect(() => {
+    // Quando o componente é remontado ou sceneIndex muda para -1 e volta, resetar
+    return () => {
+      hasStartedRef.current = false;
+      hasPausedMainAudioRef.current = false;
+    };
+  }, []);
+
   // ✅ CRÍTICO: Pausar áudio principal IMEDIATAMENTE ao entrar na fase
   useEffect(() => {
     if (!hasPausedMainAudioRef.current && audioControl) {
@@ -302,7 +311,7 @@ export const V7PhaseSecretReveal = ({
   }, [isPausedByAnchor, currentStage, transitionToMethodScreen]);
 
   // Handler do clique no botão "Quero descobrir agora"
-  const handleDiscoverClick = useCallback(() => {
+  const handleDiscoverClick = useCallback(async () => {
     console.log('[V7PhaseSecretReveal] 🔓 "Quero descobrir agora" clicked!');
     
     // Explosão final de celebração
@@ -314,11 +323,14 @@ export const V7PhaseSecretReveal = ({
       startVelocity: 60,
     });
 
-    // Retomar narração principal
+    // ✅ V7-v17: Retomar narração principal CORRETAMENTE
+    // O resumeWithFade espera que o áudio esteja pausado, então usamos isso
     if (audioControl?.resumeWithFade) {
-      audioControl.resumeWithFade(500);
-    } else {
-      audioControl?.play();
+      await audioControl.resumeWithFade(500);
+      console.log('[V7PhaseSecretReveal] ▶️ Áudio retomado com fade');
+    } else if (audioControl?.play) {
+      audioControl.play();
+      console.log('[V7PhaseSecretReveal] ▶️ Áudio retomado direto');
     }
 
     onSecretClick?.();
