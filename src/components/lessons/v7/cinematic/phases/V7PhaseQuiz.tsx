@@ -209,21 +209,26 @@ export const V7PhaseQuiz = ({
   // - AnchorText via "not playing" e ignorava a ação
   const hasPausedRef = useRef(false);
 
-  // ✅ V7-v3 FIX: Também pausar se isPausedByAnchor mudar (fallback)
+  // ✅ V7-v3 FIX: Pausar quando isPausedByAnchor for true
   // ✅ V7-v18: Habilitar opções quando o áudio pausar no anchor
   useEffect(() => {
     const ctrl = audioControlRef.current;
-    if (!ctrl) return;
-
-    if (isPausedByAnchor && ctrl.isPlaying && !hasPausedRef.current) {
+    
+    // ✅ CASO 1: Anchor disparou - pausar e habilitar opções
+    if (isPausedByAnchor && !hasPausedRef.current) {
       hasPausedRef.current = true;
-      const pauseNarration = async () => {
-        if (ctrl.pauseWithFade) {
-          await ctrl.pauseWithFade(500);
-          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA por anchorAction!');
-        } else {
-          ctrl.pause();
-          console.log('[V7PhaseQuiz] 🔇 Narração pausada por anchorAction (fallback)');
+      console.log('[V7PhaseQuiz] 🎯 isPausedByAnchor = true - habilitando opções!');
+      
+      const pauseAndEnable = async () => {
+        // Pausar áudio se estiver tocando
+        if (ctrl?.isPlaying) {
+          if (ctrl.pauseWithFade) {
+            await ctrl.pauseWithFade(500);
+            console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA por anchorAction!');
+          } else {
+            ctrl.pause();
+            console.log('[V7PhaseQuiz] 🔇 Narração pausada por anchorAction (fallback)');
+          }
         }
         setAudioPausedByQuiz(true);
         
@@ -238,7 +243,7 @@ export const V7PhaseQuiz = ({
           setShowEnableEffect(false);
         }, 1500);
       };
-      pauseNarration();
+      pauseAndEnable();
     }
   }, [isPausedByAnchor]);
 
@@ -491,6 +496,36 @@ export const V7PhaseQuiz = ({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {/* ✅ V7-v19: Loading indicator enquanto opções estão desabilitadas */}
+              <AnimatePresence>
+                {!optionsEnabled && !isRevealed && (
+                  <motion.div
+                    className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <motion.div
+                      className="bg-black/70 backdrop-blur-sm rounded-2xl px-6 py-4 flex items-center gap-3 border border-white/10"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }}
+                    >
+                      {/* Spinner animado */}
+                      <motion.div
+                        className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      />
+                      <span className="text-white/80 text-sm font-medium">
+                        Aguarde a narração...
+                      </span>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
               {/* ✅ V7-v18: Efeito visual de habilitação (flash dourado) */}
               <AnimatePresence>
                 {showEnableEffect && (
