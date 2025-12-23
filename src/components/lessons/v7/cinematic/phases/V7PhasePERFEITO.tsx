@@ -57,7 +57,7 @@ export const V7PhasePERFEITO = ({
   }, [revealedCount, autoAdvance, advanceDelay, onComplete]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-8 pb-24">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-8 pb-32">
       {/* Title */}
       <motion.div
         className="text-center mb-8"

@@ -93,9 +93,10 @@ export const V7QuizInteraction = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="w-full max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto px-4"
     >
-      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+      {/* ✅ V7-v13: max-h com overflow-y-auto para evitar scroll na página, pb-24 para espaço dos controles */}
+      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[calc(100vh-120px)]">
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
