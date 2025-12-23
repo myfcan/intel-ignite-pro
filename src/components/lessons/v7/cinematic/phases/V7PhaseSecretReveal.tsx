@@ -81,7 +81,7 @@ export const V7PhaseSecretReveal = ({
   isPausedByAnchor = false,
 }: V7PhaseSecretRevealProps) => {
   // Estados das etapas
-  const [currentStage, setCurrentStage] = useState<'narrating' | 'effects' | 'method-screen'>('narrating');
+  const [currentStage, setCurrentStage] = useState<'loading' | 'narrating' | 'effects' | 'method-screen'>('loading');
   
   // Estados visuais
   const [showExplosion, setShowExplosion] = useState(false);
@@ -90,26 +90,49 @@ export const V7PhaseSecretReveal = ({
   const [showMethodScreen, setShowMethodScreen] = useState(false);
   const [isNarrating, setIsNarrating] = useState(false);
   const [particles, setParticles] = useState<{ angle: number; distance: number }[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedRef = useRef(false);
+  const hasPausedMainAudioRef = useRef(false);
+
+  // ✅ CRÍTICO: Pausar áudio principal IMEDIATAMENTE ao entrar na fase
+  useEffect(() => {
+    if (!hasPausedMainAudioRef.current && audioControl) {
+      console.log('[V7PhaseSecretReveal] ⏸️ ENTRADA NA FASE - Pausando áudio principal IMEDIATAMENTE');
+      hasPausedMainAudioRef.current = true;
+      
+      if (audioControl.pauseWithFade) {
+        audioControl.pauseWithFade(300);
+      } else {
+        audioControl.pause();
+      }
+    }
+  }, [audioControl]);
 
   // ETAPA 1 + 2: Gerar narração via ElevenLabs e disparar efeitos
   const startNarration = useCallback(async () => {
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
     setIsNarrating(true);
-    setCurrentStage('narrating');
+    setCurrentStage('loading');
+    setLoadingProgress(10);
 
     try {
       console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Gerando narração via ElevenLabs...');
+      console.log('[V7PhaseSecretReveal] 📝 Texto:', narrationText.substring(0, 60) + '...');
       
-      // Pausar narração principal
-      if (audioControl?.pauseWithFade) {
-        await audioControl.pauseWithFade(500);
-      } else {
-        audioControl?.pause();
+      // Garantir que o áudio principal está pausado
+      if (audioControl && !hasPausedMainAudioRef.current) {
+        if (audioControl.pauseWithFade) {
+          await audioControl.pauseWithFade(300);
+        } else {
+          audioControl.pause();
+        }
+        hasPausedMainAudioRef.current = true;
       }
+
+      setLoadingProgress(30);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
@@ -127,13 +150,19 @@ export const V7PhaseSecretReveal = ({
         }
       );
 
+      setLoadingProgress(70);
+
       if (!response.ok) {
-        throw new Error('Falha ao gerar áudio');
+        const errorText = await response.text();
+        console.error('[V7PhaseSecretReveal] ❌ Erro na API:', response.status, errorText);
+        throw new Error(`Falha ao gerar áudio: ${response.status}`);
       }
 
       const data = await response.json();
+      setLoadingProgress(90);
       
       if (data.audioBase64) {
+        console.log('[V7PhaseSecretReveal] ✅ Áudio recebido, iniciando reprodução...');
         const audioUrl = `data:audio/mpeg;base64,${data.audioBase64}`;
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
@@ -143,7 +172,16 @@ export const V7PhaseSecretReveal = ({
         audio.onplay = () => {
           console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Disparando efeitos visuais');
           setCurrentStage('effects');
+          setLoadingProgress(100);
           triggerExplosion();
+        };
+
+        audio.onerror = (e) => {
+          console.error('[V7PhaseSecretReveal] ❌ Erro ao tocar áudio:', e);
+          // Fallback: ir para efeitos mesmo assim
+          setCurrentStage('effects');
+          triggerExplosion();
+          setTimeout(() => transitionToMethodScreen(), 4000);
         };
 
         // Quando terminar a narração, ir para ETAPA 3
@@ -154,13 +192,18 @@ export const V7PhaseSecretReveal = ({
         };
 
         await audio.play();
+        setCurrentStage('narrating');
+      } else {
+        console.error('[V7PhaseSecretReveal] ❌ Nenhum áudio retornado:', data);
+        throw new Error('Nenhum áudio retornado');
       }
     } catch (error) {
       console.error('[V7PhaseSecretReveal] ❌ Erro na narração:', error);
       setIsNarrating(false);
       // Fallback: mostrar efeitos mesmo sem áudio
+      setCurrentStage('effects');
       triggerExplosion();
-      setTimeout(() => transitionToMethodScreen(), 5000);
+      setTimeout(() => transitionToMethodScreen(), 4000);
     }
   }, [narrationText, audioControl]);
 
@@ -292,6 +335,48 @@ export const V7PhaseSecretReveal = ({
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Estado de loading enquanto gera áudio */}
+      <AnimatePresence>
+        {currentStage === 'loading' && (
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              className="text-6xl mb-6"
+              animate={{ 
+                scale: [1, 1.2, 1],
+                rotate: [0, 10, -10, 0]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              🔮
+            </motion.div>
+            <motion.h2
+              className="text-2xl sm:text-3xl font-bold text-white/90 mb-4"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Preparando algo especial...
+            </motion.h2>
+            <motion.div className="w-64 h-2 bg-white/20 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: 'linear-gradient(90deg, #FFD700, #FFA500)',
+                }}
+                initial={{ width: '0%' }}
+                animate={{ width: `${loadingProgress}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background glow dourado */}
       <motion.div
         className="absolute inset-0"
