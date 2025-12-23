@@ -197,31 +197,14 @@ export const V7PhaseQuiz = ({
     };
   }, [isRevealed, selectedIds.length, timeoutConfig]);
 
-  // ✅ V7-v7 FIX: Pausar áudio IMEDIATAMENTE ao montar o quiz
-  // Não esperar pelo anchorAction - o lock de fase já garante que não avança
+  // ✅ V7-v9 FIX: NÃO pausar áudio automaticamente!
+  // O áudio DEVE continuar tocando até o anchorText detectar a palavra-chave "IA"
+  // A pausa prematura quebrava o sistema de anchorText porque:
+  // - Quiz monta em ~20.6s
+  // - Pausava áudio em ~21.6s (1s delay)
+  // - Palavra "IA" está em 33.3s
+  // - AnchorText via "not playing" e ignorava a ação
   const hasPausedRef = useRef(false);
-  
-  useEffect(() => {
-    const ctrl = audioControlRef.current;
-    if (!ctrl || hasPausedRef.current) return;
-
-    // ✅ CRÍTICO: Pausar IMEDIATAMENTE ao montar (1 segundo de delay para dar tempo de mostrar)
-    const pauseTimer = setTimeout(async () => {
-      if (ctrl.isPlaying && !hasPausedRef.current) {
-        hasPausedRef.current = true;
-        if (ctrl.pauseWithFade) {
-          await ctrl.pauseWithFade(500);
-          console.log('[V7PhaseQuiz] 🔇 Narração PAUSADA ao entrar no quiz!');
-        } else {
-          ctrl.pause();
-          console.log('[V7PhaseQuiz] 🔇 Narração pausada ao entrar no quiz (fallback)');
-        }
-        setAudioPausedByQuiz(true);
-      }
-    }, 1000);
-
-    return () => clearTimeout(pauseTimer);
-  }, []);
 
   // ✅ V7-v3 FIX: Também pausar se isPausedByAnchor mudar (fallback)
   useEffect(() => {
