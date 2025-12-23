@@ -928,7 +928,7 @@ export const V7PhasePlayer = ({
         intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
 
-      {/* Minimal Unified Controls - ✅ V7-v13: ALWAYS show during revelation/secret-reveal/perfeito */}
+      {/* Minimal Unified Controls - ✅ V7-v17: Nunca bloqueado, sempre acessível */}
       <V7MinimalControls
         isPlaying={effectiveIsPlaying}
         currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
@@ -952,7 +952,7 @@ export const V7PhasePlayer = ({
             ? true
             : (showControls && !isQuizResultShowing)
         }
-        isLocked={audio.isInteracting}
+        isLocked={false} // ✅ V7-v17: NUNCA bloquear controles - usuário precisa poder pausar/resumir sempre
       />
 
       {/* Audio/Play Indicator */}
@@ -972,18 +972,19 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions - HIDE during interactive phases but SHOW during secret-reveal and narration */}
+      {/* Captions - ✅ V7-v17: HIDE during interactive phases but SHOW during all others */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
           currentTime={audio.currentTime}
           isVisible={
-            // ✅ V7-v16: Show captions whenever audio has started (even if paused)
-            audio.currentTime > 0.1 &&
+            // ✅ V7-v17: Show captions when audio is playing OR when we have any audio time
+            // Hide only during interactive phases that control their own content
+            (audio.isPlaying || audio.currentTime > 0.5) &&
             currentPhase?.type !== 'interaction' &&
             currentPhase?.type !== 'playground' &&
-            currentPhase?.type !== 'gamification'
-            // ✅ secret-reveal and revelation phases now SHOW captions
+            currentPhase?.type !== 'gamification' &&
+            currentPhase?.type !== 'secret-reveal' // ✅ secret-reveal has its own narration
           }
           maxWords={10}
         />
