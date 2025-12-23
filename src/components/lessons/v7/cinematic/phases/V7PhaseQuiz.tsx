@@ -421,32 +421,36 @@ export const V7PhaseQuiz = ({
 
   const isInBadGroup = badCount >= selectedIds.length / 2;
 
+  // ✅ V7-v15: Quando resultado aparece, container usa justify-center e esconde opções
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start p-4 sm:p-6 pt-6 sm:pt-10 pb-32 sm:pb-28 relative overflow-y-auto overflow-x-hidden">
+    <div className={`w-full h-full flex flex-col items-center p-4 sm:p-6 pb-28 relative overflow-hidden ${showResult ? 'justify-center' : 'justify-start pt-6 sm:pt-10'}`}>
       <div className="w-full max-w-2xl">
-        {/* Quiz Header - Simplificado (sem TESTE RELÂMPAGO intro) */}
-        <motion.div
-          className="text-center mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -20 }}
-        >
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
-            {title}
-          </h2>
-          {subtitle && (
-            <p className="text-white/60">{subtitle}</p>
-          )}
-        </motion.div>
+        {/* ✅ V7-v15: Quiz Header - Escondido quando resultado aparece */}
+        {!showResult && (
+          <motion.div
+            className="text-center mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -20 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="text-white/60">{subtitle}</p>
+            )}
+          </motion.div>
+        )}
 
-        {/* ✅ FASE 1: Options - só aparecem APÓS clicar "REVELAR VERDADE" */}
+        {/* ✅ V7-v15: Options - escondidas quando resultado aparece (sem scroll!) */}
         <AnimatePresence>
-          {optionsRevealed && (
+          {optionsRevealed && !showResult && (
             <motion.div
               className="space-y-2 sm:space-y-3 mb-4 sm:mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.3 }}
             >
               {options.map((option, index) => {
                 const isSelected = selectedIds.includes(option.id);
@@ -612,11 +616,11 @@ export const V7PhaseQuiz = ({
           )}
         </AnimatePresence>
 
-        {/* Result Reveal - Positioned with safe bottom margin for mobile */}
+        {/* ✅ V7-v15: Result Reveal - Centralizado na tela, sem scroll */}
         <AnimatePresence>
           {showResult && (
             <motion.div
-              className="text-center mt-4 sm:mt-6 mb-20 sm:mb-16"
+              className="text-center"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
