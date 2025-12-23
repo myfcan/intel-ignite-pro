@@ -386,23 +386,40 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, onComplete, hasAudio, audio]);
 
+  // ✅ V7-v14 FIX: Improved back navigation - reset all states and properly sync audio
   const goToPreviousPhase = useCallback(() => {
-    if (currentPhaseIndex > 0) {
+    // Use effective index considering locked state
+    const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
+    
+    if (effectiveIndex > 0) {
       playSound('click-soft');
-      const prevPhaseIndex = currentPhaseIndex - 1;
+      const prevPhaseIndex = effectiveIndex - 1;
       const prevPhase = scaledScript.phases[prevPhaseIndex];
 
-      // ✅ V7-v8 FIX: Unlock phase before navigating back
-      if (lockedPhaseIndex !== null) {
-        console.log(`[V7PhasePlayer] 🔓 Unlocking phase for back navigation`);
-        setLockedPhaseIndex(null);
-        setInteractionComplete(false);
-      }
+      console.log(`\n⏮️ [V7PhasePlayer] GO TO PREVIOUS PHASE`);
+      console.log(`  From: [${effectiveIndex}] (locked: ${lockedPhaseIndex !== null})`);
+      console.log(`  To:   [${prevPhaseIndex}] "${prevPhase?.id}" (${prevPhase?.type})`);
 
-      // Seek audio to previous phase start time
+      // ✅ V7-v14: Reset ALL interaction states
+      if (lockedPhaseIndex !== null) {
+        console.log(`  🔓 Unlocking phase for back navigation`);
+        setLockedPhaseIndex(null);
+      }
+      setInteractionComplete(false);
+      setIsQuizResultShowing(false);
+
+      // ✅ V7-v14: Always seek and ensure audio is playing for narration phases
       if (hasAudio && prevPhase) {
         audio.seekTo(prevPhase.startTime);
-        console.log(`[V7PhasePlayer] Seeking audio to phase ${prevPhaseIndex} start: ${prevPhase.startTime.toFixed(1)}s`);
+        console.log(`  🔀 Seeking audio to ${prevPhase.startTime.toFixed(1)}s`);
+        
+        // Resume audio if it was paused (from interaction phases)
+        if (!audio.isPlaying) {
+          setTimeout(() => {
+            audio.play();
+            console.log(`  ▶️ Audio resumed after navigation`);
+          }, 100);
+        }
       }
 
       goToPhase(prevPhaseIndex);

@@ -93,10 +93,11 @@ export const V7QuizInteraction = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="w-full max-w-2xl mx-auto px-4"
+      className="w-full max-w-2xl mx-auto px-4 flex items-center justify-center"
+      style={{ maxHeight: 'calc(100vh - 160px)' }}
     >
-      {/* ✅ V7-v13: max-h com overflow-y-auto para evitar scroll na página, pb-24 para espaço dos controles */}
-      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[calc(100vh-120px)]">
+      {/* ✅ V7-v14: Card compacto - altura fixa, sem scroll na página */}
+      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden w-full max-h-full flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -112,12 +113,12 @@ export const V7QuizInteraction = ({
           </div>
         </div>
 
-        {/* Question */}
-        <div className="p-6">
-          <p className="text-xl text-white font-medium mb-6">{question}</p>
+        {/* Question - ✅ V7-v14: Área scrollável interna apenas quando necessário */}
+        <div className="p-6 flex-1 overflow-y-auto min-h-0">
+          <p className="text-lg text-white font-medium mb-4">{question}</p>
 
-          {/* Options */}
-          <div className="space-y-3">
+          {/* Options - ✅ V7-v14: Espaçamento compacto */}
+          <div className="space-y-2">
             {options.map((option, index) => {
               const isSelected = selectedOptionId === option.id;
               const showCorrectness = hasAnswered;
@@ -128,10 +129,10 @@ export const V7QuizInteraction = ({
                   key={option.id}
                   onClick={() => handleOptionSelect(option.id)}
                   disabled={hasAnswered}
-                  whileHover={!hasAnswered ? { scale: 1.02 } : {}}
-                  whileTap={!hasAnswered ? { scale: 0.98 } : {}}
+                  whileHover={!hasAnswered ? { scale: 1.01 } : {}}
+                  whileTap={!hasAnswered ? { scale: 0.99 } : {}}
                   className={`
-                    w-full p-4 rounded-xl border-2 text-left transition-all duration-300
+                    w-full p-3 rounded-lg border-2 text-left transition-all duration-300
                     ${!hasAnswered && isSelected 
                       ? 'border-cyan-500 bg-cyan-500/20' 
                       : !hasAnswered 
