@@ -264,21 +264,15 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v7 FIX: Lock ALL interactive phases IMMEDIATELY when they start
-  // This prevents the phase controller from advancing based on audio time
+  // ✅ V7-v8 FIX: Lock interactive phases ONLY when anchor pauses
+  // Don't lock immediately - let audio continue until anchorText keyword is detected
   useEffect(() => {
     const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
     
-    // ✅ CRITICAL FIX: Lock IMMEDIATELY when entering interactive phase, not just when anchor pauses
-    if (isInteractivePhase && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - interactive phase entered`);
-      setLockedPhaseIndex(currentPhaseIndex);
-      setInteractionComplete(false);
-    }
-    
-    // Also lock if anchor pauses
+    // ✅ CRITICAL: Lock ONLY when isPausedByAnchor = true (keyword detected)
+    // This allows audio to continue playing until "IA." is spoken
     if (isPausedByAnchor && isInteractivePhase && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - anchor paused`);
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - anchor paused by keyword`);
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
@@ -895,7 +889,7 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions - HIDE during all interactive phases and secret-reveal */}
+      {/* Captions - HIDE during interactive phases but SHOW during secret-reveal narration */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
@@ -905,8 +899,8 @@ export const V7PhasePlayer = ({
             currentPhase?.type !== 'interaction' &&
             currentPhase?.type !== 'playground' &&
             currentPhase?.type !== 'revelation' &&
-            currentPhase?.type !== 'gamification' &&
-            currentPhase?.type !== 'secret-reveal'
+            currentPhase?.type !== 'gamification'
+            // ✅ V7-v8: Show captions during secret-reveal narration (removed from hide list)
           }
           maxWords={10}
         />
