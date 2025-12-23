@@ -256,19 +256,13 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // Log de entrada na fase + auto-pause para fases interativas
+  // Log de entrada na fase - SEM auto-pause
+  // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
     if (currentPhase?.id) {
       console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);
-      
-      // ✅ V7-v4: Auto-pause audio when entering secret-reveal phase
-      // This phase will handle its own narration via ElevenLabs
-      if (currentPhase.type === 'secret-reveal' && hasAudio && audio.isPlaying) {
-        console.log('[V7PhasePlayer] ⏸️ Auto-pausing main audio for secret-reveal phase');
-        audio.pause();
-      }
     }
-  }, [currentPhase?.id, currentPhase?.type, hasAudio, audio]);
+  }, [currentPhase?.id, currentPhase?.type]);
 
   // Keyboard navigation
   useEffect(() => {
