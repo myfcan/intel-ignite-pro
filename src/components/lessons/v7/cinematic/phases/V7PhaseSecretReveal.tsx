@@ -30,6 +30,7 @@ interface V7PhaseSecretRevealProps {
 }
 
 // Componente de nota de dinheiro caindo
+// ✅ V7-v8: Animação mais lenta e fluida
 const FallingMoney = ({ delay, left }: { delay: number; left: number }) => (
   <motion.div
     className="absolute text-4xl sm:text-5xl pointer-events-none select-none"
@@ -37,14 +38,15 @@ const FallingMoney = ({ delay, left }: { delay: number; left: number }) => (
     initial={{ y: 0, opacity: 0, rotate: 0 }}
     animate={{
       y: ['0vh', '120vh'],
-      opacity: [0, 1, 1, 0.5, 0],
-      rotate: [0, -20, 20, -10, 15, 0],
+      opacity: [0, 1, 1, 1, 0.7, 0],
+      rotate: [0, -15, 15, -10, 10, 0],
     }}
     transition={{
-      duration: 4 + Math.random() * 2,
+      // ✅ Duração mais longa para movimento mais fluido
+      duration: 6 + Math.random() * 3,
       delay: delay,
       repeat: Infinity,
-      ease: 'linear',
+      ease: 'easeInOut', // ✅ Easing mais suave
     }}
   >
     💵
