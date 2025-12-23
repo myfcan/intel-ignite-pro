@@ -386,6 +386,13 @@ export const V7PhasePlayer = ({
       const prevPhaseIndex = currentPhaseIndex - 1;
       const prevPhase = scaledScript.phases[prevPhaseIndex];
 
+      // ✅ V7-v8 FIX: Unlock phase before navigating back
+      if (lockedPhaseIndex !== null) {
+        console.log(`[V7PhasePlayer] 🔓 Unlocking phase for back navigation`);
+        setLockedPhaseIndex(null);
+        setInteractionComplete(false);
+      }
+
       // Seek audio to previous phase start time
       if (hasAudio && prevPhase) {
         audio.seekTo(prevPhase.startTime);
@@ -394,7 +401,7 @@ export const V7PhasePlayer = ({
 
       goToPhase(prevPhaseIndex);
     }
-  }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio]);
+  }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio, lockedPhaseIndex]);
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
@@ -888,7 +895,7 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Captions - HIDE during all interactive phases */}
+      {/* Captions - HIDE during all interactive phases and secret-reveal */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
@@ -898,7 +905,8 @@ export const V7PhasePlayer = ({
             currentPhase?.type !== 'interaction' &&
             currentPhase?.type !== 'playground' &&
             currentPhase?.type !== 'revelation' &&
-            currentPhase?.type !== 'gamification'
+            currentPhase?.type !== 'gamification' &&
+            currentPhase?.type !== 'secret-reveal'
           }
           maxWords={10}
         />

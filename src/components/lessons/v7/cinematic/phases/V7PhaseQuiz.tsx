@@ -433,7 +433,7 @@ export const V7PhaseQuiz = ({
   const isInBadGroup = badCount >= selectedIds.length / 2;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 pb-24 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-start p-4 sm:p-6 pt-8 sm:pt-12 pb-24 relative overflow-hidden">
       <div className="w-full max-w-2xl">
         {/* Quiz Header - Simplificado (sem TESTE RELÂMPAGO intro) */}
         <motion.div
@@ -453,7 +453,7 @@ export const V7PhaseQuiz = ({
         <AnimatePresence>
           {optionsRevealed && (
             <motion.div
-              className="space-y-3 mb-8"
+              className="space-y-2 sm:space-y-3 mb-4 sm:mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -464,10 +464,11 @@ export const V7PhaseQuiz = ({
                 const showFeedback = isRevealed;
                 const isBad = option.category === 'bad';
 
-                return (
-                  <motion.div
-                    key={option.id}
-                    className={`
+                  return (
+                    <motion.div
+                      key={option.id}
+                      className={`
+                        min-h-[48px] sm:min-h-[56px]
                       relative flex items-center gap-4 p-4 rounded-xl cursor-pointer
                       border-2 transition-all overflow-hidden
                       ${showFeedback && isSelected && isBad
