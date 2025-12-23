@@ -140,6 +140,8 @@ export const V7PhasePlayer = ({
   // ✅ V7-v6 FIX: Track if we're in an interactive phase that should block progression
   const [lockedPhaseIndex, setLockedPhaseIndex] = useState<number | null>(null);
   const [interactionComplete, setInteractionComplete] = useState(false);
+  // ✅ V7-v9: Track when quiz result is showing to hide controls
+  const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
@@ -635,6 +637,7 @@ export const V7PhasePlayer = ({
             onComplete={handleQuizComplete}
             audioControl={audio}
             isPausedByAnchor={isPausedByAnchor}
+            onResultShow={(isShowing) => setIsQuizResultShowing(isShowing)}
             timeoutConfig={quizTimeoutConfig}
           />
         );
@@ -850,7 +853,7 @@ export const V7PhasePlayer = ({
         intensity={effectiveIsPlaying ? 'high' : 'medium'}
       />
 
-      {/* Minimal Unified Controls */}
+      {/* Minimal Unified Controls - ✅ V7-v9: Hide when quiz result is showing */}
       <V7MinimalControls
         isPlaying={effectiveIsPlaying}
         currentTime={hasAudio ? audio.formattedCurrentTime : formatTime(internalTime)}
@@ -868,7 +871,7 @@ export const V7PhasePlayer = ({
         onPrevious={goToPreviousPhase}
         onNext={goToNextPhase}
         onExit={onExit}
-        isVisible={showControls}
+        isVisible={showControls && !isQuizResultShowing}
         isLocked={audio.isInteracting}
       />
 

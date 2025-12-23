@@ -168,9 +168,7 @@ export function useAnchorText({
     // Para keywords de uma só palavra, match EXATO apenas
     const normalizedKeyword = keywordParts[0];
     
-    // ✅ DEBUG: Log all words in wordTimestamps for debugging
-    const allWords = wordTimestamps.map(ts => normalizeWord(ts.word));
-    console.log(`[AnchorText] 📋 All normalized words: [${allWords.join(', ')}]`);
+    // ✅ V7-v9: Log compacto para debug
     console.log(`[AnchorText] 🎯 Looking for exact match: "${normalizedKeyword}"`);
     
     for (const ts of wordTimestamps) {
@@ -178,15 +176,10 @@ export function useAnchorText({
       
       const normalizedWord = normalizeWord(ts.word);
       
-      // ✅ CORRIGIDO: Match EXATO apenas (sem matches parciais que causavam falsos positivos)
+      // ✅ V7-v9 FIX: Match EXATO apenas - sem matches parciais
+      // O normalize já remove pontuação, então "IA." vira "ia" e "IA" vira "ia"
       if (normalizedWord === normalizedKeyword) {
         console.log(`[AnchorText] ✅ Found keyword "${keyword}" at ${ts.start.toFixed(1)}s (word: "${ts.word}")`);
-        return ts;
-      }
-      
-      // ✅ V7-v7: Também tentar match parcial se a keyword está contida na palavra (para "IA" encontrar "IA.")
-      if (normalizedWord.includes(normalizedKeyword) && normalizedKeyword.length >= 2) {
-        console.log(`[AnchorText] ✅ Found keyword "${keyword}" via partial match at ${ts.start.toFixed(1)}s (word: "${ts.word}" contains "${normalizedKeyword}")`);
         return ts;
       }
     }
