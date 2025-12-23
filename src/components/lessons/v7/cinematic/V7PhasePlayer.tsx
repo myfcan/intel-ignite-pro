@@ -345,17 +345,20 @@ export const V7PhasePlayer = ({
 
   // ✅ CRITICAL FIX: Don't seek audio when coming from interactive phases (quiz/playground/secret-reveal)
   // These phases pause audio manually and should resume from current position
-  const goToNextPhase = useCallback((skipAudioSeek: boolean = false) => {
-    const currentPhaseId = scaledScript.phases[currentPhaseIndex]?.id;
-    const currentPhaseType = scaledScript.phases[currentPhaseIndex]?.type;
+  // ✅ V7-v11: Accept optional fromPhaseIndex to handle locked phase navigation correctly
+  const goToNextPhase = useCallback((skipAudioSeek: boolean = false, fromPhaseIndex?: number) => {
+    // ✅ V7-v11: Use provided fromPhaseIndex if given (for locked phases), otherwise use currentPhaseIndex
+    const effectiveCurrentIndex = fromPhaseIndex ?? currentPhaseIndex;
+    const currentPhaseId = scaledScript.phases[effectiveCurrentIndex]?.id;
+    const currentPhaseType = scaledScript.phases[effectiveCurrentIndex]?.type;
     
-    if (currentPhaseIndex < scaledScript.phases.length - 1) {
+    if (effectiveCurrentIndex < scaledScript.phases.length - 1) {
       playSound('transition-whoosh');
-      const nextPhaseIndex = currentPhaseIndex + 1;
+      const nextPhaseIndex = effectiveCurrentIndex + 1;
       const nextPhase = scaledScript.phases[nextPhaseIndex];
 
       console.log(`\n⏭️ [V7PhasePlayer] GO TO NEXT PHASE`);
-      console.log(`  From: [${currentPhaseIndex}] "${currentPhaseId}" (${currentPhaseType})`);
+      console.log(`  From: [${effectiveCurrentIndex}] "${currentPhaseId}" (${currentPhaseType})`);
       console.log(`  To:   [${nextPhaseIndex}] "${nextPhase?.id}" (${nextPhase?.type})`);
       console.log(`  Audio: ${audio.currentTime?.toFixed(2)}s | ${audio.isPlaying ? 'PLAYING' : 'PAUSED'}`);
 
@@ -794,7 +797,14 @@ export const V7PhasePlayer = ({
             onComplete={() => {
               console.log('[V7PhasePlayer] Secret revealed - advancing');
               
-              // ✅ V7-v6: Mark interaction as complete to unlock phase
+              // ✅ V7-v11: Capture current locked index BEFORE unlocking
+              const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
+              
+              // ✅ V7-v11 FIX: FIRST unlock phase
+              if (lockedPhaseIndex !== null) {
+                console.log('[V7PhasePlayer] 🔓 Unlocking secret-reveal phase');
+                setLockedPhaseIndex(null);
+              }
               setInteractionComplete(true);
               
               manualResume();
@@ -805,7 +815,8 @@ export const V7PhasePlayer = ({
                 console.log('[V7PhasePlayer] ▶️ Audio resumed after secret-reveal');
               }
               
-              goToNextPhase();
+              // ✅ V7-v11: Pass the captured index directly to avoid closure issues
+              goToNextPhase(false, fromIndex);
             }}
             onSecretClick={() => {
               console.log('[V7PhasePlayer] 🔓 Secret button clicked!');
