@@ -111,6 +111,9 @@ export const V7PhaseQuiz = ({
   const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=soft, 2=medium
   const [audioPausedByQuiz, setAudioPausedByQuiz] = useState(false);
   const [ttsStarted, setTtsStarted] = useState(false);
+  // ✅ V7-v18: Marcadores desabilitados até narração pausar no anchor
+  const [optionsEnabled, setOptionsEnabled] = useState(false);
+  const [showEnableEffect, setShowEnableEffect] = useState(false);
 
   // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
   const {
@@ -207,6 +210,7 @@ export const V7PhaseQuiz = ({
   const hasPausedRef = useRef(false);
 
   // ✅ V7-v3 FIX: Também pausar se isPausedByAnchor mudar (fallback)
+  // ✅ V7-v18: Habilitar opções quando o áudio pausar no anchor
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (!ctrl) return;
@@ -222,6 +226,17 @@ export const V7PhaseQuiz = ({
           console.log('[V7PhaseQuiz] 🔇 Narração pausada por anchorAction (fallback)');
         }
         setAudioPausedByQuiz(true);
+        
+        // ✅ V7-v18: Habilitar opções com efeito visual
+        console.log('[V7PhaseQuiz] ✨ Habilitando opções com efeito visual');
+        setShowEnableEffect(true);
+        setTimeout(() => {
+          setOptionsEnabled(true);
+          ctrl?.playSoundEffect?.('reveal', 0.4);
+        }, 300);
+        setTimeout(() => {
+          setShowEnableEffect(false);
+        }, 1500);
       };
       pauseNarration();
     }
@@ -284,6 +299,14 @@ export const V7PhaseQuiz = ({
 
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
+    
+    // ✅ V7-v18: Bloquear seleção se opções não estão habilitadas
+    if (!optionsEnabled) {
+      console.log('[V7PhaseQuiz] ⏳ Opções ainda desabilitadas - aguardando narração pausar');
+      const ctrl = audioControlRef.current;
+      ctrl?.playSoundEffect?.('hint', 0.2); // Som suave de "espere"
+      return;
+    }
 
     // 🆕 V7-v2.1: Tocar efeito sonoro de seleção
     const ctrl = audioControlRef.current;
@@ -295,7 +318,7 @@ export const V7PhaseQuiz = ({
         ? prev.filter(i => i !== id)
         : [...prev, id]
     );
-  }, [isRevealed]);
+  }, [isRevealed, optionsEnabled]);
 
   // ✅ FASE 1: Primeiro clique revela as opções
   const handleRevealOptions = useCallback(() => {
@@ -462,56 +485,91 @@ export const V7PhaseQuiz = ({
         <AnimatePresence>
           {optionsRevealed && !showResult && (
             <motion.div
-              className="space-y-2 sm:space-y-3 mb-4 sm:mb-6"
+              className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {/* ✅ V7-v18: Efeito visual de habilitação (flash dourado) */}
+              <AnimatePresence>
+                {showEnableEffect && (
+                  <motion.div
+                    className="absolute inset-0 z-10 pointer-events-none rounded-xl"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 0.6, 0] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                    style={{
+                      background: 'linear-gradient(45deg, rgba(255, 215, 0, 0.4), rgba(255, 165, 0, 0.3), rgba(255, 215, 0, 0.4))',
+                      boxShadow: '0 0 40px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.3)',
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+              
               {options.map((option, index) => {
                 const isSelected = selectedIds.includes(option.id);
                 const showFeedback = isRevealed;
                 const isBad = option.category === 'bad';
+                // ✅ V7-v18: Opção desabilitada até optionsEnabled = true
+                const isOptionDisabled = !optionsEnabled && !isRevealed;
 
                   return (
                     <motion.div
                       key={option.id}
                       className={`
                         min-h-[48px] sm:min-h-[56px]
-                      relative flex items-center gap-4 p-4 rounded-xl cursor-pointer
+                      relative flex items-center gap-4 p-4 rounded-xl
                       border-2 transition-all overflow-hidden
-                      ${showFeedback && isSelected && isBad
+                      ${isOptionDisabled 
+                        ? 'cursor-not-allowed opacity-50 border-white/5 bg-white/[0.01]'
+                        : 'cursor-pointer'
+                      }
+                      ${!isOptionDisabled && showFeedback && isSelected && isBad
                         ? 'border-red-500/50 bg-red-500/10'
-                        : showFeedback && isSelected && !isBad
+                        : !isOptionDisabled && showFeedback && isSelected && !isBad
                           ? 'border-green-500/50 bg-green-500/10'
-                          : isSelected
+                          : !isOptionDisabled && isSelected
                             ? 'border-purple-500/50 bg-purple-500/10'
-                            : 'border-white/10 bg-white/[0.02] hover:border-white/30'
+                            : !isOptionDisabled
+                              ? 'border-white/10 bg-white/[0.02] hover:border-white/30'
+                              : ''
                       }
                       ${isRevealed ? 'pointer-events-none' : ''}
                     `}
                     initial={{ opacity: 0, x: -30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    animate={{ 
+                      opacity: isOptionDisabled ? 0.5 : 1, 
+                      x: 0,
+                      scale: showEnableEffect ? [1, 1.02, 1] : 1
+                    }}
+                    transition={{ delay: index * 0.1, duration: showEnableEffect ? 0.4 : 0.3 }}
                     onClick={() => toggleOption(option.id)}
-                    whileHover={{ scale: isRevealed ? 1 : 1.01 }}
-                    whileTap={{ scale: isRevealed ? 1 : 0.99 }}
+                    whileHover={{ scale: isRevealed || isOptionDisabled ? 1 : 1.01 }}
+                    whileTap={{ scale: isRevealed || isOptionDisabled ? 1 : 0.99 }}
                   >
                     {/* Checkbox */}
                     <motion.div
                       className={`
                         w-6 h-6 rounded-md border-2 flex items-center justify-center
                         transition-colors flex-shrink-0
-                        ${showFeedback && isSelected && isBad
-                          ? 'bg-red-500 border-red-500'
-                          : showFeedback && isSelected && !isBad
-                            ? 'bg-green-500 border-green-500'
-                            : isSelected
-                              ? 'bg-purple-500 border-purple-500'
-                              : 'border-white/30'
+                        ${isOptionDisabled
+                          ? 'border-white/10'
+                          : showFeedback && isSelected && isBad
+                            ? 'bg-red-500 border-red-500'
+                            : showFeedback && isSelected && !isBad
+                              ? 'bg-green-500 border-green-500'
+                              : isSelected
+                                ? 'bg-purple-500 border-purple-500'
+                                : 'border-white/30'
                         }
                       `}
-                      animate={{ scale: isSelected ? [1, 1.2, 1] : 1 }}
+                      animate={{ 
+                        scale: isSelected ? [1, 1.2, 1] : 1,
+                        borderColor: showEnableEffect ? ['rgba(255,255,255,0.3)', 'rgba(255,215,0,0.8)', 'rgba(255,255,255,0.3)'] : undefined
+                      }}
+                      transition={{ duration: showEnableEffect ? 0.6 : 0.3 }}
                     >
                       <AnimatePresence>
                         {isSelected && (
@@ -527,7 +585,7 @@ export const V7PhaseQuiz = ({
                       </AnimatePresence>
                     </motion.div>
 
-                    <span className="text-white/90">{option.text}</span>
+                    <span className={`${isOptionDisabled ? 'text-white/50' : 'text-white/90'}`}>{option.text}</span>
 
                     {/* Feedback indicator */}
                     {showFeedback && isSelected && (

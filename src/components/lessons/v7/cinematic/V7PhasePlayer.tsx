@@ -355,10 +355,15 @@ export const V7PhasePlayer = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [audio, currentPhaseIndex]);
 
+  // ✅ V7-v18 FIX: Usar play() diretamente ao invés de togglePlayPause()
+  // Isso garante que o áudio SEMPRE inicia, independente do estado isPlaying
+  // O togglePlayPause() verificava isPlaying que poderia estar dessincronizado
   const handleLoadingComplete = useCallback(() => {
     setIsLoading(false);
     if (hasAudio) {
-      audio.togglePlayPause();
+      // ✅ CRITICAL: Usar play() diretamente para garantir que o áudio inicie
+      audio.play();
+      console.log('[V7PhasePlayer] ▶️ Audio started via play() after loading');
     } else {
       // Start internal timer when no audio
       setIsPlayingWithoutAudio(true);
