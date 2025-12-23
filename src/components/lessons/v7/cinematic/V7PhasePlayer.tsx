@@ -256,13 +256,34 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // Log de entrada na fase - SEM auto-pause
+  // Log detalhado de entrada na fase - SEM auto-pause
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
     if (currentPhase?.id) {
-      console.log(`[V7PhasePlayer] 📍 Entered phase "${currentPhase.id}" (${currentPhase.type})`);
+      console.log(`\n========================================`);
+      console.log(`[V7PhasePlayer] 📍 PHASE TRANSITION`);
+      console.log(`----------------------------------------`);
+      console.log(`  Phase ID:    "${currentPhase.id}"`);
+      console.log(`  Phase Type:  "${currentPhase.type}"`);
+      console.log(`  Phase Index: ${currentPhaseIndex} / ${scaledScript.phases.length - 1}`);
+      console.log(`  Start Time:  ${currentPhase.startTime?.toFixed(2)}s`);
+      console.log(`  End Time:    ${currentPhase.endTime?.toFixed(2)}s`);
+      console.log(`  Audio Time:  ${audio.currentTime?.toFixed(2)}s`);
+      console.log(`  Audio State: ${audio.isPlaying ? '▶️ PLAYING' : '⏸️ PAUSED'}`);
+      console.log(`  Scenes:      ${currentPhase.scenes?.length || 0}`);
+      console.log(`----------------------------------------`);
+      
+      // Log das próximas 2 fases para contexto
+      const nextPhases = scaledScript.phases.slice(currentPhaseIndex + 1, currentPhaseIndex + 3);
+      if (nextPhases.length > 0) {
+        console.log(`  Next phases:`);
+        nextPhases.forEach((p, i) => {
+          console.log(`    [${currentPhaseIndex + 1 + i}] "${p.id}" (${p.type}) @ ${p.startTime?.toFixed(2)}s`);
+        });
+      }
+      console.log(`========================================\n`);
     }
-  }, [currentPhase?.id, currentPhase?.type]);
+  }, [currentPhase?.id, currentPhase?.type, currentPhaseIndex, scaledScript.phases, audio.currentTime, audio.isPlaying]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -292,11 +313,18 @@ export const V7PhasePlayer = ({
   // ✅ CRITICAL FIX: Don't seek audio when coming from interactive phases (quiz/playground/secret-reveal)
   // These phases pause audio manually and should resume from current position
   const goToNextPhase = useCallback((skipAudioSeek: boolean = false) => {
+    const currentPhaseId = scaledScript.phases[currentPhaseIndex]?.id;
+    const currentPhaseType = scaledScript.phases[currentPhaseIndex]?.type;
+    
     if (currentPhaseIndex < scaledScript.phases.length - 1) {
       playSound('transition-whoosh');
       const nextPhaseIndex = currentPhaseIndex + 1;
       const nextPhase = scaledScript.phases[nextPhaseIndex];
-      const currentPhaseType = scaledScript.phases[currentPhaseIndex]?.type;
+
+      console.log(`\n⏭️ [V7PhasePlayer] GO TO NEXT PHASE`);
+      console.log(`  From: [${currentPhaseIndex}] "${currentPhaseId}" (${currentPhaseType})`);
+      console.log(`  To:   [${nextPhaseIndex}] "${nextPhase?.id}" (${nextPhase?.type})`);
+      console.log(`  Audio: ${audio.currentTime?.toFixed(2)}s | ${audio.isPlaying ? 'PLAYING' : 'PAUSED'}`);
 
       // Don't seek if coming from interactive phases or if explicitly told to skip
       // ✅ V7-v4: Added 'secret-reveal' to interactive phases list
@@ -305,13 +333,14 @@ export const V7PhasePlayer = ({
 
       if (shouldSeek) {
         audio.seekTo(nextPhase.startTime);
-        console.log(`[V7PhasePlayer] Seeking audio to phase ${nextPhaseIndex} start: ${nextPhase.startTime.toFixed(1)}s`);
+        console.log(`  🔀 SEEKING to ${nextPhase.startTime.toFixed(2)}s`);
       } else if (isInteractivePhase) {
-        console.log(`[V7PhasePlayer] ⏭️ Advancing from ${currentPhaseType} - NOT seeking audio (will resume from paused position)`);
+        console.log(`  ⏸️ From interactive phase - NOT seeking (resume from paused)`);
       }
 
       goToPhase(nextPhaseIndex);
     } else {
+      console.log(`\n🏁 [V7PhasePlayer] LESSON COMPLETE - calling onComplete()`);
       onComplete?.();
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, onComplete, hasAudio, audio]);
@@ -334,7 +363,13 @@ export const V7PhasePlayer = ({
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    console.log('[V7PhasePlayer] Quiz complete - advancing to next phase (secret-reveal or playground)');
+    
+    const nextPhase = scaledScript.phases[currentPhaseIndex + 1];
+    console.log(`\n🎯 [V7PhasePlayer] QUIZ COMPLETE`);
+    console.log(`  Selected:   [${selectedIds.join(', ')}]`);
+    console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex})`);
+    console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type})`);
+    console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
 
     // ✅ Trigger resume via anchor text system
     manualResume();
@@ -344,7 +379,7 @@ export const V7PhasePlayer = ({
     // Audio will be resumed when user clicks the button in secret-reveal
 
     goToNextPhase();
-  }, [playSound, goToNextPhase, manualResume]);
+  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio.currentTime]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
