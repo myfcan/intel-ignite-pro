@@ -1,14 +1,12 @@
 // V7PhaseSecretReveal - Fase de revelação do segredo com efeitos cinematográficos
-// Features: 
-// - Narração via ElevenLabs TTS
-// - Efeito de explosão + interrogação gigante
-// - Chuva de dinheiro
-// - Botão "DESCOBRIR SEGREDO" como mini-quiz
+// FLUXO COMPLETO:
+// Etapa 1: Narração via ElevenLabs TTS ("Agora vou te mostrar o segredo dos 2%...")
+// Etapa 2: Efeitos visuais (explosão → interrogação + SEGREDO → chuva de dinheiro)
+// Etapa 3: Anchor text em "inteligente" → Tela MÉTODO PERFEITO com botão
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AudioControl {
   pause: () => void;
@@ -22,7 +20,7 @@ interface AudioControl {
 
 interface V7PhaseSecretRevealProps {
   narrationText: string;
-  pauseKeyword?: string; // Default: "10X mais inteligente"
+  pauseKeyword?: string;
   sceneIndex: number;
   onComplete?: () => void;
   onSecretClick?: () => void;
@@ -82,23 +80,29 @@ export const V7PhaseSecretReveal = ({
   audioControl,
   isPausedByAnchor = false,
 }: V7PhaseSecretRevealProps) => {
+  // Estados das etapas
+  const [currentStage, setCurrentStage] = useState<'narrating' | 'effects' | 'method-screen'>('narrating');
+  
+  // Estados visuais
   const [showExplosion, setShowExplosion] = useState(false);
   const [showQuestionMark, setShowQuestionMark] = useState(false);
   const [showMoneyRain, setShowMoneyRain] = useState(false);
-  const [showSecretButton, setShowSecretButton] = useState(false);
+  const [showMethodScreen, setShowMethodScreen] = useState(false);
   const [isNarrating, setIsNarrating] = useState(false);
   const [particles, setParticles] = useState<{ angle: number; distance: number }[]>([]);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedRef = useRef(false);
 
-  // Gerar narração via ElevenLabs e tocar
+  // ETAPA 1 + 2: Gerar narração via ElevenLabs e disparar efeitos
   const startNarration = useCallback(async () => {
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
     setIsNarrating(true);
+    setCurrentStage('narrating');
 
     try {
-      console.log('[V7PhaseSecretReveal] 🎤 Gerando narração via ElevenLabs...');
+      console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Gerando narração via ElevenLabs...');
       
       // Pausar narração principal
       if (audioControl?.pauseWithFade) {
@@ -118,7 +122,7 @@ export const V7PhaseSecretReveal = ({
           },
           body: JSON.stringify({
             text: narrationText,
-            whisper: false, // Voz normal
+            whisper: false,
           }),
         }
       );
@@ -135,17 +139,18 @@ export const V7PhaseSecretReveal = ({
         audioRef.current = audio;
         audio.volume = 0.9;
 
-        // Iniciar efeitos visuais quando o áudio começar
+        // ETAPA 2: Iniciar efeitos visuais quando o áudio começar
         audio.onplay = () => {
-          console.log('[V7PhaseSecretReveal] 🔊 Narração iniciada - disparando efeitos');
+          console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Disparando efeitos visuais');
+          setCurrentStage('effects');
           triggerExplosion();
         };
 
-        // Quando terminar, mostrar o botão
+        // Quando terminar a narração, ir para ETAPA 3
         audio.onended = () => {
-          console.log('[V7PhaseSecretReveal] ✅ Narração concluída');
+          console.log('[V7PhaseSecretReveal] ✅ Narração concluída - indo para ETAPA 3');
           setIsNarrating(false);
-          setShowSecretButton(true);
+          transitionToMethodScreen();
         };
 
         await audio.play();
@@ -155,11 +160,11 @@ export const V7PhaseSecretReveal = ({
       setIsNarrating(false);
       // Fallback: mostrar efeitos mesmo sem áudio
       triggerExplosion();
-      setTimeout(() => setShowSecretButton(true), 5000);
+      setTimeout(() => transitionToMethodScreen(), 5000);
     }
   }, [narrationText, audioControl]);
 
-  // Disparar efeitos visuais de explosão
+  // ETAPA 2: Disparar efeitos visuais de explosão
   const triggerExplosion = useCallback(() => {
     // Explosão de confetti dourado
     confetti({
@@ -206,6 +211,23 @@ export const V7PhaseSecretReveal = ({
     }, 500);
   }, []);
 
+  // ETAPA 3: Transição para tela do MÉTODO PERFEITO
+  const transitionToMethodScreen = useCallback(() => {
+    console.log('[V7PhaseSecretReveal] 🏆 ETAPA 3: Mostrando tela MÉTODO PERFEITO');
+    setCurrentStage('method-screen');
+    
+    // Fade out dos efeitos anteriores
+    setTimeout(() => {
+      setShowQuestionMark(false);
+      setShowMoneyRain(false);
+    }, 300);
+    
+    // Mostrar tela do método
+    setTimeout(() => {
+      setShowMethodScreen(true);
+    }, 500);
+  }, []);
+
   // Iniciar quando a cena começar
   useEffect(() => {
     if (sceneIndex >= 0 && !hasStartedRef.current) {
@@ -216,22 +238,22 @@ export const V7PhaseSecretReveal = ({
     }
   }, [sceneIndex, startNarration]);
 
-  // Verificar anchorText para pausar
+  // Verificar anchorText para ir direto para ETAPA 3
   useEffect(() => {
-    if (isPausedByAnchor && !showSecretButton) {
-      console.log('[V7PhaseSecretReveal] ⏸️ Pausado por anchorText - mostrando botão');
+    if (isPausedByAnchor && currentStage !== 'method-screen') {
+      console.log('[V7PhaseSecretReveal] ⏸️ Anchor text detectado - indo para ETAPA 3');
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      setShowSecretButton(true);
+      transitionToMethodScreen();
     }
-  }, [isPausedByAnchor, showSecretButton]);
+  }, [isPausedByAnchor, currentStage, transitionToMethodScreen]);
 
-  // Handler do clique no botão
-  const handleSecretClick = useCallback(() => {
-    console.log('[V7PhaseSecretReveal] 🔓 DESCOBRIR SEGREDO clicked!');
+  // Handler do clique no botão "Quero descobrir agora"
+  const handleDiscoverClick = useCallback(() => {
+    console.log('[V7PhaseSecretReveal] 🔓 "Quero descobrir agora" clicked!');
     
-    // Explosão final
+    // Explosão final de celebração
     confetti({
       particleCount: 200,
       spread: 180,
@@ -240,7 +262,7 @@ export const V7PhaseSecretReveal = ({
       startVelocity: 60,
     });
 
-    // Retomar narração principal se necessário
+    // Retomar narração principal
     if (audioControl?.resumeWithFade) {
       audioControl.resumeWithFade(500);
     } else {
@@ -288,16 +310,16 @@ export const V7PhaseSecretReveal = ({
         ))}
       </AnimatePresence>
 
-      {/* Chuva de dinheiro */}
+      {/* Chuva de dinheiro (ETAPA 2) */}
       <AnimatePresence>
-        {showMoneyRain && moneyNotes.map((note) => (
+        {showMoneyRain && !showMethodScreen && moneyNotes.map((note) => (
           <FallingMoney key={note.id} delay={note.delay} left={note.left} />
         ))}
       </AnimatePresence>
 
-      {/* Ponto de interrogação gigante */}
+      {/* Ponto de interrogação gigante + SEGREDO (ETAPA 2) */}
       <AnimatePresence>
-        {showQuestionMark && (
+        {showQuestionMark && !showMethodScreen && (
           <motion.div
             className="absolute inset-0 flex flex-col items-center justify-center z-10"
             initial={{ scale: 0, opacity: 0 }}
@@ -351,53 +373,134 @@ export const V7PhaseSecretReveal = ({
         )}
       </AnimatePresence>
 
-      {/* Botão DESCOBRIR SEGREDO */}
+      {/* ETAPA 3: Tela MÉTODO PERFEITO */}
       <AnimatePresence>
-        {showSecretButton && (
-          <motion.button
-            className="absolute z-50 px-12 py-8 rounded-2xl text-2xl sm:text-3xl md:text-4xl font-black tracking-wide cursor-pointer border-0"
-            style={{
-              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
-              boxShadow: '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
-              color: '#1a1a1a',
-            }}
-            initial={{ scale: 0, y: 100 }}
-            animate={{
-              scale: 1,
-              y: 0,
-            }}
-            exit={{ scale: 0, opacity: 0 }}
-            whileHover={{
-              scale: 1.1,
-              boxShadow: '0 0 60px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.6), 0 15px 50px rgba(0, 0, 0, 0.5)',
-            }}
-            whileTap={{ scale: 0.95 }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 20,
-            }}
-            onClick={handleSecretClick}
+        {showMethodScreen && (
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center z-50 px-6"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
           >
-            <motion.span
-              animate={{
-                textShadow: [
-                  '0 0 10px rgba(255, 255, 255, 0.5)',
-                  '0 0 20px rgba(255, 255, 255, 0.8)',
-                  '0 0 10px rgba(255, 255, 255, 0.5)',
-                ],
+            {/* Background gradient para a tela */}
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(255, 215, 0, 0.15) 0%, transparent 70%)',
               }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+
+            {/* Título principal: MÉTODO PERFEITO */}
+            <motion.h1
+              className="text-4xl sm:text-5xl md:text-7xl font-black text-center mb-4 relative z-10"
+              style={{
+                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 30px rgba(255, 165, 0, 0.6))',
+              }}
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
             >
-              🔓 DESCOBRIR SEGREDO
-            </motion.span>
-          </motion.button>
+              MÉTODO PERFEITO
+            </motion.h1>
+
+            {/* Subtítulo */}
+            <motion.p
+              className="text-xl sm:text-2xl md:text-3xl text-white/90 font-medium text-center mb-8 relative z-10"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              O segredo que os <span className="text-yellow-400 font-bold">2%</span> dominam!
+            </motion.p>
+
+            {/* Frase de pergunta */}
+            <motion.p
+              className="text-lg sm:text-xl md:text-2xl text-white/80 text-center mb-12 italic relative z-10"
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              Quer <span className="text-yellow-400 font-semibold">DESCOBRIR</span> esse <span className="text-yellow-400 font-semibold">SEGREDO</span>?
+            </motion.p>
+
+            {/* Botão principal */}
+            <motion.button
+              className="relative px-10 py-6 sm:px-14 sm:py-8 rounded-2xl text-xl sm:text-2xl md:text-3xl font-black tracking-wide cursor-pointer border-0 overflow-hidden z-10"
+              style={{
+                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
+                boxShadow: '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
+                color: '#1a1a1a',
+              }}
+              initial={{ scale: 0, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              whileHover={{
+                scale: 1.08,
+                boxShadow: '0 0 60px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.6), 0 15px 50px rgba(0, 0, 0, 0.5)',
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{
+                delay: 0.8,
+                type: 'spring',
+                stiffness: 300,
+                damping: 20,
+              }}
+              onClick={handleDiscoverClick}
+            >
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 opacity-30"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                }}
+                animate={{
+                  x: ['-100%', '100%'],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 1,
+                }}
+              />
+              
+              <span className="relative z-10 flex items-center gap-3">
+                🚀 Quero descobrir agora
+              </span>
+            </motion.button>
+
+            {/* Partículas decorativas flutuando */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 rounded-full bg-yellow-400/40"
+                style={{
+                  left: `${15 + (i * 10)}%`,
+                  top: `${20 + (i % 3) * 25}%`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  opacity: [0.3, 0.7, 0.3],
+                  scale: [1, 1.3, 1],
+                }}
+                transition={{
+                  duration: 3 + i * 0.5,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
+              />
+            ))}
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Indicador de carregamento */}
+      {/* Indicador de carregamento durante narração */}
       <AnimatePresence>
-        {isNarrating && !showSecretButton && (
+        {isNarrating && !showMethodScreen && (
           <motion.div
             className="absolute bottom-10 left-1/2 -translate-x-1/2"
             initial={{ opacity: 0 }}
