@@ -114,6 +114,7 @@ export const V7PhaseQuiz = ({
   // ✅ V7-v18: Marcadores desabilitados até narração pausar no anchor
   const [optionsEnabled, setOptionsEnabled] = useState(false);
   const [showEnableEffect, setShowEnableEffect] = useState(false);
+  const [showBlockedTooltip, setShowBlockedTooltip] = useState(false);
 
   // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
   const {
@@ -305,11 +306,15 @@ export const V7PhaseQuiz = ({
   const toggleOption = useCallback((id: string) => {
     if (isRevealed) return;
     
-    // ✅ V7-v18: Bloquear seleção se opções não estão habilitadas
+    // ✅ V7-v19: Bloquear seleção + mostrar tooltip
     if (!optionsEnabled) {
-      console.log('[V7PhaseQuiz] ⏳ Opções ainda desabilitadas - aguardando narração pausar');
+      console.log('[V7PhaseQuiz] ⏳ Opções ainda desabilitadas - mostrando tooltip');
       const ctrl = audioControlRef.current;
-      ctrl?.playSoundEffect?.('hint', 0.2); // Som suave de "espere"
+      ctrl?.playSoundEffect?.('hint', 0.2);
+      
+      // Mostrar tooltip temporário
+      setShowBlockedTooltip(true);
+      setTimeout(() => setShowBlockedTooltip(false), 2500);
       return;
     }
 
@@ -526,6 +531,25 @@ export const V7PhaseQuiz = ({
                 )}
               </AnimatePresence>
               
+              {/* ✅ V7-v19: Tooltip quando usuário tenta clicar em opção bloqueada */}
+              <AnimatePresence>
+                {showBlockedTooltip && (
+                  <motion.div
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  >
+                    <div className="bg-amber-500/90 text-black px-4 py-2 rounded-lg shadow-lg text-sm font-medium whitespace-nowrap">
+                      <span className="mr-1">🎧</span>
+                      Espere a narração terminar...
+                      {/* Seta do tooltip */}
+                      <div className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 bg-amber-500/90 rotate-45" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {/* ✅ V7-v18: Efeito visual de habilitação (flash dourado) */}
               <AnimatePresence>
                 {showEnableEffect && (
