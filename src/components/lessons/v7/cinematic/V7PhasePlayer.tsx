@@ -769,9 +769,6 @@ export const V7PhasePlayer = ({
         // Combine content from ALL revelation scenes
         const revelationContent = getCombinedSceneContent();
 
-        // ✅ Show PERFEITO typewriter during first 3 scenes (0-2), then CTA (3-4)
-        const showPerfeitoSlide = currentSceneIndex < 3;
-
         // Check if this is a "PERFEITO" method reveal
         const mainTextStr = extractTextFromContent(revelationContent.mainText);
         const isPerfeitoMethod =
@@ -779,8 +776,9 @@ export const V7PhasePlayer = ({
           revelationContent.title?.toLowerCase().includes('perfeito') ||
           currentPhase.title?.toLowerCase().includes('perfeito');
 
-        // ✅ V7-v20: Use synchronized PERFEITO component that syncs with audio
-        if (showPerfeitoSlide && isPerfeitoMethod) {
+        // ✅ V7-v21: PERFEITO phase uses ONLY the synced component - NO CTA overlay
+        // The V7PhasePERFEITOSynced handles the entire narration from "Eles" to "constante"
+        if (isPerfeitoMethod) {
           return (
             <V7PhasePERFEITOSynced
               wordTimestamps={wordTimestamps}
