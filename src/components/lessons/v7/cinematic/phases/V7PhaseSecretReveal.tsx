@@ -566,19 +566,26 @@ export const V7PhaseSecretReveal = ({
               Quer <span className="text-yellow-400 font-semibold">DESCOBRIR</span> esse <span className="text-yellow-400 font-semibold">SEGREDO</span>?
             </motion.p>
 
-            {/* Botão principal */}
+            {/* Botão principal com efeito de piscar */}
             <motion.button
               className="relative px-10 py-6 sm:px-14 sm:py-8 rounded-2xl text-xl sm:text-2xl md:text-3xl font-black tracking-wide cursor-pointer border-0 overflow-hidden z-10"
               style={{
                 background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
-                boxShadow: '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
                 color: '#1a1a1a',
               }}
               initial={{ scale: 0, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
+              animate={{ 
+                scale: 1, 
+                y: 0,
+                boxShadow: [
+                  '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
+                  '0 0 80px rgba(255, 165, 0, 1), 0 0 150px rgba(255, 215, 0, 0.8), 0 15px 50px rgba(0, 0, 0, 0.5)',
+                  '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
+                ],
+              }}
               whileHover={{
                 scale: 1.08,
-                boxShadow: '0 0 60px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.6), 0 15px 50px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 0 100px rgba(255, 165, 0, 1), 0 0 180px rgba(255, 215, 0, 0.9), 0 20px 60px rgba(0, 0, 0, 0.6)',
               }}
               whileTap={{ scale: 0.95 }}
               transition={{
@@ -586,6 +593,12 @@ export const V7PhaseSecretReveal = ({
                 type: 'spring',
                 stiffness: 300,
                 damping: 20,
+                boxShadow: {
+                  delay: 1.2,
+                  duration: 1.2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                },
               }}
               onClick={handleDiscoverClick}
             >
@@ -602,6 +615,25 @@ export const V7PhaseSecretReveal = ({
                   duration: 2,
                   repeat: Infinity,
                   repeatDelay: 1,
+                }}
+              />
+              
+              {/* ✅ Blink overlay effect */}
+              <motion.div
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.3)',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  delay: 1.5,
+                  duration: 0.4,
+                  repeat: Infinity,
+                  repeatDelay: 1.5,
+                  ease: 'easeInOut',
                 }}
               />
               
