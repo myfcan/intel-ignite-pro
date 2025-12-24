@@ -20,6 +20,7 @@ import V7PhasePlayground from './phases/V7PhasePlayground';
 import V7PhaseGamification from './phases/V7PhaseGamification';
 import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
+import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import {
   V7LessonScript,
@@ -778,11 +779,15 @@ export const V7PhasePlayer = ({
           revelationContent.title?.toLowerCase().includes('perfeito') ||
           currentPhase.title?.toLowerCase().includes('perfeito');
 
+        // ✅ V7-v20: Use synchronized PERFEITO component that syncs with audio
         if (showPerfeitoSlide && isPerfeitoMethod) {
           return (
-            <V7PhasePERFEITO
+            <V7PhasePERFEITOSynced
+              wordTimestamps={wordTimestamps}
+              currentTime={audio.currentTime}
+              isPlaying={audio.isPlaying}
               onComplete={() => {
-                console.log('[V7PhasePlayer] PERFEITO animation complete - advancing');
+                console.log('[V7PhasePlayer] PERFEITO synced animation complete - advancing');
                 // ✅ V7-v12: Unlock and advance when PERFEITO animation completes
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
                 if (lockedPhaseIndex !== null) {
@@ -792,8 +797,6 @@ export const V7PhasePlayer = ({
                 setInteractionComplete(true);
                 goToNextPhase(false, fromIndex);
               }}
-              autoAdvance={true}
-              advanceDelay={4000}
             />
           );
         }
