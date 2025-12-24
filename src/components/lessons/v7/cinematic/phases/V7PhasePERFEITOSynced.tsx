@@ -59,8 +59,13 @@ export const V7PhasePERFEITOSynced = ({
     const perfeitoTs = findWordTimestamp(wordTimestamps, 'PERFEITO');
     // Find "Eles" (start of narration)
     const elesTs = findWordTimestamp(wordTimestamps, 'Eles');
-    // Find "constante" (end of narration)
+    // ✅ V7-v22: Find "constante" mais precisamente - última palavra da narração PERFEITO
+    // A narração é: "Eles conhecem o segredo. O método PERFEITO. Persona específica. Estrutura clara. 
+    // Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante"
     const constanteTs = findWordTimestamp(wordTimestamps, 'constante');
+    
+    // ✅ V7-v22: Find "Otimização" (última palavra do acrônimo, antes de "constante")
+    const otimizacaoTs = findWordTimestamp(wordTimestamps, 'Otimização');
     
     // Find each meaning word timestamp
     const meaningTimestamps = PERFEITO_MEANINGS.map(m => ({
@@ -68,10 +73,16 @@ export const V7PhasePERFEITOSynced = ({
       timestamp: findWordTimestamp(wordTimestamps, m.searchWord)
     }));
     
+    // ✅ V7-v22: O fim REAL é após "constante", mas usamos "Otimização" como último meaning
+    // Se não achar "constante", usamos o fim de "Otimização" + 2 segundos
+    const realEnd = constanteTs?.end ?? (otimizacaoTs ? otimizacaoTs.end + 2 : 60);
+    
     console.log('[V7PhasePERFEITOSynced] Timings found:', {
       perfeito: perfeitoTs?.start,
       eles: elesTs?.start,
+      otimizacao: otimizacaoTs?.end,
       constante: constanteTs?.end,
+      realEnd,
       meanings: meaningTimestamps.map(m => `${m.word}: ${m.timestamp?.start}`),
     });
     
@@ -79,7 +90,7 @@ export const V7PhasePERFEITOSynced = ({
       start: elesTs?.start ?? 0,
       perfeitoReveal: perfeitoTs?.start ?? (elesTs ? elesTs.start + 2 : 2),
       meanings: meaningTimestamps,
-      end: constanteTs?.end ?? 30,
+      end: realEnd,
     };
   }, [wordTimestamps]);
 
@@ -139,15 +150,21 @@ export const V7PhasePERFEITOSynced = ({
     }
   }, [phase, relativeTime, timings.meanings, currentMeaningIndex]);
   
-  // ✅ Phase 4: Complete when narration ends
+  // ✅ Phase 4: Complete when narration ends AND all meanings were shown
+  // ✅ V7-v22: Adiciona verificação de que TODAS as 8 palavras foram mostradas
   useEffect(() => {
-    if (relativeTime >= timings.end && !completedRef.current) {
+    // Só completa se:
+    // 1. Tempo passou do fim da narração (após "constante")
+    // 2. Todas as 8 palavras do acrônimo foram mostradas (currentMeaningIndex >= 7 = "O" de Otimização)
+    const allMeaningsShown = currentMeaningIndex >= PERFEITO_MEANINGS.length - 1;
+    
+    if (relativeTime >= timings.end && allMeaningsShown && !completedRef.current) {
       completedRef.current = true;
       setPhase('complete');
-      console.log('[V7PhasePERFEITOSynced] ✅ Complete');
+      console.log('[V7PhasePERFEITOSynced] ✅ Complete - all meanings shown and narration ended');
       onComplete?.();
     }
-  }, [relativeTime, timings.end, onComplete]);
+  }, [relativeTime, timings.end, currentMeaningIndex, onComplete]);
 
   // Current meaning to display
   const activeMeaning = currentMeaningIndex >= 0 ? PERFEITO_MEANINGS[currentMeaningIndex] : null;
