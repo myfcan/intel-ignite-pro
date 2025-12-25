@@ -146,6 +146,11 @@ export interface V7Phase {
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
 
+  // ✅ V7.1: ANCHOR-BASED PHASE TRANSITION
+  // When set, phase only becomes active AFTER this word is spoken in the narration
+  // This replaces time-based transitions with word-based transitions
+  enterAnchor?: string;
+
   // ✅ Anchor Actions: Flexible keyword-based synchronization (V5-inspired)
   // Supports multiple action types: pause, resume, show, hide, highlight, trigger
   anchorActions?: import('../useAnchorText').AnchorAction[];
@@ -215,6 +220,7 @@ interface UsePhaseControllerProps {
   currentTime: number;
   isPlaying: boolean;
   hasAudio?: boolean; // Whether audio is available
+  wordTimestamps?: { word: string; start: number; end: number }[]; // ✅ V7.1: For anchor-based transitions
 }
 
 interface UsePhaseControllerReturn {
@@ -234,6 +240,7 @@ export function usePhaseController({
   currentTime,
   isPlaying,
   hasAudio = true,
+  wordTimestamps = [],
 }: UsePhaseControllerProps): UsePhaseControllerReturn {
   const [manualPhaseIndex, setManualPhaseIndex] = useState<number | null>(null);
 
@@ -279,21 +286,59 @@ export function usePhaseController({
 
   // Use internal time when no audio, otherwise use audio time
   const rawTime = hasAudio ? currentTime : internalTime;
-  
+
   // ✅ V7-v11 FIX: Add 3s offset to audio time to compensate for loading phase offset in phases
   // The phases have +3s offset added (loading phase is 0-3s), so audio time 0s = phase time 3s
   // This ensures audio time 0s maps to the first content phase (startTime: 3s)
   const effectiveTime = hasAudio ? rawTime + 3 : internalTime;
 
-  // Find current phase based on time (uses effectiveTime for fallback support)
+  // ✅ V7.1: Helper to check if an anchor word has been spoken
+  const hasAnchorBeenSpoken = useCallback((anchorWord: string, beforeTime: number): boolean => {
+    if (!wordTimestamps || wordTimestamps.length === 0) return true; // No timestamps = allow transition
+
+    const normalizedAnchor = anchorWord.toLowerCase().replace(/[.,!?;:]/g, '');
+
+    for (const ts of wordTimestamps) {
+      const normalizedWord = ts.word.toLowerCase().replace(/[.,!?;:]/g, '');
+      if (normalizedWord === normalizedAnchor || normalizedWord.includes(normalizedAnchor)) {
+        // Anchor word found - check if it has been spoken (timestamp passed)
+        return beforeTime >= ts.end;
+      }
+    }
+
+    // Anchor word not found in timestamps - fallback to time-based
+    console.warn(`[V7PhaseController] ⚠️ enterAnchor "${anchorWord}" not found in wordTimestamps`);
+    return true;
+  }, [wordTimestamps]);
+
+  // ✅ V7.1: Find current phase based on ANCHOR or TIME
+  // If a phase has enterAnchor, it only becomes active after that word is spoken
   const currentPhaseIndex = useMemo(() => {
     if (manualPhaseIndex !== null) return manualPhaseIndex;
 
-    const index = script.phases.findIndex(
-      (phase) => effectiveTime >= phase.startTime && effectiveTime < phase.endTime
-    );
-    return index === -1 ? 0 : index;
-  }, [script.phases, effectiveTime, manualPhaseIndex]);
+    // Find the highest phase index that should be active
+    let activeIndex = 0;
+
+    for (let i = 0; i < script.phases.length; i++) {
+      const phase = script.phases[i];
+
+      // Check if this phase should be active
+      if (phase.enterAnchor) {
+        // ✅ ANCHOR-BASED: Phase only active after enterAnchor word is spoken
+        if (hasAnchorBeenSpoken(phase.enterAnchor, effectiveTime)) {
+          activeIndex = i;
+          console.log(`[V7PhaseController] 🎯 Phase "${phase.id}" activated by enterAnchor "${phase.enterAnchor}"`);
+        }
+      } else {
+        // ✅ TIME-BASED: Traditional startTime/endTime logic
+        if (effectiveTime >= phase.startTime && effectiveTime < phase.endTime) {
+          activeIndex = i;
+        }
+      }
+    }
+
+    return activeIndex;
+  }, [script.phases, effectiveTime, manualPhaseIndex, hasAnchorBeenSpoken]);
 
   const currentPhase = script.phases[currentPhaseIndex] || null;
 

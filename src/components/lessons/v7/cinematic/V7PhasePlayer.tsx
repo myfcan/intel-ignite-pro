@@ -156,6 +156,7 @@ export const V7PhasePlayer = ({
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
+  // ✅ V7.1: Passes wordTimestamps for anchor-based phase transitions
   const {
     currentPhase: rawCurrentPhase,
     currentPhaseIndex: rawCurrentPhaseIndex,
@@ -167,7 +168,8 @@ export const V7PhasePlayer = ({
     script: scaledScript, // Use scaled script with correct timings
     currentTime: audio.currentTime,
     isPlaying: effectiveIsPlaying,
-    hasAudio
+    hasAudio,
+    wordTimestamps // ✅ V7.1: For enterAnchor-based phase transitions
   });
 
   // ✅ V7-v6: Override phase index when locked in interactive phase
