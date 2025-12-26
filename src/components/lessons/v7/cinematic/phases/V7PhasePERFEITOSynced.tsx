@@ -1,9 +1,9 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v24: STABLE VERTICAL LAYOUT - No animations that cause trembling
+// ✅ V7-v25: COMPACT VERTICAL LAYOUT - Fits screen without overflow
+// ✅ V7-v25: Pure CSS transitions - NO Framer Motion trembling
 // P-E-R-F-E-I-T-O stacked vertically with meanings appearing as spoken
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface WordTimestamp {
   word: string;
@@ -52,6 +52,7 @@ export const V7PhasePERFEITOSynced = ({
   // Find timestamps for each meaning word
   const timings = useMemo(() => {
     const perfeitoTs = findWordTimestamp(wordTimestamps, 'PERFEITO');
+    // ✅ V7-v25: Use "constante" END time (not start) to ensure narration finishes
     const constanteTs = findWordTimestamp(wordTimestamps, 'constante');
 
     const meanings = PERFEITO_MEANINGS.map(m => ({
@@ -61,12 +62,13 @@ export const V7PhasePERFEITOSynced = ({
 
     console.log('[V7PhasePERFEITOSynced] Timestamps:', {
       perfeito: perfeitoTs?.start?.toFixed(1),
-      constante: constanteTs?.end?.toFixed(1),
+      constanteEnd: constanteTs?.end?.toFixed(1),
       meanings: meanings.map(m => `${m.meaning}: ${m.timestamp?.start?.toFixed(1) || 'N/A'}`),
     });
 
     return {
       perfeitoStart: perfeitoTs?.start ?? 0,
+      // ✅ V7-v25: End time is when "constante" FINISHES being spoken (end, not start)
       endTime: constanteTs?.end ?? 60,
       meanings,
     };
@@ -93,21 +95,26 @@ export const V7PhasePERFEITOSynced = ({
 
     if (count !== visibleCount) {
       setVisibleCount(count);
-      console.log(`[V7PhasePERFEITOSynced] Visible: ${count}/8`);
+      console.log(`[V7PhasePERFEITOSynced] Visible: ${count}/8 at ${currentTime.toFixed(1)}s`);
     }
   }, [showContent, currentTime, timings.meanings, visibleCount]);
 
-  // Complete when all meanings shown and time passed
+  // ✅ V7-v25: Complete ONLY after ALL meanings shown AND "constante" fully spoken
+  // This prevents playground from activating before narration ends
   useEffect(() => {
-    if (visibleCount >= 8 && currentTime >= timings.endTime && !completedRef.current) {
+    const allMeaningsVisible = visibleCount >= 8;
+    const narrationFinished = currentTime >= timings.endTime;
+    
+    if (allMeaningsVisible && narrationFinished && !completedRef.current) {
       completedRef.current = true;
-      console.log('[V7PhasePERFEITOSynced] ✅ Complete');
-      setTimeout(() => onComplete?.(), 500);
+      console.log(`[V7PhasePERFEITOSynced] ✅ Complete - all visible (${visibleCount}/8) AND narration finished (${currentTime.toFixed(1)}s >= ${timings.endTime.toFixed(1)}s)`);
+      // Small delay to let user absorb the complete visual
+      setTimeout(() => onComplete?.(), 800);
     }
   }, [visibleCount, currentTime, timings.endTime, onComplete]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-24">
       {/* Background glow - static, no animation */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -116,108 +123,94 @@ export const V7PhasePERFEITOSynced = ({
         }}
       />
 
-      {/* Header */}
-      <AnimatePresence>
-        {showContent && (
-          <motion.div
-            className="absolute top-12 sm:top-20 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <span className="text-white/50 text-sm sm:text-base tracking-[0.3em] uppercase">
-              O Método
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Header - CSS transition for smooth fade */}
+      <div
+        className="absolute top-8 sm:top-12 text-center transition-opacity duration-500"
+        style={{ opacity: showContent ? 1 : 0 }}
+      >
+        <span className="text-white/50 text-xs sm:text-sm tracking-[0.3em] uppercase">
+          O Método
+        </span>
+      </div>
 
-      {/* PERFEITO Vertical Layout - STABLE, no trembling */}
-      <AnimatePresence>
-        {showContent && (
-          <motion.div
-            className="flex flex-col items-start gap-0.5 sm:gap-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            {PERFEITO_MEANINGS.map((item, index) => {
-              const isVisible = index < visibleCount;
+      {/* PERFEITO Vertical Layout - COMPACT, fits screen */}
+      <div
+        className="flex flex-col items-start transition-opacity duration-600"
+        style={{ opacity: showContent ? 1 : 0 }}
+      >
+        {PERFEITO_MEANINGS.map((item, index) => {
+          const isVisible = index < visibleCount;
 
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 sm:gap-4 h-10 sm:h-14"
-                >
-                  {/* Letter - always visible but dim until meaning shown */}
-                  <span
-                    className="text-3xl sm:text-5xl md:text-6xl font-black w-10 sm:w-14 md:w-16 text-center transition-all duration-300"
-                    style={{
-                      background: isVisible
-                        ? 'linear-gradient(135deg, #00d9a6, #22D3EE)'
-                        : 'linear-gradient(135deg, #444, #555)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      textShadow: isVisible ? '0 0 30px rgba(0, 217, 166, 0.5)' : 'none',
-                    }}
-                  >
-                    {item.letter}
-                  </span>
-
-                  {/* Equals sign */}
-                  <span
-                    className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300"
-                    style={{ color: isVisible ? '#00d9a6' : '#444' }}
-                  >
-                    =
-                  </span>
-
-                  {/* Meaning - fades in when spoken */}
-                  <div
-                    className="flex items-baseline gap-2 transition-opacity duration-400"
-                    style={{ opacity: isVisible ? 1 : 0 }}
-                  >
-                    <span className="text-lg sm:text-xl md:text-2xl font-semibold text-white">
-                      {item.meaning}
-                    </span>
-                    <span className="text-xs sm:text-sm md:text-base text-cyan-400/60">
-                      {item.subtitle}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Progress dots */}
-      <AnimatePresence>
-        {showContent && (
-          <motion.div
-            className="absolute bottom-12 sm:bottom-20 flex gap-1.5 sm:gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            {PERFEITO_MEANINGS.map((_, i) => (
-              <div
-                key={i}
-                className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300"
+          return (
+            <div
+              key={index}
+              className="flex items-center h-8 sm:h-9"
+              style={{ gap: '0.5rem' }}
+            >
+              {/* Letter - SMALLER: text-2xl on mobile, text-3xl on desktop */}
+              <span
+                className="text-2xl sm:text-3xl font-black w-8 sm:w-10 text-center transition-all duration-300"
                 style={{
-                  backgroundColor: i < visibleCount ? '#00d9a6' : '#333',
-                  transform: i < visibleCount ? 'scale(1)' : 'scale(0.8)',
+                  background: isVisible
+                    ? 'linear-gradient(135deg, #00d9a6, #22D3EE)'
+                    : 'linear-gradient(135deg, #444, #555)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: isVisible ? 'drop-shadow(0 0 15px rgba(0, 217, 166, 0.4))' : 'none',
                 }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              >
+                {item.letter}
+              </span>
+
+              {/* Equals sign - smaller */}
+              <span
+                className="text-lg sm:text-xl font-bold transition-colors duration-300 w-4"
+                style={{ color: isVisible ? '#00d9a6' : '#444' }}
+              >
+                =
+              </span>
+
+              {/* Meaning - fades in smoothly with CSS */}
+              <div
+                className="flex items-baseline gap-1.5 transition-all duration-400"
+                style={{ 
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? 'translateX(0)' : 'translateX(-8px)',
+                }}
+              >
+                <span className="text-sm sm:text-base font-semibold text-white">
+                  {item.meaning}
+                </span>
+                <span className="text-xs sm:text-sm text-cyan-400/60">
+                  {item.subtitle}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress dots - SMALLER and positioned better */}
+      <div
+        className="absolute bottom-16 sm:bottom-20 flex gap-1 transition-opacity duration-500"
+        style={{ opacity: showContent ? 1 : 0 }}
+      >
+        {PERFEITO_MEANINGS.map((_, i) => (
+          <div
+            key={i}
+            className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-300"
+            style={{
+              backgroundColor: i < visibleCount ? '#00d9a6' : '#333',
+              transform: i < visibleCount ? 'scale(1)' : 'scale(0.7)',
+            }}
+          />
+        ))}
+      </div>
 
       {/* Debug - only in dev */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-4 left-4 text-xs text-white/30 font-mono">
-          Time: {currentTime.toFixed(1)}s | Visible: {visibleCount}/8
+          {currentTime.toFixed(1)}s | {visibleCount}/8 | end: {timings.endTime.toFixed(1)}s
         </div>
       )}
     </div>
