@@ -54,7 +54,7 @@ const FallingMoney = ({ delay, left }: { delay: number; left: number }) => (
 );
 
 // Partículas de explosão douradas
-const GoldParticle = ({ angle, distance }: { angle: number; distance: number }) => (
+const GoldParticle = ({ angle, distance, delay = 0 }: { angle: number; distance: number; delay?: number }) => (
   <motion.div
     className="absolute w-3 h-3 rounded-full pointer-events-none"
     style={{
@@ -70,7 +70,58 @@ const GoldParticle = ({ angle, distance }: { angle: number; distance: number }) 
       opacity: 0,
       scale: 0,
     }}
-    transition={{ duration: 1.5, ease: 'easeOut' }}
+    transition={{ duration: 1.5, ease: 'easeOut', delay }}
+  />
+);
+
+// ✅ V7-v21: Partículas flutuantes douradas contínuas
+const FloatingGoldSparkle = ({ delay, left, top }: { delay: number; left: number; top: number }) => (
+  <motion.div
+    className="absolute pointer-events-none"
+    style={{ left: `${left}%`, top: `${top}%` }}
+    initial={{ opacity: 0, scale: 0 }}
+    animate={{
+      opacity: [0, 1, 1, 0],
+      scale: [0, 1.5, 1, 0],
+      y: [-20, -60],
+      rotate: [0, 180],
+    }}
+    transition={{
+      duration: 3,
+      delay,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+  >
+    <span className="text-xl sm:text-2xl">✨</span>
+  </motion.div>
+);
+
+// ✅ V7-v21: Anel de energia pulsante
+const EnergyRing = ({ size, delay }: { size: number; delay: number }) => (
+  <motion.div
+    className="absolute rounded-full pointer-events-none"
+    style={{
+      width: size,
+      height: size,
+      left: '50%',
+      top: '50%',
+      marginLeft: -size / 2,
+      marginTop: -size / 2,
+      border: '2px solid rgba(255, 215, 0, 0.6)',
+      boxShadow: '0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+    }}
+    initial={{ scale: 0, opacity: 1 }}
+    animate={{
+      scale: [0, 2, 3],
+      opacity: [0.8, 0.4, 0],
+    }}
+    transition={{
+      duration: 2.5,
+      delay,
+      repeat: Infinity,
+      ease: 'easeOut',
+    }}
   />
 );
 
@@ -430,21 +481,61 @@ export const V7PhaseSecretReveal = ({
         )}
       </AnimatePresence>
 
-      {/* Background glow dourado */}
+      {/* Background glow dourado com múltiplas camadas */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: showExplosion ? 1 : 0 }}
         transition={{ duration: 1 }}
-        style={{
-          background: 'radial-gradient(circle at center, rgba(255, 215, 0, 0.3) 0%, transparent 60%)',
-        }}
-      />
+      >
+        {/* Camada 1: Glow central */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(255, 215, 0, 0.4) 0%, transparent 50%)',
+          }}
+        />
+        {/* Camada 2: Glow externo */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(255, 165, 0, 0.2) 0%, transparent 70%)',
+          }}
+        />
+      </motion.div>
+
+      {/* ✅ V7-v21: Anéis de energia pulsantes */}
+      <AnimatePresence>
+        {showExplosion && !showMethodScreen && (
+          <>
+            <EnergyRing size={100} delay={0} />
+            <EnergyRing size={100} delay={0.5} />
+            <EnergyRing size={100} delay={1} />
+            <EnergyRing size={100} delay={1.5} />
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ V7-v21: Partículas flutuantes douradas */}
+      <AnimatePresence>
+        {showExplosion && !showMethodScreen && (
+          <>
+            {Array.from({ length: 15 }, (_, i) => (
+              <FloatingGoldSparkle
+                key={`sparkle-${i}`}
+                delay={i * 0.2}
+                left={10 + (i * 6) % 80}
+                top={20 + (i * 7) % 60}
+              />
+            ))}
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Partículas de explosão */}
       <AnimatePresence>
         {showExplosion && particles.map((p, i) => (
-          <GoldParticle key={i} angle={p.angle} distance={p.distance} />
+          <GoldParticle key={i} angle={p.angle} distance={p.distance} delay={i * 0.02} />
         ))}
       </AnimatePresence>
 
@@ -467,12 +558,24 @@ export const V7PhaseSecretReveal = ({
               type: 'spring',
               stiffness: 200,
               damping: 15,
-              duration: 0.8,
             }}
           >
-            {/* Interrogação */}
+            {/* ✅ V7-v21: Glow atrás da interrogação */}
             <motion.div
-              className="text-[30vw] sm:text-[25vw] font-black leading-none select-none"
+              className="absolute w-[50vw] h-[50vw] rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%)',
+              }}
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.5, 0.8, 0.5],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            {/* Interrogação gigante */}
+            <motion.div
+              className="text-[30vw] sm:text-[25vw] font-black leading-none select-none relative z-10"
               style={{
                 background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
                 WebkitBackgroundClip: 'text',
@@ -480,33 +583,70 @@ export const V7PhaseSecretReveal = ({
                 filter: 'drop-shadow(0 0 60px rgba(255, 215, 0, 0.8))',
               }}
               animate={{
-                scale: [1, 1.05, 1],
+                scale: [1, 1.08, 1],
+                rotate: [-2, 2, -2],
                 filter: [
                   'drop-shadow(0 0 60px rgba(255, 215, 0, 0.8))',
-                  'drop-shadow(0 0 100px rgba(255, 215, 0, 1))',
+                  'drop-shadow(0 0 120px rgba(255, 215, 0, 1))',
                   'drop-shadow(0 0 60px rgba(255, 215, 0, 0.8))',
                 ],
               }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             >
               ?
             </motion.div>
 
-            {/* Texto "SEGREDO" */}
-            <motion.h2
-              className="text-3xl sm:text-5xl md:text-6xl font-black tracking-[0.3em] mt-4"
-              style={{
-                background: 'linear-gradient(135deg, #FFD700, #FFFFFF)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 40px rgba(255, 215, 0, 0.5)',
-              }}
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
+            {/* ✅ V7-v21: Texto "SEGREDO" com efeito glitch/pulsante */}
+            <motion.div className="relative mt-6">
+              {/* Camada de sombra/glow */}
+              <motion.h2
+                className="absolute inset-0 text-3xl sm:text-5xl md:text-7xl font-black tracking-[0.3em] blur-sm"
+                style={{ color: '#FFD700' }}
+                animate={{
+                  opacity: [0.5, 1, 0.5],
+                  scale: [1, 1.02, 1],
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                SEGREDO
+              </motion.h2>
+              
+              {/* Texto principal */}
+              <motion.h2
+                className="relative text-3xl sm:text-5xl md:text-7xl font-black tracking-[0.3em]"
+                style={{
+                  background: 'linear-gradient(135deg, #FFD700 0%, #FFFFFF 50%, #FFD700 100%)',
+                  backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+                initial={{ y: 40, opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  y: 0, 
+                  opacity: 1, 
+                  scale: 1,
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{ 
+                  y: { delay: 0.5, duration: 0.6, ease: 'easeOut' },
+                  opacity: { delay: 0.5, duration: 0.6 },
+                  scale: { delay: 0.5, duration: 0.6, ease: 'easeOut' },
+                  backgroundPosition: { duration: 3, repeat: Infinity, ease: 'linear' },
+                }}
+              >
+                SEGREDO
+              </motion.h2>
+            </motion.div>
+
+            {/* ✅ V7-v21: Subtítulo animado */}
+            <motion.p
+              className="text-lg sm:text-xl text-white/70 mt-4 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.5 }}
             >
-              SEGREDO
-            </motion.h2>
+              O que os <span className="text-yellow-400 font-bold">2%</span> sabem
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>
