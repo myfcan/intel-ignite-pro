@@ -1,6 +1,6 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v25: COMPACT VERTICAL LAYOUT - Fits screen without overflow
-// ✅ V7-v25: Pure CSS transitions - NO Framer Motion trembling
+// ✅ V7-v26: ANCHORTEXT-BASED como V5 - busca palavras no wordTimestamps
+// ✅ V7-v26: Pure CSS transitions - NO Framer Motion trembling
 // P-E-R-F-E-I-T-O stacked vertically with meanings appearing as spoken
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -16,27 +16,43 @@ interface V7PhasePERFEITOSyncedProps {
   currentTime: number;
   isPlaying: boolean;
   onComplete?: () => void;
+  exitAnchor?: string; // ✅ V7-v26: AnchorText de saída (ex: "constante")
 }
 
-// PERFEITO letter meanings synced with narration words
+// PERFEITO letter meanings - agora com anchorText para cada item
 const PERFEITO_MEANINGS = [
-  { letter: 'P', meaning: 'Persona', subtitle: 'específica' },
-  { letter: 'E', meaning: 'Estrutura', subtitle: 'clara' },
-  { letter: 'R', meaning: 'Resultado', subtitle: 'esperado' },
-  { letter: 'F', meaning: 'Formato', subtitle: 'definido' },
-  { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos' },
-  { letter: 'I', meaning: 'Iteração', subtitle: 'contínua' },
-  { letter: 'T', meaning: 'Tom', subtitle: 'adequado' },
-  { letter: 'O', meaning: 'Otimização', subtitle: 'constante' },
+  { letter: 'P', meaning: 'Persona', subtitle: 'específica', anchorText: 'Persona' },
+  { letter: 'E', meaning: 'Estrutura', subtitle: 'clara', anchorText: 'Estrutura' },
+  { letter: 'R', meaning: 'Resultado', subtitle: 'esperado', anchorText: 'Resultado' },
+  { letter: 'F', meaning: 'Formato', subtitle: 'definido', anchorText: 'Formato' },
+  { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos', anchorText: 'Exemplos' },
+  { letter: 'I', meaning: 'Iteração', subtitle: 'contínua', anchorText: 'Iteração' },
+  { letter: 'T', meaning: 'Tom', subtitle: 'adequado', anchorText: 'Tom' },
+  { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'constante' }, // ✅ Última palavra = exitAnchor
 ];
 
-// Find word timestamp (case insensitive, handles punctuation)
-const findWordTimestamp = (timestamps: WordTimestamp[], word: string): WordTimestamp | null => {
-  const normalized = word.toLowerCase().replace(/[.,:;!?"]/g, '');
-  return timestamps.find(t => {
-    const wordNorm = t.word.toLowerCase().replace(/[.,:;!?"]/g, '');
-    return wordNorm === normalized || wordNorm.includes(normalized);
-  }) || null;
+// ✅ V7-v26: Busca palavra no wordTimestamps (case insensitive, remove pontuação)
+const findAnchorTimestamp = (timestamps: WordTimestamp[], anchor: string): WordTimestamp | null => {
+  if (!timestamps || timestamps.length === 0) return null;
+  
+  const normalizedAnchor = anchor.toLowerCase().replace(/[.,!?;:'"]/g, '');
+  
+  for (const ts of timestamps) {
+    const normalizedWord = ts.word.toLowerCase().replace(/[.,!?;:'"]/g, '');
+    // Match exato ou parcial (para lidar com variações)
+    if (normalizedWord === normalizedAnchor || normalizedWord.includes(normalizedAnchor) || normalizedAnchor.includes(normalizedWord)) {
+      return ts;
+    }
+  }
+  
+  return null;
+};
+
+// ✅ V7-v26: Verifica se anchor foi falado (currentTime >= end do timestamp)
+const hasAnchorBeenSpoken = (timestamps: WordTimestamp[], anchor: string, currentTime: number): boolean => {
+  const ts = findAnchorTimestamp(timestamps, anchor);
+  if (!ts) return false;
+  return currentTime >= ts.end;
 };
 
 export const V7PhasePERFEITOSynced = ({
@@ -44,74 +60,85 @@ export const V7PhasePERFEITOSynced = ({
   currentTime,
   isPlaying,
   onComplete,
+  exitAnchor = 'constante', // ✅ Default: última palavra do PERFEITO
 }: V7PhasePERFEITOSyncedProps) => {
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
   const completedRef = useRef(false);
 
-  // Find timestamps for each meaning word
+  // ✅ V7-v26: Encontrar timestamp de entrada (PERFEITO) e saída (exitAnchor)
   const timings = useMemo(() => {
-    const perfeitoTs = findWordTimestamp(wordTimestamps, 'PERFEITO');
-    // ✅ V7-v25: Use "constante" END time (not start) to ensure narration finishes
-    const constanteTs = findWordTimestamp(wordTimestamps, 'constante');
+    const perfeitoTs = findAnchorTimestamp(wordTimestamps, 'PERFEITO');
+    const exitTs = findAnchorTimestamp(wordTimestamps, exitAnchor);
 
-    const meanings = PERFEITO_MEANINGS.map(m => ({
-      ...m,
-      timestamp: findWordTimestamp(wordTimestamps, m.meaning)
-    }));
-
-    console.log('[V7PhasePERFEITOSynced] Timestamps:', {
-      perfeito: perfeitoTs?.start?.toFixed(1),
-      constanteEnd: constanteTs?.end?.toFixed(1),
-      meanings: meanings.map(m => `${m.meaning}: ${m.timestamp?.start?.toFixed(1) || 'N/A'}`),
+    console.log('[V7PhasePERFEITOSynced] 🎯 AnchorText timings:', {
+      perfeito: perfeitoTs ? `start: ${perfeitoTs.start.toFixed(1)}s` : 'NOT FOUND',
+      exitAnchor: exitAnchor,
+      exitTime: exitTs ? `end: ${exitTs.end.toFixed(1)}s` : 'NOT FOUND',
+      totalWords: wordTimestamps.length,
     });
+
+    // Log das palavras encontradas para debug
+    if (wordTimestamps.length > 0) {
+      const relevantWords = wordTimestamps.filter(ts => {
+        const w = ts.word.toLowerCase();
+        return w.includes('perfeito') || w.includes('persona') || w.includes('estrutura') || 
+               w.includes('resultado') || w.includes('formato') || w.includes('exemplos') ||
+               w.includes('iteração') || w.includes('tom') || w.includes('otimização') || 
+               w.includes('constante');
+      });
+      console.log('[V7PhasePERFEITOSynced] 📝 Relevant words in timestamps:', 
+        relevantWords.map(w => `"${w.word}" @ ${w.start.toFixed(1)}-${w.end.toFixed(1)}s`));
+    }
 
     return {
       perfeitoStart: perfeitoTs?.start ?? 0,
-      // ✅ V7-v25: End time is when "constante" FINISHES being spoken (end, not start)
-      endTime: constanteTs?.end ?? 60,
-      meanings,
+      exitTime: exitTs?.end ?? 999, // ✅ Se não achar, nunca completa automaticamente
     };
-  }, [wordTimestamps]);
+  }, [wordTimestamps, exitAnchor]);
 
   // Show content when PERFEITO is spoken
   useEffect(() => {
-    if (!showContent && currentTime >= timings.perfeitoStart - 0.5) {
-      setShowContent(true);
-      console.log('[V7PhasePERFEITOSynced] 🎬 Showing vertical layout');
+    if (!showContent) {
+      const perfeitoSpoken = hasAnchorBeenSpoken(wordTimestamps, 'PERFEITO', currentTime);
+      if (perfeitoSpoken || currentTime >= timings.perfeitoStart) {
+        setShowContent(true);
+        console.log('[V7PhasePERFEITOSynced] 🎬 PERFEITO anchor detected - showing layout');
+      }
     }
-  }, [showContent, currentTime, timings.perfeitoStart]);
+  }, [showContent, currentTime, wordTimestamps, timings.perfeitoStart]);
 
-  // Update visible meanings based on current time
+  // ✅ V7-v26: Update visible count baseado em anchorText de CADA item
   useEffect(() => {
     if (!showContent) return;
 
     let count = 0;
-    for (const m of timings.meanings) {
-      if (m.timestamp && currentTime >= m.timestamp.start) {
+    for (const item of PERFEITO_MEANINGS) {
+      if (hasAnchorBeenSpoken(wordTimestamps, item.anchorText, currentTime)) {
         count++;
       }
     }
 
     if (count !== visibleCount) {
       setVisibleCount(count);
-      console.log(`[V7PhasePERFEITOSynced] Visible: ${count}/8 at ${currentTime.toFixed(1)}s`);
+      console.log(`[V7PhasePERFEITOSynced] 📊 Visible: ${count}/8 at ${currentTime.toFixed(1)}s`);
     }
-  }, [showContent, currentTime, timings.meanings, visibleCount]);
+  }, [showContent, currentTime, wordTimestamps, visibleCount]);
 
-  // ✅ V7-v25: Complete ONLY after ALL meanings shown AND "constante" fully spoken
-  // This prevents playground from activating before narration ends
+  // ✅ V7-v26: Complete SOMENTE quando exitAnchor for falado
+  // NÃO depende de visibleCount - depende APENAS do anchorText
   useEffect(() => {
-    const allMeaningsVisible = visibleCount >= 8;
-    const narrationFinished = currentTime >= timings.endTime;
+    if (completedRef.current) return;
     
-    if (allMeaningsVisible && narrationFinished && !completedRef.current) {
+    const exitAnchorSpoken = hasAnchorBeenSpoken(wordTimestamps, exitAnchor, currentTime);
+    
+    if (exitAnchorSpoken) {
       completedRef.current = true;
-      console.log(`[V7PhasePERFEITOSynced] ✅ Complete - all visible (${visibleCount}/8) AND narration finished (${currentTime.toFixed(1)}s >= ${timings.endTime.toFixed(1)}s)`);
-      // Small delay to let user absorb the complete visual
+      console.log(`[V7PhasePERFEITOSynced] ✅ EXIT ANCHOR "${exitAnchor}" detected at ${currentTime.toFixed(1)}s - completing phase`);
+      // Delay para absorver o visual completo
       setTimeout(() => onComplete?.(), 800);
     }
-  }, [visibleCount, currentTime, timings.endTime, onComplete]);
+  }, [currentTime, wordTimestamps, exitAnchor, onComplete]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-24">
@@ -210,7 +237,7 @@ export const V7PhasePERFEITOSynced = ({
       {/* Debug - only in dev */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-4 left-4 text-xs text-white/30 font-mono">
-          {currentTime.toFixed(1)}s | {visibleCount}/8 | end: {timings.endTime.toFixed(1)}s
+          {currentTime.toFixed(1)}s | {visibleCount}/8 | exit: {timings.exitTime.toFixed(1)}s
         </div>
       )}
     </div>
