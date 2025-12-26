@@ -169,6 +169,30 @@ interface V7PipelineInput {
       chapters?: any[];
     };
   };
+
+  // ✅ V7-v3: Support for cinematicFlow.phases structure (camelCase)
+  cinematicFlow?: {
+    phases: Array<{
+      id: string;
+      type: string;
+      title?: string;
+      visual?: {
+        instruction: string;
+        [key: string]: any;
+      };
+      audio?: {
+        narration: string;
+        [key: string]: any;
+      };
+      anchorText?: {
+        endPhrase?: string;
+        pausePhrase?: string;
+      };
+      cinematography?: any;
+      content?: any;
+    }>;
+    metadata?: any;
+  };
 }
 
 // V7 Cinematic Act Types (matching frontend components)
@@ -318,11 +342,18 @@ Deno.serve(async (req) => {
     const input: V7PipelineInput = await req.json();
     console.log('[V7Pipeline] Starting pipeline for:', input.title);
     
-    // Check if using cinematic_flow.acts (rich structure) or narrativeScript (flat)
-    const hasCinematicFlow = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
+    // Check if using:
+    // - cinematicFlow.phases (V7-v3 camelCase format)
+    // - cinematic_flow.acts (V7-v2 snake_case format)
+    // - narrativeScript (flat text)
+    const hasCinematicFlowV3 = input.cinematicFlow?.phases && input.cinematicFlow.phases.length > 0;
+    const hasCinematicFlowV2 = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
+    const hasCinematicFlow = hasCinematicFlowV3 || hasCinematicFlowV2;
     
-    if (hasCinematicFlow) {
-      console.log('[V7Pipeline] Using cinematic_flow.acts structure with', input.cinematic_flow!.acts.length, 'acts');
+    if (hasCinematicFlowV3) {
+      console.log('[V7Pipeline] Using cinematicFlow.phases (V7-v3) with', input.cinematicFlow!.phases.length, 'phases');
+    } else if (hasCinematicFlowV2) {
+      console.log('[V7Pipeline] Using cinematic_flow.acts (V7-v2) with', input.cinematic_flow!.acts.length, 'acts');
     } else {
       console.log('[V7Pipeline] Using flat narrativeScript, length:', input.narrativeScript?.length || 0);
     }
@@ -332,7 +363,7 @@ Deno.serve(async (req) => {
     }
     
     if (!hasCinematicFlow && !input.narrativeScript) {
-      throw new Error('Either cinematic_flow.acts or narrativeScript is required');
+      throw new Error('Either cinematicFlow.phases, cinematic_flow.acts or narrativeScript is required');
     }
 
     // ========================================================================
@@ -342,48 +373,78 @@ Deno.serve(async (req) => {
     let narrativeForAudio = '';
     let narrationCount = 0; // Track narration count for stats
 
-    if (hasCinematicFlow) {
-      // Use provided cinematic_flow.acts directly
-      console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts...');
+    if (hasCinematicFlowV3) {
+      // ✅ V7-v3: Process cinematicFlow.phases (camelCase format)
+      console.log('[V7Pipeline] Step 1: Processing cinematicFlow.phases (V7-v3)...');
 
-      // ✅ V7-v2: Extract narration from BOTH formats:
-      // - act.narration (V7-v2 format)
-      // - act.content.audio.narration (legacy format)
+      const narrations: string[] = [];
+
+      aiGeneratedActs = {
+        acts: input.cinematicFlow!.phases.map((phase, index) => {
+          // V7-v3: Narration is in phase.audio.narration
+          const narration = phase.audio?.narration || '';
+
+          if (narration) {
+            narrations.push(narration);
+          }
+
+          return {
+            type: (phase.type || 'dramatic') as V7ActType,
+            title: phase.title || `Fase ${index + 1}`,
+            narrativeSegment: narration,
+            content: {
+              visual: phase.visual || {},
+              audio: phase.audio || {},
+              cinematography: phase.cinematography || null,
+              anchorText: phase.anchorText || null,
+              // Pass through any other content
+              ...phase.content,
+            },
+            visualEffects: {
+              mood: phase.cinematography?.opening?.effect || 'dramatic',
+              particles: true,
+              glow: true,
+            },
+          };
+        }),
+        summary: `Aula V7-v3 Cinematográfica: ${input.title}`,
+      };
+
+      narrativeForAudio = narrations.join('\n\n');
+      narrationCount = narrations.length;
+      console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments from V7-v3 phases');
+      console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
+
+    } else if (hasCinematicFlowV2) {
+      // V7-v2: Process cinematic_flow.acts (snake_case format)
+      console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts (V7-v2)...');
+
       const narrations: string[] = [];
 
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // ✅ V7-v2: Try both narration locations
-          const narration = act.narration ||                    // V7-v2 format (direct)
-                           act.content?.audio?.narration ||    // Legacy nested format
+          // V7-v2: Try both narration locations
+          const narration = act.narration ||
+                           act.content?.audio?.narration ||
                            '';
 
           if (narration) {
             narrations.push(narration);
           }
 
-          // ✅ V7-v2: Preserve ALL act-level configurations
           return {
             type: (act.type || 'dramatic') as V7ActType,
             title: act.title || `Ato ${index + 1}`,
             narrativeSegment: narration,
             content: {
-              // Preserve visual (V7-v2 has visual at act level)
               visual: act.visual || act.content?.visual || {},
-              // Preserve interaction (V7-v2 has interaction at act level)
               interaction: act.interaction || act.content?.interaction || null,
-              // Preserve audio config
               audio: act.audio || act.content?.audio || {},
-              // ✅ V7-v2: Preserve audioBehavior and timeout
               audioBehavior: act.audioBehavior || null,
               timeout: act.timeout || null,
-              // Preserve transitions
               transitions: act.transitions || null,
-              // Preserve anchorPoints per act
               anchorPoints: act.anchorPoints || null,
-              // Preserve tracking config
               tracking: act.tracking || null,
-              // Pass through any other content
               ...act.content,
             },
             visualEffects: {
@@ -393,16 +454,14 @@ Deno.serve(async (req) => {
             },
           };
         }),
-        summary: `Aula V7 Cinematográfica: ${input.title}`,
+        summary: `Aula V7-v2 Cinematográfica: ${input.title}`,
       };
 
-      // ✅ V7-v2: If no narrations in acts, try global narrativeScript
       if (narrations.length === 0 && input.narrativeScript) {
         console.log('[V7Pipeline] No act-level narrations found, using global narrativeScript');
         narrativeForAudio = input.narrativeScript;
         narrationCount = 1;
       } else {
-        // Combine all narrations for TTS
         narrativeForAudio = narrations.join('\n\n');
         narrationCount = narrations.length;
       }
@@ -425,7 +484,8 @@ Deno.serve(async (req) => {
     console.log('[V7Pipeline] Step 2: Building cinematic act structure...');
 
     // Pass input acts to preserve their duration ratios
-    const inputActsForScaling = hasCinematicFlow ? input.cinematic_flow!.acts : undefined;
+    // For V7-v3, phases don't have duration, so use undefined
+    const inputActsForScaling = hasCinematicFlowV2 ? input.cinematic_flow!.acts : undefined;
     const cinematicActs = buildCinematicActs(aiGeneratedActs, input.duration, inputActsForScaling);
     console.log('[V7Pipeline] Built', cinematicActs.length, 'cinematic acts');
 
@@ -464,7 +524,20 @@ Deno.serve(async (req) => {
           );
 
           // ✅ V7.1: WORD-BASED timing - uses pauseKeywords for precise sync
-          if (hasCinematicFlow && input.cinematic_flow?.acts) {
+          if (hasCinematicFlowV3 && input.cinematicFlow?.phases) {
+            // V7-v3: Use anchorText.pausePhrase for word-based timing
+            calculateWordBasedTimings(
+              cinematicActs,
+              wordTimestamps,
+              input.cinematicFlow.phases.map(phase => ({
+                pauseKeyword: phase.anchorText?.pausePhrase || undefined,
+                pauseKeywords: phase.anchorText?.pausePhrase ? [phase.anchorText.pausePhrase] : undefined,
+                narration: phase.audio?.narration || '',
+                type: phase.type,
+              }))
+            );
+          } else if (hasCinematicFlowV2 && input.cinematic_flow?.acts) {
+            // V7-v2: Use pauseKeyword for word-based timing
             calculateWordBasedTimings(
               cinematicActs,
               wordTimestamps,
@@ -496,97 +569,99 @@ Deno.serve(async (req) => {
       ? Math.ceil(wordTimestamps[wordTimestamps.length - 1].end)
       : input.duration;
     
-    // ✅ V7-v2: Save cinematic_flow with SCALED durations and ALL V7-v2 fields
-    // This ensures the frontend receives correct timings that match the actual audio
-    const cinematic_flow = hasCinematicFlow ? {
-      acts: input.cinematic_flow!.acts.map((act, index) => {
-        // Get the scaled timing from cinematicActs
-        const scaledAct = cinematicActs[index];
-        const scaledDuration = scaledAct ? scaledAct.endTime - scaledAct.startTime : act.duration || 60;
-        const scaledStartTime = scaledAct ? scaledAct.startTime : act.startTime || 0;
-        const scaledEndTime = scaledAct ? scaledAct.endTime : scaledStartTime + scaledDuration;
+    // Build cinematic_flow for saving - supports both V7-v2 and V7-v3 formats
+    let cinematic_flow: any = undefined;
+    let cinematicFlow: any = undefined;
 
-        // ✅ V7-v2: Get narration from both formats
-        const narration = act.narration || act.content?.audio?.narration || '';
+    if (hasCinematicFlowV3 && input.cinematicFlow?.phases) {
+      // ✅ V7-v3: Build cinematicFlow.phases with calculated timings
+      cinematicFlow = {
+        phases: input.cinematicFlow.phases.map((phase, index) => {
+          const scaledAct = cinematicActs[index];
+          const startTime = scaledAct ? scaledAct.startTime : 0;
+          const endTime = scaledAct ? scaledAct.endTime : startTime + 60;
 
-        // ✅ V7.1: Get pauseKeyword and pauseTime from calculated values
-        const pauseKeyword = (scaledAct as any)?.pauseKeyword ||
-                            (act as any).pauseKeyword ||
-                            (act as any).pauseKeywords?.[0] ||
-                            null;
-        const pauseTime = (scaledAct as any)?.pauseTime || null;
-
-        return {
-          // ✅ V7-v2: Preserve ALL act-level fields
-          id: act.id || `act-${index + 1}`,
-          type: act.type,
-          title: act.title,
-          subtype: (act as any).subtype, // quiz, playground, cta, celebration
-
-          // ✅ OVERRIDE original durations with SCALED values
-          duration: scaledDuration,
-          startTime: scaledStartTime,
-          endTime: scaledEndTime,
-
-          // ✅ V7.1: WORD-BASED sync fields
-          pauseKeyword: pauseKeyword,
-          pauseTime: pauseTime,
-          pauseKeywords: (act as any).pauseKeywords || (pauseKeyword ? [pauseKeyword] : []),
-
-          // ✅ V7-v2: Narration at act level (preferred format)
-          narration: narration,
-
-          // ✅ V7-v2: Visual config at act level
-          visual: act.visual || act.content?.visual || {},
-
-          // ✅ V7-v2: Audio config at act level
-          audio: act.audio || act.content?.audio || {},
-
-          // ✅ V7-v2: Transitions config
-          transitions: act.transitions || {},
-
-          // ✅ V7-v2: Interaction config (quiz, playground, cta)
-          interaction: act.interaction || act.content?.interaction || null,
-
-          // ✅ V7-v2: Audio behavior during interaction
-          audioBehavior: act.audioBehavior || null,
-
-          // ✅ V7-v2: Timeout with hints
-          timeout: act.timeout || null,
-
-          // ✅ V7-v2: Anchor points per act
-          anchorPoints: act.anchorPoints || null,
-
-          // ✅ V7-v2: Tracking config
-          tracking: act.tracking || null,
-
-          // Legacy content structure (for backward compatibility)
-          content: {
-            ...act.content,
-            visual: act.visual || act.content?.visual || {},
-            audio: {
-              narration: narration,
-              ...act.content?.audio,
+          return {
+            ...phase,
+            // Add calculated timing (for reference, but anchorText is primary)
+            calculatedTiming: {
+              startTime,
+              endTime,
+              duration: endTime - startTime,
             },
-            interaction: act.interaction || act.content?.interaction || null,
-            // ✅ V7.1: Also include pauseKeyword in content for legacy support
-            pauseKeyword: pauseKeyword,
-          },
-        };
-      }),
-      timeline: {
-        ...input.cinematic_flow!.timeline,
-        totalDuration, // ✅ Use actual audio duration
-      },
-    } : undefined;
+          };
+        }),
+        metadata: {
+          ...input.cinematicFlow.metadata,
+          totalDuration,
+          processedAt: new Date().toISOString(),
+        },
+      };
 
-    console.log('[V7Pipeline] Cinematic flow acts with SCALED durations:',
-      cinematic_flow?.acts.map((a, i) => `Act ${i+1}: ${a.startTime?.toFixed(1)}s-${a.endTime?.toFixed(1)}s (${a.duration?.toFixed(1)}s)`)
-    );
+      console.log('[V7Pipeline] V7-v3 phases processed:', cinematicFlow.phases.length);
+
+    } else if (hasCinematicFlowV2 && input.cinematic_flow?.acts) {
+      // ✅ V7-v2: Save cinematic_flow with SCALED durations
+      cinematic_flow = {
+        acts: input.cinematic_flow.acts.map((act, index) => {
+          const scaledAct = cinematicActs[index];
+          const scaledDuration = scaledAct ? scaledAct.endTime - scaledAct.startTime : act.duration || 60;
+          const scaledStartTime = scaledAct ? scaledAct.startTime : act.startTime || 0;
+          const scaledEndTime = scaledAct ? scaledAct.endTime : scaledStartTime + scaledDuration;
+
+          const narration = act.narration || act.content?.audio?.narration || '';
+          const pauseKeyword = (scaledAct as any)?.pauseKeyword ||
+                              (act as any).pauseKeyword ||
+                              (act as any).pauseKeywords?.[0] ||
+                              null;
+          const pauseTime = (scaledAct as any)?.pauseTime || null;
+
+          return {
+            id: act.id || `act-${index + 1}`,
+            type: act.type,
+            title: act.title,
+            subtype: (act as any).subtype,
+            duration: scaledDuration,
+            startTime: scaledStartTime,
+            endTime: scaledEndTime,
+            pauseKeyword: pauseKeyword,
+            pauseTime: pauseTime,
+            pauseKeywords: (act as any).pauseKeywords || (pauseKeyword ? [pauseKeyword] : []),
+            narration: narration,
+            visual: act.visual || act.content?.visual || {},
+            audio: act.audio || act.content?.audio || {},
+            transitions: act.transitions || {},
+            interaction: act.interaction || act.content?.interaction || null,
+            audioBehavior: act.audioBehavior || null,
+            timeout: act.timeout || null,
+            anchorPoints: act.anchorPoints || null,
+            tracking: act.tracking || null,
+            content: {
+              ...act.content,
+              visual: act.visual || act.content?.visual || {},
+              audio: {
+                narration: narration,
+                ...act.content?.audio,
+              },
+              interaction: act.interaction || act.content?.interaction || null,
+              pauseKeyword: pauseKeyword,
+            },
+          };
+        }),
+        timeline: {
+          ...input.cinematic_flow.timeline,
+          totalDuration,
+        },
+      };
+
+      console.log('[V7Pipeline] V7-v2 cinematic_flow acts with SCALED durations:',
+        cinematic_flow.acts.map((a: any, i: number) => `Act ${i+1}: ${a.startTime?.toFixed(1)}s-${a.endTime?.toFixed(1)}s`)
+      );
+    }
 
     const lessonContent = {
       model: 'v7-cinematic',
-      version: '7.1', // v7.1: WORD-BASED timing with pauseKeyword support
+      version: hasCinematicFlowV3 ? '7.3' : '7.1', // v7.3 for phases, v7.1 for acts
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
@@ -597,8 +672,9 @@ Deno.serve(async (req) => {
         totalDuration: totalDuration,
         actCount: cinematicActs.length,
         createdAt: new Date().toISOString(),
-        generatedBy: hasCinematicFlow ? 'v7-pipeline-cinematic-flow' : 'v7-pipeline-ai',
+        generatedBy: hasCinematicFlowV3 ? 'v7-pipeline-v3' : (hasCinematicFlowV2 ? 'v7-pipeline-v2' : 'v7-pipeline-ai'),
         hasCinematicFlow: hasCinematicFlow,
+        format: hasCinematicFlowV3 ? 'phases' : 'acts',
       },
 
       // ✅ V7-v2: Enhanced audio config
@@ -630,8 +706,11 @@ Deno.serve(async (req) => {
       // ✅ V7-v2: Global anchor points
       anchorPoints: input.anchorPoints || [],
 
-      // Store the original cinematic_flow for frontend to use
+      // Store the original cinematic_flow for frontend to use (V7-v2)
       cinematic_flow: cinematic_flow,
+
+      // ✅ V7-v3: Store cinematicFlow.phases for frontend
+      cinematicFlow: cinematicFlow,
 
       // Also store the processed structure for backward compatibility
       cinematicStructure: {
