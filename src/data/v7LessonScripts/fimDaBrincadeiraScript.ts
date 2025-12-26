@@ -346,9 +346,9 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       autoAdvance: false,
 
       // ✅ V7.1: ANCHOR-BASED PHASE TRANSITION
-      // Phase only activates AFTER "brutal" is spoken in narration
-      // "Observe a diferença brutal entre o prompt amador e o profissional"
-      enterAnchor: 'brutal',
+      // Phase only activates AFTER "constante" is spoken in narration
+      // Last word of PERFEITO: "Eles conhecem... Otimização constante"
+      enterAnchor: 'constante',
 
       // ✅ V7-v2: Comportamento de áudio durante playground
       audioBehavior: playgroundAudioBehavior,
