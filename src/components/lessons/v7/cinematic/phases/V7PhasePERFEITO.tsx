@@ -91,9 +91,11 @@ export const V7PhasePERFEITO = ({
                 damping: 20,
               }}
             >
-              {/* Letter */}
-              <motion.span
-                className="text-5xl sm:text-7xl md:text-8xl font-black"
+              {/* Letter with pulsing glow */}
+              <span
+                className={`text-5xl sm:text-7xl md:text-8xl font-black transition-all duration-300 ${
+                  isRevealed ? 'animate-pulse-glow' : ''
+                }`}
                 style={{
                   background: isRevealed
                     ? 'linear-gradient(135deg, #00d9a6, #22D3EE)'
@@ -103,23 +105,24 @@ export const V7PhasePERFEITO = ({
                   filter: isRevealed
                     ? 'drop-shadow(0 0 30px rgba(0, 217, 166, 0.5))'
                     : 'none',
+                  animationDelay: isRevealed ? `${index * 0.1}s` : '0s',
                 }}
-                animate={
-                  isJustRevealed
-                    ? {
-                        scale: [1, 1.3, 1],
-                        filter: [
-                          'drop-shadow(0 0 30px rgba(0, 217, 166, 0.5))',
-                          'drop-shadow(0 0 60px rgba(0, 217, 166, 0.8))',
-                          'drop-shadow(0 0 30px rgba(0, 217, 166, 0.5))',
-                        ],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
               >
                 {letter}
-              </motion.span>
+              </span>
+              
+              {/* Glow ring effect for just revealed */}
+              {isJustRevealed && (
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  initial={{ scale: 0.5, opacity: 1 }}
+                  animate={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  style={{
+                    background: 'radial-gradient(circle, rgba(0, 217, 166, 0.6) 0%, transparent 70%)',
+                  }}
+                />
+              )}
 
               {/* Meaning tooltip - shows briefly when letter appears */}
               <AnimatePresence>
