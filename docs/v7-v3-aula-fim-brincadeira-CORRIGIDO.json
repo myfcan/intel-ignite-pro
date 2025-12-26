@@ -1,0 +1,1094 @@
+{
+  "model": "v7-cinematic",
+  "version": "3.0",
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "De amador a profissional em 3 minutos",
+  "description": "Descubra a diferença brutal entre os 98% que brincam com IA e os 2% que faturam com ela",
+  "difficulty": "beginner",
+  "category": "prompt-engineering",
+  "estimatedDuration": 83,
+  "tags": ["prompts", "método-perfeito", "monetização", "iniciante"],
+  
+  "learningObjectives": [
+    "Entender a diferença entre uso amador e profissional de IA",
+    "Conhecer o método PERFEITO para prompts",
+    "Aplicar estrutura profissional em prompts"
+  ],
+
+  "cinematicFlow": {
+    "totalPhases": 9,
+    "transitionMethod": "anchorText-only",
+    "notes": "Fases transitam APENAS quando anchorText é detectado no áudio. Sem fallback de tempo.",
+    
+    "phases": [
+      {
+        "id": "phase-1-dramatic",
+        "type": "dramatic",
+        "title": "O Número Chocante",
+        "order": 1,
+        
+        "trigger": {
+          "type": "auto-start",
+          "notes": "Inicia automaticamente quando player carrega"
+        },
+        
+        "anchorText": {
+          "endPhrase": "Brinquedo",
+          "notes": "Transita para próxima fase quando 'Brinquedo' é detectado"
+        },
+        
+        "narration": {
+          "text": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo. Sim. Você ouviu bem. Brinquedo.",
+          "estimatedDuration": 10.3
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "letterbox",
+            "effect": "Tela escurece, barras cinematográficas aparecem",
+            "duration": 0.8
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-1a",
+              "trigger": "auto",
+              "visual": {
+                "element": "number-98",
+                "animation": "count-up",
+                "style": "gigante, centralizado, vermelho pulsante",
+                "size": "text-[200px] sm:text-[280px]"
+              },
+              "effects": {
+                "particles": true,
+                "particleType": "danger-sparks",
+                "glow": "red",
+                "shake": "subtle"
+              }
+            },
+            {
+              "id": "scene-1b", 
+              "trigger": "word:brinquedo",
+              "visual": {
+                "element": "text-reveal",
+                "text": "usam IA como BRINQUEDO",
+                "animation": "letter-by-letter",
+                "highlightWord": "BRINQUEDO",
+                "highlightColor": "red"
+              },
+              "effects": {
+                "flash": true,
+                "dramaticHit": true
+              }
+            }
+          ],
+          
+          "closing": {
+            "type": "hold",
+            "duration": 0.5,
+            "effect": "Número 98% pulsa uma última vez antes de transitar"
+          }
+        },
+        
+        "visualContent": {
+          "mainValue": "98%",
+          "secondaryNumber": "2%",
+          "subtitle": "das pessoas usam IA como brinquedo",
+          "hookQuestion": "VOCÊ SABIA?",
+          "highlightWord": "brinquedo",
+          "mood": "danger",
+          "backgroundColor": "gradient-danger"
+        },
+        
+        "soundEffects": {
+          "onEnter": "transition-dramatic",
+          "onAction": "dramatic-hit",
+          "ambient": "tension-low"
+        },
+        
+        "transitions": {
+          "enter": "letterbox",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-2-comparison",
+        "type": "narrative",
+        "title": "A Grande Divisão",
+        "order": 2,
+        
+        "trigger": {
+          "type": "anchorText",
+          "previousPhaseAnchor": "Brinquedo"
+        },
+        
+        "anchorText": {
+          "endPhrase": "trinta mil reais por mês",
+          "notes": "Transita quando 'mês' é detectado"
+        },
+        
+        "narration": {
+          "text": "Conta uma piada sobre banana. Escreve como pirata. Faz um poema sobre meu gato. Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês.",
+          "estimatedDuration": 10.3
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "split-reveal",
+            "effect": "Tela divide ao meio com animação fluida",
+            "duration": 0.6
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-2a",
+              "trigger": "auto",
+              "layout": "split-screen",
+              "left": {
+                "visual": {
+                  "type": "card",
+                  "icon": "😂",
+                  "label": "98% BRINCANDO",
+                  "value": "Prompts de brinquedo",
+                  "style": "red-tinted, shaking"
+                },
+                "animation": "slide-in-left",
+                "items": {
+                  "reveal": "sequential",
+                  "delay": 0.3,
+                  "texts": [
+                    "Conta uma piada sobre banana",
+                    "Escreve como pirata", 
+                    "Faz um poema sobre meu gato"
+                  ]
+                }
+              },
+              "right": {
+                "visual": {
+                  "type": "card",
+                  "icon": "💰",
+                  "label": "2% DOMINANDO",
+                  "value": "R$ 30.000/mês",
+                  "style": "green-glowing, pulsing"
+                },
+                "animation": "slide-in-right",
+                "items": {
+                  "reveal": "sequential", 
+                  "delay": 0.5,
+                  "texts": [
+                    "Prompts estruturados",
+                    "Método PERFEITO",
+                    "Resultados consistentes"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "scene-2b",
+              "trigger": "word:trinta",
+              "visual": {
+                "element": "money-counter",
+                "animation": "count-up-fast",
+                "from": 0,
+                "to": 30000,
+                "format": "R$ {value}"
+              },
+              "effects": {
+                "confetti": "gold-coins",
+                "glow": "green"
+              }
+            }
+          ],
+          
+          "closing": {
+            "type": "zoom-right",
+            "effect": "Zoom suave no card dos 2% antes de transitar",
+            "duration": 0.4
+          }
+        },
+        
+        "visualContent": {
+          "title": "A GRANDE DIVISÃO",
+          "mood": "dramatic",
+          "leftCard": {
+            "icon": "😂",
+            "label": "98% BRINCANDO",
+            "value": "Prompts de brinquedo",
+            "isPositive": false,
+            "details": [
+              "Conta uma piada sobre banana",
+              "Escreve como pirata",
+              "Faz um poema sobre meu gato"
+            ]
+          },
+          "rightCard": {
+            "icon": "💰",
+            "label": "2% DOMINANDO", 
+            "value": "R$ 30.000/mês",
+            "isPositive": true,
+            "details": [
+              "Prompts estruturados",
+              "Método PERFEITO",
+              "Resultados consistentes"
+            ]
+          }
+        },
+        
+        "soundEffects": {
+          "onEnter": "transition-whoosh",
+          "onAction": "reveal"
+        },
+        
+        "transitions": {
+          "enter": "split-reveal",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-3-quiz",
+        "type": "interaction",
+        "title": "Auto-Avaliação Honesta",
+        "order": 3,
+        
+        "trigger": {
+          "type": "anchorText",
+          "previousPhaseAnchor": "mês"
+        },
+        
+        "anchorText": {
+          "pausePhrase": "IA",
+          "notes": "PAUSA o áudio quando 'IA' é detectado para permitir interação do usuário"
+        },
+        
+        "narration": {
+          "text": "Seja honesto consigo mesmo. Você faz parte dos noventa e oito por cento ou dos dois por cento? Selecione as opções que representam seu uso atual de IA.",
+          "estimatedDuration": 13.2
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "zoom-in",
+            "effect": "Foco centraliza, bordas escurecem",
+            "duration": 0.5
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-3a",
+              "trigger": "auto",
+              "visual": {
+                "element": "title-reveal",
+                "text": "AUTO-AVALIAÇÃO",
+                "animation": "fade-scale",
+                "style": "uppercase, bold, centered"
+              }
+            },
+            {
+              "id": "scene-3b",
+              "trigger": "word:honesto",
+              "visual": {
+                "element": "subtitle-reveal",
+                "text": "Seja honesto - não há julgamento aqui",
+                "animation": "fade-up"
+              }
+            },
+            {
+              "id": "scene-3c",
+              "trigger": "pause:IA",
+              "visual": {
+                "element": "quiz-options",
+                "animation": "stagger-reveal",
+                "staggerDelay": 0.15
+              },
+              "interaction": {
+                "type": "quiz",
+                "enabled": true
+              }
+            }
+          ],
+          
+          "duringInteraction": {
+            "background": "subtle-pulse",
+            "ambient": "thinking-loop"
+          }
+        },
+        
+        "interaction": {
+          "type": "quiz",
+          "question": "Como você usa IA no seu dia a dia?",
+          "multiSelect": true,
+          "minSelections": 1,
+          "options": [
+            {
+              "id": "opt-1",
+              "text": "Peço piadas e curiosidades",
+              "category": "bad",
+              "isCorrect": false,
+              "feedback": "Uso recreativo - você está nos 98%"
+            },
+            {
+              "id": "opt-2", 
+              "text": "Tenho prompts salvos que uso sempre",
+              "category": "good",
+              "isCorrect": true,
+              "feedback": "Ótimo! Você já começou a sistematizar"
+            },
+            {
+              "id": "opt-3",
+              "text": "Escrevo prompts genéricos sem estrutura",
+              "category": "bad", 
+              "isCorrect": false,
+              "feedback": "Prompts genéricos = resultados genéricos"
+            },
+            {
+              "id": "opt-4",
+              "text": "Documento e melhoro meus prompts",
+              "category": "good",
+              "isCorrect": true,
+              "feedback": "Excelente! Iteração é chave do método PERFEITO"
+            },
+            {
+              "id": "opt-5",
+              "text": "Uso para tarefas sérias de trabalho",
+              "category": "good",
+              "isCorrect": true,
+              "feedback": "Bom caminho! Agora é hora de otimizar"
+            }
+          ],
+          "correctFeedback": "Você já tem bases sólidas para dominar IA!",
+          "incorrectFeedback": "Não se preocupe - você está aqui para mudar isso!"
+        },
+        
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.3,
+            "contextualLoops": [
+              {
+                "triggerAfter": 8,
+                "text": "Reflita com calma sobre suas últimas interações com inteligência artificial...",
+                "voice": "whisper",
+                "volume": 0.25,
+                "audioUrl": null
+              },
+              {
+                "triggerAfter": 18,
+                "text": "Seja honesto consigo mesmo... Não há julgamento aqui...",
+                "voice": "whisper", 
+                "volume": 0.2,
+                "audioUrl": null
+              },
+              {
+                "triggerAfter": 28,
+                "text": "Escolha as opções que mais representam sua realidade...",
+                "voice": "whisper",
+                "volume": 0.2,
+                "audioUrl": null
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+        
+        "timeout": {
+          "soft": 10,
+          "medium": 20,
+          "hard": 35,
+          "autoAction": "continue",
+          "hints": [
+            "Pense nas últimas vezes que usou ChatGPT...",
+            "Seja honesto - não há resposta errada aqui!",
+            "Vamos continuar? Você pode refletir depois."
+          ]
+        },
+        
+        "visualContent": {
+          "title": "AUTO-AVALIAÇÃO",
+          "subtitle": "Seja honesto - não há julgamento aqui",
+          "mood": "energetic"
+        },
+        
+        "soundEffects": {
+          "onEnter": "transition-whoosh",
+          "onAction": "click-confirm"
+        },
+        
+        "transitions": {
+          "enter": "zoom-in",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-4-secret-reveal",
+        "type": "secret-reveal",
+        "title": "O Segredo dos 2%",
+        "order": 4,
+        
+        "trigger": {
+          "type": "quiz-complete",
+          "notes": "Inicia após usuário completar o quiz"
+        },
+        
+        "anchorText": {
+          "pausePhrase": "inteligente",
+          "notes": "PAUSA quando '10X mais inteligente' é detectado, mostra botão CTA"
+        },
+        
+        "narration": {
+          "text": "Agora vou te mostrar o segredo dos 2% que sabem usar a Inteligência Artificial de verdade. Seja para seus projetos, fazer renda extra, ou simplesmente para se tornar 10X mais inteligente.",
+          "estimatedDuration": 15
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "explosion",
+            "effect": "Golden burst from center, dramatic reveal",
+            "duration": 1.2
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-4a",
+              "trigger": "auto",
+              "visual": {
+                "element": "gold-explosion",
+                "animation": "burst-outward",
+                "particles": "gold-sparks"
+              },
+              "effects": {
+                "flash": "golden",
+                "shake": "medium"
+              }
+            },
+            {
+              "id": "scene-4b",
+              "trigger": "word:segredo",
+              "visual": {
+                "element": "question-mark",
+                "size": "giant",
+                "animation": "pulsate",
+                "color": "gold"
+              },
+              "overlay": {
+                "text": "SEGREDO",
+                "animation": "glitch",
+                "style": "uppercase, dramatic"
+              }
+            },
+            {
+              "id": "scene-4c",
+              "trigger": "word:inteligente",
+              "visual": {
+                "element": "money-rain",
+                "animation": "cascade-slow",
+                "duration": 6
+              },
+              "effects": {
+                "blur": "background",
+                "glow": "intense-gold"
+              }
+            },
+            {
+              "id": "scene-4d",
+              "trigger": "pause:inteligente",
+              "visual": {
+                "element": "cta-screen",
+                "title": "MÉTODO PERFEITO",
+                "subtitle": "O segredo que os 2% dominam!",
+                "question": "Quer DESCOBRIR esse SEGREDO?",
+                "button": {
+                  "text": "🚀 Quero descobrir agora",
+                  "style": "primary, pulsing, large"
+                }
+              },
+              "interaction": {
+                "type": "button",
+                "waitForClick": true
+              }
+            }
+          ]
+        },
+        
+        "visualContent": {
+          "title": "O SEGREDO",
+          "subtitle": "A diferença entre brincar e dominar a IA",
+          "mood": "dramatic"
+        },
+        
+        "interaction": {
+          "type": "secret-reveal",
+          "buttonText": "🚀 Quero descobrir agora",
+          "pauseKeyword": "inteligente"
+        },
+        
+        "soundEffects": {
+          "onEnter": "explosion",
+          "onAction": "success"
+        },
+        
+        "transitions": {
+          "enter": "explosion",
+          "exit": "dissolve"
+        }
+      },
+
+      {
+        "id": "phase-5-method-reveal",
+        "type": "revelation",
+        "title": "O Método PERFEITO",
+        "order": 5,
+        
+        "trigger": {
+          "type": "button-click",
+          "previousPhaseButton": "Quero descobrir agora"
+        },
+        
+        "anchorText": {
+          "endPhrase": "Otimização constante",
+          "notes": "Transita quando 'constante' é detectado"
+        },
+        
+        "narration": {
+          "text": "Eles conhecem o segredo. O método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante.",
+          "estimatedDuration": 16.5
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "zoom-in-fast",
+            "effect": "Foco intenso, letras PERFEITO começam a aparecer",
+            "duration": 0.6
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-5a",
+              "trigger": "auto",
+              "visual": {
+                "element": "title-grand",
+                "text": "MÉTODO PERFEITO",
+                "animation": "scale-up-bounce",
+                "style": "gradient-gold, shadow-intense"
+              },
+              "effects": {
+                "glow": "gold",
+                "particles": "success-sparkles"
+              }
+            },
+            {
+              "id": "scene-5b",
+              "trigger": "word:Persona",
+              "visual": {
+                "element": "acronym-item",
+                "items": [
+                  { "trigger": "Persona", "emoji": "🎭", "text": "P - Persona específica" },
+                  { "trigger": "Estrutura", "emoji": "📋", "text": "E - Estrutura clara" },
+                  { "trigger": "Resultado", "emoji": "🎯", "text": "R - Resultado esperado" },
+                  { "trigger": "Formato", "emoji": "📝", "text": "F - Formato definido" },
+                  { "trigger": "Exemplos", "emoji": "💡", "text": "E - Exemplos práticos" },
+                  { "trigger": "Iteração", "emoji": "🔄", "text": "I - Iteração contínua" },
+                  { "trigger": "Tom", "emoji": "🗣️", "text": "T - Tom adequado" },
+                  { "trigger": "Otimização", "emoji": "⚡", "text": "O - Otimização constante" }
+                ],
+                "animation": "reveal-on-word",
+                "staggerDelay": 0
+              }
+            }
+          ],
+          
+          "closing": {
+            "type": "pulse-complete",
+            "effect": "Todos os 8 itens pulsam juntos em verde",
+            "duration": 0.8
+          }
+        },
+        
+        "visualContent": {
+          "title": "MÉTODO PERFEITO",
+          "subtitle": "O segredo dos 2% que dominam",
+          "highlightWord": "PERFEITO",
+          "mood": "success",
+          "items": [
+            { "emoji": "🎭", "text": "P - Persona específica" },
+            { "emoji": "📋", "text": "E - Estrutura clara" },
+            { "emoji": "🎯", "text": "R - Resultado esperado" },
+            { "emoji": "📝", "text": "F - Formato definido" },
+            { "emoji": "💡", "text": "E - Exemplos práticos" },
+            { "emoji": "🔄", "text": "I - Iteração contínua" },
+            { "emoji": "🗣️", "text": "T - Tom adequado" },
+            { "emoji": "⚡", "text": "O - Otimização constante" }
+          ]
+        },
+        
+        "soundEffects": {
+          "onEnter": "reveal",
+          "onAction": "success"
+        },
+        
+        "transitions": {
+          "enter": "zoom-in",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-6-playground",
+        "type": "playground",
+        "title": "Desafio Prático",
+        "order": 6,
+        
+        "trigger": {
+          "type": "anchorText",
+          "previousPhaseAnchor": "constante"
+        },
+        
+        "anchorText": {
+          "pausePhrase": "brutal",
+          "notes": "PAUSA quando 'brutal' é detectado para mostrar playground interativo"
+        },
+        
+        "narration": {
+          "text": "Observe a diferença brutal entre um prompt amador e um prompt profissional usando o método PERFEITO.",
+          "estimatedDuration": 8
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "split-vertical",
+            "effect": "Tela divide verticalmente, lado esquerdo vermelho, direito verde",
+            "duration": 0.8
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-6a",
+              "trigger": "auto",
+              "visual": {
+                "element": "title-challenge",
+                "text": "DESAFIO PRÁTICO",
+                "animation": "slam-down"
+              }
+            },
+            {
+              "id": "scene-6b",
+              "trigger": "word:amador",
+              "layout": "split-screen",
+              "left": {
+                "visual": {
+                  "type": "prompt-display",
+                  "label": "PROMPT AMADOR",
+                  "animation": "typewriter",
+                  "style": "red-border, faded"
+                }
+              }
+            },
+            {
+              "id": "scene-6c",
+              "trigger": "word:profissional",
+              "layout": "split-screen",
+              "right": {
+                "visual": {
+                  "type": "prompt-display",
+                  "label": "PROMPT PROFISSIONAL",
+                  "animation": "typewriter",
+                  "style": "green-border, glowing"
+                }
+              }
+            },
+            {
+              "id": "scene-6d",
+              "trigger": "pause:brutal",
+              "visual": {
+                "element": "playground-interface",
+                "showResults": true,
+                "showScores": true
+              },
+              "interaction": {
+                "type": "playground",
+                "enabled": true
+              }
+            }
+          ],
+          
+          "duringInteraction": {
+            "background": "code-matrix",
+            "ambient": "focus-loop"
+          }
+        },
+        
+        "interaction": {
+          "type": "playground",
+          "challenge": "Criar um plano de estudos para aprender programação",
+          "context": "Você quer aprender Python em 3 meses, com 2 horas por dia disponíveis",
+          
+          "amateurPrompt": "Me dá um plano de estudos de programação",
+          "amateurResult": {
+            "title": "Resultado Amador",
+            "content": "1. Aprenda o básico de Python\n2. Faça alguns exercícios\n3. Crie projetos\n4. Continue praticando\n5. Aprenda frameworks",
+            "score": 12,
+            "maxScore": 100,
+            "verdict": "bad"
+          },
+          
+          "professionalPrompt": "PERSONA: Atue como um mentor de programação sênior com 15 anos de experiência ensinando iniciantes.\n\nESTRUTURA: Crie um plano de estudos em formato de semanas.\n\nRESULTADO: Plano para aprender Python do zero ao nível de criar aplicações web.\n\nFORMATO: Tabela com semanas, tópicos, exercícios práticos e marcos de progresso.\n\nEXEMPLO: Semana 1 - Variáveis e tipos de dados - Exercício: Calculadora - Marco: Primeiro programa funcionando.\n\nCONTEXTO: 2 horas diárias disponíveis, objetivo em 3 meses, nível iniciante absoluto.\n\nTOM: Didático e encorajador, com dicas práticas.",
+          "professionalResult": {
+            "title": "Resultado Profissional",
+            "content": "📅 PLANO DE 12 SEMANAS\n\n**FASE 1: FUNDAMENTOS (Semanas 1-3)**\n| Semana | Tópico | Exercício | Marco |\n|--------|--------|-----------|-------|\n| 1 | Variáveis, tipos | Calculadora | Primeiro código |\n| 2 | Condicionais, loops | Jogo adivinhação | Lógica dominada |\n| 3 | Funções, módulos | Organizador tarefas | Código modular |\n\n**FASE 2: ESTRUTURAS (Semanas 4-6)**\n| 4 | Listas, dicionários | Sistema cadastro | CRUD básico |\n| 5 | Arquivos, exceções | Gerador relatórios | Persistência |\n| 6 | POO básico | Mini-sistema vendas | OOP funcionando |",
+            "score": 95,
+            "maxScore": 100,
+            "verdict": "excellent"
+          }
+        },
+        
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.2,
+            "contextualLoops": [
+              {
+                "triggerAfter": 5,
+                "text": "Observe a diferença entre um prompt amador e um profissional...",
+                "voice": "main",
+                "volume": 0.3,
+                "audioUrl": null
+              },
+              {
+                "triggerAfter": 15,
+                "text": "Veja como o método PERFEITO transforma resultados...",
+                "voice": "whisper",
+                "volume": 0.25,
+                "audioUrl": null
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+        
+        "visualContent": {
+          "title": "DESAFIO PRÁTICO",
+          "subtitle": "Veja a diferença na prática",
+          "mood": "energetic"
+        },
+        
+        "soundEffects": {
+          "onEnter": "transition-whoosh",
+          "onAction": "success"
+        },
+        
+        "transitions": {
+          "enter": "split-vertical",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-7-transformation",
+        "type": "narrative",
+        "title": "Transformação",
+        "order": 7,
+        
+        "trigger": {
+          "type": "playground-complete",
+          "notes": "Inicia após usuário explorar playground"
+        },
+        
+        "anchorText": {
+          "endPhrase": "uma semana",
+          "notes": "Transita quando 'semana' é detectado"
+        },
+        
+        "narration": {
+          "text": "Este método transforma qualquer pessoa comum em um usuário profissional de IA. E você pode dominar isso em menos de uma semana.",
+          "estimatedDuration": 10
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "reveal-up",
+            "effect": "Cortina sobe revelando transformação",
+            "duration": 0.6
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-7a",
+              "trigger": "auto",
+              "visual": {
+                "element": "transformation-title",
+                "text": "TRANSFORMAÇÃO",
+                "animation": "scale-up",
+                "style": "gradient-success"
+              }
+            },
+            {
+              "id": "scene-7b",
+              "trigger": "word:transforma",
+              "visual": {
+                "element": "before-after",
+                "before": {
+                  "icon": "😕",
+                  "label": "AMADOR",
+                  "style": "faded, small"
+                },
+                "arrow": "→",
+                "after": {
+                  "icon": "🚀",
+                  "label": "PROFISSIONAL",
+                  "style": "glowing, large"
+                }
+              },
+              "animation": "morph-transition"
+            },
+            {
+              "id": "scene-7c",
+              "trigger": "word:semana",
+              "visual": {
+                "element": "time-badge",
+                "text": "< 1 SEMANA",
+                "animation": "pop-in",
+                "style": "urgent, pulsing"
+              },
+              "effects": {
+                "confetti": "celebration"
+              }
+            }
+          ]
+        },
+        
+        "visualContent": {
+          "title": "TRANSFORMAÇÃO",
+          "subtitle": "De amador para profissional",
+          "mood": "success"
+        },
+        
+        "soundEffects": {
+          "onEnter": "transition-whoosh",
+          "onAction": "reveal"
+        },
+        
+        "transitions": {
+          "enter": "reveal-up",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-8-decision",
+        "type": "revelation",
+        "title": "Sua Decisão",
+        "order": 8,
+        
+        "trigger": {
+          "type": "anchorText",
+          "previousPhaseAnchor": "semana"
+        },
+        
+        "anchorText": {
+          "endPhrase": "fazer parte",
+          "notes": "Transita quando 'parte' é detectado"
+        },
+        
+        "narration": {
+          "text": "Agora você sabe o que separa os dois por cento dos noventa e oito por cento. A pergunta é: qual grupo você quer fazer parte?",
+          "estimatedDuration": 10
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "dramatic-zoom",
+            "effect": "Zoom lento com foco intenso",
+            "duration": 0.8
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-8a",
+              "trigger": "auto",
+              "visual": {
+                "element": "decision-title",
+                "text": "SUA DECISÃO",
+                "animation": "fade-scale",
+                "style": "dramatic, centered"
+              }
+            },
+            {
+              "id": "scene-8b",
+              "trigger": "word:separa",
+              "visual": {
+                "element": "choice-cards",
+                "layout": "side-by-side"
+              },
+              "left": {
+                "label": "Ficar nos 98%",
+                "emoji": "😔",
+                "style": "secondary, muted",
+                "variant": "secondary"
+              },
+              "right": {
+                "label": "Entrar nos 2%",
+                "emoji": "🚀",
+                "style": "primary, glowing, pulsing",
+                "variant": "primary"
+              }
+            },
+            {
+              "id": "scene-8c",
+              "trigger": "word:parte",
+              "visual": {
+                "element": "question-final",
+                "text": "Qual grupo você escolhe?",
+                "animation": "fade-in-slow"
+              },
+              "effects": {
+                "spotlight": "right-card"
+              }
+            }
+          ]
+        },
+        
+        "visualContent": {
+          "title": "SUA DECISÃO",
+          "subtitle": "Qual grupo você escolhe?",
+          "mood": "dramatic",
+          "options": [
+            { "emoji": "😔", "label": "Ficar nos 98%", "variant": "secondary" },
+            { "emoji": "🚀", "label": "Entrar nos 2%", "variant": "primary" }
+          ]
+        },
+        
+        "soundEffects": {
+          "onEnter": "reveal",
+          "onAction": "success"
+        },
+        
+        "transitions": {
+          "enter": "dramatic-zoom",
+          "exit": "fade"
+        }
+      },
+
+      {
+        "id": "phase-9-gamification",
+        "type": "gamification",
+        "title": "Conquista Desbloqueada",
+        "order": 9,
+        
+        "trigger": {
+          "type": "anchorText",
+          "previousPhaseAnchor": "parte"
+        },
+        
+        "anchorText": {
+          "endPhrase": null,
+          "notes": "Última fase - não precisa de anchor de saída"
+        },
+        
+        "narration": {
+          "text": null,
+          "notes": "Sem narração - apenas celebração visual"
+        },
+        
+        "cinematography": {
+          "opening": {
+            "type": "celebration-burst",
+            "effect": "Explosão de confetti, fogos de artifício",
+            "duration": 1.5
+          },
+          
+          "scenes": [
+            {
+              "id": "scene-9a",
+              "trigger": "auto",
+              "visual": {
+                "element": "achievement-badge",
+                "badge": "🏆",
+                "title": "Primeiro Passo",
+                "animation": "bounce-in-scale"
+              },
+              "effects": {
+                "confetti": "full-celebration",
+                "fireworks": true,
+                "glow": "gold-intense"
+              }
+            },
+            {
+              "id": "scene-9b",
+              "trigger": "delay:1.5",
+              "visual": {
+                "element": "xp-counter",
+                "from": 0,
+                "to": 100,
+                "label": "XP",
+                "animation": "count-up-fast"
+              },
+              "effects": {
+                "particles": "xp-sparkles"
+              }
+            },
+            {
+              "id": "scene-9c",
+              "trigger": "delay:3",
+              "visual": {
+                "element": "completion-message",
+                "title": "PARABÉNS!",
+                "subtitle": "Você concluiu a primeira lição",
+                "animation": "fade-scale"
+              }
+            },
+            {
+              "id": "scene-9d",
+              "trigger": "delay:4.5",
+              "visual": {
+                "element": "cta-buttons",
+                "buttons": [
+                  { "text": "Próxima Lição", "variant": "primary", "action": "next-lesson" },
+                  { "text": "Voltar ao Menu", "variant": "secondary", "action": "menu" }
+                ]
+              }
+            }
+          ]
+        },
+        
+        "visualContent": {
+          "title": "PARABÉNS!",
+          "subtitle": "Você concluiu a primeira lição",
+          "achievement": "🏆 Primeiro Passo",
+          "xp": 100,
+          "mood": "success"
+        },
+        
+        "soundEffects": {
+          "onEnter": "achievement",
+          "onAction": "celebration"
+        },
+        
+        "transitions": {
+          "enter": "celebration-burst",
+          "exit": "fade-out"
+        }
+      }
+    ]
+  },
+
+  "audioConfig": {
+    "notes": "Áudio principal gerado pelo ElevenLabs com wordTimestamps. Ancoras detectadas comparando words com anchorText de cada fase.",
+    "format": "mp3",
+    "sampleRate": 44100,
+    "hasWordTimestamps": true,
+    "url": null,
+    "wordTimestamps": null
+  },
+
+  "processingNotes": {
+    "transitionLogic": "Sistema usa APENAS anchorText para transições. Quando wordTimestamp.word === phase.anchorText.endPhrase (ou pausePhrase), executa transição/pausa.",
+    "noFallbacks": "Sem fallbacks de tempo. Se anchor não for detectado, fase não avança automaticamente.",
+    "interactionPhases": "Fases interaction/playground/secret-reveal PAUSAM o áudio até interação do usuário ser completada.",
+    "audioGeneration": "Pipeline gera áudio concatenando todas as narrações e gerando wordTimestamps únicos para todo o áudio.",
+    "regenerationSafe": "Estrutura baseada em palavras-chave, não timestamps absolutos. Regenerar áudio atualiza wordTimestamps automaticamente mantendo anchorTexts válidos."
+  }
+}
