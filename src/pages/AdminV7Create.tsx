@@ -293,6 +293,7 @@ export default function AdminV7Create() {
           sections: payload.sections,
           duration: payload.duration || 300,
           cinematic_flow: payload.cinematic_flow,
+          cinematicFlow: payload.cinematicFlow, // V7-v3 format
         },
       });
 
