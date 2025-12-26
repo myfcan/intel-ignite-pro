@@ -940,22 +940,23 @@ export const V7PhasePlayer = ({
               }
               setInteractionComplete(true);
               
-              manualResume();
-              
-              // ✅ V7-v20 FIX: SEEK to next phase startTime antes de resumir
+              // ✅ V7-v23 FIX: SEEK to next phase startTime ANTES de resumir
               // Isso evita repetir a narração da fase secret-reveal
               const nextPhaseIdx = fromIndex + 1;
               const nextPhase = scaledScript.phases[nextPhaseIdx];
               if (nextPhase && hasAudio) {
                 console.log(`[V7PhasePlayer] 🔀 SEEKING to next phase "${nextPhase.id}" @ ${nextPhase.startTime}s`);
                 audio.seekTo(nextPhase.startTime);
+                
+                // ✅ V7-v23 FIX: SEMPRE dar play após seek - não checar isPlaying
+                // O áudio estava pausado pelo anchorText, precisa retomar SEMPRE
+                setTimeout(() => {
+                  audio.play();
+                  console.log('[V7PhasePlayer] ▶️ Audio PLAY forced after seek');
+                }, 50); // Pequeno delay para garantir que seek completou
               }
               
-              // Resume audio for next phase AFTER seeking
-              if (hasAudio && !audio.isPlaying) {
-                audio.play();
-                console.log('[V7PhasePlayer] ▶️ Audio resumed at next phase position');
-              }
+              manualResume();
               
               // ✅ Advance to next phase
               goToPhase(nextPhaseIdx);
