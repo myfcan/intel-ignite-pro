@@ -392,16 +392,40 @@ Deno.serve(async (req) => {
 
       const narrations: string[] = [];
 
+      // DEBUG: Log the first phase to see its structure
+      const firstPhase = input.cinematicFlow!.phases[0];
+      console.log('[V7Pipeline:DEBUG] First phase keys:', Object.keys(firstPhase || {}));
+      console.log('[V7Pipeline:DEBUG] First phase.narration:', JSON.stringify((firstPhase as any)?.narration));
+      console.log('[V7Pipeline:DEBUG] First phase.audio:', JSON.stringify(firstPhase?.audio));
+      console.log('[V7Pipeline:DEBUG] First phase.content:', JSON.stringify((firstPhase as any)?.content)?.slice(0, 200));
+
       aiGeneratedActs = {
         acts: input.cinematicFlow!.phases.map((phase, index) => {
           // V7-v3: Narration can be in multiple locations:
-          // - phase.narration.text (V7-v3 format)
-          // - phase.audio.narration (alternative format)
-          // - phase.audio?.text (fallback)
-          const narration = (phase as any).narration?.text || 
-                           phase.audio?.narration || 
-                           (phase.audio as any)?.text ||
-                           '';
+          // 1. phase.narration.text (V7-v3 format)
+          // 2. phase.audio.narration (alternative format)
+          // 3. phase.audio?.text (fallback)
+          // 4. phase.content?.narration?.text (nested content)
+          // 5. phase.content?.audio?.narration (nested content audio)
+          const phaseAny = phase as any;
+          const narration = 
+            phaseAny.narration?.text || 
+            phase.audio?.narration || 
+            phaseAny.audio?.text ||
+            phaseAny.content?.narration?.text ||
+            phaseAny.content?.audio?.narration ||
+            '';
+
+          if (index === 0) {
+            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction:', {
+              'narration?.text': phaseAny.narration?.text?.slice(0, 50),
+              'audio?.narration': phase.audio?.narration?.slice?.(0, 50),
+              'audio?.text': phaseAny.audio?.text?.slice?.(0, 50),
+              'content?.narration?.text': phaseAny.content?.narration?.text?.slice?.(0, 50),
+              'content?.audio?.narration': phaseAny.content?.audio?.narration?.slice?.(0, 50),
+              'final': narration?.slice?.(0, 50) || 'EMPTY',
+            });
+          }
 
           if (narration) {
             narrations.push(narration);
@@ -417,7 +441,7 @@ Deno.serve(async (req) => {
               cinematography: phase.cinematography || null,
               anchorText: phase.anchorText || null,
               // Pass through any other content
-              ...phase.content,
+              ...(phaseAny.content || {}),
             },
             visualEffects: {
               mood: phase.cinematography?.opening?.effect || 'dramatic',
