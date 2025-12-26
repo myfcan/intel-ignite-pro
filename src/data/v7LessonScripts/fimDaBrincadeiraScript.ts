@@ -334,7 +334,33 @@ export const fimDaBrincadeiraScript: V7LessonScript = {
       ]
     },
 
-    // FASE 6: DESAFIO PLAYGROUND (150-300s)
+    // FASE 6: PERFEITO REVELATION - Mostra P-E-R-F-E-I-T-O vertical com narração
+    // ✅ V7.1: Esta fase mostra o método PERFEITO enquanto a narração toca
+    // A narração é: "Eles conhecem o segredo... Otimização constante"
+    {
+      id: 'perfeito-reveal',
+      title: 'Método PERFEITO', // ✅ Triggers isPerfeitoMethod → V7PhasePERFEITOSynced
+      startTime: 60, // Começa quando áudio resume após secret-reveal
+      endTime: 150,
+      type: 'revelation',
+      mood: 'success',
+      autoAdvance: false, // ✅ V7PhasePERFEITOSynced controla quando avança
+      scenes: [
+        {
+          id: 'scene-perfeito-vertical',
+          type: 'text-reveal',
+          startTime: 60,
+          duration: 90,
+          content: {
+            mainText: 'MÉTODO PERFEITO',
+            subtitle: 'O segredo dos 2%'
+          },
+          animation: 'fade'
+        }
+      ]
+    },
+
+    // FASE 7: DESAFIO PLAYGROUND (150-300s)
     // ✅ V7.1: Uses enterAnchor for word-based phase transition
     {
       id: 'playground-challenge',

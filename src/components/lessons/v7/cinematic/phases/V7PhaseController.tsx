@@ -314,7 +314,20 @@ export function usePhaseController({
   // ✅ V7.1: Find current phase based on ANCHOR or TIME
   // If a phase has enterAnchor, it only becomes active after that word is spoken
   const currentPhaseIndex = useMemo(() => {
-    if (manualPhaseIndex !== null) return manualPhaseIndex;
+    // ✅ V7.1 FIX: Even with manualPhaseIndex, RESPECT enterAnchor!
+    // If the target phase has enterAnchor and it hasn't been spoken, stay on previous phase
+    if (manualPhaseIndex !== null) {
+      const manualPhase = script.phases[manualPhaseIndex];
+      if (manualPhase?.enterAnchor) {
+        if (!hasAnchorBeenSpoken(manualPhase.enterAnchor, effectiveTime)) {
+          // ✅ Anchor not spoken yet - stay on PREVIOUS phase (or 0 if first)
+          const previousIndex = Math.max(0, manualPhaseIndex - 1);
+          console.log(`[V7PhaseController] ⏳ enterAnchor "${manualPhase.enterAnchor}" not yet spoken - staying on phase ${previousIndex}`);
+          return previousIndex;
+        }
+      }
+      return manualPhaseIndex;
+    }
 
     // Find the highest phase index that should be active
     let activeIndex = 0;
