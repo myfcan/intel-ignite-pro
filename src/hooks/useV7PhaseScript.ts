@@ -903,7 +903,8 @@ function transformActsToPhases(
 
     // ✅ AUTO-GENERATE pauseKeywords for interactive phases if NONE defined (no anchorActions AND no pauseKeywords)
     // This ensures the audio pauses even without explicit anchorActions in DB
-    const isInteractivePhase = phaseType === 'interaction' || phaseType === 'playground';
+    // ✅ V7-v26 FIX: Added 'secret-reveal' to list of phases that need auto-generated pauseKeywords
+    const isInteractivePhase = phaseType === 'interaction' || phaseType === 'playground' || phaseType === 'secret-reveal';
     if (isInteractivePhase && anchorActions.length === 0 && pauseKeywords.length === 0 && wordTimestamps.length > 0) {
       // Find keywords in the audio that occur within/near this phase
       // ✅ V7-v2.4: Pass narration text for intelligent sentence-based detection
