@@ -127,36 +127,57 @@ export default function AdminV7Create() {
         return;
       }
       
-      // Accept cinematic_flow.acts OR narrativeScript OR sections
-      const hasCinematicFlow = parsed.cinematic_flow?.acts?.length > 0;
+      // Accept multiple JSON formats:
+      // V7-v3: cinematicFlow.phases (camelCase, new format)
+      // V7-v2: cinematic_flow.acts (snake_case, legacy)
+      // V7-v1: narrativeScript OR sections
+      const hasCinematicFlowV3 = parsed.cinematicFlow?.phases?.length > 0;
+      const hasCinematicFlowV2 = parsed.cinematic_flow?.acts?.length > 0;
       const hasNarrativeScript = !!parsed.narrativeScript;
       const hasSections = parsed.sections?.length > 0;
       
-      if (!hasCinematicFlow && !hasNarrativeScript && !hasSections) {
+      if (!hasCinematicFlowV3 && !hasCinematicFlowV2 && !hasNarrativeScript && !hasSections) {
         setJsonValidation({ 
           isValid: false, 
-          error: 'Campo "cinematic_flow.acts", "narrativeScript" ou "sections" é obrigatório' 
+          error: 'Campo "cinematicFlow.phases", "cinematic_flow.acts", "narrativeScript" ou "sections" é obrigatório' 
         });
         return;
       }
 
-      // Calculate stats
-      const actCount = parsed.cinematic_flow?.acts?.length || 0;
-      const sections = parsed.sections?.length || 0;
-      const duration = parsed.duration || 300;
-
-      // Extract narration count for cinematic_flow
-      // ✅ V7-v2 FIX: Check BOTH formats (V7-v2 direct + legacy nested)
+      // Calculate stats based on format detected
+      let actCount = 0;
       let narrationCount = 0;
       let pauseKeywordCount = 0;
       let interactiveActsWithoutPauseKeyword: string[] = [];
+      const sections = parsed.sections?.length || 0;
+      const duration = parsed.duration || 300;
 
-      if (hasCinematicFlow) {
+      // V7-v3 format: cinematicFlow.phases
+      if (hasCinematicFlowV3) {
+        actCount = parsed.cinematicFlow.phases.length;
+        
+        parsed.cinematicFlow.phases.forEach((phase: any, index: number) => {
+          // Count narrations
+          if (phase.audio?.narration) {
+            narrationCount++;
+          }
+          
+          // Check anchorText for pause phrases
+          if (phase.anchorText?.pausePhrase) {
+            pauseKeywordCount++;
+          } else if (phase.type === 'quiz' || phase.type === 'playground' || phase.type === 'secret-reveal') {
+            interactiveActsWithoutPauseKeyword.push(phase.id || `phase-${index + 1}`);
+          }
+        });
+      }
+      // V7-v2 format: cinematic_flow.acts
+      else if (hasCinematicFlowV2) {
+        actCount = parsed.cinematic_flow.acts.length;
+        
         narrationCount = parsed.cinematic_flow.acts.filter(
           (act: any) => act.narration || act.content?.audio?.narration
         ).length;
 
-        // ✅ V7.1: Check pauseKeyword for interactive acts
         parsed.cinematic_flow.acts.forEach((act: any, index: number) => {
           if (act.pauseKeyword || act.pauseKeywords?.length > 0) {
             pauseKeywordCount++;
@@ -181,7 +202,7 @@ export default function AdminV7Create() {
           duration,
           actCount,
           narrationCount,
-          hasCinematicFlow,
+          hasCinematicFlow: hasCinematicFlowV3 || hasCinematicFlowV2,
           pauseKeywordCount, // ✅ V7.1: Track pause keywords
         }
       });
