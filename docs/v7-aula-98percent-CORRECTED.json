@@ -1,0 +1,341 @@
+{
+  "version": "7.1",
+  "model": "v7-cinematic",
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "98% brinca. 2% lucra com método.",
+  "difficulty": "intermediate",
+  "category": "prompts",
+  "tags": ["prompts", "profissional", "ia", "chatgpt", "metodo-perfeito"],
+  "learningObjectives": [
+    "Reconhecer o padrão de uso amador vs profissional de I.A.",
+    "Tomar consciência do seu nível atual (98% vs 2%)",
+    "Entender e memorizar o Método PERFEITO",
+    "Testar, na prática, a diferença entre prompt amador e prompt profissional"
+  ],
+  "cinematic_flow": {
+    "timeline": { "totalDuration": 180 },
+    "acts": [
+      {
+        "id": "act-1-hook",
+        "type": "dramatic",
+        "title": "Tela preta. Um número. Um choque.",
+        "startTime": 0,
+        "endTime": 22,
+        "narration": "Noventa e oito por cento das pessoas que usam a Inteligência Artificial hoje tratam isso como brinquedo. Isso mesmo. Elas transformam a Inteligência Artificial em passatempo. Perguntas rápidas, sem contexto, só para ver o que sai.",
+        "visual": {
+          "mainValue": "98%",
+          "subtitle": "tratam a Inteligência Artificial como brinquedo",
+          "hookQuestion": "VOCÊ SABIA?",
+          "highlightWord": "BRINCADEIRA",
+          "mood": "danger"
+        },
+        "transitions": {
+          "enter": "letterbox",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-2-comparison",
+        "type": "narrative",
+        "title": "98% vs 2%. A divisão real.",
+        "startTime": 22,
+        "endTime": 50,
+        "narration": "Enquanto noventa e oito por cento brinca, um grupo pequeno faz diferente. Não é magia. É método. E quando você aplica método, a Inteligência Artificial deixa de ser curiosidade e vira ferramenta de resultado.",
+        "visual": {
+          "title": "A DIVISÃO REAL",
+          "subtitle": "Dois grupos. Dois resultados.",
+          "leftCard": {
+            "label": "98% — BRINCANDO",
+            "value": "Resultado: genérico",
+            "isPositive": false,
+            "details": [
+              "Prompt curto",
+              "Sem contexto",
+              "Sem objetivo claro",
+              "Saída comum",
+              "Pouca ou nenhuma aplicação"
+            ]
+          },
+          "rightCard": {
+            "label": "2% — USO PROFISSIONAL",
+            "value": "Resultado: aplicável",
+            "isPositive": true,
+            "details": [
+              "Prompt estruturado",
+              "Contexto rico",
+              "Objetivo mensurável",
+              "Formato definido",
+              "Iteração e otimização"
+            ]
+          }
+        },
+        "transitions": {
+          "enter": "split-reveal",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-3-quiz",
+        "type": "interaction",
+        "title": "Seja honesto. Você é 98% ou 2%?",
+        "startTime": 50,
+        "endTime": 84,
+        "narration": "Agora é o momento mais importante. Seja honesto consigo mesmo. Você faz parte dos noventa e oito por cento… ou dos dois por cento? Selecione a opção que representa o seu uso atual.",
+        "pauseKeyword": "uso atual",
+        "anchorActions": [
+          {
+            "id": "pause-for-quiz",
+            "keyword": "uso atual",
+            "type": "pause"
+          }
+        ],
+        "visual": {
+          "title": "SEJA HONESTO CONSIGO MESMO.",
+          "subtitle": "Escolha a opção que mais te representa agora."
+        },
+        "interaction": {
+          "type": "quiz",
+          "question": "Como você usa a I.A. hoje?",
+          "options": [
+            {
+              "id": "opt-1",
+              "text": "Eu faço prompts curtos, do tipo: \"faz pra mim\", sem muito contexto.",
+              "isCorrect": false,
+              "category": "bad",
+              "feedback": "Esse é o padrão dos 98%. Sem contexto, a saída fica genérica."
+            },
+            {
+              "id": "opt-2",
+              "text": "Eu dou contexto, defino objetivo e peço num formato específico.",
+              "isCorrect": true,
+              "category": "good",
+              "feedback": "Você já pensa como os 2%. Estrutura muda tudo."
+            },
+            {
+              "id": "opt-3",
+              "text": "Eu copio prompts prontos e torço para funcionar no meu caso.",
+              "isCorrect": false,
+              "category": "bad",
+              "feedback": "Prompts genéricos geram respostas genéricas — e pouca aplicação real."
+            }
+          ],
+          "correctFeedback": "Boa. Você já está no caminho profissional. Agora vamos colocar método em cima disso.",
+          "incorrectFeedback": "Sem problema. Em poucos minutos você vai virar a chave — com método e estrutura."
+        },
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.3,
+            "contextualLoops": [
+              {
+                "triggerAfter": 6,
+                "text": "Escolhe aí. A decisão é sua. Sem julgamento. Só verdade.",
+                "volume": 0.25,
+                "voice": "whisper"
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+        "timeout": {
+          "soft": 8,
+          "medium": 15,
+          "hard": 25,
+          "hints": [
+            "Pense nas suas últimas interações com IA...",
+            "Seja honesto consigo mesmo...",
+            "Vamos continuar? A resposta é só pra você refletir."
+          ],
+          "autoAction": "continue"
+        },
+        "transitions": {
+          "enter": "zoom-in",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-4-secret-teaser",
+        "type": "revelation",
+        "title": "A ponte. O segredo dos 2%.",
+        "startTime": 84,
+        "endTime": 106,
+        "narration": "Eu vou te mostrar o segredo desses dois por cento. O que eles fazem para usar a Inteligência Artificial em projetos, em renda extra, e para ganhar clareza de verdade. Um método simples. E quando você aprende, você nunca mais volta para o jeito amador.",
+        "pauseKeyword": "jeito amador",
+        "anchorActions": [
+          {
+            "id": "show-cta-button",
+            "keyword": "jeito amador",
+            "type": "pause"
+          }
+        ],
+        "visual": {
+          "title": "O SEGREDO DOS 2%",
+          "subtitle": "Não é talento. É um método simples.",
+          "mood": "dramatic"
+        },
+        "interaction": {
+          "type": "cta",
+          "ctaTitle": "Quer descobrir o método?",
+          "ctaOptions": [
+            {
+              "label": "QUERO DESCOBRIR AGORA",
+              "emoji": "⚡",
+              "variant": "primary"
+            }
+          ]
+        },
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.2
+          },
+          "onComplete": "resume"
+        },
+        "transitions": {
+          "enter": "scale-up",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-5-method-reveal",
+        "type": "revelation",
+        "title": "Método PERFEITO. Revelação letra por letra.",
+        "startTime": 106,
+        "endTime": 138,
+        "narration": "Eles conhecem o segredo. O método PERFEITO. Persona. Especificidade. Resultado. Formato. Exemplos. Instruções. Tom. Otimização. Isso é o que separa tentativa de resultado.",
+        "visual": {
+          "title": "ELES CONHECEM O MÉTODO.",
+          "subtitle": "O método PERFEITO.",
+          "mainValue": "P.E.R.F.E.I.T.O",
+          "highlightWord": "PERFEITO",
+          "mood": "success",
+          "items": [
+            { "emoji": "🎭", "text": "P - Persona: Defina quem a I.A. deve ser" },
+            { "emoji": "🎯", "text": "E - Especificidade: Elimine ambiguidade" },
+            { "emoji": "✅", "text": "R - Resultado: Deixe claro o objetivo" },
+            { "emoji": "📋", "text": "F - Formato: Estruture a saída" },
+            { "emoji": "💡", "text": "E - Exemplos: Forneça referências" },
+            { "emoji": "📝", "text": "I - Instruções: Detalhe cada passo" },
+            { "emoji": "🗣️", "text": "T - Tom: Defina a personalidade" },
+            { "emoji": "🔄", "text": "O - Otimização: Refine sempre" }
+          ]
+        },
+        "transitions": {
+          "enter": "letter-by-letter",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-6-playground",
+        "type": "playground",
+        "title": "Playground. A diferença na prática.",
+        "startTime": 138,
+        "endTime": 178,
+        "narration": "Agora, observe a diferença na prática. Um prompt amador pede qualquer coisa e recebe qualquer coisa. Um prompt profissional usa o método PERFEITO e recebe uma entrega aplicável. Navegue pelos slides até o final e faça o teste agora.",
+        "pauseKeyword": "teste agora",
+        "anchorActions": [
+          {
+            "id": "start-playground",
+            "keyword": "teste agora",
+            "type": "pause"
+          }
+        ],
+        "visual": {
+          "title": "AGORA, A DIFERENÇA AO VIVO.",
+          "subtitle": "Prompt amador vs prompt profissional usando PERFEITO.",
+          "instruction": "Navegue pelos slides e compare. No final, faça o teste."
+        },
+        "interaction": {
+          "type": "playground",
+          "challenge": "Compare prompt amador vs profissional",
+          "context": "Objetivo: vender mais para restaurantes",
+          "amateurPrompt": "Me ajude a vender mais.",
+          "professionalPrompt": "Persona: Atue como consultor de vendas B2B com 15 anos de experiência.\n\nEspecificidade + Contexto: Minha empresa vende software para restaurantes. Ticket médio R$ 500/mês. Conversão atual 2%.\n\nResultado: Criar uma sequência de 5 e-mails de follow-up para elevar conversão para 5%.\n\nFormato: Cada e-mail com: assunto + corpo + CTA.\n\nTom: Direto, consultivo e persuasivo.\n\nOtimização: Gere 2 versões por e-mail e destaque a melhor.",
+          "amateurResult": {
+            "title": "Resultado Amador",
+            "content": "Para vender mais: faça promoções, use redes sociais, melhore o atendimento…",
+            "score": 15,
+            "maxScore": 100,
+            "verdict": "bad"
+          },
+          "professionalResult": {
+            "title": "Resultado Profissional",
+            "content": "E-mail 1: assunto forte + contexto do lead + CTA claro.\nE-mail 2: objeção principal + prova + CTA.\nE-mail 3: história curta + benefício + CTA.\nE-mail 4: urgência real + alternativa + CTA.\nE-mail 5: última chamada + opção de resposta rápida + CTA.",
+            "score": 95,
+            "maxScore": 100,
+            "verdict": "excellent"
+          }
+        },
+        "audioBehavior": {
+          "onStart": "pause",
+          "duringInteraction": {
+            "mainVolume": 0,
+            "ambientVolume": 0.2,
+            "contextualLoops": [
+              {
+                "triggerAfter": 7,
+                "text": "Vai. Passa os slides. Compara com calma. No final, escreve o seu.",
+                "volume": 0.2,
+                "voice": "whisper"
+              }
+            ]
+          },
+          "onComplete": "resume"
+        },
+        "timeout": {
+          "soft": 15,
+          "medium": 30,
+          "hard": 60,
+          "hints": [
+            "Navegue pelos slides para ver a diferença...",
+            "Compare o prompt amador com o profissional...",
+            "Quando estiver pronto, avance para finalizar."
+          ],
+          "autoAction": "continue"
+        },
+        "transitions": {
+          "enter": "slide-up",
+          "exit": "fade"
+        }
+      },
+      {
+        "id": "act-7-gamification",
+        "type": "gamification",
+        "title": "Conclusão. Recompensa.",
+        "startTime": 178,
+        "endTime": 190,
+        "narration": "Parabéns. Agora você tem um método. O próximo passo é simples: aplicar, ajustar e otimizar. Nos vemos na próxima aula.",
+        "visual": {
+          "title": "AULA CONCLUÍDA!",
+          "mainText": "Você virou a chave.",
+          "subtitle": "Agora você tem método — não sorte.",
+          "items": [
+            { "emoji": "✅", "text": "Entendeu a divisão 98% vs 2%" },
+            { "emoji": "✅", "text": "Aprendeu o Método PERFEITO" },
+            { "emoji": "✅", "text": "Testou na prática a diferença" }
+          ],
+          "metrics": [
+            { "label": "XP Ganho", "value": "+150", "isHighlight": true },
+            { "label": "Nível", "value": "Prompting PRO" }
+          ]
+        },
+        "transitions": {
+          "enter": "scale-up",
+          "exit": "fade"
+        }
+      }
+    ]
+  },
+  "audioConfig": {
+    "notes": "Áudio gerado via ElevenLabs. wordTimestamps calculados após geração."
+  },
+  "fallbacks": {
+    "noWordTimestamps": {
+      "pauseAfterSeconds": 5,
+      "pauseAfterProgress": 0.8
+    },
+    "audioLoadError": "continue"
+  }
+}
