@@ -30,8 +30,19 @@ interface RawWordTimestamp {
 interface V7LessonContent {
   model?: string;
   version?: string;
+  // ✅ V7-v3: New structure with phases array and anchorText-only transitions
+  cinematicFlow?: {
+    totalPhases?: number;
+    transitionMethod?: 'anchorText-only' | 'hybrid';
+    phases?: V7DatabasePhase[];
+    // Legacy support
+    acts?: V7DatabaseAct[];
+    timeline?: { totalDuration?: number };
+  };
+  // Legacy: cinematic_flow snake_case
   cinematic_flow?: {
-    acts: V7DatabaseAct[];
+    acts?: V7DatabaseAct[];
+    phases?: V7DatabasePhase[];
     timeline?: { totalDuration?: number };
   };
   cinematicStructure?: {
@@ -59,6 +70,72 @@ interface V7LessonContent {
     phaseId: string;
     action: string;
   }>;
+}
+
+/** ✅ V7-v3: New phase structure with cinematography and triggers */
+interface V7DatabasePhase {
+  id?: string;
+  type?: string;
+  title?: string;
+  order?: number;
+  
+  // ✅ V7-v3: Trigger-based phase start (no startTime!)
+  trigger?: {
+    type?: 'auto-start' | 'anchorText' | 'quiz-complete' | 'button-click' | 'playground-complete';
+    previousPhaseAnchor?: string;
+    previousPhaseButton?: string;
+    notes?: string;
+  };
+  
+  // ✅ V7-v3: AnchorText-only transitions (no endTime!)
+  anchorText?: {
+    endPhrase?: string;      // Transits to next phase when detected
+    pausePhrase?: string;    // Pauses audio when detected (for interactions)
+    notes?: string;
+  };
+  
+  // ✅ V7-v3: Narration with text only (timing from wordTimestamps)
+  narration?: {
+    text?: string;
+    estimatedDuration?: number;
+  };
+  
+  // ✅ V7-v3: Detailed cinematography per phase
+  cinematography?: {
+    opening?: {
+      type?: string;
+      effect?: string;
+      duration?: number;
+    };
+    scenes?: Array<{
+      id?: string;
+      trigger?: string;  // 'auto', 'word:keyword', 'pause:keyword', 'delay:seconds'
+      layout?: string;
+      visual?: Record<string, unknown>;
+      animation?: string;
+      effects?: Record<string, unknown>;
+      interaction?: Record<string, unknown>;
+      left?: Record<string, unknown>;
+      right?: Record<string, unknown>;
+      overlay?: Record<string, unknown>;
+    }>;
+    duringInteraction?: {
+      background?: string;
+      ambient?: string;
+    };
+    closing?: {
+      type?: string;
+      effect?: string;
+      duration?: number;
+    };
+  };
+  
+  visualContent?: Record<string, unknown>;
+  interaction?: Record<string, unknown>;
+  audioBehavior?: V7AudioBehavior;
+  timeout?: V7TimeoutConfig;
+  soundEffects?: Record<string, unknown>;
+  transitions?: Record<string, unknown>;
 }
 
 /** Act structure from database (supports both V7-v2 and legacy) */
@@ -173,11 +250,18 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         console.log('[useV7PhaseScript] Last word:', timestamps[timestamps.length - 1]);
       }
 
-      // Check if using rich cinematic_flow structure
-      const hasCinematicFlow = content?.cinematic_flow?.acts?.length > 0;
-
-      // Get raw acts from either source
-      const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || [];
+      // ✅ V7-v3: Detect new structure with phases array (anchorText-only)
+      const rawPhases = content?.cinematicFlow?.phases || 
+                        content?.cinematic_flow?.phases || 
+                        [];
+      const isV7v3Format = rawPhases.length > 0;
+      
+      // ✅ Legacy: Check if using old cinematic_flow structure with acts
+      const rawActs = content?.cinematicFlow?.acts || 
+                      content?.cinematic_flow?.acts || 
+                      content?.cinematicStructure?.acts || 
+                      [];
+      const hasCinematicFlow = rawActs.length > 0 || isV7v3Format;
 
       // ✅ PRIORITY ORDER for total duration:
       // 1. word_timestamps (actual audio length) - most accurate
@@ -190,24 +274,26 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       const totalDuration = audioDurationFromTimestamps ||
         content?.cinematic_flow?.timeline?.totalDuration ||
+        content?.cinematicFlow?.timeline?.totalDuration ||
         (data.estimated_time || 8) * 60;
 
-      // Check if acts already have scaled durations from pipeline
-      // (Pipeline v2.0+ stores startTime/endTime directly on acts)
-      const actsHaveScaledTimings = rawActs.length > 0 &&
-        rawActs[0].startTime !== undefined &&
-        rawActs[0].endTime !== undefined;
-
       console.log('[useV7PhaseScript] Loading lesson:', data.id);
+      console.log('[useV7PhaseScript] ✅ V7-v3 format detected:', isV7v3Format);
       console.log('[useV7PhaseScript] Has cinematic_flow:', hasCinematicFlow);
-      console.log('[useV7PhaseScript] Acts count:', rawActs.length);
+      console.log('[useV7PhaseScript] Phases count (v3):', rawPhases.length);
+      console.log('[useV7PhaseScript] Acts count (legacy):', rawActs.length);
       console.log('[useV7PhaseScript] Audio duration from timestamps:', audioDurationFromTimestamps);
       console.log('[useV7PhaseScript] Total duration used:', totalDuration);
-      console.log('[useV7PhaseScript] Acts have pre-scaled timings:', actsHaveScaledTimings);
 
-      // Transform database acts to V7 phases
-      // ✅ Pass wordTimestamps so we can auto-generate pauseKeywords for interactive phases
-      const phases: V7Phase[] = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
+      // ✅ V7-v3: Use new transformation for phases array, otherwise use legacy acts
+      let phases: V7Phase[];
+      if (isV7v3Format) {
+        console.log('[useV7PhaseScript] 🚀 Using V7-v3 transformPhasesToV7Phases');
+        phases = transformPhasesToV7Phases(rawPhases, totalDuration, timestamps);
+      } else {
+        console.log('[useV7PhaseScript] 📦 Using legacy transformActsToPhases');
+        phases = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
+      }
 
       // ✅ V7.1: Extract lesson-level configs (NO FALLBACKS - AnchorText only)
       const audioConfig = content?.audioConfig || {};
@@ -261,7 +347,401 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
   return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson };
 }
 
-// Transform database acts to V7 phase format
+// ============================================================================
+// V7-v3 TRANSFORMATION: Phases with anchorText-only transitions
+// ============================================================================
+
+/**
+ * ✅ V7-v3: Transform new phases structure to V7Phase format
+ * Uses ONLY anchorText for transitions - no startTime/endTime
+ */
+function transformPhasesToV7Phases(
+  phases: V7DatabasePhase[],
+  totalDuration: number,
+  wordTimestamps: Array<{ word: string; start: number; end: number }>
+): V7Phase[] {
+  if (!phases || phases.length === 0) {
+    console.error('[transformPhasesToV7Phases] ❌ ERRO CRÍTICO: Nenhuma phase encontrada!');
+    throw new Error('Nenhuma phase encontrada na aula V7-v3.');
+  }
+
+  console.log(`[transformPhasesToV7Phases] 🚀 Processing ${phases.length} phases (anchorText-only mode)`);
+  
+  const result: V7Phase[] = [];
+  
+  // Add loading phase first
+  result.push({
+    id: 'loading',
+    title: 'Carregando',
+    startTime: 0,
+    endTime: 3,
+    type: 'loading',
+    scenes: [],
+    mood: 'neutral',
+  });
+
+  // ✅ Calculate estimated timings from wordTimestamps based on anchorText
+  // This is for visual purposes only - actual transitions use anchorText detection
+  let estimatedCurrentTime = 3; // After loading phase
+  
+  phases.forEach((phase, index) => {
+    const phaseType = mapActTypeToPhaseType(phase.type || 'dramatic');
+    
+    // ✅ Find timing from wordTimestamps using anchorText.endPhrase
+    let estimatedEndTime = estimatedCurrentTime + 10; // Default 10s per phase
+    
+    if (phase.anchorText?.endPhrase && wordTimestamps.length > 0) {
+      const anchorWord = findWordTimestamp(wordTimestamps, phase.anchorText.endPhrase);
+      if (anchorWord) {
+        estimatedEndTime = anchorWord.end + 0.5; // Small buffer after anchor word
+        console.log(`[transformPhasesToV7Phases] Phase "${phase.id}": anchor "${phase.anchorText.endPhrase}" found at ${anchorWord.end.toFixed(1)}s`);
+      }
+    }
+    
+    // For phases with pausePhrase, find when audio should pause
+    let pauseKeywords: string[] = [];
+    if (phase.anchorText?.pausePhrase) {
+      pauseKeywords = [phase.anchorText.pausePhrase];
+      console.log(`[transformPhasesToV7Phases] Phase "${phase.id}": will pause at "${phase.anchorText.pausePhrase}"`);
+    }
+    
+    // ✅ Extract visual and interaction content
+    const visualContent = phase.visualContent || {};
+    const interaction = phase.interaction || {};
+    const cinematography = phase.cinematography || {};
+    
+    // ✅ Generate scenes from cinematography
+    const scenes = generateScenesFromCinematography(
+      phase,
+      phaseType,
+      estimatedCurrentTime,
+      estimatedEndTime - estimatedCurrentTime,
+      wordTimestamps
+    );
+    
+    // ✅ Create anchorActions from anchorText config
+    const anchorActions: Array<{
+      id: string;
+      keyword: string;
+      type: 'pause' | 'trigger' | 'show' | 'highlight';
+      targetId?: string;
+      once?: boolean;
+    }> = [];
+    
+    if (phase.anchorText?.pausePhrase) {
+      anchorActions.push({
+        id: `anchor-pause-${phase.id}`,
+        keyword: phase.anchorText.pausePhrase,
+        type: 'pause',
+        once: true,
+      });
+    }
+    
+    if (phase.anchorText?.endPhrase) {
+      anchorActions.push({
+        id: `anchor-next-${phase.id}`,
+        keyword: phase.anchorText.endPhrase,
+        type: 'trigger',
+        targetId: phases[index + 1]?.id,
+        once: true,
+      });
+    }
+    
+    // Determine if phase should auto-advance
+    const isInteractivePhase = 
+      phaseType === 'interaction' || 
+      phaseType === 'playground' || 
+      phaseType === 'secret-reveal' ||
+      phase.trigger?.type === 'quiz-complete' ||
+      phase.trigger?.type === 'button-click' ||
+      phase.trigger?.type === 'playground-complete';
+    
+    const v7Phase: V7Phase = {
+      id: phase.id || `phase-${index + 1}`,
+      title: phase.title || `Fase ${index + 1}`,
+      startTime: estimatedCurrentTime,
+      endTime: estimatedEndTime,
+      type: phaseType,
+      mood: extractMood(visualContent),
+      autoAdvance: !isInteractivePhase,
+      
+      // ✅ V7-v3: AnchorText-based transitions
+      anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
+      pauseKeywords: pauseKeywords.length > 0 ? pauseKeywords : undefined,
+      
+      // ✅ Audio and timeout configs
+      audioBehavior: phase.audioBehavior,
+      timeout: phase.timeout,
+      
+      // ✅ Interaction data for quiz/playground phases
+      interaction: interaction,
+      
+      // ✅ Generated scenes
+      scenes,
+    };
+    
+    result.push(v7Phase);
+    
+    // Update estimated time for next phase
+    estimatedCurrentTime = estimatedEndTime;
+    
+    console.log(`[transformPhasesToV7Phases] ✅ Phase ${index + 1}/${phases.length}: "${phase.title}" (${phaseType}) @ ${v7Phase.startTime.toFixed(1)}s-${v7Phase.endTime.toFixed(1)}s`);
+  });
+  
+  console.log(`[transformPhasesToV7Phases] ✅ Completed: ${result.length} phases total (including loading)`);
+  
+  return result;
+}
+
+/**
+ * Find word timestamp by searching for a phrase in the wordTimestamps array
+ */
+function findWordTimestamp(
+  wordTimestamps: Array<{ word: string; start: number; end: number }>,
+  phrase: string
+): { word: string; start: number; end: number } | null {
+  const normalizeWord = (w: string) => 
+    w.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,!?;:'"()[\]{}…]+/g, '')
+      .trim();
+  
+  // Split phrase into words
+  const phraseWords = phrase.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+  
+  if (phraseWords.length === 0) return null;
+  
+  // For single word, find exact match
+  if (phraseWords.length === 1) {
+    const target = phraseWords[0];
+    const match = wordTimestamps.find(ts => normalizeWord(ts.word) === target);
+    return match || null;
+  }
+  
+  // For multi-word phrase, find the LAST word of the phrase
+  const lastWord = phraseWords[phraseWords.length - 1];
+  
+  // Find occurrences of the last word
+  for (let i = 0; i < wordTimestamps.length; i++) {
+    const ts = wordTimestamps[i];
+    if (normalizeWord(ts.word) === lastWord) {
+      // Check if previous words match
+      let allMatch = true;
+      for (let j = 0; j < phraseWords.length - 1; j++) {
+        const prevIndex = i - (phraseWords.length - 1 - j);
+        if (prevIndex < 0 || normalizeWord(wordTimestamps[prevIndex].word) !== phraseWords[j]) {
+          allMatch = false;
+          break;
+        }
+      }
+      if (allMatch) {
+        return ts; // Return the last word's timestamp
+      }
+    }
+  }
+  
+  // Fallback: just find the last word anywhere
+  const fallback = wordTimestamps.find(ts => normalizeWord(ts.word) === lastWord);
+  return fallback || null;
+}
+
+/**
+ * Generate V7Scenes from V7-v3 cinematography structure
+ */
+function generateScenesFromCinematography(
+  phase: V7DatabasePhase,
+  phaseType: V7Phase['type'],
+  startTime: number,
+  duration: number,
+  wordTimestamps: Array<{ word: string; start: number; end: number }>
+): V7Scene[] {
+  const scenes: V7Scene[] = [];
+  const cinematography = phase.cinematography;
+  const visualContent = phase.visualContent || {};
+  const narrationText = phase.narration?.text || '';
+  
+  // Common fields for all scenes
+  const commonFields = {
+    narration: narrationText,
+  };
+  
+  // If no cinematography defined, generate default scenes based on phase type
+  if (!cinematography?.scenes || cinematography.scenes.length === 0) {
+    return generateDefaultScenesForPhaseType(phase, phaseType, startTime, duration, commonFields);
+  }
+  
+  // Process cinematography scenes
+  let sceneStartTime = startTime;
+  const sceneDuration = duration / Math.max(1, cinematography.scenes.length);
+  
+  cinematography.scenes.forEach((scene, index) => {
+    // Parse trigger to determine timing
+    let sceneTime = sceneStartTime;
+    if (scene.trigger) {
+      if (scene.trigger.startsWith('word:')) {
+        // Find word in timestamps
+        const word = scene.trigger.replace('word:', '');
+        const ts = findWordTimestamp(wordTimestamps, word);
+        if (ts) sceneTime = ts.start;
+      } else if (scene.trigger.startsWith('delay:')) {
+        const delay = parseFloat(scene.trigger.replace('delay:', ''));
+        sceneTime = startTime + delay;
+      } else if (scene.trigger.startsWith('pause:')) {
+        // Pause scenes are triggered by anchor detection
+        sceneTime = sceneStartTime;
+      }
+    }
+    
+    // Determine scene type and animation
+    const visual = scene.visual || {};
+    let sceneType: V7Scene['type'] = 'text-reveal';
+    let animation: V7Scene['animation'] = 'fade';
+    
+    if (visual.element) {
+      const element = String(visual.element);
+      if (element.includes('number')) sceneType = 'number-reveal';
+      else if (element.includes('split')) sceneType = 'split-screen';
+      else if (element.includes('quiz')) sceneType = 'quiz';
+      else if (element.includes('playground')) sceneType = 'playground';
+      else if (element.includes('letterbox')) sceneType = 'letterbox';
+    }
+    
+    if (scene.animation) {
+      animation = scene.animation as V7Scene['animation'];
+    }
+    
+    scenes.push({
+      id: scene.id || `${phase.id}-scene-${index}`,
+      type: sceneType,
+      startTime: sceneTime,
+      duration: sceneDuration,
+      content: {
+        ...visualContent,
+        ...visual,
+        ...commonFields,
+      },
+      animation,
+    });
+    
+    sceneStartTime = sceneTime + sceneDuration;
+  });
+  
+  return scenes;
+}
+
+/**
+ * Generate default scenes for a phase type when no cinematography is defined
+ */
+function generateDefaultScenesForPhaseType(
+  phase: V7DatabasePhase,
+  phaseType: V7Phase['type'],
+  startTime: number,
+  duration: number,
+  commonFields: Record<string, unknown>
+): V7Scene[] {
+  const visual = phase.visualContent || {} as Record<string, any>;
+  const scenes: V7Scene[] = [];
+  
+  switch (phaseType) {
+    case 'dramatic':
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'number-reveal',
+        startTime,
+        duration,
+        content: {
+          number: String(visual.mainValue || visual.number || '98%'),
+          subtitle: String(visual.subtitle || ''),
+          highlightWord: String(visual.highlightWord || ''),
+          ...commonFields,
+        },
+        animation: 'count-up',
+      });
+      break;
+      
+    case 'narrative':
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'split-screen',
+        startTime,
+        duration,
+        content: {
+          title: String(visual.title || phase.title || ''),
+          leftCard: visual.leftCard as any,
+          rightCard: visual.rightCard as any,
+          ...commonFields,
+        },
+        animation: 'slide-left',
+      });
+      break;
+      
+    case 'interaction':
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'quiz',
+        startTime,
+        duration,
+        content: {
+          title: String(visual.title || 'AUTO-AVALIAÇÃO'),
+          subtitle: String(visual.subtitle || ''),
+          ...commonFields,
+        },
+        animation: 'fade',
+      });
+      break;
+      
+    case 'revelation':
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'text-reveal',
+        startTime,
+        duration,
+        content: {
+          title: String(visual.title || phase.title || ''),
+          items: Array.isArray(visual.items) ? visual.items : [],
+          highlightWord: String(visual.highlightWord || ''),
+          ...commonFields,
+        },
+        animation: 'scale-up',
+      });
+      break;
+      
+    case 'gamification':
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'result',
+        startTime,
+        duration,
+        content: {
+          title: String(visual.title || 'PARABÉNS!'),
+          subtitle: String(visual.subtitle || ''),
+          achievement: String(visual.achievement || ''),
+          xp: Number(visual.xp) || 100,
+          ...commonFields,
+        },
+        animation: 'scale-up',
+      });
+      break;
+      
+    default:
+      scenes.push({
+        id: `${phase.id}-main`,
+        type: 'text-reveal',
+        startTime,
+        duration,
+        content: {
+          mainText: String(visual.title || phase.title || ''),
+          ...commonFields,
+        },
+        animation: 'fade',
+      });
+  }
+  
+  return scenes;
+}
+
+
 // ✅ Now receives wordTimestamps to auto-generate pauseKeywords for interactive phases
 function transformActsToPhases(
   acts: any[], 
