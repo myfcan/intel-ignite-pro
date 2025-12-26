@@ -384,13 +384,29 @@ export const V7PhasePlayer = ({
       }
       console.log(`========================================\n`);
       
-      // ✅ V7-v24 FIX: Retomar áudio automaticamente ao entrar em secret-reveal
-      // O quiz pausa o áudio, mas quando transiciona para secret-reveal, precisa retomar
-      if (currentPhase.type === 'secret-reveal' && hasAudio && !audio.isPlaying) {
-        console.log(`[V7PhasePlayer] ▶️ V7-v24: AUTO-RESUMING audio for secret-reveal phase`);
+      // ✅ V7-v25 FIX: SEEK + PLAY ao entrar em secret-reveal
+      // O audio pode estar tocando na POSIÇÃO ERRADA (ex: 89s quando deveria ser 34s)
+      // Precisamos SEEKAR para a posição correta da fase E garantir que está tocando
+      if (currentPhase.type === 'secret-reveal' && hasAudio) {
+        const phaseStartTime = currentPhase.startTime ?? 0;
+        const audioCurrentTime = audio.currentTime ?? 0;
+        const timeDrift = Math.abs(audioCurrentTime - phaseStartTime);
+        
+        console.log(`[V7PhasePlayer] ▶️ V7-v25: Secret-reveal phase entered`);
+        console.log(`[V7PhasePlayer] 📍 Phase startTime: ${phaseStartTime}s, Audio currentTime: ${audioCurrentTime}s, Drift: ${timeDrift}s`);
+        
+        // Se drift > 5s, o áudio está fora de sync - precisa seekar
+        if (timeDrift > 5) {
+          console.log(`[V7PhasePlayer] 🔀 SEEKING audio to phase startTime ${phaseStartTime}s (was ${audioCurrentTime}s)`);
+          audio.seekTo(phaseStartTime);
+        }
+        
+        // Garantir que está tocando após seek
         setTimeout(() => {
-          audio.play();
-          console.log(`[V7PhasePlayer] ▶️ Audio resumed for secret-reveal`);
+          if (!audio.isPlaying) {
+            audio.play();
+            console.log(`[V7PhasePlayer] ▶️ Audio PLAY forced for secret-reveal`);
+          }
         }, 100);
       }
     }
