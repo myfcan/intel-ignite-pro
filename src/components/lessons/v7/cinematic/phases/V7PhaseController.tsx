@@ -22,6 +22,26 @@ export interface V7SceneContent {
   hints?: string[];
   successCriteria?: string[];
   
+  // ✅ V7-v3: Split-screen comparison cards
+  leftCard?: {
+    icon?: string;
+    label?: string;
+    value?: string;
+    details?: string[];
+    isPositive?: boolean;
+  };
+  rightCard?: {
+    icon?: string;
+    label?: string;
+    value?: string;
+    details?: string[];
+    isPositive?: boolean;
+  };
+  
+  // ✅ V7-v3: Gamification fields
+  achievement?: string;
+  xp?: number;
+  
   // Playground comparison fields
   challenge?: string;
   context?: string;
