@@ -458,6 +458,38 @@ Deno.serve(async (req) => {
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments from V7-v3 phases');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
 
+      // ✅ V7-v3 VALIDATION: Ensure interaction phases have valid options
+      const validationErrors: string[] = [];
+      input.cinematicFlow!.phases.forEach((phase, index) => {
+        const phaseAny = phase as any;
+        if (phase.type === 'interaction' || phase.type === 'quiz') {
+          const options = phaseAny.interaction?.options;
+          if (!options || !Array.isArray(options) || options.length === 0) {
+            validationErrors.push(`Phase ${index + 1} (${phase.id || phase.type}): Missing or empty interaction.options`);
+          } else {
+            // Validate each option has required fields
+            options.forEach((opt: any, optIndex: number) => {
+              if (!opt.id && !opt.text) {
+                validationErrors.push(`Phase ${index + 1}, Option ${optIndex + 1}: Missing id and text`);
+              }
+            });
+          }
+        }
+        if (phase.type === 'playground') {
+          const interaction = phaseAny.interaction;
+          if (!interaction) {
+            validationErrors.push(`Phase ${index + 1} (${phase.id || phase.type}): Missing interaction config for playground`);
+          }
+        }
+      });
+
+      if (validationErrors.length > 0) {
+        console.warn('[V7Pipeline:Validation] ⚠️ Warnings found:', validationErrors);
+        // Log but don't fail - allow save with warnings
+      } else {
+        console.log('[V7Pipeline:Validation] ✅ All interaction phases have valid options');
+      }
+
     } else if (hasCinematicFlowV2) {
       // V7-v2: Process cinematic_flow.acts (snake_case format)
       console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts (V7-v2)...');
