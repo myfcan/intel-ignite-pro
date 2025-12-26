@@ -1,16 +1,24 @@
-// V7-v2 Cinematic Types - Tipos completos para o sistema V7
+// V7 Cinematic Types - Tipos completos para o sistema V7
 // Modelo cinematográfico com áudio inteligente e interações contextuais
+//
+// NOTA: Este arquivo está sendo mantido para compatibilidade.
+// A FONTE PRINCIPAL é v7-schema.ts (versão 7.1)
+// Use os tipos de v7-schema.ts para novos desenvolvimentos.
 
 // ==========================================
-// TIPOS BASE
+// TIPOS BASE (Alinhados com v7-schema.ts v7.1)
 // ==========================================
 
 export type V7ActType =
   | 'dramatic'      // Números impactantes (98%, 2%)
+  | 'narrative'     // Narrativa/explicação
   | 'comparison'    // Comparação lado a lado
-  | 'interactive'   // Quiz, checkboxes
+  | 'interaction'   // Quiz interativo (v7.1 naming)
+  | 'interactive'   // Alias para compatibilidade
+  | 'quiz'          // Alias para interaction
   | 'playground'    // Prática com prompts
   | 'revelation'    // Revelação do método
+  | 'cta'           // Call-to-action
   | 'gamification'; // Conquistas e XP
 
 export type V7AnimationType =
@@ -47,7 +55,8 @@ export type V7InteractionType =
   | 'checkboxes'  // Múltipla seleção
   | 'button';     // CTA simples
 
-export type V7Mood = 'danger' | 'success' | 'neutral' | 'warning';
+// Alinhado com v7-schema.ts V7_MOODS
+export type V7Mood = 'danger' | 'success' | 'neutral' | 'warning' | 'dramatic';
 
 // ==========================================
 // ÁUDIO
@@ -101,6 +110,7 @@ export interface V7TimeoutConfig {
   medium: number;  // segundos para segunda dica (default: 15)
   hard: number;    // segundos para auto-avanço (default: 30)
   hints: string[];
+  autoAction?: 'skip' | 'selectDefault' | 'continue';  // Alinhado com v7-schema.ts
 }
 
 export interface V7InteractionConfig {
@@ -208,6 +218,18 @@ export interface V7Act {
   duration?: number;
   mood?: V7Mood;
 
+  // V7.1: Word-based sync (alinhado com v7-schema.ts)
+  narration?: string;           // Texto da narração diretamente no act
+  pauseKeyword?: string;        // Palavra que dispara pausa (OBRIGATÓRIO para interações)
+  pauseKeywords?: string[];     // Alternativas para compatibilidade
+  pauseTime?: number;           // Tempo em segundos quando pauseKeyword é falado
+  anchorActions?: Array<{
+    id: string;
+    keyword: string;
+    type: 'pause' | 'resume' | 'show' | 'hide' | 'highlight' | 'trigger';
+    targetId?: string;
+  }>;
+
   scenes: V7Scene[];
 
   content?: {
@@ -218,6 +240,8 @@ export interface V7Act {
   };
 
   interaction?: V7InteractionConfig;
+  audioBehavior?: V7AudioBehavior;  // Alinhado com v7-schema.ts
+  timeout?: V7TimeoutConfig;        // Alinhado com v7-schema.ts
 
   transitions?: V7Transition;
 }
@@ -251,15 +275,21 @@ export interface V7Timeline {
 export interface V7LessonData {
   id: string;
   model: 'v7-cinematic';
-  version: '2.0';
+  version: '7.1' | '2.0';  // 7.1 é a versão atual, 2.0 para compatibilidade
   title: string;
   description?: string;
   duration: number; // segundos totais
 
-  cinematicFlow: {
+  // Suporta ambos os formatos para compatibilidade
+  cinematicFlow?: {
     acts: V7Act[];
     timeline?: V7Timeline;
     transitions?: V7Transition[];
+  };
+  // snake_case é o formato preferido (alinhado com v7-schema.ts)
+  cinematic_flow?: {
+    acts: V7Act[];
+    timeline?: V7Timeline;
   };
 
   audioConfig?: {
@@ -334,32 +364,33 @@ export const DEFAULT_TIMEOUT_CONFIG: V7TimeoutConfig = {
   medium: 15,
   hard: 30,
   hints: [
-    'Tome seu tempo para pensar...',
-    'Qual opção mais combina com você?',
-    'Vamos continuar a jornada...'
-  ]
+    'Pense com calma...',
+    'Não há resposta errada, seja honesto!',
+    'Vamos continuar? Você pode voltar depois.'
+  ],
+  autoAction: 'continue'  // Alinhado com v7-schema.ts
 };
 
+// Alinhado com v7-schema.ts DEFAULT_AUDIO_BEHAVIOR_*
 export const DEFAULT_AUDIO_BEHAVIORS: Record<V7InteractionType, V7AudioBehavior> = {
   quiz: {
-    onStart: 'fadeToBackground',
+    onStart: 'pause',  // Pausa completa para quiz (alinhado com v7-schema.ts)
     duringInteraction: {
-      mainVolume: 0.15,
-      ambientVolume: 0.4,
+      mainVolume: 0,
+      ambientVolume: 0.3,
       contextualLoops: [
-        { triggerAfter: 7, text: 'Pense com calma...', volume: 0.4 },
-        { triggerAfter: 15, text: 'Qual mais combina com você?', volume: 0.4 },
-        { triggerAfter: 25, text: 'Tome seu tempo...', volume: 0.3 }
+        { triggerAfter: 10, text: 'Pense com calma...', volume: 0.3, voice: 'whisper' },
+        { triggerAfter: 20, text: 'Reflita sobre sua resposta...', volume: 0.3, voice: 'whisper' }
       ]
     },
-    onComplete: 'fadeIn'
+    onComplete: 'resume'
   },
 
   playground: {
     onStart: 'pause',
     duringInteraction: {
       mainVolume: 0,
-      ambientVolume: 0.3,
+      ambientVolume: 0,  // Silêncio total para playground (alinhado com v7-schema.ts)
       contextualLoops: []
     },
     onComplete: 'resume'
@@ -376,13 +407,11 @@ export const DEFAULT_AUDIO_BEHAVIORS: Record<V7InteractionType, V7AudioBehavior>
   },
 
   button: {
-    onStart: 'fadeToBackground',
+    onStart: 'fadeToBackground',  // CTA mantém áudio de fundo (alinhado com v7-schema.ts)
     duringInteraction: {
-      mainVolume: 0.2,
+      mainVolume: 0.3,
       ambientVolume: 0.4,
-      contextualLoops: [
-        { triggerAfter: 5, text: 'A escolha é sua...', volume: 0.3 }
-      ]
+      contextualLoops: []
     },
     onComplete: 'next'
   }
