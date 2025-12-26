@@ -22,6 +22,7 @@ import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
+import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import {
   V7LessonScript,
   V7Phase,
@@ -153,6 +154,10 @@ export const V7PhasePlayer = ({
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
   // ✅ V7-v15: Track if we're navigating backwards to prevent re-locking
   const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+  // ✅ V7-v18: Track transition particles for dramatic phase changes
+  const [showTransitionParticles, setShowTransitionParticles] = useState(false);
+  const [transitionParticleColor, setTransitionParticleColor] = useState<'cyan' | 'gold' | 'emerald' | 'purple'>('cyan');
+  const previousPhaseRef = useRef<string | null>(null);
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
@@ -315,6 +320,44 @@ export const V7PhasePlayer = ({
       setInteractionComplete(false);
     }
   }, [interactionComplete, lockedPhaseIndex]);
+
+  // ✅ V7-v18: Trigger particle burst on specific phase transitions
+  useEffect(() => {
+    const prevPhaseType = previousPhaseRef.current;
+    const currentPhaseType = currentPhase?.type;
+    
+    // Trigger particles when transitioning FROM revelation/secret-reveal TO playground
+    if (prevPhaseType && currentPhaseType) {
+      const isRevelationToPlayground = 
+        (prevPhaseType === 'revelation' || prevPhaseType === 'secret-reveal') && 
+        currentPhaseType === 'playground';
+      
+      const isInteractionToSecretReveal = 
+        prevPhaseType === 'interaction' && 
+        currentPhaseType === 'secret-reveal';
+      
+      const isPlaygroundToGamification = 
+        prevPhaseType === 'playground' && 
+        currentPhaseType === 'gamification';
+      
+      if (isRevelationToPlayground) {
+        setTransitionParticleColor('cyan');
+        setShowTransitionParticles(true);
+        setTimeout(() => setShowTransitionParticles(false), 1500);
+      } else if (isInteractionToSecretReveal) {
+        setTransitionParticleColor('gold');
+        setShowTransitionParticles(true);
+        setTimeout(() => setShowTransitionParticles(false), 1500);
+      } else if (isPlaygroundToGamification) {
+        setTransitionParticleColor('emerald');
+        setShowTransitionParticles(true);
+        setTimeout(() => setShowTransitionParticles(false), 1500);
+      }
+    }
+    
+    previousPhaseRef.current = currentPhaseType || null;
+  }, [currentPhase?.type]);
+
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
     if (currentPhase?.id) {
@@ -965,6 +1008,17 @@ export const V7PhasePlayer = ({
 
       {/* Audio/Play Indicator */}
       <V7AudioIndicator isPlaying={effectiveIsPlaying} />
+
+      {/* Transition Particles Effect */}
+      <AnimatePresence>
+        {showTransitionParticles && (
+          <V7TransitionParticles 
+            isActive={showTransitionParticles} 
+            color={transitionParticleColor}
+            particleCount={50}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Phase Content - Cinematic Fade Transition */}
       <AnimatePresence mode="wait">
