@@ -966,15 +966,33 @@ export const V7PhasePlayer = ({
       {/* Audio/Play Indicator */}
       <V7AudioIndicator isPlaying={effectiveIsPlaying} />
 
-      {/* Phase Content */}
+      {/* Phase Content - Cinematic Fade Transition */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPhase?.id || 'empty'}
           className="absolute inset-0 flex items-center justify-center"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ 
+            opacity: 0, 
+            scale: 0.92,
+            filter: 'blur(12px) brightness(1.3)'
+          }}
+          animate={{ 
+            opacity: 1, 
+            scale: 1,
+            filter: 'blur(0px) brightness(1)'
+          }}
+          exit={{ 
+            opacity: 0, 
+            scale: 1.08,
+            filter: 'blur(16px) brightness(0.7)'
+          }}
+          transition={{ 
+            duration: 1.2, 
+            ease: [0.16, 1, 0.3, 1],
+            opacity: { duration: 0.8 },
+            scale: { duration: 1.0 },
+            filter: { duration: 1.0 }
+          }}
         >
           {renderPhaseContent()}
         </motion.div>
