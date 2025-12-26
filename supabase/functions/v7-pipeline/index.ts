@@ -176,21 +176,34 @@ interface V7PipelineInput {
       id: string;
       type: string;
       title?: string;
+      order?: number;
+      trigger?: any;
       visual?: {
-        instruction: string;
+        instruction?: string;
         [key: string]: any;
       };
       audio?: {
-        narration: string;
+        narration?: string;
+        text?: string;
         [key: string]: any;
+      };
+      // V7-v3: narration can be a separate object
+      narration?: {
+        text: string;
+        estimatedDuration?: number;
       };
       anchorText?: {
         endPhrase?: string;
         pausePhrase?: string;
+        notes?: string;
       };
       cinematography?: any;
+      visualContent?: any;
       content?: any;
     }>;
+    totalPhases?: number;
+    transitionMethod?: string;
+    notes?: string;
     metadata?: any;
   };
 }
@@ -381,8 +394,14 @@ Deno.serve(async (req) => {
 
       aiGeneratedActs = {
         acts: input.cinematicFlow!.phases.map((phase, index) => {
-          // V7-v3: Narration is in phase.audio.narration
-          const narration = phase.audio?.narration || '';
+          // V7-v3: Narration can be in multiple locations:
+          // - phase.narration.text (V7-v3 format)
+          // - phase.audio.narration (alternative format)
+          // - phase.audio?.text (fallback)
+          const narration = (phase as any).narration?.text || 
+                           phase.audio?.narration || 
+                           (phase.audio as any)?.text ||
+                           '';
 
           if (narration) {
             narrations.push(narration);
