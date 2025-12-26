@@ -31,7 +31,8 @@ const PERFEITO_MEANINGS = [
   { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'constante' }, // ✅ Última palavra = exitAnchor
 ];
 
-// ✅ V7-v26: Busca palavra no wordTimestamps (case insensitive, remove pontuação)
+// ✅ V7-v27: Busca palavra no wordTimestamps - MATCH EXATO APENAS
+// Problema anterior: 'constante'.includes('cento') = true causava match prematuro
 const findAnchorTimestamp = (timestamps: WordTimestamp[], anchor: string): WordTimestamp | null => {
   if (!timestamps || timestamps.length === 0) return null;
   
@@ -39,8 +40,8 @@ const findAnchorTimestamp = (timestamps: WordTimestamp[], anchor: string): WordT
   
   for (const ts of timestamps) {
     const normalizedWord = ts.word.toLowerCase().replace(/[.,!?;:'"]/g, '');
-    // Match exato ou parcial (para lidar com variações)
-    if (normalizedWord === normalizedAnchor || normalizedWord.includes(normalizedAnchor) || normalizedAnchor.includes(normalizedWord)) {
+    // ✅ MATCH EXATO APENAS - não usa includes()
+    if (normalizedWord === normalizedAnchor) {
       return ts;
     }
   }
