@@ -1,8 +1,9 @@
 // V7PhaseSecretReveal - Fase de revelação do segredo com efeitos cinematográficos
-// FLUXO COMPLETO:
-// Etapa 1: Narração via ElevenLabs TTS ("Agora vou te mostrar o segredo dos 2%...")
-// Etapa 2: Efeitos visuais (explosão → interrogação + SEGREDO → chuva de dinheiro)
-// Etapa 3: Anchor text em "inteligente" → Tela MÉTODO PERFEITO com botão
+// FLUXO V7-v22 CORRIGIDO:
+// O áudio PRINCIPAL continua tocando (NÃO pausa, NÃO gera TTS próprio)
+// Componente apenas exibe efeitos visuais sincronizados com o áudio principal
+// Quando isPausedByAnchor=true (palavra "inteligente" detectada), mostra tela com botão
+// Clique no botão → onComplete() → V7PhasePlayer faz SEEK para próxima fase
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -161,21 +162,7 @@ export const V7PhaseSecretReveal = ({
     };
   }, []);
 
-  // ✅ CRÍTICO: Pausar áudio principal IMEDIATAMENTE ao entrar na fase
-  useEffect(() => {
-    if (!hasPausedMainAudioRef.current && audioControl) {
-      console.log('[V7PhaseSecretReveal] ⏸️ ENTRADA NA FASE - Pausando áudio principal IMEDIATAMENTE');
-      hasPausedMainAudioRef.current = true;
-      
-      if (audioControl.pauseWithFade) {
-        audioControl.pauseWithFade(300);
-      } else {
-        audioControl.pause();
-      }
-    }
-  }, [audioControl]);
-
-  // ETAPA 2: Disparar efeitos visuais de explosão (MOVIDO para antes de startNarration)
+  // ETAPA 2: Disparar efeitos visuais de explosão
   const triggerExplosion = useCallback(() => {
     // Explosão de confetti dourado
     confetti({
@@ -222,6 +209,16 @@ export const V7PhaseSecretReveal = ({
     }, 500);
   }, []);
 
+  // ✅ V7-v22: NÃO pausar áudio principal - ele continua tocando
+  // Os efeitos visuais são exibidos ENQUANTO o áudio principal toca
+  // A pausa só acontece via anchorText quando "inteligente" é detectado
+  useEffect(() => {
+    console.log('[V7PhaseSecretReveal] 🎬 ENTRADA NA FASE - Áudio principal CONTINUA tocando');
+    console.log('[V7PhaseSecretReveal] 🎬 Efeitos visuais serão exibidos sincronizados');
+    // ✅ V7-v22: Disparar efeitos imediatamente (sem pausar áudio)
+    triggerExplosion();
+  }, [triggerExplosion]);
+
   // ETAPA 3: Transição para tela do MÉTODO PERFEITO (MOVIDO para antes de startNarration)
   const transitionToMethodScreen = useCallback(() => {
     console.log('[V7PhaseSecretReveal] 🏆 ETAPA 3: Mostrando tela MÉTODO PERFEITO');
@@ -239,130 +236,32 @@ export const V7PhaseSecretReveal = ({
     }, 500);
   }, []);
 
-  // ETAPA 1 + 2: Gerar narração via ElevenLabs e disparar efeitos
-  const startNarration = useCallback(async () => {
-    if (hasStartedRef.current) return;
-    hasStartedRef.current = true;
-    setIsNarrating(true);
-    setAudioLoading(true);
-
-    // ✅ V7-v20: Disparar efeitos imediatamente (não esperar áudio)
-    triggerExplosion();
-
-    try {
-      // Garantir que o áudio principal está pausado
-      if (audioControl && !hasPausedMainAudioRef.current) {
-        if (audioControl.pauseWithFade) {
-          await audioControl.pauseWithFade(300);
-        } else {
-          audioControl.pause();
-        }
-        hasPausedMainAudioRef.current = true;
-      }
-
-      let audioUrl: string;
-
-      // ✅ V7-v6: Usar URL pré-gerada se disponível
-      if (narrationAudioUrl) {
-        console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Usando áudio PRÉ-GERADO do banco');
-        audioUrl = narrationAudioUrl;
-        setLoadingProgress(90);
-      } else {
-        console.log('[V7PhaseSecretReveal] 🎤 ETAPA 1: Gerando narração via ElevenLabs...');
-        console.log('[V7PhaseSecretReveal] 📝 Texto:', narrationText.substring(0, 60) + '...');
-        setLoadingProgress(30);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts-contextual`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({
-              text: narrationText,
-              whisper: false,
-            }),
-          }
-        );
-
-        setLoadingProgress(70);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[V7PhaseSecretReveal] ❌ Erro na API:', response.status, errorText);
-          throw new Error(`Falha ao gerar áudio: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setLoadingProgress(90);
-        
-        if (!data.audioBase64) {
-          throw new Error('Nenhum áudio retornado');
-        }
-        
-        audioUrl = `data:audio/mpeg;base64,${data.audioBase64}`;
-      }
-
-      console.log('[V7PhaseSecretReveal] ✅ Áudio pronto, iniciando reprodução...');
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      audio.volume = 1.0; // ✅ Volume máximo para narração principal
-
-      // ETAPA 2: Áudio pronto - efeitos já estão rodando
-      audio.onplay = () => {
-        console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Áudio iniciado, efeitos já em andamento');
-        setCurrentStage('narrating');
-        setAudioLoading(false);
-        setLoadingProgress(100);
-      };
-
-      audio.onerror = (e) => {
-        console.error('[V7PhaseSecretReveal] ❌ Erro ao tocar áudio:', e);
-        setAudioLoading(false);
-        setTimeout(() => transitionToMethodScreen(), 4000);
-      };
-
-      audio.onended = () => {
-        console.log('[V7PhaseSecretReveal] ✅ Narração concluída - indo para ETAPA 3');
-        setIsNarrating(false);
-        transitionToMethodScreen();
-      };
-
-      await audio.play();
-      setCurrentStage('narrating');
-    } catch (error) {
-      console.error('[V7PhaseSecretReveal] ❌ Erro na narração:', error);
-      setIsNarrating(false);
-      setAudioLoading(false);
-      setTimeout(() => transitionToMethodScreen(), 4000);
-    }
-  }, [narrationText, narrationAudioUrl, audioControl, triggerExplosion, transitionToMethodScreen]);
-
-  // Iniciar quando a cena começar
+  // ✅ V7-v22: NÃO gera TTS próprio - áudio principal já contém a narração
+  // Este componente APENAS exibe efeitos visuais cinematográficos
+  // Os efeitos são disparados automaticamente no useEffect de entrada
+  
+  // Verificar quando sceneIndex muda para garantir efeitos ativos
   useEffect(() => {
     if (sceneIndex >= 0 && !hasStartedRef.current) {
-      const timer = setTimeout(() => {
-        startNarration();
-      }, 500);
-      return () => clearTimeout(timer);
+      hasStartedRef.current = true;
+      console.log('[V7PhaseSecretReveal] 🎬 Cena ativa - efeitos já disparados na entrada');
+      setCurrentStage('effects');
+      setAudioLoading(false);
     }
-  }, [sceneIndex, startNarration]);
+  }, [sceneIndex]);
 
-  // Verificar anchorText para ir direto para ETAPA 3
+  // ✅ V7-v22: Verificar anchorText para mostrar tela com botão
+  // Quando isPausedByAnchor=true, o áudio principal FOI pausado pelo anchorText
+  // Nesse momento mostramos a tela "MÉTODO PERFEITO" com o botão
   useEffect(() => {
     if (isPausedByAnchor && currentStage !== 'method-screen') {
-      console.log('[V7PhaseSecretReveal] ⏸️ Anchor text detectado - indo para ETAPA 3');
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      console.log('[V7PhaseSecretReveal] ⏸️ Anchor text detectado ("inteligente") - mostrando tela do botão');
       transitionToMethodScreen();
     }
   }, [isPausedByAnchor, currentStage, transitionToMethodScreen]);
 
-  // Handler do clique no botão "Quero descobrir agora"
+  // ✅ V7-v22: Handler do clique no botão "Quero descobrir agora"
+  // NÃO retoma áudio aqui - o V7PhasePlayer fará SEEK para a próxima fase e retomará
   const handleDiscoverClick = useCallback(async () => {
     console.log('[V7PhaseSecretReveal] 🔓 "Quero descobrir agora" clicked!');
     
@@ -375,19 +274,10 @@ export const V7PhaseSecretReveal = ({
       startVelocity: 60,
     });
 
-    // ✅ V7-v17: Retomar narração principal CORRETAMENTE
-    // O resumeWithFade espera que o áudio esteja pausado, então usamos isso
-    if (audioControl?.resumeWithFade) {
-      await audioControl.resumeWithFade(500);
-      console.log('[V7PhaseSecretReveal] ▶️ Áudio retomado com fade');
-    } else if (audioControl?.play) {
-      audioControl.play();
-      console.log('[V7PhaseSecretReveal] ▶️ Áudio retomado direto');
-    }
-
+    // ✅ V7-v22: Apenas chama callbacks - V7PhasePlayer faz o SEEK e resume
     onSecretClick?.();
     onComplete?.();
-  }, [audioControl, onSecretClick, onComplete]);
+  }, [onSecretClick, onComplete]);
 
   // Cleanup
   useEffect(() => {
