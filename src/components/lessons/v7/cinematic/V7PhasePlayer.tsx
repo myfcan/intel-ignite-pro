@@ -383,8 +383,18 @@ export const V7PhasePlayer = ({
         });
       }
       console.log(`========================================\n`);
+      
+      // ✅ V7-v24 FIX: Retomar áudio automaticamente ao entrar em secret-reveal
+      // O quiz pausa o áudio, mas quando transiciona para secret-reveal, precisa retomar
+      if (currentPhase.type === 'secret-reveal' && hasAudio && !audio.isPlaying) {
+        console.log(`[V7PhasePlayer] ▶️ V7-v24: AUTO-RESUMING audio for secret-reveal phase`);
+        setTimeout(() => {
+          audio.play();
+          console.log(`[V7PhasePlayer] ▶️ Audio resumed for secret-reveal`);
+        }, 100);
+      }
     }
-  }, [currentPhase?.id, currentPhase?.type, currentPhaseIndex, scaledScript.phases, audio.currentTime, audio.isPlaying]);
+  }, [currentPhase?.id, currentPhase?.type, currentPhaseIndex, scaledScript.phases, audio.currentTime, audio.isPlaying, hasAudio, audio]);
 
   // Keyboard navigation
   useEffect(() => {
