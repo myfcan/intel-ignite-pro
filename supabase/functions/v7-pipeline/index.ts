@@ -96,6 +96,9 @@ interface V7PipelineInput {
   voice_id?: string;
   generate_audio?: boolean;
 
+  // ✅ V7.1 FIX: Option to fail pipeline if audio generation fails
+  fail_on_audio_error?: boolean;  // If true, throw error instead of saving without audio
+
   // ✅ V7-v2: Audio config and fallbacks
   audioConfig?: {
     narrationVoice?: string;
@@ -339,6 +342,56 @@ interface AIGeneratedActs {
 }
 
 // ============================================================================
+// NARRATION EXTRACTION HELPER
+// ============================================================================
+
+/**
+ * ✅ V7.1 FIX: Centralized narration extraction
+ * Handles all possible narration locations in a single function.
+ *
+ * Priority order:
+ * 1. act.narration (string) - V7-v2 format
+ * 2. phase.narration.text - V7-v3 format
+ * 3. phase.audio.narration - Alternative format
+ * 4. phase.audio.text - Fallback
+ * 5. act.content.narration.text - Nested content
+ * 6. act.content.audio.narration - Legacy format
+ */
+function extractNarration(item: any): string {
+  // V7-v2: narration at top level (string)
+  if (typeof item.narration === 'string' && item.narration.trim().length > 0) {
+    return item.narration;
+  }
+
+  // V7-v3: narration as object with text
+  if (item.narration?.text && typeof item.narration.text === 'string') {
+    return item.narration.text;
+  }
+
+  // Alternative: audio.narration
+  if (item.audio?.narration && typeof item.audio.narration === 'string') {
+    return item.audio.narration;
+  }
+
+  // Fallback: audio.text
+  if (item.audio?.text && typeof item.audio.text === 'string') {
+    return item.audio.text;
+  }
+
+  // Nested: content.narration.text
+  if (item.content?.narration?.text && typeof item.content.narration.text === 'string') {
+    return item.content.narration.text;
+  }
+
+  // Legacy: content.audio.narration
+  if (item.content?.audio?.narration && typeof item.content.audio.narration === 'string') {
+    return item.content.audio.narration;
+  }
+
+  return '';
+}
+
+// ============================================================================
 // MAIN HANDLER
 // ============================================================================
 
@@ -401,29 +454,12 @@ Deno.serve(async (req) => {
 
       aiGeneratedActs = {
         acts: input.cinematicFlow!.phases.map((phase, index) => {
-          // V7-v3: Narration can be in multiple locations:
-          // 1. phase.narration.text (V7-v3 format)
-          // 2. phase.audio.narration (alternative format)
-          // 3. phase.audio?.text (fallback)
-          // 4. phase.content?.narration?.text (nested content)
-          // 5. phase.content?.audio?.narration (nested content audio)
-          const phaseAny = phase as any;
-          const narration = 
-            phaseAny.narration?.text || 
-            phase.audio?.narration || 
-            phaseAny.audio?.text ||
-            phaseAny.content?.narration?.text ||
-            phaseAny.content?.audio?.narration ||
-            '';
+          // ✅ V7.1 FIX: Use centralized extractNarration helper
+          const narration = extractNarration(phase);
 
           if (index === 0) {
-            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction:', {
-              'narration?.text': phaseAny.narration?.text?.slice(0, 50),
-              'audio?.narration': phase.audio?.narration?.slice?.(0, 50),
-              'audio?.text': phaseAny.audio?.text?.slice?.(0, 50),
-              'content?.narration?.text': phaseAny.content?.narration?.text?.slice?.(0, 50),
-              'content?.audio?.narration': phaseAny.content?.audio?.narration?.slice?.(0, 50),
-              'final': narration?.slice?.(0, 50) || 'EMPTY',
+            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction via extractNarration():', {
+              'narration': narration?.slice?.(0, 50) || 'EMPTY',
             });
           }
 
@@ -458,16 +494,31 @@ Deno.serve(async (req) => {
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments from V7-v3 phases');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
 
-      // ✅ V7-v3 VALIDATION: Ensure interaction phases have valid options
+      // ✅ V7.1 VALIDATION: Strict validation for interactive phases
       const validationErrors: string[] = [];
+      const validationWarnings: string[] = [];
+
       input.cinematicFlow!.phases.forEach((phase, index) => {
         const phaseAny = phase as any;
+        const isInteractive = phase.type === 'interaction' || phase.type === 'quiz' || phase.type === 'playground';
+
+        // ✅ V7.1 FIX: pauseKeyword is REQUIRED for interactive phases
+        if (isInteractive) {
+          const pauseKeyword = phase.anchorText?.pausePhrase || phaseAny.pauseKeyword;
+          if (!pauseKeyword) {
+            validationErrors.push(
+              `Phase ${index + 1} (${phase.id || phase.type}): MISSING pauseKeyword. ` +
+              `Interactive phases MUST have anchorText.pausePhrase or pauseKeyword for word-based sync.`
+            );
+          }
+        }
+
+        // Validate quiz options
         if (phase.type === 'interaction' || phase.type === 'quiz') {
-          const options = phaseAny.interaction?.options;
+          const options = phaseAny.interaction?.options || phaseAny.visualContent?.options;
           if (!options || !Array.isArray(options) || options.length === 0) {
             validationErrors.push(`Phase ${index + 1} (${phase.id || phase.type}): Missing or empty interaction.options`);
           } else {
-            // Validate each option has required fields
             options.forEach((opt: any, optIndex: number) => {
               if (!opt.id && !opt.text) {
                 validationErrors.push(`Phase ${index + 1}, Option ${optIndex + 1}: Missing id and text`);
@@ -475,19 +526,37 @@ Deno.serve(async (req) => {
             });
           }
         }
+
+        // Validate playground config
         if (phase.type === 'playground') {
           const interaction = phaseAny.interaction;
           if (!interaction) {
             validationErrors.push(`Phase ${index + 1} (${phase.id || phase.type}): Missing interaction config for playground`);
+          } else {
+            // Check for required playground fields
+            if (!interaction.amateurPrompt && !interaction.challenge) {
+              validationWarnings.push(`Phase ${index + 1} (${phase.id}): Playground missing amateurPrompt or challenge`);
+            }
           }
+        }
+
+        // Check narration exists - use centralized extractNarration
+        const narration = extractNarration(phase);
+        if (!narration || narration.trim().length === 0) {
+          validationWarnings.push(`Phase ${index + 1} (${phase.id || phase.type}): No narration text found`);
         }
       });
 
+      // ✅ V7.1 FIX: FAIL on validation errors (not just warnings)
       if (validationErrors.length > 0) {
-        console.warn('[V7Pipeline:Validation] ⚠️ Warnings found:', validationErrors);
-        // Log but don't fail - allow save with warnings
+        console.error('[V7Pipeline:Validation] ❌ ERRORS found:', validationErrors);
+        throw new Error(`V7 Validation Failed:\n${validationErrors.join('\n')}`);
+      }
+
+      if (validationWarnings.length > 0) {
+        console.warn('[V7Pipeline:Validation] ⚠️ Warnings:', validationWarnings);
       } else {
-        console.log('[V7Pipeline:Validation] ✅ All interaction phases have valid options');
+        console.log('[V7Pipeline:Validation] ✅ All phases validated successfully');
       }
 
     } else if (hasCinematicFlowV2) {
@@ -498,10 +567,8 @@ Deno.serve(async (req) => {
 
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // V7-v2: Try both narration locations
-          const narration = act.narration ||
-                           act.content?.audio?.narration ||
-                           '';
+          // ✅ V7.1 FIX: Use centralized extractNarration helper
+          const narration = extractNarration(act);
 
           if (narration) {
             narrations.push(narration);
@@ -543,7 +610,71 @@ Deno.serve(async (req) => {
 
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments for TTS');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
-      
+
+      // ✅ V7.1 VALIDATION: Strict validation for V7-v2 acts
+      const validationErrors: string[] = [];
+      const validationWarnings: string[] = [];
+
+      input.cinematic_flow!.acts.forEach((act, index) => {
+        const actAny = act as any;
+        const isInteractive = act.type === 'interaction' || act.type === 'quiz' || act.type === 'playground';
+
+        // ✅ V7.1 FIX: pauseKeyword is REQUIRED for interactive acts
+        if (isInteractive) {
+          const pauseKeyword = actAny.pauseKeyword || actAny.pauseKeywords?.[0];
+          if (!pauseKeyword) {
+            validationErrors.push(
+              `Act ${index + 1} (${act.id || act.type}): MISSING pauseKeyword. ` +
+              `Interactive acts MUST have pauseKeyword for word-based sync.`
+            );
+          }
+        }
+
+        // Validate quiz/interaction options
+        if (act.type === 'interaction' || act.type === 'quiz') {
+          const options = act.interaction?.options || actAny.visual?.options;
+          if (!options || !Array.isArray(options) || options.length === 0) {
+            validationErrors.push(`Act ${index + 1} (${act.id || act.type}): Missing or empty interaction.options`);
+          } else {
+            options.forEach((opt: any, optIndex: number) => {
+              if (!opt.id && !opt.text) {
+                validationErrors.push(`Act ${index + 1}, Option ${optIndex + 1}: Missing id and text`);
+              }
+            });
+          }
+        }
+
+        // Validate playground config
+        if (act.type === 'playground') {
+          const interaction = act.interaction;
+          if (!interaction) {
+            validationErrors.push(`Act ${index + 1} (${act.id || act.type}): Missing interaction config for playground`);
+          } else {
+            if (!interaction.amateurPrompt && !interaction.challenge) {
+              validationWarnings.push(`Act ${index + 1} (${act.id}): Playground missing amateurPrompt or challenge`);
+            }
+          }
+        }
+
+        // Check narration exists - use centralized extractNarration
+        const narration = extractNarration(act);
+        if (!narration || narration.trim().length === 0) {
+          validationWarnings.push(`Act ${index + 1} (${act.id || act.type}): No narration text found`);
+        }
+      });
+
+      // ✅ V7.1 FIX: FAIL on validation errors (not just warnings)
+      if (validationErrors.length > 0) {
+        console.error('[V7Pipeline:Validation:V2] ❌ ERRORS found:', validationErrors);
+        throw new Error(`V7-v2 Validation Failed:\n${validationErrors.join('\n')}`);
+      }
+
+      if (validationWarnings.length > 0) {
+        console.warn('[V7Pipeline:Validation:V2] ⚠️ Warnings:', validationWarnings);
+      } else {
+        console.log('[V7Pipeline:Validation:V2] ✅ All acts validated successfully');
+      }
+
     } else {
       // Use AI to generate acts from flat narrativeScript
       console.log('[V7Pipeline] Step 1: Generating cinematic acts with AI...');
@@ -629,6 +760,12 @@ Deno.serve(async (req) => {
         // ✅ V7-v2 FIX: Track error instead of silent failure
         audioGenerationError = audioResult.error || 'Unknown audio generation error';
         console.error('[V7Pipeline] ❌ Audio generation FAILED:', audioGenerationError);
+
+        // ✅ V7.1 FIX: Optionally fail the entire pipeline if audio fails
+        if (input.fail_on_audio_error) {
+          throw new Error(`Audio generation failed: ${audioGenerationError}. Pipeline aborted because fail_on_audio_error=true.`);
+        }
+
         console.error('[V7Pipeline] ⚠️ Lesson will be saved WITHOUT audio - admin should regenerate');
       }
     } else {
