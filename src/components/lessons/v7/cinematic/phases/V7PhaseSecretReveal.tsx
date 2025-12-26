@@ -84,17 +84,18 @@ export const V7PhaseSecretReveal = ({
   audioControl,
   isPausedByAnchor = false,
 }: V7PhaseSecretRevealProps) => {
-  // Estados das etapas
-  const [currentStage, setCurrentStage] = useState<'loading' | 'narrating' | 'effects' | 'method-screen'>('loading');
+  // Estados das etapas - V7-v20: Inicia em 'effects' para mostrar cinematografia imediatamente
+  const [currentStage, setCurrentStage] = useState<'loading' | 'narrating' | 'effects' | 'method-screen'>('effects');
   
-  // Estados visuais
-  const [showExplosion, setShowExplosion] = useState(false);
-  const [showQuestionMark, setShowQuestionMark] = useState(false);
+  // Estados visuais - V7-v20: Efeitos iniciam TRUE para cinematografia imediata
+  const [showExplosion, setShowExplosion] = useState(true);
+  const [showQuestionMark, setShowQuestionMark] = useState(true);
   const [showMoneyRain, setShowMoneyRain] = useState(false);
   const [showMethodScreen, setShowMethodScreen] = useState(false);
   const [isNarrating, setIsNarrating] = useState(false);
   const [particles, setParticles] = useState<{ angle: number; distance: number }[]>([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [audioLoading, setAudioLoading] = useState(true); // Novo: loading separado do stage visual
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedRef = useRef(false);
@@ -123,13 +124,79 @@ export const V7PhaseSecretReveal = ({
     }
   }, [audioControl]);
 
+  // ETAPA 2: Disparar efeitos visuais de explosão (MOVIDO para antes de startNarration)
+  const triggerExplosion = useCallback(() => {
+    // Explosão de confetti dourado
+    confetti({
+      particleCount: 150,
+      spread: 100,
+      origin: { y: 0.5, x: 0.5 },
+      colors: ['#FFD700', '#FFA500', '#FFDF00', '#FFE135', '#D4AF37'],
+      startVelocity: 45,
+      gravity: 0.8,
+    });
+
+    // Mostrar interrogação gigante
+    setShowExplosion(true);
+    setShowQuestionMark(true);
+
+    // Gerar partículas de explosão
+    const newParticles = Array.from({ length: 30 }, (_, i) => ({
+      angle: (i / 30) * Math.PI * 2,
+      distance: 200 + Math.random() * 100,
+    }));
+    setParticles(newParticles);
+
+    // ✅ V7-v8: Iniciar chuva de dinheiro após 2.5s (mais devagar/fluido)
+    setTimeout(() => {
+      setShowMoneyRain(true);
+    }, 2500);
+
+    // Segunda explosão de confetti
+    setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#FFD700', '#FFA500', '#32CD32', '#00C853'],
+      });
+      confetti({
+        particleCount: 80,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#FFD700', '#FFA500', '#32CD32', '#00C853'],
+      });
+    }, 500);
+  }, []);
+
+  // ETAPA 3: Transição para tela do MÉTODO PERFEITO (MOVIDO para antes de startNarration)
+  const transitionToMethodScreen = useCallback(() => {
+    console.log('[V7PhaseSecretReveal] 🏆 ETAPA 3: Mostrando tela MÉTODO PERFEITO');
+    setCurrentStage('method-screen');
+    
+    // Fade out dos efeitos anteriores
+    setTimeout(() => {
+      setShowQuestionMark(false);
+      setShowMoneyRain(false);
+    }, 300);
+    
+    // Mostrar tela do método
+    setTimeout(() => {
+      setShowMethodScreen(true);
+    }, 500);
+  }, []);
+
   // ETAPA 1 + 2: Gerar narração via ElevenLabs e disparar efeitos
   const startNarration = useCallback(async () => {
     if (hasStartedRef.current) return;
     hasStartedRef.current = true;
     setIsNarrating(true);
-    setCurrentStage('loading');
-    setLoadingProgress(10);
+    setAudioLoading(true);
+
+    // ✅ V7-v20: Disparar efeitos imediatamente (não esperar áudio)
+    triggerExplosion();
 
     try {
       // Garantir que o áudio principal está pausado
@@ -193,18 +260,17 @@ export const V7PhaseSecretReveal = ({
       audioRef.current = audio;
       audio.volume = 1.0; // ✅ Volume máximo para narração principal
 
-      // ETAPA 2: Iniciar efeitos visuais quando o áudio começar
+      // ETAPA 2: Áudio pronto - efeitos já estão rodando
       audio.onplay = () => {
-        console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Disparando efeitos visuais');
-        setCurrentStage('effects');
+        console.log('[V7PhaseSecretReveal] 🎆 ETAPA 2: Áudio iniciado, efeitos já em andamento');
+        setCurrentStage('narrating');
+        setAudioLoading(false);
         setLoadingProgress(100);
-        triggerExplosion();
       };
 
       audio.onerror = (e) => {
         console.error('[V7PhaseSecretReveal] ❌ Erro ao tocar áudio:', e);
-        setCurrentStage('effects');
-        triggerExplosion();
+        setAudioLoading(false);
         setTimeout(() => transitionToMethodScreen(), 4000);
       };
 
@@ -219,75 +285,10 @@ export const V7PhaseSecretReveal = ({
     } catch (error) {
       console.error('[V7PhaseSecretReveal] ❌ Erro na narração:', error);
       setIsNarrating(false);
-      setCurrentStage('effects');
-      triggerExplosion();
+      setAudioLoading(false);
       setTimeout(() => transitionToMethodScreen(), 4000);
     }
-  }, [narrationText, narrationAudioUrl, audioControl]);
-
-  // ETAPA 2: Disparar efeitos visuais de explosão
-  const triggerExplosion = useCallback(() => {
-    // Explosão de confetti dourado
-    confetti({
-      particleCount: 150,
-      spread: 100,
-      origin: { y: 0.5, x: 0.5 },
-      colors: ['#FFD700', '#FFA500', '#FFDF00', '#FFE135', '#D4AF37'],
-      startVelocity: 45,
-      gravity: 0.8,
-    });
-
-    // Mostrar interrogação gigante
-    setShowExplosion(true);
-    setShowQuestionMark(true);
-
-    // Gerar partículas de explosão
-    const newParticles = Array.from({ length: 30 }, (_, i) => ({
-      angle: (i / 30) * Math.PI * 2,
-      distance: 200 + Math.random() * 100,
-    }));
-    setParticles(newParticles);
-
-    // ✅ V7-v8: Iniciar chuva de dinheiro após 2.5s (mais devagar/fluido)
-    setTimeout(() => {
-      setShowMoneyRain(true);
-    }, 2500);
-
-    // Segunda explosão de confetti
-    setTimeout(() => {
-      confetti({
-        particleCount: 80,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#FFD700', '#FFA500', '#32CD32', '#00C853'],
-      });
-      confetti({
-        particleCount: 80,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#FFD700', '#FFA500', '#32CD32', '#00C853'],
-      });
-    }, 500);
-  }, []);
-
-  // ETAPA 3: Transição para tela do MÉTODO PERFEITO
-  const transitionToMethodScreen = useCallback(() => {
-    console.log('[V7PhaseSecretReveal] 🏆 ETAPA 3: Mostrando tela MÉTODO PERFEITO');
-    setCurrentStage('method-screen');
-    
-    // Fade out dos efeitos anteriores
-    setTimeout(() => {
-      setShowQuestionMark(false);
-      setShowMoneyRain(false);
-    }, 300);
-    
-    // Mostrar tela do método
-    setTimeout(() => {
-      setShowMethodScreen(true);
-    }, 500);
-  }, []);
+  }, [narrationText, narrationAudioUrl, audioControl, triggerExplosion, transitionToMethodScreen]);
 
   // Iniciar quando a cena começar
   useEffect(() => {
