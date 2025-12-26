@@ -716,10 +716,24 @@ export const V7PhasePlayer = ({
       case 'interaction':
         // Combine content from ALL interaction scenes
         const interactionContent = getCombinedSceneContent();
-        const quizOptions = (interactionContent.options || content.options || firstSceneContent.options || []).map((opt: any) => ({
+        
+        // ✅ V7-v3 FIX: Options can be in phase.interaction.options (V7-v3 JSON format)
+        // or in scenes[].content.options (legacy format)
+        const phaseInteractionOptions = (currentPhase.interaction as any)?.options;
+        const rawOptions = phaseInteractionOptions || interactionContent.options || content.options || firstSceneContent.options || [];
+        
+        console.log('[V7PhasePlayer:interaction] 🎯 Options source:', {
+          'phase.interaction.options': phaseInteractionOptions?.length || 0,
+          'interactionContent.options': interactionContent.options?.length || 0,
+          'content.options': content.options?.length || 0,
+          'firstSceneContent.options': firstSceneContent.options?.length || 0,
+          'rawOptions': rawOptions.length
+        });
+        
+        const quizOptions = rawOptions.map((opt: any) => ({
           id: opt.id || String(Math.random()),
           text: opt.label || opt.text || '',
-          category: (opt.isCorrect ? 'good' : 'bad') as 'good' | 'bad'
+          category: (opt.isCorrect === true || opt.category === 'good' ? 'good' : 'bad') as 'good' | 'bad'
         }));
 
         // ✅ V7-v2: Extract timeout config from phase
@@ -730,16 +744,22 @@ export const V7PhasePlayer = ({
           hints: currentPhase.timeout.hints
         } : undefined;
 
+        // ✅ V7-v3 FIX: Also extract feedback from phase.interaction
+        const quizPhaseInteraction = currentPhase.interaction as any || {};
+        const quizQuestion = quizPhaseInteraction.question || interactionContent.mainText || content.mainText;
+        const quizCorrectFeedback = quizPhaseInteraction.correctFeedback || interactionContent.correctFeedback || content.correctFeedback;
+        const quizIncorrectFeedback = quizPhaseInteraction.incorrectFeedback || interactionContent.incorrectFeedback || content.incorrectFeedback;
+
         return (
           <V7PhaseQuiz
-            title={extractTextFromContent(interactionContent.mainText || content.mainText) || 'Responda:'}
-            subtitle={extractTextFromContent(interactionContent.subtitle || content.subtitle) || ''}
+            title={extractTextFromContent(quizQuestion) || 'Responda:'}
+            subtitle={extractTextFromContent(interactionContent.subtitle || content.subtitle) || (currentPhase as any).visualContent?.subtitle || ''}
             options={quizOptions}
             revealTitle="RESULTADO"
             revealMessage={extractTextFromContent(interactionContent.explanation || content.explanation) || ''}
             revealValue=""
-            correctFeedback={extractTextFromContent(interactionContent.correctFeedback || content.correctFeedback)}
-            incorrectFeedback={extractTextFromContent(interactionContent.incorrectFeedback || content.incorrectFeedback)}
+            correctFeedback={extractTextFromContent(quizCorrectFeedback)}
+            incorrectFeedback={extractTextFromContent(quizIncorrectFeedback)}
             sceneIndex={currentSceneIndex}
             onComplete={handleQuizComplete}
             audioControl={audio}
