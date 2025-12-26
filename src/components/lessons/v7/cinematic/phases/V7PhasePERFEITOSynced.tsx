@@ -1,6 +1,6 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v23: VERTICAL LAYOUT - P-E-R-F-E-I-T-O stacked with meanings appearing horizontally
-// Creates typewriter effect with blur as each meaning is spoken
+// ✅ V7-v24: STABLE VERTICAL LAYOUT - No animations that cause trembling
+// P-E-R-F-E-I-T-O stacked vertically with meanings appearing as spoken
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,26 +18,25 @@ interface V7PhasePERFEITOSyncedProps {
   onComplete?: () => void;
 }
 
-// Mapping of PERFEITO letters to their meanings (based on narration)
+// PERFEITO letter meanings synced with narration words
 const PERFEITO_MEANINGS = [
-  { letter: 'P', word: 'Persona', subtitle: 'específica', searchWord: 'Persona' },
-  { letter: 'E', word: 'Estrutura', subtitle: 'clara', searchWord: 'Estrutura' },
-  { letter: 'R', word: 'Resultado', subtitle: 'esperado', searchWord: 'Resultado' },
-  { letter: 'F', word: 'Formato', subtitle: 'definido', searchWord: 'Formato' },
-  { letter: 'E', word: 'Exemplos', subtitle: 'práticos', searchWord: 'Exemplos' },
-  { letter: 'I', word: 'Iteração', subtitle: 'contínua', searchWord: 'Iteração' },
-  { letter: 'T', word: 'Tom', subtitle: 'adequado', searchWord: 'Tom' },
-  { letter: 'O', word: 'Otimização', subtitle: 'constante', searchWord: 'Otimização' },
+  { letter: 'P', meaning: 'Persona', subtitle: 'específica' },
+  { letter: 'E', meaning: 'Estrutura', subtitle: 'clara' },
+  { letter: 'R', meaning: 'Resultado', subtitle: 'esperado' },
+  { letter: 'F', meaning: 'Formato', subtitle: 'definido' },
+  { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos' },
+  { letter: 'I', meaning: 'Iteração', subtitle: 'contínua' },
+  { letter: 'T', meaning: 'Tom', subtitle: 'adequado' },
+  { letter: 'O', meaning: 'Otimização', subtitle: 'constante' },
 ];
 
-// Find timestamps for key words in narration
-const findWordTimestamp = (timestamps: WordTimestamp[], searchWord: string): WordTimestamp | null => {
-  const normalized = searchWord.toLowerCase().replace(/[.,:;!?"]/g, '');
-  const found = timestamps.find(t =>
-    t.word.toLowerCase().replace(/[.,:;!?"]/g, '') === normalized ||
-    t.word.toLowerCase().includes(normalized)
-  );
-  return found || null;
+// Find word timestamp (case insensitive, handles punctuation)
+const findWordTimestamp = (timestamps: WordTimestamp[], word: string): WordTimestamp | null => {
+  const normalized = word.toLowerCase().replace(/[.,:;!?"]/g, '');
+  return timestamps.find(t => {
+    const wordNorm = t.word.toLowerCase().replace(/[.,:;!?"]/g, '');
+    return wordNorm === normalized || wordNorm.includes(normalized);
+  }) || null;
 };
 
 export const V7PhasePERFEITOSynced = ({
@@ -46,339 +45,179 @@ export const V7PhasePERFEITOSynced = ({
   isPlaying,
   onComplete,
 }: V7PhasePERFEITOSyncedProps) => {
-  // Phase states
-  const [phase, setPhase] = useState<'waiting' | 'reveal-perfeito' | 'blink' | 'meanings' | 'complete'>('waiting');
-  const [blinkCount, setBlinkCount] = useState(0);
-  const [visibleMeanings, setVisibleMeanings] = useState<number[]>([]);
-  const [perfeitoVisible, setPerfeitoVisible] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(0);
   const completedRef = useRef(false);
 
-  // Find key timestamps from narration
+  // Find timestamps for each meaning word
   const timings = useMemo(() => {
-    // Find "PERFEITO" word timestamp
     const perfeitoTs = findWordTimestamp(wordTimestamps, 'PERFEITO');
-    // Find "Eles" (start of narration)
-    const elesTs = findWordTimestamp(wordTimestamps, 'Eles');
-    // Find "constante" (last word of PERFEITO narration)
     const constanteTs = findWordTimestamp(wordTimestamps, 'constante');
 
-    // Find each meaning word timestamp
-    const meaningTimestamps = PERFEITO_MEANINGS.map(m => ({
+    const meanings = PERFEITO_MEANINGS.map(m => ({
       ...m,
-      timestamp: findWordTimestamp(wordTimestamps, m.searchWord)
+      timestamp: findWordTimestamp(wordTimestamps, m.meaning)
     }));
 
-    const realEnd = constanteTs?.end ?? 60;
-
-    console.log('[V7PhasePERFEITOSynced] Timings found:', {
-      perfeito: perfeitoTs?.start,
-      eles: elesTs?.start,
-      constante: constanteTs?.end,
-      realEnd,
-      meanings: meaningTimestamps.map(m => `${m.word}: ${m.timestamp?.start?.toFixed(1)}s`),
+    console.log('[V7PhasePERFEITOSynced] Timestamps:', {
+      perfeito: perfeitoTs?.start?.toFixed(1),
+      constante: constanteTs?.end?.toFixed(1),
+      meanings: meanings.map(m => `${m.meaning}: ${m.timestamp?.start?.toFixed(1) || 'N/A'}`),
     });
 
     return {
-      start: elesTs?.start ?? 0,
-      perfeitoReveal: perfeitoTs?.start ?? (elesTs ? elesTs.start + 2 : 2),
-      meanings: meaningTimestamps,
-      end: realEnd,
+      perfeitoStart: perfeitoTs?.start ?? 0,
+      endTime: constanteTs?.end ?? 60,
+      meanings,
     };
   }, [wordTimestamps]);
 
-  const relativeTime = currentTime;
-
-  // Phase 1: Wait for "PERFEITO" word, then show vertical letters
+  // Show content when PERFEITO is spoken
   useEffect(() => {
-    if (phase === 'waiting' && relativeTime >= timings.perfeitoReveal - 0.5) {
-      console.log('[V7PhasePERFEITOSynced] 🎬 Starting PERFEITO vertical reveal');
-      setPhase('reveal-perfeito');
-      setPerfeitoVisible(true);
+    if (!showContent && currentTime >= timings.perfeitoStart - 0.5) {
+      setShowContent(true);
+      console.log('[V7PhasePERFEITOSynced] 🎬 Showing vertical layout');
     }
-  }, [phase, relativeTime, timings.perfeitoReveal]);
+  }, [showContent, currentTime, timings.perfeitoStart]);
 
-  // Phase 2: After initial reveal, do 3 blinks
+  // Update visible meanings based on current time
   useEffect(() => {
-    if (phase === 'reveal-perfeito') {
-      const timer = setTimeout(() => {
-        setPhase('blink');
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [phase]);
+    if (!showContent) return;
 
-  // Phase 2b: Execute 3 blinks
-  useEffect(() => {
-    if (phase === 'blink' && blinkCount < 3) {
-      const timer = setTimeout(() => {
-        setBlinkCount(prev => prev + 1);
-      }, 400);
-      return () => clearTimeout(timer);
-    } else if (phase === 'blink' && blinkCount >= 3) {
-      setPhase('meanings');
-    }
-  }, [phase, blinkCount]);
-
-  // Phase 3: Show each meaning when spoken in audio
-  useEffect(() => {
-    if (phase === 'meanings') {
-      const newVisible: number[] = [];
-
-      for (let i = 0; i < timings.meanings.length; i++) {
-        const meaning = timings.meanings[i];
-        if (meaning.timestamp && relativeTime >= meaning.timestamp.start) {
-          newVisible.push(i);
-        }
-      }
-
-      if (newVisible.length !== visibleMeanings.length) {
-        console.log(`[V7PhasePERFEITOSynced] 📍 Meanings visible: ${newVisible.length}/8`);
-        setVisibleMeanings(newVisible);
+    let count = 0;
+    for (const m of timings.meanings) {
+      if (m.timestamp && currentTime >= m.timestamp.start) {
+        count++;
       }
     }
-  }, [phase, relativeTime, timings.meanings, visibleMeanings.length]);
 
-  // Phase 4: Complete when all meanings shown and narration ends
+    if (count !== visibleCount) {
+      setVisibleCount(count);
+      console.log(`[V7PhasePERFEITOSynced] Visible: ${count}/8`);
+    }
+  }, [showContent, currentTime, timings.meanings, visibleCount]);
+
+  // Complete when all meanings shown and time passed
   useEffect(() => {
-    const allMeaningsShown = visibleMeanings.length >= PERFEITO_MEANINGS.length;
-
-    if (relativeTime >= timings.end && allMeaningsShown && !completedRef.current) {
+    if (visibleCount >= 8 && currentTime >= timings.endTime && !completedRef.current) {
       completedRef.current = true;
-      setPhase('complete');
-      console.log('[V7PhasePERFEITOSynced] ✅ Complete - all meanings shown');
-      onComplete?.();
+      console.log('[V7PhasePERFEITOSynced] ✅ Complete');
+      setTimeout(() => onComplete?.(), 500);
     }
-  }, [relativeTime, timings.end, visibleMeanings.length, onComplete]);
-
-  // Typewriter text component with blur effect
-  const TypewriterText = ({ text, delay = 0 }: { text: string; delay?: number }) => {
-    const [displayText, setDisplayText] = useState('');
-    const [isTyping, setIsTyping] = useState(true);
-
-    useEffect(() => {
-      setDisplayText('');
-      setIsTyping(true);
-
-      const timeout = setTimeout(() => {
-        let index = 0;
-        const interval = setInterval(() => {
-          if (index < text.length) {
-            setDisplayText(text.slice(0, index + 1));
-            index++;
-          } else {
-            setIsTyping(false);
-            clearInterval(interval);
-          }
-        }, 50); // 50ms per character
-
-        return () => clearInterval(interval);
-      }, delay);
-
-      return () => clearTimeout(timeout);
-    }, [text, delay]);
-
-    return (
-      <span className="relative">
-        {displayText}
-        {isTyping && (
-          <motion.span
-            className="inline-block w-0.5 h-full bg-cyan-400 ml-0.5"
-            animate={{ opacity: [1, 0] }}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          />
-        )}
-      </span>
-    );
-  };
+  }, [visibleCount, currentTime, timings.endTime, onComplete]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background glow */}
-      <motion.div
+      {/* Background glow - static, no animation */}
+      <div
         className="absolute inset-0 pointer-events-none"
-        animate={{
-          background: phase === 'meanings'
-            ? 'radial-gradient(circle at center, rgba(0, 217, 166, 0.15) 0%, transparent 60%)'
-            : 'radial-gradient(circle at center, rgba(0, 217, 166, 0.08) 0%, transparent 50%)',
+        style={{
+          background: 'radial-gradient(circle at center, rgba(0, 217, 166, 0.12) 0%, transparent 60%)',
         }}
-        transition={{ duration: 1 }}
       />
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          "O Método" header
-      ═══════════════════════════════════════════════════════════════════════ */}
+      {/* Header */}
       <AnimatePresence>
-        {perfeitoVisible && (
+        {showContent && (
           <motion.div
-            className="absolute top-8 sm:top-16 text-center"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            className="absolute top-12 sm:top-20 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <span className="text-white/60 text-sm sm:text-lg tracking-widest uppercase">
+            <span className="text-white/50 text-sm sm:text-base tracking-[0.3em] uppercase">
               O Método
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          VERTICAL P-E-R-F-E-I-T-O with meanings
-      ═══════════════════════════════════════════════════════════════════════ */}
+      {/* PERFEITO Vertical Layout - STABLE, no trembling */}
       <AnimatePresence>
-        {perfeitoVisible && (
+        {showContent && (
           <motion.div
-            className="flex flex-col items-start gap-1 sm:gap-2"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{
-              opacity: phase === 'blink' ? [1, 0.3, 1] : 1,
-              scale: 1
-            }}
-            transition={{
-              opacity: phase === 'blink' ? { duration: 0.4, repeat: blinkCount < 3 ? 1 : 0 } : { duration: 0.5 },
-              scale: { duration: 0.5 }
-            }}
+            className="flex flex-col items-start gap-0.5 sm:gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
           >
             {PERFEITO_MEANINGS.map((item, index) => {
-              const isVisible = phase === 'meanings' && visibleMeanings.includes(index);
-              const showLetter = phase !== 'waiting';
+              const isVisible = index < visibleCount;
 
               return (
-                <motion.div
+                <div
                   key={index}
-                  className="flex items-center gap-3 sm:gap-6"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{
-                    opacity: showLetter ? 1 : 0,
-                    x: showLetter ? 0 : -20
-                  }}
-                  transition={{
-                    duration: 0.3,
-                    delay: index * 0.08
-                  }}
+                  className="flex items-center gap-2 sm:gap-4 h-10 sm:h-14"
                 >
-                  {/* Letter */}
-                  <motion.span
-                    className="text-4xl sm:text-6xl md:text-7xl font-black w-12 sm:w-16 md:w-20 text-center"
+                  {/* Letter - always visible but dim until meaning shown */}
+                  <span
+                    className="text-3xl sm:text-5xl md:text-6xl font-black w-10 sm:w-14 md:w-16 text-center transition-all duration-300"
                     style={{
                       background: isVisible
-                        ? 'linear-gradient(135deg, #00d9a6 0%, #22D3EE 100%)'
-                        : 'linear-gradient(135deg, #666 0%, #888 100%)',
+                        ? 'linear-gradient(135deg, #00d9a6, #22D3EE)'
+                        : 'linear-gradient(135deg, #444, #555)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
-                      filter: isVisible ? 'drop-shadow(0 0 20px rgba(0, 217, 166, 0.6))' : 'none',
+                      textShadow: isVisible ? '0 0 30px rgba(0, 217, 166, 0.5)' : 'none',
                     }}
-                    animate={{
-                      scale: isVisible ? [1, 1.1, 1] : 1,
-                    }}
-                    transition={{ duration: 0.3 }}
                   >
                     {item.letter}
-                  </motion.span>
+                  </span>
 
-                  {/* = sign */}
-                  <motion.span
-                    className="text-2xl sm:text-3xl md:text-4xl font-bold"
-                    style={{
-                      color: isVisible ? '#00d9a6' : '#555',
-                    }}
+                  {/* Equals sign */}
+                  <span
+                    className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300"
+                    style={{ color: isVisible ? '#00d9a6' : '#444' }}
                   >
                     =
-                  </motion.span>
+                  </span>
 
-                  {/* Meaning with typewriter effect */}
-                  <motion.div
-                    className="flex items-baseline gap-2"
-                    initial={{ opacity: 0, filter: 'blur(10px)' }}
-                    animate={{
-                      opacity: isVisible ? 1 : 0,
-                      filter: isVisible ? 'blur(0px)' : 'blur(10px)'
-                    }}
-                    transition={{ duration: 0.4 }}
+                  {/* Meaning - fades in when spoken */}
+                  <div
+                    className="flex items-baseline gap-2 transition-opacity duration-400"
+                    style={{ opacity: isVisible ? 1 : 0 }}
                   >
-                    {isVisible && (
-                      <>
-                        <span
-                          className="text-xl sm:text-2xl md:text-3xl font-bold text-white"
-                          style={{
-                            textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-                          }}
-                        >
-                          <TypewriterText text={item.word} />
-                        </span>
-                        <span className="text-sm sm:text-base md:text-lg text-cyan-400/70">
-                          {item.subtitle}
-                        </span>
-                      </>
-                    )}
-                  </motion.div>
-                </motion.div>
+                    <span className="text-lg sm:text-xl md:text-2xl font-semibold text-white">
+                      {item.meaning}
+                    </span>
+                    <span className="text-xs sm:text-sm md:text-base text-cyan-400/60">
+                      {item.subtitle}
+                    </span>
+                  </div>
+                </div>
               );
             })}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Progress indicator */}
+      {/* Progress dots */}
       <AnimatePresence>
-        {phase === 'meanings' && (
+        {showContent && (
           <motion.div
-            className="absolute bottom-8 sm:bottom-16 left-1/2 -translate-x-1/2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            className="absolute bottom-12 sm:bottom-20 flex gap-1.5 sm:gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
           >
-            <div className="flex gap-2">
-              {PERFEITO_MEANINGS.map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="w-2 h-2 rounded-full"
-                  animate={{
-                    backgroundColor: visibleMeanings.includes(i) ? '#00d9a6' : '#333',
-                    scale: visibleMeanings.includes(i) ? 1 : 0.8,
-                  }}
-                  transition={{ duration: 0.2 }}
-                />
-              ))}
-            </div>
+            {PERFEITO_MEANINGS.map((_, i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300"
+                style={{
+                  backgroundColor: i < visibleCount ? '#00d9a6' : '#333',
+                  transform: i < visibleCount ? 'scale(1)' : 'scale(0.8)',
+                }}
+              />
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Sparkle effects when meanings appear */}
-      <AnimatePresence>
-        {phase === 'meanings' && visibleMeanings.length > 0 && (
-          <>
-            {[...Array(8)].map((_, i) => (
-              <motion.div
-                key={`sparkle-${i}`}
-                className="absolute w-1 h-1 rounded-full bg-cyan-400"
-                style={{
-                  left: `${20 + Math.random() * 60}%`,
-                  top: `${20 + Math.random() * 60}%`,
-                }}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{
-                  opacity: [0, 1, 0],
-                  scale: [0, 1.5, 0],
-                }}
-                transition={{
-                  duration: 1.5,
-                  delay: i * 0.2,
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                }}
-              />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Debug info */}
+      {/* Debug - only in dev */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-4 left-4 text-xs text-white/40 font-mono">
-          Phase: {phase} | Time: {relativeTime.toFixed(1)}s | Visible: {visibleMeanings.length}/8
+        <div className="absolute top-4 left-4 text-xs text-white/30 font-mono">
+          Time: {currentTime.toFixed(1)}s | Visible: {visibleCount}/8
         </div>
       )}
     </div>
