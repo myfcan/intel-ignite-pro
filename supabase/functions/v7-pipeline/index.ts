@@ -477,7 +477,7 @@ Deno.serve(async (req) => {
               cinematography: phase.cinematography || null,
               anchorText: phase.anchorText || null,
               // Pass through any other content
-              ...(phaseAny.content || {}),
+              ...((phase as any).content || {}),
             },
             visualEffects: {
               mood: phase.cinematography?.opening?.effect || 'dramatic',
