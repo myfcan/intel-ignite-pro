@@ -357,35 +357,57 @@ interface AIGeneratedActs {
  * 5. act.content.narration.text - Nested content
  * 6. act.content.audio.narration - Legacy format
  */
-function extractNarration(item: any): string {
+function extractNarration(item: any, debug: boolean = false): string {
+  const sources: Record<string, string | undefined> = {};
+
   // V7-v2: narration at top level (string)
   if (typeof item.narration === 'string' && item.narration.trim().length > 0) {
+    sources['narration (string)'] = item.narration.slice(0, 30);
     return item.narration;
   }
 
   // V7-v3: narration as object with text
   if (item.narration?.text && typeof item.narration.text === 'string') {
+    sources['narration.text'] = item.narration.text.slice(0, 30);
     return item.narration.text;
   }
 
   // Alternative: audio.narration
   if (item.audio?.narration && typeof item.audio.narration === 'string') {
+    sources['audio.narration'] = item.audio.narration.slice(0, 30);
     return item.audio.narration;
   }
 
   // Fallback: audio.text
   if (item.audio?.text && typeof item.audio.text === 'string') {
+    sources['audio.text'] = item.audio.text.slice(0, 30);
     return item.audio.text;
   }
 
   // Nested: content.narration.text
   if (item.content?.narration?.text && typeof item.content.narration.text === 'string') {
+    sources['content.narration.text'] = item.content.narration.text.slice(0, 30);
     return item.content.narration.text;
   }
 
   // Legacy: content.audio.narration
   if (item.content?.audio?.narration && typeof item.content.audio.narration === 'string') {
+    sources['content.audio.narration'] = item.content.audio.narration.slice(0, 30);
     return item.content.audio.narration;
+  }
+
+  // ✅ DEBUG: Log what we found when extraction fails
+  if (debug) {
+    console.warn('[extractNarration] ❌ No narration found. Item structure:', {
+      hasNarration: !!item.narration,
+      narrationIsString: typeof item.narration === 'string',
+      narrationIsObject: typeof item.narration === 'object',
+      hasNarrationText: !!item.narration?.text,
+      hasAudio: !!item.audio,
+      hasAudioNarration: !!item.audio?.narration,
+      hasContent: !!item.content,
+      itemKeys: Object.keys(item || {}),
+    });
   }
 
   return '';
@@ -454,17 +476,20 @@ Deno.serve(async (req) => {
 
       aiGeneratedActs = {
         acts: input.cinematicFlow!.phases.map((phase, index) => {
-          // ✅ V7.1 FIX: Use centralized extractNarration helper
-          const narration = extractNarration(phase);
+          // ✅ V7.1 FIX: Use centralized extractNarration helper with debug for first phase
+          const narration = extractNarration(phase, index === 0);
 
           if (index === 0) {
-            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction via extractNarration():', {
-              'narration': narration?.slice?.(0, 50) || 'EMPTY',
+            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction result:', {
+              'narration': narration?.slice?.(0, 80) || '❌ EMPTY - NO NARRATION FOUND',
+              'length': narration?.length || 0,
             });
           }
 
           if (narration) {
             narrations.push(narration);
+          } else {
+            console.warn(`[V7Pipeline] ⚠️ Phase ${index + 1} (${phase.id || phase.type}): No narration extracted`);
           }
 
           return {
@@ -490,6 +515,16 @@ Deno.serve(async (req) => {
       };
 
       narrativeForAudio = narrations.join('\n\n');
+
+      // ✅ CRITICAL WARNING: No narrations extracted
+      if (narrations.length === 0) {
+        console.error('[V7Pipeline] ❌ CRITICAL: NO NARRATIONS EXTRACTED from V7-v3 phases!');
+        console.error('[V7Pipeline] This means audio generation will be SKIPPED.');
+        console.error('[V7Pipeline] Check the JSON structure - narration should be at:');
+        console.error('  - phase.narration (string) for V7-v2');
+        console.error('  - phase.narration.text for V7-v3');
+        console.error('  - phase.audio.narration as fallback');
+      }
       narrationCount = narrations.length;
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments from V7-v3 phases');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
@@ -565,13 +600,20 @@ Deno.serve(async (req) => {
 
       const narrations: string[] = [];
 
+      // DEBUG: Log the first act to see its structure
+      const firstAct = input.cinematic_flow!.acts[0];
+      console.log('[V7Pipeline:DEBUG:V2] First act keys:', Object.keys(firstAct || {}));
+      console.log('[V7Pipeline:DEBUG:V2] First act.narration:', typeof firstAct?.narration, JSON.stringify(firstAct?.narration)?.slice(0, 100));
+
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // ✅ V7.1 FIX: Use centralized extractNarration helper
-          const narration = extractNarration(act);
+          // ✅ V7.1 FIX: Use centralized extractNarration helper with debug for first act
+          const narration = extractNarration(act, index === 0);
 
           if (narration) {
             narrations.push(narration);
+          } else {
+            console.warn(`[V7Pipeline] ⚠️ Act ${index + 1} (${act.id || act.type}): No narration extracted`);
           }
 
           return {
