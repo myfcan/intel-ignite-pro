@@ -619,6 +619,11 @@ function extractNarration(item: any, debug: boolean = false): string {
     return item.narration;
   }
 
+  // ✅ V7-hybrid: narrativeSegment at top level (Lovable/cinematicStructure format)
+  if (typeof item.narrativeSegment === 'string' && item.narrativeSegment.trim().length > 0) {
+    return item.narrativeSegment;
+  }
+
   // V7-v3: narration as object with text
   if (item.narration?.text && typeof item.narration.text === 'string') {
     return item.narration.text;
@@ -745,15 +750,32 @@ Deno.serve(async (req) => {
     // Check if using:
     // - cinematicFlow.phases (V7-v3 camelCase format)
     // - cinematic_flow.acts (V7-v2 snake_case format)
+    // - cinematicStructure.acts (hybrid format - Lovable generated)
     // - narrativeScript (flat text)
     const hasCinematicFlowV3 = input.cinematicFlow?.phases && input.cinematicFlow.phases.length > 0;
     const hasCinematicFlowV2 = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
-    const hasCinematicFlow = hasCinematicFlowV3 || hasCinematicFlowV2;
+    const hasCinematicStructure = (input as any).cinematicStructure?.acts && (input as any).cinematicStructure.acts.length > 0;
+    const hasCinematicFlow = hasCinematicFlowV3 || hasCinematicFlowV2 || hasCinematicStructure;
+
+    // ✅ Normalize cinematicStructure.acts to cinematic_flow.acts
+    if (hasCinematicStructure && !hasCinematicFlowV2) {
+      console.log('[V7Pipeline] Normalizing cinematicStructure.acts to cinematic_flow.acts');
+      input.cinematic_flow = {
+        acts: (input as any).cinematicStructure.acts,
+        timeline: (input as any).cinematicStructure.timeline || { totalDuration: input.duration }
+      };
+    }
+
+    // Use normalized check after potential conversion
+    const normalizedHasCinematicFlowV2 = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
     
     if (hasCinematicFlowV3) {
       console.log('[V7Pipeline] Using cinematicFlow.phases (V7-v3) with', input.cinematicFlow!.phases.length, 'phases');
-    } else if (hasCinematicFlowV2) {
+    } else if (normalizedHasCinematicFlowV2) {
       console.log('[V7Pipeline] Using cinematic_flow.acts (V7-v2) with', input.cinematic_flow!.acts.length, 'acts');
+      if (hasCinematicStructure) {
+        console.log('[V7Pipeline] (normalized from cinematicStructure.acts)');
+      }
     } else {
       console.log('[V7Pipeline] Using flat narrativeScript, length:', input.narrativeScript?.length || 0);
     }
@@ -763,7 +785,7 @@ Deno.serve(async (req) => {
     }
     
     if (!hasCinematicFlow && !input.narrativeScript) {
-      throw new Error('Either cinematicFlow.phases, cinematic_flow.acts or narrativeScript is required');
+      throw new Error('Either cinematicFlow.phases, cinematic_flow.acts, cinematicStructure.acts or narrativeScript is required');
     }
 
     // ========================================================================
@@ -906,7 +928,7 @@ Deno.serve(async (req) => {
         console.log('[V7Pipeline:Validation] ✅ All phases validated successfully');
       }
 
-    } else if (hasCinematicFlowV2) {
+    } else if (normalizedHasCinematicFlowV2) {
       // V7-v2: Process cinematic_flow.acts (snake_case format)
       console.log('[V7Pipeline] Step 1: Processing cinematic_flow.acts (V7-v2)...');
 
@@ -1045,7 +1067,7 @@ Deno.serve(async (req) => {
 
     // Pass input acts to preserve their duration ratios
     // For V7-v3, phases don't have duration, so use undefined
-    const inputActsForScaling = hasCinematicFlowV2 ? input.cinematic_flow!.acts : undefined;
+    const inputActsForScaling = normalizedHasCinematicFlowV2 ? input.cinematic_flow!.acts : undefined;
     const cinematicActs = buildCinematicActs(aiGeneratedActs, input.duration, inputActsForScaling);
     console.log('[V7Pipeline] Built', cinematicActs.length, 'cinematic acts');
 
@@ -1096,7 +1118,7 @@ Deno.serve(async (req) => {
                 type: phase.type,
               }))
             );
-          } else if (hasCinematicFlowV2 && input.cinematic_flow?.acts) {
+          } else if (normalizedHasCinematicFlowV2 && input.cinematic_flow?.acts) {
             // V7-v2: Use pauseKeyword for word-based timing
             calculateWordBasedTimings(
               cinematicActs,
@@ -1166,7 +1188,7 @@ Deno.serve(async (req) => {
 
       console.log('[V7Pipeline] V7-v3 phases processed:', cinematicFlow.phases.length);
 
-    } else if (hasCinematicFlowV2 && input.cinematic_flow?.acts) {
+    } else if (normalizedHasCinematicFlowV2 && input.cinematic_flow?.acts) {
       // ✅ V7-v2: Save cinematic_flow with SCALED durations
       // ✅ V7.2: Generate multiple visuals per act based on duration
       cinematic_flow = {
@@ -1253,7 +1275,7 @@ Deno.serve(async (req) => {
         totalDuration: totalDuration,
         actCount: cinematicActs.length,
         createdAt: new Date().toISOString(),
-        generatedBy: hasCinematicFlowV3 ? 'v7-pipeline-v3' : (hasCinematicFlowV2 ? 'v7-pipeline-v2' : 'v7-pipeline-ai'),
+        generatedBy: hasCinematicFlowV3 ? 'v7-pipeline-v3' : (normalizedHasCinematicFlowV2 ? 'v7-pipeline-v2' : 'v7-pipeline-ai'),
         hasCinematicFlow: hasCinematicFlow,
         format: hasCinematicFlowV3 ? 'phases' : 'acts',
       },
