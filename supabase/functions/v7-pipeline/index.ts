@@ -356,44 +356,97 @@ interface AIGeneratedActs {
  * 4. phase.audio.text - Fallback
  * 5. act.content.narration.text - Nested content
  * 6. act.content.audio.narration - Legacy format
+ * 7+ Additional Lovable variations (script, dialogue, voiceover, etc.)
  */
 function extractNarration(item: any, debug: boolean = false): string {
-  const sources: Record<string, string | undefined> = {};
-
   // V7-v2: narration at top level (string)
   if (typeof item.narration === 'string' && item.narration.trim().length > 0) {
-    sources['narration (string)'] = item.narration.slice(0, 30);
     return item.narration;
   }
 
   // V7-v3: narration as object with text
   if (item.narration?.text && typeof item.narration.text === 'string') {
-    sources['narration.text'] = item.narration.text.slice(0, 30);
     return item.narration.text;
   }
 
   // Alternative: audio.narration
   if (item.audio?.narration && typeof item.audio.narration === 'string') {
-    sources['audio.narration'] = item.audio.narration.slice(0, 30);
     return item.audio.narration;
   }
 
   // Fallback: audio.text
   if (item.audio?.text && typeof item.audio.text === 'string') {
-    sources['audio.text'] = item.audio.text.slice(0, 30);
     return item.audio.text;
   }
 
   // Nested: content.narration.text
   if (item.content?.narration?.text && typeof item.content.narration.text === 'string') {
-    sources['content.narration.text'] = item.content.narration.text.slice(0, 30);
     return item.content.narration.text;
   }
 
   // Legacy: content.audio.narration
   if (item.content?.audio?.narration && typeof item.content.audio.narration === 'string') {
-    sources['content.audio.narration'] = item.content.audio.narration.slice(0, 30);
     return item.content.audio.narration;
+  }
+
+  // =========================================================================
+  // LOVABLE VARIATIONS - Common alternative field names
+  // =========================================================================
+
+  // script / scriptText (common in video/audio tools)
+  if (typeof item.script === 'string' && item.script.trim().length > 0) {
+    return item.script;
+  }
+  if (item.script?.text && typeof item.script.text === 'string') {
+    return item.script.text;
+  }
+  if (typeof item.scriptText === 'string' && item.scriptText.trim().length > 0) {
+    return item.scriptText;
+  }
+
+  // dialogue / dialog
+  if (typeof item.dialogue === 'string' && item.dialogue.trim().length > 0) {
+    return item.dialogue;
+  }
+  if (typeof item.dialog === 'string' && item.dialog.trim().length > 0) {
+    return item.dialog;
+  }
+
+  // voiceover / voiceOver / voice_over
+  if (typeof item.voiceover === 'string' && item.voiceover.trim().length > 0) {
+    return item.voiceover;
+  }
+  if (typeof item.voiceOver === 'string' && item.voiceOver.trim().length > 0) {
+    return item.voiceOver;
+  }
+  if (typeof item.voice_over === 'string' && item.voice_over.trim().length > 0) {
+    return item.voice_over;
+  }
+
+  // speech
+  if (typeof item.speech === 'string' && item.speech.trim().length > 0) {
+    return item.speech;
+  }
+
+  // text (top level - less specific, checked last)
+  if (typeof item.text === 'string' && item.text.trim().length > 0) {
+    return item.text;
+  }
+
+  // content.text / content.script
+  if (item.content?.text && typeof item.content.text === 'string') {
+    return item.content.text;
+  }
+  if (item.content?.script && typeof item.content.script === 'string') {
+    return item.content.script;
+  }
+
+  // ttsText / tts_text (text-to-speech specific)
+  if (typeof item.ttsText === 'string' && item.ttsText.trim().length > 0) {
+    return item.ttsText;
+  }
+  if (typeof item.tts_text === 'string' && item.tts_text.trim().length > 0) {
+    return item.tts_text;
   }
 
   // ✅ DEBUG: Log what we found when extraction fails
@@ -406,6 +459,10 @@ function extractNarration(item: any, debug: boolean = false): string {
       hasAudio: !!item.audio,
       hasAudioNarration: !!item.audio?.narration,
       hasContent: !!item.content,
+      hasScript: !!item.script,
+      hasText: !!item.text,
+      hasDialogue: !!item.dialogue,
+      hasVoiceover: !!item.voiceover,
       itemKeys: Object.keys(item || {}),
     });
   }
