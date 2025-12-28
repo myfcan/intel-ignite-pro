@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * V7 CINEMATIC LESSON SCHEMA v7.1
+ * V7 CINEMATIC LESSON SCHEMA v7.2
  * ============================================================================
  *
  * Este arquivo define o CONTRATO ÚNICO para todo o sistema V7:
@@ -16,8 +16,13 @@
  * - O pipeline calcula `startTime`/`endTime` BASEADO nos word_timestamps
  * - Não mais durações arbitrárias que são "escaladas"
  *
- * @version 7.1.0
- * @date 2024-12-22
+ * MUDANÇA v7.2: MÚLTIPLOS VISUAIS POR ATO
+ * - Cada ato pode ter N visuais sincronizados com o áudio
+ * - Pipeline calcula quantidade de visuais baseado na duração
+ * - Cada visual tem startTime/endTime relativo ao ato
+ *
+ * @version 7.2.0
+ * @date 2024-12-28
  */
 
 // ============================================================================
@@ -382,6 +387,7 @@ export interface V7PipelineAct {
   // === TIMING (calculado pelo pipeline) ===
   startTime: number;
   endTime: number;
+  duration?: number;         // Duração em segundos (para cálculo de visuals)
 
   // === NARRAÇÃO ===
   narration: string;         // Texto da narração EXATO
@@ -391,8 +397,9 @@ export interface V7PipelineAct {
   pauseKeywords?: string[];  // Alternativas (backward compat)
   anchorActions?: V7AnchorAction[];
 
-  // === VISUAL ===
-  visual: V7VisualConfig;
+  // === VISUAL (v7.2 - suporta múltiplos visuais) ===
+  visual?: V7VisualConfig;           // Compatibilidade: visual único
+  visuals?: V7TimedVisual[];         // NOVO: array de visuais sincronizados
 
   // === INTERAÇÃO ===
   interaction?: V7InteractionConfig;
@@ -403,6 +410,44 @@ export interface V7PipelineAct {
   transitions?: {
     enter?: V7Animation;
     exit?: V7Animation;
+  };
+}
+
+/**
+ * Visual sincronizado com timestamp
+ * Permite múltiplos visuais dentro de um único ato
+ */
+export interface V7TimedVisual {
+  id: string;
+  startTime: number;         // Início relativo ao ato (segundos)
+  endTime: number;           // Fim relativo ao ato (segundos)
+  type: 'number' | 'text' | 'icon' | 'image' | 'comparison' | 'list';
+  animation: V7Animation;
+  content: V7VisualContent;
+}
+
+/**
+ * Conteúdo de um visual (usado por V7TimedVisual)
+ */
+export interface V7VisualContent {
+  // Texto/Número principal
+  value?: string;            // "98%", "BRINCADEIRA", etc.
+  label?: string;            // Label secundário
+  subtitle?: string;         // Subtítulo
+
+  // Estilo
+  mood?: V7Mood;
+  color?: string;
+  fontSize?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+
+  // Efeitos
+  glow?: boolean;
+  shake?: boolean;
+  pulse?: boolean;
+  particles?: {
+    enabled: boolean;
+    type: 'ember' | 'confetti' | 'stars' | 'sparks';
+    intensity?: number;
   };
 }
 
@@ -460,7 +505,7 @@ export interface V7InteractionConfig {
  */
 export interface V7CinematicLesson {
   // === METADADOS ===
-  version: '7.1';            // Versão do schema
+  version: '7.1' | '7.2';    // Versão do schema (7.2 suporta múltiplos visuais)
   model: 'v7-cinematic';
 
   // === CONTEÚDO ===
@@ -598,8 +643,8 @@ export function validateV7CinematicLesson(data: unknown): data is V7CinematicLes
 
   const lesson = data as Partial<V7CinematicLesson>;
 
-  // Versão obrigatória
-  if (lesson.version !== '7.1') {
+  // Versão obrigatória (7.1 ou 7.2)
+  if (lesson.version !== '7.1' && lesson.version !== '7.2') {
     console.warn('[V7Schema] Invalid version:', lesson.version);
     return false;
   }

@@ -342,6 +342,261 @@ interface AIGeneratedActs {
 }
 
 // ============================================================================
+// V7.2: MULTIPLE VISUALS GENERATOR
+// ============================================================================
+
+interface V7TimedVisual {
+  id: string;
+  startTime: number;
+  endTime: number;
+  type: 'number' | 'text' | 'icon' | 'image' | 'comparison' | 'list';
+  animation: string;
+  content: {
+    value?: string;
+    label?: string;
+    subtitle?: string;
+    mood?: string;
+    glow?: boolean;
+    shake?: boolean;
+    pulse?: boolean;
+    particles?: {
+      enabled: boolean;
+      type: string;
+      intensity?: number;
+    };
+  };
+}
+
+/**
+ * ✅ V7.2: Generate multiple timed visuals for an act
+ *
+ * Based on:
+ * - Act duration (how many visuals to create)
+ * - Act narration (what content to show)
+ * - Act type (what style of visuals)
+ *
+ * @param duration - Duration in seconds
+ * @param narration - Narration text for this act
+ * @param actType - Type of act (dramatic, comparison, etc)
+ * @param visualConfig - Optional visual config from input
+ * @returns Array of timed visuals
+ */
+function generateTimedVisuals(
+  duration: number,
+  narration: string,
+  actType: string,
+  visualConfig?: any
+): V7TimedVisual[] {
+  // Calculate number of visuals based on duration
+  // Rule: 1 visual per ~5 seconds, minimum 1, maximum 10
+  const visualsPerSecond = 0.2; // 1 visual per 5 seconds
+  const numVisuals = Math.min(10, Math.max(1, Math.ceil(duration * visualsPerSecond)));
+
+  console.log(`[V7Pipeline:Visuals] Generating ${numVisuals} visuals for ${duration}s act (${actType})`);
+
+  // Extract key phrases from narration for visual content
+  const phrases = extractKeyPhrases(narration, numVisuals);
+
+  // Calculate time per visual
+  const timePerVisual = duration / numVisuals;
+
+  const visuals: V7TimedVisual[] = [];
+
+  for (let i = 0; i < numVisuals; i++) {
+    const startTime = i * timePerVisual;
+    const endTime = (i + 1) * timePerVisual;
+    const phrase = phrases[i] || '';
+
+    // Determine visual type and content based on act type and phrase
+    const visual = createVisualFromPhrase(
+      `visual-${i + 1}`,
+      startTime,
+      endTime,
+      phrase,
+      actType,
+      i,
+      numVisuals,
+      visualConfig
+    );
+
+    visuals.push(visual);
+  }
+
+  return visuals;
+}
+
+/**
+ * Extract key phrases from narration for visual content
+ */
+function extractKeyPhrases(narration: string, count: number): string[] {
+  if (!narration || narration.trim().length === 0) {
+    return Array(count).fill('');
+  }
+
+  // Split into sentences
+  const sentences = narration
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  const phrases: string[] = [];
+
+  // Distribute sentences across visuals
+  const sentencesPerVisual = Math.max(1, Math.ceil(sentences.length / count));
+
+  for (let i = 0; i < count; i++) {
+    const startIdx = i * sentencesPerVisual;
+    const endIdx = Math.min(startIdx + sentencesPerVisual, sentences.length);
+    const segment = sentences.slice(startIdx, endIdx).join('. ');
+
+    // Extract key phrase (important words)
+    const keyPhrase = extractImportantWords(segment);
+    phrases.push(keyPhrase || segment.slice(0, 50));
+  }
+
+  return phrases;
+}
+
+/**
+ * Extract important words from a sentence segment
+ */
+function extractImportantWords(text: string): string {
+  // Common words to skip (Portuguese)
+  const stopWords = new Set([
+    'que', 'de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'um', 'uma',
+    'os', 'as', 'e', 'a', 'o', 'para', 'por', 'com', 'como', 'mais', 'mas',
+    'isso', 'isso', 'esse', 'essa', 'eles', 'elas', 'seu', 'sua', 'seus', 'suas',
+    'quando', 'onde', 'muito', 'também', 'já', 'ainda', 'só', 'mesmo', 'sobre'
+  ]);
+
+  const words = text
+    .toLowerCase()
+    .replace(/[.,!?;:'"()[\]{}…]+/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !stopWords.has(w));
+
+  // Look for percentages, numbers, or key terms
+  const percentMatch = text.match(/(\d+%|\d+\s*por\s*cento)/i);
+  if (percentMatch) {
+    return percentMatch[1].toUpperCase();
+  }
+
+  const numberMatch = text.match(/\b(\d+)\b/);
+  if (numberMatch && parseInt(numberMatch[1]) > 0) {
+    return numberMatch[1];
+  }
+
+  // Look for capitalized words (often important)
+  const capitalMatch = text.match(/\b([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ]{2,})\b/);
+  if (capitalMatch) {
+    return capitalMatch[1];
+  }
+
+  // Return longest meaningful word
+  const sorted = words.sort((a, b) => b.length - a.length);
+  return sorted[0]?.toUpperCase() || text.slice(0, 20).toUpperCase();
+}
+
+/**
+ * Create a visual object from a phrase
+ */
+function createVisualFromPhrase(
+  id: string,
+  startTime: number,
+  endTime: number,
+  phrase: string,
+  actType: string,
+  index: number,
+  total: number,
+  visualConfig?: any
+): V7TimedVisual {
+  // Determine visual type based on act type and position
+  let type: V7TimedVisual['type'] = 'text';
+  let animation = 'fade';
+  let mood = 'neutral';
+
+  // Check if phrase is a number/percentage
+  const isNumber = /^\d+%?$/.test(phrase);
+  if (isNumber) {
+    type = 'number';
+  }
+
+  // Set mood and animation based on act type
+  switch (actType) {
+    case 'dramatic':
+      mood = index === 0 ? 'danger' : 'dramatic';
+      animation = index === 0 ? 'letterbox' : 'scale-up';
+      if (isNumber) type = 'number';
+      break;
+
+    case 'comparison':
+      mood = index < total / 2 ? 'danger' : 'success';
+      animation = 'slide-up';
+      type = 'comparison';
+      break;
+
+    case 'interaction':
+    case 'quiz':
+      mood = 'neutral';
+      animation = 'zoom-in';
+      break;
+
+    case 'revelation':
+      mood = 'success';
+      animation = index === 0 ? 'letter-by-letter' : 'fade';
+      break;
+
+    case 'playground':
+      mood = 'neutral';
+      animation = 'slide-up';
+      break;
+
+    case 'gamification':
+      mood = 'success';
+      animation = 'scale-up';
+      break;
+
+    default:
+      mood = 'neutral';
+      animation = 'fade';
+  }
+
+  // Use visual config if provided
+  if (visualConfig) {
+    if (visualConfig.mainValue && index === 0) {
+      phrase = visualConfig.mainValue;
+      type = 'number';
+    }
+    if (visualConfig.mood) {
+      mood = visualConfig.mood;
+    }
+    if (visualConfig.highlightWord && index === 1) {
+      phrase = visualConfig.highlightWord;
+    }
+  }
+
+  return {
+    id,
+    startTime,
+    endTime,
+    type,
+    animation,
+    content: {
+      value: phrase,
+      mood,
+      glow: actType === 'dramatic' || actType === 'gamification',
+      shake: actType === 'dramatic' && index === 0,
+      pulse: actType === 'revelation',
+      particles: {
+        enabled: actType === 'dramatic' || actType === 'gamification',
+        type: actType === 'gamification' ? 'confetti' : 'ember',
+        intensity: 0.6,
+      },
+    },
+  };
+}
+
+// ============================================================================
 // NARRATION EXTRACTION HELPER
 // ============================================================================
 
@@ -913,6 +1168,7 @@ Deno.serve(async (req) => {
 
     } else if (hasCinematicFlowV2 && input.cinematic_flow?.acts) {
       // ✅ V7-v2: Save cinematic_flow with SCALED durations
+      // ✅ V7.2: Generate multiple visuals per act based on duration
       cinematic_flow = {
         acts: input.cinematic_flow.acts.map((act, index) => {
           const scaledAct = cinematicActs[index];
@@ -927,6 +1183,17 @@ Deno.serve(async (req) => {
                               null;
           const pauseTime = (scaledAct as any)?.pauseTime || null;
 
+          // ✅ V7.2: Generate multiple timed visuals for this act
+          const visualConfig = act.visual || act.content?.visual || {};
+          const timedVisuals = generateTimedVisuals(
+            scaledDuration,
+            narration,
+            act.type,
+            visualConfig
+          );
+
+          console.log(`[V7Pipeline] Act ${index + 1} (${act.type}): Generated ${timedVisuals.length} visuals for ${scaledDuration.toFixed(1)}s`);
+
           return {
             id: act.id || `act-${index + 1}`,
             type: act.type,
@@ -939,7 +1206,9 @@ Deno.serve(async (req) => {
             pauseTime: pauseTime,
             pauseKeywords: (act as any).pauseKeywords || (pauseKeyword ? [pauseKeyword] : []),
             narration: narration,
-            visual: act.visual || act.content?.visual || {},
+            // ✅ V7.2: Both visual (single, for backwards compat) and visuals (array, new)
+            visual: visualConfig,
+            visuals: timedVisuals,
             audio: act.audio || act.content?.audio || {},
             transitions: act.transitions || {},
             interaction: act.interaction || act.content?.interaction || null,
@@ -949,7 +1218,8 @@ Deno.serve(async (req) => {
             tracking: act.tracking || null,
             content: {
               ...act.content,
-              visual: act.visual || act.content?.visual || {},
+              visual: visualConfig,
+              visuals: timedVisuals,
               audio: {
                 narration: narration,
                 ...act.content?.audio,
@@ -972,7 +1242,7 @@ Deno.serve(async (req) => {
 
     const lessonContent = {
       model: 'v7-cinematic',
-      version: hasCinematicFlowV3 ? '7.3' : '7.1', // v7.3 for phases, v7.1 for acts
+      version: hasCinematicFlowV3 ? '7.3' : '7.2', // v7.3 for phases, v7.2 for acts with multiple visuals
       metadata: {
         title: input.title,
         subtitle: input.subtitle || '',
