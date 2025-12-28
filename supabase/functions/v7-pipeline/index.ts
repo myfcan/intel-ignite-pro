@@ -356,8 +356,9 @@ interface AIGeneratedActs {
  * 4. phase.audio.text - Fallback
  * 5. act.content.narration.text - Nested content
  * 6. act.content.audio.narration - Legacy format
+ * 7+ Additional Lovable variations (script, dialogue, voiceover, etc.)
  */
-function extractNarration(item: any): string {
+function extractNarration(item: any, debug: boolean = false): string {
   // V7-v2: narration at top level (string)
   if (typeof item.narration === 'string' && item.narration.trim().length > 0) {
     return item.narration;
@@ -386,6 +387,84 @@ function extractNarration(item: any): string {
   // Legacy: content.audio.narration
   if (item.content?.audio?.narration && typeof item.content.audio.narration === 'string') {
     return item.content.audio.narration;
+  }
+
+  // =========================================================================
+  // LOVABLE VARIATIONS - Common alternative field names
+  // =========================================================================
+
+  // script / scriptText (common in video/audio tools)
+  if (typeof item.script === 'string' && item.script.trim().length > 0) {
+    return item.script;
+  }
+  if (item.script?.text && typeof item.script.text === 'string') {
+    return item.script.text;
+  }
+  if (typeof item.scriptText === 'string' && item.scriptText.trim().length > 0) {
+    return item.scriptText;
+  }
+
+  // dialogue / dialog
+  if (typeof item.dialogue === 'string' && item.dialogue.trim().length > 0) {
+    return item.dialogue;
+  }
+  if (typeof item.dialog === 'string' && item.dialog.trim().length > 0) {
+    return item.dialog;
+  }
+
+  // voiceover / voiceOver / voice_over
+  if (typeof item.voiceover === 'string' && item.voiceover.trim().length > 0) {
+    return item.voiceover;
+  }
+  if (typeof item.voiceOver === 'string' && item.voiceOver.trim().length > 0) {
+    return item.voiceOver;
+  }
+  if (typeof item.voice_over === 'string' && item.voice_over.trim().length > 0) {
+    return item.voice_over;
+  }
+
+  // speech
+  if (typeof item.speech === 'string' && item.speech.trim().length > 0) {
+    return item.speech;
+  }
+
+  // text (top level - less specific, checked last)
+  if (typeof item.text === 'string' && item.text.trim().length > 0) {
+    return item.text;
+  }
+
+  // content.text / content.script
+  if (item.content?.text && typeof item.content.text === 'string') {
+    return item.content.text;
+  }
+  if (item.content?.script && typeof item.content.script === 'string') {
+    return item.content.script;
+  }
+
+  // ttsText / tts_text (text-to-speech specific)
+  if (typeof item.ttsText === 'string' && item.ttsText.trim().length > 0) {
+    return item.ttsText;
+  }
+  if (typeof item.tts_text === 'string' && item.tts_text.trim().length > 0) {
+    return item.tts_text;
+  }
+
+  // ✅ DEBUG: Log what we found when extraction fails
+  if (debug) {
+    console.warn('[extractNarration] ❌ No narration found. Item structure:', {
+      hasNarration: !!item.narration,
+      narrationIsString: typeof item.narration === 'string',
+      narrationIsObject: typeof item.narration === 'object',
+      hasNarrationText: !!item.narration?.text,
+      hasAudio: !!item.audio,
+      hasAudioNarration: !!item.audio?.narration,
+      hasContent: !!item.content,
+      hasScript: !!item.script,
+      hasText: !!item.text,
+      hasDialogue: !!item.dialogue,
+      hasVoiceover: !!item.voiceover,
+      itemKeys: Object.keys(item || {}),
+    });
   }
 
   return '';
@@ -454,17 +533,20 @@ Deno.serve(async (req) => {
 
       aiGeneratedActs = {
         acts: input.cinematicFlow!.phases.map((phase, index) => {
-          // ✅ V7.1 FIX: Use centralized extractNarration helper
-          const narration = extractNarration(phase);
+          // ✅ V7.1 FIX: Use centralized extractNarration helper with debug for first phase
+          const narration = extractNarration(phase, index === 0);
 
           if (index === 0) {
-            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction via extractNarration():', {
-              'narration': narration?.slice?.(0, 50) || 'EMPTY',
+            console.log('[V7Pipeline:DEBUG] Phase 0 narration extraction result:', {
+              'narration': narration?.slice?.(0, 80) || '❌ EMPTY - NO NARRATION FOUND',
+              'length': narration?.length || 0,
             });
           }
 
           if (narration) {
             narrations.push(narration);
+          } else {
+            console.warn(`[V7Pipeline] ⚠️ Phase ${index + 1} (${phase.id || phase.type}): No narration extracted`);
           }
 
           return {
@@ -490,6 +572,16 @@ Deno.serve(async (req) => {
       };
 
       narrativeForAudio = narrations.join('\n\n');
+
+      // ✅ CRITICAL WARNING: No narrations extracted
+      if (narrations.length === 0) {
+        console.error('[V7Pipeline] ❌ CRITICAL: NO NARRATIONS EXTRACTED from V7-v3 phases!');
+        console.error('[V7Pipeline] This means audio generation will be SKIPPED.');
+        console.error('[V7Pipeline] Check the JSON structure - narration should be at:');
+        console.error('  - phase.narration (string) for V7-v2');
+        console.error('  - phase.narration.text for V7-v3');
+        console.error('  - phase.audio.narration as fallback');
+      }
       narrationCount = narrations.length;
       console.log('[V7Pipeline] Extracted', narrationCount, 'narration segments from V7-v3 phases');
       console.log('[V7Pipeline] Total narration length:', narrativeForAudio.length);
@@ -565,13 +657,20 @@ Deno.serve(async (req) => {
 
       const narrations: string[] = [];
 
+      // DEBUG: Log the first act to see its structure
+      const firstAct = input.cinematic_flow!.acts[0];
+      console.log('[V7Pipeline:DEBUG:V2] First act keys:', Object.keys(firstAct || {}));
+      console.log('[V7Pipeline:DEBUG:V2] First act.narration:', typeof firstAct?.narration, JSON.stringify(firstAct?.narration)?.slice(0, 100));
+
       aiGeneratedActs = {
         acts: input.cinematic_flow!.acts.map((act, index) => {
-          // ✅ V7.1 FIX: Use centralized extractNarration helper
-          const narration = extractNarration(act);
+          // ✅ V7.1 FIX: Use centralized extractNarration helper with debug for first act
+          const narration = extractNarration(act, index === 0);
 
           if (narration) {
             narrations.push(narration);
+          } else {
+            console.warn(`[V7Pipeline] ⚠️ Act ${index + 1} (${act.id || act.type}): No narration extracted`);
           }
 
           return {
