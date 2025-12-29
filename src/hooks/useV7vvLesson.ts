@@ -158,7 +158,7 @@ export function useV7vvLesson(lessonId: string): UseV7vvLessonResult {
         }
 
         // Validar que é uma aula V7-vv
-        const content = data.content as V7vvLessonData;
+        const content = data.content as unknown as V7vvLessonData;
 
         if (!content) {
           throw new Error('Aula sem conteúdo');
@@ -190,7 +190,7 @@ export function useV7vvLesson(lessonId: string): UseV7vvLessonResult {
         // Usar wordTimestamps do audio gerado
         let wordTimestamps = content.wordTimestamps || [];
         if (data.word_timestamps && Array.isArray(data.word_timestamps)) {
-          wordTimestamps = data.word_timestamps as WordTimestamp[];
+          wordTimestamps = data.word_timestamps as unknown as WordTimestamp[];
         }
 
         // Usar audio_url do storage se disponível
