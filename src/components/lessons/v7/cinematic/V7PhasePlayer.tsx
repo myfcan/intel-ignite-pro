@@ -461,16 +461,35 @@ export const V7PhasePlayer = ({
       console.log(`  To:   [${nextPhaseIndex}] "${nextPhase?.id}" (${nextPhase?.type})`);
       console.log(`  Audio: ${audio.currentTime?.toFixed(2)}s | ${audio.isPlaying ? 'PLAYING' : 'PAUSED'}`);
 
-      // Don't seek if coming from interactive phases or if explicitly told to skip
-      // ✅ V7-v4: Added 'secret-reveal' to interactive phases list
+      // ✅ V7-v27 FIX: ALWAYS seek when coming from interactive phases
+      // This is critical because during interactive phases, the audio may have continued playing
+      // or the user may have paused/seeked, causing the audio time to be completely out of sync
+      // with the expected phase timings. We MUST sync the audio to the next phase's startTime.
       const isInteractivePhase = currentPhaseType === 'interaction' || currentPhaseType === 'playground' || currentPhaseType === 'secret-reveal';
-      const shouldSeek = hasAudio && nextPhase && !skipAudioSeek && !isInteractivePhase;
-
-      if (shouldSeek) {
-        audio.seekTo(nextPhase.startTime);
-        console.log(`  🔀 SEEKING to ${nextPhase.startTime.toFixed(2)}s`);
-      } else if (isInteractivePhase) {
-        console.log(`  ⏸️ From interactive phase - NOT seeking (resume from paused)`);
+      
+      // ✅ V7-v27: CRITICAL - Check if audio is significantly out of sync with next phase
+      // If the audio time is MORE than 5 seconds away from the next phase's startTime,
+      // we MUST seek to prevent skipping phases
+      const audioTime = audio.currentTime || 0;
+      const nextPhaseStart = nextPhase?.startTime || 0;
+      const timeDrift = Math.abs(audioTime - nextPhaseStart);
+      const isAudioOutOfSync = timeDrift > 5;
+      
+      // Seek if:
+      // 1. Not coming from interactive phase AND not skipAudioSeek AND normal behavior, OR
+      // 2. Coming from interactive phase AND audio is significantly out of sync
+      const shouldSeekNormal = hasAudio && nextPhase && !skipAudioSeek && !isInteractivePhase;
+      const shouldSeekForSync = hasAudio && nextPhase && isInteractivePhase && isAudioOutOfSync;
+      
+      if (shouldSeekNormal) {
+        audio.seekTo(nextPhaseStart);
+        console.log(`  🔀 SEEKING to ${nextPhaseStart.toFixed(2)}s (normal navigation)`);
+      } else if (shouldSeekForSync) {
+        // ✅ V7-v27: CRITICAL FIX - Seek audio back to next phase start to prevent skipping
+        audio.seekTo(nextPhaseStart);
+        console.log(`  🔀 SEEKING to ${nextPhaseStart.toFixed(2)}s (audio was at ${audioTime.toFixed(2)}s, drift: ${timeDrift.toFixed(2)}s) - SYNC FIX`);
+      } else if (isInteractivePhase && !isAudioOutOfSync) {
+        console.log(`  ⏸️ From interactive phase - NOT seeking (audio in sync, drift: ${timeDrift.toFixed(2)}s)`);
       }
 
       goToPhase(nextPhaseIndex);
