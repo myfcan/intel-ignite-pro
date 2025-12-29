@@ -1,0 +1,286 @@
+-- Migration: Update "O Fim da Brincadeira com IA" with CORRECT structure
+-- Following the cinematographic script exactly:
+-- 1. 98% explosion IMMEDIATE (no letterbox)
+-- 2. Anchor "brinquedo" -> Quiz
+-- 3. Exemplos amadores
+-- 4. R$ 30.000 revelation
+-- 5. Anchor "PERFEITO" -> Playground
+-- 6. Playground without extra buttons
+-- 7. Anchor "dominam" -> CTA
+-- 8. CTA with only 2 buttons
+
+UPDATE lessons
+SET
+  content = '{
+    "title": "O Fim da Brincadeira com IA",
+    "subtitle": "98% brinca. 2% lucra com método.",
+    "difficulty": "intermediate",
+    "category": "prompts",
+    "tags": ["prompts", "profissional", "ia", "metodo-perfeito"],
+    "learningObjectives": [
+      "Reconhecer o padrão de uso amador vs profissional de I.A.",
+      "Tomar consciência do seu nível atual (98% vs 2%)",
+      "Entender e memorizar o Método PERFEITO",
+      "Testar, na prática, a diferença entre prompt amador e prompt profissional"
+    ],
+    "duration": 240,
+    "generate_audio": true,
+    "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+    "narrativeScript": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo. Conta uma piada. Escreve como pirata. Faz um poema sobre meu gato. Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês. Eles conhecem o segredo. O método PERFEITO. Persona. Especificidade. Resultado. Formato. Exemplos. Instruções. Tom. Otimização. A diferença entre brincar e lucrar está no método. E você está prestes a dominá-lo. Aqueles que dominam o método transformam IA em ferramenta de trabalho real.",
+    "cinematic_flow": {
+      "timeline": {
+        "totalDuration": 240
+      },
+      "acts": [
+        {
+          "id": "act-1-abertura",
+          "type": "dramatic",
+          "title": "98% Explosão Imediata",
+          "startTime": 0,
+          "duration": 15,
+          "narration": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo.",
+          "anchorActions": [
+            {
+              "id": "pause-quiz-brinquedo",
+              "keyword": "brinquedo",
+              "type": "pause"
+            }
+          ],
+          "visual": {
+            "mainValue": "98%",
+            "subtitle": "tratam a IA como brinquedo",
+            "highlightWord": "BRINQUEDO",
+            "mood": "danger",
+            "showLetterboxInitial": false,
+            "showNumberImmediate": true,
+            "particles": {
+              "enabled": true,
+              "type": "ember",
+              "intensity": 0.8
+            }
+          }
+        },
+        {
+          "id": "act-2-quiz",
+          "type": "interaction",
+          "title": "Teste Relâmpago - Auto-avaliação",
+          "startTime": 15,
+          "duration": 45,
+          "narration": "",
+          "visual": {
+            "title": "TESTE RELÂMPAGO",
+            "subtitle": "AUTO-AVALIAÇÃO"
+          },
+          "interaction": {
+            "type": "quiz",
+            "question": "Suas últimas 5 interações com IA foram para:",
+            "revealButtonText": "REVELAR VERDADE",
+            "options": [
+              {"id": "opt-1", "text": "Criar conteúdo profissional", "category": "good", "isCorrect": true},
+              {"id": "opt-2", "text": "Aprender algo específico", "category": "good", "isCorrect": true},
+              {"id": "opt-3", "text": "Curiosidade e brincadeira", "category": "bad", "isCorrect": false},
+              {"id": "opt-4", "text": "Não uso muito IA", "category": "bad", "isCorrect": false}
+            ],
+            "correctFeedback": "Você já pensa como os 2%. Agora vamos adicionar método.",
+            "incorrectFeedback": "Sem problema. Em poucos minutos você vai virar a chave."
+          },
+          "contextualLoops": [
+            {"triggerAfter": 7, "text": "Reflita com calma...", "volume": 0.4},
+            {"triggerAfter": 15, "text": "Seja honesto consigo mesmo...", "volume": 0.35},
+            {"triggerAfter": 25, "text": "Escolha a opção que mais te representa...", "volume": 0.3}
+          ],
+          "audioBehavior": {
+            "onStart": "pause",
+            "duringInteraction": {"mainVolume": 0, "ambientVolume": 0.2},
+            "onComplete": "resume"
+          }
+        },
+        {
+          "id": "act-3-exemplos",
+          "type": "narrative",
+          "title": "Exemplos Amadores",
+          "startTime": 60,
+          "duration": 15,
+          "narration": "Conta uma piada. Escreve como pirata. Faz um poema sobre meu gato.",
+          "visual": {
+            "type": "split-comparison",
+            "title": "O QUE OS 98% FAZEM",
+            "items": [
+              {"text": "Conta uma piada sobre banana", "category": "bad"},
+              {"text": "Escreve como pirata", "category": "bad"},
+              {"text": "Faz um poema sobre meu gato", "category": "bad"}
+            ]
+          }
+        },
+        {
+          "id": "act-4-revelacao-30k",
+          "type": "dramatic",
+          "title": "Revelação R$ 30.000",
+          "startTime": 75,
+          "duration": 15,
+          "narration": "Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês.",
+          "visual": {
+            "mainValue": "R$ 30.000",
+            "subtitle": "por mês",
+            "highlightWord": "LUCRAM",
+            "mood": "success",
+            "particles": {
+              "enabled": true,
+              "type": "gold",
+              "intensity": 1.0
+            }
+          }
+        },
+        {
+          "id": "act-5-metodo-perfeito",
+          "type": "revelation",
+          "title": "O Método PERFEITO",
+          "startTime": 90,
+          "duration": 45,
+          "narration": "Eles conhecem o segredo. O método PERFEITO. Persona. Especificidade. Resultado. Formato. Exemplos. Instruções. Tom. Otimização.",
+          "anchorActions": [
+            {
+              "id": "pause-playground-perfeito",
+              "keyword": "PERFEITO",
+              "type": "pause"
+            }
+          ],
+          "visual": {
+            "title": "O MÉTODO",
+            "mainValue": "P.E.R.F.E.I.T.O",
+            "highlightWord": "PERFEITO",
+            "mood": "success",
+            "revealType": "letter-by-letter",
+            "items": [
+              {"letter": "P", "text": "Persona", "description": "Defina quem a IA deve ser"},
+              {"letter": "E", "text": "Especificidade", "description": "Elimine ambiguidade"},
+              {"letter": "R", "text": "Resultado", "description": "Deixe claro o objetivo"},
+              {"letter": "F", "text": "Formato", "description": "Estruture a saída"},
+              {"letter": "E", "text": "Exemplos", "description": "Forneça referências"},
+              {"letter": "I", "text": "Instruções", "description": "Detalhe cada passo"},
+              {"letter": "T", "text": "Tom", "description": "Defina a personalidade"},
+              {"letter": "O", "text": "Otimização", "description": "Refine sempre"}
+            ]
+          }
+        },
+        {
+          "id": "act-6-playground",
+          "type": "playground",
+          "title": "Playground - Amador vs Profissional",
+          "startTime": 135,
+          "duration": 60,
+          "narration": "",
+          "visual": {
+            "title": "VEJA A DIFERENÇA NA PRÁTICA",
+            "instruction": "Compare os dois prompts e veja a diferença nos resultados"
+          },
+          "interaction": {
+            "type": "playground",
+            "context": "Objetivo: vender mais para restaurantes",
+            "amateurPrompt": "Me ajude a vender mais.",
+            "professionalPrompt": "Persona: Atue como consultor de vendas B2B com 15 anos de experiência.\n\nEspecificidade: Minha empresa vende software para restaurantes. Ticket médio R$ 500/mês. Conversão atual 2%.\n\nResultado: Criar sequência de 5 e-mails de follow-up para elevar conversão para 5%.\n\nFormato: Cada e-mail com: assunto + corpo + CTA.\n\nTom: Direto, consultivo e persuasivo.",
+            "amateurResult": {
+              "title": "Resultado Amador",
+              "content": "Para vender mais: faça promoções, use redes sociais, melhore o atendimento...",
+              "score": 15,
+              "verdict": "bad"
+            },
+            "professionalResult": {
+              "title": "Resultado Profissional",
+              "content": "E-mail 1: assunto forte + contexto do lead + CTA claro.\nE-mail 2: objeção principal + prova + CTA.\nE-mail 3: história curta + benefício + CTA.\nE-mail 4: urgência real + alternativa + CTA.\nE-mail 5: última chamada + opção de resposta rápida + CTA.",
+              "score": 95,
+              "verdict": "excellent"
+            }
+          },
+          "contextualLoops": [
+            {"triggerAfter": 5, "text": "Observe a diferença...", "volume": 0.4},
+            {"triggerAfter": 15, "text": "Veja como o prompt estruturado gera resultados melhores...", "volume": 0.35}
+          ],
+          "audioBehavior": {
+            "onStart": "pause",
+            "duringInteraction": {"mainVolume": 0, "ambientVolume": 0.2},
+            "onComplete": "resume"
+          }
+        },
+        {
+          "id": "act-7-transformacao",
+          "type": "narrative",
+          "title": "Transformação",
+          "startTime": 195,
+          "duration": 25,
+          "narration": "A diferença entre brincar e lucrar está no método. E você está prestes a dominá-lo. Aqueles que dominam o método transformam IA em ferramenta de trabalho real.",
+          "anchorActions": [
+            {
+              "id": "pause-cta-dominam",
+              "keyword": "dominam",
+              "type": "pause"
+            }
+          ],
+          "visual": {
+            "title": "A TRANSFORMAÇÃO",
+            "subtitle": "De amador para profissional",
+            "mood": "dramatic"
+          }
+        },
+        {
+          "id": "act-8-cta",
+          "type": "cta",
+          "title": "CTA Final",
+          "startTime": 220,
+          "duration": 20,
+          "narration": "",
+          "visual": {
+            "title": "O QUE VOCÊ VAI FAZER AGORA?",
+            "subtitle": "A decisão é sua"
+          },
+          "interaction": {
+            "type": "cta",
+            "options": [
+              {"id": "cta-continue", "label": "Continuar Aprendendo", "emoji": "🚀", "variant": "positive", "action": "next-lesson"},
+              {"id": "cta-later", "label": "Voltar Depois", "emoji": "↩️", "variant": "negative", "action": "exit"}
+            ]
+          }
+        }
+      ]
+    },
+    "audioConfig": {
+      "narrationVoice": "Xb7hH8MSUJpSbSDYk0k2",
+      "voiceSettings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75
+      },
+      "backgroundMusic": {
+        "enabled": true,
+        "track": "cinematic-ambient",
+        "volume": 0.15
+      }
+    }
+  }'::jsonb,
+  estimated_time = 4,
+  updated_at = NOW()
+WHERE
+  title = 'O Fim da Brincadeira com IA'
+  AND model = 'v7';
+
+-- Verify update
+DO $$
+DECLARE
+  act_count INTEGER;
+  lesson_title TEXT;
+  first_anchor TEXT;
+BEGIN
+  SELECT
+    title,
+    jsonb_array_length(content->'cinematic_flow'->'acts'),
+    content->'cinematic_flow'->'acts'->0->'anchorActions'->0->>'keyword'
+  INTO lesson_title, act_count, first_anchor
+  FROM lessons
+  WHERE model = 'v7' AND title ILIKE '%fim da brincadeira%'
+  LIMIT 1;
+
+  IF act_count IS NOT NULL THEN
+    RAISE NOTICE '✅ Updated lesson "%" - % acts, first anchor: "%"', lesson_title, act_count, first_anchor;
+  ELSE
+    RAISE WARNING '❌ Lesson "O Fim da Brincadeira com IA" not found or content structure invalid';
+  END IF;
+END $$;
