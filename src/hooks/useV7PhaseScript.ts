@@ -863,6 +863,37 @@ function transformActsToPhases(
                            act.content?.anchorActions ||
                            [];
     
+    // 🔍 DIAGNOSTIC LOG: Show what's in the act object
+    console.log(`[transformActsToPhases] 🔍 Act ${act.id}:`, {
+      hasAnchorActions: !!act.anchorActions,
+      rawAnchorActions: act.anchorActions,
+      hasPauseKeyword: !!act.pauseKeyword,
+      pauseKeyword: act.pauseKeyword,
+      hasPauseKeywords: !!act.pauseKeywords,
+      pauseKeywords: act.pauseKeywords,
+      interactionPauseKeyword: interactionData?.pauseKeyword,
+      contentPauseKeyword: act.content?.pauseKeyword,
+    });
+    
+    // ✅ V7-v29 FIX: Also convert SINGLE pauseKeyword (string) to anchorAction
+    // The DB often has pauseKeyword: "uso atual" instead of anchorActions array
+    if (rawAnchorActions.length === 0) {
+      const singlePauseKeyword = act.pauseKeyword || 
+                                 interactionData?.pauseKeyword || 
+                                 act.content?.pauseKeyword ||
+                                 act.content?.interaction?.pauseKeyword;
+      
+      if (singlePauseKeyword && typeof singlePauseKeyword === 'string') {
+        console.log(`[transformActsToPhases] ✅ FOUND pauseKeyword: "${singlePauseKeyword}" - converting to anchorAction`);
+        rawAnchorActions = [{
+          id: 'pause-from-keyword',
+          keyword: singlePauseKeyword,
+          type: 'pause',
+          once: true
+        }];
+      }
+    }
+    
     // ✅ NORMALIZE anchorActions - support both "keyword" and "pauseKeyword" formats
     let anchorActions = rawAnchorActions.map((action: any, idx: number) => {
       const keyword = action.keyword || action.pauseKeyword || '';
@@ -881,10 +912,11 @@ function transformActsToPhases(
       return normalized;
     });
     
-    // ✅ Also support legacy pauseKeywords for backward compatibility
+    // ✅ Also support legacy pauseKeywords array for backward compatibility
     let pauseKeywords = act.pauseKeywords || 
                         interactionData?.pauseKeywords || 
                         act.content?.pauseKeywords ||
+                        act.content?.interaction?.pauseKeywords ||
                         [];
     
     // ✅ V7-v2.4: Extract narration text for intelligent pauseKeyword detection

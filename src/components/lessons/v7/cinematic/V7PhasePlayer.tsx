@@ -230,16 +230,29 @@ export const V7PhasePlayer = ({
   const anchorActions = useMemo((): AnchorAction[] => {
     if (!currentPhase) return [];
     
+    // 🔍 DIAGNOSTIC LOG: Show what's arriving at the player
+    console.log(`[V7PhasePlayer] 🔍 Phase "${currentPhase.id}" data:`, {
+      type: currentPhase.type,
+      hasAnchorActions: !!currentPhase.anchorActions,
+      anchorActionsCount: currentPhase.anchorActions?.length || 0,
+      anchorActionsKeywords: currentPhase.anchorActions?.map((a: any) => a.keyword),
+      hasPauseKeywords: !!currentPhase.pauseKeywords,
+      pauseKeywordsCount: currentPhase.pauseKeywords?.length || 0,
+      pauseKeywords: currentPhase.pauseKeywords,
+    });
+    
     if (currentPhase.anchorActions && currentPhase.anchorActions.length > 0) {
-      console.log(`[V7PhasePlayer] 📍 Phase "${currentPhase.id}" anchorActions:`, 
-        currentPhase.anchorActions.map(a => `${a.keyword}`));
+      console.log(`[V7PhasePlayer] ✅ Using anchorActions from DB:`, 
+        currentPhase.anchorActions.map((a: any) => `${a.keyword} (${a.type})`));
       return currentPhase.anchorActions;
     }
     
     if (currentPhase.pauseKeywords && currentPhase.pauseKeywords.length > 0) {
+      console.log(`[V7PhasePlayer] ⚠️ Using pauseKeywords as fallback:`, currentPhase.pauseKeywords);
       return convertPauseKeywordsToActions(currentPhase.pauseKeywords);
     }
     
+    console.log(`[V7PhasePlayer] ❌ NO anchorActions OR pauseKeywords for phase "${currentPhase.id}"`);
     return [];
   }, [currentPhase]);
 
