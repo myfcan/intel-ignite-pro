@@ -452,6 +452,45 @@ export const V7PhasePlayer = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [audio, currentPhaseIndex]);
 
+  // ✅ CRITICAL FIX: Calculate current scene based on currentTime
+  // MUST be called BEFORE any early returns to maintain consistent hooks order
+  // ONLY ONE scene should be active at a time!
+  const currentScene = useMemo(() => {
+    if (!currentPhase?.scenes || currentPhase.scenes.length === 0) {
+      return null;
+    }
+
+    const effectiveTime = hasAudio ? audio.currentTime : internalTime;
+    const phaseStartTime = currentPhase.startTime ?? 0;
+    const relativeTime = effectiveTime - phaseStartTime;
+
+    // Find the scene that matches the current time
+    const activeScene = currentPhase.scenes.find((scene, idx) => {
+      const sceneStart = scene.startTime ?? 0;
+      const sceneDuration = scene.duration ?? 2; // Default 2 seconds
+      const sceneEnd = sceneStart + sceneDuration;
+
+      const isActive = relativeTime >= sceneStart && relativeTime < sceneEnd;
+
+      if (isActive) {
+        console.log(`[V7 SCENE DEBUG] Scene ${idx} "${scene.id}" is ACTIVE:`, {
+          sceneStart,
+          sceneEnd,
+          relativeTime: relativeTime.toFixed(2),
+        });
+      }
+
+      return isActive;
+    });
+
+    // If no scene found, return last scene (for end of phase)
+    if (!activeScene && currentPhase.scenes.length > 0) {
+      return currentPhase.scenes[currentPhase.scenes.length - 1];
+    }
+
+    return activeScene;
+  }, [currentPhase, audio.currentTime, internalTime, hasAudio]);
+
   // ✅ V7-v18 FIX: Usar play() diretamente ao invés de togglePlayPause()
   // Isso garante que o áudio SEMPRE inicia, independente do estado isPlaying
   // O togglePlayPause() verificava isPlaying que poderia estar dessincronizado
@@ -693,54 +732,6 @@ export const V7PhasePlayer = ({
     if (typeof value === 'object' && value?.content) return value.content;
     return '';
   };
-
-  // ✅ CRITICAL FIX: Calculate current scene based on currentTime
-  // ONLY ONE scene should be active at a time!
-  const currentScene = useMemo(() => {
-    if (!currentPhase?.scenes || currentPhase.scenes.length === 0) {
-      return null;
-    }
-
-    const effectiveTime = hasAudio ? audio.currentTime : internalTime;
-    const phaseStartTime = currentPhase.startTime ?? 0;
-    const relativeTime = effectiveTime - phaseStartTime;
-
-    // Find the scene that matches the current time
-    const activeScene = currentPhase.scenes.find((scene, idx) => {
-      const sceneStart = scene.startTime ?? 0;
-      const sceneDuration = scene.duration ?? 2; // Default 2 seconds
-      const sceneEnd = sceneStart + sceneDuration;
-      
-      const isActive = relativeTime >= sceneStart && relativeTime < sceneEnd;
-      
-      console.log(`[V7 SCENE DEBUG] Scene ${idx} "${scene.id}":`, {
-        sceneStart,
-        sceneEnd,
-        relativeTime: relativeTime.toFixed(2),
-        isActive,
-      });
-      
-      return isActive;
-    });
-
-    // If no scene found, return last scene (for end of phase)
-    if (!activeScene && currentPhase.scenes.length > 0) {
-      const lastScene = currentPhase.scenes[currentPhase.scenes.length - 1];
-      console.log('[V7 SCENE DEBUG] No active scene found, using last scene:', lastScene.id);
-      return lastScene;
-    }
-
-    if (activeScene) {
-      console.log('[V7 SCENE DEBUG] ✅ ACTIVE SCENE:', {
-        id: activeScene.id,
-        type: activeScene.type,
-        startTime: activeScene.startTime,
-        duration: activeScene.duration,
-      });
-    }
-
-    return activeScene;
-  }, [currentPhase, audio.currentTime, internalTime, hasAudio]);
 
   // Get content from the CURRENT scene only (not all scenes combined)
   const getCurrentSceneContent = (): any => {
