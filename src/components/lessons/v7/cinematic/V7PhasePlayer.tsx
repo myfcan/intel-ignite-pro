@@ -581,14 +581,17 @@ export const V7PhasePlayer = ({
     // The secret-reveal phase will handle its own audio flow
     if (nextPhase?.type !== 'secret-reveal') {
       manualResume();
+
+      // ✅ V7-v27 FIX: ALWAYS resume audio after quiz (unless going to secret-reveal)
+      // manualResume only resets anchor state - we need to actually play the audio
+      if (hasAudio && !audio.isPlaying) {
+        audio.play();
+        console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz completion');
+      }
     }
 
-    // ✅ V7-v4: Do NOT resume audio here - let the secret-reveal phase handle it
-    // The secret-reveal phase will pause main audio and play its own ElevenLabs narration
-    // Audio will be resumed when user clicks the button in secret-reveal
-
     goToNextPhase();
-  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio.currentTime]);
+  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio.currentTime, hasAudio, audio]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
@@ -628,11 +631,18 @@ export const V7PhasePlayer = ({
       playSound('success');
     }
 
+    // ✅ V7-v27 FIX: Resume audio after CTA choice
+    manualResume();
+    if (hasAudio && !audio.isPlaying) {
+      audio.play();
+      console.log('[V7PhasePlayer] ▶️ Audio RESUMED after CTA choice');
+    }
+
     // Small delay to show selection animation before navigating
     setTimeout(() => {
       goToNextPhase();
     }, 800);
-  }, [ctaClicked, playSound, goToNextPhase]);
+  }, [ctaClicked, playSound, goToNextPhase, manualResume, hasAudio, audio]);
 
   // Get canvas mood based on phase type
   const getCanvasMood = (type?: V7Phase['type']): 'dramatic' | 'calm' | 'energetic' | 'mysterious' => {

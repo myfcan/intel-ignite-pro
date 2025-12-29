@@ -601,17 +601,18 @@ function createVisualFromPhrase(
 // ============================================================================
 
 /**
- * ✅ V7.1 FIX: Centralized narration extraction
+ * ✅ V7.2 FIX: Centralized narration extraction
  * Handles all possible narration locations in a single function.
  *
  * Priority order:
  * 1. act.narration (string) - V7-v2 format
- * 2. phase.narration.text - V7-v3 format
- * 3. phase.audio.narration - Alternative format
- * 4. phase.audio.text - Fallback
- * 5. act.content.narration.text - Nested content
- * 6. act.content.audio.narration - Legacy format
- * 7+ Additional Lovable variations (script, dialogue, voiceover, etc.)
+ * 2. act.narrativeSegment (string) - Lovable cinematicStructure format
+ * 3. phase.narration.text - V7-v3 format
+ * 4. phase.audio.narration - Alternative format
+ * 5. phase.audio.text - Fallback
+ * 6. act.content.narration.text - Nested content
+ * 7. act.content.audio.narration - Legacy format
+ * 8+ Additional Lovable variations (script, dialogue, voiceover, etc.)
  */
 function extractNarration(item: any, debug: boolean = false): string {
   // V7-v2: narration at top level (string)
@@ -619,7 +620,7 @@ function extractNarration(item: any, debug: boolean = false): string {
     return item.narration;
   }
 
-  // ✅ V7-hybrid: narrativeSegment at top level (Lovable/cinematicStructure format)
+  // ✅ V7.2: Lovable cinematicStructure uses narrativeSegment
   if (typeof item.narrativeSegment === 'string' && item.narrativeSegment.trim().length > 0) {
     return item.narrativeSegment;
   }
@@ -750,14 +751,14 @@ Deno.serve(async (req) => {
     // Check if using:
     // - cinematicFlow.phases (V7-v3 camelCase format)
     // - cinematic_flow.acts (V7-v2 snake_case format)
-    // - cinematicStructure.acts (hybrid format - Lovable generated)
+    // - cinematicStructure.acts (Lovable hybrid format)
     // - narrativeScript (flat text)
     const hasCinematicFlowV3 = input.cinematicFlow?.phases && input.cinematicFlow.phases.length > 0;
     const hasCinematicFlowV2 = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
     const hasCinematicStructure = (input as any).cinematicStructure?.acts && (input as any).cinematicStructure.acts.length > 0;
     const hasCinematicFlow = hasCinematicFlowV3 || hasCinematicFlowV2 || hasCinematicStructure;
 
-    // ✅ Normalize cinematicStructure.acts to cinematic_flow.acts
+    // ✅ V7.2: Normalize cinematicStructure to cinematic_flow for unified processing
     if (hasCinematicStructure && !hasCinematicFlowV2) {
       console.log('[V7Pipeline] Normalizing cinematicStructure.acts to cinematic_flow.acts');
       input.cinematic_flow = {
@@ -766,15 +767,15 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Use normalized check after potential conversion
+    // Re-check after normalization
     const normalizedHasCinematicFlowV2 = input.cinematic_flow?.acts && input.cinematic_flow.acts.length > 0;
-    
+
     if (hasCinematicFlowV3) {
       console.log('[V7Pipeline] Using cinematicFlow.phases (V7-v3) with', input.cinematicFlow!.phases.length, 'phases');
     } else if (normalizedHasCinematicFlowV2) {
       console.log('[V7Pipeline] Using cinematic_flow.acts (V7-v2) with', input.cinematic_flow!.acts.length, 'acts');
       if (hasCinematicStructure) {
-        console.log('[V7Pipeline] (normalized from cinematicStructure.acts)');
+        console.log('[V7Pipeline] (Normalized from cinematicStructure.acts - Lovable format)');
       }
     } else {
       console.log('[V7Pipeline] Using flat narrativeScript, length:', input.narrativeScript?.length || 0);
