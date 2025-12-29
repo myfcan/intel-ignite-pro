@@ -250,7 +250,7 @@ export default function AdminV7vv() {
                   setScriptJson(e.target.value);
                   validateJson(e.target.value);
                 }}
-                className="font-mono text-sm h-[500px] bg-gray-900 border-gray-600"
+                className="font-mono text-sm h-[500px] bg-gray-900 border-gray-600 text-gray-100"
                 placeholder="Cole seu roteiro JSON aqui..."
               />
 
