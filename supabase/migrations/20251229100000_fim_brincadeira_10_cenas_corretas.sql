@@ -1,21 +1,23 @@
 -- Migration: O Fim da Brincadeira com IA - 10 CENAS EXATAS DO ROTEIRO CINEMATOGRÁFICO
 --
--- CENA 1: "98%" Hook - Explosão imediata do número
--- CENA 2: Brincadeira vs Resultado - Exemplos amadores
--- CENA 3: Os 2% e o dinheiro - R$ 30.000
--- CENA 4: Comparação 98% vs 2% - Divisão visual
--- CENA 5: Espelho/reflexão - Pausa com "brinquedo" -> Quiz
--- CENA 6: Quiz com 3 opções
--- CENA 7: Promessa do segredo - "O método"
--- CENA 8: Clique/transição - Revelação com "PERFEITO"
--- CENA 9: PERFEITO letra por letra
--- CENA 10: Playground - Comparação amador vs profissional
+-- ESTRUTURA CORRETA:
+-- pauseKeyword deve estar na PHASE INTERATIVA (quiz/playground) que APARECE quando a palavra é detectada
+-- NÃO na phase narrativa onde a palavra é falada!
+--
+-- Fluxo:
+-- 1. CENA 1-5: Narração toca, menciona "brinquedo" na CENA 2
+-- 2. Quando "brinquedo" detectado → CENA 6 (quiz) aparece com pauseKeyword: "brinquedo"
+-- 3. Usuário responde quiz
+-- 4. CENA 7-9: Narração continua, menciona "PERFEITO" na CENA 9
+-- 5. Quando "PERFEITO" detectado → CENA 10 (playground) aparece com pauseKeyword: "PERFEITO"
 
 UPDATE lessons
 SET
   content = '{
     "title": "O Fim da Brincadeira com IA",
     "subtitle": "98% brinca. 2% lucra com método.",
+    "model": "v7-cinematic",
+    "version": "7.2",
     "difficulty": "intermediate",
     "category": "prompts",
     "tags": ["prompts", "profissional", "ia", "metodo-perfeito"],
@@ -25,10 +27,11 @@ SET
       "Entender e memorizar o Método PERFEITO",
       "Testar, na prática, a diferença entre prompt amador e prompt profissional"
     ],
-    "duration": 240,
-    "generate_audio": true,
-    "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
-    "narrativeScript": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo. Conta uma piada. Escreve como pirata. Faz um poema sobre meu gato. Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês. Eles conhecem o segredo. O método PERFEITO. Persona. Especificidade. Resultado. Formato. Exemplos. Instruções. Tom. Otimização. A diferença entre brincar e lucrar está no método. E você está prestes a dominá-lo. Aqueles que dominam o método transformam IA em ferramenta de trabalho real.",
+    "metadata": {
+      "totalDuration": 240,
+      "actCount": 10,
+      "format": "acts"
+    },
     "cinematic_flow": {
       "timeline": {
         "totalDuration": 240
@@ -63,13 +66,6 @@ SET
           "startTime": 8,
           "duration": 15,
           "narration": "Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo. Conta uma piada. Escreve como pirata. Faz um poema sobre meu gato.",
-          "anchorActions": [
-            {
-              "id": "pause-quiz-brinquedo",
-              "keyword": "brinquedo",
-              "type": "pause"
-            }
-          ],
           "visual": {
             "type": "list-reveal",
             "title": "O QUE OS 98% FAZEM",
@@ -151,6 +147,8 @@ SET
           "startTime": 60,
           "duration": 45,
           "narration": "",
+          "pauseKeyword": "brinquedo",
+          "pauseKeywords": ["brinquedo"],
           "visual": {
             "title": "TESTE RELÂMPAGO",
             "subtitle": "AUTO-AVALIAÇÃO"
@@ -167,11 +165,6 @@ SET
             "correctFeedback": "Você já pensa como os 2%. Agora vamos adicionar método.",
             "incorrectFeedback": "Sem problema. Em poucos minutos você vai virar a chave."
           },
-          "contextualLoops": [
-            {"triggerAfter": 7, "text": "Reflita com calma...", "volume": 0.4},
-            {"triggerAfter": 15, "text": "Seja honesto consigo mesmo...", "volume": 0.35},
-            {"triggerAfter": 25, "text": "Escolha a opção que mais te representa...", "volume": 0.3}
-          ],
           "audioBehavior": {
             "onStart": "pause",
             "duringInteraction": {"mainVolume": 0, "ambientVolume": 0.2},
@@ -185,13 +178,6 @@ SET
           "startTime": 105,
           "duration": 12,
           "narration": "Eles conhecem o segredo. O método PERFEITO.",
-          "anchorActions": [
-            {
-              "id": "pause-playground-perfeito",
-              "keyword": "PERFEITO",
-              "type": "pause"
-            }
-          ],
           "visual": {
             "type": "teaser",
             "title": "ELES CONHECEM",
@@ -253,13 +239,8 @@ SET
           "startTime": 160,
           "duration": 80,
           "narration": "A diferença entre brincar e lucrar está no método. E você está prestes a dominá-lo. Aqueles que dominam o método transformam IA em ferramenta de trabalho real.",
-          "anchorActions": [
-            {
-              "id": "pause-cta-dominam",
-              "keyword": "dominam",
-              "type": "pause"
-            }
-          ],
+          "pauseKeyword": "PERFEITO",
+          "pauseKeywords": ["PERFEITO", "dominam"],
           "visual": {
             "title": "VEJA A DIFERENÇA NA PRÁTICA",
             "instruction": "Compare os dois prompts e veja a diferença nos resultados"
@@ -286,10 +267,6 @@ SET
               {"id": "cta-later", "label": "Voltar Depois", "emoji": "↩️", "variant": "negative", "action": "exit"}
             ]
           },
-          "contextualLoops": [
-            {"triggerAfter": 5, "text": "Observe a diferença...", "volume": 0.4},
-            {"triggerAfter": 15, "text": "Veja como o prompt estruturado gera resultados melhores...", "volume": 0.35}
-          ],
           "audioBehavior": {
             "onStart": "pause",
             "duringInteraction": {"mainVolume": 0, "ambientVolume": 0.2},
@@ -317,28 +294,28 @@ WHERE
   title = 'O Fim da Brincadeira com IA'
   AND model = 'v7';
 
--- Verify: 10 CENAS
+-- Verify: 10 CENAS with correct pauseKeywords
 DO $$
 DECLARE
   act_count INTEGER;
   lesson_title TEXT;
-  first_act_type TEXT;
-  last_act_type TEXT;
+  quiz_pause_keyword TEXT;
+  playground_pause_keyword TEXT;
 BEGIN
   SELECT
     title,
     jsonb_array_length(content->'cinematic_flow'->'acts'),
-    content->'cinematic_flow'->'acts'->0->>'type',
-    content->'cinematic_flow'->'acts'->9->>'type'
-  INTO lesson_title, act_count, first_act_type, last_act_type
+    content->'cinematic_flow'->'acts'->5->>'pauseKeyword',
+    content->'cinematic_flow'->'acts'->9->>'pauseKeyword'
+  INTO lesson_title, act_count, quiz_pause_keyword, playground_pause_keyword
   FROM lessons
   WHERE model = 'v7' AND title ILIKE '%fim da brincadeira%'
   LIMIT 1;
 
   IF act_count = 10 THEN
     RAISE NOTICE '✅ SUCCESS: Lesson "%" updated with 10 CENAS', lesson_title;
-    RAISE NOTICE '   - CENA 1: % (dramatic)', first_act_type;
-    RAISE NOTICE '   - CENA 10: % (playground)', last_act_type;
+    RAISE NOTICE '   - Quiz (CENA 6) pauseKeyword: %', quiz_pause_keyword;
+    RAISE NOTICE '   - Playground (CENA 10) pauseKeyword: %', playground_pause_keyword;
   ELSIF act_count IS NOT NULL THEN
     RAISE WARNING '⚠️ Lesson has % acts instead of 10', act_count;
   ELSE
