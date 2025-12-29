@@ -307,10 +307,10 @@ export function usePhaseController({
   // Use internal time when no audio, otherwise use audio time
   const rawTime = hasAudio ? currentTime : internalTime;
 
-  // ✅ V7-v11 FIX: Add 3s offset to audio time to compensate for loading phase offset in phases
-  // The phases have +3s offset added (loading phase is 0-3s), so audio time 0s = phase time 3s
-  // This ensures audio time 0s maps to the first content phase (startTime: 3s)
-  const effectiveTime = hasAudio ? rawTime + 3 : internalTime;
+  // ✅ V7-v28 FIX: Do NOT add +3s offset here!
+  // The phases now use timestamps directly from DB (starting at 0), so audio time maps 1:1
+  // The loading phase (0-3s) is handled separately and doesn't need offset
+  const effectiveTime = rawTime;
 
   // ✅ V7.1: Helper to check if an anchor word has been spoken
   const hasAnchorBeenSpoken = useCallback((anchorWord: string, beforeTime: number): boolean => {
