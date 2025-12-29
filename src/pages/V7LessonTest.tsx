@@ -213,7 +213,7 @@ const V7LessonTest = () => {
           learningObjectives: script?.learningObjectives || [],
           narrativeScript: narrationText,
           duration: script?.duration || 300,
-          voice_id: script?.voice_id || 'pFZP5JQG7iQjIQuC4Bku',
+          voice_id: script?.voice_id || 'Xb7hH8MSUJpSbSDYk0k2', // Alice - mesma voz do V5
           generate_audio: true,
           cinematic_flow: script?.cinematic_flow
         }
