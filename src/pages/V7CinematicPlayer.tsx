@@ -13,7 +13,7 @@ export default function V7CinematicPlayer() {
   const { toast } = useToast();
   
   // Fetch lesson from database - NO FALLBACK
-  const { script, audioUrl, wordTimestamps, isLoading, error, refetch } = useV7PhaseScript(lessonId);
+  const { script, audioUrl, wordTimestamps, isLoading, error, refetch, rawContent, detectionPath } = useV7PhaseScript(lessonId);
 
   // Handle lesson completion
   const handleComplete = () => {
@@ -101,6 +101,8 @@ export default function V7CinematicPlayer() {
       wordTimestamps={wordTimestamps}
       onComplete={handleComplete}
       onExit={handleExit}
+      rawContent={rawContent}
+      detectionPath={detectionPath}
     />
   );
 }

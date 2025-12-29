@@ -194,6 +194,9 @@ interface UseV7PhaseScriptResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
+  // ✅ DEBUG: For V7DebugPanel
+  rawContent: any;
+  detectionPath: 'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null;
 }
 
 export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScriptResult {
@@ -202,6 +205,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
   const [wordTimestamps, setWordTimestamps] = useState<Array<{ word: string; start: number; end: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // ✅ DEBUG: Track raw content and detection path
+  const [rawContent, setRawContent] = useState<any>(null);
+  const [detectionPath, setDetectionPath] = useState<'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null>(null);
   const { toast } = useToast();
 
   const fetchLesson = useCallback(async () => {
@@ -272,6 +278,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ============================================================================
       const contentAny = content as any;
 
+      // ✅ DEBUG: Save raw content for V7DebugPanel
+      setRawContent(contentAny);
+
       // ✅ DEBUG: Log ANTES da detecção para ver exatamente o que está chegando
       console.log('[useV7PhaseScript] 🔍 CONTENT ANALYSIS:');
       console.log('[useV7PhaseScript] - content exists:', !!content);
@@ -291,6 +300,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       if (isV7vvFormat) {
         console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
+        setDetectionPath('v7-vv');
         
         // ✅ DEBUG LOGS SOLICITADOS
         console.log('[V7-vv DEBUG] ==========================================');
@@ -356,6 +366,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       if (Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) {
         console.log('[useV7PhaseScript] 🚨 EMERGENCY FALLBACK: Usando content.phases diretamente!');
         console.log('[useV7PhaseScript] 🚨 Phases encontradas:', contentAny.phases.length);
+        setDetectionPath('emergency');
 
         const v7vvContent = contentAny;
         const v7vvPhases = v7vvContent.phases || [];
@@ -432,9 +443,11 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       let phases: V7Phase[];
       if (isV7v3Format) {
         console.log('[useV7PhaseScript] 🚀 Using V7-v3 transformPhasesToV7Phases');
+        setDetectionPath('v7-v3');
         phases = transformPhasesToV7Phases(rawPhases, totalDuration, timestamps);
       } else {
         console.log('[useV7PhaseScript] 📦 Using legacy transformActsToPhases');
+        setDetectionPath('legacy');
         console.log('[useV7PhaseScript] ⚠️ ATENÇÃO: rawActs está vazio?', rawActs.length === 0);
         console.log('[useV7PhaseScript] ⚠️ Se rawActs vazio, vai dar erro "Nenhum act encontrado"');
         console.log('[useV7PhaseScript] ⚠️ Isso significa que a detecção V7-vv FALHOU!');
@@ -477,6 +490,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
       setError(err.message);
+      setDetectionPath('error');
       toast({
         title: 'Erro ao carregar aula',
         description: err.message,
@@ -491,7 +505,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
     fetchLesson();
   }, [fetchLesson]);
 
-  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson };
+  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson, rawContent, detectionPath };
 }
 
 // ============================================================================
