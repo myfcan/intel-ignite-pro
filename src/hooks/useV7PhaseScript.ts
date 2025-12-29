@@ -350,6 +350,46 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript]   - metadata.generatedBy:', contentAny?.metadata?.generatedBy);
 
       // ============================================================================
+      // 🚨 EMERGENCY FALLBACK: Se content.phases existe, usar diretamente!
+      // Isso resolve o caso onde a detecção V7-vv falhou mas os dados estão lá
+      // ============================================================================
+      if (Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) {
+        console.log('[useV7PhaseScript] 🚨 EMERGENCY FALLBACK: Usando content.phases diretamente!');
+        console.log('[useV7PhaseScript] 🚨 Phases encontradas:', contentAny.phases.length);
+
+        const v7vvContent = contentAny;
+        const v7vvPhases = v7vvContent.phases || [];
+        const v7vvTotalDuration = v7vvContent.metadata?.totalDuration ||
+          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
+
+        const lessonScript: V7LessonScript = {
+          id: data.id,
+          title: v7vvContent.metadata?.title || data.title,
+          totalDuration: v7vvTotalDuration,
+          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
+          wordTimestamps: timestamps,
+          phases: v7vvPhases,
+          audioConfig: {
+            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
+          },
+          anchorPoints: [],
+        };
+
+        console.log('[useV7PhaseScript] ✅ EMERGENCY Script criado:', {
+          id: lessonScript.id,
+          title: lessonScript.title,
+          phases: lessonScript.phases.length,
+          totalDuration: lessonScript.totalDuration,
+        });
+
+        setScript(lessonScript);
+        setAudioUrl(data.audio_url || null);
+        setWordTimestamps(timestamps);
+        setIsLoading(false);
+        return; // ✅ Fallback de emergência - não vai para o caminho legacy!
+      }
+
+      // ============================================================================
       // LEGACY PATH: V7-v3 e anteriores (mantido para compatibilidade)
       // ============================================================================
 
@@ -395,6 +435,10 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         phases = transformPhasesToV7Phases(rawPhases, totalDuration, timestamps);
       } else {
         console.log('[useV7PhaseScript] 📦 Using legacy transformActsToPhases');
+        console.log('[useV7PhaseScript] ⚠️ ATENÇÃO: rawActs está vazio?', rawActs.length === 0);
+        console.log('[useV7PhaseScript] ⚠️ Se rawActs vazio, vai dar erro "Nenhum act encontrado"');
+        console.log('[useV7PhaseScript] ⚠️ Isso significa que a detecção V7-vv FALHOU!');
+        console.log('[useV7PhaseScript] ⚠️ Verifique se content.version === "vv" ou content.model === "v7-cinematic"');
         phases = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
       }
 
