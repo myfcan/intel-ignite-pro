@@ -262,6 +262,15 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       if (isV7vvFormat) {
         console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
+        
+        // ✅ DEBUG LOGS SOLICITADOS
+        console.log('[V7-vv DEBUG] ==========================================');
+        console.log('[V7-vv DEBUG] FORMATO V7-vv DETECTADO!');
+        console.log('[V7-vv DEBUG] content.version:', contentAny?.version);
+        console.log('[V7-vv DEBUG] content.model:', contentAny?.model);
+        console.log('[V7-vv DEBUG] phases count:', contentAny?.phases?.length);
+        console.log('[V7-vv DEBUG] Primeira phase:', JSON.stringify(contentAny?.phases?.[0], null, 2));
+        console.log('[V7-vv DEBUG] ==========================================');
 
         // V7-vv: Dados já vêm prontos do Pipeline
         const v7vvContent = contentAny;
