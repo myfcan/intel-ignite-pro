@@ -349,8 +349,10 @@ export function usePhaseController({
       return manualPhaseIndex;
     }
 
-    // Find the highest phase index that should be active
-    let activeIndex = 0;
+    // ✅ V7-v29 FIX: Find the BEST matching phase, handling GAPS properly
+    // Strategy: Find the last phase whose startTime we've passed
+    // This prevents looping back to phase 0 when in a gap
+    let bestIndex = 0;
 
     for (let i = 0; i < script.phases.length; i++) {
       const phase = script.phases[i];
@@ -359,18 +361,44 @@ export function usePhaseController({
       if (phase.enterAnchor) {
         // ✅ ANCHOR-BASED: Phase only active after enterAnchor word is spoken
         if (hasAnchorBeenSpoken(phase.enterAnchor, effectiveTime)) {
-          activeIndex = i;
+          bestIndex = i;
           console.log(`[V7PhaseController] 🎯 Phase "${phase.id}" activated by enterAnchor "${phase.enterAnchor}"`);
         }
       } else {
-        // ✅ TIME-BASED: Traditional startTime/endTime logic
-        if (effectiveTime >= phase.startTime && effectiveTime < phase.endTime) {
-          activeIndex = i;
+        // ✅ V7-v29 FIX: Use >= startTime to find which phase we're in or past
+        // If time is WITHIN the phase (startTime <= time < endTime), it's active
+        // If time is AFTER the phase (time >= endTime), keep looking for later phases
+        // If time is BEFORE the phase (time < startTime), stop - we found our phase
+
+        if (effectiveTime >= phase.startTime) {
+          // We've passed or are at this phase's start
+          if (effectiveTime < phase.endTime) {
+            // We're WITHIN this phase - this is the active one
+            bestIndex = i;
+          } else {
+            // We're PAST this phase - keep it as candidate (handles gaps)
+            // If the next phase hasn't started yet, this is still the best match
+            bestIndex = i;
+          }
+        } else {
+          // Time is BEFORE this phase's startTime
+          // If we already have a bestIndex, stop searching
+          // Otherwise this phase hasn't started yet and we stay on previous
+          break;
         }
       }
     }
 
-    return activeIndex;
+    // Log when we're in a gap
+    const selectedPhase = script.phases[bestIndex];
+    if (selectedPhase && effectiveTime >= selectedPhase.endTime) {
+      const nextPhase = script.phases[bestIndex + 1];
+      if (nextPhase && effectiveTime < nextPhase.startTime) {
+        console.log(`[V7PhaseController] ⏳ In GAP between phase ${bestIndex} (ends ${selectedPhase.endTime.toFixed(1)}s) and phase ${bestIndex + 1} (starts ${nextPhase.startTime.toFixed(1)}s) - showing phase ${bestIndex}`);
+      }
+    }
+
+    return bestIndex;
   }, [script.phases, effectiveTime, manualPhaseIndex, hasAnchorBeenSpoken]);
 
   const currentPhase = script.phases[currentPhaseIndex] || null;
