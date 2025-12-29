@@ -250,6 +250,62 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         console.log('[useV7PhaseScript] Last word:', timestamps[timestamps.length - 1]);
       }
 
+      // ============================================================================
+      // ✅ V7-vv DETECTION: Pipeline Cinematográfico - Caminho Simplificado
+      // Se a aula foi criada pelo V7-vv Pipeline, os dados já vêm prontos
+      // SEM necessidade de transformação - zero fallbacks
+      // ============================================================================
+      const contentAny = content as any;
+      const isV7vvFormat =
+        contentAny?.version === 'vv' ||
+        (contentAny?.model === 'v7-cinematic' && Array.isArray(contentAny?.phases) && contentAny.phases.length > 0);
+
+      if (isV7vvFormat) {
+        console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
+
+        // V7-vv: Dados já vêm prontos do Pipeline
+        const v7vvContent = contentAny;
+        const v7vvPhases = v7vvContent.phases || [];
+
+        // Usar totalDuration do metadata ou calcular de wordTimestamps
+        const v7vvTotalDuration = v7vvContent.metadata?.totalDuration ||
+          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
+
+        console.log('[useV7PhaseScript] V7-vv phases:', v7vvPhases.length);
+        console.log('[useV7PhaseScript] V7-vv totalDuration:', v7vvTotalDuration);
+
+        // ✅ V7-vv: Usar phases diretamente (já vêm com anchorActions, scenes, etc)
+        const lessonScript: V7LessonScript = {
+          id: data.id,
+          title: v7vvContent.metadata?.title || data.title,
+          totalDuration: v7vvTotalDuration,
+          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
+          wordTimestamps: timestamps,
+          phases: v7vvPhases,
+          audioConfig: {
+            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
+          },
+          anchorPoints: [],
+        };
+
+        console.log('[useV7PhaseScript] ✅ V7-vv Script criado:', {
+          id: lessonScript.id,
+          title: lessonScript.title,
+          phases: lessonScript.phases.length,
+          totalDuration: lessonScript.totalDuration,
+        });
+
+        setScript(lessonScript);
+        setAudioUrl(data.audio_url || null);
+        setWordTimestamps(timestamps);
+        setIsLoading(false);
+        return; // ✅ Caminho rápido - sem mais transformações!
+      }
+
+      // ============================================================================
+      // LEGACY PATH: V7-v3 e anteriores (mantido para compatibilidade)
+      // ============================================================================
+
       // ✅ V7-v3: Detect new structure with phases array (anchorText-only)
       const rawPhases = content?.cinematicFlow?.phases || 
                         content?.cinematic_flow?.phases || 
