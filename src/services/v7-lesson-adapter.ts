@@ -247,15 +247,23 @@ function generateInteractionPoints(acts: CinematicAct[]): InteractionPoint[] {
     // Check all layers for interaction data (quiz, playground, cta)
     let visualContent: any = null;
 
-    // Find the layer with interaction data
-    for (const layer of act.content?.visual?.layers || []) {
-      if (
-        typeof layer.content === 'object' &&
-        layer.content !== null &&
-        (layer.content.question || layer.content.options || layer.content.choices || layer.content.code)
-      ) {
-        visualContent = layer.content;
-        break;
+    // CORREÇÃO: Primeiro verifica act.content.interaction (V7-v2 format)
+    const interactionData = (act as any).content?.interaction || {};
+    if (interactionData.question || interactionData.options) {
+      visualContent = interactionData;
+    }
+
+    // Se não encontrou em interaction, busca nos layers (legacy format)
+    if (!visualContent) {
+      for (const layer of act.content?.visual?.layers || []) {
+        if (
+          typeof layer.content === 'object' &&
+          layer.content !== null &&
+          (layer.content.question || layer.content.options || layer.content.choices || layer.content.code)
+        ) {
+          visualContent = layer.content;
+          break;
+        }
       }
     }
 
