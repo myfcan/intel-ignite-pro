@@ -43,6 +43,9 @@ interface V7PhasePlayerProps {
   wordTimestamps?: WordTimestamp[];
   onComplete?: () => void;
   onExit?: () => void;
+  // ✅ DEBUG: For V7DebugPanel
+  rawContent?: any;
+  detectionPath?: 'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null;
 }
 
 // Helper to format time in mm:ss
@@ -98,7 +101,9 @@ export const V7PhasePlayer = ({
   audioUrl,
   wordTimestamps = [],
   onComplete,
-  onExit
+  onExit,
+  rawContent,
+  detectionPath
 }: V7PhasePlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
@@ -1251,6 +1256,9 @@ export const V7PhasePlayer = ({
         isPlaying={effectiveIsPlaying}
         audioUrl={audioUrl || null}
         wordTimestamps={wordTimestamps}
+        fullScript={scaledScript}
+        rawContent={rawContent}
+        detectionPath={detectionPath || undefined}
       />
     </div>
   );
