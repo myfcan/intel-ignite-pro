@@ -786,7 +786,7 @@ Deno.serve(async (req) => {
     }
     
     if (!hasCinematicFlow && !input.narrativeScript) {
-      throw new Error('Either cinematicFlow.phases, cinematic_flow.acts or narrativeScript is required');
+      throw new Error('Either cinematicFlow.phases, cinematic_flow.acts, cinematicStructure.acts or narrativeScript is required');
     }
 
     // ========================================================================

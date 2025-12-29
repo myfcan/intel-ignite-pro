@@ -369,12 +369,12 @@ function transformPhasesToV7Phases(
   
   const result: V7Phase[] = [];
   
-  // Add loading phase first
+  // ✅ V7-v28: Loading phase is shown BEFORE audio starts (negative time range)
   result.push({
     id: 'loading',
     title: 'Carregando',
-    startTime: 0,
-    endTime: 3,
+    startTime: -10,
+    endTime: 0,
     type: 'loading',
     scenes: [],
     mood: 'neutral',
@@ -382,7 +382,7 @@ function transformPhasesToV7Phases(
 
   // ✅ Calculate estimated timings from wordTimestamps based on anchorText
   // This is for visual purposes only - actual transitions use anchorText detection
-  let estimatedCurrentTime = 3; // After loading phase
+  let estimatedCurrentTime = 0; // ✅ V7-v28: Start at 0 since phases use DB timestamps
   
   phases.forEach((phase, index) => {
     const phaseType = mapActTypeToPhaseType(phase.type || 'dramatic');
@@ -791,17 +791,19 @@ function transformActsToPhases(
   console.log(`[transformActsToPhases] Needs re-scaling: ${needsReScaling}`);
   console.log(`[transformActsToPhases] Scale factor: ${scaleFactor.toFixed(2)} (${totalActsDuration}s acts → ${availableTime}s audio)`);
 
-  // Add loading phase first
+  // ✅ V7-v28: Loading phase is shown BEFORE audio starts (negative time range)
+  // This ensures it doesn't conflict with actual content phases
   phases.push({
     id: 'loading',
     title: 'Carregando',
-    startTime: 0,
-    endTime: 3,
+    startTime: -10, // Before audio starts
+    endTime: 0,     // Ends when audio starts at 0
     type: 'loading',
     scenes: [],
     mood: 'neutral',
   });
-  currentTime = 3;
+  // ✅ V7-v28: currentTime starts at 0 since phases use DB timestamps directly
+  currentTime = 0;
 
   acts.forEach((act, index) => {
     const phaseType = mapActTypeToPhaseType(act.type);
@@ -823,23 +825,14 @@ function transformActsToPhases(
     const minDuration = minDurations[phaseType] || 5;
 
     if (hasPreScaledTimings && act.startTime !== undefined && act.endTime !== undefined) {
-      if (needsReScaling) {
-        // Pre-scaled timings exist but are WRONG - re-scale them
-        const scaledStart = act.startTime * scaleFactor;
-        const scaledEnd = act.endTime * scaleFactor;
-        startTime = 3 + scaledStart; // Add 3s loading phase offset
-        endTime = 3 + scaledEnd;
-        duration = Math.max(minDuration, scaledEnd - scaledStart);
-        // Adjust endTime if we hit minimum
-        if (duration > scaledEnd - scaledStart) {
-          endTime = startTime + duration;
-        }
-      } else {
-        // Pipeline v2.0+: timings already correct, just add loading phase offset
-        startTime = 3 + act.startTime;
-        endTime = 3 + act.endTime;
-        duration = Math.max(minDuration, act.endTime - act.startTime);
-      }
+      // ✅ V7-v28 FIX: Use timestamps from DB directly, WITHOUT adding 3s offset here
+      // The +3s offset is already added by usePhaseController when comparing to audio time
+      // Adding it here causes DOUBLE offset!
+      startTime = act.startTime;
+      endTime = act.endTime;
+      duration = endTime - startTime;
+      
+      console.log(`[transformActsToPhases] Act ${index + 1}: using DB timestamps ${startTime.toFixed(1)}s-${endTime.toFixed(1)}s (duration: ${duration.toFixed(1)}s)`);
     } else {
       // Legacy: scale manually
       const originalDuration = act.duration || 60;
@@ -870,6 +863,37 @@ function transformActsToPhases(
                            act.content?.anchorActions ||
                            [];
     
+    // 🔍 DIAGNOSTIC LOG: Show what's in the act object
+    console.log(`[transformActsToPhases] 🔍 Act ${act.id}:`, {
+      hasAnchorActions: !!act.anchorActions,
+      rawAnchorActions: act.anchorActions,
+      hasPauseKeyword: !!act.pauseKeyword,
+      pauseKeyword: act.pauseKeyword,
+      hasPauseKeywords: !!act.pauseKeywords,
+      pauseKeywords: act.pauseKeywords,
+      interactionPauseKeyword: interactionData?.pauseKeyword,
+      contentPauseKeyword: act.content?.pauseKeyword,
+    });
+    
+    // ✅ V7-v29 FIX: Also convert SINGLE pauseKeyword (string) to anchorAction
+    // The DB often has pauseKeyword: "uso atual" instead of anchorActions array
+    if (rawAnchorActions.length === 0) {
+      const singlePauseKeyword = act.pauseKeyword || 
+                                 interactionData?.pauseKeyword || 
+                                 act.content?.pauseKeyword ||
+                                 act.content?.interaction?.pauseKeyword;
+      
+      if (singlePauseKeyword && typeof singlePauseKeyword === 'string') {
+        console.log(`[transformActsToPhases] ✅ FOUND pauseKeyword: "${singlePauseKeyword}" - converting to anchorAction`);
+        rawAnchorActions = [{
+          id: 'pause-from-keyword',
+          keyword: singlePauseKeyword,
+          type: 'pause',
+          once: true
+        }];
+      }
+    }
+    
     // ✅ NORMALIZE anchorActions - support both "keyword" and "pauseKeyword" formats
     let anchorActions = rawAnchorActions.map((action: any, idx: number) => {
       const keyword = action.keyword || action.pauseKeyword || '';
@@ -888,10 +912,11 @@ function transformActsToPhases(
       return normalized;
     });
     
-    // ✅ Also support legacy pauseKeywords for backward compatibility
+    // ✅ Also support legacy pauseKeywords array for backward compatibility
     let pauseKeywords = act.pauseKeywords || 
                         interactionData?.pauseKeywords || 
                         act.content?.pauseKeywords ||
+                        act.content?.interaction?.pauseKeywords ||
                         [];
     
     // ✅ V7-v2.4: Extract narration text for intelligent pauseKeyword detection

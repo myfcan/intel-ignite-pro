@@ -89,7 +89,7 @@ export function useV7CinematicLesson(lessonId: string | undefined): UseV7Cinemat
 
       // Extract acts from timeline or create default structure
       const timeline = content?.timeline || content?.cinematic_flow?.timeline || {};
-      const rawActs = content?.cinematic_flow?.acts || timeline?.acts || content?.cinematicFlow?.acts || [];
+      const rawActs = content?.cinematic_flow?.acts || content?.cinematicStructure?.acts || timeline?.acts || content?.cinematicFlow?.acts || [];
       
       // Transform acts to cinematic format
       const acts: V7CinematicActData[] = rawActs.map((act: any, index: number) => {
