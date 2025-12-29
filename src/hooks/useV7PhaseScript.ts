@@ -30,6 +30,15 @@ interface RawWordTimestamp {
 interface V7LessonContent {
   model?: string;
   version?: string;
+  // ✅ V7-vv: Phases diretamente no content (Pipeline Cinematográfico)
+  phases?: any[];
+  metadata?: {
+    title?: string;
+    subtitle?: string;
+    totalDuration?: number;
+    phaseCount?: number;
+    [key: string]: any;
+  };
   // ✅ V7-v3: New structure with phases array and anchorText-only transitions
   cinematicFlow?: {
     totalPhases?: number;
@@ -49,7 +58,13 @@ interface V7LessonContent {
     acts: V7DatabaseAct[];
     totalDuration?: number;
   };
+  // ✅ UNIFIED audioConfig - supports both V7-vv and legacy formats
   audioConfig?: {
+    // V7-vv format
+    url?: string;
+    duration?: number;
+    wordTimestampsCount?: number;
+    // Legacy format
     mainAudioUrl?: string;
     ambientAudioUrl?: string;
     soundEffects?: {
