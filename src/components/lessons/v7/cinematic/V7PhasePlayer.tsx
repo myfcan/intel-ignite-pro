@@ -694,30 +694,90 @@ export const V7PhasePlayer = ({
     return '';
   };
 
-  // Combine ALL scene content for progressive reveal phases (dramatic, etc.)
+  // ✅ CRITICAL FIX: Calculate current scene based on currentTime
+  // ONLY ONE scene should be active at a time!
+  const currentScene = useMemo(() => {
+    if (!currentPhase?.scenes || currentPhase.scenes.length === 0) {
+      return null;
+    }
+
+    const effectiveTime = hasAudio ? audio.currentTime : internalTime;
+    const phaseStartTime = currentPhase.startTime ?? 0;
+    const relativeTime = effectiveTime - phaseStartTime;
+
+    // Find the scene that matches the current time
+    const activeScene = currentPhase.scenes.find((scene, idx) => {
+      const sceneStart = scene.startTime ?? 0;
+      const sceneDuration = scene.duration ?? 2; // Default 2 seconds
+      const sceneEnd = sceneStart + sceneDuration;
+      
+      const isActive = relativeTime >= sceneStart && relativeTime < sceneEnd;
+      
+      console.log(`[V7 SCENE DEBUG] Scene ${idx} "${scene.id}":`, {
+        sceneStart,
+        sceneEnd,
+        relativeTime: relativeTime.toFixed(2),
+        isActive,
+      });
+      
+      return isActive;
+    });
+
+    // If no scene found, return last scene (for end of phase)
+    if (!activeScene && currentPhase.scenes.length > 0) {
+      const lastScene = currentPhase.scenes[currentPhase.scenes.length - 1];
+      console.log('[V7 SCENE DEBUG] No active scene found, using last scene:', lastScene.id);
+      return lastScene;
+    }
+
+    if (activeScene) {
+      console.log('[V7 SCENE DEBUG] ✅ ACTIVE SCENE:', {
+        id: activeScene.id,
+        type: activeScene.type,
+        startTime: activeScene.startTime,
+        duration: activeScene.duration,
+      });
+    }
+
+    return activeScene;
+  }, [currentPhase, audio.currentTime, internalTime, hasAudio]);
+
+  // Get content from the CURRENT scene only (not all scenes combined)
+  const getCurrentSceneContent = (): any => {
+    if (!currentScene?.content) return {};
+    return currentScene.content;
+  };
+
+  // For phases that need progressive content (combines scenes UP TO currentTime)
   const getCombinedSceneContent = (): any => {
     if (!currentPhase?.scenes) return {};
 
-    // Merge all scenes' content, prioritizing later scenes for conflicts
+    const effectiveTime = hasAudio ? audio.currentTime : internalTime;
+    const phaseStartTime = currentPhase.startTime ?? 0;
+    const relativeTime = effectiveTime - phaseStartTime;
+
+    // Merge only scenes that have STARTED (not future scenes)
     const combined: any = {};
-    currentPhase.scenes.forEach((scene, idx) => {
-      // ✅ DEBUG LOG SOLICITADO
-      console.log('[V7 SCENE DEBUG] Renderizando scene:', {
-        id: scene.id,
-        type: scene.type,
-        startTime: scene.startTime,
-        duration: scene.duration,
-        hasContent: !!scene.content,
+    currentPhase.scenes
+      .filter(scene => {
+        const sceneStart = scene.startTime ?? 0;
+        return relativeTime >= sceneStart; // Only include scenes that have started
+      })
+      .forEach((scene, idx) => {
+        console.log('[V7 SCENE DEBUG] Including scene in combined:', {
+          id: scene.id,
+          type: scene.type,
+          startTime: scene.startTime,
+        });
+        
+        const content = scene.content || {};
+        Object.keys(content).forEach(key => {
+          // Keep first non-empty value for each key
+          if (!combined[key] && content[key]) {
+            combined[key] = content[key];
+          }
+        });
       });
-      
-      const content = scene.content || {};
-      Object.keys(content).forEach(key => {
-        // Keep first non-empty value for each key
-        if (!combined[key] && content[key]) {
-          combined[key] = content[key];
-        }
-      });
-    });
     return combined;
   };
 
