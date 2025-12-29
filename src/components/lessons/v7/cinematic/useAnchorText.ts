@@ -44,6 +44,11 @@ export interface AnchorAction {
   once?: boolean;
   /** Delay após detectar a palavra (ms) */
   delayMs?: number;
+  /**
+   * V7-vv: Tempo exato da palavra no áudio (pré-calculado pelo Pipeline)
+   * Quando disponível, usa detecção direta por tempo ao invés de busca por keyword
+   */
+  keywordTime?: number;
 }
 
 export interface AnchorEvent {
@@ -311,9 +316,12 @@ export function useAnchorText({
       return;
     }
     
-    if (!wordTimestamps.length) {
+    // ✅ V7-vv: Se todas as ações têm keywordTime, não precisamos de wordTimestamps
+    const allActionsHaveKeywordTime = actions.every(a => a.keywordTime !== undefined && a.keywordTime > 0);
+
+    if (!wordTimestamps.length && !allActionsHaveKeywordTime) {
       if (Math.floor(currentTime) % 5 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
-        console.log(`[AnchorText] ⚠️ No wordTimestamps at ${timeStr}s - anchor system CANNOT work!`);
+        console.log(`[AnchorText] ⚠️ No wordTimestamps at ${timeStr}s and actions don't have keywordTime - anchor system CANNOT work!`);
       }
       return;
     }
@@ -325,7 +333,7 @@ export function useAnchorText({
 
     for (const action of actions) {
       const actionKey = `${phaseId}-${action.id}`;
-      
+
       // Pula se já executada e once=true
       if (action.once !== false && stateRef.current.executedActions.has(actionKey)) {
         continue;
@@ -336,11 +344,31 @@ export function useAnchorText({
         console.log(`[AnchorText] ⏸️ Skipping pause action "${action.keyword}" - not playing`);
         continue;
       }
-      
+
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // Encontra o timestamp da palavra-chave
+      // ✅ V7-vv: Se keywordTime está disponível, usar detecção direta por tempo
+      // Isso é mais preciso e eficiente que buscar pela keyword nos wordTimestamps
+      if (action.keywordTime !== undefined && action.keywordTime > 0) {
+        const windowMs = 500; // 500ms window for V7-vv (more forgiving)
+        const windowSec = windowMs / 1000;
+        const isNear = currentTime >= action.keywordTime && currentTime <= action.keywordTime + windowSec;
+
+        if (isNear) {
+          console.log(`[AnchorText] 🎯 V7-vv DIRECT MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(1)}s (current: ${timeStr}s)`);
+          // Create synthetic wordTs for compatibility
+          const syntheticWordTs: WordTimestamp = {
+            word: action.keyword,
+            start: action.keywordTime - 0.5,
+            end: action.keywordTime,
+          };
+          executeAction(action, syntheticWordTs);
+        }
+        continue;
+      }
+
+      // Fallback: Encontra o timestamp da palavra-chave (método legado)
       const wordTs = findKeywordTimestamp(action.keyword);
       if (!wordTs) {
         console.log(`[AnchorText] ❌ Action "${action.keyword}" - keyword not found in timestamps`);
@@ -350,7 +378,7 @@ export function useAnchorText({
       // Verifica se o tempo atual está próximo
       const isNear = isTimeNearWord(wordTs, currentTime);
       console.log(`[AnchorText] 📍 Action "${action.keyword}" | wordTs: ${wordTs.start.toFixed(1)}s-${wordTs.end.toFixed(1)}s | currentTime: ${timeStr}s | isNear: ${isNear}`);
-      
+
       if (isNear) {
         console.log(`[AnchorText] 🎯🎯🎯 MATCH! Keyword "${action.keyword}" near time ${timeStr}s (word at ${wordTs.start.toFixed(1)}s)`);
         executeAction(action, wordTs);
