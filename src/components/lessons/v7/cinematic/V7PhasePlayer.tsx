@@ -104,6 +104,18 @@ export const V7PhasePlayer = ({
   const [showControls, setShowControls] = useState(true);
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
 
+  // ✅ DEBUG LOGS SOLICITADOS
+  console.log('[V7PhasePlayer DEBUG] ==========================================');
+  console.log('[V7PhasePlayer DEBUG] Script recebido:', {
+    id: script?.id,
+    title: script?.title,
+    phasesCount: script?.phases?.length,
+    firstPhaseType: script?.phases?.[0]?.type,
+    firstPhaseScenesCount: script?.phases?.[0]?.scenes?.length,
+  });
+  console.log('[V7PhasePlayer DEBUG] Primeira phase completa:', JSON.stringify(script?.phases?.[0], null, 2));
+  console.log('[V7PhasePlayer DEBUG] ==========================================');
+
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
 
@@ -689,6 +701,15 @@ export const V7PhasePlayer = ({
     // Merge all scenes' content, prioritizing later scenes for conflicts
     const combined: any = {};
     currentPhase.scenes.forEach((scene, idx) => {
+      // ✅ DEBUG LOG SOLICITADO
+      console.log('[V7 SCENE DEBUG] Renderizando scene:', {
+        id: scene.id,
+        type: scene.type,
+        startTime: scene.startTime,
+        duration: scene.duration,
+        hasContent: !!scene.content,
+      });
+      
       const content = scene.content || {};
       Object.keys(content).forEach(key => {
         // Keep first non-empty value for each key
