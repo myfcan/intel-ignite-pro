@@ -256,9 +256,23 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // SEM necessidade de transformação - zero fallbacks
       // ============================================================================
       const contentAny = content as any;
+
+      // ✅ DEBUG: Log ANTES da detecção para ver exatamente o que está chegando
+      console.log('[useV7PhaseScript] 🔍 CONTENT ANALYSIS:');
+      console.log('[useV7PhaseScript] - content exists:', !!content);
+      console.log('[useV7PhaseScript] - content.version:', contentAny?.version);
+      console.log('[useV7PhaseScript] - content.model:', contentAny?.model);
+      console.log('[useV7PhaseScript] - content.phases:', Array.isArray(contentAny?.phases) ? `array(${contentAny.phases.length})` : typeof contentAny?.phases);
+      console.log('[useV7PhaseScript] - content.cinematicFlow:', !!contentAny?.cinematicFlow);
+      console.log('[useV7PhaseScript] - content.cinematic_flow:', !!contentAny?.cinematic_flow);
+      console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content) : 'N/A');
+
+      // ✅ Detecção mais robusta - aceita variações
       const isV7vvFormat =
         contentAny?.version === 'vv' ||
-        (contentAny?.model === 'v7-cinematic' && Array.isArray(contentAny?.phases) && contentAny.phases.length > 0);
+        contentAny?.version === 'VV' ||
+        (contentAny?.model === 'v7-cinematic' && Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) ||
+        (contentAny?.metadata?.generatedBy === 'V7-vv' && Array.isArray(contentAny?.phases));
 
       if (isV7vvFormat) {
         console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
@@ -310,6 +324,15 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         setIsLoading(false);
         return; // ✅ Caminho rápido - sem mais transformações!
       }
+
+      // ✅ LOG: V7-vv não detectado - vamos entender por quê
+      console.log('[useV7PhaseScript] ⚠️ V7-vv NOT DETECTED - usando caminho legacy');
+      console.log('[useV7PhaseScript] ⚠️ Razões da falha:');
+      console.log('[useV7PhaseScript]   - version !== "vv":', contentAny?.version);
+      console.log('[useV7PhaseScript]   - model !== "v7-cinematic":', contentAny?.model);
+      console.log('[useV7PhaseScript]   - phases is array:', Array.isArray(contentAny?.phases));
+      console.log('[useV7PhaseScript]   - phases length:', contentAny?.phases?.length || 0);
+      console.log('[useV7PhaseScript]   - metadata.generatedBy:', contentAny?.metadata?.generatedBy);
 
       // ============================================================================
       // LEGACY PATH: V7-v3 e anteriores (mantido para compatibilidade)
