@@ -395,6 +395,10 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         phases = transformPhasesToV7Phases(rawPhases, totalDuration, timestamps);
       } else {
         console.log('[useV7PhaseScript] 📦 Using legacy transformActsToPhases');
+        console.log('[useV7PhaseScript] ⚠️ ATENÇÃO: rawActs está vazio?', rawActs.length === 0);
+        console.log('[useV7PhaseScript] ⚠️ Se rawActs vazio, vai dar erro "Nenhum act encontrado"');
+        console.log('[useV7PhaseScript] ⚠️ Isso significa que a detecção V7-vv FALHOU!');
+        console.log('[useV7PhaseScript] ⚠️ Verifique se content.version === "vv" ou content.model === "v7-cinematic"');
         phases = transformActsToPhases(rawActs, totalDuration, hasCinematicFlow, timestamps);
       }
 
