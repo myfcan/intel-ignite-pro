@@ -202,7 +202,7 @@ interface V7Phase {
     id: string;
     type: string;
     startTime: number;
-    endTime: number;
+    duration: number;  // Duração em segundos (compatível com frontend V7Scene)
     content: Record<string, any>;
     animation: string;
   }>;
@@ -649,7 +649,8 @@ function generatePhases(
 // GERAR SCENES CINEMATOGRÁFICAS (Múltiplas por cena)
 // ============================================================================
 
-interface CinematicScene {
+// Internal representation with endTime for calculations
+interface CinematicSceneInternal {
   id: string;
   type: string;
   startTime: number;
@@ -658,13 +659,36 @@ interface CinematicScene {
   animation: string;
 }
 
+// Frontend-compatible format with duration
+interface CinematicScene {
+  id: string;
+  type: string;
+  startTime: number;
+  duration: number;
+  content: Record<string, any>;
+  animation: string;
+}
+
+// Transform internal scenes to frontend-compatible format
+function transformScenesToDuration(scenes: CinematicSceneInternal[]): CinematicScene[] {
+  return scenes.map(scene => ({
+    id: scene.id,
+    type: scene.type,
+    startTime: scene.startTime,
+    duration: scene.endTime - scene.startTime,
+    content: scene.content,
+    animation: scene.animation,
+  }));
+}
+
 function generateCinematicScenes(
   scene: V7SceneInput,
   startTime: number,
   endTime: number,
   wordTimestamps: WordTimestamp[]
 ): CinematicScene[] {
-  const scenes: CinematicScene[] = [];
+  // Use internal format with endTime for calculations
+  const internalScenes: CinematicSceneInternal[] = [];
   const duration = endTime - startTime;
   const visual = scene.visual;
 
@@ -674,33 +698,33 @@ function generateCinematicScenes(
   // Gerar scenes baseado no tipo
   switch (scene.type) {
     case 'dramatic':
-      scenes.push(...generateDramaticScenes(scene.id, visual, startTime, duration, effects));
+      internalScenes.push(...generateDramaticScenes(scene.id, visual, startTime, duration, effects));
       break;
 
     case 'narrative':
     case 'comparison':
-      scenes.push(...generateNarrativeScenes(scene.id, visual, startTime, duration, effects));
+      internalScenes.push(...generateNarrativeScenes(scene.id, visual, startTime, duration, effects));
       break;
 
     case 'interaction':
-      scenes.push(...generateInteractionScenes(scene.id, visual, scene.interaction, startTime, duration));
+      internalScenes.push(...generateInteractionScenes(scene.id, visual, scene.interaction, startTime, duration));
       break;
 
     case 'playground':
-      scenes.push(...generatePlaygroundScenes(scene.id, visual, scene.interaction, startTime, duration));
+      internalScenes.push(...generatePlaygroundScenes(scene.id, visual, scene.interaction, startTime, duration));
       break;
 
     case 'revelation':
     case 'secret-reveal':
-      scenes.push(...generateRevelationScenes(scene.id, visual, scene.interaction, startTime, duration));
+      internalScenes.push(...generateRevelationScenes(scene.id, visual, scene.interaction, startTime, duration));
       break;
 
     case 'gamification':
-      scenes.push(...generateGamificationScenes(scene.id, visual, startTime, duration));
+      internalScenes.push(...generateGamificationScenes(scene.id, visual, startTime, duration));
       break;
 
     default:
-      scenes.push({
+      internalScenes.push({
         id: `${scene.id}-main`,
         type: 'text-reveal',
         startTime,
@@ -715,7 +739,7 @@ function generateCinematicScenes(
     // Encontrar timing do anchorText
     const matchTime = startTime + (duration * (index + 1) / (visual.microVisuals!.length + 1));
 
-    scenes.push({
+    internalScenes.push({
       id: mv.id || `${scene.id}-mv-${index}`,
       type: `micro-${mv.type}`,
       startTime: matchTime,
@@ -726,9 +750,10 @@ function generateCinematicScenes(
   });
 
   // Ordenar por startTime
-  scenes.sort((a, b) => a.startTime - b.startTime);
+  internalScenes.sort((a, b) => a.startTime - b.startTime);
 
-  return scenes;
+  // Transform to frontend-compatible format with duration
+  return transformScenesToDuration(internalScenes);
 }
 
 function generateDramaticScenes(
@@ -737,9 +762,9 @@ function generateDramaticScenes(
   startTime: number,
   duration: number,
   effects: V7VisualConfig['effects']
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Letterbox com hook question (15% da duração)
   if (content.hookQuestion) {
@@ -828,9 +853,9 @@ function generateNarrativeScenes(
   startTime: number,
   duration: number,
   effects: V7VisualConfig['effects']
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Title fade in (15%)
   scenes.push({
@@ -926,9 +951,9 @@ function generateInteractionScenes(
   interaction: V7InteractionConfig | undefined,
   startTime: number,
   duration: number
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Quiz intro (20%)
   scenes.push({
@@ -979,9 +1004,9 @@ function generatePlaygroundScenes(
   interaction: V7InteractionConfig | undefined,
   startTime: number,
   duration: number
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Challenge title (10%)
   scenes.push({
@@ -1080,9 +1105,9 @@ function generateRevelationScenes(
   interaction: V7InteractionConfig | undefined,
   startTime: number,
   duration: number
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Dramatic pause (10%)
   scenes.push({
@@ -1145,9 +1170,9 @@ function generateGamificationScenes(
   visual: V7VisualConfig,
   startTime: number,
   duration: number
-): CinematicScene[] {
+): CinematicSceneInternal[] {
   const content = visual.content;
-  const scenes: CinematicScene[] = [];
+  const scenes: CinematicSceneInternal[] = [];
 
   // Scene 1: Celebration title (25%)
   scenes.push({
