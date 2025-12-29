@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Clock, Zap, TestTube, Bug, FlaskConical,
-  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings, Film, Play
+  Volume2, ArrowLeft, Wrench, Image, Wand2, FolderPlus, Settings, Film, Play, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,7 +38,7 @@ export default function AdminManualHub() {
               Ferramentas para criar novas aulas V3, V5 e V7
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {/* Criação Aula V3 */}
             <Card className="border border-purple-500/30 hover:border-purple-500/50 transition-colors">
               <CardHeader className="pb-2">
@@ -104,6 +104,30 @@ export default function AdminManualHub() {
                 >
                   <Film className="w-4 h-4 mr-2" />
                   Criar Aula V7
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* V7-vv Pipeline (NOVO) */}
+            <Card className="border border-pink-500/30 hover:border-pink-500/50 transition-colors bg-pink-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="w-5 h-5 text-pink-600" />
+                  V7-vv Pipeline
+                  <span className="text-xs bg-pink-600 text-white px-1.5 py-0.5 rounded">NOVO</span>
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Pipeline automatizado com scenes, narração e anchorActions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  onClick={() => navigate('/admin/v7-vv')}
+                  className="w-full bg-pink-600 hover:bg-pink-700"
+                  size="sm"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Criar V7-vv
                 </Button>
               </CardContent>
             </Card>
