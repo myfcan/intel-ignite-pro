@@ -625,7 +625,7 @@ export const V7PhasePlayer = ({
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
 
-    // ✅ V7-vv-v2: Get actual next phase from locked or current index
+    // ✅ V7-vv-v3: Get actual next phase from locked or current index
     const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
     const nextPhaseIndex = effectiveIndex + 1;
     const nextPhase = scaledScript.phases[nextPhaseIndex];
@@ -640,39 +640,39 @@ export const V7PhasePlayer = ({
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
 
-    // ✅ V7-vv-v2: ALWAYS seek audio to next phase start for proper sync
-    // This prevents the loop/skip issue after interactions
+    // ✅ V7-vv-v3: CRITICAL FIX - Unlock FIRST, then navigate
+    if (lockedPhaseIndex !== null) {
+      console.log(`  🔓 Unlocking phase ${lockedPhaseIndex}`);
+      setLockedPhaseIndex(null);
+    }
+
+    // ✅ V7-vv-v3: ALWAYS seek audio to next phase start - NO EXCEPTIONS
+    // This is the FIX for "volta ao ato 1" bug
     if (hasAudio && nextPhase) {
       const nextStartTime = nextPhase.startTime || 0;
-      const audioTime = audio.currentTime || 0;
-      const drift = Math.abs(audioTime - nextStartTime);
-
-      console.log(`  Drift:      ${drift.toFixed(2)}s (audio: ${audioTime.toFixed(2)}s, target: ${nextStartTime.toFixed(2)}s)`);
-
-      // Always seek if drift is significant (> 2 seconds)
-      if (drift > 2) {
-        console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s (drift too large)`);
-        audio.seekTo(nextStartTime);
-      }
+      console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s`);
+      audio.seekTo(nextStartTime);
     }
 
     // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
-    // The secret-reveal phase will handle its own audio flow
     if (nextPhase?.type !== 'secret-reveal') {
       manualResume();
 
-      // ✅ V7-v27 FIX: ALWAYS resume audio after quiz (unless going to secret-reveal)
-      // manualResume only resets anchor state - we need to actually play the audio
-      if (hasAudio && !audio.isPlaying) {
+      // ✅ Resume audio after seek
+      if (hasAudio) {
         setTimeout(() => {
           audio.play();
-          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz completion');
-        }, 100); // Small delay to ensure seek completes
+          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
+        }, 150);
       }
     }
 
-    goToNextPhase(false, effectiveIndex);
-  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio, hasAudio, lockedPhaseIndex]);
+    // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
+    setTimeout(() => {
+      goToPhase(nextPhaseIndex);
+      console.log(`  ➡️ Navigated to phase ${nextPhaseIndex}`);
+    }, 50);
+  }, [playSound, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio, hasAudio, lockedPhaseIndex, goToPhase]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
