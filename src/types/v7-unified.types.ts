@@ -233,8 +233,8 @@ export interface V7Scene {
 // ============================================================================
 
 export type V7PhaseType =
-  | 'loading' | 'dramatic' | 'narrative' | 'interaction'
-  | 'playground' | 'revelation' | 'gamification';
+  | 'loading' | 'dramatic' | 'narrative' | 'comparison' | 'interaction'
+  | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
 
 export interface V7Phase {
   id: string;

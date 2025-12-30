@@ -35,10 +35,12 @@
 export const V7_PHASE_TYPES = [
   'dramatic',     // Impacto visual (98%, números grandes)
   'narrative',    // Comparação/explicação
+  'comparison',   // Comparação lado a lado
   'interaction',  // Quiz interativo
   'playground',   // Comparação amador vs profissional
   'revelation',   // Revelação do método + CTA
   'gamification', // Conquistas finais
+  'secret-reveal', // Revelação secreta com animação gold
 ] as const;
 
 export type V7PhaseType = typeof V7_PHASE_TYPES[number];
