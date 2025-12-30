@@ -423,22 +423,25 @@ export function usePhaseController({
 
   const currentPhase = script.phases[currentPhaseIndex] || null;
 
+  // ✅ V7-vv: Ensure scenes array exists (V7-vv pipeline may not include scenes)
+  const phaseScenes = currentPhase?.scenes || [];
+
   // Find current scene within phase based on time (uses effectiveTime for fallback support)
   const currentSceneIndex = useMemo(() => {
-    if (!currentPhase) return 0;
+    if (!currentPhase || phaseScenes.length === 0) return 0;
 
     const phaseElapsed = effectiveTime - currentPhase.startTime;
     let accumulatedTime = 0;
 
-    for (let i = 0; i < currentPhase.scenes.length; i++) {
-      const scene = currentPhase.scenes[i];
+    for (let i = 0; i < phaseScenes.length; i++) {
+      const scene = phaseScenes[i];
       const sceneDuration = scene.duration ||
-        (currentPhase.endTime - currentPhase.startTime) / currentPhase.scenes.length;
+        (currentPhase.endTime - currentPhase.startTime) / phaseScenes.length;
 
       if (scene.startTime !== undefined) {
         if (effectiveTime >= scene.startTime) {
           // Check if this is the last matching scene
-          const nextScene = currentPhase.scenes[i + 1];
+          const nextScene = phaseScenes[i + 1];
           if (!nextScene || (nextScene.startTime && effectiveTime < nextScene.startTime)) {
             return i;
           }
@@ -451,10 +454,10 @@ export function usePhaseController({
       }
     }
 
-    return currentPhase.scenes.length - 1;
-  }, [currentPhase, effectiveTime]);
+    return phaseScenes.length - 1;
+  }, [currentPhase, phaseScenes, effectiveTime]);
 
-  const currentScene = currentPhase?.scenes[currentSceneIndex] || null;
+  const currentScene = phaseScenes[currentSceneIndex] || null;
 
   // Calculate overall progress (uses effectiveTime for fallback support)
   const progress = useMemo(() => {
