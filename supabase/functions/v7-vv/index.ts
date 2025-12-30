@@ -1,15 +1,16 @@
 /**
  * V7-vv Pipeline - Cinematographic Lesson Generator
  *
- * ARQUITETURA DEFINITIVA:
- * - AnchorText como ÚNICO mecanismo de sincronização
- * - Múltiplos visuais cinematográficos por segmento de narração
- * - Validação rigorosa sem fallbacks
- * - Scenes alinhadas com wordTimestamps
- * - Sem fallbacks, sem remendos - código profissional
+ * VERSÃO DEFINITIVA - Baseada no V7Contract.ts
  *
- * @version VV (Versão Definitiva)
- * @author Claude Code Assistant
+ * RESPONSABILIDADES:
+ * 1. Validar input (JSON de roteiro)
+ * 2. Gerar áudio principal (narrações das cenas)
+ * 3. Gerar áudios de feedback (narrações dos feedbacks do quiz)
+ * 4. Calcular timing baseado em wordTimestamps
+ * 5. Gerar V7LessonData exato conforme contrato
+ *
+ * @version VV-Definitive
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -21,158 +22,8 @@ const corsHeaders = {
 };
 
 // ============================================================================
-// TIPOS - Formato de Entrada (Roteiro)
-// ============================================================================
-
-interface V7ScriptInput {
-  title: string;
-  subtitle?: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  category: string;
-  tags: string[];
-  learningObjectives: string[];
-  trail_id?: string;
-  order_index?: number;
-
-  // Configuração de áudio
-  voice_id?: string;
-  generate_audio?: boolean;
-  fail_on_audio_error?: boolean;
-
-  // CENAS - Estrutura cinematográfica baseada em roteiro
-  scenes: V7SceneInput[];
-}
-
-interface V7SceneInput {
-  id: string;
-  title: string;
-  type: 'dramatic' | 'narrative' | 'comparison' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
-
-  // Narração (texto que será convertido em áudio)
-  narration: string;
-
-  // AnchorText - Palavra/frase que dispara a transição/pausa
-  // OBRIGATÓRIO para cenas interativas (interaction, playground, secret-reveal)
-  anchorText?: {
-    // Palavra que, quando falada, pausa o áudio para interação
-    pauseAt?: string;
-    // Palavra que, quando falada, transita para próxima cena
-    transitionAt?: string;
-  };
-
-  // Visual - Configuração cinematográfica
-  visual: V7VisualConfig;
-
-  // Interação (para cenas interativas)
-  interaction?: V7InteractionConfig;
-}
-
-interface V7VisualConfig {
-  // Tipo de visual principal
-  type: 'number-reveal' | 'text-reveal' | 'letterbox' | 'split-screen' | 'quiz' | 'playground' | 'comparison' | 'cta' | 'result';
-
-  // Conteúdo do visual (varia por tipo)
-  content: {
-    // Para number-reveal
-    mainValue?: string;
-    secondaryValue?: string;
-    subtitle?: string;
-    highlightWord?: string;
-
-    // Para letterbox/text-reveal
-    hookQuestion?: string;
-    mainText?: string;
-    impactWord?: string;
-
-    // Para comparison/split-screen
-    leftCard?: {
-      label: string;
-      value: string;
-      details: string[];
-      isPositive: boolean;
-      prompt?: string;
-      result?: string;
-    };
-    rightCard?: {
-      label: string;
-      value: string;
-      details: string[];
-      isPositive: boolean;
-      prompt?: string;
-      result?: string;
-    };
-
-    // Para result/gamification
-    emoji?: string;
-    title?: string;
-    message?: string;
-    metrics?: Array<{ label: string; value: string; isHighlight?: boolean }>;
-    ctaText?: string;
-
-    // Qualquer outro campo customizado
-    [key: string]: any;
-  };
-
-  // Efeitos cinematográficos
-  effects?: {
-    mood?: 'dramatic' | 'calm' | 'energetic' | 'mysterious' | 'danger' | 'success';
-    particles?: 'confetti' | 'sparks' | 'ember' | 'stars' | 'none';
-    glow?: boolean;
-    shake?: boolean;
-    pulse?: boolean;
-  };
-
-  // Micro-visuais que aparecem DURANTE a narração desta cena
-  // Cada um é ativado por um anchorText específico
-  microVisuals?: Array<{
-    id: string;
-    anchorText: string; // Palavra que ativa este visual
-    type: 'icon' | 'text' | 'number' | 'image' | 'badge' | 'highlight';
-    content: {
-      value?: string;
-      icon?: string;
-      color?: string;
-      animation?: string;
-      position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
-    };
-  }>;
-}
-
-interface V7InteractionConfig {
-  type: 'quiz' | 'playground';
-
-  // Para quiz
-  question?: string;
-  options?: Array<{
-    id: string;
-    text: string;
-    isCorrect?: boolean;
-    feedback?: string;
-  }>;
-
-  // Para playground
-  amateurPrompt?: string;
-  professionalPrompt?: string;
-  amateurResult?: {
-    title: string;
-    content: string;
-    score: number;
-    verdict: string;
-  };
-  professionalResult?: {
-    title: string;
-    content: string;
-    score: number;
-    verdict: string;
-  };
-
-  // Revelação após interação
-  revealMessage?: string;
-  secretContent?: string;
-}
-
-// ============================================================================
-// TIPOS - Formato de Saída (Pronto para Frontend)
+// TIPOS - Importados conceitualmente do V7Contract.ts
+// (Deno não suporta import direto do frontend)
 // ============================================================================
 
 interface WordTimestamp {
@@ -181,45 +32,67 @@ interface WordTimestamp {
   end: number;
 }
 
-interface V7Phase {
+interface AudioSegment {
+  id: string;
+  url: string;
+  duration: number;
+  wordTimestamps: WordTimestamp[];
+}
+
+interface MicroVisual {
+  id: string;
+  type: string;
+  anchorText: string;
+  triggerTime: number;
+  duration: number;
+  content: Record<string, unknown>;
+}
+
+interface AnchorAction {
+  id: string;
+  keyword: string;
+  keywordTime: number;
+  type: 'pause' | 'show' | 'highlight' | 'trigger';
+  targetId?: string;
+}
+
+interface QuizFeedback {
+  title: string;
+  subtitle: string;
+  mood: string;
+  audioId?: string;
+}
+
+interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  feedback: QuizFeedback;
+}
+
+interface Phase {
   id: string;
   title: string;
   type: string;
   startTime: number;
   endTime: number;
-
-  // AnchorActions - O que fazer quando palavras específicas são detectadas
-  anchorActions: Array<{
-    id: string;
-    keyword: string;
-    keywordTime: number; // Tempo exato no áudio
-    type: 'pause' | 'show' | 'highlight' | 'trigger';
-    targetId?: string;
-  }>;
-
-  // Scenes cinematográficas com timing preciso
-  scenes: Array<{
-    id: string;
+  visual: {
     type: string;
-    startTime: number;
-    duration: number;  // Duração em segundos (compatível com frontend V7Scene)
-    content: Record<string, any>;
-    animation: string;
-  }>;
-
-  // Interação (se aplicável)
-  interaction?: V7InteractionConfig;
-
-  // Comportamento de áudio durante interação
+    content: Record<string, unknown>;
+  };
+  effects?: Record<string, unknown>;
+  microVisuals?: MicroVisual[];
+  anchorActions?: AnchorAction[];
+  interaction?: Record<string, unknown>;
   audioBehavior?: {
-    onStart: 'pause' | 'fade' | 'continue';
-    onComplete: 'resume' | 'next-phase';
+    onStart: string;
+    onComplete: string;
   };
 }
 
-interface V7LessonOutput {
-  model: 'v7-cinematic';
-  version: 'vv';
+interface LessonData {
+  model: string;
+  version: string;
   metadata: {
     title: string;
     subtitle: string;
@@ -230,22 +103,71 @@ interface V7LessonOutput {
     totalDuration: number;
     phaseCount: number;
     createdAt: string;
-    generatedBy: 'V7-vv';
+    generatedBy: string;
   };
-
-  phases: V7Phase[];
-
-  audioConfig: {
-    url: string;
-    duration: number;
-    wordTimestampsCount: number;
+  phases: Phase[];
+  audio: {
+    mainAudio: AudioSegment;
+    feedbackAudios?: Record<string, AudioSegment>;
   };
-
-  wordTimestamps: WordTimestamp[];
 }
 
 // ============================================================================
-// VALIDAÇÃO RIGOROSA
+// TIPOS DE INPUT (Roteiro)
+// ============================================================================
+
+interface ScriptInput {
+  title: string;
+  subtitle?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: string;
+  tags: string[];
+  learningObjectives: string[];
+  voice_id?: string;
+  generate_audio?: boolean;
+  fail_on_audio_error?: boolean;
+  scenes: ScriptScene[];
+}
+
+interface ScriptScene {
+  id: string;
+  title: string;
+  type: string;
+  narration: string;
+  anchorText?: {
+    pauseAt?: string;
+    transitionAt?: string;
+  };
+  visual: {
+    type: string;
+    content: Record<string, unknown>;
+    effects?: Record<string, unknown>;
+    microVisuals?: Array<{
+      id: string;
+      type: string;
+      anchorText: string;
+      content: Record<string, unknown>;
+    }>;
+  };
+  interaction?: {
+    type: string;
+    options?: Array<{
+      id: string;
+      text: string;
+      isCorrect?: boolean;
+      feedback?: {
+        title: string;
+        subtitle: string;
+        narration?: string;
+        mood: string;
+      };
+    }>;
+    [key: string]: unknown;
+  };
+}
+
+// ============================================================================
+// VALIDAÇÃO
 // ============================================================================
 
 interface ValidationError {
@@ -254,33 +176,29 @@ interface ValidationError {
   message: string;
 }
 
-function validateInput(input: V7ScriptInput): ValidationError[] {
+function validateInput(input: ScriptInput): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  // Validar campos obrigatórios
   if (!input.title?.trim()) {
     errors.push({ scene: 'root', field: 'title', message: 'Título é obrigatório' });
   }
 
   if (!input.scenes || input.scenes.length === 0) {
     errors.push({ scene: 'root', field: 'scenes', message: 'Pelo menos uma cena é obrigatória' });
-    return errors; // Não pode continuar sem cenas
+    return errors;
   }
 
-  // Validar cada cena
   input.scenes.forEach((scene, index) => {
     const sceneId = scene.id || `scene-${index + 1}`;
 
-    // Narração obrigatória
     if (!scene.narration?.trim()) {
       errors.push({
         scene: sceneId,
         field: 'narration',
-        message: `Cena "${sceneId}" não tem narração. Toda cena deve ter texto de narração.`
+        message: `Cena "${sceneId}" não tem narração.`
       });
     }
 
-    // Visual obrigatório
     if (!scene.visual) {
       errors.push({
         scene: sceneId,
@@ -289,45 +207,15 @@ function validateInput(input: V7ScriptInput): ValidationError[] {
       });
     }
 
-    // AnchorText OBRIGATÓRIO para cenas interativas
+    // Cenas interativas DEVEM ter anchorText.pauseAt
     const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(scene.type);
     if (isInteractive && !scene.anchorText?.pauseAt) {
       errors.push({
         scene: sceneId,
         field: 'anchorText.pauseAt',
-        message: `Cena interativa "${sceneId}" (${scene.type}) DEVE ter anchorText.pauseAt definido. ` +
-                 `Este é o texto no áudio que irá pausar para a interação.`
+        message: `Cena interativa "${sceneId}" DEVE ter anchorText.pauseAt.`
       });
     }
-
-    // Validar interação para cenas que precisam
-    if (scene.type === 'interaction' && (!scene.interaction?.options || scene.interaction.options.length === 0)) {
-      errors.push({
-        scene: sceneId,
-        field: 'interaction.options',
-        message: `Cena de interação "${sceneId}" deve ter opções de quiz.`
-      });
-    }
-
-    if (scene.type === 'playground' && !scene.interaction?.amateurPrompt) {
-      errors.push({
-        scene: sceneId,
-        field: 'interaction.amateurPrompt',
-        message: `Cena de playground "${sceneId}" deve ter prompts de comparação.`
-      });
-    }
-
-    // Validar microVisuals (cada um precisa de anchorText)
-    scene.visual?.microVisuals?.forEach((mv, mvIndex) => {
-      if (!mv.anchorText?.trim()) {
-        errors.push({
-          scene: sceneId,
-          field: `visual.microVisuals[${mvIndex}].anchorText`,
-          message: `MicroVisual ${mvIndex + 1} da cena "${sceneId}" não tem anchorText. ` +
-                   `Todo microVisual deve ter uma palavra que o ativa.`
-        });
-      }
-    });
   });
 
   return errors;
@@ -337,13 +225,14 @@ function validateInput(input: V7ScriptInput): ValidationError[] {
 // GERAÇÃO DE ÁUDIO COM ELEVENLABS
 // ============================================================================
 
-async function generateAudioWithElevenLabs(
-  narrations: string[],
-  voiceId?: string,
-  supabase?: any
+async function generateAudio(
+  text: string,
+  voiceId: string,
+  supabase: any,
+  filePrefix: string
 ): Promise<{
   success: boolean;
-  audioUrl?: string;
+  url?: string;
   wordTimestamps?: WordTimestamp[];
   duration?: number;
   error?: string;
@@ -354,21 +243,15 @@ async function generateAudioWithElevenLabs(
     return { success: false, error: 'ELEVENLABS_API_KEY not configured' };
   }
 
-  // Concatenar todas as narrações com pausas entre cenas
-  const fullText = narrations
-    .map(n => n.trim())
-    .filter(n => n.length > 0)
-    .join('\n\n');
+  if (!text.trim()) {
+    return { success: false, error: 'Empty text' };
+  }
 
-  const voice = voiceId || 'Xb7hH8MSUJpSbSDYk0k2'; // Alice - bom para português
-  const modelId = 'eleven_multilingual_v2';
-
-  console.log('[V7Pipeline:Audio] Generating audio...');
-  console.log('[V7Pipeline:Audio] Text length:', fullText.length);
+  console.log(`[Audio] Generating for: "${text.substring(0, 50)}..."`);
 
   try {
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
       {
         method: 'POST',
         headers: {
@@ -377,8 +260,8 @@ async function generateAudioWithElevenLabs(
           'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: JSON.stringify({
-          text: fullText,
-          model_id: modelId,
+          text: text,
+          model_id: 'eleven_multilingual_v2',
           voice_settings: {
             stability: 0.5,
             similarity_boost: 0.75,
@@ -391,7 +274,7 @@ async function generateAudioWithElevenLabs(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[V7Pipeline:Audio] ElevenLabs error:', response.status, errorText);
+      console.error('[Audio] ElevenLabs error:', response.status, errorText);
       return { success: false, error: `ElevenLabs API error: ${response.status}` };
     }
 
@@ -403,9 +286,7 @@ async function generateAudioWithElevenLabs(
       return { success: false, error: 'No audio in response' };
     }
 
-    console.log('[V7Pipeline:Audio] Audio generated, processing timestamps...');
-
-    // Processar word timestamps
+    // Process word timestamps
     let wordTimestamps: WordTimestamp[] = [];
     let duration = 0;
 
@@ -417,14 +298,13 @@ async function generateAudioWithElevenLabs(
       if (wordTimestamps.length > 0) {
         duration = wordTimestamps[wordTimestamps.length - 1].end;
       }
-      console.log('[V7Pipeline:Audio] Processed', wordTimestamps.length, 'word timestamps');
     }
 
-    // Upload para Supabase Storage
-    let audioUrl = '';
+    // Upload to Supabase Storage
+    let url = '';
     if (supabase) {
       const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
-      const fileName = `v7-lesson-${Date.now()}.mp3`;
+      const fileName = `${filePrefix}-${Date.now()}.mp3`;
 
       const { error: uploadError } = await supabase.storage
         .from('lesson-audios')
@@ -434,25 +314,26 @@ async function generateAudioWithElevenLabs(
         });
 
       if (uploadError) {
-        console.error('[V7Pipeline:Audio] Upload error:', uploadError);
+        console.error('[Audio] Upload error:', uploadError);
       } else {
         const { data: urlData } = supabase.storage
           .from('lesson-audios')
           .getPublicUrl(fileName);
-        audioUrl = urlData.publicUrl;
-        console.log('[V7Pipeline:Audio] Uploaded to:', audioUrl);
+        url = urlData.publicUrl;
       }
     }
 
+    console.log(`[Audio] Generated: ${url} (${duration.toFixed(1)}s, ${wordTimestamps.length} words)`);
+
     return {
       success: true,
-      audioUrl,
+      url,
       wordTimestamps,
       duration,
     };
 
   } catch (error: any) {
-    console.error('[V7Pipeline:Audio] Error:', error);
+    console.error('[Audio] Error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -494,39 +375,37 @@ function processWordTimestamps(
 }
 
 // ============================================================================
-// ENCONTRAR PALAVRA NO WORD TIMESTAMPS
-// V7-vv-v4: Improved multi-word matching with gap tolerance
+// BUSCA DE PALAVRAS NOS TIMESTAMPS
 // ============================================================================
 
-function findKeywordInTimestamps(
+function normalizeWord(word: string): string {
+  return word
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.,!?;:'"()[\]{}…\-]+/g, '')
+    .trim();
+}
+
+function findKeywordTime(
   keyword: string,
   wordTimestamps: WordTimestamp[],
   afterTime: number = 0
-): { word: string; time: number } | null {
-  const normalize = (w: string) =>
-    w.toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[.,!?;:'"()[\]{}…]+/g, '')
-      .trim();
-
-  const keywordParts = keyword.split(/\s+/).map(normalize).filter(w => w.length > 0);
+): number | null {
+  const keywordParts = keyword.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
 
   if (keywordParts.length === 0) return null;
 
-  console.log(`[findKeyword] Looking for "${keyword}" (parts: ${JSON.stringify(keywordParts)}) after ${afterTime.toFixed(2)}s`);
-
-  // Para multi-word, encontrar sequência COM tolerância de gap
+  // Multi-word: busca com tolerância de gap
   if (keywordParts.length > 1) {
-    const MAX_GAP = 2; // Permitir até 2 palavras entre os termos buscados
+    const MAX_GAP = 2;
 
     for (let i = 0; i < wordTimestamps.length; i++) {
       if (wordTimestamps[i].start < afterTime) continue;
 
-      const firstWordNorm = normalize(wordTimestamps[i].word);
+      const firstWordNorm = normalizeWord(wordTimestamps[i].word);
       if (firstWordNorm !== keywordParts[0]) continue;
 
-      // Encontramos a primeira palavra, agora procurar as próximas
       let matchPositions: number[] = [i];
       let searchStart = i + 1;
 
@@ -534,10 +413,8 @@ function findKeywordInTimestamps(
         const targetPart = keywordParts[partIdx];
         let found = false;
 
-        // Procurar dentro do range de gap
         for (let j = searchStart; j <= Math.min(searchStart + MAX_GAP, wordTimestamps.length - 1); j++) {
-          const wordNorm = normalize(wordTimestamps[j].word);
-          if (wordNorm === targetPart) {
+          if (normalizeWord(wordTimestamps[j].word) === targetPart) {
             matchPositions.push(j);
             searchStart = j + 1;
             found = true;
@@ -546,928 +423,235 @@ function findKeywordInTimestamps(
         }
 
         if (!found) {
-          matchPositions = []; // Reset - não encontrou sequência completa
+          matchPositions = [];
           break;
         }
       }
 
       if (matchPositions.length === keywordParts.length) {
         const lastIdx = matchPositions[matchPositions.length - 1];
-        const lastWord = wordTimestamps[lastIdx];
-        console.log(`[findKeyword] ✓ Found "${keyword}" at positions ${JSON.stringify(matchPositions)} -> time ${lastWord.end.toFixed(2)}s`);
-        return { word: keyword, time: lastWord.end };
+        return wordTimestamps[lastIdx].end;
       }
     }
 
-    // Fallback: procurar apenas a última palavra da frase (mais específica)
-    console.log(`[findKeyword] ⚠️ Exact sequence not found, trying last word: "${keywordParts[keywordParts.length - 1]}"`);
+    // Fallback: buscar última palavra
     const lastKeyword = keywordParts[keywordParts.length - 1];
-
-    // Procurar do FIM para o INÍCIO após afterTime para pegar a última ocorrência
     for (let i = wordTimestamps.length - 1; i >= 0; i--) {
       if (wordTimestamps[i].start < afterTime) continue;
-      const wordNorm = normalize(wordTimestamps[i].word);
-      if (wordNorm === lastKeyword) {
-        // Verificar se a palavra anterior contém o primeiro termo (para "teste agora", verificar se "teste" está próximo)
-        if (i > 0) {
-          for (let j = Math.max(0, i - MAX_GAP - 1); j < i; j++) {
-            if (normalize(wordTimestamps[j].word) === keywordParts[0]) {
-              console.log(`[findKeyword] ✓ Found fallback match: "${keywordParts[0]}" at ${j}, "${lastKeyword}" at ${i} -> time ${wordTimestamps[i].end.toFixed(2)}s`);
-              return { word: keyword, time: wordTimestamps[i].end };
-            }
-          }
-        }
+      if (normalizeWord(wordTimestamps[i].word) === lastKeyword) {
+        return wordTimestamps[i].end;
       }
     }
-
-    console.warn(`[findKeyword] ❌ "${keyword}" NOT FOUND in timestamps after ${afterTime.toFixed(2)}s`);
-    // Log alguns timestamps para debug
-    const relevantTimestamps = wordTimestamps.filter(ts => ts.start >= afterTime).slice(0, 20);
-    console.log(`[findKeyword] First 20 words after ${afterTime.toFixed(2)}s:`, relevantTimestamps.map(ts => `${ts.word}(${ts.start.toFixed(1)})`).join(', '));
 
     return null;
   }
 
   // Single word
-  const targetWord = keywordParts[0];
+  const target = keywordParts[0];
   for (const ts of wordTimestamps) {
     if (ts.start < afterTime) continue;
-    if (normalize(ts.word) === targetWord) {
-      console.log(`[findKeyword] ✓ Found single word "${targetWord}" at ${ts.end.toFixed(2)}s`);
-      return { word: ts.word, time: ts.end };
+    if (normalizeWord(ts.word) === target) {
+      return ts.end;
     }
   }
 
-  console.warn(`[findKeyword] ❌ Single word "${targetWord}" NOT FOUND after ${afterTime.toFixed(2)}s`);
   return null;
 }
 
+function findNarrationRange(
+  narration: string,
+  wordTimestamps: WordTimestamp[],
+  startSearchIndex: number
+): { startIdx: number; endIdx: number; startTime: number; endTime: number } | null {
+  const narrationWords = narration.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+
+  if (narrationWords.length === 0) return null;
+
+  // Encontrar primeira palavra
+  let startIdx = -1;
+  for (let i = startSearchIndex; i < wordTimestamps.length; i++) {
+    if (normalizeWord(wordTimestamps[i].word) === narrationWords[0]) {
+      startIdx = i;
+      break;
+    }
+  }
+
+  if (startIdx === -1) return null;
+
+  // Encontrar última palavra (aproximadamente)
+  const estimatedEndIdx = Math.min(startIdx + narrationWords.length + 10, wordTimestamps.length - 1);
+  let endIdx = startIdx;
+
+  const lastNarrationWord = narrationWords[narrationWords.length - 1];
+  for (let i = estimatedEndIdx; i >= startIdx; i--) {
+    if (normalizeWord(wordTimestamps[i].word) === lastNarrationWord) {
+      endIdx = i;
+      break;
+    }
+  }
+
+  return {
+    startIdx,
+    endIdx,
+    startTime: wordTimestamps[startIdx].start,
+    endTime: wordTimestamps[endIdx].end + 0.3,
+  };
+}
+
 // ============================================================================
-// GERAR PHASES CINEMATOGRÁFICAS (V7-vv-v2: TIMING PRECISO)
+// GERAÇÃO DE FASES
 // ============================================================================
 
-/**
- * V7-vv-v2: Improved phase generation with precise word-based timing
- *
- * Key improvements:
- * 1. Finds EXACT word positions in timestamps instead of approximating
- * 2. Calculates scene durations based on actual narration length
- * 3. Stores microVisuals in a format the player can render
- * 4. Ensures phases don't overlap (gap prevention)
- */
 function generatePhases(
-  scenes: V7SceneInput[],
+  scenes: ScriptScene[],
   wordTimestamps: WordTimestamp[],
   totalDuration: number
-): V7Phase[] {
-  const phases: V7Phase[] = [];
-
-  console.log(`[V7Pipeline:Phase] 🎬 Starting phase generation with ${wordTimestamps.length} word timestamps`);
-
-  // Build a word index for faster lookup
-  const wordIndex: Map<string, WordTimestamp[]> = new Map();
-  wordTimestamps.forEach((ts, idx) => {
-    const normalized = normalizeWord(ts.word);
-    if (!wordIndex.has(normalized)) {
-      wordIndex.set(normalized, []);
-    }
-    wordIndex.get(normalized)!.push({ ...ts, originalIndex: idx } as any);
-  });
-
-  // Track the last word index used to ensure sequential matching
-  let lastWordIndex = 0;
+): Phase[] {
+  const phases: Phase[] = [];
+  let lastSearchIdx = 0;
   let lastEndTime = 0;
 
-  scenes.forEach((scene, sceneIdx) => {
-    console.log(`\n[V7Pipeline:Phase] ═══════════════════════════════════════`);
-    console.log(`[V7Pipeline:Phase] Processing scene ${sceneIdx + 1}/${scenes.length}: "${scene.title}"`);
-    console.log(`[V7Pipeline:Phase] Type: ${scene.type}`);
-    console.log(`[V7Pipeline:Phase] Narration: "${scene.narration.substring(0, 80)}..."`);
+  console.log(`\n[Phases] Generating ${scenes.length} phases from ${wordTimestamps.length} words`);
 
-    // V7-vv-v2: Find the RANGE of words this narration covers
-    const narrationWords = scene.narration
-      .split(/\s+/)
-      .map(w => normalizeWord(w))
-      .filter(w => w.length > 0);
+  for (const scene of scenes) {
+    console.log(`\n[Phase] ${scene.id} (${scene.type})`);
 
-    console.log(`[V7Pipeline:Phase] Narration has ${narrationWords.length} words`);
+    // Encontrar range da narração
+    const range = findNarrationRange(scene.narration, wordTimestamps, lastSearchIdx);
 
-    // Find where this narration STARTS in the word timestamps
-    // We search from lastWordIndex to ensure sequential order
-    let phaseStartWordIdx = -1;
-    let phaseEndWordIdx = -1;
-
-    // Find first matching word
-    for (let i = lastWordIndex; i < wordTimestamps.length; i++) {
-      const tsWord = normalizeWord(wordTimestamps[i].word);
-      if (tsWord === narrationWords[0]) {
-        phaseStartWordIdx = i;
-        console.log(`[V7Pipeline:Phase] ✓ Found first word "${narrationWords[0]}" at index ${i} (${wordTimestamps[i].start.toFixed(2)}s)`);
-        break;
-      }
-    }
-
-    // Find last matching word (search forward from start)
-    if (phaseStartWordIdx >= 0) {
-      const lastNarrationWord = narrationWords[narrationWords.length - 1];
-      for (let i = Math.min(phaseStartWordIdx + narrationWords.length + 10, wordTimestamps.length - 1); i >= phaseStartWordIdx; i--) {
-        const tsWord = normalizeWord(wordTimestamps[i].word);
-        if (tsWord === lastNarrationWord) {
-          phaseEndWordIdx = i;
-          console.log(`[V7Pipeline:Phase] ✓ Found last word "${lastNarrationWord}" at index ${i} (${wordTimestamps[i].end.toFixed(2)}s)`);
-          break;
-        }
-      }
-    }
-
-    // Calculate timing
     let startTime: number;
     let endTime: number;
 
-    if (phaseStartWordIdx >= 0 && phaseEndWordIdx >= 0) {
-      startTime = wordTimestamps[phaseStartWordIdx].start;
-      endTime = wordTimestamps[phaseEndWordIdx].end + 0.3; // Small buffer after last word
-      lastWordIndex = phaseEndWordIdx + 1;
+    if (range) {
+      startTime = Math.max(range.startTime, lastEndTime);
+      endTime = range.endTime;
+      lastSearchIdx = range.endIdx + 1;
+      console.log(`[Phase] Timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s`);
     } else {
-      // Fallback: estimate based on word count
-      const wordsPerSecond = 2.5; // Average speaking rate
-      const estimatedDuration = narrationWords.length / wordsPerSecond;
+      // Fallback: estimar baseado em palavras
+      const wordCount = scene.narration.split(/\s+/).length;
+      const estimatedDuration = wordCount / 2.5;
       startTime = lastEndTime;
       endTime = startTime + estimatedDuration;
-      console.warn(`[V7Pipeline:Phase] ⚠️ Could not find narration in timestamps - using estimate`);
+      console.warn(`[Phase] ⚠️ Using estimated timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s`);
     }
 
-    // Ensure no overlap with previous phase
-    if (startTime < lastEndTime) {
-      console.log(`[V7Pipeline:Phase] ⚠️ Adjusting start from ${startTime.toFixed(2)}s to ${lastEndTime.toFixed(2)}s to prevent overlap`);
-      startTime = lastEndTime;
-    }
-
-    console.log(`[V7Pipeline:Phase] ⏱️ Final timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s (duration: ${(endTime - startTime).toFixed(2)}s)`);
-
-    // Create anchorActions for pauses
-    const anchorActions: V7Phase['anchorActions'] = [];
+    // Anchor Actions
+    const anchorActions: AnchorAction[] = [];
 
     if (scene.anchorText?.pauseAt) {
-      const pauseMatch = findKeywordInTimestamps(scene.anchorText.pauseAt, wordTimestamps, startTime);
-      if (pauseMatch) {
+      const pauseTime = findKeywordTime(scene.anchorText.pauseAt, wordTimestamps, startTime);
+      if (pauseTime !== null) {
         anchorActions.push({
           id: `pause-${scene.id}`,
           keyword: scene.anchorText.pauseAt,
-          keywordTime: pauseMatch.time,
+          keywordTime: pauseTime,
           type: 'pause',
         });
-        console.log(`[V7Pipeline:Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" at ${pauseMatch.time.toFixed(2)}s`);
+        console.log(`[Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" @ ${pauseTime.toFixed(2)}s`);
       } else {
-        console.warn(`[V7Pipeline:Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" NOT FOUND in audio`);
+        // Fallback: pausar a 80% da fase
+        const fallbackTime = startTime + (endTime - startTime) * 0.8;
+        anchorActions.push({
+          id: `pause-${scene.id}`,
+          keyword: scene.anchorText.pauseAt,
+          keywordTime: fallbackTime,
+          type: 'pause',
+        });
+        console.warn(`[Phase] ⚠️ pauseAt fallback @ ${fallbackTime.toFixed(2)}s (80%)`);
       }
     }
 
-    // V7-vv-v2: Store microVisuals with their trigger times for overlay rendering
-    const microVisuals: Array<{
-      id: string;
-      anchorText: string;
-      triggerTime: number;
-      type: string;
-      content: any;
-      duration: number;
-    }> = [];
+    // Micro-visuais
+    const microVisuals: MicroVisual[] = [];
+    scene.visual?.microVisuals?.forEach((mv, idx) => {
+      const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime);
+      microVisuals.push({
+        id: mv.id || `mv-${scene.id}-${idx}`,
+        type: mv.type,
+        anchorText: mv.anchorText,
+        triggerTime: triggerTime ?? (startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1))),
+        duration: 2.0,
+        content: mv.content,
+      });
 
-    scene.visual?.microVisuals?.forEach((mv, mvIdx) => {
-      const mvMatch = findKeywordInTimestamps(mv.anchorText, wordTimestamps, startTime);
-      if (mvMatch) {
-        microVisuals.push({
-          id: mv.id || `mv-${scene.id}-${mvIdx}`,
-          anchorText: mv.anchorText,
-          triggerTime: mvMatch.time,
-          type: mv.type,
-          content: mv.content,
-          duration: 2.5, // Default micro-visual duration
-        });
-
-        // Also add as anchorAction for the anchor system
+      if (triggerTime !== null) {
         anchorActions.push({
-          id: mv.id || `mv-${scene.id}-${mvIdx}`,
+          id: mv.id || `mv-${scene.id}-${idx}`,
           keyword: mv.anchorText,
-          keywordTime: mvMatch.time,
+          keywordTime: triggerTime,
           type: 'show',
           targetId: mv.id,
         });
-
-        console.log(`[V7Pipeline:Phase] ✓ microVisual "${mv.anchorText}" (${mv.type}) at ${mvMatch.time.toFixed(2)}s`);
       }
     });
 
-    // V7-vv-v2: Generate simplified scenes that map to player components
-    const cinematicScenes = generateSimplifiedScenes(
-      scene,
-      startTime,
-      endTime,
-      microVisuals
-    );
-
-    // Determine audio behavior for interactive phases
+    // Determinar comportamento de áudio
     const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(scene.type);
 
-    const phase: V7Phase = {
+    // Construir fase
+    const phase: Phase = {
       id: scene.id,
       title: scene.title,
       type: scene.type,
       startTime,
       endTime,
-      anchorActions,
-      scenes: cinematicScenes,
-      interaction: scene.interaction,
-      // V7-vv-v2: Store microVisuals array for overlay rendering
+      visual: {
+        type: scene.visual.type,
+        content: scene.visual.content,
+      },
+      effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
+      anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
       audioBehavior: isInteractive ? {
         onStart: 'pause',
         onComplete: 'resume',
       } : undefined,
-    } as any;
+    };
+
+    // Interação
+    if (scene.interaction) {
+      if (scene.interaction.type === 'quiz' && scene.interaction.options) {
+        phase.interaction = {
+          type: 'quiz',
+          question: scene.interaction.question || scene.visual.content.question as string || '',
+          options: scene.interaction.options.map(opt => ({
+            id: opt.id,
+            text: opt.text,
+            isCorrect: opt.isCorrect ?? false,
+            feedback: {
+              title: opt.feedback?.title || '',
+              subtitle: opt.feedback?.subtitle || '',
+              mood: opt.feedback?.mood || 'neutral',
+              audioId: opt.feedback?.narration ? `feedback-${opt.id}` : undefined,
+            },
+          })),
+          timeout: scene.interaction.timeout,
+        };
+      } else if (scene.interaction.type === 'playground') {
+        phase.interaction = {
+          type: 'playground',
+          amateurPrompt: scene.interaction.amateurPrompt,
+          professionalPrompt: scene.interaction.professionalPrompt,
+          amateurResult: scene.interaction.amateurResult,
+          professionalResult: scene.interaction.professionalResult,
+        };
+      } else if (scene.interaction.type === 'cta-button') {
+        phase.interaction = {
+          type: 'cta-button',
+          buttonText: scene.interaction.buttonText,
+          action: scene.interaction.action,
+        };
+      }
+    }
 
     phases.push(phase);
     lastEndTime = endTime;
+  }
 
-    console.log(`[V7Pipeline:Phase] ✅ Phase "${scene.id}" created with ${cinematicScenes.length} scenes, ${anchorActions.length} anchors, ${microVisuals.length} microVisuals`);
-  });
-
-  console.log(`\n[V7Pipeline:Phase] ═══════════════════════════════════════`);
-  console.log(`[V7Pipeline:Phase] ✅ Generated ${phases.length} phases`);
-  console.log(`[V7Pipeline:Phase] Total duration: ${lastEndTime.toFixed(2)}s`);
+  console.log(`\n[Phases] Generated ${phases.length} phases, total duration: ${lastEndTime.toFixed(2)}s`);
 
   return phases;
-}
-
-// Helper to normalize words for comparison
-function normalizeWord(word: string): string {
-  return word
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[.,!?;:'"()[\]{}…\-]+/g, '') // Remove punctuation
-    .trim();
-}
-
-/**
- * V7-vv-v2: Generate simplified scenes that the player can render
- *
- * Instead of complex scene types like 'micro-image-flash', we generate
- * scenes that map directly to player components:
- * - 'main-content': The primary visual content for the phase
- * - 'micro-overlay': Overlay visuals triggered by anchors (stored separately)
- */
-function generateSimplifiedScenes(
-  scene: V7SceneInput,
-  startTime: number,
-  endTime: number,
-  microVisuals: any[]
-): CinematicScene[] {
-  const duration = endTime - startTime;
-  const visual = scene.visual;
-
-  // Create a single main scene that contains all the content
-  // The player will decide how to render based on phase.type
-  const mainScene: CinematicScene = {
-    id: `${scene.id}-main`,
-    type: visual.type,
-    startTime: 0, // Relative to phase start
-    duration,
-    content: {
-      ...visual.content,
-      // Include effects
-      mood: visual.effects?.mood || 'dramatic',
-      particles: visual.effects?.particles,
-      glow: visual.effects?.glow,
-      shake: visual.effects?.shake,
-      pulse: visual.effects?.pulse,
-    },
-    animation: 'fade',
-  };
-
-  const scenes: CinematicScene[] = [mainScene];
-
-  // For interaction/playground phases, add sub-scenes for the interaction flow
-  if (scene.type === 'interaction' && scene.interaction) {
-    // Add quiz intro scene
-    scenes.push({
-      id: `${scene.id}-intro`,
-      type: 'quiz-intro',
-      startTime: 0,
-      duration: duration * 0.3,
-      content: {
-        title: scene.interaction.question || visual.content.title || 'AUTO-AVALIAÇÃO',
-        subtitle: visual.content.subtitle,
-      },
-      animation: 'scale-up',
-    });
-  }
-
-  if (scene.type === 'playground' && scene.interaction) {
-    // Add playground scenes
-    scenes.push({
-      id: `${scene.id}-amateur`,
-      type: 'playground-code',
-      startTime: duration * 0.1,
-      duration: duration * 0.35,
-      content: {
-        label: 'PROMPT AMADOR',
-        prompt: scene.interaction.amateurPrompt,
-        result: scene.interaction.amateurResult,
-      },
-      animation: 'typewriter',
-    });
-
-    scenes.push({
-      id: `${scene.id}-pro`,
-      type: 'playground-code',
-      startTime: duration * 0.45,
-      duration: duration * 0.35,
-      content: {
-        label: 'PROMPT PROFISSIONAL',
-        prompt: scene.interaction.professionalPrompt,
-        result: scene.interaction.professionalResult,
-      },
-      animation: 'typewriter',
-    });
-  }
-
-  return scenes;
-}
-
-// ============================================================================
-// GERAR SCENES CINEMATOGRÁFICAS (Múltiplas por cena)
-// ============================================================================
-
-// Internal representation with endTime for calculations
-interface CinematicSceneInternal {
-  id: string;
-  type: string;
-  startTime: number;
-  endTime: number;
-  content: Record<string, any>;
-  animation: string;
-}
-
-// Frontend-compatible format with duration
-interface CinematicScene {
-  id: string;
-  type: string;
-  startTime: number;
-  duration: number;
-  content: Record<string, any>;
-  animation: string;
-}
-
-// Transform internal scenes to frontend-compatible format
-function transformScenesToDuration(scenes: CinematicSceneInternal[]): CinematicScene[] {
-  return scenes.map(scene => ({
-    id: scene.id,
-    type: scene.type,
-    startTime: scene.startTime,
-    duration: scene.endTime - scene.startTime,
-    content: scene.content,
-    animation: scene.animation,
-  }));
-}
-
-function generateCinematicScenes(
-  scene: V7SceneInput,
-  startTime: number,
-  endTime: number,
-  wordTimestamps: WordTimestamp[]
-): CinematicScene[] {
-  // Use internal format with endTime for calculations
-  const internalScenes: CinematicSceneInternal[] = [];
-  const duration = endTime - startTime;
-  const visual = scene.visual;
-
-  // Efeitos padrão
-  const effects = visual.effects || { mood: 'dramatic', particles: 'sparks', glow: true };
-
-  // Gerar scenes baseado no tipo
-  switch (scene.type) {
-    case 'dramatic':
-      internalScenes.push(...generateDramaticScenes(scene.id, visual, startTime, duration, effects));
-      break;
-
-    case 'narrative':
-    case 'comparison':
-      internalScenes.push(...generateNarrativeScenes(scene.id, visual, startTime, duration, effects));
-      break;
-
-    case 'interaction':
-      internalScenes.push(...generateInteractionScenes(scene.id, visual, scene.interaction, startTime, duration));
-      break;
-
-    case 'playground':
-      internalScenes.push(...generatePlaygroundScenes(scene.id, visual, scene.interaction, startTime, duration));
-      break;
-
-    case 'revelation':
-    case 'secret-reveal':
-      internalScenes.push(...generateRevelationScenes(scene.id, visual, scene.interaction, startTime, duration));
-      break;
-
-    case 'gamification':
-      internalScenes.push(...generateGamificationScenes(scene.id, visual, startTime, duration));
-      break;
-
-    default:
-      internalScenes.push({
-        id: `${scene.id}-main`,
-        type: 'text-reveal',
-        startTime,
-        endTime: startTime + duration,
-        content: visual.content,
-        animation: 'fade',
-      });
-  }
-
-  // Adicionar microVisuals como scenes individuais
-  visual.microVisuals?.forEach((mv, index) => {
-    // Encontrar timing do anchorText
-    const matchTime = startTime + (duration * (index + 1) / (visual.microVisuals!.length + 1));
-
-    internalScenes.push({
-      id: mv.id || `${scene.id}-mv-${index}`,
-      type: `micro-${mv.type}`,
-      startTime: matchTime,
-      endTime: matchTime + 2, // 2 segundos de duração
-      content: mv.content,
-      animation: mv.content.animation || 'scale-up',
-    });
-  });
-
-  // Ordenar por startTime
-  internalScenes.sort((a, b) => a.startTime - b.startTime);
-
-  // Transform to frontend-compatible format with duration
-  return transformScenesToDuration(internalScenes);
-}
-
-function generateDramaticScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  startTime: number,
-  duration: number,
-  effects: V7VisualConfig['effects']
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Letterbox com hook question (15% da duração)
-  if (content.hookQuestion) {
-    scenes.push({
-      id: `${sceneId}-letterbox`,
-      type: 'letterbox',
-      startTime,
-      endTime: startTime + duration * 0.15,
-      content: {
-        hookQuestion: content.hookQuestion,
-        backgroundColor: 'black',
-        aspectRatio: 'cinematic',
-      },
-      animation: 'letterbox',
-    });
-  }
-
-  // Scene 2: Número principal com glow (20% da duração)
-  if (content.mainValue) {
-    scenes.push({
-      id: `${sceneId}-number`,
-      type: 'number-reveal',
-      startTime: startTime + duration * 0.15,
-      endTime: startTime + duration * 0.35,
-      content: {
-        number: content.mainValue,
-        secondaryNumber: content.secondaryValue,
-        glowEffect: effects?.glow ?? true,
-        countUpAnimation: true,
-      },
-      animation: 'count-up',
-    });
-  }
-
-  // Scene 3: Subtitle com highlight (25% da duração)
-  if (content.subtitle) {
-    scenes.push({
-      id: `${sceneId}-subtitle`,
-      type: 'text-reveal',
-      startTime: startTime + duration * 0.35,
-      endTime: startTime + duration * 0.6,
-      content: {
-        mainText: content.subtitle,
-        highlightWord: content.highlightWord,
-        letterByLetter: true,
-      },
-      animation: 'letter-by-letter',
-    });
-  }
-
-  // Scene 4: Particle explosion (15% da duração)
-  scenes.push({
-    id: `${sceneId}-particles`,
-    type: 'particle-effect',
-    startTime: startTime + duration * 0.6,
-    endTime: startTime + duration * 0.75,
-    content: {
-      particleType: effects?.particles || 'sparks',
-      particleColor: effects?.mood === 'danger' ? '#ff0040' : '#22D3EE',
-    },
-    animation: 'particle-burst',
-  });
-
-  // Scene 5: Impact word (25% da duração)
-  if (content.impactWord) {
-    scenes.push({
-      id: `${sceneId}-impact`,
-      type: 'text-reveal',
-      startTime: startTime + duration * 0.75,
-      endTime: startTime + duration,
-      content: {
-        mainText: content.impactWord,
-        cameraZoom: true,
-        cameraShake: effects?.shake ?? true,
-      },
-      animation: 'zoom-in',
-    });
-  }
-
-  return scenes;
-}
-
-function generateNarrativeScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  startTime: number,
-  duration: number,
-  effects: V7VisualConfig['effects']
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Title fade in (15%)
-  scenes.push({
-    id: `${sceneId}-title`,
-    type: 'letterbox',
-    startTime,
-    endTime: startTime + duration * 0.15,
-    content: {
-      mainText: content.mainText || content.title,
-      subtitle: content.subtitle,
-      aspectRatio: 'cinematic',
-    },
-    animation: 'letterbox',
-  });
-
-  // Se tiver comparação (leftCard/rightCard)
-  if (content.leftCard && content.rightCard) {
-    // Scene 2: Left card slide in (25%)
-    scenes.push({
-      id: `${sceneId}-left`,
-      type: 'comparison-card',
-      startTime: startTime + duration * 0.15,
-      endTime: startTime + duration * 0.4,
-      content: {
-        ...content.leftCard,
-        position: 'left',
-        glowColor: content.leftCard.isPositive ? '#4ecdc4' : '#ff6b6b',
-      },
-      animation: 'slide-left',
-    });
-
-    // Scene 3: Right card slide in (25%)
-    scenes.push({
-      id: `${sceneId}-right`,
-      type: 'comparison-card',
-      startTime: startTime + duration * 0.4,
-      endTime: startTime + duration * 0.65,
-      content: {
-        ...content.rightCard,
-        position: 'right',
-        glowColor: content.rightCard.isPositive ? '#4ecdc4' : '#ff6b6b',
-      },
-      animation: 'slide-right',
-    });
-
-    // Scene 4: Comparison highlight (20%)
-    scenes.push({
-      id: `${sceneId}-compare`,
-      type: 'comparison-highlight',
-      startTime: startTime + duration * 0.65,
-      endTime: startTime + duration * 0.85,
-      content: {
-        leftValue: content.leftCard.value,
-        rightValue: content.rightCard.value,
-        winner: content.rightCard.isPositive ? 'right' : 'left',
-        pulseEffect: true,
-      },
-      animation: 'pulse',
-    });
-
-    // Scene 5: Transition (15%)
-    scenes.push({
-      id: `${sceneId}-transition`,
-      type: 'transition-effect',
-      startTime: startTime + duration * 0.85,
-      endTime: startTime + duration,
-      content: {
-        transitionType: 'fade-scale',
-      },
-      animation: 'fade',
-    });
-  } else {
-    // Narrative sem comparação - texto simples
-    scenes.push({
-      id: `${sceneId}-content`,
-      type: 'text-reveal',
-      startTime: startTime + duration * 0.15,
-      endTime: startTime + duration,
-      content: {
-        mainText: content.mainText,
-        items: content.items,
-      },
-      animation: 'slide-up',
-    });
-  }
-
-  return scenes;
-}
-
-function generateInteractionScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  interaction: V7InteractionConfig | undefined,
-  startTime: number,
-  duration: number
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Quiz intro (20%)
-  scenes.push({
-    id: `${sceneId}-intro`,
-    type: 'quiz-intro',
-    startTime,
-    endTime: startTime + duration * 0.2,
-    content: {
-      title: content.title || 'AUTO-AVALIAÇÃO',
-      subtitle: content.subtitle,
-      iconBounce: true,
-    },
-    animation: 'scale-up',
-  });
-
-  // Scene 2: Question reveal (20%)
-  scenes.push({
-    id: `${sceneId}-question`,
-    type: 'quiz-question',
-    startTime: startTime + duration * 0.2,
-    endTime: startTime + duration * 0.4,
-    content: {
-      question: interaction?.question || content.question,
-    },
-    animation: 'slide-up',
-  });
-
-  // Scene 3: Options (60% - aguardando interação)
-  scenes.push({
-    id: `${sceneId}-options`,
-    type: 'quiz',
-    startTime: startTime + duration * 0.4,
-    endTime: startTime + duration,
-    content: {
-      question: interaction?.question || content.question,
-      options: interaction?.options || [],
-      highlightOnHover: true,
-    },
-    animation: 'stagger-in',
-  });
-
-  return scenes;
-}
-
-function generatePlaygroundScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  interaction: V7InteractionConfig | undefined,
-  startTime: number,
-  duration: number
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Challenge title (10%)
-  scenes.push({
-    id: `${sceneId}-title`,
-    type: 'playground-intro',
-    startTime,
-    endTime: startTime + duration * 0.1,
-    content: {
-      title: content.title || 'DESAFIO PRÁTICO',
-      subtitle: content.subtitle,
-      glitchEffect: true,
-    },
-    animation: 'glitch',
-  });
-
-  // Scene 2: Amateur prompt (15%)
-  scenes.push({
-    id: `${sceneId}-amateur-prompt`,
-    type: 'playground-code',
-    startTime: startTime + duration * 0.1,
-    endTime: startTime + duration * 0.25,
-    content: {
-      label: 'PROMPT AMADOR',
-      prompt: interaction?.amateurPrompt || content.leftCard?.prompt,
-      typewriterSpeed: 50,
-    },
-    animation: 'typewriter',
-  });
-
-  // Scene 3: Amateur result (15%)
-  scenes.push({
-    id: `${sceneId}-amateur-result`,
-    type: 'playground-result',
-    startTime: startTime + duration * 0.25,
-    endTime: startTime + duration * 0.4,
-    content: {
-      label: 'RESULTADO',
-      result: interaction?.amateurResult || content.leftCard?.result,
-      scoreColor: 'red',
-    },
-    animation: 'slide-up',
-  });
-
-  // Scene 4: Professional prompt (15%)
-  scenes.push({
-    id: `${sceneId}-pro-prompt`,
-    type: 'playground-code',
-    startTime: startTime + duration * 0.4,
-    endTime: startTime + duration * 0.55,
-    content: {
-      label: 'PROMPT PROFISSIONAL',
-      prompt: interaction?.professionalPrompt || content.rightCard?.prompt,
-      typewriterSpeed: 30,
-    },
-    animation: 'typewriter',
-  });
-
-  // Scene 5: Professional result (15%)
-  scenes.push({
-    id: `${sceneId}-pro-result`,
-    type: 'playground-result',
-    startTime: startTime + duration * 0.55,
-    endTime: startTime + duration * 0.7,
-    content: {
-      label: 'RESULTADO',
-      result: interaction?.professionalResult || content.rightCard?.result,
-      scoreColor: 'green',
-      particles: 'sparks',
-    },
-    animation: 'slide-up',
-  });
-
-  // Scene 6: Comparison (30% - aguardando interação)
-  scenes.push({
-    id: `${sceneId}-comparison`,
-    type: 'playground',
-    startTime: startTime + duration * 0.7,
-    endTime: startTime + duration,
-    content: {
-      amateurPrompt: interaction?.amateurPrompt,
-      professionalPrompt: interaction?.professionalPrompt,
-      amateurResult: interaction?.amateurResult,
-      professionalResult: interaction?.professionalResult,
-      raceAnimation: true,
-      winnerEffect: 'confetti',
-    },
-    animation: 'fade',
-  });
-
-  return scenes;
-}
-
-function generateRevelationScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  interaction: V7InteractionConfig | undefined,
-  startTime: number,
-  duration: number
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Dramatic pause (10%)
-  scenes.push({
-    id: `${sceneId}-pause`,
-    type: 'letterbox',
-    startTime,
-    endTime: startTime + duration * 0.1,
-    content: {
-      backgroundColor: 'black',
-    },
-    animation: 'fade',
-  });
-
-  // Scene 2: Title reveal (20%)
-  scenes.push({
-    id: `${sceneId}-title`,
-    type: 'text-reveal',
-    startTime: startTime + duration * 0.1,
-    endTime: startTime + duration * 0.3,
-    content: {
-      mainText: content.title || '✨ REVELAÇÃO',
-      glowEffect: true,
-    },
-    animation: 'zoom-in',
-  });
-
-  // Scene 3: Secret content (40%)
-  scenes.push({
-    id: `${sceneId}-secret`,
-    type: 'secret-reveal',
-    startTime: startTime + duration * 0.3,
-    endTime: startTime + duration * 0.7,
-    content: {
-      secretContent: interaction?.secretContent || content.message,
-      items: content.items,
-      staggerChildren: 0.25,
-    },
-    animation: 'stagger-in',
-  });
-
-  // Scene 4: CTA (30%)
-  scenes.push({
-    id: `${sceneId}-cta`,
-    type: 'cta',
-    startTime: startTime + duration * 0.7,
-    endTime: startTime + duration,
-    content: {
-      title: content.ctaText || 'Próximos Passos',
-      options: content.options,
-      pulseAnimation: true,
-    },
-    animation: 'slide-up',
-  });
-
-  return scenes;
-}
-
-function generateGamificationScenes(
-  sceneId: string,
-  visual: V7VisualConfig,
-  startTime: number,
-  duration: number
-): CinematicSceneInternal[] {
-  const content = visual.content;
-  const scenes: CinematicSceneInternal[] = [];
-
-  // Scene 1: Celebration title (25%)
-  scenes.push({
-    id: `${sceneId}-title`,
-    type: 'text-reveal',
-    startTime,
-    endTime: startTime + duration * 0.25,
-    content: {
-      mainText: content.emoji ? `${content.emoji} ${content.title}` : '🏆 PARABÉNS!',
-      glowEffect: true,
-      particles: 'confetti',
-    },
-    animation: 'scale-up',
-  });
-
-  // Scene 2: Achievements (40%)
-  scenes.push({
-    id: `${sceneId}-achievements`,
-    type: 'result',
-    startTime: startTime + duration * 0.25,
-    endTime: startTime + duration * 0.65,
-    content: {
-      title: 'CONQUISTAS',
-      items: content.items,
-      staggerChildren: 0.2,
-      iconBounce: true,
-    },
-    animation: 'slide-up',
-  });
-
-  // Scene 3: Metrics (35%)
-  scenes.push({
-    id: `${sceneId}-metrics`,
-    type: 'result',
-    startTime: startTime + duration * 0.65,
-    endTime: startTime + duration,
-    content: {
-      title: 'RECOMPENSAS',
-      metrics: content.metrics,
-      particles: 'sparks',
-    },
-    animation: 'explode',
-  });
-
-  return scenes;
 }
 
 // ============================================================================
@@ -1484,105 +668,121 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const input: V7ScriptInput = await req.json();
-    console.log('[V7-vv] Starting for:', input.title);
-    console.log('[V7-vv] Scenes:', input.scenes?.length || 0);
+    const input: ScriptInput = await req.json();
+
+    console.log('================================================');
+    console.log('[V7-vv] Pipeline Start');
+    console.log(`[V7-vv] Title: ${input.title}`);
+    console.log(`[V7-vv] Scenes: ${input.scenes?.length || 0}`);
+    console.log(`[V7-vv] Voice ID: ${input.voice_id || 'default'}`);
+    console.log('================================================');
 
     // =========================================================================
-    // PASSO 1: VALIDAÇÃO RIGOROSA
+    // PASSO 1: VALIDAÇÃO
     // =========================================================================
-    console.log('[V7-vv] Step 1: Validating input...');
-
     const validationErrors = validateInput(input);
     if (validationErrors.length > 0) {
       console.error('[V7-vv] ❌ Validation failed:', validationErrors);
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Validation failed',
-          validationErrors,
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ success: false, error: 'Validation failed', validationErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
     console.log('[V7-vv] ✅ Validation passed');
 
     // =========================================================================
-    // PASSO 2: GERAR ÁUDIO COM ELEVENLABS
+    // PASSO 2: GERAR ÁUDIO PRINCIPAL
     // =========================================================================
-    console.log('[V7-vv] Step 2: Generating audio...');
-
-    const narrations = input.scenes.map(s => s.narration);
+    const voiceId = input.voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Usa voice_id do input!
     const shouldGenerateAudio = input.generate_audio !== false;
 
-    let audioUrl = '';
-    let wordTimestamps: WordTimestamp[] = [];
-    let audioDuration = 0;
+    let mainAudio: AudioSegment = {
+      id: 'main',
+      url: '',
+      duration: 0,
+      wordTimestamps: [],
+    };
 
     if (shouldGenerateAudio) {
-      const audioResult = await generateAudioWithElevenLabs(
-        narrations,
-        input.voice_id,
-        supabase
-      );
+      console.log('[V7-vv] Step 2: Generating main audio...');
+
+      // Concatenar todas as narrações
+      const fullNarration = input.scenes
+        .map(s => s.narration.trim())
+        .filter(n => n.length > 0)
+        .join('\n\n');
+
+      const audioResult = await generateAudio(fullNarration, voiceId, supabase, 'v7-main');
 
       if (!audioResult.success) {
         if (input.fail_on_audio_error) {
           throw new Error(`Audio generation failed: ${audioResult.error}`);
         }
-        console.warn('[V7-vv] ⚠️ Audio failed, continuing without audio');
+        console.warn('[V7-vv] ⚠️ Main audio failed, continuing without audio');
       } else {
-        audioUrl = audioResult.audioUrl || '';
-        wordTimestamps = audioResult.wordTimestamps || [];
-        audioDuration = audioResult.duration || 0;
-        console.log('[V7-vv] ✅ Audio generated:', audioUrl);
-        console.log('[V7-vv] Word timestamps:', wordTimestamps.length);
+        mainAudio = {
+          id: 'main',
+          url: audioResult.url || '',
+          duration: audioResult.duration || 0,
+          wordTimestamps: audioResult.wordTimestamps || [],
+        };
+        console.log(`[V7-vv] ✅ Main audio: ${mainAudio.duration.toFixed(1)}s, ${mainAudio.wordTimestamps.length} words`);
       }
-    } else {
-      console.log('[V7-vv] Skipping audio generation');
-      // Estimar duração baseado no texto (~150 palavras por minuto)
-      const totalWords = narrations.join(' ').split(/\s+/).length;
-      audioDuration = (totalWords / 150) * 60;
     }
 
     // =========================================================================
-    // PASSO 3: GERAR PHASES COM TIMING PRECISO
+    // PASSO 3: GERAR ÁUDIOS DE FEEDBACK DO QUIZ
     // =========================================================================
-    console.log('[V7-vv] Step 3: Generating phases...');
+    console.log('[V7-vv] Step 3: Generating feedback audios...');
 
-    const phases = generatePhases(input.scenes, wordTimestamps, audioDuration);
-    console.log('[V7-vv] ✅ Generated', phases.length, 'phases');
+    const feedbackAudios: Record<string, AudioSegment> = {};
 
-    // Verificar se todos os anchorTexts foram encontrados
-    let missingAnchors: string[] = [];
-    phases.forEach(phase => {
-      const scene = input.scenes.find(s => s.id === phase.id);
-      if (scene?.anchorText?.pauseAt) {
-        const found = phase.anchorActions.find(a => a.keyword === scene.anchorText!.pauseAt);
-        if (!found) {
-          missingAnchors.push(`Scene "${phase.id}": pauseAt "${scene.anchorText.pauseAt}" not found`);
+    for (const scene of input.scenes) {
+      if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
+        for (const option of scene.interaction.options) {
+          if (option.feedback?.narration) {
+            console.log(`[V7-vv] Generating feedback audio for option ${option.id}`);
+
+            const feedbackResult = await generateAudio(
+              option.feedback.narration,
+              voiceId,
+              supabase,
+              `v7-feedback-${option.id}`
+            );
+
+            if (feedbackResult.success) {
+              feedbackAudios[`feedback-${option.id}`] = {
+                id: `feedback-${option.id}`,
+                url: feedbackResult.url || '',
+                duration: feedbackResult.duration || 0,
+                wordTimestamps: feedbackResult.wordTimestamps || [],
+              };
+              console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s`);
+            } else {
+              console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}`);
+            }
+          }
         }
       }
-    });
-
-    if (missingAnchors.length > 0) {
-      console.warn('[V7-vv] ⚠️ Missing anchors:', missingAnchors);
     }
 
-    // =========================================================================
-    // PASSO 4: CONSTRUIR OUTPUT FINAL
-    // =========================================================================
-    console.log('[V7-vv] Step 4: Building output...');
+    console.log(`[V7-vv] Generated ${Object.keys(feedbackAudios).length} feedback audios`);
 
-    const totalDuration = phases.length > 0
-      ? phases[phases.length - 1].endTime
-      : audioDuration;
+    // =========================================================================
+    // PASSO 4: GERAR FASES
+    // =========================================================================
+    console.log('[V7-vv] Step 4: Generating phases...');
 
-    const lessonOutput: V7LessonOutput = {
+    const phases = generatePhases(input.scenes, mainAudio.wordTimestamps, mainAudio.duration);
+
+    // =========================================================================
+    // PASSO 5: CONSTRUIR OUTPUT
+    // =========================================================================
+    console.log('[V7-vv] Step 5: Building output...');
+
+    const totalDuration = phases.length > 0 ? phases[phases.length - 1].endTime : mainAudio.duration;
+
+    const lessonData: LessonData = {
       model: 'v7-cinematic',
       version: 'vv',
       metadata: {
@@ -1598,31 +798,29 @@ Deno.serve(async (req) => {
         generatedBy: 'V7-vv',
       },
       phases,
-      audioConfig: {
-        url: audioUrl,
-        duration: audioDuration,
-        wordTimestampsCount: wordTimestamps.length,
+      audio: {
+        mainAudio,
+        feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
       },
-      wordTimestamps,
     };
 
     // =========================================================================
-    // PASSO 5: SALVAR NO BANCO
+    // PASSO 6: SALVAR NO BANCO
     // =========================================================================
-    console.log('[V7-vv] Step 5: Saving to database...');
+    console.log('[V7-vv] Step 6: Saving to database...');
 
     const { data: lesson, error: lessonError } = await supabase
       .from('lessons')
       .insert({
         title: input.title,
         description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
-        trail_id: input.trail_id || null,
-        order_index: input.order_index || 0,
+        trail_id: (input as any).trail_id || null,
+        order_index: (input as any).order_index || 0,
         model: 'v7',
         lesson_type: 'v7-cinematic',
-        content: lessonOutput,
-        audio_url: audioUrl || null,
-        word_timestamps: wordTimestamps.length > 0 ? wordTimestamps : null,
+        content: lessonData,
+        audio_url: mainAudio.url || null,
+        word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
         estimated_time: Math.ceil(totalDuration / 60),
         difficulty_level: input.difficulty,
         is_active: false,
@@ -1637,7 +835,7 @@ Deno.serve(async (req) => {
     }
 
     const lessonId = lesson.id;
-    console.log('[V7-vv] ✅ Lesson saved with ID:', lessonId);
+    console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
 
     // =========================================================================
     // RESPOSTA
@@ -1647,30 +845,28 @@ Deno.serve(async (req) => {
       lessonId,
       stats: {
         phaseCount: phases.length,
-        sceneCount: phases.reduce((sum, p) => sum + p.scenes.length, 0),
-        anchorCount: phases.reduce((sum, p) => sum + p.anchorActions.length, 0),
         totalDuration,
-        hasAudio: !!audioUrl,
-        wordTimestampsCount: wordTimestamps.length,
-        missingAnchors: missingAnchors.length > 0 ? missingAnchors : undefined,
+        mainAudioDuration: mainAudio.duration,
+        wordCount: mainAudio.wordTimestamps.length,
+        feedbackAudioCount: Object.keys(feedbackAudios).length,
+        hasAudio: !!mainAudio.url,
       },
     };
 
+    console.log('================================================');
     console.log('[V7-vv] ✅ Pipeline completed successfully');
     console.log('[V7-vv] Stats:', JSON.stringify(response.stats));
+    console.log('================================================');
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error: any) {
-    console.error('[V7-vv] Error:', error);
+    console.error('[V7-vv] ❌ Error:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
