@@ -990,14 +990,76 @@ export const V7PhasePlayer = ({
         );
 
       case 'interaction':
+        // ✅ V7-vv: Check interaction type FIRST
+        const interactionType = (currentPhase.interaction as any)?.type;
+
+        // ✅ V7-vv: CTA-BUTTON - Render button that advances to next phase
+        if (interactionType === 'cta-button') {
+          const ctaInteraction = currentPhase.interaction as any;
+          const ctaContent = getCombinedSceneContent();
+          const ctaButtonText = ctaInteraction.buttonText || 'CONTINUAR';
+
+          const handleCtaClick = () => {
+            console.log('[V7PhasePlayer] CTA clicked, resuming audio and advancing');
+            // Resume audio
+            if (audio.audioRef.current) {
+              audio.audioRef.current.play();
+            }
+            // Unlock the phase to allow natural progression
+            setLockedPhaseIndex(null);
+            setIsPausedByAnchor(false);
+          };
+
+          return (
+            <div className="flex flex-col items-center justify-center h-full text-center px-8 space-y-8">
+              {/* Title */}
+              {ctaContent.title && (
+                <h2 className="text-3xl md:text-4xl font-bold text-white">
+                  {ctaContent.title}
+                </h2>
+              )}
+
+              {/* Subtitle */}
+              {ctaContent.subtitle && (
+                <p className="text-xl text-gray-300 max-w-2xl">
+                  {ctaContent.subtitle}
+                </p>
+              )}
+
+              {/* Cards if present */}
+              {ctaContent.cards && Array.isArray(ctaContent.cards) && (
+                <div className="flex flex-wrap justify-center gap-4 my-6">
+                  {ctaContent.cards.map((card: any, idx: number) => (
+                    <div
+                      key={card.id || idx}
+                      className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-6 min-w-[150px] transform hover:scale-105 transition-transform"
+                    >
+                      <p className="text-lg font-semibold text-cyan-400">{card.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* CTA Button */}
+              <button
+                onClick={handleCtaClick}
+                className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xl font-bold rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 animate-pulse"
+              >
+                {ctaButtonText}
+              </button>
+            </div>
+          );
+        }
+
+        // ✅ QUIZ - Default interaction type
         // Combine content from ALL interaction scenes
         const interactionContent = getCombinedSceneContent();
-        
+
         // ✅ V7-v3 FIX: Options can be in phase.interaction.options (V7-v3 JSON format)
         // or in scenes[].content.options (legacy format)
         const phaseInteractionOptions = (currentPhase.interaction as any)?.options;
         const rawOptions = phaseInteractionOptions || interactionContent.options || content.options || firstSceneContent.options || [];
-        
+
         console.log('[V7PhasePlayer:interaction] 🎯 Options source:', {
           'phase.interaction.options': phaseInteractionOptions?.length || 0,
           'interactionContent.options': interactionContent.options?.length || 0,
@@ -1005,7 +1067,7 @@ export const V7PhasePlayer = ({
           'firstSceneContent.options': firstSceneContent.options?.length || 0,
           'rawOptions': rawOptions.length
         });
-        
+
         const quizOptions = rawOptions.map((opt: any) => ({
           id: opt.id || String(Math.random()),
           text: opt.label || opt.text || '',
