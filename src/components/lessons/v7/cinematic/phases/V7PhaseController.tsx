@@ -156,15 +156,35 @@ export interface V7TimeoutConfig {
   autoAction?: 'skip' | 'selectDefault' | 'continue';
 }
 
+// ✅ V7-vv-v2: MicroVisual interface for overlay rendering
+export interface V7MicroVisual {
+  id: string;
+  anchorText: string;
+  triggerTime: number;
+  type: 'icon' | 'text' | 'number' | 'image' | 'badge' | 'highlight';
+  content: {
+    value?: string;
+    icon?: string;
+    color?: string;
+    animation?: string;
+    position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
+    description?: string;
+  };
+  duration: number;
+}
+
 export interface V7Phase {
   id: string;
   title: string;
   startTime: number;
   endTime: number;
-  type: 'loading' | 'dramatic' | 'narrative' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
+  type: 'loading' | 'dramatic' | 'narrative' | 'comparison' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
+
+  // ✅ V7-vv-v2: MicroVisuals for overlay rendering
+  microVisuals?: V7MicroVisual[];
 
   // ✅ V7.1: ANCHOR-BASED PHASE TRANSITION
   // When set, phase only becomes active AFTER this word is spoken in the narration
@@ -182,7 +202,7 @@ export interface V7Phase {
   // ✅ V7-v2: New interaction configuration fields
   audioBehavior?: V7AudioBehavior;
   timeout?: V7TimeoutConfig;
-  
+
   // ✅ V7-v4: Interaction data for secret-reveal phase
   interaction?: Record<string, unknown>;
 }

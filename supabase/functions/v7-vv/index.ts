@@ -548,9 +548,18 @@ function findKeywordInTimestamps(
 }
 
 // ============================================================================
-// GERAR PHASES CINEMATOGRÁFICAS
+// GERAR PHASES CINEMATOGRÁFICAS (V7-vv-v2: TIMING PRECISO)
 // ============================================================================
 
+/**
+ * V7-vv-v2: Improved phase generation with precise word-based timing
+ *
+ * Key improvements:
+ * 1. Finds EXACT word positions in timestamps instead of approximating
+ * 2. Calculates scene durations based on actual narration length
+ * 3. Stores microVisuals in a format the player can render
+ * 4. Ensures phases don't overlap (gap prevention)
+ */
 function generatePhases(
   scenes: V7SceneInput[],
   wordTimestamps: WordTimestamp[],
@@ -558,30 +567,92 @@ function generatePhases(
 ): V7Phase[] {
   const phases: V7Phase[] = [];
 
+  console.log(`[V7Pipeline:Phase] 🎬 Starting phase generation with ${wordTimestamps.length} word timestamps`);
+
+  // Build a word index for faster lookup
+  const wordIndex: Map<string, WordTimestamp[]> = new Map();
+  wordTimestamps.forEach((ts, idx) => {
+    const normalized = normalizeWord(ts.word);
+    if (!wordIndex.has(normalized)) {
+      wordIndex.set(normalized, []);
+    }
+    wordIndex.get(normalized)!.push({ ...ts, originalIndex: idx } as any);
+  });
+
+  // Track the last word index used to ensure sequential matching
+  let lastWordIndex = 0;
   let lastEndTime = 0;
 
-  scenes.forEach((scene, index) => {
-    console.log(`[V7Pipeline:Phase] Processing scene ${index + 1}: "${scene.title}" (${scene.type})`);
+  scenes.forEach((scene, sceneIdx) => {
+    console.log(`\n[V7Pipeline:Phase] ═══════════════════════════════════════`);
+    console.log(`[V7Pipeline:Phase] Processing scene ${sceneIdx + 1}/${scenes.length}: "${scene.title}"`);
+    console.log(`[V7Pipeline:Phase] Type: ${scene.type}`);
+    console.log(`[V7Pipeline:Phase] Narration: "${scene.narration.substring(0, 80)}..."`);
 
-    // Encontrar timing da narração desta cena
-    const narrationWords = scene.narration.split(/\s+/).filter(w => w.length > 0);
-    const firstWord = narrationWords[0];
-    const lastWord = narrationWords[narrationWords.length - 1];
+    // V7-vv-v2: Find the RANGE of words this narration covers
+    const narrationWords = scene.narration
+      .split(/\s+/)
+      .map(w => normalizeWord(w))
+      .filter(w => w.length > 0);
 
-    // Encontrar início (primeira palavra da narração)
-    const firstWordMatch = findKeywordInTimestamps(firstWord, wordTimestamps, lastEndTime);
-    const startTime = firstWordMatch ? firstWordMatch.time - 0.5 : lastEndTime;
+    console.log(`[V7Pipeline:Phase] Narration has ${narrationWords.length} words`);
 
-    // Encontrar fim (última palavra da narração)
-    const lastWordMatch = findKeywordInTimestamps(lastWord, wordTimestamps, startTime);
-    const endTime = lastWordMatch ? lastWordMatch.time + 0.5 : startTime + 30;
+    // Find where this narration STARTS in the word timestamps
+    // We search from lastWordIndex to ensure sequential order
+    let phaseStartWordIdx = -1;
+    let phaseEndWordIdx = -1;
 
-    console.log(`[V7Pipeline:Phase] Timing: ${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s`);
+    // Find first matching word
+    for (let i = lastWordIndex; i < wordTimestamps.length; i++) {
+      const tsWord = normalizeWord(wordTimestamps[i].word);
+      if (tsWord === narrationWords[0]) {
+        phaseStartWordIdx = i;
+        console.log(`[V7Pipeline:Phase] ✓ Found first word "${narrationWords[0]}" at index ${i} (${wordTimestamps[i].start.toFixed(2)}s)`);
+        break;
+      }
+    }
 
-    // Criar anchorActions
+    // Find last matching word (search forward from start)
+    if (phaseStartWordIdx >= 0) {
+      const lastNarrationWord = narrationWords[narrationWords.length - 1];
+      for (let i = Math.min(phaseStartWordIdx + narrationWords.length + 10, wordTimestamps.length - 1); i >= phaseStartWordIdx; i--) {
+        const tsWord = normalizeWord(wordTimestamps[i].word);
+        if (tsWord === lastNarrationWord) {
+          phaseEndWordIdx = i;
+          console.log(`[V7Pipeline:Phase] ✓ Found last word "${lastNarrationWord}" at index ${i} (${wordTimestamps[i].end.toFixed(2)}s)`);
+          break;
+        }
+      }
+    }
+
+    // Calculate timing
+    let startTime: number;
+    let endTime: number;
+
+    if (phaseStartWordIdx >= 0 && phaseEndWordIdx >= 0) {
+      startTime = wordTimestamps[phaseStartWordIdx].start;
+      endTime = wordTimestamps[phaseEndWordIdx].end + 0.3; // Small buffer after last word
+      lastWordIndex = phaseEndWordIdx + 1;
+    } else {
+      // Fallback: estimate based on word count
+      const wordsPerSecond = 2.5; // Average speaking rate
+      const estimatedDuration = narrationWords.length / wordsPerSecond;
+      startTime = lastEndTime;
+      endTime = startTime + estimatedDuration;
+      console.warn(`[V7Pipeline:Phase] ⚠️ Could not find narration in timestamps - using estimate`);
+    }
+
+    // Ensure no overlap with previous phase
+    if (startTime < lastEndTime) {
+      console.log(`[V7Pipeline:Phase] ⚠️ Adjusting start from ${startTime.toFixed(2)}s to ${lastEndTime.toFixed(2)}s to prevent overlap`);
+      startTime = lastEndTime;
+    }
+
+    console.log(`[V7Pipeline:Phase] ⏱️ Final timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s (duration: ${(endTime - startTime).toFixed(2)}s)`);
+
+    // Create anchorActions for pauses
     const anchorActions: V7Phase['anchorActions'] = [];
 
-    // Adicionar pauseAt se definido
     if (scene.anchorText?.pauseAt) {
       const pauseMatch = findKeywordInTimestamps(scene.anchorText.pauseAt, wordTimestamps, startTime);
       if (pauseMatch) {
@@ -591,36 +662,56 @@ function generatePhases(
           keywordTime: pauseMatch.time,
           type: 'pause',
         });
-        console.log(`[V7Pipeline:Phase] pauseAt "${scene.anchorText.pauseAt}" found at ${pauseMatch.time.toFixed(1)}s`);
+        console.log(`[V7Pipeline:Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" at ${pauseMatch.time.toFixed(2)}s`);
       } else {
-        console.warn(`[V7Pipeline:Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" NOT FOUND in audio!`);
+        console.warn(`[V7Pipeline:Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" NOT FOUND in audio`);
       }
     }
 
-    // Adicionar microVisuals como anchorActions de show
-    scene.visual?.microVisuals?.forEach((mv, mvIndex) => {
+    // V7-vv-v2: Store microVisuals with their trigger times for overlay rendering
+    const microVisuals: Array<{
+      id: string;
+      anchorText: string;
+      triggerTime: number;
+      type: string;
+      content: any;
+      duration: number;
+    }> = [];
+
+    scene.visual?.microVisuals?.forEach((mv, mvIdx) => {
       const mvMatch = findKeywordInTimestamps(mv.anchorText, wordTimestamps, startTime);
       if (mvMatch) {
+        microVisuals.push({
+          id: mv.id || `mv-${scene.id}-${mvIdx}`,
+          anchorText: mv.anchorText,
+          triggerTime: mvMatch.time,
+          type: mv.type,
+          content: mv.content,
+          duration: 2.5, // Default micro-visual duration
+        });
+
+        // Also add as anchorAction for the anchor system
         anchorActions.push({
-          id: mv.id || `mv-${scene.id}-${mvIndex}`,
+          id: mv.id || `mv-${scene.id}-${mvIdx}`,
           keyword: mv.anchorText,
           keywordTime: mvMatch.time,
           type: 'show',
           targetId: mv.id,
         });
-        console.log(`[V7Pipeline:Phase] microVisual "${mv.anchorText}" at ${mvMatch.time.toFixed(1)}s`);
+
+        console.log(`[V7Pipeline:Phase] ✓ microVisual "${mv.anchorText}" (${mv.type}) at ${mvMatch.time.toFixed(2)}s`);
       }
     });
 
-    // Gerar scenes cinematográficas
-    const cinematicScenes = generateCinematicScenes(
+    // V7-vv-v2: Generate simplified scenes that map to player components
+    const cinematicScenes = generateSimplifiedScenes(
       scene,
       startTime,
       endTime,
-      wordTimestamps
+      microVisuals
     );
 
-    // Determinar comportamento de áudio
+    // Determine audio behavior for interactive phases
     const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(scene.type);
 
     const phase: V7Phase = {
@@ -632,17 +723,121 @@ function generatePhases(
       anchorActions,
       scenes: cinematicScenes,
       interaction: scene.interaction,
+      // V7-vv-v2: Store microVisuals array for overlay rendering
+      microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       audioBehavior: isInteractive ? {
         onStart: 'pause',
         onComplete: 'resume',
       } : undefined,
-    };
+    } as any;
 
     phases.push(phase);
     lastEndTime = endTime;
+
+    console.log(`[V7Pipeline:Phase] ✅ Phase "${scene.id}" created with ${cinematicScenes.length} scenes, ${anchorActions.length} anchors, ${microVisuals.length} microVisuals`);
   });
 
+  console.log(`\n[V7Pipeline:Phase] ═══════════════════════════════════════`);
+  console.log(`[V7Pipeline:Phase] ✅ Generated ${phases.length} phases`);
+  console.log(`[V7Pipeline:Phase] Total duration: ${lastEndTime.toFixed(2)}s`);
+
   return phases;
+}
+
+// Helper to normalize words for comparison
+function normalizeWord(word: string): string {
+  return word
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[.,!?;:'"()[\]{}…\-]+/g, '') // Remove punctuation
+    .trim();
+}
+
+/**
+ * V7-vv-v2: Generate simplified scenes that the player can render
+ *
+ * Instead of complex scene types like 'micro-image-flash', we generate
+ * scenes that map directly to player components:
+ * - 'main-content': The primary visual content for the phase
+ * - 'micro-overlay': Overlay visuals triggered by anchors (stored separately)
+ */
+function generateSimplifiedScenes(
+  scene: V7SceneInput,
+  startTime: number,
+  endTime: number,
+  microVisuals: any[]
+): CinematicScene[] {
+  const duration = endTime - startTime;
+  const visual = scene.visual;
+
+  // Create a single main scene that contains all the content
+  // The player will decide how to render based on phase.type
+  const mainScene: CinematicScene = {
+    id: `${scene.id}-main`,
+    type: visual.type,
+    startTime: 0, // Relative to phase start
+    duration,
+    content: {
+      ...visual.content,
+      // Include effects
+      mood: visual.effects?.mood || 'dramatic',
+      particles: visual.effects?.particles,
+      glow: visual.effects?.glow,
+      shake: visual.effects?.shake,
+      pulse: visual.effects?.pulse,
+    },
+    animation: 'fade',
+  };
+
+  const scenes: CinematicScene[] = [mainScene];
+
+  // For interaction/playground phases, add sub-scenes for the interaction flow
+  if (scene.type === 'interaction' && scene.interaction) {
+    // Add quiz intro scene
+    scenes.push({
+      id: `${scene.id}-intro`,
+      type: 'quiz-intro',
+      startTime: 0,
+      duration: duration * 0.3,
+      content: {
+        title: scene.interaction.question || visual.content.title || 'AUTO-AVALIAÇÃO',
+        subtitle: visual.content.subtitle,
+      },
+      animation: 'scale-up',
+    });
+  }
+
+  if (scene.type === 'playground' && scene.interaction) {
+    // Add playground scenes
+    scenes.push({
+      id: `${scene.id}-amateur`,
+      type: 'playground-code',
+      startTime: duration * 0.1,
+      duration: duration * 0.35,
+      content: {
+        label: 'PROMPT AMADOR',
+        prompt: scene.interaction.amateurPrompt,
+        result: scene.interaction.amateurResult,
+      },
+      animation: 'typewriter',
+    });
+
+    scenes.push({
+      id: `${scene.id}-pro`,
+      type: 'playground-code',
+      startTime: duration * 0.45,
+      duration: duration * 0.35,
+      content: {
+        label: 'PROMPT PROFISSIONAL',
+        prompt: scene.interaction.professionalPrompt,
+        result: scene.interaction.professionalResult,
+      },
+      animation: 'typewriter',
+    });
+  }
+
+  return scenes;
 }
 
 // ============================================================================

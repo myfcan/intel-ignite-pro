@@ -23,11 +23,13 @@ import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
+import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import {
   V7LessonScript,
   V7Phase,
   V7TimeoutConfig,
   V7AudioBehavior,
+  V7MicroVisual,
   usePhaseController
 } from './phases/V7PhaseController';
 
@@ -622,16 +624,37 @@ export const V7PhasePlayer = ({
 
   const handleQuizComplete = useCallback((selectedIds: string[]) => {
     playSound('success');
-    
-    const nextPhase = scaledScript.phases[currentPhaseIndex + 1];
+
+    // ✅ V7-vv-v2: Get actual next phase from locked or current index
+    const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
+    const nextPhaseIndex = effectiveIndex + 1;
+    const nextPhase = scaledScript.phases[nextPhaseIndex];
+
     console.log(`\n🎯 [V7PhasePlayer] QUIZ COMPLETE`);
     console.log(`  Selected:   [${selectedIds.join(', ')}]`);
-    console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex})`);
-    console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type})`);
+    console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex}, locked: ${lockedPhaseIndex})`);
+    console.log(`  Effective:  index ${effectiveIndex}`);
+    console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type}) @ ${nextPhase?.startTime?.toFixed(2)}s`);
     console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
+
+    // ✅ V7-vv-v2: ALWAYS seek audio to next phase start for proper sync
+    // This prevents the loop/skip issue after interactions
+    if (hasAudio && nextPhase) {
+      const nextStartTime = nextPhase.startTime || 0;
+      const audioTime = audio.currentTime || 0;
+      const drift = Math.abs(audioTime - nextStartTime);
+
+      console.log(`  Drift:      ${drift.toFixed(2)}s (audio: ${audioTime.toFixed(2)}s, target: ${nextStartTime.toFixed(2)}s)`);
+
+      // Always seek if drift is significant (> 2 seconds)
+      if (drift > 2) {
+        console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s (drift too large)`);
+        audio.seekTo(nextStartTime);
+      }
+    }
 
     // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
     // The secret-reveal phase will handle its own audio flow
@@ -641,29 +664,57 @@ export const V7PhasePlayer = ({
       // ✅ V7-v27 FIX: ALWAYS resume audio after quiz (unless going to secret-reveal)
       // manualResume only resets anchor state - we need to actually play the audio
       if (hasAudio && !audio.isPlaying) {
-        audio.play();
-        console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz completion');
+        setTimeout(() => {
+          audio.play();
+          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz completion');
+        }, 100); // Small delay to ensure seek completes
       }
     }
 
-    goToNextPhase();
-  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio.currentTime, hasAudio, audio]);
+    goToNextPhase(false, effectiveIndex);
+  }, [playSound, goToNextPhase, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio, hasAudio, lockedPhaseIndex]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
-    console.log('[V7PhasePlayer] Playground complete - advancing');
+
+    // ✅ V7-vv-v2: Get actual next phase from locked or current index
+    const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
+    const nextPhaseIndex = effectiveIndex + 1;
+    const nextPhase = scaledScript.phases[nextPhaseIndex];
+
+    console.log(`\n🎮 [V7PhasePlayer] PLAYGROUND COMPLETE`);
+    console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex}, locked: ${lockedPhaseIndex})`);
+    console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type}) @ ${nextPhase?.startTime?.toFixed(2)}s`);
+    console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
+
+    // ✅ V7-v6: Mark interaction as complete to unlock phase
+    setInteractionComplete(true);
+
+    // ✅ V7-vv-v2: ALWAYS seek audio to next phase start for proper sync
+    if (hasAudio && nextPhase) {
+      const nextStartTime = nextPhase.startTime || 0;
+      const audioTime = audio.currentTime || 0;
+      const drift = Math.abs(audioTime - nextStartTime);
+
+      if (drift > 2) {
+        console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s (drift: ${drift.toFixed(2)}s)`);
+        audio.seekTo(nextStartTime);
+      }
+    }
 
     // ✅ Trigger resume via anchor text system
     manualResume();
 
     // ✅ Resume audio for next phase narration
     if (hasAudio && !audio.isPlaying) {
-      audio.play();
-      console.log('[V7PhasePlayer] ▶️ Audio resumed after playground');
+      setTimeout(() => {
+        audio.play();
+        console.log('[V7PhasePlayer] ▶️ Audio resumed after playground');
+      }, 100);
     }
 
-    setTimeout(goToNextPhase, 1000);
-  }, [playSound, goToNextPhase, hasAudio, audio, manualResume]);
+    setTimeout(() => goToNextPhase(false, effectiveIndex), 1000);
+  }, [playSound, goToNextPhase, hasAudio, audio, manualResume, lockedPhaseIndex, currentPhaseIndex, currentPhase, scaledScript.phases]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
@@ -1188,13 +1239,22 @@ export const V7PhasePlayer = ({
       {/* Transition Particles Effect */}
       <AnimatePresence>
         {showTransitionParticles && (
-          <V7TransitionParticles 
-            isActive={showTransitionParticles} 
+          <V7TransitionParticles
+            isActive={showTransitionParticles}
             color={transitionParticleColor}
             particleCount={50}
           />
         )}
       </AnimatePresence>
+
+      {/* V7-vv-v2: MicroVisual Overlay - renders word-triggered micro-visuals */}
+      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && (
+        <V7MicroVisualOverlay
+          microVisuals={currentPhase.microVisuals}
+          currentTime={hasAudio ? audio.currentTime : internalTime}
+          isPlaying={effectiveIsPlaying}
+        />
+      )}
 
       {/* Phase Content - Cinematic Fade Transition */}
       <AnimatePresence mode="wait">
