@@ -495,6 +495,7 @@ function processWordTimestamps(
 
 // ============================================================================
 // ENCONTRAR PALAVRA NO WORD TIMESTAMPS
+// V7-vv-v4: Improved multi-word matching with gap tolerance
 // ============================================================================
 
 function findKeywordInTimestamps(
@@ -513,25 +514,77 @@ function findKeywordInTimestamps(
 
   if (keywordParts.length === 0) return null;
 
-  // Para multi-word, encontrar sequência
+  console.log(`[findKeyword] Looking for "${keyword}" (parts: ${JSON.stringify(keywordParts)}) after ${afterTime.toFixed(2)}s`);
+
+  // Para multi-word, encontrar sequência COM tolerância de gap
   if (keywordParts.length > 1) {
-    for (let i = 0; i <= wordTimestamps.length - keywordParts.length; i++) {
+    const MAX_GAP = 2; // Permitir até 2 palavras entre os termos buscados
+
+    for (let i = 0; i < wordTimestamps.length; i++) {
       if (wordTimestamps[i].start < afterTime) continue;
 
-      let allMatch = true;
-      for (let j = 0; j < keywordParts.length; j++) {
-        const wordNorm = normalize(wordTimestamps[i + j].word);
-        if (wordNorm !== keywordParts[j]) {
-          allMatch = false;
+      const firstWordNorm = normalize(wordTimestamps[i].word);
+      if (firstWordNorm !== keywordParts[0]) continue;
+
+      // Encontramos a primeira palavra, agora procurar as próximas
+      let matchPositions: number[] = [i];
+      let searchStart = i + 1;
+
+      for (let partIdx = 1; partIdx < keywordParts.length; partIdx++) {
+        const targetPart = keywordParts[partIdx];
+        let found = false;
+
+        // Procurar dentro do range de gap
+        for (let j = searchStart; j <= Math.min(searchStart + MAX_GAP, wordTimestamps.length - 1); j++) {
+          const wordNorm = normalize(wordTimestamps[j].word);
+          if (wordNorm === targetPart) {
+            matchPositions.push(j);
+            searchStart = j + 1;
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          matchPositions = []; // Reset - não encontrou sequência completa
           break;
         }
       }
 
-      if (allMatch) {
-        const lastWord = wordTimestamps[i + keywordParts.length - 1];
+      if (matchPositions.length === keywordParts.length) {
+        const lastIdx = matchPositions[matchPositions.length - 1];
+        const lastWord = wordTimestamps[lastIdx];
+        console.log(`[findKeyword] ✓ Found "${keyword}" at positions ${JSON.stringify(matchPositions)} -> time ${lastWord.end.toFixed(2)}s`);
         return { word: keyword, time: lastWord.end };
       }
     }
+
+    // Fallback: procurar apenas a última palavra da frase (mais específica)
+    console.log(`[findKeyword] ⚠️ Exact sequence not found, trying last word: "${keywordParts[keywordParts.length - 1]}"`);
+    const lastKeyword = keywordParts[keywordParts.length - 1];
+
+    // Procurar do FIM para o INÍCIO após afterTime para pegar a última ocorrência
+    for (let i = wordTimestamps.length - 1; i >= 0; i--) {
+      if (wordTimestamps[i].start < afterTime) continue;
+      const wordNorm = normalize(wordTimestamps[i].word);
+      if (wordNorm === lastKeyword) {
+        // Verificar se a palavra anterior contém o primeiro termo (para "teste agora", verificar se "teste" está próximo)
+        if (i > 0) {
+          for (let j = Math.max(0, i - MAX_GAP - 1); j < i; j++) {
+            if (normalize(wordTimestamps[j].word) === keywordParts[0]) {
+              console.log(`[findKeyword] ✓ Found fallback match: "${keywordParts[0]}" at ${j}, "${lastKeyword}" at ${i} -> time ${wordTimestamps[i].end.toFixed(2)}s`);
+              return { word: keyword, time: wordTimestamps[i].end };
+            }
+          }
+        }
+      }
+    }
+
+    console.warn(`[findKeyword] ❌ "${keyword}" NOT FOUND in timestamps after ${afterTime.toFixed(2)}s`);
+    // Log alguns timestamps para debug
+    const relevantTimestamps = wordTimestamps.filter(ts => ts.start >= afterTime).slice(0, 20);
+    console.log(`[findKeyword] First 20 words after ${afterTime.toFixed(2)}s:`, relevantTimestamps.map(ts => `${ts.word}(${ts.start.toFixed(1)})`).join(', '));
+
     return null;
   }
 
@@ -540,10 +593,12 @@ function findKeywordInTimestamps(
   for (const ts of wordTimestamps) {
     if (ts.start < afterTime) continue;
     if (normalize(ts.word) === targetWord) {
+      console.log(`[findKeyword] ✓ Found single word "${targetWord}" at ${ts.end.toFixed(2)}s`);
       return { word: ts.word, time: ts.end };
     }
   }
 
+  console.warn(`[findKeyword] ❌ Single word "${targetWord}" NOT FOUND after ${afterTime.toFixed(2)}s`);
   return null;
 }
 
