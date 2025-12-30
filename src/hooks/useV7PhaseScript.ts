@@ -187,6 +187,14 @@ interface V7DatabaseAct {
   visualEffects?: Record<string, unknown>;
 }
 
+// ✅ V7-vv Definitive: Feedback audio structure
+interface FeedbackAudioSegment {
+  id: string;
+  url: string;
+  duration: number;
+  wordTimestamps?: Array<{ word: string; start: number; end: number }>;
+}
+
 interface UseV7PhaseScriptResult {
   script: V7LessonScript | null;
   audioUrl: string | null;
@@ -197,6 +205,8 @@ interface UseV7PhaseScriptResult {
   // ✅ DEBUG: For V7DebugPanel
   rawContent: any;
   detectionPath: 'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null;
+  // ✅ V7-vv Definitive: Feedback audios for quiz
+  feedbackAudios: Record<string, FeedbackAudioSegment> | null;
 }
 
 export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScriptResult {
@@ -208,6 +218,8 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
   // ✅ DEBUG: Track raw content and detection path
   const [rawContent, setRawContent] = useState<any>(null);
   const [detectionPath, setDetectionPath] = useState<'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null>(null);
+  // ✅ V7-vv Definitive: Feedback audios for quiz
+  const [feedbackAudios, setFeedbackAudios] = useState<Record<string, FeedbackAudioSegment> | null>(null);
   const { toast } = useToast();
 
   const fetchLesson = useCallback(async () => {
@@ -343,6 +355,13 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           totalDuration: lessonScript.totalDuration,
         });
 
+        // ✅ V7-vv Definitive: Extract feedbackAudios from audio config
+        const v7vvFeedbackAudios = v7vvContent.audio?.feedbackAudios || null;
+        if (v7vvFeedbackAudios) {
+          console.log('[useV7PhaseScript] 🎧 V7-vv feedbackAudios encontrados:', Object.keys(v7vvFeedbackAudios));
+        }
+        setFeedbackAudios(v7vvFeedbackAudios);
+
         setScript(lessonScript);
         setAudioUrl(data.audio_url || null);
         setWordTimestamps(timestamps);
@@ -392,6 +411,13 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           phases: lessonScript.phases.length,
           totalDuration: lessonScript.totalDuration,
         });
+
+        // ✅ V7-vv Definitive: Extract feedbackAudios from audio config (emergency path)
+        const emergencyFeedbackAudios = v7vvContent.audio?.feedbackAudios || null;
+        if (emergencyFeedbackAudios) {
+          console.log('[useV7PhaseScript] 🎧 EMERGENCY feedbackAudios encontrados:', Object.keys(emergencyFeedbackAudios));
+        }
+        setFeedbackAudios(emergencyFeedbackAudios);
 
         setScript(lessonScript);
         setAudioUrl(data.audio_url || null);
@@ -505,7 +531,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
     fetchLesson();
   }, [fetchLesson]);
 
-  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson, rawContent, detectionPath };
+  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson, rawContent, detectionPath, feedbackAudios };
 }
 
 // ============================================================================
