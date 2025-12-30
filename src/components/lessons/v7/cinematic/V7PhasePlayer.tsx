@@ -39,6 +39,14 @@ interface WordTimestamp {
   end: number;
 }
 
+// ✅ V7-vv Definitive: Feedback audio structure
+interface FeedbackAudioSegment {
+  id: string;
+  url: string;
+  duration: number;
+  wordTimestamps?: Array<{ word: string; start: number; end: number }>;
+}
+
 interface V7PhasePlayerProps {
   script: V7LessonScript;
   audioUrl?: string;
@@ -48,6 +56,8 @@ interface V7PhasePlayerProps {
   // ✅ DEBUG: For V7DebugPanel
   rawContent?: any;
   detectionPath?: 'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null;
+  // ✅ V7-vv Definitive: Feedback audios for quiz
+  feedbackAudios?: Record<string, FeedbackAudioSegment>;
 }
 
 // Helper to format time in mm:ss
@@ -105,7 +115,8 @@ export const V7PhasePlayer = ({
   onComplete,
   onExit,
   rawContent,
-  detectionPath
+  detectionPath,
+  feedbackAudios
 }: V7PhasePlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
@@ -173,6 +184,9 @@ export const V7PhasePlayer = ({
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
   // ✅ V7-v15: Track if we're navigating backwards to prevent re-locking
   const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+  // ✅ V7-vv Definitive: Track feedback audio playback
+  const [isPlayingFeedbackAudio, setIsPlayingFeedbackAudio] = useState(false);
+  const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
   // ✅ V7-v18: Track transition particles for dramatic phase changes
   const [showTransitionParticles, setShowTransitionParticles] = useState(false);
   const [transitionParticleColor, setTransitionParticleColor] = useState<'cyan' | 'gold' | 'emerald' | 'purple'>('cyan');
@@ -216,6 +230,17 @@ export const V7PhasePlayer = ({
     window.addEventListener('click', handleInteraction);
     return () => window.removeEventListener('click', handleInteraction);
   }, [unlockAudio]);
+
+  // ✅ V7-vv Definitive: Cleanup feedback audio on unmount
+  useEffect(() => {
+    return () => {
+      if (feedbackAudioRef.current) {
+        feedbackAudioRef.current.pause();
+        feedbackAudioRef.current.src = '';
+        feedbackAudioRef.current = null;
+      }
+    };
+  }, []);
 
   // Hide controls after inactivity
   useEffect(() => {
@@ -636,43 +661,97 @@ export const V7PhasePlayer = ({
     console.log(`  Effective:  index ${effectiveIndex}`);
     console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type}) @ ${nextPhase?.startTime?.toFixed(2)}s`);
     console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
+    console.log(`  FeedbackAudios:`, feedbackAudios ? Object.keys(feedbackAudios) : 'NONE');
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
 
-    // ✅ V7-vv-v3: CRITICAL FIX - Unlock FIRST, then navigate
-    if (lockedPhaseIndex !== null) {
-      console.log(`  🔓 Unlocking phase ${lockedPhaseIndex}`);
-      setLockedPhaseIndex(null);
-    }
-
-    // ✅ V7-vv-v3: ALWAYS seek audio to next phase start - NO EXCEPTIONS
-    // This is the FIX for "volta ao ato 1" bug
-    if (hasAudio && nextPhase) {
-      const nextStartTime = nextPhase.startTime || 0;
-      console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s`);
-      audio.seekTo(nextStartTime);
-    }
-
-    // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
-    if (nextPhase?.type !== 'secret-reveal') {
-      manualResume();
-
-      // ✅ Resume audio after seek
-      if (hasAudio) {
-        setTimeout(() => {
-          audio.play();
-          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
-        }, 150);
+    // ✅ V7-vv Definitive: Helper to continue after feedback
+    const continueToNextPhase = () => {
+      // ✅ V7-vv-v3: CRITICAL FIX - Unlock FIRST, then navigate
+      if (lockedPhaseIndex !== null) {
+        console.log(`  🔓 Unlocking phase ${lockedPhaseIndex}`);
+        setLockedPhaseIndex(null);
       }
-    }
 
-    // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
-    setTimeout(() => {
-      goToPhase(nextPhaseIndex);
-      console.log(`  ➡️ Navigated to phase ${nextPhaseIndex}`);
-    }, 50);
-  }, [playSound, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio, hasAudio, lockedPhaseIndex, goToPhase]);
+      // ✅ V7-vv-v3: ALWAYS seek audio to next phase start - NO EXCEPTIONS
+      if (hasAudio && nextPhase) {
+        const nextStartTime = nextPhase.startTime || 0;
+        console.log(`  🔀 SEEKING to ${nextStartTime.toFixed(2)}s`);
+        audio.seekTo(nextStartTime);
+      }
+
+      // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
+      if (nextPhase?.type !== 'secret-reveal') {
+        manualResume();
+
+        // ✅ Resume audio after seek
+        if (hasAudio) {
+          setTimeout(() => {
+            audio.play();
+            console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
+          }, 150);
+        }
+      }
+
+      // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
+      setTimeout(() => {
+        goToPhase(nextPhaseIndex);
+        console.log(`  ➡️ Navigated to phase ${nextPhaseIndex}`);
+      }, 50);
+    };
+
+    // ✅ V7-vv Definitive: Check if we have feedback audio for the selected option
+    const selectedOptionId = selectedIds[0]; // First selected option
+    const feedbackAudioKey = `feedback-${selectedOptionId}`;
+    const feedbackAudio = feedbackAudios?.[feedbackAudioKey];
+
+    if (feedbackAudio?.url) {
+      console.log(`  🎧 Playing feedback audio for option "${selectedOptionId}"`);
+      console.log(`  🎧 Audio URL: ${feedbackAudio.url}`);
+
+      // Pause main audio while playing feedback
+      if (hasAudio && audio.isPlaying) {
+        audio.pause();
+        console.log(`  ⏸️ Main audio PAUSED for feedback playback`);
+      }
+
+      setIsPlayingFeedbackAudio(true);
+
+      // Create or reuse audio element for feedback
+      if (!feedbackAudioRef.current) {
+        feedbackAudioRef.current = new Audio();
+      }
+
+      const feedbackEl = feedbackAudioRef.current;
+      feedbackEl.src = feedbackAudio.url;
+
+      // When feedback audio ends, continue to next phase
+      feedbackEl.onended = () => {
+        console.log(`  ✅ Feedback audio COMPLETED`);
+        setIsPlayingFeedbackAudio(false);
+        continueToNextPhase();
+      };
+
+      // Handle errors gracefully - continue anyway
+      feedbackEl.onerror = (e) => {
+        console.error(`  ❌ Feedback audio ERROR:`, e);
+        setIsPlayingFeedbackAudio(false);
+        continueToNextPhase();
+      };
+
+      // Play feedback audio
+      feedbackEl.play().catch(err => {
+        console.error(`  ❌ Feedback audio PLAY error:`, err);
+        setIsPlayingFeedbackAudio(false);
+        continueToNextPhase();
+      });
+    } else {
+      // No feedback audio - continue immediately
+      console.log(`  ⚠️ No feedback audio found for key "${feedbackAudioKey}"`);
+      continueToNextPhase();
+    }
+  }, [playSound, manualResume, currentPhaseIndex, currentPhase, scaledScript.phases, audio, hasAudio, lockedPhaseIndex, goToPhase, feedbackAudios]);
 
   const handlePlaygroundComplete = useCallback(() => {
     playSound('success');
