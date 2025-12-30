@@ -161,7 +161,7 @@ export interface V7Phase {
   title: string;
   startTime: number;
   endTime: number;
-  type: 'loading' | 'dramatic' | 'narrative' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
+  type: 'loading' | 'dramatic' | 'narrative' | 'comparison' | 'interaction' | 'playground' | 'revelation' | 'gamification' | 'secret-reveal';
   scenes: V7Scene[];
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;

@@ -27,7 +27,8 @@ import {
   Volume2,
   Clock,
   Layers,
-  Target
+  Target,
+  ArrowLeft
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -177,14 +178,24 @@ export default function AdminV7vv() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Film className="w-8 h-8 text-cyan-400" />
-              Pipeline V7-vv
-            </h1>
-            <p className="text-gray-400 mt-1">
-              Gerador de Aulas Cinematográficas - Versão Definitiva
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin/manual')}
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Film className="w-8 h-8 text-cyan-400" />
+                Pipeline V7-vv
+              </h1>
+              <p className="text-gray-400 mt-1">
+                Gerador de Aulas Cinematográficas - Versão Definitiva
+              </p>
+            </div>
           </div>
           <Badge variant="outline" className="text-cyan-400 border-cyan-400">
             v7-vv
