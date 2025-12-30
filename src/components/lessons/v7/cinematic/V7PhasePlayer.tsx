@@ -815,6 +815,7 @@ export const V7PhasePlayer = ({
         );
 
       case 'narrative':
+      case 'comparison': // ✅ V7-v30: COMPARISON usa mesmo renderizador que NARRATIVE (leftCard/rightCard)
         // CORRECT: Scene 0 has main comparison items, Scene 1 has detailed comparisons, Scene 2 has warning
         const scene0Content = getSceneContent(0); // Main comparison items
         const scene1Content = getSceneContent(1); // Detailed comparisons
