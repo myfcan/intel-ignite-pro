@@ -167,14 +167,34 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
     const { type, content } = microVisual;
 
     switch (type) {
-      // IMAGE-FLASH: Shows description with cinematic flash
+      // IMAGE-FLASH: Cinematic flash effect (NO text displayed)
+      // The description is for pipeline/dev reference only, not for display
       case 'image-flash':
         return (
-          <div className="px-8 py-6 rounded-2xl backdrop-blur-md bg-black/60 border border-white/10"
-            style={{ boxShadow: '0 0 60px rgba(0,0,0,0.8)' }}>
-            <p className="text-2xl md:text-3xl font-medium text-white/90 text-center max-w-md italic">
-              "{content.description}"
-            </p>
+          <div className="w-full h-full flex items-center justify-center">
+            {/* Visual flash effect overlay - no text */}
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: `radial-gradient(circle at center, ${content.color || 'rgba(255,255,255,0.3)'} 0%, transparent 70%)`,
+                animation: 'flash 0.5s ease-out',
+              }}
+            />
+            {/* If there's an actual image URL, show it */}
+            {content.imageUrl && (
+              <img
+                src={content.imageUrl}
+                alt=""
+                className="max-w-md max-h-64 object-contain rounded-xl shadow-2xl"
+                style={{ boxShadow: '0 0 60px rgba(0,0,0,0.8)' }}
+              />
+            )}
+            {/* If emoji is provided, show it centered */}
+            {content.emoji && !content.imageUrl && (
+              <span className="text-8xl md:text-9xl" style={{ textShadow: '0 0 40px rgba(255,255,255,0.5)' }}>
+                {content.emoji}
+              </span>
+            )}
           </div>
         );
 
@@ -227,9 +247,14 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
         );
 
       // HIGHLIGHT: Side highlight with pulse
+      // V7-vv: Use content.label if provided, otherwise derive from side
+      // side='left' = 98% BRINCANDO, side='right' = 2% DOMINANDO
       case 'highlight':
         const side = content.side || 'left';
-        const highlightColor = side === 'right' ? '#4ecdc4' : '#ff6b6b';
+        // Colors: red for left/brincando, cyan for right/dominando
+        const highlightColor = side === 'left' ? '#ff6b6b' : '#4ecdc4';
+        // Use explicit label if provided, otherwise use default based on side
+        const highlightLabel = content.label || (side === 'left' ? '😂 BRINCANDO' : '💰 DOMINANDO');
         return (
           <div className="px-6 py-3 rounded-lg border-2"
             style={{
@@ -239,7 +264,7 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
               animation: content.pulse ? 'pulse 1s infinite' : undefined,
             }}>
             <span className="text-xl font-bold" style={{ color: highlightColor }}>
-              {side === 'right' ? '💰 LUCRANDO' : '😂 BRINCANDO'}
+              {highlightLabel}
             </span>
           </div>
         );

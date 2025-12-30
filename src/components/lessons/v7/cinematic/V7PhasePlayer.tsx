@@ -1001,13 +1001,10 @@ export const V7PhasePlayer = ({
 
           const handleCtaClick = () => {
             console.log('[V7PhasePlayer] CTA clicked, resuming audio and advancing');
-            // Resume audio
-            if (audio.audioRef.current) {
-              audio.audioRef.current.play();
-            }
             // Unlock the phase to allow natural progression
             setLockedPhaseIndex(null);
-            setIsPausedByAnchor(false);
+            // Resume via manualResume (which triggers onResume callback to play audio)
+            manualResume();
           };
 
           return (
