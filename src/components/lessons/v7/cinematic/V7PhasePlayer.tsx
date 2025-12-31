@@ -1001,10 +1001,37 @@ export const V7PhasePlayer = ({
 
           const handleCtaClick = () => {
             console.log('[V7PhasePlayer] CTA clicked, resuming audio and advancing');
+
+            // Get next phase info for seeking
+            const effectiveIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : currentPhaseIndex;
+            const nextPhaseIndex = effectiveIndex + 1;
+            const nextPhase = scaledScript.phases[nextPhaseIndex];
+
             // Unlock the phase to allow natural progression
             setLockedPhaseIndex(null);
-            // Resume via manualResume (which triggers onResume callback to play audio)
+
+            // Resume via manualResume (which triggers onResume callback)
             manualResume();
+
+            // ✅ V7-vv: Seek audio to next phase start and play
+            if (hasAudio && nextPhase) {
+              const nextStartTime = nextPhase.startTime || 0;
+              console.log(`[V7PhasePlayer] CTA: Seeking to next phase @ ${nextStartTime.toFixed(2)}s`);
+              audio.seekTo(nextStartTime);
+
+              // Ensure audio plays after seek
+              setTimeout(() => {
+                if (!audio.isPlaying) {
+                  audio.play();
+                  console.log('[V7PhasePlayer] ▶️ Audio RESUMED after CTA click');
+                }
+              }, 100);
+            }
+
+            // Navigate to next phase
+            setTimeout(() => {
+              goToPhase(nextPhaseIndex);
+            }, 200);
           };
 
           return (
@@ -1363,8 +1390,11 @@ export const V7PhasePlayer = ({
         onNext={goToNextPhase}
         onExit={onExit}
         isVisible={
-          // ✅ V7-v13: Always show controls during revelation/secret-reveal phases (PERFEITO, etc)
-          currentPhase?.type === 'revelation' || currentPhase?.type === 'secret-reveal'
+          // ✅ V7-v13: Always show controls during revelation/secret-reveal/interaction phases
+          // User needs X button visible during CTA/quiz to exit if needed
+          currentPhase?.type === 'revelation' ||
+          currentPhase?.type === 'secret-reveal' ||
+          currentPhase?.type === 'interaction'
             ? true
             : (showControls && !isQuizResultShowing)
         }
