@@ -303,12 +303,22 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] - content.cinematic_flow:', !!contentAny?.cinematic_flow);
       console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content) : 'N/A');
 
-      // ✅ Detecção mais robusta - aceita variações
-      const isV7vvFormat =
-        contentAny?.version === 'vv' ||
-        contentAny?.version === 'VV' ||
-        (contentAny?.model === 'v7-cinematic' && Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) ||
-        (contentAny?.metadata?.generatedBy === 'V7-vv' && Array.isArray(contentAny?.phases));
+      // ✅ V7-vv DETECTION: Super robusta - qualquer indicação de V7-vv deve funcionar
+      const hasV7vvVersion = contentAny?.version === 'vv' || contentAny?.version === 'VV';
+      const hasV7vvModel = contentAny?.model === 'v7-cinematic';
+      const hasV7vvGeneratedBy = contentAny?.metadata?.generatedBy === 'V7-vv';
+      const hasValidPhases = Array.isArray(contentAny?.phases) && contentAny.phases.length > 0;
+      
+      // ✅ QUALQUER combinação de indicadores V7-vv + phases deve funcionar
+      const isV7vvFormat = hasValidPhases && (hasV7vvVersion || hasV7vvModel || hasV7vvGeneratedBy);
+      
+      console.log('[useV7PhaseScript] 🎯 V7-vv Detection:', {
+        hasV7vvVersion,
+        hasV7vvModel,
+        hasV7vvGeneratedBy,
+        hasValidPhases,
+        isV7vvFormat
+      });
 
       if (isV7vvFormat) {
         console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
@@ -335,15 +345,21 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         console.log('[useV7PhaseScript] V7-vv totalDuration:', v7vvTotalDuration);
 
         // ✅ V7-vv: Usar phases diretamente (já vêm com anchorActions, scenes, etc)
+        // Suporte a múltiplos formatos de audio URL
+        const audioUrlResolved = data.audio_url || 
+          v7vvContent.audioConfig?.url || 
+          v7vvContent.audio?.mainAudio?.url || 
+          '';
+        
         const lessonScript: V7LessonScript = {
           id: data.id,
           title: v7vvContent.metadata?.title || data.title,
           totalDuration: v7vvTotalDuration,
-          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
+          audioUrl: audioUrlResolved,
           wordTimestamps: timestamps,
           phases: v7vvPhases,
           audioConfig: {
-            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
+            mainAudioUrl: audioUrlResolved,
           },
           anchorPoints: [],
         };
@@ -392,15 +408,21 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         const v7vvTotalDuration = v7vvContent.metadata?.totalDuration ||
           (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
 
+        // ✅ Suporte a múltiplos formatos de audio URL (mesmo do caminho principal)
+        const audioUrlResolved = data.audio_url || 
+          v7vvContent.audioConfig?.url || 
+          v7vvContent.audio?.mainAudio?.url || 
+          '';
+
         const lessonScript: V7LessonScript = {
           id: data.id,
           title: v7vvContent.metadata?.title || data.title,
           totalDuration: v7vvTotalDuration,
-          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
+          audioUrl: audioUrlResolved,
           wordTimestamps: timestamps,
           phases: v7vvPhases,
           audioConfig: {
-            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
+            mainAudioUrl: audioUrlResolved,
           },
           anchorPoints: [],
         };
