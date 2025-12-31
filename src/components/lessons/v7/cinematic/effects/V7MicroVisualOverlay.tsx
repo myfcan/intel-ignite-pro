@@ -160,15 +160,15 @@ const CountingNumber: React.FC<{ from: number; to: number; prefix?: string; dura
 };
 
 const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentTime }) => {
-  // V7-vv: For highlight type, auto-match position to side when not specified
-  // side='left' (98% BRINCANDO) should position at 'left'
-  // side='right' (2% DOMINANDO) should position at 'right'
+  // V7-vv: For highlight type, ALWAYS use side for position (ignore explicit position)
+  // This ensures BRINCANDO appears on LEFT (98%) and DOMINANDO on RIGHT (2%)
   const getPosition = () => {
-    if (microVisual.content.position) return microVisual.content.position;
+    // For highlight type, side determines position - ignore any explicit position
     if (microVisual.type === 'highlight' && microVisual.content.side) {
       return microVisual.content.side; // 'left' or 'right'
     }
-    return 'center';
+    // For other types, use explicit position or default to center
+    return microVisual.content.position || 'center';
   };
   const position = getPosition();
   const variants = animationVariants[microVisual.type] || animationVariants['default'];
