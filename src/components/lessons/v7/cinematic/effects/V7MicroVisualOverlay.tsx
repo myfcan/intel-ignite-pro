@@ -299,22 +299,11 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
           </div>
         );
 
-      // LETTER-REVEAL: Single letter of PERFEITO
+      // LETTER-REVEAL: DISABLED - V7PhasePERFEITOSynced handles all letter rendering
+      // This was causing duplicate letters and boxes to appear
       case 'letter-reveal':
-        const letters = ['P', 'E', 'R', 'F', 'E', 'I', 'T', 'O'];
-        const meanings = ['Persona', 'Estrutura', 'Resultado', 'Formato', 'Exemplos', 'Iteração', 'Tom', 'Otimização'];
-        const index = content.index || 0;
-        return (
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-8xl md:text-9xl font-black text-cyan-400"
-              style={{ textShadow: '0 0 40px rgba(34,211,238,0.8)' }}>
-              {letters[index]}
-            </span>
-            <span className="text-xl md:text-2xl font-medium text-white/90">
-              {meanings[index]}
-            </span>
-          </div>
-        );
+        // Return null - the phase component handles letter rendering
+        return null;
 
       // DEFAULT: Generic text display
       default:
