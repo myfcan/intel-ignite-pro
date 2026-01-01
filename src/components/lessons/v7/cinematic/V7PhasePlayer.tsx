@@ -1007,32 +1007,38 @@ export const V7PhasePlayer = ({
             const nextPhaseIndex = effectiveIndex + 1;
             const nextPhase = scaledScript.phases[nextPhaseIndex];
 
-            // Unlock the phase to allow natural progression
+            // ✅ FIX: Navigate FIRST, then handle audio - prevents double-click issue
+            goToPhase(nextPhaseIndex);
+            
+            // ✅ FIX: Unlock AFTER navigation to prevent race condition
             setLockedPhaseIndex(null);
-
-            // Resume via manualResume (which triggers onResume callback)
-            manualResume();
+            setInteractionComplete(true);
 
             // ✅ V7-vv FIX: SEMPRE tocar áudio após CTA - seek + play garantido
             if (hasAudio) {
               const nextStartTime = nextPhase?.startTime || audio.currentTime;
               console.log(`[V7PhasePlayer] CTA: Seeking to ${nextStartTime.toFixed(2)}s and PLAYING`);
+              
+              // Seek first
               audio.seekTo(nextStartTime);
 
               // Força play imediato E novamente após seek completar
-              audio.play();
+              requestAnimationFrame(() => {
+                audio.play();
+                console.log('[V7PhasePlayer] ▶️ Audio PLAY after CTA click');
+              });
+              
+              // Double-check play after seek completes
               setTimeout(() => {
                 if (!audio.isPlaying) {
                   audio.play();
-                  console.log('[V7PhasePlayer] ▶️ Audio FORCE PLAY after CTA click');
+                  console.log('[V7PhasePlayer] ▶️ Audio FORCE PLAY (retry) after CTA');
                 }
-              }, 150);
+              }, 200);
             }
 
-            // Navigate to next phase
-            setTimeout(() => {
-              goToPhase(nextPhaseIndex);
-            }, 200);
+            // Resume anchor system
+            manualResume();
           };
 
           return (
