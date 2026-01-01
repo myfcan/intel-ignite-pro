@@ -188,41 +188,43 @@ export const V7PhasePERFEITOSynced = ({
           return (
             <div
               key={index}
-              className="flex items-center gap-4 sm:gap-6"
+              className="flex items-center gap-5 sm:gap-8"
             >
-              {/* Letter - ALWAYS VISIBLE, glow when revealed */}
+              {/* Letter - LARGER, bolder colors */}
               <span
-                className="text-5xl sm:text-6xl md:text-7xl font-black transition-all duration-500 min-w-[48px] sm:min-w-[60px] md:min-w-[70px] text-center"
+                className="text-6xl sm:text-7xl md:text-8xl font-black transition-all duration-500 min-w-[56px] sm:min-w-[72px] md:min-w-[88px] text-center"
                 style={{
-                  color: isRevealed ? '#00d9a6' : 'rgba(255, 255, 255, 0.15)',
+                  color: isRevealed ? '#22D3EE' : 'rgba(255, 255, 255, 0.25)',
                   textShadow: isRevealed 
-                    ? '0 0 30px rgba(0, 217, 166, 0.8), 0 0 60px rgba(0, 217, 166, 0.4)' 
+                    ? '0 0 40px rgba(34, 211, 238, 0.9), 0 0 80px rgba(34, 211, 238, 0.5), 0 0 120px rgba(0, 217, 166, 0.3)' 
                     : 'none',
-                  transform: isNew ? 'scale(1.1)' : 'scale(1)',
+                  transform: isNew ? 'scale(1.15)' : 'scale(1)',
                 }}
               >
                 {item.letter}
               </span>
 
-              {/* Meaning - appears when revealed */}
+              {/* Meaning - larger text */}
               <div
                 className="flex flex-col transition-all duration-400"
                 style={{ 
-                  opacity: isRevealed ? 1 : 0.1,
+                  opacity: isRevealed ? 1 : 0.15,
                   transform: isRevealed ? 'translateX(0)' : 'translateX(-10px)',
                 }}
               >
                 <span 
-                  className="text-xl sm:text-2xl md:text-3xl font-bold text-white transition-all duration-300"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white transition-all duration-300"
                   style={{
-                    textShadow: isNew ? '0 0 20px rgba(255,255,255,0.5)' : 'none',
+                    textShadow: isNew ? '0 0 25px rgba(255,255,255,0.6)' : 'none',
                   }}
                 >
                   {item.meaning}
                 </span>
                 <span 
-                  className="text-sm sm:text-base text-cyan-400/70 font-light -mt-1"
-                  style={{ opacity: isRevealed ? 0.8 : 0.2 }}
+                  className="text-sm sm:text-base md:text-lg font-light -mt-0.5"
+                  style={{ 
+                    color: isRevealed ? '#00d9a6' : 'rgba(100, 100, 100, 0.4)',
+                  }}
                 >
                   {item.subtitle}
                 </span>
