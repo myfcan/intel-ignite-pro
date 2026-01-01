@@ -1007,38 +1007,45 @@ export const V7PhasePlayer = ({
             const nextPhaseIndex = effectiveIndex + 1;
             const nextPhase = scaledScript.phases[nextPhaseIndex];
 
-            // ✅ FIX: Navigate FIRST, then handle audio - prevents double-click issue
-            goToPhase(nextPhaseIndex);
-            
-            // ✅ FIX: Unlock AFTER navigation to prevent race condition
+            // ✅ FIX: Unlock and reset state FIRST
             setLockedPhaseIndex(null);
             setInteractionComplete(true);
+            
+            // ✅ Resume anchor system BEFORE playing audio
+            manualResume();
 
-            // ✅ V7-vv FIX: SEMPRE tocar áudio após CTA - seek + play garantido
+            // ✅ V7-vv FIX: GARANTIR que o áudio toca - múltiplas tentativas
             if (hasAudio) {
               const nextStartTime = nextPhase?.startTime || audio.currentTime;
               console.log(`[V7PhasePlayer] CTA: Seeking to ${nextStartTime.toFixed(2)}s and PLAYING`);
               
-              // Seek first
+              // Seek to next phase start
               audio.seekTo(nextStartTime);
-
-              // Força play imediato E novamente após seek completar
-              requestAnimationFrame(() => {
-                audio.play();
-                console.log('[V7PhasePlayer] ▶️ Audio PLAY after CTA click');
-              });
               
-              // Double-check play after seek completes
+              // Force play with multiple attempts
+              const forcePlay = () => {
+                // Ensure volume is up
+                audio.setVolume(0.8);
+                audio.play();
+                console.log('[V7PhasePlayer] ▶️ Audio PLAY called');
+              };
+              
+              // Immediate play
+              forcePlay();
+              
+              // Retry after short delays to ensure play works
+              setTimeout(forcePlay, 100);
+              setTimeout(forcePlay, 300);
               setTimeout(() => {
                 if (!audio.isPlaying) {
-                  audio.play();
-                  console.log('[V7PhasePlayer] ▶️ Audio FORCE PLAY (retry) after CTA');
+                  console.log('[V7PhasePlayer] ⚠️ Audio still not playing, forcing again');
+                  forcePlay();
                 }
-              }, 200);
+              }, 500);
             }
 
-            // Resume anchor system
-            manualResume();
+            // ✅ FIX: Navigate LAST, after all audio setup
+            goToPhase(nextPhaseIndex);
           };
 
           return (
