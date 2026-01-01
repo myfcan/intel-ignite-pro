@@ -20,6 +20,7 @@ interface V7PhasePERFEITOSyncedProps {
 }
 
 // PERFEITO letter meanings com anchorText para cada item
+// ✅ FIXED: anchorText deve corresponder à palavra EXATA falada no áudio
 const PERFEITO_MEANINGS = [
   { letter: 'P', meaning: 'Persona', subtitle: 'específica', anchorText: 'Persona' },
   { letter: 'E', meaning: 'Estrutura', subtitle: 'clara', anchorText: 'Estrutura' },
@@ -28,7 +29,7 @@ const PERFEITO_MEANINGS = [
   { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos', anchorText: 'Exemplos' },
   { letter: 'I', meaning: 'Iteração', subtitle: 'contínua', anchorText: 'Iteração' },
   { letter: 'T', meaning: 'Tom', subtitle: 'adequado', anchorText: 'Tom' },
-  { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'constante' },
+  { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'Otimização' },
 ];
 
 // ✅ Busca palavra EXATA no wordTimestamps - retorna o timestamp
@@ -59,7 +60,7 @@ export const V7PhasePERFEITOSynced = ({
   currentTime,
   isPlaying,
   onComplete,
-  exitAnchor = 'constante',
+  exitAnchor = 'Otimização', // ✅ FIXED: Match exact word spoken in audio
 }: V7PhasePERFEITOSyncedProps) => {
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
