@@ -60,7 +60,7 @@ export const V7PhasePERFEITOSynced = ({
   currentTime,
   isPlaying,
   onComplete,
-  exitAnchor = 'agora', // ✅ FIX: Transitar para playground apenas após "teste agora" (86.737s)
+  exitAnchor = 'teste', // ✅ FIX: "teste" aparece UMA vez @ 86.052s - antes do playground
 }: V7PhasePERFEITOSyncedProps) => {
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
