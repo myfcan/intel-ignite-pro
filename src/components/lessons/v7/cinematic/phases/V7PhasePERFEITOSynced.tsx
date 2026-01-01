@@ -1,9 +1,9 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v28: ANCHORTEXT PURO - ZERO FALLBACKS DE TEMPO
-// ✅ V7-v28: Modelo V5 - busca palavra exata no wordTimestamps, dispara quando currentTime >= ts.end
+// ✅ V7-v29: CLEAN DESIGN - No blue boxes, simple reveal effect with sound
 // P-E-R-F-E-I-T-O stacked vertically with meanings appearing as spoken
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface WordTimestamp {
   word: string;
@@ -31,7 +31,7 @@ const PERFEITO_MEANINGS = [
   { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'constante' },
 ];
 
-// ✅ V7-v28: Busca palavra EXATA no wordTimestamps - retorna o timestamp
+// ✅ Busca palavra EXATA no wordTimestamps - retorna o timestamp
 const findExactWordTimestamp = (timestamps: WordTimestamp[], anchor: string): WordTimestamp | null => {
   if (!timestamps || timestamps.length === 0) return null;
   
@@ -47,14 +47,10 @@ const findExactWordTimestamp = (timestamps: WordTimestamp[], anchor: string): Wo
   return null;
 };
 
-// ✅ V7-v28: ANCHORTEXT PURO - retorna true SOMENTE quando palavra foi falada
-// Dispara quando currentTime >= timestamp.end da palavra
+// ✅ ANCHORTEXT PURO - retorna true SOMENTE quando palavra foi falada
 const hasWordBeenSpoken = (timestamps: WordTimestamp[], anchor: string, currentTime: number): boolean => {
   const ts = findExactWordTimestamp(timestamps, anchor);
-  if (!ts) {
-    // Palavra não encontrada = nunca dispara
-    return false;
-  }
+  if (!ts) return false;
   return currentTime >= ts.end;
 };
 
@@ -69,8 +65,12 @@ export const V7PhasePERFEITOSynced = ({
   const [visibleCount, setVisibleCount] = useState(0);
   const completedRef = useRef(false);
   const loggedRef = useRef(false);
+  const playedSoundsRef = useRef<Set<number>>(new Set());
+  
+  // Sound effects
+  const { playSound, unlockAudio } = useV7SoundEffects();
 
-  // ✅ V7-v28: Log inicial das palavras relevantes (apenas uma vez)
+  // ✅ Log inicial das palavras relevantes (apenas uma vez)
   useEffect(() => {
     if (loggedRef.current || wordTimestamps.length === 0) return;
     loggedRef.current = true;
@@ -94,8 +94,7 @@ export const V7PhasePERFEITOSynced = ({
     }
   }, [wordTimestamps]);
 
-  // ✅ V7-v28: Mostrar conteúdo SOMENTE quando "PERFEITO" for falado
-  // ZERO FALLBACK DE TEMPO - apenas anchorText
+  // ✅ Mostrar conteúdo SOMENTE quando "PERFEITO" for falado
   useEffect(() => {
     if (showContent) return;
     
@@ -103,19 +102,28 @@ export const V7PhasePERFEITOSynced = ({
     
     if (perfeitoSpoken) {
       setShowContent(true);
+      playSound('reveal');
       console.log(`[V7PhasePERFEITOSynced] 🎬 "PERFEITO" falado @ ${currentTime.toFixed(1)}s - mostrando layout`);
     }
-  }, [showContent, currentTime, wordTimestamps]);
+  }, [showContent, currentTime, wordTimestamps, playSound]);
 
-  // ✅ V7-v28: Atualizar visibleCount baseado em anchorText de CADA letra
-  // ZERO FALLBACK DE TEMPO - apenas anchorText
+  // ✅ Atualizar visibleCount e tocar sons baseado em anchorText
   useEffect(() => {
     if (!showContent) return;
 
     let count = 0;
-    for (const item of PERFEITO_MEANINGS) {
+    for (let i = 0; i < PERFEITO_MEANINGS.length; i++) {
+      const item = PERFEITO_MEANINGS[i];
       if (hasWordBeenSpoken(wordTimestamps, item.anchorText, currentTime)) {
         count++;
+        
+        // ✅ Play sound effect for newly revealed letter
+        if (!playedSoundsRef.current.has(i)) {
+          playedSoundsRef.current.add(i);
+          // Pitch increases with each letter for musical progression
+          playSound('letter-reveal', { pitch: i });
+          console.log(`[V7PhasePERFEITOSynced] 🔊 Sound for letter "${item.letter}"`);
+        }
       }
     }
 
@@ -123,10 +131,9 @@ export const V7PhasePERFEITOSynced = ({
       setVisibleCount(count);
       console.log(`[V7PhasePERFEITOSynced] 📊 Visible: ${count}/8 @ ${currentTime.toFixed(1)}s`);
     }
-  }, [showContent, currentTime, wordTimestamps, visibleCount]);
+  }, [showContent, currentTime, wordTimestamps, visibleCount, playSound]);
 
-  // ✅ V7-v28: Completar fase SOMENTE quando exitAnchor for falado
-  // ZERO FALLBACK DE TEMPO - apenas anchorText
+  // ✅ Completar fase SOMENTE quando exitAnchor for falado
   useEffect(() => {
     if (completedRef.current) return;
     
@@ -134,15 +141,15 @@ export const V7PhasePERFEITOSynced = ({
     
     if (exitSpoken) {
       completedRef.current = true;
+      playSound('completion');
       console.log(`[V7PhasePERFEITOSynced] ✅ EXIT "${exitAnchor}" falado @ ${currentTime.toFixed(1)}s - completando fase`);
-      // Delay para absorver o visual completo
       setTimeout(() => onComplete?.(), 800);
     }
-  }, [currentTime, wordTimestamps, exitAnchor, onComplete]);
+  }, [currentTime, wordTimestamps, exitAnchor, onComplete, playSound]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-16">
-      {/* Animated background glow - pulsing */}
+      {/* Animated background glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -151,15 +158,15 @@ export const V7PhasePERFEITOSynced = ({
         }}
       />
       
-      {/* Scanlines effect overlay */}
+      {/* Subtle scanlines */}
       <div 
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none opacity-[0.02]"
         style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px)',
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
         }}
       />
 
-      {/* Header with glow */}
+      {/* Header */}
       <div
         className="absolute top-6 sm:top-10 text-center transition-all duration-700"
         style={{ 
@@ -170,17 +177,17 @@ export const V7PhasePERFEITOSynced = ({
         <span 
           className="text-xs sm:text-sm tracking-[0.5em] uppercase font-light"
           style={{
-            color: 'rgba(0, 217, 166, 0.6)',
-            textShadow: '0 0 20px rgba(0, 217, 166, 0.3)',
+            color: 'rgba(0, 217, 166, 0.7)',
+            textShadow: '0 0 20px rgba(0, 217, 166, 0.4)',
           }}
         >
-          O Método
+          M É T O D O
         </span>
       </div>
 
-      {/* PERFEITO Vertical Layout - Modern Design */}
+      {/* PERFEITO Vertical Layout - CLEAN DESIGN */}
       <div
-        className="flex flex-col items-start gap-1 sm:gap-2 transition-all duration-700"
+        className="flex flex-col items-start gap-2 sm:gap-3 transition-all duration-700"
         style={{ 
           opacity: showContent ? 1 : 0,
           transform: showContent ? 'scale(1)' : 'scale(0.95)',
@@ -193,42 +200,57 @@ export const V7PhasePERFEITOSynced = ({
           return (
             <div
               key={index}
-              className="flex items-center gap-3 sm:gap-4 group"
+              className="flex items-center gap-3 sm:gap-5"
               style={{
-                opacity: showContent ? 1 : 0.3,
+                opacity: showContent ? 1 : 0,
                 transform: showContent ? 'translateX(0)' : 'translateX(-20px)',
-                transition: `all 0.5s ease-out ${index * 0.05}s`,
+                transition: `all 0.4s ease-out ${index * 0.03}s`,
               }}
             >
-              {/* Letter - Large and prominent */}
-              <div className="relative">
+              {/* Letter - CLEAN, NO BOX */}
+              <div className="relative flex items-center justify-center w-14 sm:w-16 md:w-20">
                 <span
-                  className="text-4xl sm:text-5xl md:text-6xl font-black w-12 sm:w-14 md:w-16 text-center inline-block transition-all duration-500"
+                  className="text-5xl sm:text-6xl md:text-7xl font-black transition-all duration-500"
                   style={{
+                    // Visible: bright gradient, Hidden: very dim
                     background: isVisible
                       ? 'linear-gradient(180deg, #00d9a6 0%, #22D3EE 50%, #00d9a6 100%)'
-                      : 'linear-gradient(180deg, #2a2a2a, #1a1a1a)',
+                      : 'linear-gradient(180deg, rgba(100,100,100,0.3), rgba(60,60,60,0.2))',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
+                    // Glow effect when visible
                     filter: isVisible 
-                      ? 'drop-shadow(0 0 25px rgba(0, 217, 166, 0.6))' 
+                      ? 'drop-shadow(0 0 20px rgba(0, 217, 166, 0.6)) drop-shadow(0 0 40px rgba(0, 217, 166, 0.3))' 
                       : 'none',
-                    transform: isJustRevealed ? 'scale(1.1)' : 'scale(1)',
+                    // Scale pulse on reveal
+                    transform: isJustRevealed ? 'scale(1.15)' : 'scale(1)',
+                    opacity: isVisible ? 1 : 0.25,
                   }}
                 >
                   {item.letter}
                 </span>
                 
-                {/* Glow ring for just revealed letter */}
+                {/* Burst effect on reveal */}
                 {isJustRevealed && (
-                  <div
-                    className="absolute inset-0 rounded-full pointer-events-none"
-                    style={{
-                      background: 'radial-gradient(circle, rgba(0, 217, 166, 0.4) 0%, transparent 70%)',
-                      animation: 'pulse 0.6s ease-out',
-                      transform: 'scale(2)',
-                    }}
-                  />
+                  <>
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(0, 217, 166, 0.5) 0%, transparent 60%)',
+                        animation: 'pulse 0.6s ease-out forwards',
+                        transform: 'scale(2.5)',
+                        opacity: 0.8,
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-full"
+                      style={{
+                        border: '2px solid rgba(0, 217, 166, 0.4)',
+                        animation: 'ping 0.8s ease-out forwards',
+                        transform: 'scale(1)',
+                      }}
+                    />
+                  </>
                 )}
               </div>
 
@@ -236,36 +258,35 @@ export const V7PhasePERFEITOSynced = ({
               <div 
                 className="h-[2px] transition-all duration-500"
                 style={{
-                  width: isVisible ? '24px' : '12px',
+                  width: isVisible ? '32px' : '16px',
                   background: isVisible 
-                    ? 'linear-gradient(90deg, #00d9a6, transparent)' 
-                    : '#2a2a2a',
-                  opacity: isVisible ? 1 : 0.3,
+                    ? 'linear-gradient(90deg, rgba(0, 217, 166, 0.8), rgba(34, 211, 238, 0.4), transparent)' 
+                    : 'rgba(100, 100, 100, 0.2)',
+                  boxShadow: isVisible ? '0 0 10px rgba(0, 217, 166, 0.3)' : 'none',
                 }}
               />
 
-              {/* Meaning text - slides in from left */}
+              {/* Meaning text - slides in smoothly */}
               <div
                 className="flex flex-col transition-all duration-500"
                 style={{ 
-                  opacity: isVisible ? 1 : 0,
-                  transform: isVisible ? 'translateX(0)' : 'translateX(-16px)',
-                  filter: isVisible ? 'none' : 'blur(4px)',
+                  opacity: isVisible ? 1 : 0.15,
+                  transform: isVisible ? 'translateX(0)' : 'translateX(-12px)',
                 }}
               >
                 <span 
-                  className="text-base sm:text-lg md:text-xl font-bold tracking-wide"
+                  className="text-lg sm:text-xl md:text-2xl font-bold tracking-wide transition-all duration-300"
                   style={{
-                    color: '#ffffff',
-                    textShadow: isJustRevealed ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
+                    color: isVisible ? '#ffffff' : 'rgba(150, 150, 150, 0.4)',
+                    textShadow: isJustRevealed ? '0 0 15px rgba(255,255,255,0.6)' : 'none',
                   }}
                 >
                   {item.meaning}
                 </span>
                 <span 
-                  className="text-xs sm:text-sm font-light -mt-0.5"
+                  className="text-xs sm:text-sm font-light -mt-0.5 transition-all duration-300"
                   style={{
-                    color: 'rgba(34, 211, 238, 0.7)',
+                    color: isVisible ? 'rgba(34, 211, 238, 0.8)' : 'rgba(100, 100, 100, 0.3)',
                   }}
                 >
                   {item.subtitle}
@@ -276,37 +297,51 @@ export const V7PhasePERFEITOSynced = ({
         })}
       </div>
 
-      {/* Modern progress indicator - bottom bar */}
+      {/* Progress indicator - bottom */}
       <div
-        className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 transition-all duration-500"
+        className="absolute bottom-12 sm:bottom-16 left-1/2 -translate-x-1/2 transition-all duration-500"
         style={{ opacity: showContent ? 1 : 0 }}
       >
         <div className="flex items-center gap-3">
-          {/* Progress bar */}
-          <div 
-            className="w-32 sm:w-40 h-1 rounded-full overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.1)' }}
-          >
-            <div 
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{
-                width: `${(visibleCount / 8) * 100}%`,
-                background: 'linear-gradient(90deg, #00d9a6, #22D3EE)',
-                boxShadow: '0 0 10px rgba(0, 217, 166, 0.5)',
-              }}
-            />
+          {/* Dot indicators */}
+          <div className="flex gap-1.5">
+            {PERFEITO_MEANINGS.map((_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full transition-all duration-300"
+                style={{
+                  background: i < visibleCount 
+                    ? 'linear-gradient(135deg, #00d9a6, #22D3EE)' 
+                    : 'rgba(255,255,255,0.15)',
+                  boxShadow: i < visibleCount ? '0 0 8px rgba(0, 217, 166, 0.5)' : 'none',
+                  transform: i === visibleCount - 1 ? 'scale(1.3)' : 'scale(1)',
+                }}
+              />
+            ))}
           </div>
           {/* Counter */}
           <span 
-            className="text-xs font-mono"
-            style={{ color: 'rgba(0, 217, 166, 0.6)' }}
+            className="text-xs font-mono ml-2"
+            style={{ color: 'rgba(0, 217, 166, 0.7)' }}
           >
             {visibleCount}/8
           </span>
         </div>
       </div>
 
-      {/* Debug - ANCHORTEXT PURO */}
+      {/* CSS for animations */}
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 0.8; transform: scale(1); }
+          100% { opacity: 0; transform: scale(3); }
+        }
+        @keyframes ping {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2.5); }
+        }
+      `}</style>
+
+      {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-4 left-4 text-xs text-white/30 font-mono">
           {currentTime.toFixed(1)}s | {visibleCount}/8 | exit: "{exitAnchor}"
