@@ -303,25 +303,28 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] - content.cinematic_flow:', !!contentAny?.cinematic_flow);
       console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content) : 'N/A');
 
-      // ✅ V7-vv DETECTION: Super robusta - qualquer indicação de V7-vv deve funcionar
-      // CRITÉRIO PRINCIPAL: Se tem phases[] válidas no root do content, é V7-vv!
+      // ✅ V7-vv DETECTION: SUPER SIMPLIFICADA - se tem phases[] é V7-vv!
+      // CRITÉRIO ÚNICO: Se content.phases é um array válido, usar V7-vv path!
+      const hasValidPhases = Array.isArray(contentAny?.phases) && contentAny.phases.length > 0;
+      
+      // ✅ Indicadores secundários (para debug apenas)
       const hasV7vvVersion = contentAny?.version === 'vv' || contentAny?.version === 'VV';
       const hasV7vvModel = contentAny?.model === 'v7-cinematic';
       const hasV7vvGeneratedBy = contentAny?.metadata?.generatedBy === 'V7-vv' || contentAny?.generatedBy === 'V7-vv';
-      const hasValidPhases = Array.isArray(contentAny?.phases) && contentAny.phases.length > 0;
-      const hasV7vvAudioStructure = !!contentAny?.audio?.mainAudio; // V7-vv always has audio.mainAudio
+      const hasV7vvAudioStructure = !!contentAny?.audio?.mainAudio;
       
-      // ✅ QUALQUER combinação de indicadores V7-vv + phases deve funcionar
-      // OU se tem phases válidas E audio.mainAudio (estrutura V7-vv definitiva)
-      const isV7vvFormat = hasValidPhases && (hasV7vvVersion || hasV7vvModel || hasV7vvGeneratedBy || hasV7vvAudioStructure);
+      // ✅ CRITÉRIO SIMPLIFICADO: Se tem phases[], é V7-vv! Ponto final.
+      const isV7vvFormat = hasValidPhases;
       
-      console.log('[useV7PhaseScript] 🎯 V7-vv Detection:', {
+      console.log('[useV7PhaseScript] 🎯 V7-vv Detection SIMPLIFICADA:', {
+        hasValidPhases,
+        isV7vvFormat,
+        phasesCount: contentAny?.phases?.length || 0,
+        // Debug secondary indicators
         hasV7vvVersion,
         hasV7vvModel,
         hasV7vvGeneratedBy,
-        hasV7vvAudioStructure,
-        hasValidPhases,
-        isV7vvFormat
+        hasV7vvAudioStructure
       });
 
       if (isV7vvFormat) {
