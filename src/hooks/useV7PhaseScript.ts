@@ -459,6 +459,44 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // LEGACY PATH: V7-v3 e anteriores (mantido para compatibilidade)
       // ============================================================================
 
+      // ✅ SAFETY CHECK: Se chegou aqui mas content.phases existe, NÃO DEVERIA ACONTECER
+      // Isso significa que a detecção V7-vv falhou por algum motivo inesperado
+      // Vamos forçar o caminho correto
+      if (Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) {
+        console.error('[useV7PhaseScript] 🚨 SAFETY CHECK: content.phases existe mas V7-vv não foi detectado!');
+        console.error('[useV7PhaseScript] 🚨 Forçando retorno com phases diretamente...');
+        
+        const safetyContent = contentAny;
+        const safetyPhases = safetyContent.phases || [];
+        const safetyTotalDuration = safetyContent.metadata?.totalDuration ||
+          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
+        const safetyAudioUrl = data.audio_url || 
+          safetyContent.audioConfig?.url || 
+          safetyContent.audio?.mainAudio?.url || 
+          '';
+
+        const safetyScript: V7LessonScript = {
+          id: data.id,
+          title: safetyContent.metadata?.title || data.title,
+          totalDuration: safetyTotalDuration,
+          audioUrl: safetyAudioUrl,
+          wordTimestamps: timestamps,
+          phases: safetyPhases,
+          audioConfig: {
+            mainAudioUrl: safetyAudioUrl,
+          },
+          anchorPoints: [],
+        };
+
+        setDetectionPath('emergency');
+        setFeedbackAudios(safetyContent.audio?.feedbackAudios || null);
+        setScript(safetyScript);
+        setAudioUrl(data.audio_url || null);
+        setWordTimestamps(timestamps);
+        setIsLoading(false);
+        return;
+      }
+
       // ✅ V7-v3: Detect new structure with phases array (anchorText-only)
       const rawPhases = content?.cinematicFlow?.phases || 
                         content?.cinematic_flow?.phases || 
