@@ -60,7 +60,7 @@ export const V7PhasePERFEITOSynced = ({
   currentTime,
   isPlaying,
   onComplete,
-  exitAnchor = 'Otimização', // ✅ FIXED: Match exact word spoken in audio
+  exitAnchor = 'agora', // ✅ FIX: Transitar para playground apenas após "teste agora" (86.737s)
 }: V7PhasePERFEITOSyncedProps) => {
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -134,7 +134,8 @@ export const V7PhasePERFEITOSynced = ({
     }
   }, [showContent, currentTime, wordTimestamps, visibleCount, playSound]);
 
-  // ✅ Completar fase SOMENTE quando exitAnchor for falado
+// ✅ Completar fase SOMENTE quando "teste agora" for falado (antes do playground)
+  // O exitAnchor padrão é "teste agora" - a última frase antes do desafio prático
   useEffect(() => {
     if (completedRef.current) return;
     
@@ -149,7 +150,7 @@ export const V7PhasePERFEITOSynced = ({
   }, [currentTime, wordTimestamps, exitAnchor, onComplete, playSound]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-16">
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden py-4">
       {/* Subtle ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
@@ -159,9 +160,9 @@ export const V7PhasePERFEITOSynced = ({
         }}
       />
 
-      {/* Header - MÉTODO */}
+      {/* Header - MÉTODO - positioned relative to content */}
       <div
-        className="absolute top-8 sm:top-12 text-center transition-all duration-700"
+        className="text-center transition-all duration-700 mb-4"
         style={{ 
           opacity: showContent ? 1 : 0,
           transform: showContent ? 'translateY(0)' : 'translateY(-20px)',
@@ -174,9 +175,9 @@ export const V7PhasePERFEITOSynced = ({
         </span>
       </div>
 
-      {/* PERFEITO Vertical Layout - ULTRA CLEAN */}
+      {/* PERFEITO Vertical Layout - COMPACT for better fit */}
       <div
-        className="flex flex-col items-start gap-4 sm:gap-5 transition-all duration-700"
+        className="flex flex-col items-start gap-1.5 sm:gap-2 transition-all duration-700"
         style={{ 
           opacity: showContent ? 1 : 0,
           transform: showContent ? 'translateY(0)' : 'translateY(20px)',
@@ -189,23 +190,23 @@ export const V7PhasePERFEITOSynced = ({
           return (
             <div
               key={index}
-              className="flex items-center gap-5 sm:gap-8"
+              className="flex items-center gap-3 sm:gap-5"
             >
-              {/* Letter - LARGER, bolder colors */}
+              {/* Letter - SMALLER to fit 8 items on screen */}
               <span
-                className="text-6xl sm:text-7xl md:text-8xl font-black transition-all duration-500 min-w-[56px] sm:min-w-[72px] md:min-w-[88px] text-center"
+                className="text-3xl sm:text-4xl md:text-5xl font-black transition-all duration-500 min-w-[36px] sm:min-w-[48px] md:min-w-[56px] text-center"
                 style={{
                   color: isRevealed ? '#22D3EE' : 'rgba(255, 255, 255, 0.25)',
                   textShadow: isRevealed 
-                    ? '0 0 40px rgba(34, 211, 238, 0.9), 0 0 80px rgba(34, 211, 238, 0.5), 0 0 120px rgba(0, 217, 166, 0.3)' 
+                    ? '0 0 30px rgba(34, 211, 238, 0.9), 0 0 60px rgba(34, 211, 238, 0.5)' 
                     : 'none',
-                  transform: isNew ? 'scale(1.15)' : 'scale(1)',
+                  transform: isNew ? 'scale(1.1)' : 'scale(1)',
                 }}
               >
                 {item.letter}
               </span>
 
-              {/* Meaning - larger text */}
+              {/* Meaning - compact text */}
               <div
                 className="flex flex-col transition-all duration-400"
                 style={{ 
@@ -214,15 +215,15 @@ export const V7PhasePERFEITOSynced = ({
                 }}
               >
                 <span 
-                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white transition-all duration-300"
+                  className="text-lg sm:text-xl md:text-2xl font-bold text-white transition-all duration-300"
                   style={{
-                    textShadow: isNew ? '0 0 25px rgba(255,255,255,0.6)' : 'none',
+                    textShadow: isNew ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
                   }}
                 >
                   {item.meaning}
                 </span>
                 <span 
-                  className="text-sm sm:text-base md:text-lg font-light -mt-0.5"
+                  className="text-xs sm:text-sm font-light -mt-0.5"
                   style={{ 
                     color: isRevealed ? '#00d9a6' : 'rgba(100, 100, 100, 0.4)',
                   }}
@@ -235,23 +236,23 @@ export const V7PhasePERFEITOSynced = ({
         })}
       </div>
 
-      {/* Progress dots - bottom */}
+      {/* Progress dots - positioned below content */}
       <div
-        className="absolute bottom-14 sm:bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-2 transition-opacity duration-500"
+        className="flex items-center gap-2 mt-4 transition-opacity duration-500"
         style={{ opacity: showContent ? 1 : 0 }}
       >
         {PERFEITO_MEANINGS.map((_, i) => (
           <div
             key={i}
-            className="w-2.5 h-2.5 rounded-full transition-all duration-300"
+            className="w-2 h-2 rounded-full transition-all duration-300"
             style={{
               background: i < visibleCount ? '#00d9a6' : 'rgba(255,255,255,0.2)',
-              boxShadow: i < visibleCount ? '0 0 10px rgba(0, 217, 166, 0.6)' : 'none',
-              transform: i === visibleCount - 1 ? 'scale(1.4)' : 'scale(1)',
+              boxShadow: i < visibleCount ? '0 0 8px rgba(0, 217, 166, 0.6)' : 'none',
+              transform: i === visibleCount - 1 ? 'scale(1.3)' : 'scale(1)',
             }}
           />
         ))}
-        <span className="text-xs font-mono text-cyan-400/60 ml-3">
+        <span className="text-xs font-mono text-cyan-400/60 ml-2">
           {visibleCount}/8
         </span>
       </div>
