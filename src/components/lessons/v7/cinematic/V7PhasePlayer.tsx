@@ -1013,19 +1013,20 @@ export const V7PhasePlayer = ({
             // Resume via manualResume (which triggers onResume callback)
             manualResume();
 
-            // ✅ V7-vv: Seek audio to next phase start and play
-            if (hasAudio && nextPhase) {
-              const nextStartTime = nextPhase.startTime || 0;
-              console.log(`[V7PhasePlayer] CTA: Seeking to next phase @ ${nextStartTime.toFixed(2)}s`);
+            // ✅ V7-vv FIX: SEMPRE tocar áudio após CTA - seek + play garantido
+            if (hasAudio) {
+              const nextStartTime = nextPhase?.startTime || audio.currentTime;
+              console.log(`[V7PhasePlayer] CTA: Seeking to ${nextStartTime.toFixed(2)}s and PLAYING`);
               audio.seekTo(nextStartTime);
 
-              // Ensure audio plays after seek
+              // Força play imediato E novamente após seek completar
+              audio.play();
               setTimeout(() => {
                 if (!audio.isPlaying) {
                   audio.play();
-                  console.log('[V7PhasePlayer] ▶️ Audio RESUMED after CTA click');
+                  console.log('[V7PhasePlayer] ▶️ Audio FORCE PLAY after CTA click');
                 }
-              }, 100);
+              }, 150);
             }
 
             // Navigate to next phase
