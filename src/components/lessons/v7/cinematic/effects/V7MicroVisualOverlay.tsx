@@ -279,17 +279,23 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
           </div>
         );
 
-      // CARD-REVEAL: Card slides up with content
+      // CARD-REVEAL: Hidden in overlay - cards are rendered in the phase component
+      // V7-vv: card-reveal micro-visuals reference cards by ID, 
+      // the actual rendering happens in V7PhasePlayer/V7VisualRenderer
       case 'card-reveal':
+        // Don't render empty cards - the phase handles card display
+        if (!content.text && !content.icon) return null;
         return (
           <div className="px-8 py-6 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-cyan-500/30"
             style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(34,211,238,0.2)' }}>
             {content.icon && (
               <div className="text-4xl mb-3 text-center">{content.icon}</div>
             )}
-            <p className="text-xl md:text-2xl font-bold text-white text-center">
-              {content.text}
-            </p>
+            {content.text && (
+              <p className="text-xl md:text-2xl font-bold text-white text-center">
+                {content.text}
+              </p>
+            )}
           </div>
         );
 

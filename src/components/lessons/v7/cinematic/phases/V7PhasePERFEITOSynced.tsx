@@ -141,74 +141,133 @@ export const V7PhasePERFEITOSynced = ({
   }, [currentTime, wordTimestamps, exitAnchor, onComplete]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-24">
-      {/* Background glow */}
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden pb-16">
+      {/* Animated background glow - pulsing */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, rgba(0, 217, 166, 0.12) 0%, transparent 60%)',
+          background: `radial-gradient(ellipse 80% 50% at center, rgba(0, 217, 166, ${showContent ? 0.15 : 0.05}) 0%, transparent 70%)`,
+          transition: 'all 0.8s ease-out',
+        }}
+      />
+      
+      {/* Scanlines effect overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px)',
         }}
       />
 
-      {/* Header */}
+      {/* Header with glow */}
       <div
-        className="absolute top-8 sm:top-12 text-center transition-opacity duration-500"
-        style={{ opacity: showContent ? 1 : 0 }}
+        className="absolute top-6 sm:top-10 text-center transition-all duration-700"
+        style={{ 
+          opacity: showContent ? 1 : 0,
+          transform: showContent ? 'translateY(0)' : 'translateY(-20px)',
+        }}
       >
-        <span className="text-white/50 text-xs sm:text-sm tracking-[0.3em] uppercase">
+        <span 
+          className="text-xs sm:text-sm tracking-[0.5em] uppercase font-light"
+          style={{
+            color: 'rgba(0, 217, 166, 0.6)',
+            textShadow: '0 0 20px rgba(0, 217, 166, 0.3)',
+          }}
+        >
           O Método
         </span>
       </div>
 
-      {/* PERFEITO Vertical Layout */}
+      {/* PERFEITO Vertical Layout - Modern Design */}
       <div
-        className="flex flex-col items-start transition-opacity duration-600"
-        style={{ opacity: showContent ? 1 : 0 }}
+        className="flex flex-col items-start gap-1 sm:gap-2 transition-all duration-700"
+        style={{ 
+          opacity: showContent ? 1 : 0,
+          transform: showContent ? 'scale(1)' : 'scale(0.95)',
+        }}
       >
         {PERFEITO_MEANINGS.map((item, index) => {
           const isVisible = index < visibleCount;
+          const isJustRevealed = index === visibleCount - 1;
 
           return (
             <div
               key={index}
-              className="flex items-center h-8 sm:h-9"
-              style={{ gap: '0.5rem' }}
+              className="flex items-center gap-3 sm:gap-4 group"
+              style={{
+                opacity: showContent ? 1 : 0.3,
+                transform: showContent ? 'translateX(0)' : 'translateX(-20px)',
+                transition: `all 0.5s ease-out ${index * 0.05}s`,
+              }}
             >
-              {/* Letter */}
-              <span
-                className="text-2xl sm:text-3xl font-black w-8 sm:w-10 text-center transition-all duration-300"
+              {/* Letter - Large and prominent */}
+              <div className="relative">
+                <span
+                  className="text-4xl sm:text-5xl md:text-6xl font-black w-12 sm:w-14 md:w-16 text-center inline-block transition-all duration-500"
+                  style={{
+                    background: isVisible
+                      ? 'linear-gradient(180deg, #00d9a6 0%, #22D3EE 50%, #00d9a6 100%)'
+                      : 'linear-gradient(180deg, #2a2a2a, #1a1a1a)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: isVisible 
+                      ? 'drop-shadow(0 0 25px rgba(0, 217, 166, 0.6))' 
+                      : 'none',
+                    transform: isJustRevealed ? 'scale(1.1)' : 'scale(1)',
+                  }}
+                >
+                  {item.letter}
+                </span>
+                
+                {/* Glow ring for just revealed letter */}
+                {isJustRevealed && (
+                  <div
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(0, 217, 166, 0.4) 0%, transparent 70%)',
+                      animation: 'pulse 0.6s ease-out',
+                      transform: 'scale(2)',
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Connector line */}
+              <div 
+                className="h-[2px] transition-all duration-500"
                 style={{
-                  background: isVisible
-                    ? 'linear-gradient(135deg, #00d9a6, #22D3EE)'
-                    : 'linear-gradient(135deg, #444, #555)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  filter: isVisible ? 'drop-shadow(0 0 15px rgba(0, 217, 166, 0.4))' : 'none',
+                  width: isVisible ? '24px' : '12px',
+                  background: isVisible 
+                    ? 'linear-gradient(90deg, #00d9a6, transparent)' 
+                    : '#2a2a2a',
+                  opacity: isVisible ? 1 : 0.3,
                 }}
-              >
-                {item.letter}
-              </span>
+              />
 
-              {/* Equals sign */}
-              <span
-                className="text-lg sm:text-xl font-bold transition-colors duration-300 w-4"
-                style={{ color: isVisible ? '#00d9a6' : '#444' }}
-              >
-                =
-              </span>
-
-              {/* Meaning */}
+              {/* Meaning text - slides in from left */}
               <div
-                className="flex items-baseline gap-1.5 transition-all duration-400"
+                className="flex flex-col transition-all duration-500"
                 style={{ 
                   opacity: isVisible ? 1 : 0,
-                  transform: isVisible ? 'translateX(0)' : 'translateX(-8px)',
+                  transform: isVisible ? 'translateX(0)' : 'translateX(-16px)',
+                  filter: isVisible ? 'none' : 'blur(4px)',
                 }}
               >
-                <span className="text-sm sm:text-base font-semibold text-white">
+                <span 
+                  className="text-base sm:text-lg md:text-xl font-bold tracking-wide"
+                  style={{
+                    color: '#ffffff',
+                    textShadow: isJustRevealed ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
+                  }}
+                >
                   {item.meaning}
                 </span>
-                <span className="text-xs sm:text-sm text-cyan-400/60">
+                <span 
+                  className="text-xs sm:text-sm font-light -mt-0.5"
+                  style={{
+                    color: 'rgba(34, 211, 238, 0.7)',
+                  }}
+                >
                   {item.subtitle}
                 </span>
               </div>
@@ -217,21 +276,34 @@ export const V7PhasePERFEITOSynced = ({
         })}
       </div>
 
-      {/* Progress dots */}
+      {/* Modern progress indicator - bottom bar */}
       <div
-        className="absolute bottom-16 sm:bottom-20 flex gap-1 transition-opacity duration-500"
+        className="absolute bottom-10 sm:bottom-14 left-1/2 -translate-x-1/2 transition-all duration-500"
         style={{ opacity: showContent ? 1 : 0 }}
       >
-        {PERFEITO_MEANINGS.map((_, i) => (
-          <div
-            key={i}
-            className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-300"
-            style={{
-              backgroundColor: i < visibleCount ? '#00d9a6' : '#333',
-              transform: i < visibleCount ? 'scale(1)' : 'scale(0.7)',
-            }}
-          />
-        ))}
+        <div className="flex items-center gap-3">
+          {/* Progress bar */}
+          <div 
+            className="w-32 sm:w-40 h-1 rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.1)' }}
+          >
+            <div 
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${(visibleCount / 8) * 100}%`,
+                background: 'linear-gradient(90deg, #00d9a6, #22D3EE)',
+                boxShadow: '0 0 10px rgba(0, 217, 166, 0.5)',
+              }}
+            />
+          </div>
+          {/* Counter */}
+          <span 
+            className="text-xs font-mono"
+            style={{ color: 'rgba(0, 217, 166, 0.6)' }}
+          >
+            {visibleCount}/8
+          </span>
+        </div>
       </div>
 
       {/* Debug - ANCHORTEXT PURO */}
