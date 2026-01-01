@@ -1404,11 +1404,12 @@ export const V7PhasePlayer = ({
         onNext={goToNextPhase}
         onExit={onExit}
         isVisible={
-          // ✅ V7-v13: Always show controls during revelation/secret-reveal/interaction phases
-          // User needs X button visible during CTA/quiz to exit if needed
+          // ✅ V7-v13: Always show controls during interactive phases
+          // User needs X button visible during CTA/quiz/playground to exit if needed
           currentPhase?.type === 'revelation' ||
           currentPhase?.type === 'secret-reveal' ||
-          currentPhase?.type === 'interaction'
+          currentPhase?.type === 'interaction' ||
+          currentPhase?.type === 'playground'
             ? true
             : (showControls && !isQuizResultShowing)
         }
