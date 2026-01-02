@@ -71,6 +71,9 @@ function MicroVisualItem({ microVisual }: { microVisual: V7MicroVisual }) {
 // ============================================================================
 
 function ImageFlash({ content }: { content: any }) {
+  // Se não tiver imageUrl, não renderiza nada
+  if (!content.imageUrl) return null;
+
   return (
     <motion.div
       className="relative"
@@ -79,17 +82,11 @@ function ImageFlash({ content }: { content: any }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {content.imageUrl ? (
-        <img
-          src={content.imageUrl}
-          alt={content.description || ''}
-          className="max-w-[300px] max-h-[200px] rounded-lg shadow-2xl"
-        />
-      ) : (
-        <div className="bg-gray-800/80 rounded-lg p-4 text-white text-sm">
-          {content.description}
-        </div>
-      )}
+      <img
+        src={content.imageUrl}
+        alt={content.description || ''}
+        className="max-w-[300px] max-h-[200px] rounded-lg shadow-2xl"
+      />
     </motion.div>
   );
 }
