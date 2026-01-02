@@ -635,6 +635,11 @@ function generatePhases(
           professionalPrompt: scene.interaction.professionalPrompt,
           amateurResult: scene.interaction.amateurResult,
           professionalResult: scene.interaction.professionalResult,
+          // V7-vv: Copy all playground fields for complete data
+          amateurScore: scene.interaction.amateurScore,
+          professionalScore: scene.interaction.professionalScore,
+          comparison: scene.interaction.comparison,
+          userChallenge: scene.interaction.userChallenge,
         };
       } else if (scene.interaction.type === 'cta-button') {
         phase.interaction = {
