@@ -38,7 +38,7 @@ const Index = () => {
               <img 
                 src={logoAiliv} 
                 alt="Ailiv" 
-                className="h-12 sm:h-14 w-auto object-contain"
+                className="h-12 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-110 hover:brightness-125 hover:drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]"
               />
             </div>
             <Button onClick={() => navigate('/auth?mode=signup')} className="gradient-hero text-white">
