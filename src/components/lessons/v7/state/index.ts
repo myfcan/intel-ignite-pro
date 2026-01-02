@@ -10,3 +10,5 @@ export type {
 
 export { useV7PlayerMachine } from './useV7PlayerMachine';
 export type { UseV7PlayerMachineReturn } from './useV7PlayerMachine';
+
+export { useV7PlayerAdapter } from './useV7PlayerAdapter';

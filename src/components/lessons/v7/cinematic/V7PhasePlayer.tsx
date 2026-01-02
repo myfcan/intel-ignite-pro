@@ -1,6 +1,7 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
 // ✅ V7-v2: Uses useV7AudioManager with fade capabilities for interactions
 // ✅ V7-v2: Uses useAnchorText for keyword-based pause sync
+// ✅ Level 4: Integrated with XState machine via useV7PlayerAdapter
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { V7MinimalControls } from './V7MinimalControls';
@@ -11,6 +12,7 @@ import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
+import { useV7PlayerAdapter } from '../state/useV7PlayerAdapter';
 
 import V7PhaseLoading from './phases/V7PhaseLoading';
 import V7PhaseDramatic from './phases/V7PhaseDramatic';
@@ -203,6 +205,24 @@ export const V7PhasePlayer = ({
   const [showTransitionParticles, setShowTransitionParticles] = useState(false);
   const [transitionParticleColor, setTransitionParticleColor] = useState<'cyan' | 'gold' | 'emerald' | 'purple'>('cyan');
   const previousPhaseRef = useRef<string | null>(null);
+
+  // ✅ Level 4: XState machine integration via adapter
+  // The adapter syncs with machine but legacy states are still used for full compatibility
+  // This enables gradual migration and provides state machine benefits (debugging, predictability)
+  const machineAdapter = useV7PlayerAdapter({
+    script,
+    hasAudio,
+    audioDuration: audio.duration,
+    audioCurrentTime: audio.currentTime,
+    audioIsPlaying: audio.isPlaying,
+    onComplete,
+    onExit,
+  });
+
+  // ✅ Log machine state for debugging
+  useEffect(() => {
+    console.log(`[V7PhasePlayer] 🤖 Machine state: ${machineAdapter.machineState}`);
+  }, [machineAdapter.machineState]);
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
