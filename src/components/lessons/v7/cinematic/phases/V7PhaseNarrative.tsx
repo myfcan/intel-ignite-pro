@@ -22,6 +22,9 @@ interface V7PhaseNarrativeProps {
   warningSubtitle?: string;
   sceneIndex: number;
   phaseProgress: number;
+  // ✅ NEW: Center prompt box - displayed between the two sides
+  centerPrompt?: string;
+  centerEmoji?: string;
 }
 
 export const V7PhaseNarrative = ({
@@ -34,6 +37,8 @@ export const V7PhaseNarrative = ({
   warningSubtitle,
   sceneIndex,
   phaseProgress,
+  centerPrompt,
+  centerEmoji,
 }: V7PhaseNarrativeProps) => {
   const [animatedValues, setAnimatedValues] = useState<Map<number, { left: number; right: number }>>(new Map());
   const [showWarning, setShowWarning] = useState(false);
@@ -156,7 +161,26 @@ export const V7PhaseNarrative = ({
         </div>
       </motion.div>
 
-      {/* Comparison Rows */}
+      {/* ✅ Center Prompt Box - positioned between the headers and comparisons */}
+      {centerPrompt && (
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5, type: 'spring' }}
+        >
+          <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="flex items-center gap-3 justify-center">
+              {centerEmoji && (
+                <span className="text-2xl sm:text-3xl">{centerEmoji}</span>
+              )}
+              <span className="text-lg sm:text-xl font-medium text-white/90">
+                {centerPrompt}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
       <div className="w-full max-w-4xl space-y-4">
         {comparisons.map((comp, index) => (
           <motion.div

@@ -961,10 +961,25 @@ export const V7PhasePlayer = ({
         if (dramaticVisual?.type === 'text-reveal') {
           const revealContent = dramaticVisual.content || {};
           console.log('[V7PhasePlayer] 🎬 DRAMATIC TEXT-REVEAL detected:', revealContent);
+          // ✅ FIX: Only render V7PhaseMethodReveal if highlightWord is explicitly set
+          // Otherwise use V7PhaseDramatic with just mainText (e.g. "SEJA HONESTO.")
+          if (revealContent.highlightWord) {
+            return (
+              <V7PhaseMethodReveal
+                mainText={revealContent.mainText || 'O MÉTODO'}
+                highlightWord={revealContent.highlightWord}
+              />
+            );
+          }
+          // No highlightWord - render as simple text reveal with V7PhaseDramatic
           return (
-            <V7PhaseMethodReveal
-              mainText={revealContent.mainText || 'O MÉTODO'}
-              highlightWord={revealContent.highlightWord || 'PERFEITO'}
+            <V7PhaseDramatic
+              mainNumber=""
+              subtitle=""
+              hookQuestion={revealContent.mainText || ''}
+              sceneIndex={currentSceneIndex}
+              phaseProgress={phaseProgress}
+              mood={revealContent.mood === 'danger' ? 'danger' : revealContent.mood === 'success' ? 'success' : 'neutral'}
             />
           );
         }
@@ -1005,6 +1020,15 @@ export const V7PhasePlayer = ({
         const scene2Warning = getSceneContent(2); // Warning/urgency section
         const narrativeContent = getCombinedSceneContent();
 
+        // ✅ V7-vv: Extract visual content for split-screen (left/right + centerPrompt)
+        const visualContent = (currentPhase as any).visual?.content || {};
+        const leftVisual = visualContent.left || {};
+        const rightVisual = visualContent.right || {};
+        
+        // ✅ Center prompt - look for centerPrompt or first item as example prompt
+        const centerPrompt = visualContent.centerPrompt || visualContent.examplePrompt || '';
+        const centerEmoji = visualContent.centerEmoji || '🍌';
+
         // Extract left/right from scene 0 items (format: {label, value, isNegative/isPositive})
         const mainItems = scene0Content.items || [];
         const leftItem = mainItems.find((item: any) => item.isNegative) || mainItems[0] || {};
@@ -1030,15 +1054,17 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhaseNarrative
-            leftTitle={leftItem.label || '98% BRINCANDO'}
-            rightTitle={rightItem.label || '2% DOMINANDO'}
-            leftEmoji="😂"
-            rightEmoji="💰"
+            leftTitle={leftVisual.label || leftItem.label || '98% BRINCANDO'}
+            rightTitle={rightVisual.label || rightItem.label || '2% DOMINANDO'}
+            leftEmoji={leftVisual.emoji || '😂'}
+            rightEmoji={rightVisual.emoji || '💰'}
             comparisons={comparisons}
             warningTitle={scene2Warning.mainText || scene2Warning.highlightWord || ''}
             warningSubtitle={scene2Warning.subtitle || ''}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
+            centerPrompt={centerPrompt}
+            centerEmoji={centerEmoji}
           />
         );
 
