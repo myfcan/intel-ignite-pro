@@ -137,9 +137,20 @@ export const V7PhasePlayer = ({
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
 
+  // ✅ V7-v30 FIX: Track if we're in a blocking interactive phase
+  // This ref is used to prevent onComplete from being called when audio ends
+  // but we're still in an interactive phase (playground, quiz, etc.)
+  const isInBlockingPhaseRef = useRef(false);
+
   // ✅ V7-v2: Audio hook with fade capabilities
+  // ✅ V7-v30: Only call onComplete if NOT in blocking phase
   const audio = useV7AudioManager({
     onEnded: () => {
+      // ✅ V7-v30: Check if we're in a blocking interactive phase
+      if (isInBlockingPhaseRef.current) {
+        console.log('[V7PhasePlayer] 🎧 Audio ended but in BLOCKING PHASE - NOT calling onComplete');
+        return;
+      }
       playSound('completion');
       onComplete?.();
     }
@@ -341,33 +352,47 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v15 FIX: Lock interactive phases IMMEDIATELY ao entrar
-  // Isso impede que a fase avance pelo tempo, mas o áudio CONTINUA tocando
-  // O lock aqui é sobre FASE, não sobre áudio!
+  // ✅ V7-v30 FIX: Lock interactive phases IMMEDIATELY ao entrar
+  // Isso impede que a fase avance pelo tempo E que onComplete seja chamado quando áudio termina
+  // O lock aqui é sobre FASE e sobre IMPEDIR fim prematuro da aula!
   // CRITICAL: Don't lock when navigating backwards!
   useEffect(() => {
     // ✅ V7-v15: Skip locking if we're navigating backwards
     if (isNavigatingBack) {
       console.log(`[V7PhasePlayer] ⏭️ Skipping lock - navigating backwards`);
+      isInBlockingPhaseRef.current = false;
       return;
     }
     
-    const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
+    // ✅ V7-v30 CRITICAL: Include 'playground' in blocking phases!
+    // These phases BLOCK lesson completion until user explicitly completes them
+    const isBlockingPhase = 
+      currentPhase?.type === 'interaction' || 
+      currentPhase?.type === 'secret-reveal' ||
+      currentPhase?.type === 'playground';  // ← ADDED: Playground must block!
     
     // ✅ V7-v12: Also lock revelation phases that show PERFEITO (requires animation to complete)
     const isRevelationWithPERFEITO = currentPhase?.type === 'revelation' && 
       (currentPhase?.title?.toLowerCase().includes('perfeito') || 
        String((currentPhase?.scenes?.[0]?.content as Record<string, unknown>)?.mainText || '').toLowerCase().includes('perfeito'));
     
-    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase interativa ou revelation PERFEITO
-    // O áudio continua tocando até o anchorText detectar "IA." ou animação PERFEITO terminar
+    // ✅ V7-v30: Update ref for audio onEnded check
+    isInBlockingPhaseRef.current = isBlockingPhase || isRevelationWithPERFEITO;
+    
+    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase que bloqueia
+    // O áudio continua tocando até o anchorText detectar a keyword ou interação completar
     // Sem esse lock, a fase mudaria automaticamente antes da interação/animação completar
-    if ((isInteractivePhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) IMMEDIATELY`);
+    if ((isBlockingPhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - BLOCKING lesson completion`);
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
-  }, [currentPhase?.type, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
+    
+    // ✅ V7-v30: Log blocking state for debugging
+    if (isBlockingPhase) {
+      console.log(`[V7PhasePlayer] 🛡️ Phase "${currentPhase?.id}" is BLOCKING - audio.onEnded will NOT end lesson`);
+    }
+  }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
   // ✅ V7-v6: Reset lock when interaction completes and advances manually
   useEffect(() => {
@@ -765,9 +790,23 @@ export const V7PhasePlayer = ({
     console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex}, locked: ${lockedPhaseIndex})`);
     console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type}) @ ${nextPhase?.startTime?.toFixed(2)}s`);
     console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
+    console.log(`  Total phases: ${scaledScript.phases.length}`);
+
+    // ✅ V7-v30: Clear blocking state since we're completing the interaction
+    isInBlockingPhaseRef.current = false;
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
+
+    // ✅ V7-v30: Check if this is the LAST phase - if so, complete the lesson!
+    if (!nextPhase) {
+      console.log(`[V7PhasePlayer] 🏁 PLAYGROUND is LAST PHASE - completing lesson!`);
+      playSound('completion');
+      setTimeout(() => {
+        onComplete?.();
+      }, 500);
+      return;
+    }
 
     // ✅ V7-vv-v2: ALWAYS seek audio to next phase start for proper sync
     if (hasAudio && nextPhase) {
@@ -793,7 +832,7 @@ export const V7PhasePlayer = ({
     }
 
     setTimeout(() => goToNextPhase(false, effectiveIndex), 1000);
-  }, [playSound, goToNextPhase, hasAudio, audio, manualResume, lockedPhaseIndex, currentPhaseIndex, currentPhase, scaledScript.phases]);
+  }, [playSound, goToNextPhase, hasAudio, audio, manualResume, lockedPhaseIndex, currentPhaseIndex, currentPhase, scaledScript.phases, onComplete]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
