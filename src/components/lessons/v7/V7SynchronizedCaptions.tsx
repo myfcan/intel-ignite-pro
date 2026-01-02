@@ -7,6 +7,12 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  V7_SPACING, 
+  V7_LAYERS, 
+  V7_CLASSES,
+  getCaptionWordClass 
+} from './v7-design-tokens';
 
 interface WordTimestamp {
   word: string;
@@ -101,33 +107,24 @@ export const V7SynchronizedCaptions = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.2 }}
-        className={`v7-captions fixed left-0 right-0 flex justify-center z-[50] px-4 sm:px-6 pointer-events-none ${className}`}
+        className={`v7-captions fixed left-0 right-0 flex justify-center px-4 sm:px-6 pointer-events-none ${className}`}
         style={{
           // ✅ FIX: Position JUST ABOVE the player controls with safe area support
-          // Player uses safe-area-inset-bottom + ~100px height
-          // Add extra margin to stay above controls on all devices
-          bottom: 'max(clamp(140px, 20vh, 180px), calc(env(safe-area-inset-bottom, 0px) + 140px))',
-          paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-          paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+          bottom: V7_SPACING.positions.captions.bottom,
+          paddingLeft: V7_SPACING.safeArea.left,
+          paddingRight: V7_SPACING.safeArea.right,
+          zIndex: V7_LAYERS.captions,
         }}
       >
         {/* Clean minimal caption - safe distance above all controls */}
-        <div className="bg-black/85 backdrop-blur-lg rounded-xl px-4 py-2 sm:px-5 sm:py-2.5 max-w-[90vw] sm:max-w-lg md:max-w-xl border border-white/10 shadow-lg">
+        <div className={V7_CLASSES.captionContainer}>
           <p className="text-center text-xs sm:text-sm md:text-base flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
             {visibleWords.map((word) => {
               const state = getWordState(word.absoluteIndex);
               return (
                 <span
                   key={`${word.absoluteIndex}-${word.word}`}
-                  className={`
-                    transition-all duration-150
-                    ${state === 'current'
-                      ? 'text-cyan-400 font-semibold scale-105'
-                      : state === 'past'
-                        ? 'text-white/50'
-                        : 'text-white/30'
-                    }
-                  `}
+                  className={`transition-all duration-150 ${getCaptionWordClass(state)}`}
                 >
                   {word.word}
                 </span>

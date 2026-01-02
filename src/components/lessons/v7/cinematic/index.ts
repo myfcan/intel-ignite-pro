@@ -1,3 +1,6 @@
+// V7 Design Tokens - Single source of truth
+export * from "../v7-design-tokens";
+
 // V7 Cinematic Components - Phase 1 (Infrastructure)
 export { V7ImmersivePlayer } from "./V7ImmersivePlayer";
 export { V7MinimalTimeline } from "./V7MinimalTimeline";

@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Send, Sparkles, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react';
 import { usePromptAchievements, type PromptAchievement } from '@/hooks/usePromptAchievements';
 import { V7AchievementToast } from './V7AchievementToast';
+import { V7_CLASSES } from '../../v7-design-tokens';
 
 interface UserChallenge {
   instruction: string;
@@ -191,7 +192,7 @@ export const V7UserChallengeInput = ({
             onChange={(e) => setUserPrompt(e.target.value)}
             placeholder="Escreva seu prompt profissional aqui..."
             disabled={isSubmitting || !!aiFeedback}
-            className="w-full h-24 sm:h-28 bg-black/60 border-2 border-cyan-400/50 rounded-xl p-3 sm:p-4 text-white placeholder-white/50 font-mono text-sm sm:text-base resize-none focus:outline-none focus:border-cyan-400 focus:bg-black/70 transition-all duration-200 disabled:opacity-50 shadow-[0_0_20px_rgba(34,211,238,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]"
+            className={`h-24 sm:h-28 ${V7_CLASSES.inputField}`}
             onKeyDown={(e) => e.stopPropagation()}
           />
           {/* Glow effect */}
