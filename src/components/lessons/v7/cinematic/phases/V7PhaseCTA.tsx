@@ -183,10 +183,10 @@ export default function V7PhaseCTA({
           transition={{ duration: 0.8 }}
           className="space-y-4"
         >
-          <h2 className="text-2xl sm:text-3xl text-muted-foreground">
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground px-2">
             {title}
           </h2>
-          <p className="text-4xl sm:text-5xl font-bold text-foreground">
+          <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold text-foreground px-2">
             {subtitle}
           </p>
         </motion.div>
@@ -215,7 +215,7 @@ export default function V7PhaseCTA({
               onClick={() => handleSelect(option.variant)}
               disabled={isProcessing || selected !== null}
               className={`
-                relative px-8 py-6 rounded-2xl text-xl font-bold
+                relative px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 rounded-xl sm:rounded-2xl text-base sm:text-lg md:text-xl font-bold
                 transition-all duration-300 overflow-hidden
                 ${option.variant === 'negative'
                   ? 'bg-muted/20 text-muted-foreground hover:bg-muted/30 border border-muted/30'

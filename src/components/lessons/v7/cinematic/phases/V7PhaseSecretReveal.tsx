@@ -566,14 +566,14 @@ export const V7PhaseSecretReveal = ({
               }}
             />
 
-            {/* Título principal: O MÉTODO */}
+            {/* Título principal: O MÉTODO - MOBILE OPTIMIZED */}
             <motion.h1
-              className="text-4xl sm:text-5xl md:text-7xl font-black text-center mb-4 relative z-10"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-center mb-2 sm:mb-4 relative z-10 px-4"
               style={{
                 background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 30px rgba(255, 165, 0, 0.6))',
+                filter: 'drop-shadow(0 0 20px rgba(255, 165, 0, 0.6))',
               }}
               initial={{ y: -30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -582,9 +582,9 @@ export const V7PhaseSecretReveal = ({
               O MÉTODO
             </motion.h1>
 
-            {/* Subtítulo */}
+            {/* Subtítulo - MOBILE OPTIMIZED */}
             <motion.p
-              className="text-xl sm:text-2xl md:text-3xl text-white/90 font-medium text-center mb-8 relative z-10"
+              className="text-base sm:text-lg md:text-2xl lg:text-3xl text-white/90 font-medium text-center mb-4 sm:mb-8 relative z-10 px-4"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
@@ -592,9 +592,9 @@ export const V7PhaseSecretReveal = ({
               O segredo que os <span className="text-yellow-400 font-bold">2%</span> dominam!
             </motion.p>
 
-            {/* Frase de pergunta */}
+            {/* Frase de pergunta - MOBILE OPTIMIZED */}
             <motion.p
-              className="text-lg sm:text-xl md:text-2xl text-white/80 text-center mb-12 italic relative z-10"
+              className="text-sm sm:text-base md:text-xl lg:text-2xl text-white/80 text-center mb-6 sm:mb-12 italic relative z-10 px-4"
               initial={{ y: -10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6, duration: 0.5 }}
@@ -602,9 +602,9 @@ export const V7PhaseSecretReveal = ({
               Quer <span className="text-yellow-400 font-semibold">DESCOBRIR</span> esse <span className="text-yellow-400 font-semibold">SEGREDO</span>?
             </motion.p>
 
-            {/* Botão principal - APENAS ativo quando buttonEnabled=true (narração completou) */}
+            {/* Botão principal - MOBILE OPTIMIZED */}
             <motion.button
-              className={`relative px-10 py-6 sm:px-14 sm:py-8 rounded-2xl text-xl sm:text-2xl md:text-3xl font-black tracking-wide border-0 overflow-hidden z-10 transition-all ${
+              className={`relative px-6 py-4 sm:px-10 sm:py-6 md:px-14 md:py-8 rounded-xl sm:rounded-2xl text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-wide border-0 overflow-hidden z-10 transition-all ${
                 buttonEnabled 
                   ? 'cursor-pointer opacity-100' 
                   : 'cursor-not-allowed opacity-40 grayscale'
