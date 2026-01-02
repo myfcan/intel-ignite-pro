@@ -15,11 +15,13 @@ export default function V7PlaygroundInteraction({ interaction, onComplete }: V7P
   const [showResults, setShowResults] = useState(false);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-40 p-4 overflow-y-auto">
+    // ✅ V7-v25: Melhor responsivo para iPad/mobile - safe-area + padding bottom maior
+    <div className="absolute inset-0 flex items-start md:items-center justify-center bg-black/70 backdrop-blur-md z-40 p-4 pt-8 pb-40 md:pb-32 overflow-y-auto">
       <motion.div
-        className="w-full max-w-6xl my-auto pb-32 md:pb-24"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-5xl mx-auto"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
       >
         {/* Title */}
         <div className="text-center mb-6 md:mb-8">
@@ -107,28 +109,38 @@ export default function V7PlaygroundInteraction({ interaction, onComplete }: V7P
           </motion.div>
         </div>
 
-        {/* Action Button - posicionado acima do player */}
+        {/* Action Button - ✅ V7-v25: Botão fixo na área segura, acima do player */}
         <motion.div
-          className="text-center mt-6 md:mt-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="sticky bottom-0 left-0 right-0 pt-4 pb-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent -mx-4 px-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          {!showResults ? (
-            <button
-              onClick={() => setShowResults(true)}
-              className="px-6 md:px-8 py-3 md:py-4 bg-cyan-500 hover:bg-cyan-600 text-black font-bold rounded-xl transition-colors text-sm md:text-base"
-            >
-              VER RESULTADOS
-            </button>
-          ) : (
-            <button
-              onClick={onComplete}
-              className="px-6 md:px-8 py-3 md:py-4 bg-green-500 hover:bg-green-600 text-black font-bold rounded-xl transition-colors text-sm md:text-base"
-            >
-              CONTINUAR
-            </button>
-          )}
+          <div className="flex justify-center">
+            {!showResults ? (
+              <motion.button
+                onClick={() => setShowResults(true)}
+                className="px-8 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-black font-bold rounded-2xl transition-all text-base md:text-lg shadow-lg shadow-cyan-500/30"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                VER RESULTADOS
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={onComplete}
+                className="px-8 md:px-10 py-4 md:py-5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-black font-bold rounded-2xl transition-all text-base md:text-lg shadow-lg shadow-green-500/30"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                animate={{ 
+                  boxShadow: ['0 10px 25px rgba(34, 197, 94, 0.3)', '0 10px 40px rgba(34, 197, 94, 0.5)', '0 10px 25px rgba(34, 197, 94, 0.3)']
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                ✅ CONTINUAR
+              </motion.button>
+            )}
+          </div>
         </motion.div>
       </motion.div>
     </div>
