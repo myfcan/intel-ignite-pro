@@ -275,15 +275,18 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       
       // ============================================================================
       // 🔧 CRITICAL FIX: Garantir que content é objeto válido
+      // Supabase JSONB pode retornar de várias formas dependendo do driver/versão
       // ============================================================================
       console.log('[useV7PhaseScript] 🔍 RAW CONTENT DEBUG:', {
         rawContentType: typeof rawContent,
         rawContentIsNull: rawContent === null,
         rawContentIsUndefined: rawContent === undefined,
-        rawContentConstructor: rawContent?.constructor?.name
+        rawContentConstructor: rawContent?.constructor?.name,
+        rawContentIsArray: Array.isArray(rawContent),
+        rawContentKeys: rawContent && typeof rawContent === 'object' ? Object.keys(rawContent).slice(0, 10) : 'N/A'
       });
       
-      // Se content veio como string, fazer parse
+      // ✅ FIX 1: Se content veio como string, fazer parse
       if (typeof rawContent === 'string') {
         try {
           console.log('[useV7PhaseScript] ⚠️ Content veio como STRING - fazendo parse JSON');
@@ -291,6 +294,27 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         } catch (parseError) {
           console.error('[useV7PhaseScript] ❌ Erro ao parsear content:', parseError);
           throw new Error('Formato de conteúdo inválido na aula');
+        }
+      }
+      
+      // ✅ FIX 2: Garantir que temos um objeto antes de acessar propriedades
+      // Às vezes o Supabase retorna um objeto com comportamento proxy estranho
+      if (rawContent && typeof rawContent === 'object') {
+        // Forçar uma cópia profunda do objeto para garantir acesso normal às propriedades
+        try {
+          const stringified = JSON.stringify(rawContent);
+          const reparsed = JSON.parse(stringified);
+          console.log('[useV7PhaseScript] 🔄 Content re-parsed for safety, phases check:', {
+            hasPhases: !!reparsed?.phases,
+            phasesIsArray: Array.isArray(reparsed?.phases),
+            phasesLength: Array.isArray(reparsed?.phases) ? reparsed.phases.length : 0
+          });
+          // Só sobrescreve se reparse funcionou e tem mais chaves
+          if (reparsed && Object.keys(reparsed).length > 0) {
+            rawContent = reparsed;
+          }
+        } catch (e) {
+          console.warn('[useV7PhaseScript] ⚠️ Re-parse failed, continuing with original:', e);
         }
       }
 
