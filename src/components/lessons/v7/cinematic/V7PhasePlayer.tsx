@@ -1185,57 +1185,118 @@ export const V7PhasePlayer = ({
         );
 
       case 'playground':
-        // Combine content from ALL playground scenes
-        const playgroundContent = getCombinedSceneContent();
+        // ✅ V7-v31 DEFINITIVE FIX: Extract data from phase.interaction AND phase.visual
+        // The database stores playground data in:
+        // - currentPhase.interaction.amateurPrompt / professionalPrompt / comparison
+        // - currentPhase.visual.content.title / subtitle
+        const playgroundInteraction = (currentPhase as any).interaction || {};
+        const playgroundVisual = (currentPhase as any).visual?.content || {};
+        const playgroundSceneContent = getCombinedSceneContent();
 
-        // Extract playground scores from combined content with proper fallbacks
-        const amateurScore = typeof playgroundContent.amateurScore === 'number'
-          ? playgroundContent.amateurScore
-          : (typeof content.amateurScore === 'number' ? content.amateurScore : 10);
-        const professionalScore = typeof playgroundContent.professionalScore === 'number'
-          ? playgroundContent.professionalScore
-          : (typeof content.professionalScore === 'number' ? content.professionalScore : 95);
-        const maxScore = 100;
+        // Log for debugging
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND DATA:');
+        console.log('  interaction:', JSON.stringify(playgroundInteraction, null, 2));
+        console.log('  visual:', JSON.stringify(playgroundVisual, null, 2));
+
+        // ✅ Extract prompts from interaction (primary source from database)
+        const pgAmateurPrompt = playgroundInteraction.amateurPrompt || 
+                                playgroundSceneContent.amateurPrompt || 
+                                content.amateurPrompt || 
+                                'Me dá ideias de negócio';
+        
+        const pgProfessionalPrompt = playgroundInteraction.professionalPrompt || 
+                                     playgroundSceneContent.professionalPrompt || 
+                                     content.professionalPrompt || 
+                                     'prompt profissional estruturado';
+
+        // ✅ Extract comparison results from interaction.comparison
+        const comparison = playgroundInteraction.comparison || {};
+        const amateurComparison = comparison.amateur || {};
+        const professionalComparison = comparison.professional || {};
+
+        // ✅ Extract results - support both direct and comparison formats
+        const pgAmateurResultText = amateurComparison.response || 
+                                    playgroundInteraction.amateurResult?.content ||
+                                    playgroundInteraction.amateurResult ||
+                                    playgroundSceneContent.amateurResult?.content ||
+                                    playgroundSceneContent.amateurResult ||
+                                    content.amateurResult?.content ||
+                                    content.amateurResult ||
+                                    'Resultado genérico do prompt amador...';
+        
+        const pgProfessionalResultText = professionalComparison.response || 
+                                         playgroundInteraction.professionalResult?.content ||
+                                         playgroundInteraction.professionalResult ||
+                                         playgroundSceneContent.professionalResult?.content ||
+                                         playgroundSceneContent.professionalResult ||
+                                         content.professionalResult?.content ||
+                                         content.professionalResult ||
+                                         'Resultado otimizado do prompt profissional...';
+
+        // ✅ Extract scores with proper fallbacks
+        const pgAmateurScore = typeof playgroundInteraction.amateurScore === 'number'
+          ? playgroundInteraction.amateurScore
+          : (typeof playgroundSceneContent.amateurScore === 'number' 
+              ? playgroundSceneContent.amateurScore 
+              : (typeof content.amateurScore === 'number' ? content.amateurScore : 10));
+        
+        const pgProfessionalScore = typeof playgroundInteraction.professionalScore === 'number'
+          ? playgroundInteraction.professionalScore
+          : (typeof playgroundSceneContent.professionalScore === 'number' 
+              ? playgroundSceneContent.professionalScore 
+              : (typeof content.professionalScore === 'number' ? content.professionalScore : 95));
+        
+        const pgMaxScore = 100;
 
         // Determine verdict based on score
-        const getVerdict = (score: number): 'bad' | 'good' | 'excellent' => {
+        const getPlaygroundVerdict = (score: number): 'bad' | 'good' | 'excellent' => {
           if (score < 30) return 'bad';
           if (score < 70) return 'good';
           return 'excellent';
         };
 
-        // Parse result content (handle both string and object formats)
-        const getResultContent = (result: any): string => {
-          if (typeof result === 'string') return result;
-          if (typeof result === 'object' && result?.content) return result.content;
-          return '';
-        };
+        // ✅ Extract title/subtitle from visual.content (primary) or scene content
+        const pgTitle = playgroundVisual.title || 
+                        playgroundSceneContent.mainText || 
+                        content.mainText || 
+                        'A DIFERENÇA NA PRÁTICA';
+        
+        const pgSubtitle = playgroundVisual.subtitle || 
+                           playgroundSceneContent.subtitle || 
+                           content.subtitle || 
+                           currentPhase.title ||
+                           'Prompt amador vs profissional';
 
         // ✅ V7-v2: Extract timeout config for playground (uses perStep)
         const playgroundTimeoutConfig = currentPhase.timeout ? {
-          perStep: currentPhase.timeout.soft, // Use soft timeout as perStep
+          perStep: currentPhase.timeout.soft,
           hints: currentPhase.timeout.hints
         } : undefined;
 
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND FINAL PROPS:');
+        console.log('  title:', pgTitle);
+        console.log('  amateurPrompt:', pgAmateurPrompt);
+        console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
+
         return (
           <V7PhasePlayground
-            challengeTitle={playgroundContent.mainText || content.mainText || 'DESAFIO PRÁTICO'}
-            challengeSubtitle={playgroundContent.subtitle || content.subtitle || currentPhase.title}
-            amateurPrompt={playgroundContent.amateurPrompt || content.amateurPrompt || 'prompt simples'}
+            challengeTitle={pgTitle}
+            challengeSubtitle={pgSubtitle}
+            amateurPrompt={pgAmateurPrompt}
             amateurResult={{
               title: 'Resultado Amador',
-              content: getResultContent(playgroundContent.amateurResult || content.amateurResult) || 'Resultado genérico...',
-              score: amateurScore,
-              maxScore,
-              verdict: getVerdict(amateurScore)
+              content: typeof pgAmateurResultText === 'string' ? pgAmateurResultText : JSON.stringify(pgAmateurResultText),
+              score: pgAmateurScore,
+              maxScore: pgMaxScore,
+              verdict: getPlaygroundVerdict(pgAmateurScore)
             }}
-            professionalPrompt={playgroundContent.professionalPrompt || content.professionalPrompt || 'prompt profissional estruturado'}
+            professionalPrompt={pgProfessionalPrompt}
             professionalResult={{
               title: 'Resultado Profissional',
-              content: getResultContent(playgroundContent.professionalResult || content.professionalResult) || 'Resultado otimizado...',
-              score: professionalScore,
-              maxScore,
-              verdict: getVerdict(professionalScore)
+              content: typeof pgProfessionalResultText === 'string' ? pgProfessionalResultText : JSON.stringify(pgProfessionalResultText),
+              score: pgProfessionalScore,
+              maxScore: pgMaxScore,
+              verdict: getPlaygroundVerdict(pgProfessionalScore)
             }}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
