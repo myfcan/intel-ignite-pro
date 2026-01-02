@@ -427,62 +427,57 @@ export const V7PhasePlayground = ({
         </AnimatePresence>
 
         {/* Continue Button - PULSING to draw attention */}
-        <motion.button
-          className="w-full mt-6 py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
-          style={{
-            background: currentStep >= maxStep
-              ? 'linear-gradient(135deg, #00d9a6, #4ecdc4)'
-              : currentStep === 5 && userChallenge
-                ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                : 'linear-gradient(135deg, #667eea, #764ba2)',
-          }}
-          animate={{
-            scale: [1, 1.03, 1],
-            boxShadow: currentStep >= maxStep
-              ? [
-                  '0 10px 30px rgba(0, 217, 166, 0.4)',
-                  '0 15px 50px rgba(0, 217, 166, 0.7)',
-                  '0 10px 30px rgba(0, 217, 166, 0.4)',
-                ]
-              : currentStep === 5 && userChallenge
-                ? [
-                    '0 10px 30px rgba(245, 158, 11, 0.4)',
-                    '0 15px 50px rgba(245, 158, 11, 0.7)',
-                    '0 10px 30px rgba(245, 158, 11, 0.4)',
-                  ]
-                : [
-                    '0 10px 30px rgba(102, 126, 234, 0.4)',
-                    '0 15px 50px rgba(102, 126, 234, 0.7)',
-                    '0 10px 30px rgba(102, 126, 234, 0.4)',
-                  ],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleContinue}
-        >
-          <motion.div
-            className="absolute inset-0 opacity-50"
+        {/* ✅ FIX: NÃO mostrar botão no step 6 (userChallenge) - o próprio V7UserChallengeInput tem seu botão */}
+        {currentStep !== 6 && (
+          <motion.button
+            className="w-full mt-6 py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+              background: currentStep === 5 && userChallenge
+                  ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                  : 'linear-gradient(135deg, #667eea, #764ba2)',
             }}
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          />
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            {getButtonText()}
-            <motion.span
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
-              →
-            </motion.span>
-          </span>
-        </motion.button>
+            animate={{
+              scale: [1, 1.03, 1],
+              boxShadow: currentStep === 5 && userChallenge
+                  ? [
+                      '0 10px 30px rgba(245, 158, 11, 0.4)',
+                      '0 15px 50px rgba(245, 158, 11, 0.7)',
+                      '0 10px 30px rgba(245, 158, 11, 0.4)',
+                    ]
+                  : [
+                      '0 10px 30px rgba(102, 126, 234, 0.4)',
+                      '0 15px 50px rgba(102, 126, 234, 0.7)',
+                      '0 10px 30px rgba(102, 126, 234, 0.4)',
+                    ],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleContinue}
+          >
+            <motion.div
+              className="absolute inset-0 opacity-50"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+              }}
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {getButtonText()}
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                →
+              </motion.span>
+            </span>
+          </motion.button>
+        )}
 
         {/* Hint progressivo - V7-v2 */}
         <AnimatePresence>
