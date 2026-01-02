@@ -724,7 +724,132 @@ export const V7PhaseSecretReveal = ({
               </span>
             </motion.button>
 
-            {/* Partículas decorativas flutuando */}
+            {/* ✨ FAÍSCAS/SPARKLES ao redor do botão - quando ativo */}
+            {buttonEnabled && (
+              <>
+                {/* Faíscas orbitando */}
+                {[...Array(12)].map((_, i) => {
+                  const angle = (i / 12) * 360;
+                  const radius = 120 + (i % 3) * 30;
+                  return (
+                    <motion.div
+                      key={`spark-${i}`}
+                      className="absolute pointer-events-none"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        width: i % 2 === 0 ? '8px' : '6px',
+                        height: i % 2 === 0 ? '8px' : '6px',
+                      }}
+                      initial={{
+                        x: Math.cos((angle * Math.PI) / 180) * radius,
+                        y: Math.sin((angle * Math.PI) / 180) * radius,
+                        scale: 0,
+                        opacity: 0,
+                      }}
+                      animate={{
+                        x: [
+                          Math.cos((angle * Math.PI) / 180) * radius,
+                          Math.cos(((angle + 180) * Math.PI) / 180) * (radius + 20),
+                          Math.cos((angle * Math.PI) / 180) * radius,
+                        ],
+                        y: [
+                          Math.sin((angle * Math.PI) / 180) * radius,
+                          Math.sin(((angle + 180) * Math.PI) / 180) * (radius + 20),
+                          Math.sin((angle * Math.PI) / 180) * radius,
+                        ],
+                        scale: [0, 1.5, 1, 1.5, 0],
+                        opacity: [0, 1, 0.8, 1, 0],
+                        rotate: [0, 180, 360],
+                      }}
+                      transition={{
+                        duration: 2 + (i % 3) * 0.5,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      <div 
+                        className="w-full h-full rounded-full"
+                        style={{
+                          background: i % 3 === 0 
+                            ? 'radial-gradient(circle, #FFD700 0%, #FFA500 50%, transparent 100%)'
+                            : i % 3 === 1
+                            ? 'radial-gradient(circle, #FFF 0%, #FFD700 50%, transparent 100%)'
+                            : 'radial-gradient(circle, #FF6B00 0%, #FF4500 50%, transparent 100%)',
+                          boxShadow: '0 0 10px currentColor',
+                        }}
+                      />
+                    </motion.div>
+                  );
+                })}
+
+                {/* Faíscas subindo como fogo */}
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={`fire-spark-${i}`}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: `${30 + i * 6}%`,
+                      bottom: '20%',
+                      width: '4px',
+                      height: '4px',
+                    }}
+                    animate={{
+                      y: [0, -150, -200],
+                      x: [0, (i % 2 === 0 ? 1 : -1) * 30, (i % 2 === 0 ? -1 : 1) * 20],
+                      opacity: [0, 1, 0],
+                      scale: [0.5, 1.2, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                      ease: 'easeOut',
+                    }}
+                  >
+                    <div 
+                      className="w-full h-full rounded-full bg-yellow-400"
+                      style={{
+                        boxShadow: '0 0 8px #FFD700, 0 0 15px #FFA500',
+                      }}
+                    />
+                  </motion.div>
+                ))}
+
+                {/* Explosões de brilho intermitentes */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={`burst-${i}`}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: `${20 + i * 12}%`,
+                      top: `${30 + (i % 2) * 40}%`,
+                    }}
+                    animate={{
+                      scale: [0, 2, 0],
+                      opacity: [0, 0.8, 0],
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: i * 0.4 + 0.5,
+                      ease: 'easeOut',
+                    }}
+                  >
+                    <div 
+                      className="w-3 h-3"
+                      style={{
+                        background: 'radial-gradient(circle, #FFF 0%, #FFD700 30%, transparent 70%)',
+                        filter: 'blur(1px)',
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </>
+            )}
+
+            {/* Partículas decorativas flutuando (background) */}
             {[...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
