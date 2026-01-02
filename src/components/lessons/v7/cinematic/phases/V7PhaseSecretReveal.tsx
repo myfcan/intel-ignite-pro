@@ -149,6 +149,9 @@ export const V7PhaseSecretReveal = ({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [audioLoading, setAudioLoading] = useState(true); // Novo: loading separado do stage visual
   
+  // ✅ V7-v24: Botão só fica ativo quando isPausedByAnchor=true (narração completou)
+  const [buttonEnabled, setButtonEnabled] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasStartedRef = useRef(false);
   const hasPausedMainAudioRef = useRef(false);
@@ -250,13 +253,15 @@ export const V7PhaseSecretReveal = ({
     }
   }, [sceneIndex]);
 
-  // ✅ V7-v22: Verificar anchorText para mostrar tela com botão
+  // ✅ V7-v24: Verificar anchorText para mostrar tela com botão E ativar botão
   // Quando isPausedByAnchor=true, o áudio principal FOI pausado pelo anchorText
-  // Nesse momento mostramos a tela "MÉTODO PERFEITO" com o botão
+  // Nesse momento mostramos a tela "MÉTODO PERFEITO" e ativamos o botão
   useEffect(() => {
     if (isPausedByAnchor && currentStage !== 'method-screen') {
       console.log('[V7PhaseSecretReveal] ⏸️ Anchor text detectado ("inteligente") - mostrando tela do botão');
       transitionToMethodScreen();
+      // ✅ V7-v24: Botão fica ativo APENAS quando a narração termina
+      setButtonEnabled(true);
     }
   }, [isPausedByAnchor, currentStage, transitionToMethodScreen]);
 
@@ -597,79 +602,87 @@ export const V7PhaseSecretReveal = ({
               Quer <span className="text-yellow-400 font-semibold">DESCOBRIR</span> esse <span className="text-yellow-400 font-semibold">SEGREDO</span>?
             </motion.p>
 
-            {/* Botão principal com efeito de piscar */}
+            {/* Botão principal - APENAS ativo quando buttonEnabled=true (narração completou) */}
             <motion.button
-              className="relative px-10 py-6 sm:px-14 sm:py-8 rounded-2xl text-xl sm:text-2xl md:text-3xl font-black tracking-wide cursor-pointer border-0 overflow-hidden z-10"
+              className={`relative px-10 py-6 sm:px-14 sm:py-8 rounded-2xl text-xl sm:text-2xl md:text-3xl font-black tracking-wide border-0 overflow-hidden z-10 transition-all ${
+                buttonEnabled 
+                  ? 'cursor-pointer opacity-100' 
+                  : 'cursor-not-allowed opacity-40 grayscale'
+              }`}
               style={{
-                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)',
-                color: '#1a1a1a',
+                background: buttonEnabled 
+                  ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)'
+                  : 'linear-gradient(135deg, #666 0%, #444 50%, #333 100%)',
+                color: buttonEnabled ? '#1a1a1a' : '#888',
               }}
               initial={{ scale: 0, y: 50 }}
               animate={{ 
-                scale: 1, 
+                scale: buttonEnabled ? [1, 1.1, 1] : 1, 
                 y: 0,
-                boxShadow: [
+                boxShadow: buttonEnabled ? [
                   '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
-                  '0 0 80px rgba(255, 165, 0, 1), 0 0 150px rgba(255, 215, 0, 0.8), 0 15px 50px rgba(0, 0, 0, 0.5)',
+                  '0 0 100px rgba(255, 165, 0, 1), 0 0 180px rgba(255, 215, 0, 0.9), 0 20px 60px rgba(0, 0, 0, 0.6)',
                   '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
-                ],
+                ] : '0 0 10px rgba(0, 0, 0, 0.3)',
               }}
-              whileHover={{
+              whileHover={buttonEnabled ? {
                 scale: 1.08,
-                boxShadow: '0 0 100px rgba(255, 165, 0, 1), 0 0 180px rgba(255, 215, 0, 0.9), 0 20px 60px rgba(0, 0, 0, 0.6)',
-              }}
-              whileTap={{ scale: 0.95 }}
+                boxShadow: '0 0 120px rgba(255, 165, 0, 1), 0 0 200px rgba(255, 215, 0, 1), 0 25px 70px rgba(0, 0, 0, 0.7)',
+              } : {}}
+              whileTap={buttonEnabled ? { scale: 0.95 } : {}}
               transition={{
-                delay: 0.8,
+                delay: buttonEnabled ? 0.2 : 0.8,
                 type: 'spring',
                 stiffness: 300,
                 damping: 20,
-                boxShadow: {
-                  delay: 1.2,
-                  duration: 1.2,
+                boxShadow: buttonEnabled ? {
+                  delay: 0.3,
+                  duration: 1,
                   repeat: Infinity,
                   ease: 'easeInOut',
-                },
+                } : {},
               }}
-              onClick={handleDiscoverClick}
+              onClick={buttonEnabled ? handleDiscoverClick : undefined}
+              disabled={!buttonEnabled}
             >
-              {/* Shimmer effect */}
-              <motion.div
-                className="absolute inset-0 opacity-30"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                }}
-                animate={{
-                  x: ['-100%', '100%'],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                }}
-              />
+              {/* Shimmer effect - apenas quando ativo */}
+              {buttonEnabled && (
+                <motion.div
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
+                  }}
+                  animate={{
+                    x: ['-100%', '100%'],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatDelay: 0.5,
+                  }}
+                />
+              )}
               
-              {/* ✅ Blink overlay effect */}
-              <motion.div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.3)',
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ 
-                  opacity: [0, 0.5, 0],
-                }}
-                transition={{
-                  delay: 1.5,
-                  duration: 0.4,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  ease: 'easeInOut',
-                }}
-              />
+              {/* ✅ Pulse ring effect quando botão ativa */}
+              {buttonEnabled && (
+                <>
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl border-4 border-yellow-400/50"
+                    initial={{ scale: 1, opacity: 0.8 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl border-2 border-orange-400/50"
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 1.8, opacity: 0 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut', delay: 0.3 }}
+                  />
+                </>
+              )}
               
               <span className="relative z-10 flex items-center gap-3">
-                🚀 Quero descobrir agora
+                {buttonEnabled ? '🚀' : '⏳'} {buttonEnabled ? 'Quero descobrir agora' : 'Aguarde a narração...'}
               </span>
             </motion.button>
 

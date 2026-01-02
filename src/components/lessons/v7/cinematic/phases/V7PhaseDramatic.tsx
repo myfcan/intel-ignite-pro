@@ -14,6 +14,8 @@ interface V7PhaseDramaticProps {
   sceneIndex: number;
   phaseProgress: number;
   mood?: 'danger' | 'success' | 'neutral';
+  // ✅ V7-v24: Switch to show secondaryNumber as main in certain scenes
+  showSecondaryAsMain?: boolean;
 }
 
 const MOOD_COLORS = {
@@ -50,9 +52,13 @@ export const V7PhaseDramatic = ({
   sceneIndex,
   phaseProgress,
   mood = 'danger',
+  showSecondaryAsMain = false,
 }: V7PhaseDramaticProps) => {
-  const colors = MOOD_COLORS[mood];
-  const [countValue, setCountValue] = useState(mainNumber);
+  // ✅ V7-v24: Determine which number to show as main based on prop
+  const displayNumber = showSecondaryAsMain && secondaryNumber ? secondaryNumber : mainNumber;
+  const displayColors = showSecondaryAsMain ? MOOD_COLORS.success : MOOD_COLORS[mood];
+  const colors = displayColors;
+  const [countValue, setCountValue] = useState(displayNumber);
   const [revealedLetters, setRevealedLetters] = useState(0);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; angle: number }[]>([]);
   const [countUpStarted, setCountUpStarted] = useState(false);
@@ -87,10 +93,10 @@ export const V7PhaseDramatic = ({
   useEffect(() => {
     if (showCountUp && !countUpStarted) {
       setCountUpStarted(true);
-      const numericMatch = mainNumber.match(/^(\d+)/);
+      const numericMatch = displayNumber.match(/^(\d+)/);
       if (numericMatch) {
         const targetNum = parseInt(numericMatch[1]);
-        const suffix = mainNumber.replace(/^\d+/, '');
+        const suffix = displayNumber.replace(/^\d+/, '');
         const duration = 1500;
         const startTime = Date.now();
 
@@ -104,7 +110,7 @@ export const V7PhaseDramatic = ({
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            setCountValue(mainNumber);
+            setCountValue(displayNumber);
           }
         };
         requestAnimationFrame(animate);
