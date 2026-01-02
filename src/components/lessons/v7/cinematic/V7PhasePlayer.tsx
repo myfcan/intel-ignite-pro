@@ -1362,6 +1362,7 @@ export const V7PhasePlayer = ({
             audioControl={audio}
             timeoutConfig={playgroundTimeoutConfig}
             userChallenge={pgUserChallenge}
+            lessonId={script.id}
           />
         );
 

@@ -4,10 +4,11 @@
 // - User clicks pulsing button to see next step
 // - Audio resumes with FADE after completion
 // - Hints progressivos após timeout
+// ✅ V7-v26: Input real do usuário com feedback de IA
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import { V7UserChallengeInput } from './V7UserChallengeInput';
 interface PlaygroundResult {
   title: string;
   content: string;
@@ -52,6 +53,8 @@ interface V7PhasePlaygroundProps {
   };
   // ✅ V7-vv: User challenge (optional - step 6)
   userChallenge?: UserChallenge;
+  // ✅ V7-v26: Lesson ID para salvar sessões
+  lessonId?: string;
 }
 
 // Steps: 0=intro, 1=amateur, 2=amateur-result, 3=professional, 4=professional-result, 5=comparison, 6=userChallenge
@@ -74,7 +77,8 @@ export const V7PhasePlayground = ({
       '💡 Perceba a diferença na estrutura...'
     ]
   },
-  userChallenge
+  userChallenge,
+  lessonId
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
@@ -154,6 +158,22 @@ export const V7PhasePlayground = ({
       onCompleteRef.current?.();
     }
   }, [currentStep, audioPausedByPlayground, maxStep]);
+
+  // ✅ V7-v26: Handler quando o userChallenge é completado (após feedback da IA)
+  const handleUserChallengeComplete = useCallback(async () => {
+    console.log('[V7PhasePlayground] 🎯 User challenge completed');
+    const ctrl = audioControlRef.current;
+    if (audioPausedByPlayground && ctrl) {
+      if (ctrl.resumeWithFade) {
+        await ctrl.resumeWithFade(500);
+      } else if (!ctrl.isPlaying) {
+        ctrl.play();
+      }
+      setAudioPausedByPlayground(false);
+      console.log('[V7PhasePlayground] 🔊 Audio retomado após user challenge');
+    }
+    onCompleteRef.current?.();
+  }, [audioPausedByPlayground]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {
@@ -389,69 +409,19 @@ export const V7PhasePlayground = ({
             </motion.div>
           )}
 
-          {/* Step 6: User Challenge (opcional) */}
+          {/* Step 6: User Challenge com input real (opcional) */}
           {currentStep === 6 && userChallenge && (
             <motion.div
               key="user-challenge"
-              className="space-y-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
-              {/* Instruction */}
-              <div className="text-center mb-4">
-                <motion.p 
-                  className="text-xl font-bold text-yellow-400"
-                  animate={{ scale: [1, 1.02, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  {userChallenge.instruction}
-                </motion.p>
-              </div>
-
-              {/* Challenge Prompt */}
-              <div className="bg-white/[0.02] border-2 border-amber-500/30 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded">DESAFIO</span>
-                  <span className="text-white/50 text-sm">Reescreva este prompt</span>
-                </div>
-                <div className="bg-black/40 rounded-lg p-4 font-mono text-sm text-amber-300">
-                  "{userChallenge.challengePrompt}"
-                </div>
-              </div>
-
-              {/* Hints */}
-              <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
-                  <span>💡</span>
-                  Dicas para um prompt profissional:
-                </h4>
-                <ul className="space-y-2">
-                  {userChallenge.hints.map((hint, idx) => (
-                    <motion.li 
-                      key={idx}
-                      className="flex items-start gap-2 text-white/70 text-sm"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.15 }}
-                    >
-                      <span className="text-cyan-400 font-bold mt-0.5">✓</span>
-                      <span>{hint}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Call to action */}
-              <motion.div 
-                className="text-center pt-2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <p className="text-white/60 text-sm">
-                  Pratique isso na sua próxima conversa com uma IA!
-                </p>
-              </motion.div>
+              <V7UserChallengeInput
+                userChallenge={userChallenge}
+                lessonId={lessonId}
+                onComplete={handleUserChallengeComplete}
+              />
             </motion.div>
           )}
         </AnimatePresence>
