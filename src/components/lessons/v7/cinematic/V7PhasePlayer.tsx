@@ -1544,12 +1544,13 @@ export const V7PhasePlayer = ({
         )}
       </AnimatePresence>
 
-      {/* V7-vv-v2: MicroVisual Overlay - renders word-triggered micro-visuals */}
+      {/* V7-vv-v4: MicroVisual Overlay - renders word-triggered micro-visuals with sounds */}
       {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && (
         <V7MicroVisualOverlay
           microVisuals={currentPhase.microVisuals}
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
+          visualType={currentPhase.visual?.type}
         />
       )}
 

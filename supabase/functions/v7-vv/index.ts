@@ -562,16 +562,49 @@ function generatePhases(
       }
     }
 
+    // ✅ V7-vv FIX: Processar transitionAt (antes ignorado!)
+    if (scene.anchorText?.transitionAt) {
+      const transitionTime = findKeywordTime(scene.anchorText.transitionAt, wordTimestamps, startTime);
+      if (transitionTime !== null) {
+        anchorActions.push({
+          id: `transition-${scene.id}`,
+          keyword: scene.anchorText.transitionAt,
+          keywordTime: transitionTime,
+          type: 'trigger',
+          targetId: 'next-phase',
+        });
+        console.log(`[Phase] ✓ transitionAt "${scene.anchorText.transitionAt}" @ ${transitionTime.toFixed(2)}s`);
+      } else {
+        console.warn(`[Phase] ⚠️ transitionAt "${scene.anchorText.transitionAt}" não encontrado nos timestamps`);
+      }
+    }
+
     // Micro-visuais
+    // ✅ V7-vv FIX: Duration dinâmico baseado no tipo e input
+    const getDefaultDuration = (type: string): number => {
+      switch (type) {
+        case 'image-flash': return 0.8;
+        case 'text-pop': return 2.0;
+        case 'number-count': return 1.5;
+        case 'highlight': return 2.5;
+        case 'text-highlight': return 2.0;
+        case 'card-reveal': return 3.0;
+        case 'letter-reveal': return 1.0;
+        default: return 2.0;
+      }
+    };
+
     const microVisuals: MicroVisual[] = [];
     scene.visual?.microVisuals?.forEach((mv, idx) => {
       const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime);
+      // ✅ Usar duration do content se especificado, senão usar default por tipo
+      const duration = (mv.content as any)?.duration || getDefaultDuration(mv.type);
       microVisuals.push({
         id: mv.id || `mv-${scene.id}-${idx}`,
         type: mv.type,
         anchorText: mv.anchorText,
         triggerTime: triggerTime ?? (startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1))),
-        duration: 2.0,
+        duration,
         content: mv.content,
       });
 
