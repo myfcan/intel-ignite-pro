@@ -30,11 +30,12 @@ interface V7MicroVisualOverlayProps {
   visualType?: string; // Type of main visual for smart positioning
 }
 
-// Position mapping for micro-visuals - V7-v24: Adjusted bottom to avoid player controls
+// Position mapping for micro-visuals - V7-v25: text-pop centralizado abaixo do VS header
 const positionStyles: Record<string, React.CSSProperties> = {
   center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
   top: { top: '12%', left: '50%', transform: 'translateX(-50%)' },
-  bottom: { bottom: '28%', left: '50%', transform: 'translateX(-50%)' }, // ✅ V7-v24: Changed from 15% to 28% to avoid player
+  // ✅ V7-v25: 'bottom' agora fica no meio-baixo da tela (55% do topo = abaixo do header VS)
+  bottom: { top: '55%', left: '50%', transform: 'translate(-50%, -50%)' },
   left: { top: '50%', left: '12%', transform: 'translateY(-50%)' },
   right: { top: '50%', right: '12%', transform: 'translateY(-50%)' },
   'top-left': { top: '15%', left: '15%' },
@@ -375,36 +376,48 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
         );
 
       // TEXT-POP: Text with emoji pops in dramatically
+      // ✅ V7-v25: Emoji centralizado, texto abaixo - layout vertical
       case 'text-pop':
         return (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
+            {/* Emoji grande e centralizado */}
             {content.emoji && (
               <motion.span
-                className="text-5xl md:text-6xl"
+                className="text-6xl md:text-7xl lg:text-8xl block"
                 animate={{
-                  y: [0, -8, 0],
-                  scale: [1, 1.1, 1],
+                  y: [0, -10, 0],
+                  scale: [1, 1.15, 1],
                 }}
                 transition={{
-                  duration: 0.6,
+                  duration: 0.8,
                   repeat: Infinity,
-                  repeatType: 'reverse'
+                  repeatType: 'reverse',
+                  ease: 'easeInOut'
+                }}
+                style={{
+                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))'
                 }}
               >
                 {content.emoji}
               </motion.span>
             )}
-            <div
-              className="px-8 py-4 rounded-2xl backdrop-blur-xl border border-white/20"
-              style={{
-                background: 'linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(168,85,247,0.15) 100%)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
-              }}
-            >
-              <p className="text-xl md:text-2xl font-bold text-white text-center">
-                {content.text || content.words?.join(' • ')}
-              </p>
-            </div>
+            {/* Texto abaixo do emoji */}
+            {(content.text || content.words) && (
+              <motion.div
+                className="px-6 py-3 rounded-xl backdrop-blur-xl border border-white/20 max-w-[90vw]"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(34,211,238,0.2) 0%, rgba(168,85,247,0.2) 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-lg md:text-xl lg:text-2xl font-bold text-white text-center">
+                  {content.text || content.words?.join(' • ')}
+                </p>
+              </motion.div>
+            )}
           </div>
         );
 
