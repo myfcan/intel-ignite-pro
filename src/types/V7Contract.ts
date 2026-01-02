@@ -1,66 +1,110 @@
 /**
- * V7 Contract - Tipos compartilhados entre Pipeline e Player
- *
- * REGRA DE OURO: Se um tipo está aqui, Pipeline GERA e Player CONSOME.
- * Nenhum dos dois pode inventar tipos fora deste arquivo.
- *
- * @version 1.0.0
+ * V7 Contract - SINGLE SOURCE OF TRUTH
+ * =====================================
+ * 
+ * This file defines ALL types shared between Pipeline (generator) and Player (consumer).
+ * 
+ * GOLDEN RULE: If a type is used by both Pipeline and Player, it MUST be defined here.
+ * Neither Pipeline nor Player should define types outside this file.
+ * 
+ * ARCHITECTURE:
+ * - Pipeline generates V7LessonData
+ * - Player consumes V7LessonData
+ * - Both use the same types from this file
+ * 
+ * @version 2.0.0 (Unified)
  * @author V7-vv Definitive
  */
 
 // ============================================================================
-// TIPOS DE VISUAL SUPORTADOS
+// VISUAL TYPES
 // ============================================================================
 
 /**
- * Todos os tipos de visual que o Player DEVE saber renderizar.
- * Se não está aqui, não é suportado.
+ * All visual types the Player MUST know how to render.
+ * If it's not here, it's not supported.
  */
 export type V7VisualType =
-  | 'number-reveal'      // Número grande com animação (ex: "98%", "30M")
-  | 'text-reveal'        // Texto com reveal progressivo
-  | 'split-screen'       // Comparação lado a lado (98% vs 2%)
-  | 'letter-reveal'      // Revela letra por letra (P-E-R-F-E-I-T-O)
-  | 'cards-reveal'       // Cards que aparecem em sequência
-  | 'quiz'               // Tela de quiz com opções
-  | 'quiz-feedback'      // Feedback após responder quiz
-  | 'playground'         // Comparação prompt amador vs profissional
-  | 'result'             // Tela de resultado/gamificação
+  | 'number-reveal'      // Large animated number (e.g., "98%", "30M")
+  | 'text-reveal'        // Progressive text reveal
+  | 'split-screen'       // Side-by-side comparison (98% vs 2%)
+  | 'letter-reveal'      // Letter by letter reveal (P-E-R-F-E-I-T-O)
+  | 'cards-reveal'       // Cards appearing in sequence
+  | 'quiz'               // Quiz screen with options
+  | 'quiz-feedback'      // Feedback after answering quiz
+  | 'playground'         // Amateur vs professional prompt comparison
+  | 'result'             // Result/gamification screen
   | 'cta';               // Call to action
 
 /**
- * Tipos de micro-visual (overlays que aparecem durante narração)
+ * Micro-visual types (overlays during narration)
  */
 export type V7MicroVisualType =
-  | 'image-flash'        // Imagem que aparece e some rapidamente
-  | 'text-pop'           // Texto que "popa" na tela
-  | 'number-count'       // Número com animação de contagem
-  | 'text-highlight'     // Destaca texto na tela
-  | 'highlight'          // Destaque genérico (pulse, glow)
-  | 'card-reveal'        // Revela um card específico
-  | 'letter-reveal';     // Revela uma letra do acrônimo
+  | 'image-flash'        // Image that appears and fades
+  | 'text-pop'           // Text that "pops" on screen
+  | 'number-count'       // Number with counting animation
+  | 'text-highlight'     // Highlight text on screen
+  | 'highlight'          // Generic highlight (pulse, glow)
+  | 'card-reveal'        // Reveal a specific card
+  | 'letter-reveal';     // Reveal a letter from acronym
 
 /**
- * Tipos de fase/cena
+ * Phase/Scene types
  */
 export type V7PhaseType =
-  | 'dramatic'           // Impacto visual forte (números, estatísticas)
-  | 'narrative'          // Narrativa com texto/itens
-  | 'comparison'         // Comparação visual (split-screen)
-  | 'interaction'        // Quiz ou escolha
-  | 'playground'         // Desafio prático
-  | 'revelation'         // Revelação (método PERFEITO)
-  | 'gamification'       // Resultado/conquistas
-  | 'secret-reveal';     // Revelação de segredo
+  | 'loading'            // Loading screen
+  | 'dramatic'           // Strong visual impact (numbers, statistics)
+  | 'narrative'          // Narrative with text/items
+  | 'comparison'         // Visual comparison (split-screen)
+  | 'interaction'        // Quiz or choice
+  | 'playground'         // Practical challenge
+  | 'revelation'         // Revelation (PERFEITO method)
+  | 'gamification'       // Result/achievements
+  | 'secret-reveal';     // Secret reveal
+
+/**
+ * Animation types
+ */
+export type V7AnimationType =
+  | 'fade'
+  | 'slide-up'
+  | 'slide-left'
+  | 'slide-right'
+  | 'explode'
+  | 'count-up'
+  | 'letter-by-letter'
+  | 'scale-up'
+  | 'particle-burst'
+  | 'zoom-in'
+  | 'letterbox'
+  | 'glitch';
+
+/**
+ * Mood types for visual styling
+ */
+export type V7Mood = 'danger' | 'success' | 'neutral' | 'warning' | 'dramatic' | 'mysterious';
+
+/**
+ * Transition types
+ */
+export type V7TransitionType =
+  | 'fadeFromBlack'
+  | 'fadeToBlack'
+  | 'fadeToNext'
+  | 'slideLeft'
+  | 'slideRight'
+  | 'zoomIn'
+  | 'zoomOut'
+  | 'dissolve';
 
 // ============================================================================
-// ESTRUTURA DO ÁUDIO
+// AUDIO TYPES
 // ============================================================================
 
 export interface V7WordTimestamp {
   word: string;
-  start: number;  // segundos
-  end: number;    // segundos
+  start: number;  // seconds
+  end: number;    // seconds
 }
 
 export interface V7AudioSegment {
@@ -70,58 +114,83 @@ export interface V7AudioSegment {
   wordTimestamps: V7WordTimestamp[];
 }
 
+export interface V7AudioTrack {
+  url?: string;
+  text?: string;
+  duration?: number;
+  volume?: number;
+}
+
+export interface V7SoundEffect {
+  id: string;
+  url: string;
+  triggerAt?: number;
+  volume?: number;
+}
+
+export interface V7ContextualLoop {
+  triggerAfter: number;
+  text: string;
+  voice?: 'main' | 'whisper' | 'thought';
+  volume: number;
+  loop?: boolean;
+}
+
+export interface V7AudioBehavior {
+  onStart: 'pause' | 'fadeToBackground' | 'continue' | 'switch';
+  duringInteraction: {
+    mainVolume: number;
+    ambientVolume: number;
+    contextualLoops?: V7ContextualLoop[];
+  };
+  onComplete: 'resume' | 'fadeIn' | 'next';
+}
+
 /**
- * Configuração de áudio da aula.
- * O áudio principal contém a narração das cenas.
- * Os feedbackAudios contêm narrações específicas para cada opção do quiz.
+ * Lesson audio configuration.
+ * Main audio contains scene narrations.
+ * Feedback audios contain specific narrations for each quiz option.
  */
 export interface V7AudioConfig {
-  /** Áudio principal com todas as narrações das cenas */
+  /** Main audio with all scene narrations */
   mainAudio: V7AudioSegment;
-
-  /** Áudios de feedback do quiz, indexados por optionId */
+  /** Quiz feedback audios, indexed by optionId */
   feedbackAudios?: Record<string, V7AudioSegment>;
 }
 
 // ============================================================================
-// MICRO-VISUAIS
+// MICRO-VISUALS
 // ============================================================================
 
 export interface V7MicroVisual {
   id: string;
   type: V7MicroVisualType;
-  anchorText: string;       // Palavra que ativa o visual
-  triggerTime: number;      // Tempo em segundos (calculado pelo pipeline)
-  duration: number;         // Duração em segundos
+  anchorText: string;
+  triggerTime: number;
+  duration: number;
   content: {
-    // Para image-flash
+    // For image-flash
     description?: string;
     imageUrl?: string;
-
-    // Para text-pop
+    // For text-pop
     text?: string;
     words?: string[];
     emoji?: string;
-
-    // Para number-count
+    // For number-count
     from?: number;
     to?: number;
     prefix?: string;
     suffix?: string;
-
-    // Para highlight
+    // For highlight
     side?: 'left' | 'right';
     pulse?: boolean;
     shake?: boolean;
     glow?: boolean;
-
-    // Para card-reveal
+    // For card-reveal
     cardId?: string;
-
-    // Para letter-reveal
+    // For letter-reveal
     index?: number;
-
-    // Comum
+    // Common
     animation?: string;
     color?: string;
     position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
@@ -129,52 +198,93 @@ export interface V7MicroVisual {
 }
 
 // ============================================================================
-// QUIZ E INTERAÇÕES
+// ANCHOR ACTIONS
+// ============================================================================
+
+export type V7AnchorActionType = 'pause' | 'resume' | 'show' | 'hide' | 'highlight' | 'trigger';
+
+export interface V7AnchorAction {
+  id: string;
+  keyword: string;
+  keywordTime?: number;
+  type: V7AnchorActionType;
+  targetId?: string;
+  payload?: unknown;
+  once?: boolean;
+  delayMs?: number;
+}
+
+// ============================================================================
+// TIMEOUT CONFIGURATION
+// ============================================================================
+
+export interface V7TimeoutConfig {
+  soft: number;
+  medium: number;
+  hard: number;
+  hints: string[];
+  autoAction?: 'skip' | 'selectDefault' | 'continue';
+}
+
+export const DEFAULT_TIMEOUT_CONFIG: V7TimeoutConfig = {
+  soft: 7,
+  medium: 15,
+  hard: 30,
+  hints: [
+    'Pense com calma...',
+    'Não há resposta errada, seja honesto!',
+    'Vamos continuar? Você pode voltar depois.'
+  ],
+  autoAction: 'continue'
+};
+
+// ============================================================================
+// QUIZ AND INTERACTIONS
 // ============================================================================
 
 export interface V7QuizFeedback {
   title: string;
   subtitle: string;
   mood: 'success' | 'warning' | 'danger' | 'neutral';
-  /** ID do áudio de feedback (referencia feedbackAudios) */
   audioId?: string;
 }
 
 export interface V7QuizOption {
   id: string;
   text: string;
-  isCorrect: boolean;
-  feedback: V7QuizFeedback;
+  isCorrect?: boolean;
+  category?: 'good' | 'bad';
+  feedback?: V7QuizFeedback;
+  emoji?: string;
 }
 
 export interface V7QuizInteraction {
   type: 'quiz';
   question: string;
   options: V7QuizOption[];
-  timeout?: {
-    soft: number;
-    medium: number;
-    hard: number;
-    hints: string[];
-    autoSelect?: string;  // optionId para auto-selecionar
-  };
+  correctFeedback?: string;
+  incorrectFeedback?: string;
+  timeout?: V7TimeoutConfig;
+}
+
+export interface V7PlaygroundResult {
+  title: string;
+  content: string;
+  score: number;
+  maxScore?: number;
+  verdict: 'bad' | 'good' | 'excellent';
 }
 
 export interface V7PlaygroundInteraction {
   type: 'playground';
   amateurPrompt: string;
   professionalPrompt: string;
-  amateurResult: {
-    title: string;
-    content: string;
-    score: number;
-    verdict: string;
-  };
-  professionalResult: {
-    title: string;
-    content: string;
-    score: number;
-    verdict: string;
+  amateurResult: V7PlaygroundResult;
+  professionalResult: V7PlaygroundResult;
+  userChallenge?: {
+    instruction: string;
+    challengePrompt: string;
+    hints: string[];
   };
 }
 
@@ -186,29 +296,29 @@ export interface V7CTAInteraction {
 
 export type V7Interaction = V7QuizInteraction | V7PlaygroundInteraction | V7CTAInteraction;
 
+export type V7InteractionType = 'quiz' | 'playground' | 'checkboxes' | 'button';
+
 // ============================================================================
-// CONTEÚDO VISUAL
+// VISUAL CONTENT TYPES
 // ============================================================================
 
 export interface V7NumberRevealContent {
-  hookQuestion?: string;      // "VOCÊ SABIA?"
-  number: string;             // "98%"
-  secondaryNumber?: string;   // "2%"
+  hookQuestion?: string;
+  number: string;
+  secondaryNumber?: string;
   subtitle?: string;
-  mood?: 'danger' | 'success' | 'warning' | 'neutral';
+  mood?: V7Mood;
   countUp?: boolean;
+  effect?: string;
 }
 
 export interface V7TextRevealContent {
   mainText?: string;
   title?: string;
   subtitle?: string;
-  items?: Array<{
-    icon?: string;
-    text: string;
-  }>;
+  items?: Array<{ icon?: string; text: string }>;
   highlightWord?: string;
-  mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
+  mood?: V7Mood;
 }
 
 export interface V7SplitScreenContent {
@@ -227,7 +337,7 @@ export interface V7SplitScreenContent {
 }
 
 export interface V7LetterRevealContent {
-  word: string;               // "PERFEITO"
+  word: string;
   letters: Array<{
     letter: string;
     meaning: string;
@@ -244,15 +354,12 @@ export interface V7CardsRevealContent {
     text: string;
     icon?: string;
   }>;
-  cta?: {
-    text: string;
-    action: string;
-  };
+  cta?: { text: string; action: string };
 }
 
 export interface V7QuizContent {
   question: string;
-  mood?: 'neutral' | 'dramatic';
+  mood?: V7Mood;
 }
 
 export interface V7QuizFeedbackContent {
@@ -300,60 +407,51 @@ export type V7VisualContent =
   | { type: 'cta'; content: V7CTAContent };
 
 // ============================================================================
-// ANCHOR ACTIONS
+// PHASE STRUCTURE
 // ============================================================================
 
-export interface V7AnchorAction {
-  id: string;
-  keyword: string;
-  keywordTime: number;        // Tempo exato no áudio
-  type: 'pause' | 'show' | 'highlight' | 'trigger';
-  targetId?: string;          // ID do elemento alvo (para show/highlight)
+export interface V7PhaseEffects {
+  mood?: V7Mood;
+  particles?: 'confetti' | 'sparks' | 'ember' | 'stars' | 'none';
+  glow?: boolean;
+  shake?: boolean;
+  vignette?: boolean;
+  grain?: boolean;
 }
-
-// ============================================================================
-// FASE (PHASE)
-// ============================================================================
 
 export interface V7Phase {
   id: string;
   title: string;
   type: V7PhaseType;
-
-  /** Timing */
-  startTime: number;          // segundos (relativo ao áudio principal)
-  endTime: number;            // segundos
-
-  /** Visual principal da fase */
+  startTime: number;
+  endTime: number;
   visual: V7VisualContent;
-
-  /** Efeitos visuais */
-  effects?: {
-    mood?: 'danger' | 'success' | 'warning' | 'dramatic' | 'mysterious';
-    particles?: 'confetti' | 'sparks' | 'ember' | 'stars' | 'none';
-    glow?: boolean;
-    shake?: boolean;
-    vignette?: boolean;
-  };
-
-  /** Micro-visuais (overlays durante narração) */
+  effects?: V7PhaseEffects;
   microVisuals?: V7MicroVisual[];
-
-  /** Anchor actions (pausas, highlights, etc) */
   anchorActions?: V7AnchorAction[];
-
-  /** Interação (se for fase interativa) */
   interaction?: V7Interaction;
-
-  /** Comportamento do áudio durante interação */
   audioBehavior?: {
     onStart: 'pause' | 'fade' | 'continue';
     onComplete: 'resume' | 'next-phase';
   };
+  timeout?: V7TimeoutConfig;
 }
 
 // ============================================================================
-// AULA COMPLETA
+// SCENE (Sub-unit of Phase for granular control)
+// ============================================================================
+
+export interface V7Scene {
+  id: string;
+  type: string;
+  startTime?: number;
+  duration?: number;
+  content: Record<string, unknown>;
+  animation?: V7AnimationType;
+}
+
+// ============================================================================
+// LESSON METADATA
 // ============================================================================
 
 export interface V7LessonMetadata {
@@ -363,38 +461,62 @@ export interface V7LessonMetadata {
   category: string;
   tags: string[];
   learningObjectives: string[];
-  totalDuration: number;      // segundos
+  totalDuration: number;
   phaseCount: number;
   createdAt: string;
-  generatedBy: 'V7-vv';
+  generatedBy: 'V7-vv' | string;
 }
 
+// ============================================================================
+// COMPLETE LESSON DATA
+// ============================================================================
+
 /**
- * Estrutura completa da aula gerada pelo Pipeline.
- * O Player consome exatamente esta estrutura.
+ * Complete lesson structure generated by Pipeline.
+ * Player consumes exactly this structure.
  */
 export interface V7LessonData {
   model: 'v7-cinematic';
-  version: 'vv';
-
-  /** Metadados da aula */
+  version: 'vv' | '2.0' | '7.1';
+  id?: string;
   metadata: V7LessonMetadata;
-
-  /** Fases da aula (em ordem) */
   phases: V7Phase[];
-
-  /** Configuração de áudio */
   audio: V7AudioConfig;
+  
+  // Legacy compatibility
+  cinematicFlow?: { acts: unknown[]; timeline?: unknown };
+  cinematic_flow?: { acts: unknown[]; timeline?: unknown };
 }
 
 // ============================================================================
-// INPUT DO PIPELINE (roteiro)
+// LESSON SCRIPT (Frontend representation)
 // ============================================================================
 
-/**
- * Estrutura de entrada do Pipeline (JSON de roteiro).
- * O Pipeline recebe isso e gera V7LessonData.
- */
+export interface V7LessonScript {
+  id: string;
+  title: string;
+  totalDuration: number;
+  phases: V7Phase[];
+  audioUrl?: string;
+  wordTimestamps?: V7WordTimestamp[];
+  audioConfig?: {
+    mainAudioUrl?: string;
+    ambientAudioUrl?: string;
+    soundEffects?: Record<string, string>;
+  };
+  anchorPoints?: Array<{
+    id: string;
+    keyword: string;
+    phaseId: string;
+    action: V7AnchorActionType;
+    targetId?: string;
+  }>;
+}
+
+// ============================================================================
+// PIPELINE INPUT (Script)
+// ============================================================================
+
 export interface V7ScriptInput {
   title: string;
   subtitle?: string;
@@ -402,13 +524,9 @@ export interface V7ScriptInput {
   category: string;
   tags: string[];
   learningObjectives: string[];
-
-  /** Configuração de voz */
   voice_id?: string;
   generate_audio?: boolean;
   fail_on_audio_error?: boolean;
-
-  /** Cenas do roteiro */
   scenes: V7ScriptScene[];
 }
 
@@ -417,12 +535,10 @@ export interface V7ScriptScene {
   title: string;
   type: V7PhaseType;
   narration: string;
-
   anchorText?: {
     pauseAt?: string;
     transitionAt?: string;
   };
-
   visual: {
     type: string;
     content: Record<string, unknown>;
@@ -434,7 +550,6 @@ export interface V7ScriptScene {
       content: Record<string, unknown>;
     }>;
   };
-
   interaction?: {
     type: 'quiz' | 'playground' | 'cta-button';
     options?: Array<{
@@ -459,37 +574,236 @@ export interface V7ScriptScene {
 }
 
 // ============================================================================
-// ESTADO DO PLAYER
+// PIPELINE RESPONSE
+// ============================================================================
+
+export interface V7PipelineResponse {
+  success: boolean;
+  lessonId?: string;
+  content?: V7LessonData;
+  audioUrl?: string;
+  wordTimestampsCount?: number;
+  warnings?: V7PipelineWarning[];
+  stats?: V7PipelineStats;
+  error?: string;
+}
+
+export interface V7PipelineWarning {
+  type: string;
+  message: string;
+  severity: 'low' | 'medium' | 'high';
+  action?: string;
+}
+
+export interface V7PipelineStats {
+  actCount: number;
+  narrationCount: number;
+  actTypes: Record<string, number>;
+  totalDuration: number;
+  hasAudio: boolean;
+  hasWordTimestamps: boolean;
+  audioSource: string;
+  audioError?: string | null;
+}
+
+// ============================================================================
+// PLAYER STATE
 // ============================================================================
 
 export type V7PlayerStatus =
   | 'loading'
+  | 'ready'
   | 'playing'
   | 'paused'
   | 'waiting-interaction'
   | 'showing-feedback'
-  | 'completed';
+  | 'completed'
+  | 'ended'
+  | 'error';
 
+/**
+ * Player state for V7PhasePlayer (new unified state)
+ */
 export interface V7PlayerState {
   status: V7PlayerStatus;
   currentPhaseIndex: number;
+  currentSceneIndex?: number;
   currentTime: number;
-
-  /** Interação ativa */
+  isInteracting?: boolean;
+  audioState?: 'playing' | 'paused' | 'background' | 'muted';
+  fullscreen?: boolean;
+  progress: number;
   activeInteraction?: {
     phaseId: string;
     selectedOptionId?: string;
     startedAt: number;
   };
-
-  /** Resultados das interações */
   interactionResults: Record<string, {
     optionId: string;
     isCorrect: boolean;
     timestamp: number;
   }>;
-
-  /** Progresso */
   completedPhases: string[];
   score: number;
+}
+
+/**
+ * Player state for V7CinematicPlayer (legacy format)
+ * Used by the older cinematic player implementation
+ */
+export interface V7CinematicPlayerState {
+  currentActId: string | null;
+  currentTime: number;
+  isPlaying: boolean;
+  isPaused: boolean;
+  volume: number;
+  playbackRate: number;
+  completedActs: string[];
+  interactionResults: Record<string, unknown>;
+  score: number;
+  xp: number;
+  achievements: string[];
+}
+
+// ============================================================================
+// ANALYTICS
+// ============================================================================
+
+export interface V7Analytics {
+  trackInteractions: boolean;
+  trackTime: boolean;
+  trackSkips: boolean;
+  webhookUrl?: string;
+}
+
+export interface V7InteractionResult {
+  actId: string;
+  type: V7InteractionType;
+  selected: string | string[];
+  timeToComplete: number;
+  hadHints: boolean;
+  autoCompleted: boolean;
+}
+
+export interface V7SessionAnalytics {
+  sessionId: string;
+  lessonId: string;
+  startedAt: Date;
+  completedAt?: Date;
+  totalTime: number;
+  interactions: V7InteractionResult[];
+  skippedActs: string[];
+  completionRate: number;
+}
+
+// ============================================================================
+// DEFAULT AUDIO BEHAVIORS
+// ============================================================================
+
+export const DEFAULT_AUDIO_BEHAVIORS: Record<V7InteractionType, V7AudioBehavior> = {
+  quiz: {
+    onStart: 'pause',
+    duringInteraction: {
+      mainVolume: 0,
+      ambientVolume: 0.3,
+      contextualLoops: [
+        { triggerAfter: 10, text: 'Pense com calma...', volume: 0.3, voice: 'whisper' },
+        { triggerAfter: 20, text: 'Reflita sobre sua resposta...', volume: 0.3, voice: 'whisper' }
+      ]
+    },
+    onComplete: 'resume'
+  },
+  playground: {
+    onStart: 'pause',
+    duringInteraction: {
+      mainVolume: 0,
+      ambientVolume: 0,
+      contextualLoops: []
+    },
+    onComplete: 'resume'
+  },
+  checkboxes: {
+    onStart: 'fadeToBackground',
+    duringInteraction: {
+      mainVolume: 0.3,
+      ambientVolume: 0.3,
+      contextualLoops: []
+    },
+    onComplete: 'fadeIn'
+  },
+  button: {
+    onStart: 'fadeToBackground',
+    duringInteraction: {
+      mainVolume: 0.3,
+      ambientVolume: 0.4,
+      contextualLoops: []
+    },
+    onComplete: 'next'
+  }
+};
+
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+
+export function isV7Phase(obj: unknown): obj is V7Phase {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'type' in obj &&
+    'startTime' in obj
+  );
+}
+
+export function isV7WordTimestamp(obj: unknown): obj is V7WordTimestamp {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'word' in obj &&
+    'start' in obj &&
+    'end' in obj
+  );
+}
+
+export function isQuizInteraction(interaction: V7Interaction): interaction is V7QuizInteraction {
+  return interaction.type === 'quiz';
+}
+
+export function isPlaygroundInteraction(interaction: V7Interaction): interaction is V7PlaygroundInteraction {
+  return interaction.type === 'playground';
+}
+
+export function isCTAInteraction(interaction: V7Interaction): interaction is V7CTAInteraction {
+  return interaction.type === 'cta-button';
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Normalize word timestamp to consistent format
+ */
+export function normalizeTimestamp(ts: Record<string, unknown>): V7WordTimestamp {
+  return {
+    word: (ts.word as string) || '',
+    start: (ts.start as number) ?? (ts.start_time as number) ?? 0,
+    end: (ts.end as number) ?? (ts.end_time as number) ?? 0,
+  };
+}
+
+/**
+ * Extract narration text from various formats
+ */
+export function extractNarration(act: Record<string, unknown>): string {
+  if (typeof act.narration === 'string') return act.narration;
+  const content = act.content as Record<string, unknown> | undefined;
+  if (content?.audio) {
+    const audio = content.audio as Record<string, unknown>;
+    if (typeof audio.narration === 'string') return audio.narration;
+    const segment = audio.narrationSegment as Record<string, unknown> | undefined;
+    if (segment?.text && typeof segment.text === 'string') return segment.text;
+  }
+  return '';
 }

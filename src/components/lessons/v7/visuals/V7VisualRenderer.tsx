@@ -6,11 +6,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { V7VisualContent, V7PhaseType } from '@/types/V7Contract';
+import type { V7VisualContent, V7PhaseType, V7PhaseEffects } from '@/types/V7Contract';
 
 interface V7VisualRendererProps {
   visual: V7VisualContent;
-  effects?: Record<string, unknown>;
+  effects?: V7PhaseEffects;
   phaseType: V7PhaseType;
 }
 
