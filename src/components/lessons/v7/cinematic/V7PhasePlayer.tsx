@@ -998,6 +998,12 @@ export const V7PhasePlayer = ({
 
         console.log('[V7PhasePlayer] Dramatic phase - hookQuestion:', hookQuestion, 'sceneIndex:', currentSceneIndex);
 
+        // ✅ V7-v24: Determine if we should show 2% as main number based on scene content
+        // When narration talks about the 2% (success side), flip the display
+        const showSecondaryAsMain = dramaticContent.showSecondaryAsMain || 
+          (currentPhase.mood === 'success') ||
+          (dramaticContent.subtitle?.toLowerCase().includes('2%') || dramaticContent.subtitle?.toLowerCase().includes('dominam'));
+
         return (
           <V7PhaseDramatic
             mainNumber={String(dramaticContent.number || '98%')}
@@ -1009,6 +1015,7 @@ export const V7PhasePlayer = ({
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}
+            showSecondaryAsMain={showSecondaryAsMain}
           />
         );
 
