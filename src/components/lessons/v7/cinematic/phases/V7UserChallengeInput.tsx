@@ -121,204 +121,190 @@ export const V7UserChallengeInput = ({
         />
       )}
 
-      {/* ✅ FIX: Container com max-height e overflow para não estourar a tela */}
-      <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
-      {/* Header com instrução */}
-      <div className="text-center mb-2">
+      {/* ✅ RESPONSIVE: Layout flex sem scroll, tudo visível na viewport */}
+      <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-lg mx-auto">
+        {/* Header com instrução - compacto */}
         <motion.p 
-          className="text-lg font-bold text-yellow-400"
+          className="text-sm sm:text-base font-bold text-yellow-400 text-center"
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           {userChallenge.instruction}
         </motion.p>
-      </div>
 
-      {/* Desafio original - mais compacto */}
-      <div className="bg-white/[0.02] border-2 border-amber-500/30 rounded-xl p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded">DESAFIO</span>
-          <span className="text-white/50 text-xs">Reescreva este prompt</span>
+        {/* Desafio original - compacto */}
+        <div className="bg-white/[0.02] border border-amber-500/30 rounded-lg p-2 sm:p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2 py-0.5 bg-amber-500 text-black text-[10px] sm:text-xs font-bold rounded">DESAFIO</span>
+            <span className="text-white/50 text-[10px] sm:text-xs">Reescreva este prompt</span>
+          </div>
+          <div className="bg-black/40 rounded p-2 font-mono text-xs sm:text-sm text-amber-300">
+            "{userChallenge.challengePrompt}"
+          </div>
         </div>
-        <div className="bg-black/40 rounded-lg p-3 font-mono text-sm text-amber-300">
-          "{userChallenge.challengePrompt}"
-        </div>
-      </div>
 
-      {/* Botão de dicas */}
-      <motion.button
-        onClick={() => setShowHints(!showHints)}
-        className="flex items-center gap-2 text-purple-400 text-sm hover:text-purple-300 transition-colors"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <Lightbulb className="w-4 h-4" />
-        {showHints ? 'Esconder dicas' : 'Ver dicas'}
-      </motion.button>
-
-      {/* Dicas expansíveis */}
-      <AnimatePresence>
-        {showHints && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-xl p-4"
+        {/* Botão de dicas inline */}
+        <div className="flex items-center justify-between">
+          <motion.button
+            onClick={() => setShowHints(!showHints)}
+            className="flex items-center gap-1 text-purple-400 text-xs hover:text-purple-300 transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
-              <span>💡</span>
-              Dicas para um prompt profissional:
-            </h4>
-            <ul className="space-y-2">
-              {userChallenge.hints.map((hint, idx) => (
-                <motion.li 
-                  key={idx}
-                  className="flex items-start gap-2 text-white/70 text-sm"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                >
-                  <span className="text-cyan-400 font-bold mt-0.5">✓</span>
-                  <span>{hint}</span>
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Lightbulb className="w-3 h-3" />
+            {showHints ? 'Esconder' : 'Ver dicas'}
+          </motion.button>
+          <span className="text-white/30 text-[10px]">{userPrompt.length} caracteres</span>
+        </div>
 
-      {/* Input do usuário - ✅ FIX: onKeyDown removido para permitir espaços */}
-      <div className="relative">
+        {/* Dicas expansíveis - compactas */}
+        <AnimatePresence>
+          {showHints && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2"
+            >
+              <ul className="grid grid-cols-1 gap-1">
+                {userChallenge.hints.slice(0, 3).map((hint, idx) => (
+                  <motion.li 
+                    key={idx}
+                    className="flex items-start gap-1 text-white/70 text-[10px] sm:text-xs"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <span className="text-cyan-400 font-bold">✓</span>
+                    <span className="line-clamp-1">{hint}</span>
+                  </motion.li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Input do usuário - altura fixa responsiva */}
         <textarea
           value={userPrompt}
           onChange={(e) => setUserPrompt(e.target.value)}
           placeholder="Escreva seu prompt profissional aqui..."
           disabled={isSubmitting || !!aiFeedback}
-          className="w-full min-h-[100px] bg-black/40 border-2 border-cyan-500/30 rounded-xl p-3 text-white placeholder-white/30 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500/60 transition-colors disabled:opacity-50"
-          onKeyDown={(e) => {
-            // ✅ FIX: Não bloquear nenhuma tecla - permitir espaços normalmente
-            e.stopPropagation();
-          }}
+          className="w-full h-20 sm:h-24 bg-black/40 border border-cyan-500/30 rounded-lg p-2 sm:p-3 text-white placeholder-white/30 font-mono text-xs sm:text-sm resize-none focus:outline-none focus:border-cyan-500/60 transition-colors disabled:opacity-50"
+          onKeyDown={(e) => e.stopPropagation()}
         />
-        
-        {/* Contador de caracteres */}
-        <div className="absolute bottom-2 right-3 text-white/30 text-xs">
-          {userPrompt.length} caracteres
-        </div>
-      </div>
 
-      {/* Erro */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3"
-          >
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Botão de enviar */}
-      {!aiFeedback && (
-        <motion.button
-          onClick={handleSubmit}
-          disabled={!userPrompt.trim() || isSubmitting}
-          className="w-full py-4 px-6 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold rounded-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          whileHover={{ scale: userPrompt.trim() && !isSubmitting ? 1.02 : 1 }}
-          whileTap={{ scale: userPrompt.trim() && !isSubmitting ? 0.98 : 1 }}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Analisando seu prompt...
-            </>
-          ) : (
-            <>
-              <Send className="w-5 h-5" />
-              Enviar para análise
-            </>
-          )}
-        </motion.button>
-      )}
-
-      {/* Feedback da IA - mais compacto */}
-      <AnimatePresence>
-        {aiFeedback && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-3"
-          >
-            {/* Score - mais compacto */}
+        {/* Erro */}
+        <AnimatePresence>
+          {error && (
             <motion.div
-              className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-xl p-3 text-center`}
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg p-2"
             >
-              <div className="flex items-center justify-center gap-2">
-                {(aiFeedback.score || 70) >= 70 ? (
-                  <CheckCircle className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
-                ) : (
-                  <Sparkles className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
-                )}
-                <span className={`text-xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
-                  {aiFeedback.score || 70}%
-                </span>
-                <span className="text-white/60 text-sm ml-2">
-                  {(aiFeedback.score || 70) >= 85 ? 'Excelente!' : 
-                   (aiFeedback.score || 70) >= 70 ? 'Bom trabalho!' : 'Continue!'}
-                </span>
-              </div>
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              <span className="line-clamp-1">{error}</span>
             </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Resultado da IA - mais compacto */}
-            <div className="bg-white/[0.02] border border-cyan-500/30 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-bold text-cyan-400">RESULTADO DA IA</span>
-              </div>
-              <div className="bg-black/40 rounded-lg p-3 text-xs text-white/80 max-h-[80px] overflow-y-auto whitespace-pre-line">
-                {aiFeedback.response}
-              </div>
-            </div>
-
-            {/* Feedback do coach - mais compacto */}
-            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-base">🎯</span>
-                <span className="text-xs font-bold text-purple-300">FEEDBACK DO COACH</span>
-              </div>
-              <p className="text-white/70 text-xs leading-relaxed">
-                {aiFeedback.feedback}
-              </p>
-            </div>
-
-            {/* Botão de continuar */}
-            <motion.button
-              onClick={onComplete}
-              className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold rounded-xl flex items-center justify-center gap-3"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              animate={{
-                boxShadow: [
-                  '0 0 20px rgba(34, 197, 94, 0.3)',
-                  '0 0 40px rgba(34, 197, 94, 0.5)',
-                  '0 0 20px rgba(34, 197, 94, 0.3)'
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <CheckCircle className="w-5 h-5" />
-              Continuar Aula
-            </motion.button>
-          </motion.div>
+        {/* Botão de enviar */}
+        {!aiFeedback && (
+          <motion.button
+            onClick={handleSubmit}
+            disabled={!userPrompt.trim() || isSubmitting}
+            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold text-sm rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: userPrompt.trim() && !isSubmitting ? 1.02 : 1 }}
+            whileTap={{ scale: userPrompt.trim() && !isSubmitting ? 0.98 : 1 }}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analisando...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Enviar para análise
+              </>
+            )}
+          </motion.button>
         )}
-      </AnimatePresence>
+
+        {/* Feedback da IA - compacto em grid */}
+        <AnimatePresence>
+          {aiFeedback && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-2"
+            >
+              {/* Score + Feedback lado a lado em telas maiores */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Score */}
+                <motion.div
+                  className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-lg p-2 flex items-center justify-center gap-2`}
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                >
+                  {(aiFeedback.score || 70) >= 70 ? (
+                    <CheckCircle className={`w-4 h-4 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  ) : (
+                    <Sparkles className={`w-4 h-4 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  )}
+                  <span className={`text-lg font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
+                    {aiFeedback.score || 70}%
+                  </span>
+                  <span className="text-white/60 text-xs">
+                    {(aiFeedback.score || 70) >= 85 ? 'Excelente!' : 
+                     (aiFeedback.score || 70) >= 70 ? 'Bom!' : 'Continue!'}
+                  </span>
+                </motion.div>
+
+                {/* Coach feedback compacto */}
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-2 flex items-start gap-2">
+                  <span className="text-sm">🎯</span>
+                  <p className="text-white/70 text-[10px] sm:text-xs line-clamp-2">
+                    {aiFeedback.feedback}
+                  </p>
+                </div>
+              </div>
+
+              {/* Resultado da IA - toggle para expandir */}
+              <details className="bg-white/[0.02] border border-cyan-500/30 rounded-lg">
+                <summary className="flex items-center gap-2 p-2 cursor-pointer text-xs text-cyan-400 font-medium">
+                  <Sparkles className="w-3 h-3" />
+                  Ver resposta completa da IA
+                </summary>
+                <div className="p-2 pt-0">
+                  <div className="bg-black/40 rounded p-2 text-[10px] sm:text-xs text-white/80 max-h-24 overflow-y-auto whitespace-pre-line">
+                    {aiFeedback.response}
+                  </div>
+                </div>
+              </details>
+
+              {/* Botão de continuar */}
+              <motion.button
+                onClick={onComplete}
+                className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm rounded-lg flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                animate={{
+                  boxShadow: [
+                    '0 0 15px rgba(34, 197, 94, 0.3)',
+                    '0 0 25px rgba(34, 197, 94, 0.5)',
+                    '0 0 15px rgba(34, 197, 94, 0.3)'
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <CheckCircle className="w-4 h-4" />
+                Continuar Aula
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

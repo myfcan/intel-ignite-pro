@@ -216,35 +216,35 @@ export const V7PhasePlayground = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 pb-24 overflow-y-auto">
-      <div className="w-full max-w-2xl">
-        {/* Challenge Header */}
+    <div className="w-full h-full flex flex-col items-center justify-start p-3 sm:p-4 pb-20">
+      <div className="w-full max-w-xl flex flex-col h-full">
+        {/* Challenge Header - compacto */}
         <motion.div
-          className="text-center mb-6"
-          initial={{ opacity: 0, y: -20 }}
+          className="text-center mb-2 sm:mb-3 flex-shrink-0"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-3"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-1.5"
           >
-            <span className="text-xl">🎮</span>
-            <span className="text-base font-bold text-purple-300">DESAFIO PRÁTICO</span>
+            <span className="text-base">🎮</span>
+            <span className="text-xs sm:text-sm font-bold text-purple-300">DESAFIO PRÁTICO</span>
           </motion.div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+          <h2 className="text-base sm:text-lg font-bold text-white">
             {challengeTitle}
           </h2>
           {challengeSubtitle && (
-            <p className="text-white/60 text-sm">{challengeSubtitle}</p>
+            <p className="text-white/60 text-xs">{challengeSubtitle}</p>
           )}
         </motion.div>
 
-        {/* Step Indicator */}
-        <div className="flex justify-center gap-1 mb-4">
+        {/* Step Indicator - compacto */}
+        <div className="flex justify-center gap-1 mb-2 flex-shrink-0">
           {[0, 1, 2, 3, 4, 5].map((step) => (
             <div
               key={step}
-              className={`w-2 h-2 rounded-full transition-colors ${
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${
                 step === currentStep
                   ? 'bg-purple-500'
                   : step < currentStep
@@ -258,196 +258,198 @@ export const V7PhasePlayground = ({
         {/* Current Step Title */}
         <motion.h3
           key={currentStep}
-          className="text-center text-lg font-semibold text-white/80 mb-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="text-center text-sm sm:text-base font-semibold text-white/80 mb-2 flex-shrink-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
         >
           {getStepTitle()}
         </motion.h3>
 
-        {/* Content Area */}
-        <AnimatePresence mode="wait">
-          {/* Step 0: Intro */}
-          {currentStep === 0 && (
-            <motion.div
-              key="intro"
-              className="text-center py-8"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-            >
-              <div className="text-6xl mb-4">🆚</div>
-              <p className="text-white/70">
-                Veja a diferença entre um prompt amador e um prompt profissional
-              </p>
-            </motion.div>
-          )}
-
-          {/* Step 1: Amateur Prompt */}
-          {currentStep === 1 && (
-            <motion.div
-              key="amateur-prompt"
-              className="bg-white/[0.02] border-2 border-red-500/30 rounded-xl p-4"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">AMADOR</span>
-                <span className="text-white/50 text-sm">Prompt simples</span>
-              </div>
-              <div className="bg-black/40 rounded-lg p-4 font-mono text-sm text-red-300">
-                {amateurPrompt}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 2: Amateur Result */}
-          {currentStep === 2 && (
-            <motion.div
-              key="amateur-result"
-              className={`rounded-xl p-4 border ${getVerdictBg(amateurResult.verdict)}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="text-white/60 text-sm mb-2">RESULTADO DO AMADOR:</div>
-              <div className="text-white/90 text-sm mb-4 whitespace-pre-line">
-                {amateurResult.content}
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                <span className="text-white/50 text-sm">Valor comercial:</span>
-                <span className={`text-2xl font-bold ${getVerdictColor(amateurResult.verdict)}`}>
-                  R$ {amateurResult.score}
-                </span>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 3: Professional Prompt */}
-          {currentStep === 3 && (
-            <motion.div
-              key="professional-prompt"
-              className="bg-white/[0.02] border-2 border-green-500/30 rounded-xl p-4"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 bg-green-500 text-black text-xs font-bold rounded">PROFISSIONAL</span>
-                <span className="text-white/50 text-sm">Método PERFEITO</span>
-              </div>
-              <div className="bg-black/40 rounded-lg p-4 font-mono text-xs text-green-300 max-h-[200px] overflow-y-auto whitespace-pre-line">
-                {professionalPrompt}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 4: Professional Result */}
-          {currentStep === 4 && (
-            <motion.div
-              key="professional-result"
-              className={`rounded-xl p-4 border ${getVerdictBg(professionalResult.verdict)}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="text-white/60 text-sm mb-2">RESULTADO DO PROFISSIONAL:</div>
-              <div className="text-white/90 text-sm mb-4 whitespace-pre-line max-h-[150px] overflow-y-auto">
-                {professionalResult.content}
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                <span className="text-white/50 text-sm">Valor comercial:</span>
-                <motion.span
-                  className={`text-2xl font-bold ${getVerdictColor(professionalResult.verdict)}`}
-                  style={{ textShadow: '0 0 20px rgba(34, 197, 94, 0.5)' }}
-                  initial={{ scale: 1 }}
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.5 }}
-                >
-                  R$ {professionalResult.score}
-                </motion.span>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 5: Comparison */}
-          {currentStep === 5 && (
-            <motion.div
-              key="comparison"
-              className="text-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-            >
+        {/* Content Area - flex-grow para ocupar espaço disponível */}
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            {/* Step 0: Intro */}
+            {currentStep === 0 && (
               <motion.div
-                className="inline-block px-8 py-6 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 rounded-xl"
-                animate={{
-                  boxShadow: [
-                    '0 0 20px rgba(168, 85, 247, 0.3)',
-                    '0 0 40px rgba(168, 85, 247, 0.5)',
-                    '0 0 20px rgba(168, 85, 247, 0.3)',
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
+                key="intro"
+                className="text-center py-4"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
               >
-                <div className="flex items-center justify-center gap-6 mb-4">
-                  <div className="text-center">
-                    <div className="text-red-400 text-2xl font-bold">R$ {amateurResult.score}</div>
-                    <div className="text-white/50 text-xs">Amador</div>
-                  </div>
-                  <div className="text-white/30 text-2xl">→</div>
-                  <div className="text-center">
-                    <div className="text-green-400 text-2xl font-bold">R$ {professionalResult.score}</div>
-                    <div className="text-white/50 text-xs">Profissional</div>
-                  </div>
+                <div className="text-5xl sm:text-6xl mb-3">🆚</div>
+                <p className="text-white/70 text-sm">
+                  Veja a diferença entre prompts
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 1: Amateur Prompt */}
+            {currentStep === 1 && (
+              <motion.div
+                key="amateur-prompt"
+                className="w-full bg-white/[0.02] border border-red-500/30 rounded-lg p-3"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">AMADOR</span>
+                  <span className="text-white/50 text-xs">Prompt simples</span>
                 </div>
-                <div className="text-cyan-400 text-lg font-bold">
-                  +R$ {professionalResult.score - amateurResult.score} com o método certo!
+                <div className="bg-black/40 rounded p-3 font-mono text-xs sm:text-sm text-red-300">
+                  {amateurPrompt}
                 </div>
               </motion.div>
-            </motion.div>
-          )}
+            )}
 
-          {/* Step 6: User Challenge com input real (opcional) */}
-          {currentStep === 6 && userChallenge && (
-            <motion.div
-              key="user-challenge"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              <V7UserChallengeInput
-                userChallenge={userChallenge}
-                lessonId={lessonId}
-                onComplete={handleUserChallengeComplete}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* Step 2: Amateur Result */}
+            {currentStep === 2 && (
+              <motion.div
+                key="amateur-result"
+                className={`w-full rounded-lg p-3 border ${getVerdictBg(amateurResult.verdict)}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <div className="text-white/60 text-xs mb-1">RESULTADO:</div>
+                <div className="text-white/90 text-xs sm:text-sm mb-3 whitespace-pre-line line-clamp-4">
+                  {amateurResult.content}
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                  <span className="text-white/50 text-xs">Valor comercial:</span>
+                  <span className={`text-xl font-bold ${getVerdictColor(amateurResult.verdict)}`}>
+                    R$ {amateurResult.score}
+                  </span>
+                </div>
+              </motion.div>
+            )}
 
-        {/* Continue Button - PULSING to draw attention */}
-        {/* ✅ FIX: NÃO mostrar botão no step 6 (userChallenge) - o próprio V7UserChallengeInput tem seu botão */}
+            {/* Step 3: Professional Prompt */}
+            {currentStep === 3 && (
+              <motion.div
+                key="professional-prompt"
+                className="w-full bg-white/[0.02] border border-green-500/30 rounded-lg p-3"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-green-500 text-black text-[10px] font-bold rounded">PROFISSIONAL</span>
+                  <span className="text-white/50 text-xs">Método PERFEITO</span>
+                </div>
+                <div className="bg-black/40 rounded p-3 font-mono text-[10px] sm:text-xs text-green-300 max-h-32 overflow-y-auto whitespace-pre-line">
+                  {professionalPrompt}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4: Professional Result */}
+            {currentStep === 4 && (
+              <motion.div
+                key="professional-result"
+                className={`w-full rounded-lg p-3 border ${getVerdictBg(professionalResult.verdict)}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <div className="text-white/60 text-xs mb-1">RESULTADO:</div>
+                <div className="text-white/90 text-xs sm:text-sm mb-3 whitespace-pre-line line-clamp-4">
+                  {professionalResult.content}
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                  <span className="text-white/50 text-xs">Valor comercial:</span>
+                  <motion.span
+                    className={`text-xl font-bold ${getVerdictColor(professionalResult.verdict)}`}
+                    style={{ textShadow: '0 0 15px rgba(34, 197, 94, 0.5)' }}
+                    initial={{ scale: 1 }}
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    R$ {professionalResult.score}
+                  </motion.span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 5: Comparison */}
+            {currentStep === 5 && (
+              <motion.div
+                key="comparison"
+                className="text-center w-full"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="inline-block px-6 py-4 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 rounded-xl"
+                  animate={{
+                    boxShadow: [
+                      '0 0 15px rgba(168, 85, 247, 0.3)',
+                      '0 0 25px rgba(168, 85, 247, 0.5)',
+                      '0 0 15px rgba(168, 85, 247, 0.3)',
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="flex items-center justify-center gap-4 sm:gap-6 mb-3">
+                    <div className="text-center">
+                      <div className="text-red-400 text-lg sm:text-xl font-bold">R$ {amateurResult.score}</div>
+                      <div className="text-white/50 text-[10px]">Amador</div>
+                    </div>
+                    <div className="text-white/30 text-xl">→</div>
+                    <div className="text-center">
+                      <div className="text-green-400 text-lg sm:text-xl font-bold">R$ {professionalResult.score}</div>
+                      <div className="text-white/50 text-[10px]">Profissional</div>
+                    </div>
+                  </div>
+                  <div className="text-cyan-400 text-sm sm:text-base font-bold">
+                    +R$ {professionalResult.score - amateurResult.score} com o método certo!
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Step 6: User Challenge */}
+            {currentStep === 6 && userChallenge && (
+              <motion.div
+                key="user-challenge"
+                className="w-full"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <V7UserChallengeInput
+                  userChallenge={userChallenge}
+                  lessonId={lessonId}
+                  onComplete={handleUserChallengeComplete}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Continue Button - fixed at bottom, não mostrar no step 6 */}
         {currentStep !== 6 && (
           <motion.button
-            className="w-full mt-6 py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
+            className="w-full mt-3 py-3 px-6 text-sm font-bold text-white rounded-full relative overflow-hidden flex-shrink-0"
             style={{
               background: currentStep === 5 && userChallenge
                   ? 'linear-gradient(135deg, #f59e0b, #d97706)'
                   : 'linear-gradient(135deg, #667eea, #764ba2)',
             }}
             animate={{
-              scale: [1, 1.03, 1],
+              scale: [1, 1.02, 1],
               boxShadow: currentStep === 5 && userChallenge
                   ? [
-                      '0 10px 30px rgba(245, 158, 11, 0.4)',
-                      '0 15px 50px rgba(245, 158, 11, 0.7)',
-                      '0 10px 30px rgba(245, 158, 11, 0.4)',
+                      '0 5px 20px rgba(245, 158, 11, 0.4)',
+                      '0 10px 30px rgba(245, 158, 11, 0.6)',
+                      '0 5px 20px rgba(245, 158, 11, 0.4)',
                     ]
                   : [
-                      '0 10px 30px rgba(102, 126, 234, 0.4)',
-                      '0 15px 50px rgba(102, 126, 234, 0.7)',
-                      '0 10px 30px rgba(102, 126, 234, 0.4)',
+                      '0 5px 20px rgba(102, 126, 234, 0.4)',
+                      '0 10px 30px rgba(102, 126, 234, 0.6)',
+                      '0 5px 20px rgba(102, 126, 234, 0.4)',
                     ],
             }}
             transition={{
@@ -455,7 +457,7 @@ export const V7PhasePlayground = ({
               repeat: Infinity,
               ease: 'easeInOut',
             }}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleContinue}
           >
