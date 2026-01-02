@@ -707,17 +707,16 @@ export const V7PhasePlayer = ({
         audio.seekTo(nextStartTime);
       }
 
-      // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
-      if (nextPhase?.type !== 'secret-reveal') {
-        manualResume();
+      // ✅ FIX: SEMPRE dar play no áudio, incluindo para secret-reveal
+      // O secret-reveal precisa do áudio PRINCIPAL tocando para a narração funcionar!
+      manualResume();
 
-        // ✅ Resume audio after seek
-        if (hasAudio) {
-          setTimeout(() => {
-            audio.play();
-            console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
-          }, 150);
-        }
+      // ✅ Resume audio after seek - SEMPRE, para qualquer fase
+      if (hasAudio) {
+        setTimeout(() => {
+          audio.play();
+          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
+        }, 150);
       }
 
       // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
@@ -1085,7 +1084,15 @@ export const V7PhasePlayer = ({
           const ctaContent = getCombinedSceneContent();
           const ctaButtonText = ctaInteraction.buttonText || 'CONTINUAR';
 
+          // ✅ FIX: Botão só ativa quando narração termina
+          // isPausedByAnchor=true OU áudio está a menos de 2s do fim da fase
+          const phaseEndTime = currentPhase.endTime;
+          const audioNearEnd = hasAudio && phaseEndTime && (audio.currentTime >= phaseEndTime - 2);
+          const ctaButtonEnabled = isPausedByAnchor || audioNearEnd || !hasAudio;
+
           const handleCtaClick = () => {
+            if (!ctaButtonEnabled) return; // Prevent click if disabled
+            
             console.log('[V7PhasePlayer] CTA clicked, resuming audio and advancing');
 
             // Get next phase info for seeking
@@ -1164,12 +1171,17 @@ export const V7PhasePlayer = ({
                 </div>
               )}
 
-              {/* CTA Button */}
+              {/* CTA Button - ✅ FIX: Só ativo quando narração termina */}
               <button
                 onClick={handleCtaClick}
-                className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xl font-bold rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 animate-pulse"
+                disabled={!ctaButtonEnabled}
+                className={`px-8 py-4 text-xl font-bold rounded-xl shadow-lg transform transition-all duration-300 ${
+                  ctaButtonEnabled
+                    ? 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:scale-105 animate-pulse cursor-pointer'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-60'
+                }`}
               >
-                {ctaButtonText}
+                {ctaButtonEnabled ? ctaButtonText : '⏳ Aguarde a narração...'}
               </button>
             </div>
           );
