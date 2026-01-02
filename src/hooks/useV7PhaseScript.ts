@@ -395,6 +395,11 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           phases: lessonScript.phases.length,
           totalDuration: lessonScript.totalDuration,
         });
+        
+        // ✅ DEBUG: Log phase timings to verify DB data
+        lessonScript.phases.forEach((p: any, i: number) => {
+          console.log(`[useV7PhaseScript] Phase ${i}: "${p.id}" | ${p.startTime?.toFixed(2)}s - ${p.endTime?.toFixed(2)}s | visual: ${p.visual?.content?.number || 'N/A'}`);
+        });
 
         // Extrair feedbackAudios
         const feedbackAudiosData = contentObj.audio?.feedbackAudios || null;
