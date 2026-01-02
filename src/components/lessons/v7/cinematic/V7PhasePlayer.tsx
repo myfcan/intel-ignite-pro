@@ -1588,7 +1588,7 @@ export const V7PhasePlayer = ({
           microVisuals={currentPhase.microVisuals}
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
-          visualType={currentPhase.visual?.type}
+          visualType={(currentPhase as any).visual?.type}
         />
       )}
 
