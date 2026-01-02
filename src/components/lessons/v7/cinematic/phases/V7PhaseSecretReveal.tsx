@@ -602,42 +602,55 @@ export const V7PhaseSecretReveal = ({
               Quer <span className="text-yellow-400 font-semibold">DESCOBRIR</span> esse <span className="text-yellow-400 font-semibold">SEGREDO</span>?
             </motion.p>
 
-            {/* Botão principal - MOBILE OPTIMIZED */}
+            {/* Botão principal - ULTRA IMPACTANTE */}
             <motion.button
-              className={`relative px-6 py-4 sm:px-10 sm:py-6 md:px-14 md:py-8 rounded-xl sm:rounded-2xl text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-wide border-0 overflow-hidden z-10 transition-all ${
+              className={`relative px-8 py-5 sm:px-12 sm:py-7 md:px-16 md:py-9 rounded-2xl sm:rounded-3xl text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-wide border-4 overflow-hidden z-10 transition-all uppercase ${
                 buttonEnabled 
-                  ? 'cursor-pointer opacity-100' 
-                  : 'cursor-not-allowed opacity-40 grayscale'
+                  ? 'cursor-pointer opacity-100 border-yellow-300/80' 
+                  : 'cursor-not-allowed opacity-40 grayscale border-gray-600'
               }`}
               style={{
                 background: buttonEnabled 
-                  ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)'
+                  ? 'linear-gradient(135deg, #FFD700 0%, #FF8C00 30%, #FF4500 60%, #FFD700 100%)'
                   : 'linear-gradient(135deg, #666 0%, #444 50%, #333 100%)',
-                color: buttonEnabled ? '#1a1a1a' : '#888',
+                color: buttonEnabled ? '#000' : '#888',
+                textShadow: buttonEnabled ? '0 2px 4px rgba(255,255,255,0.5)' : 'none',
+                backgroundSize: '200% 200%',
               }}
               initial={{ scale: 0, y: 50 }}
               animate={{ 
-                scale: buttonEnabled ? [1, 1.1, 1] : 1, 
+                scale: buttonEnabled ? [1, 1.08, 1.02, 1.08, 1] : 1, 
                 y: 0,
+                backgroundPosition: buttonEnabled ? ['0% 50%', '100% 50%', '0% 50%'] : '0% 50%',
                 boxShadow: buttonEnabled ? [
-                  '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
-                  '0 0 100px rgba(255, 165, 0, 1), 0 0 180px rgba(255, 215, 0, 0.9), 0 20px 60px rgba(0, 0, 0, 0.6)',
-                  '0 0 40px rgba(255, 165, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.4), 0 10px 40px rgba(0, 0, 0, 0.4)',
+                  '0 0 60px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.6), 0 0 200px rgba(255, 69, 0, 0.4), 0 15px 50px rgba(0, 0, 0, 0.5)',
+                  '0 0 120px rgba(255, 215, 0, 1), 0 0 250px rgba(255, 140, 0, 1), 0 0 350px rgba(255, 69, 0, 0.8), 0 25px 80px rgba(0, 0, 0, 0.7)',
+                  '0 0 60px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.6), 0 0 200px rgba(255, 69, 0, 0.4), 0 15px 50px rgba(0, 0, 0, 0.5)',
                 ] : '0 0 10px rgba(0, 0, 0, 0.3)',
               }}
               whileHover={buttonEnabled ? {
-                scale: 1.08,
-                boxShadow: '0 0 120px rgba(255, 165, 0, 1), 0 0 200px rgba(255, 215, 0, 1), 0 25px 70px rgba(0, 0, 0, 0.7)',
+                scale: 1.15,
+                boxShadow: '0 0 180px rgba(255, 215, 0, 1), 0 0 300px rgba(255, 140, 0, 1), 0 0 400px rgba(255, 69, 0, 1), 0 30px 100px rgba(0, 0, 0, 0.8)',
               } : {}}
-              whileTap={buttonEnabled ? { scale: 0.95 } : {}}
+              whileTap={buttonEnabled ? { scale: 0.92 } : {}}
               transition={{
                 delay: buttonEnabled ? 0.2 : 0.8,
                 type: 'spring',
-                stiffness: 300,
-                damping: 20,
+                stiffness: 250,
+                damping: 15,
+                scale: buttonEnabled ? {
+                  duration: 1.8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                } : {},
+                backgroundPosition: buttonEnabled ? {
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'linear',
+                } : {},
                 boxShadow: buttonEnabled ? {
                   delay: 0.3,
-                  duration: 1,
+                  duration: 1.2,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 } : {},
@@ -645,44 +658,69 @@ export const V7PhaseSecretReveal = ({
               onClick={buttonEnabled ? handleDiscoverClick : undefined}
               disabled={!buttonEnabled}
             >
-              {/* Shimmer effect - apenas quando ativo */}
+              {/* Intense shimmer sweep */}
               {buttonEnabled && (
                 <motion.div
-                  className="absolute inset-0 opacity-30"
+                  className="absolute inset-0 opacity-60"
                   style={{
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)',
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 50%, transparent 100%)',
                   }}
                   animate={{
-                    x: ['-100%', '100%'],
+                    x: ['-200%', '200%'],
                   }}
                   transition={{
-                    duration: 1.5,
+                    duration: 1.2,
                     repeat: Infinity,
-                    repeatDelay: 0.5,
+                    repeatDelay: 0.3,
+                    ease: 'easeInOut',
                   }}
                 />
               )}
               
-              {/* ✅ Pulse ring effect quando botão ativa */}
+              {/* Multiple pulse ring effects */}
               {buttonEnabled && (
                 <>
                   <motion.div
-                    className="absolute inset-0 rounded-2xl border-4 border-yellow-400/50"
-                    initial={{ scale: 1, opacity: 0.8 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                    className="absolute inset-0 rounded-2xl sm:rounded-3xl border-4 border-yellow-300"
+                    initial={{ scale: 1, opacity: 1 }}
+                    animate={{ scale: 2, opacity: 0 }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
                   />
                   <motion.div
-                    className="absolute inset-0 rounded-2xl border-2 border-orange-400/50"
+                    className="absolute inset-0 rounded-2xl sm:rounded-3xl border-4 border-orange-400"
+                    initial={{ scale: 1, opacity: 0.8 }}
+                    animate={{ scale: 2.2, opacity: 0 }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.2 }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl sm:rounded-3xl border-2 border-red-500"
                     initial={{ scale: 1, opacity: 0.6 }}
-                    animate={{ scale: 1.8, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut', delay: 0.3 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
                   />
                 </>
               )}
+
+              {/* Inner glow */}
+              {buttonEnabled && (
+                <motion.div
+                  className="absolute inset-0 rounded-2xl sm:rounded-3xl"
+                  style={{
+                    background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, transparent 70%)',
+                  }}
+                  animate={{
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              )}
               
-              <span className="relative z-10 flex items-center gap-3">
-                {buttonEnabled ? '🚀' : '⏳'} {buttonEnabled ? 'Quero descobrir agora' : 'Aguarde a narração...'}
+              <span className="relative z-10 flex items-center gap-3 drop-shadow-lg">
+                {buttonEnabled ? '🚀' : '⏳'} {buttonEnabled ? 'QUERO DESCOBRIR AGORA' : 'Aguarde a narração...'}
               </span>
             </motion.button>
 
