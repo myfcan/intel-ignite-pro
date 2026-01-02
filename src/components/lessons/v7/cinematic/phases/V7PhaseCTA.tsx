@@ -173,8 +173,9 @@ export default function V7PhaseCTA({
   }, [isProcessing, selected]);
 
   return (
-    <div className="w-full h-full flex items-center justify-center p-8 pb-24">
-      <div className="max-w-2xl w-full text-center space-y-12">
+    <div className="w-full h-full flex items-center justify-center px-4 sm:px-8 pt-4 pb-28">
+      {/* pb-28 = espaço para CTA + player controls */}
+      <div className="max-w-2xl w-full text-center space-y-8 sm:space-y-12">
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
