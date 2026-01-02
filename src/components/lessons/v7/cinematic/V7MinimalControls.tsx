@@ -76,14 +76,18 @@ export const V7MinimalControls = ({
 
   return (
     <>
-      {/* Exit Button - Top Left */}
+      {/* Exit Button - Top Left with safe area support */}
       {onExit && (
         <motion.button
-          className="absolute top-4 left-4 z-[150] w-10 h-10 rounded-full 
+          className="absolute z-[150] w-10 h-10 rounded-full 
                      bg-black/40 backdrop-blur-md border border-white/10
                      flex items-center justify-center
                      text-white/60 hover:text-white hover:bg-black/60
                      transition-all duration-200"
+          style={{
+            top: 'max(1rem, env(safe-area-inset-top, 1rem))',
+            left: 'max(1rem, env(safe-area-inset-left, 1rem))',
+          }}
           onClick={onExit}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -20 }}
@@ -95,9 +99,14 @@ export const V7MinimalControls = ({
         </motion.button>
       )}
 
-      {/* Unified Control Bar - Bottom Center - More breathing room from edge */}
+      {/* Unified Control Bar - Bottom Center - Safe area support for notch/gestures */}
       <motion.div
-        className="fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] flex justify-center px-4"
+        className="fixed left-0 right-0 z-[100] flex justify-center px-4"
+        style={{
+          bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))',
+          paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        }}
         initial={{ opacity: 0, y: 30 }}
         animate={{ 
           opacity: isVisible ? 1 : 0, 

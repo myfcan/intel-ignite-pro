@@ -103,10 +103,12 @@ export const V7SynchronizedCaptions = ({
         transition={{ duration: 0.2 }}
         className={`v7-captions fixed left-0 right-0 flex justify-center z-[50] px-4 sm:px-6 pointer-events-none ${className}`}
         style={{
-          // ✅ FIX: Position JUST ABOVE the player controls (~120px from bottom)
-          // Player is at bottom-6/bottom-8 (~32px) + height (~100px) = ~132px
-          // Give extra 8px margin = 140px minimum
-          bottom: 'clamp(140px, 20vh, 180px)',
+          // ✅ FIX: Position JUST ABOVE the player controls with safe area support
+          // Player uses safe-area-inset-bottom + ~100px height
+          // Add extra margin to stay above controls on all devices
+          bottom: 'max(clamp(140px, 20vh, 180px), calc(env(safe-area-inset-bottom, 0px) + 140px))',
+          paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
         }}
       >
         {/* Clean minimal caption - safe distance above all controls */}
