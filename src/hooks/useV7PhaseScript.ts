@@ -262,12 +262,41 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         id: data.id,
         title: data.title,
         hasContent: !!data.content,
+        contentType: typeof data.content,
         hasTimestamps: !!data.word_timestamps,
         hasAudioUrl: !!data.audio_url
       });
 
+      // ============================================================================
+      // 🔧 CRITICAL FIX: Garantir que content seja um objeto, não string JSON
+      // Supabase às vezes retorna jsonb como string dependendo da configuração
+      // ============================================================================
+      let rawContent = data.content;
+      
+      // Se content veio como string, fazer parse
+      if (typeof rawContent === 'string') {
+        try {
+          console.log('[useV7PhaseScript] ⚠️ Content veio como STRING - fazendo parse JSON');
+          rawContent = JSON.parse(rawContent);
+        } catch (parseError) {
+          console.error('[useV7PhaseScript] ❌ Erro ao parsear content:', parseError);
+          throw new Error('Formato de conteúdo inválido na aula');
+        }
+      }
+
+      // ✅ GARANTIA ABSOLUTA: Verificar phases IMEDIATAMENTE após parse
+      const rawContentObj = rawContent as Record<string, any>;
+      const directPhasesCheck = rawContentObj?.phases;
+      
+      console.log('[useV7PhaseScript] 🔍 DIRECT PHASES CHECK:', {
+        phasesExists: !!directPhasesCheck,
+        phasesIsArray: Array.isArray(directPhasesCheck),
+        phasesLength: Array.isArray(directPhasesCheck) ? directPhasesCheck.length : 'N/A',
+        contentKeys: rawContentObj ? Object.keys(rawContentObj) : []
+      });
+
       // ✅ P1 FIX: Use typed interfaces instead of 'as any'
-      const content = data.content as V7LessonContent | null;
+      const content = rawContent as V7LessonContent | null;
       const rawTimestamps = (data.word_timestamps as unknown as RawWordTimestamp[] | null) || [];
 
       // ✅ CRITICAL FIX: Normalize timestamps - some lessons use start_time/end_time, others use start/end
@@ -284,150 +313,89 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       }
 
       // ============================================================================
-      // ✅ V7-vv DETECTION: Pipeline Cinematográfico - Caminho Simplificado
-      // Se a aula foi criada pelo V7-vv Pipeline, os dados já vêm prontos
-      // SEM necessidade de transformação - zero fallbacks
+      // ✅ V7-vv DETECTION: DEFINITIVA - ÚNICO CAMINHO PARA PHASES
+      // Se a aula tem content.phases, é V7-vv. Ponto final. Sem exceções.
       // ============================================================================
-      const contentAny = content as any;
-
+      
       // ✅ DEBUG: Save raw content for V7DebugPanel
-      setRawContent(contentAny);
+      setRawContent(content);
 
-      // ✅ DEBUG: Log ANTES da detecção para ver exatamente o que está chegando
-      console.log('[useV7PhaseScript] 🔍 CONTENT ANALYSIS:');
+      // 🔍 DEBUG: Mostrar EXATAMENTE o que recebemos
+      console.log('[useV7PhaseScript] 🔍 CONTENT ANALYSIS (DEFINITIVO):');
       console.log('[useV7PhaseScript] - content exists:', !!content);
-      console.log('[useV7PhaseScript] - content.version:', contentAny?.version);
-      console.log('[useV7PhaseScript] - content.model:', contentAny?.model);
-      console.log('[useV7PhaseScript] - content.phases:', Array.isArray(contentAny?.phases) ? `array(${contentAny.phases.length})` : typeof contentAny?.phases);
-      console.log('[useV7PhaseScript] - content.cinematicFlow:', !!contentAny?.cinematicFlow);
-      console.log('[useV7PhaseScript] - content.cinematic_flow:', !!contentAny?.cinematic_flow);
-      console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content) : 'N/A');
+      console.log('[useV7PhaseScript] - content type:', typeof content);
+      console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content as object) : 'null');
+      
+      // Acessar phases diretamente do objeto
+      const phasesArray = (content as any)?.phases;
+      console.log('[useV7PhaseScript] - phases exists:', !!phasesArray);
+      console.log('[useV7PhaseScript] - phases is Array:', Array.isArray(phasesArray));
+      console.log('[useV7PhaseScript] - phases length:', Array.isArray(phasesArray) ? phasesArray.length : 'N/A');
 
-      // ✅ Detecção mais robusta - aceita variações
-      const isV7vvFormat =
-        contentAny?.version === 'vv' ||
-        contentAny?.version === 'VV' ||
-        (contentAny?.model === 'v7-cinematic' && Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) ||
-        (contentAny?.metadata?.generatedBy === 'V7-vv' && Array.isArray(contentAny?.phases));
-
-      if (isV7vvFormat) {
-        console.log('[useV7PhaseScript] 🎬 V7-vv DETECTED - Usando caminho simplificado!');
+      // ============================================================================
+      // 🎬 CAMINHO ÚNICO V7-vv: Se tem phases[], USAR DIRETAMENTE!
+      // ============================================================================
+      if (Array.isArray(phasesArray) && phasesArray.length > 0) {
+        console.log('[useV7PhaseScript] ✅✅✅ V7-vv DEFINITIVO - Usando phases diretamente!');
+        console.log('[useV7PhaseScript] ✅✅✅ Phases encontradas:', phasesArray.length);
         setDetectionPath('v7-vv');
+
+        const contentObj = content as any;
         
-        // ✅ DEBUG LOGS SOLICITADOS
-        console.log('[V7-vv DEBUG] ==========================================');
-        console.log('[V7-vv DEBUG] FORMATO V7-vv DETECTADO!');
-        console.log('[V7-vv DEBUG] content.version:', contentAny?.version);
-        console.log('[V7-vv DEBUG] content.model:', contentAny?.model);
-        console.log('[V7-vv DEBUG] phases count:', contentAny?.phases?.length);
-        console.log('[V7-vv DEBUG] Primeira phase:', JSON.stringify(contentAny?.phases?.[0], null, 2));
-        console.log('[V7-vv DEBUG] ==========================================');
-
-        // V7-vv: Dados já vêm prontos do Pipeline
-        const v7vvContent = contentAny;
-        const v7vvPhases = v7vvContent.phases || [];
-
-        // Usar totalDuration do metadata ou calcular de wordTimestamps
-        const v7vvTotalDuration = v7vvContent.metadata?.totalDuration ||
+        // Calcular duração total
+        const totalDuration = contentObj.metadata?.totalDuration ||
           (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
 
-        console.log('[useV7PhaseScript] V7-vv phases:', v7vvPhases.length);
-        console.log('[useV7PhaseScript] V7-vv totalDuration:', v7vvTotalDuration);
+        // Resolver URL do áudio
+        const audioUrlResolved = data.audio_url || 
+          contentObj.audioConfig?.url || 
+          contentObj.audio?.mainAudio?.url || 
+          '';
 
-        // ✅ V7-vv: Usar phases diretamente (já vêm com anchorActions, scenes, etc)
+        // Criar script diretamente
         const lessonScript: V7LessonScript = {
           id: data.id,
-          title: v7vvContent.metadata?.title || data.title,
-          totalDuration: v7vvTotalDuration,
-          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
+          title: contentObj.metadata?.title || data.title,
+          totalDuration,
+          audioUrl: audioUrlResolved,
           wordTimestamps: timestamps,
-          phases: v7vvPhases,
+          phases: phasesArray,
           audioConfig: {
-            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
+            mainAudioUrl: audioUrlResolved,
           },
           anchorPoints: [],
         };
 
-        console.log('[useV7PhaseScript] ✅ V7-vv Script criado:', {
+        console.log('[useV7PhaseScript] ✅ Script V7-vv criado com sucesso:', {
           id: lessonScript.id,
           title: lessonScript.title,
           phases: lessonScript.phases.length,
           totalDuration: lessonScript.totalDuration,
         });
 
-        // ✅ V7-vv Definitive: Extract feedbackAudios from audio config
-        const v7vvFeedbackAudios = v7vvContent.audio?.feedbackAudios || null;
-        if (v7vvFeedbackAudios) {
-          console.log('[useV7PhaseScript] 🎧 V7-vv feedbackAudios encontrados:', Object.keys(v7vvFeedbackAudios));
+        // Extrair feedbackAudios
+        const feedbackAudiosData = contentObj.audio?.feedbackAudios || null;
+        if (feedbackAudiosData) {
+          console.log('[useV7PhaseScript] 🎧 feedbackAudios encontrados:', Object.keys(feedbackAudiosData));
         }
-        setFeedbackAudios(v7vvFeedbackAudios);
+        setFeedbackAudios(feedbackAudiosData);
 
         setScript(lessonScript);
         setAudioUrl(data.audio_url || null);
         setWordTimestamps(timestamps);
         setIsLoading(false);
-        return; // ✅ Caminho rápido - sem mais transformações!
+        return; // ✅ RETORNO IMEDIATO - NUNCA CAI NO CAMINHO LEGACY!
       }
 
-      // ✅ LOG: V7-vv não detectado - vamos entender por quê
-      console.log('[useV7PhaseScript] ⚠️ V7-vv NOT DETECTED - usando caminho legacy');
-      console.log('[useV7PhaseScript] ⚠️ Razões da falha:');
-      console.log('[useV7PhaseScript]   - version !== "vv":', contentAny?.version);
-      console.log('[useV7PhaseScript]   - model !== "v7-cinematic":', contentAny?.model);
-      console.log('[useV7PhaseScript]   - phases is array:', Array.isArray(contentAny?.phases));
-      console.log('[useV7PhaseScript]   - phases length:', contentAny?.phases?.length || 0);
-      console.log('[useV7PhaseScript]   - metadata.generatedBy:', contentAny?.metadata?.generatedBy);
-
       // ============================================================================
-      // 🚨 EMERGENCY FALLBACK: Se content.phases existe, usar diretamente!
-      // Isso resolve o caso onde a detecção V7-vv falhou mas os dados estão lá
+      // ⚠️ CAMINHO LEGACY: Só chega aqui se NÃO tem phases[]
       // ============================================================================
-      if (Array.isArray(contentAny?.phases) && contentAny.phases.length > 0) {
-        console.log('[useV7PhaseScript] 🚨 EMERGENCY FALLBACK: Usando content.phases diretamente!');
-        console.log('[useV7PhaseScript] 🚨 Phases encontradas:', contentAny.phases.length);
-        setDetectionPath('emergency');
-
-        const v7vvContent = contentAny;
-        const v7vvPhases = v7vvContent.phases || [];
-        const v7vvTotalDuration = v7vvContent.metadata?.totalDuration ||
-          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
-
-        const lessonScript: V7LessonScript = {
-          id: data.id,
-          title: v7vvContent.metadata?.title || data.title,
-          totalDuration: v7vvTotalDuration,
-          audioUrl: data.audio_url || v7vvContent.audioConfig?.url || '',
-          wordTimestamps: timestamps,
-          phases: v7vvPhases,
-          audioConfig: {
-            mainAudioUrl: data.audio_url || v7vvContent.audioConfig?.url,
-          },
-          anchorPoints: [],
-        };
-
-        console.log('[useV7PhaseScript] ✅ EMERGENCY Script criado:', {
-          id: lessonScript.id,
-          title: lessonScript.title,
-          phases: lessonScript.phases.length,
-          totalDuration: lessonScript.totalDuration,
-        });
-
-        // ✅ V7-vv Definitive: Extract feedbackAudios from audio config (emergency path)
-        const emergencyFeedbackAudios = v7vvContent.audio?.feedbackAudios || null;
-        if (emergencyFeedbackAudios) {
-          console.log('[useV7PhaseScript] 🎧 EMERGENCY feedbackAudios encontrados:', Object.keys(emergencyFeedbackAudios));
-        }
-        setFeedbackAudios(emergencyFeedbackAudios);
-
-        setScript(lessonScript);
-        setAudioUrl(data.audio_url || null);
-        setWordTimestamps(timestamps);
-        setIsLoading(false);
-        return; // ✅ Fallback de emergência - não vai para o caminho legacy!
-      }
+      console.log('[useV7PhaseScript] ⚠️ Sem phases[] - entrando no caminho legacy');
+      const contentAny = content as any;
 
       // ============================================================================
       // LEGACY PATH: V7-v3 e anteriores (mantido para compatibilidade)
+      // NOTA: Só chega aqui se content.phases NÃO existe
       // ============================================================================
 
       // ✅ V7-v3: Detect new structure with phases array (anchorText-only)
@@ -464,6 +432,40 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] Acts count (legacy):', rawActs.length);
       console.log('[useV7PhaseScript] Audio duration from timestamps:', audioDurationFromTimestamps);
       console.log('[useV7PhaseScript] Total duration used:', totalDuration);
+
+      // ============================================================================
+      // ✅ V7-v32 SAFETY NET: DOUBLE-CHECK - Se ainda tiver content.phases, USAR!
+      // Isso é uma segunda linha de defesa caso a detecção anterior tenha falhado
+      // ============================================================================
+      const emergencyPhasesCheck = (content as any)?.phases;
+      if (Array.isArray(emergencyPhasesCheck) && emergencyPhasesCheck.length > 0) {
+        console.error('[useV7PhaseScript] 🚨🚨🚨 SAFETY NET TRIGGERED! V7-vv detection failed but content.phases exists!');
+        console.log('[useV7PhaseScript] 🚨 Redirecting to V7-vv path via emergency route');
+        
+        const contentObj = content as any;
+        const emergencyDuration = contentObj.metadata?.totalDuration ||
+          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
+        const emergencyAudioUrl = data.audio_url || contentObj.audioConfig?.url || '';
+        
+        const emergencyScript: V7LessonScript = {
+          id: data.id,
+          title: contentObj.metadata?.title || data.title,
+          totalDuration: emergencyDuration,
+          audioUrl: emergencyAudioUrl,
+          wordTimestamps: timestamps,
+          phases: emergencyPhasesCheck,
+          audioConfig: { mainAudioUrl: emergencyAudioUrl },
+          anchorPoints: [],
+        };
+        
+        setDetectionPath('emergency');
+        setFeedbackAudios(contentObj.audio?.feedbackAudios || null);
+        setScript(emergencyScript);
+        setAudioUrl(data.audio_url || null);
+        setWordTimestamps(timestamps);
+        setIsLoading(false);
+        return; // ✅ EMERGENCY EXIT - Never reach legacy code!
+      }
 
       // ✅ V7-v3: Use new transformation for phases array, otherwise use legacy acts
       let phases: V7Phase[];

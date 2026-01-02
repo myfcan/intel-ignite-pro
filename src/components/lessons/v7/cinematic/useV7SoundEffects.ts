@@ -17,7 +17,8 @@ type SoundType =
   | "quiz-correct"
   | "quiz-wrong"
   | "progress-tick"
-  | "completion";
+  | "completion"
+  | "letter-reveal";
 
 interface SoundConfig {
   volume: number;
@@ -204,6 +205,17 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
           createOscillatorSound(ctx, 1047, 0.4, "sine", volume * 0.4);
           createNoiseSound(ctx, 0.2, volume * 0.1);
         }, 300);
+        break;
+
+      case "letter-reveal":
+        // Magical letter reveal - ascending sparkle
+        const basePitch = config?.pitch ?? 1;
+        const letterFreq = 400 + (basePitch * 100); // Higher pitch for later letters
+        createOscillatorSound(ctx, letterFreq, 0.15, "sine", volume * 0.35);
+        createOscillatorSound(ctx, letterFreq * 1.5, 0.12, "triangle", volume * 0.2);
+        setTimeout(() => {
+          createOscillatorSound(ctx, letterFreq * 2, 0.1, "sine", volume * 0.15);
+        }, 50);
         break;
     }
   }, [enabled, masterVolume, getAudioContext]);

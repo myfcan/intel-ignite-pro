@@ -22,6 +22,7 @@ import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
+import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import {
@@ -137,9 +138,20 @@ export const V7PhasePlayer = ({
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
 
+  // ✅ V7-v30 FIX: Track if we're in a blocking interactive phase
+  // This ref is used to prevent onComplete from being called when audio ends
+  // but we're still in an interactive phase (playground, quiz, etc.)
+  const isInBlockingPhaseRef = useRef(false);
+
   // ✅ V7-v2: Audio hook with fade capabilities
+  // ✅ V7-v30: Only call onComplete if NOT in blocking phase
   const audio = useV7AudioManager({
     onEnded: () => {
+      // ✅ V7-v30: Check if we're in a blocking interactive phase
+      if (isInBlockingPhaseRef.current) {
+        console.log('[V7PhasePlayer] 🎧 Audio ended but in BLOCKING PHASE - NOT calling onComplete');
+        return;
+      }
       playSound('completion');
       onComplete?.();
     }
@@ -341,33 +353,47 @@ export const V7PhasePlayer = ({
     },
   });
 
-  // ✅ V7-v15 FIX: Lock interactive phases IMMEDIATELY ao entrar
-  // Isso impede que a fase avance pelo tempo, mas o áudio CONTINUA tocando
-  // O lock aqui é sobre FASE, não sobre áudio!
+  // ✅ V7-v30 FIX: Lock interactive phases IMMEDIATELY ao entrar
+  // Isso impede que a fase avance pelo tempo E que onComplete seja chamado quando áudio termina
+  // O lock aqui é sobre FASE e sobre IMPEDIR fim prematuro da aula!
   // CRITICAL: Don't lock when navigating backwards!
   useEffect(() => {
     // ✅ V7-v15: Skip locking if we're navigating backwards
     if (isNavigatingBack) {
       console.log(`[V7PhasePlayer] ⏭️ Skipping lock - navigating backwards`);
+      isInBlockingPhaseRef.current = false;
       return;
     }
     
-    const isInteractivePhase = currentPhase?.type === 'interaction' || currentPhase?.type === 'secret-reveal';
+    // ✅ V7-v30 CRITICAL: Include 'playground' in blocking phases!
+    // These phases BLOCK lesson completion until user explicitly completes them
+    const isBlockingPhase = 
+      currentPhase?.type === 'interaction' || 
+      currentPhase?.type === 'secret-reveal' ||
+      currentPhase?.type === 'playground';  // ← ADDED: Playground must block!
     
     // ✅ V7-v12: Also lock revelation phases that show PERFEITO (requires animation to complete)
     const isRevelationWithPERFEITO = currentPhase?.type === 'revelation' && 
       (currentPhase?.title?.toLowerCase().includes('perfeito') || 
        String((currentPhase?.scenes?.[0]?.content as Record<string, unknown>)?.mainText || '').toLowerCase().includes('perfeito'));
     
-    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase interativa ou revelation PERFEITO
-    // O áudio continua tocando até o anchorText detectar "IA." ou animação PERFEITO terminar
+    // ✅ V7-v30: Update ref for audio onEnded check
+    isInBlockingPhaseRef.current = isBlockingPhase || isRevelationWithPERFEITO;
+    
+    // ✅ CRITICAL: Lock IMEDIATAMENTE ao entrar na fase que bloqueia
+    // O áudio continua tocando até o anchorText detectar a keyword ou interação completar
     // Sem esse lock, a fase mudaria automaticamente antes da interação/animação completar
-    if ((isInteractivePhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
-      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) IMMEDIATELY`);
+    if ((isBlockingPhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
+      console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - BLOCKING lesson completion`);
       setLockedPhaseIndex(currentPhaseIndex);
       setInteractionComplete(false);
     }
-  }, [currentPhase?.type, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
+    
+    // ✅ V7-v30: Log blocking state for debugging
+    if (isBlockingPhase) {
+      console.log(`[V7PhasePlayer] 🛡️ Phase "${currentPhase?.id}" is BLOCKING - audio.onEnded will NOT end lesson`);
+    }
+  }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
   // ✅ V7-v6: Reset lock when interaction completes and advances manually
   useEffect(() => {
@@ -765,9 +791,23 @@ export const V7PhasePlayer = ({
     console.log(`  Current:    "${currentPhase?.id}" (index: ${currentPhaseIndex}, locked: ${lockedPhaseIndex})`);
     console.log(`  Next:       "${nextPhase?.id}" (${nextPhase?.type}) @ ${nextPhase?.startTime?.toFixed(2)}s`);
     console.log(`  Audio at:   ${audio.currentTime?.toFixed(2)}s`);
+    console.log(`  Total phases: ${scaledScript.phases.length}`);
+
+    // ✅ V7-v30: Clear blocking state since we're completing the interaction
+    isInBlockingPhaseRef.current = false;
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
     setInteractionComplete(true);
+
+    // ✅ V7-v30: Check if this is the LAST phase - if so, complete the lesson!
+    if (!nextPhase) {
+      console.log(`[V7PhasePlayer] 🏁 PLAYGROUND is LAST PHASE - completing lesson!`);
+      playSound('completion');
+      setTimeout(() => {
+        onComplete?.();
+      }, 500);
+      return;
+    }
 
     // ✅ V7-vv-v2: ALWAYS seek audio to next phase start for proper sync
     if (hasAudio && nextPhase) {
@@ -793,7 +833,7 @@ export const V7PhasePlayer = ({
     }
 
     setTimeout(() => goToNextPhase(false, effectiveIndex), 1000);
-  }, [playSound, goToNextPhase, hasAudio, audio, manualResume, lockedPhaseIndex, currentPhaseIndex, currentPhase, scaledScript.phases]);
+  }, [playSound, goToNextPhase, hasAudio, audio, manualResume, lockedPhaseIndex, currentPhaseIndex, currentPhase, scaledScript.phases, onComplete]);
 
   // Track if CTA was already clicked to prevent double navigation
   const [ctaClicked, setCtaClicked] = useState(false);
@@ -916,6 +956,19 @@ export const V7PhasePlayer = ({
 
     switch (currentPhase.type) {
       case 'dramatic':
+        // ✅ V7-v33 FIX: Check if this is a text-reveal visual (e.g., "O MÉTODO PERFEITO" transition)
+        const dramaticVisual = (currentPhase as any).visual;
+        if (dramaticVisual?.type === 'text-reveal') {
+          const revealContent = dramaticVisual.content || {};
+          console.log('[V7PhasePlayer] 🎬 DRAMATIC TEXT-REVEAL detected:', revealContent);
+          return (
+            <V7PhaseMethodReveal
+              mainText={revealContent.mainText || 'O MÉTODO'}
+              highlightWord={revealContent.highlightWord || 'PERFEITO'}
+            />
+          );
+        }
+
         // Use combined content from ALL scenes for progressive reveal
         const dramaticContent = getCombinedSceneContent();
         // Get impactWord from scene 5 specifically (impact scene)
@@ -1007,31 +1060,45 @@ export const V7PhasePlayer = ({
             const nextPhaseIndex = effectiveIndex + 1;
             const nextPhase = scaledScript.phases[nextPhaseIndex];
 
-            // Unlock the phase to allow natural progression
+            // ✅ FIX: Unlock and reset state FIRST
             setLockedPhaseIndex(null);
-
-            // Resume via manualResume (which triggers onResume callback)
+            setInteractionComplete(true);
+            
+            // ✅ Resume anchor system BEFORE playing audio
             manualResume();
 
-            // ✅ V7-vv: Seek audio to next phase start and play
-            if (hasAudio && nextPhase) {
-              const nextStartTime = nextPhase.startTime || 0;
-              console.log(`[V7PhasePlayer] CTA: Seeking to next phase @ ${nextStartTime.toFixed(2)}s`);
+            // ✅ V7-vv FIX: GARANTIR que o áudio toca - múltiplas tentativas
+            if (hasAudio) {
+              const nextStartTime = nextPhase?.startTime || audio.currentTime;
+              console.log(`[V7PhasePlayer] CTA: Seeking to ${nextStartTime.toFixed(2)}s and PLAYING`);
+              
+              // Seek to next phase start
               audio.seekTo(nextStartTime);
-
-              // Ensure audio plays after seek
+              
+              // Force play with multiple attempts
+              const forcePlay = () => {
+                // Ensure volume is up
+                audio.setVolume(0.8);
+                audio.play();
+                console.log('[V7PhasePlayer] ▶️ Audio PLAY called');
+              };
+              
+              // Immediate play
+              forcePlay();
+              
+              // Retry after short delays to ensure play works
+              setTimeout(forcePlay, 100);
+              setTimeout(forcePlay, 300);
               setTimeout(() => {
                 if (!audio.isPlaying) {
-                  audio.play();
-                  console.log('[V7PhasePlayer] ▶️ Audio RESUMED after CTA click');
+                  console.log('[V7PhasePlayer] ⚠️ Audio still not playing, forcing again');
+                  forcePlay();
                 }
-              }, 100);
+              }, 500);
             }
 
-            // Navigate to next phase
-            setTimeout(() => {
-              goToPhase(nextPhaseIndex);
-            }, 200);
+            // ✅ FIX: Navigate LAST, after all audio setup
+            goToPhase(nextPhaseIndex);
           };
 
           return (
@@ -1132,57 +1199,118 @@ export const V7PhasePlayer = ({
         );
 
       case 'playground':
-        // Combine content from ALL playground scenes
-        const playgroundContent = getCombinedSceneContent();
+        // ✅ V7-v31 DEFINITIVE FIX: Extract data from phase.interaction AND phase.visual
+        // The database stores playground data in:
+        // - currentPhase.interaction.amateurPrompt / professionalPrompt / comparison
+        // - currentPhase.visual.content.title / subtitle
+        const playgroundInteraction = (currentPhase as any).interaction || {};
+        const playgroundVisual = (currentPhase as any).visual?.content || {};
+        const playgroundSceneContent = getCombinedSceneContent();
 
-        // Extract playground scores from combined content with proper fallbacks
-        const amateurScore = typeof playgroundContent.amateurScore === 'number'
-          ? playgroundContent.amateurScore
-          : (typeof content.amateurScore === 'number' ? content.amateurScore : 10);
-        const professionalScore = typeof playgroundContent.professionalScore === 'number'
-          ? playgroundContent.professionalScore
-          : (typeof content.professionalScore === 'number' ? content.professionalScore : 95);
-        const maxScore = 100;
+        // Log for debugging
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND DATA:');
+        console.log('  interaction:', JSON.stringify(playgroundInteraction, null, 2));
+        console.log('  visual:', JSON.stringify(playgroundVisual, null, 2));
+
+        // ✅ Extract prompts from interaction (primary source from database)
+        const pgAmateurPrompt = playgroundInteraction.amateurPrompt || 
+                                playgroundSceneContent.amateurPrompt || 
+                                content.amateurPrompt || 
+                                'Me dá ideias de negócio';
+        
+        const pgProfessionalPrompt = playgroundInteraction.professionalPrompt || 
+                                     playgroundSceneContent.professionalPrompt || 
+                                     content.professionalPrompt || 
+                                     'prompt profissional estruturado';
+
+        // ✅ Extract comparison results from interaction.comparison
+        const comparison = playgroundInteraction.comparison || {};
+        const amateurComparison = comparison.amateur || {};
+        const professionalComparison = comparison.professional || {};
+
+        // ✅ Extract results - support both direct and comparison formats
+        const pgAmateurResultText = amateurComparison.response || 
+                                    playgroundInteraction.amateurResult?.content ||
+                                    playgroundInteraction.amateurResult ||
+                                    playgroundSceneContent.amateurResult?.content ||
+                                    playgroundSceneContent.amateurResult ||
+                                    content.amateurResult?.content ||
+                                    content.amateurResult ||
+                                    'Resultado genérico do prompt amador...';
+        
+        const pgProfessionalResultText = professionalComparison.response || 
+                                         playgroundInteraction.professionalResult?.content ||
+                                         playgroundInteraction.professionalResult ||
+                                         playgroundSceneContent.professionalResult?.content ||
+                                         playgroundSceneContent.professionalResult ||
+                                         content.professionalResult?.content ||
+                                         content.professionalResult ||
+                                         'Resultado otimizado do prompt profissional...';
+
+        // ✅ Extract scores with proper fallbacks
+        const pgAmateurScore = typeof playgroundInteraction.amateurScore === 'number'
+          ? playgroundInteraction.amateurScore
+          : (typeof playgroundSceneContent.amateurScore === 'number' 
+              ? playgroundSceneContent.amateurScore 
+              : (typeof content.amateurScore === 'number' ? content.amateurScore : 10));
+        
+        const pgProfessionalScore = typeof playgroundInteraction.professionalScore === 'number'
+          ? playgroundInteraction.professionalScore
+          : (typeof playgroundSceneContent.professionalScore === 'number' 
+              ? playgroundSceneContent.professionalScore 
+              : (typeof content.professionalScore === 'number' ? content.professionalScore : 95));
+        
+        const pgMaxScore = 100;
 
         // Determine verdict based on score
-        const getVerdict = (score: number): 'bad' | 'good' | 'excellent' => {
+        const getPlaygroundVerdict = (score: number): 'bad' | 'good' | 'excellent' => {
           if (score < 30) return 'bad';
           if (score < 70) return 'good';
           return 'excellent';
         };
 
-        // Parse result content (handle both string and object formats)
-        const getResultContent = (result: any): string => {
-          if (typeof result === 'string') return result;
-          if (typeof result === 'object' && result?.content) return result.content;
-          return '';
-        };
+        // ✅ Extract title/subtitle from visual.content (primary) or scene content
+        const pgTitle = playgroundVisual.title || 
+                        playgroundSceneContent.mainText || 
+                        content.mainText || 
+                        'A DIFERENÇA NA PRÁTICA';
+        
+        const pgSubtitle = playgroundVisual.subtitle || 
+                           playgroundSceneContent.subtitle || 
+                           content.subtitle || 
+                           currentPhase.title ||
+                           'Prompt amador vs profissional';
 
         // ✅ V7-v2: Extract timeout config for playground (uses perStep)
         const playgroundTimeoutConfig = currentPhase.timeout ? {
-          perStep: currentPhase.timeout.soft, // Use soft timeout as perStep
+          perStep: currentPhase.timeout.soft,
           hints: currentPhase.timeout.hints
         } : undefined;
 
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND FINAL PROPS:');
+        console.log('  title:', pgTitle);
+        console.log('  amateurPrompt:', pgAmateurPrompt);
+        console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
+
         return (
           <V7PhasePlayground
-            challengeTitle={playgroundContent.mainText || content.mainText || 'DESAFIO PRÁTICO'}
-            challengeSubtitle={playgroundContent.subtitle || content.subtitle || currentPhase.title}
-            amateurPrompt={playgroundContent.amateurPrompt || content.amateurPrompt || 'prompt simples'}
+            challengeTitle={pgTitle}
+            challengeSubtitle={pgSubtitle}
+            amateurPrompt={pgAmateurPrompt}
             amateurResult={{
               title: 'Resultado Amador',
-              content: getResultContent(playgroundContent.amateurResult || content.amateurResult) || 'Resultado genérico...',
-              score: amateurScore,
-              maxScore,
-              verdict: getVerdict(amateurScore)
+              content: typeof pgAmateurResultText === 'string' ? pgAmateurResultText : JSON.stringify(pgAmateurResultText),
+              score: pgAmateurScore,
+              maxScore: pgMaxScore,
+              verdict: getPlaygroundVerdict(pgAmateurScore)
             }}
-            professionalPrompt={playgroundContent.professionalPrompt || content.professionalPrompt || 'prompt profissional estruturado'}
+            professionalPrompt={pgProfessionalPrompt}
             professionalResult={{
               title: 'Resultado Profissional',
-              content: getResultContent(playgroundContent.professionalResult || content.professionalResult) || 'Resultado otimizado...',
-              score: professionalScore,
-              maxScore,
-              verdict: getVerdict(professionalScore)
+              content: typeof pgProfessionalResultText === 'string' ? pgProfessionalResultText : JSON.stringify(pgProfessionalResultText),
+              score: pgProfessionalScore,
+              maxScore: pgMaxScore,
+              verdict: getPlaygroundVerdict(pgProfessionalScore)
             }}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
@@ -1390,11 +1518,12 @@ export const V7PhasePlayer = ({
         onNext={goToNextPhase}
         onExit={onExit}
         isVisible={
-          // ✅ V7-v13: Always show controls during revelation/secret-reveal/interaction phases
-          // User needs X button visible during CTA/quiz to exit if needed
+          // ✅ V7-v13: Always show controls during interactive phases
+          // User needs X button visible during CTA/quiz/playground to exit if needed
           currentPhase?.type === 'revelation' ||
           currentPhase?.type === 'secret-reveal' ||
-          currentPhase?.type === 'interaction'
+          currentPhase?.type === 'interaction' ||
+          currentPhase?.type === 'playground'
             ? true
             : (showControls && !isQuizResultShowing)
         }

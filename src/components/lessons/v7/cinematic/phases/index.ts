@@ -11,3 +11,4 @@ export { default as V7PhaseGamification } from './V7PhaseGamification';
 export { default as V7PhaseLoading } from './V7PhaseLoading';
 export { default as V7PhaseCTA } from './V7PhaseCTA';
 export { default as V7PhaseSecretReveal } from './V7PhaseSecretReveal';
+export { default as V7PhaseMethodReveal } from './V7PhaseMethodReveal';

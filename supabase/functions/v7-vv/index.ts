@@ -629,13 +629,14 @@ function generatePhases(
           timeout: scene.interaction.timeout,
         };
       } else if (scene.interaction.type === 'playground') {
+        // ✅ V7-vv FIX: Copiar TODOS os campos do playground
         phase.interaction = {
           type: 'playground',
           amateurPrompt: scene.interaction.amateurPrompt,
           professionalPrompt: scene.interaction.professionalPrompt,
           amateurResult: scene.interaction.amateurResult,
           professionalResult: scene.interaction.professionalResult,
-          // V7-vv: Copy all playground fields for complete data
+          // V7-vv: Campos adicionados para playground completo:
           amateurScore: scene.interaction.amateurScore,
           professionalScore: scene.interaction.professionalScore,
           comparison: scene.interaction.comparison,
