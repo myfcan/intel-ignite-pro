@@ -712,11 +712,26 @@ export const V7PhasePlayer = ({
       manualResume();
 
       // ✅ Resume audio after seek - SEMPRE, para qualquer fase
+      // IMPORTANTE: Usar delay maior e retry para garantir que o play funcione
       if (hasAudio) {
-        setTimeout(() => {
+        const attemptPlay = (attempt: number) => {
+          console.log(`[V7PhasePlayer] 🎵 Attempt ${attempt} to resume audio...`);
           audio.play();
-          console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
-        }, 150);
+          
+          // Verificar se realmente está tocando após 100ms
+          setTimeout(() => {
+            if (!audio.isPlaying) {
+              console.warn(`[V7PhasePlayer] ⚠️ Audio still not playing after attempt ${attempt}`);
+              if (attempt < 3) {
+                attemptPlay(attempt + 1);
+              }
+            } else {
+              console.log(`[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ${audio.currentTime?.toFixed(2)}s (attempt ${attempt})`);
+            }
+          }, 100);
+        };
+        
+        setTimeout(() => attemptPlay(1), 200);
       }
 
       // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
