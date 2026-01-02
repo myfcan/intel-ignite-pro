@@ -44,7 +44,8 @@ const positionStyles: Record<string, React.CSSProperties> = {
 };
 
 // ✅ CINEMATIC Animation variants using V7CinematicEffects principles
-const getAnimationVariants = (type: string, animation?: string) => {
+// Return type is explicit to avoid TypeScript inference issues with framer-motion
+const getAnimationVariants = (type: string, animation?: string): Record<string, any> => {
   // Custom animation from content
   if (animation === 'zoom-in') {
     return {
@@ -95,7 +96,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           opacity: 1,
           y: 0,
           rotateX: 0,
-          transition: { type: 'spring', stiffness: 400, damping: 15 }
+          transition: { type: 'spring' as const, stiffness: 400, damping: 15 }
         },
         exit: { scale: 0.7, opacity: 0, y: -30, transition: { duration: 0.25 } },
       };
@@ -107,7 +108,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           scale: 1,
           opacity: 1,
           y: 0,
-          transition: { type: 'spring', stiffness: 150, damping: 12 }
+          transition: { type: 'spring' as const, stiffness: 150, damping: 12 }
         },
         exit: { scale: 1.8, opacity: 0, transition: { duration: 0.5, ease: EASING.dramatic } },
       };
@@ -143,7 +144,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           opacity: 1,
           rotateX: 0,
           scale: 1,
-          transition: { type: 'spring', stiffness: 120, damping: 18 }
+          transition: { type: 'spring' as const, stiffness: 120, damping: 18 }
         },
         exit: { y: -60, opacity: 0, scale: 0.95, transition: { duration: 0.35 } },
       };
@@ -155,7 +156,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           scale: 1,
           opacity: 1,
           rotate: 0,
-          transition: { type: 'spring', stiffness: 250, damping: 14 }
+          transition: { type: 'spring' as const, stiffness: 250, damping: 14 }
         },
         exit: { scale: 0.6, opacity: 0, rotate: 45, transition: { duration: 0.2 } },
       };
