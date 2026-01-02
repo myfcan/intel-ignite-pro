@@ -1,12 +1,15 @@
 /**
  * V7UserChallengeInput - Componente de input real para o desafio do usuário
  * O usuário escreve seu prompt e recebe feedback da IA em tempo real
+ * ✅ V7-v27: Integrado com sistema de achievements
  */
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Send, Sparkles, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react';
+import { usePromptAchievements, type PromptAchievement } from '@/hooks/usePromptAchievements';
+import { V7AchievementToast } from './V7AchievementToast';
 
 interface UserChallenge {
   instruction: string;
@@ -36,6 +39,10 @@ export const V7UserChallengeInput = ({
   const [aiFeedback, setAIFeedback] = useState<AIFeedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showHints, setShowHints] = useState(false);
+  const [earnedAchievements, setEarnedAchievements] = useState<PromptAchievement[]>([]);
+  const [showAchievementToast, setShowAchievementToast] = useState(false);
+
+  const { checkAndAwardAchievements } = usePromptAchievements();
 
   const handleSubmit = useCallback(async () => {
     if (!userPrompt.trim() || isSubmitting) return;
@@ -77,13 +84,20 @@ export const V7UserChallengeInput = ({
         feedback: data.aiFeedback,
         score
       });
+
+      // ✅ V7-v27: Verificar e atribuir achievements
+      const achievements = await checkAndAwardAchievements(score, lessonId);
+      if (achievements.length > 0) {
+        setEarnedAchievements(achievements);
+        setShowAchievementToast(true);
+      }
     } catch (err) {
       console.error('Error getting AI feedback:', err);
       setError(err instanceof Error ? err.message : 'Erro ao processar seu prompt');
     } finally {
       setIsSubmitting(false);
     }
-  }, [userPrompt, lessonId, isSubmitting]);
+  }, [userPrompt, lessonId, isSubmitting, checkAndAwardAchievements]);
 
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-green-400';
@@ -98,7 +112,16 @@ export const V7UserChallengeInput = ({
   };
 
   return (
-    <div className="space-y-4">
+    <>
+      {/* Achievement Toast */}
+      {showAchievementToast && (
+        <V7AchievementToast
+          achievements={earnedAchievements}
+          onClose={() => setShowAchievementToast(false)}
+        />
+      )}
+
+      <div className="space-y-4">
       {/* Header com instrução */}
       <div className="text-center mb-4">
         <motion.p 
@@ -291,7 +314,8 @@ export const V7UserChallengeInput = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 };
 
