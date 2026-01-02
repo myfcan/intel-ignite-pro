@@ -150,7 +150,7 @@ export const V7PhasePERFEITOSynced = ({
   }, [currentTime, wordTimestamps, exitAnchor, onComplete, playSound]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden py-4">
+    <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden py-4 pb-44 sm:pb-48">
       {/* Subtle ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-1000"

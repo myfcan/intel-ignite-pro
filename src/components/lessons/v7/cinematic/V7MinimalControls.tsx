@@ -95,9 +95,9 @@ export const V7MinimalControls = ({
         </motion.button>
       )}
 
-      {/* Unified Control Bar - Bottom Center */}
+      {/* Unified Control Bar - Bottom Center - More breathing room from edge */}
       <motion.div
-        className="fixed bottom-4 left-0 right-0 z-[100] flex justify-center px-4"
+        className="fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] flex justify-center px-4"
         initial={{ opacity: 0, y: 30 }}
         animate={{ 
           opacity: isVisible ? 1 : 0, 
