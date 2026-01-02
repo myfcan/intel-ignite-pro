@@ -184,15 +184,19 @@ export const V7UserChallengeInput = ({
           )}
         </AnimatePresence>
 
-        {/* Input do usuário - altura fixa responsiva */}
-        <textarea
-          value={userPrompt}
-          onChange={(e) => setUserPrompt(e.target.value)}
-          placeholder="Escreva seu prompt profissional aqui..."
-          disabled={isSubmitting || !!aiFeedback}
-          className="w-full h-20 sm:h-24 bg-black/40 border border-cyan-500/30 rounded-lg p-2 sm:p-3 text-white placeholder-white/30 font-mono text-xs sm:text-sm resize-none focus:outline-none focus:border-cyan-500/60 transition-colors disabled:opacity-50"
-          onKeyDown={(e) => e.stopPropagation()}
-        />
+        {/* Input do usuário - altura fixa responsiva - DESTAQUE VISUAL */}
+        <div className="relative">
+          <textarea
+            value={userPrompt}
+            onChange={(e) => setUserPrompt(e.target.value)}
+            placeholder="Escreva seu prompt profissional aqui..."
+            disabled={isSubmitting || !!aiFeedback}
+            className="w-full h-24 sm:h-28 bg-black/60 border-2 border-cyan-400/50 rounded-xl p-3 sm:p-4 text-white placeholder-white/50 font-mono text-sm sm:text-base resize-none focus:outline-none focus:border-cyan-400 focus:bg-black/70 transition-all duration-200 disabled:opacity-50 shadow-[0_0_20px_rgba(34,211,238,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          {/* Glow effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
+        </div>
 
         {/* Erro */}
         <AnimatePresence>
