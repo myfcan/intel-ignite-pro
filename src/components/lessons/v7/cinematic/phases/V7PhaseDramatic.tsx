@@ -214,7 +214,7 @@ export const V7PhaseDramatic = ({
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.h2
-              className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-wide text-center px-4"
+              className="text-xl sm:text-3xl md:text-4xl lg:text-6xl font-black text-white tracking-wide text-center px-6 max-w-[90vw] mx-auto break-words"
               style={{
                 textShadow: `0 0 40px ${colors.glow}, 0 0 80px ${colors.glow}`,
               }}

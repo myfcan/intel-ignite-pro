@@ -205,13 +205,13 @@ export const V7PhasePlayground = ({
 
   const getButtonText = () => {
     switch (currentStep) {
-      case 0: return 'Ver Prompt Amador →';
-      case 1: return 'Ver Resultado →';
-      case 2: return 'Ver Prompt Profissional →';
-      case 3: return 'Ver Resultado →';
-      case 4: return 'Ver Comparação →';
-      case 5: return userChallenge ? 'Aceitar o Desafio →' : 'Continuar Aula →';
-      case 6: return 'Finalizar Aula →';
+      case 0: return 'Ver Prompt Amador';
+      case 1: return 'Ver Resultado';
+      case 2: return 'Ver Prompt Profissional';
+      case 3: return 'Ver Resultado';
+      case 4: return 'Ver Comparação';
+      case 5: return userChallenge ? 'Aceitar o Desafio' : 'Continuar Aula';
+      case 6: return 'Finalizar Aula';
     }
   };
 

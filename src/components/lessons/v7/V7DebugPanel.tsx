@@ -68,9 +68,14 @@ export const V7DebugPanel = ({
     }
   };
 
+  // ✅ FIX: Só mostrar debug em desenvolvimento
+  const isDev = import.meta.env.DEV;
+  
+  if (!isDev) return null;
+
   return (
     <>
-      {/* Toggle Button - ALWAYS VISIBLE, HIGH Z-INDEX */}
+      {/* Toggle Button - ONLY IN DEV MODE */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-4 right-4 z-[9999] bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold"
