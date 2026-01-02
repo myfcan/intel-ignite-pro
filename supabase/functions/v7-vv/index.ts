@@ -636,7 +636,7 @@ function generatePhases(
           professionalPrompt: scene.interaction.professionalPrompt,
           amateurResult: scene.interaction.amateurResult,
           professionalResult: scene.interaction.professionalResult,
-          // Campos adicionados:
+          // V7-vv: Campos adicionados para playground completo:
           amateurScore: scene.interaction.amateurScore,
           professionalScore: scene.interaction.professionalScore,
           comparison: scene.interaction.comparison,
