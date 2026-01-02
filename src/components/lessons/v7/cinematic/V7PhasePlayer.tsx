@@ -22,6 +22,7 @@ import V7PhaseCTA from './phases/V7PhaseCTA';
 import V7PhasePERFEITO from './phases/V7PhasePERFEITO';
 import V7PhasePERFEITOSynced from './phases/V7PhasePERFEITOSynced';
 import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
+import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import {
@@ -955,6 +956,19 @@ export const V7PhasePlayer = ({
 
     switch (currentPhase.type) {
       case 'dramatic':
+        // ✅ V7-v33 FIX: Check if this is a text-reveal visual (e.g., "O MÉTODO PERFEITO" transition)
+        const dramaticVisual = (currentPhase as any).visual;
+        if (dramaticVisual?.type === 'text-reveal') {
+          const revealContent = dramaticVisual.content || {};
+          console.log('[V7PhasePlayer] 🎬 DRAMATIC TEXT-REVEAL detected:', revealContent);
+          return (
+            <V7PhaseMethodReveal
+              mainText={revealContent.mainText || 'O MÉTODO'}
+              highlightWord={revealContent.highlightWord || 'PERFEITO'}
+            />
+          );
+        }
+
         // Use combined content from ALL scenes for progressive reveal
         const dramaticContent = getCombinedSceneContent();
         // Get impactWord from scene 5 specifically (impact scene)
