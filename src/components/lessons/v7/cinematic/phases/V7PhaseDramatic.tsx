@@ -214,9 +214,9 @@ export const V7PhaseDramatic = ({
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.h2
-              className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-wide text-center px-4"
+              className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-wide text-center px-4"
               style={{
-                textShadow: `0 0 60px ${colors.glow}, 0 0 120px ${colors.glow}`,
+                textShadow: `0 0 40px ${colors.glow}, 0 0 80px ${colors.glow}`,
               }}
               animate={{
                 scale: [1, 1.05, 1],
@@ -308,7 +308,7 @@ export const V7PhaseDramatic = ({
         <AnimatePresence>
           {showNumberGlow && (
             <motion.div
-              className="text-[20vw] sm:text-[25vw] font-black leading-none select-none"
+              className="text-[18vw] sm:text-[22vw] md:text-[25vw] font-black leading-none select-none"
               style={{
                 background: colors.gradient,
                 WebkitBackgroundClip: 'text',
@@ -334,7 +334,7 @@ export const V7PhaseDramatic = ({
         <AnimatePresence>
           {showSubtitle && subtitle && subtitle.length > 0 && (
             <motion.div
-              className="mt-4 text-lg sm:text-2xl md:text-3xl"
+              className="mt-2 sm:mt-4 text-sm sm:text-lg md:text-2xl lg:text-3xl px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >

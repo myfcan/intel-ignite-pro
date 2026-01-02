@@ -473,21 +473,21 @@ export const V7PhaseQuiz = ({
 
   // ✅ V7-v15: Quando resultado aparece, container usa justify-center e esconde opções
   return (
-    <div className={`w-full h-full flex flex-col items-center p-4 sm:p-6 pb-28 relative overflow-hidden ${showResult ? 'justify-center' : 'justify-start pt-6 sm:pt-10'}`}>
+    <div className={`w-full h-full flex flex-col items-center p-3 sm:p-4 md:p-6 pb-28 relative overflow-hidden ${showResult ? 'justify-center' : 'justify-start pt-4 sm:pt-6 md:pt-10'}`}>
       <div className="w-full max-w-2xl">
         {/* ✅ V7-v15: Quiz Header - Escondido quando resultado aparece */}
         {!showResult && (
           <motion.div
-            className="text-center mb-6"
+            className="text-center mb-3 sm:mb-4 md:mb-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -20 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 px-2">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-white/60">{subtitle}</p>
+              <p className="text-white/60 text-xs sm:text-sm">{subtitle}</p>
             )}
           </motion.div>
         )}
@@ -579,8 +579,8 @@ export const V7PhaseQuiz = ({
                     <motion.div
                       key={option.id}
                       className={`
-                        min-h-[48px] sm:min-h-[56px]
-                      relative flex items-center gap-4 p-4 rounded-xl
+                        min-h-[40px] sm:min-h-[48px] md:min-h-[56px]
+                      relative flex items-center gap-2 sm:gap-3 md:gap-4 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl
                       border-2 transition-all overflow-hidden
                       ${isOptionDisabled 
                         ? 'cursor-not-allowed opacity-50 border-white/5 bg-white/[0.01]'
@@ -612,7 +612,7 @@ export const V7PhaseQuiz = ({
                     {/* Checkbox */}
                     <motion.div
                       className={`
-                        w-6 h-6 rounded-md border-2 flex items-center justify-center
+                        w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 flex items-center justify-center
                         transition-colors flex-shrink-0
                         ${isOptionDisabled
                           ? 'border-white/10'
@@ -634,7 +634,7 @@ export const V7PhaseQuiz = ({
                       <AnimatePresence>
                         {isSelected && (
                           <motion.span
-                            className="text-white text-sm font-bold"
+                            className="text-white text-xs sm:text-sm font-bold"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
@@ -645,7 +645,7 @@ export const V7PhaseQuiz = ({
                       </AnimatePresence>
                     </motion.div>
 
-                    <span className={`${isOptionDisabled ? 'text-white/50' : 'text-white/90'}`}>{option.text}</span>
+                    <span className={`text-sm sm:text-base ${isOptionDisabled ? 'text-white/50' : 'text-white/90'}`}>{option.text}</span>
 
                     {/* Feedback indicator */}
                     {showFeedback && isSelected && (

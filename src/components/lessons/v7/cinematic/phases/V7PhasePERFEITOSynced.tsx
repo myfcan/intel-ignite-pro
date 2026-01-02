@@ -175,9 +175,9 @@ export const V7PhasePERFEITOSynced = ({
         </span>
       </div>
 
-      {/* PERFEITO Vertical Layout - COMPACT for better fit */}
+      {/* PERFEITO Vertical Layout - COMPACT for mobile */}
       <div
-        className="flex flex-col items-start gap-1.5 sm:gap-2 transition-all duration-700"
+        className="flex flex-col items-start gap-1 sm:gap-1.5 md:gap-2 transition-all duration-700"
         style={{ 
           opacity: showContent ? 1 : 0,
           transform: showContent ? 'translateY(0)' : 'translateY(20px)',
@@ -192,9 +192,9 @@ export const V7PhasePERFEITOSynced = ({
               key={index}
               className="flex items-center gap-3 sm:gap-5"
             >
-              {/* Letter - SMALLER to fit 8 items on screen */}
+              {/* Letter - SMALLER for mobile */}
               <span
-                className="text-3xl sm:text-4xl md:text-5xl font-black transition-all duration-500 min-w-[36px] sm:min-w-[48px] md:min-w-[56px] text-center"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black transition-all duration-500 min-w-[28px] sm:min-w-[36px] md:min-w-[48px] lg:min-w-[56px] text-center"
                 style={{
                   color: isRevealed ? '#22D3EE' : 'rgba(255, 255, 255, 0.25)',
                   textShadow: isRevealed 
@@ -215,7 +215,7 @@ export const V7PhasePERFEITOSynced = ({
                 }}
               >
                 <span 
-                  className="text-lg sm:text-xl md:text-2xl font-bold text-white transition-all duration-300"
+                  className="text-sm sm:text-base md:text-xl lg:text-2xl font-bold text-white transition-all duration-300"
                   style={{
                     textShadow: isNew ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
                   }}
@@ -223,7 +223,7 @@ export const V7PhasePERFEITOSynced = ({
                   {item.meaning}
                 </span>
                 <span 
-                  className="text-xs sm:text-sm font-light -mt-0.5"
+                  className="text-[10px] sm:text-xs md:text-sm font-light -mt-0.5"
                   style={{ 
                     color: isRevealed ? '#00d9a6' : 'rgba(100, 100, 100, 0.4)',
                   }}
