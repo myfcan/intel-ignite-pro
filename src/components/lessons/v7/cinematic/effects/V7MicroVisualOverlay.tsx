@@ -30,18 +30,23 @@ interface V7MicroVisualOverlayProps {
   visualType?: string; // Type of main visual for smart positioning
 }
 
-// Position mapping for micro-visuals - V7-v25: text-pop centralizado abaixo do VS header
+// Position mapping for micro-visuals - V7-v33: Posições que NÃO sobrepõem conteúdo principal
+// Micro-visuals devem aparecer em áreas periféricas, não no centro da tela
 const positionStyles: Record<string, React.CSSProperties> = {
-  center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
-  top: { top: '12%', left: '50%', transform: 'translateX(-50%)' },
-  // ✅ V7-v25: 'bottom' agora fica no meio-baixo da tela (55% do topo = abaixo do header VS)
-  bottom: { top: '55%', left: '50%', transform: 'translate(-50%, -50%)' },
-  left: { top: '50%', left: '12%', transform: 'translateY(-50%)' },
-  right: { top: '50%', right: '12%', transform: 'translateY(-50%)' },
-  'top-left': { top: '15%', left: '15%' },
-  'top-right': { top: '15%', right: '15%' },
-  'bottom-left': { bottom: '28%', left: '15%' },
-  'bottom-right': { bottom: '28%', right: '15%' },
+  // Centro agora é mais alto para não sobrepor conteúdo VS
+  center: { top: '35%', left: '50%', transform: 'translate(-50%, -50%)' },
+  // Topo da tela - área segura
+  top: { top: '8%', left: '50%', transform: 'translateX(-50%)' },
+  // Bottom agora é bem acima do player (75% da altura = 25% de baixo)
+  bottom: { top: '70%', left: '50%', transform: 'translate(-50%, -50%)' },
+  // Laterais - ajustadas para não sobrepor conteúdo
+  left: { top: '40%', left: '5%', transform: 'translateY(-50%)' },
+  right: { top: '40%', right: '5%', transform: 'translateY(-50%)' },
+  // Cantos - áreas mais seguras
+  'top-left': { top: '10%', left: '10%' },
+  'top-right': { top: '10%', right: '10%' },
+  'bottom-left': { bottom: '20%', left: '10%' },
+  'bottom-right': { bottom: '20%', right: '10%' },
 };
 
 // ✅ CINEMATIC Animation variants using V7CinematicEffects principles
@@ -296,32 +301,39 @@ const CountingNumber: React.FC<{ from: number; to: number; prefix?: string; suff
 };
 
 const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentTime, visualType }) => {
-  // V7-vv: Smart positioning based on type and visual context
+  // V7-v33: Smart positioning - EVITAR sobreposição com conteúdo principal
   const getPosition = () => {
     const { type, content } = microVisual;
 
-    // For highlight type, side determines position
-    if (type === 'highlight' && content.side) {
-      return content.side; // 'left' or 'right'
-    }
-
-    // For split-screen visual, adjust positioning
-    if (visualType === 'split-screen') {
-      if (content.side === 'left') return 'left';
-      if (content.side === 'right') return 'right';
-    }
-
-    // Use explicit position or default based on type
+    // ✅ Posição explícita tem prioridade
     if (content.position) return content.position;
 
-    // Smart defaults per type - V7-v24: text-pop vai para bottom para não sobrepor header
+    // ✅ V7-v33: Para split-screen/comparison, usar cantos superiores (não centro)
+    if (visualType === 'split-screen' || visualType === 'comparison') {
+      if (content.side === 'left') return 'top-left';
+      if (content.side === 'right') return 'top-right';
+      // Default para split-screen: topo (acima do VS)
+      return 'top';
+    }
+
+    // ✅ V7-v33: Para quiz, posicionar nos cantos para não cobrir opções
+    if (visualType === 'quiz') {
+      return 'top';
+    }
+
+    // For highlight type, side determines position
+    if (type === 'highlight' && content.side) {
+      return content.side === 'left' ? 'top-left' : 'top-right';
+    }
+
+    // ✅ V7-v33: Smart defaults - preferir topo e cantos
     switch (type) {
-      case 'image-flash': return 'center';
-      case 'text-pop': return 'bottom'; // ✅ V7-v24: Changed from 'center' to 'bottom'
-      case 'number-count': return 'center';
-      case 'highlight': return 'left';
-      case 'text-highlight': return 'bottom';
-      default: return 'center';
+      case 'image-flash': return 'top'; // Antes era 'center'
+      case 'text-pop': return 'top';    // Antes era 'bottom' que ainda sobrepunha
+      case 'number-count': return 'top';
+      case 'highlight': return 'top-left';
+      case 'text-highlight': return 'top';
+      default: return 'top';
     }
   };
 
