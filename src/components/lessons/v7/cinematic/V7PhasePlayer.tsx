@@ -1292,6 +1292,17 @@ export const V7PhasePlayer = ({
         console.log('  amateurPrompt:', pgAmateurPrompt);
         console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
 
+        // ✅ V7-vv: Extract userChallenge from interaction
+        const pgUserChallenge = playgroundInteraction.userChallenge ? {
+          instruction: playgroundInteraction.userChallenge.instruction || 'Agora é sua vez!',
+          challengePrompt: playgroundInteraction.userChallenge.challengePrompt || '',
+          hints: Array.isArray(playgroundInteraction.userChallenge.hints) 
+            ? playgroundInteraction.userChallenge.hints 
+            : []
+        } : undefined;
+
+        console.log('[V7PhasePlayer] 🎮 userChallenge:', pgUserChallenge);
+
         return (
           <V7PhasePlayground
             challengeTitle={pgTitle}
@@ -1317,6 +1328,7 @@ export const V7PhasePlayer = ({
             onComplete={handlePlaygroundComplete}
             audioControl={audio}
             timeoutConfig={playgroundTimeoutConfig}
+            userChallenge={pgUserChallenge}
           />
         );
 
