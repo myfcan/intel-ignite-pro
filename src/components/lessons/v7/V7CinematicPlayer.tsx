@@ -266,7 +266,7 @@ export const V7CinematicPlayer = ({
       if (time >= lesson.duration) {
         pause();
         setPlayerState((prev) => ({ ...prev, currentTime: lesson.duration }));
-        trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState });
+        trackEvent({ type: 'complete', timestamp: Date.now(), data: playerState as unknown as Record<string, unknown> });
 
         if (onComplete) {
           onComplete(playerState);
