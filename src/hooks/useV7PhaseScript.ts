@@ -433,6 +433,40 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       console.log('[useV7PhaseScript] Audio duration from timestamps:', audioDurationFromTimestamps);
       console.log('[useV7PhaseScript] Total duration used:', totalDuration);
 
+      // ============================================================================
+      // ✅ V7-v32 SAFETY NET: DOUBLE-CHECK - Se ainda tiver content.phases, USAR!
+      // Isso é uma segunda linha de defesa caso a detecção anterior tenha falhado
+      // ============================================================================
+      const emergencyPhasesCheck = (content as any)?.phases;
+      if (Array.isArray(emergencyPhasesCheck) && emergencyPhasesCheck.length > 0) {
+        console.error('[useV7PhaseScript] 🚨🚨🚨 SAFETY NET TRIGGERED! V7-vv detection failed but content.phases exists!');
+        console.log('[useV7PhaseScript] 🚨 Redirecting to V7-vv path via emergency route');
+        
+        const contentObj = content as any;
+        const emergencyDuration = contentObj.metadata?.totalDuration ||
+          (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
+        const emergencyAudioUrl = data.audio_url || contentObj.audioConfig?.url || '';
+        
+        const emergencyScript: V7LessonScript = {
+          id: data.id,
+          title: contentObj.metadata?.title || data.title,
+          totalDuration: emergencyDuration,
+          audioUrl: emergencyAudioUrl,
+          wordTimestamps: timestamps,
+          phases: emergencyPhasesCheck,
+          audioConfig: { mainAudioUrl: emergencyAudioUrl },
+          anchorPoints: [],
+        };
+        
+        setDetectionPath('emergency');
+        setFeedbackAudios(contentObj.audio?.feedbackAudios || null);
+        setScript(emergencyScript);
+        setAudioUrl(data.audio_url || null);
+        setWordTimestamps(timestamps);
+        setIsLoading(false);
+        return; // ✅ EMERGENCY EXIT - Never reach legacy code!
+      }
+
       // ✅ V7-v3: Use new transformation for phases array, otherwise use legacy acts
       let phases: V7Phase[];
       if (isV7v3Format) {
