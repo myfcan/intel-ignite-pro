@@ -30,17 +30,17 @@ interface V7MicroVisualOverlayProps {
   visualType?: string; // Type of main visual for smart positioning
 }
 
-// Position mapping for micro-visuals
+// Position mapping for micro-visuals - V7-v24: Adjusted bottom to avoid player controls
 const positionStyles: Record<string, React.CSSProperties> = {
   center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
   top: { top: '12%', left: '50%', transform: 'translateX(-50%)' },
-  bottom: { bottom: '15%', left: '50%', transform: 'translateX(-50%)' },
+  bottom: { bottom: '28%', left: '50%', transform: 'translateX(-50%)' }, // ✅ V7-v24: Changed from 15% to 28% to avoid player
   left: { top: '50%', left: '12%', transform: 'translateY(-50%)' },
   right: { top: '50%', right: '12%', transform: 'translateY(-50%)' },
   'top-left': { top: '15%', left: '15%' },
   'top-right': { top: '15%', right: '15%' },
-  'bottom-left': { bottom: '20%', left: '15%' },
-  'bottom-right': { bottom: '20%', right: '15%' },
+  'bottom-left': { bottom: '28%', left: '15%' },
+  'bottom-right': { bottom: '28%', right: '15%' },
 };
 
 // ✅ CINEMATIC Animation variants using V7CinematicEffects principles
@@ -313,10 +313,10 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
     // Use explicit position or default based on type
     if (content.position) return content.position;
 
-    // Smart defaults per type
+    // Smart defaults per type - V7-v24: text-pop vai para bottom para não sobrepor header
     switch (type) {
       case 'image-flash': return 'center';
-      case 'text-pop': return 'center';
+      case 'text-pop': return 'bottom'; // ✅ V7-v24: Changed from 'center' to 'bottom'
       case 'number-count': return 'center';
       case 'highlight': return 'left';
       case 'text-highlight': return 'bottom';
