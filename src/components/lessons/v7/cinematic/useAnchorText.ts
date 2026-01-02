@@ -339,9 +339,14 @@ export function useAnchorText({
         continue;
       }
 
-      // Para ações de pause, só monitora se estiver tocando
-      if (action.type === 'pause' && !isPlaying) {
-        console.log(`[AnchorText] ⏸️ Skipping pause action "${action.keyword}" - not playing`);
+      // ✅ V7-v33 FIX: Removido check de isPlaying para ações de pause
+      // MOTIVO: Quando áudio termina naturalmente (onEnded), isPlaying fica false imediatamente
+      // Mas ainda queremos executar a ação de pause para sinalizar ao sistema que é uma fase blocking
+      // O áudio terminar naturalmente NÃO deve pular a ação de pause - queremos marcar isPausedByAnchor = true
+      // ANTES: if (action.type === 'pause' && !isPlaying) continue; ← isso causava o bug
+      // AGORA: Só pula se já estamos pausados E a ação já foi executada
+      if (action.type === 'pause' && stateRef.current.pausedByAnchor) {
+        console.log(`[AnchorText] ⏸️ Skipping pause action "${action.keyword}" - already paused by anchor`);
         continue;
       }
 
