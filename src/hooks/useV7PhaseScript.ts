@@ -273,6 +273,16 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ============================================================================
       let rawContent = data.content;
       
+      // ============================================================================
+      // 🔧 CRITICAL FIX: Garantir que content é objeto válido
+      // ============================================================================
+      console.log('[useV7PhaseScript] 🔍 RAW CONTENT DEBUG:', {
+        rawContentType: typeof rawContent,
+        rawContentIsNull: rawContent === null,
+        rawContentIsUndefined: rawContent === undefined,
+        rawContentConstructor: rawContent?.constructor?.name
+      });
+      
       // Se content veio como string, fazer parse
       if (typeof rawContent === 'string') {
         try {
@@ -286,6 +296,15 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
       // ✅ GARANTIA ABSOLUTA: Verificar phases IMEDIATAMENTE após parse
       const rawContentObj = rawContent as Record<string, any>;
+      
+      // 🔍 ULTRA DEBUG - Verificar TODAS as formas de acessar phases
+      console.log('[useV7PhaseScript] 🔍 ULTRA DEBUG - Acessando phases de várias formas:', {
+        direct: rawContentObj?.phases,
+        hasOwn: rawContentObj ? Object.prototype.hasOwnProperty.call(rawContentObj, 'phases') : false,
+        keys: rawContentObj ? Object.keys(rawContentObj) : [],
+        stringified: rawContentObj ? JSON.stringify(rawContentObj).substring(0, 200) : 'null'
+      });
+      
       const directPhasesCheck = rawContentObj?.phases;
       
       console.log('[useV7PhaseScript] 🔍 DIRECT PHASES CHECK:', {
@@ -313,24 +332,28 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       }
 
       // ============================================================================
-      // ✅ V7-vv DETECTION: DEFINITIVA - ÚNICO CAMINHO PARA PHASES
-      // Se a aula tem content.phases, é V7-vv. Ponto final. Sem exceções.
+      // ✅ V7-vv DETECTION: DEFINITIVA - VERIFICAÇÃO MAIS ROBUSTA
       // ============================================================================
       
       // ✅ DEBUG: Save raw content for V7DebugPanel
       setRawContent(content);
 
-      // 🔍 DEBUG: Mostrar EXATAMENTE o que recebemos
-      console.log('[useV7PhaseScript] 🔍 CONTENT ANALYSIS (DEFINITIVO):');
-      console.log('[useV7PhaseScript] - content exists:', !!content);
-      console.log('[useV7PhaseScript] - content type:', typeof content);
-      console.log('[useV7PhaseScript] - content keys:', content ? Object.keys(content as object) : 'null');
+      // 🔍 Acessar phases de múltiplas formas para garantir detecção
+      const phasesFromRaw = rawContentObj?.phases;
+      const phasesFromContent = (content as any)?.phases;
+      const phasesFromDirect = directPhasesCheck;
       
-      // Acessar phases diretamente do objeto
-      const phasesArray = (content as any)?.phases;
-      console.log('[useV7PhaseScript] - phases exists:', !!phasesArray);
-      console.log('[useV7PhaseScript] - phases is Array:', Array.isArray(phasesArray));
-      console.log('[useV7PhaseScript] - phases length:', Array.isArray(phasesArray) ? phasesArray.length : 'N/A');
+      // Usar o primeiro que funcionar
+      const phasesArray = phasesFromRaw || phasesFromContent || phasesFromDirect;
+      
+      console.log('[useV7PhaseScript] 🔍 MULTI-PATH DETECTION:', {
+        fromRaw: !!phasesFromRaw,
+        fromContent: !!phasesFromContent,
+        fromDirect: !!phasesFromDirect,
+        finalArray: !!phasesArray,
+        isArray: Array.isArray(phasesArray),
+        length: Array.isArray(phasesArray) ? phasesArray.length : 'N/A'
+      });
 
       // ============================================================================
       // 🎬 CAMINHO ÚNICO V7-vv: Se tem phases[], USAR DIRETAMENTE!
