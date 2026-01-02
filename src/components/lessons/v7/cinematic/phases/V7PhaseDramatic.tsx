@@ -82,6 +82,8 @@ export const V7PhaseDramatic = ({
   const showCountUp = sceneIndex >= 1; // ✅ Count-up começa mais cedo
   const showExplosion = sceneIndex >= 0; // ✅ Partículas desde o início!
   const showSubtitle = sceneIndex >= 3;
+  // ✅ FIX: Mostrar o 2% (secondaryNumber) a partir da cena 2, não apenas no impact (cena 4)
+  const showSecondaryNumber = sceneIndex >= 2 && secondaryNumber;
   const showImpact = sceneIndex >= 4;
 
   // Debug log for scene transitions
@@ -349,9 +351,9 @@ export const V7PhaseDramatic = ({
           )}
         </AnimatePresence>
 
-        {/* Secondary Number (2%) - shows as contrast during impact scene */}
+        {/* Secondary Number (2%) - ✅ FIX: shows earlier during scene 2+ */}
         <AnimatePresence>
-          {showImpact && secondaryNumber && (
+          {showSecondaryNumber && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-4 sm:gap-8"
               initial={{ opacity: 0, y: 30 }}
@@ -368,7 +370,7 @@ export const V7PhaseDramatic = ({
                   filter: `drop-shadow(0 0 20px ${colors.glow})`,
                 }}
                 initial={{ scale: 1 }}
-                animate={{ scale: 0.6, opacity: 0.7 }}
+                animate={{ scale: showImpact ? 0.6 : 0.8, opacity: showImpact ? 0.7 : 0.9 }}
               >
                 {mainNumber}
               </motion.div>

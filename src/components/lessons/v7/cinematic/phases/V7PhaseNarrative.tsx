@@ -105,27 +105,27 @@ export const V7PhaseNarrative = ({
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden min-h-screen">
-      {/* Split Screen Header - Estrutura reorganizada para centralização */}
+      {/* Split Screen Header - ✅ FIX: Estrutura simétrica para centralização perfeita */}
       <motion.div
-        className="flex flex-col items-center mb-8"
+        className="flex flex-col items-center mb-8 w-full max-w-3xl"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -30 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Row 1: Emojis + VS */}
-        <div className="flex items-center justify-center gap-8 sm:gap-16 mb-4">
-          {/* Left Emoji */}
+        {/* Row 1: Emojis + VS - Grid simétrico com 3 colunas iguais */}
+        <div className="grid grid-cols-3 items-center justify-items-center w-full gap-4 mb-4">
+          {/* Left Emoji - Centralizado na primeira coluna */}
           <motion.span 
-            className="text-4xl sm:text-6xl"
+            className="text-4xl sm:text-6xl justify-self-center"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             {leftEmoji}
           </motion.span>
 
-          {/* VS Divider - centralizado */}
+          {/* VS Divider - Centralizado perfeitamente na coluna do meio */}
           <motion.div
-            className="text-white/30 text-xl sm:text-3xl font-bold"
+            className="text-white/30 text-xl sm:text-3xl font-bold justify-self-center"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.5, type: 'spring' }}
@@ -133,9 +133,9 @@ export const V7PhaseNarrative = ({
             VS
           </motion.div>
 
-          {/* Right Emoji */}
+          {/* Right Emoji - Centralizado na terceira coluna */}
           <motion.span 
-            className="text-4xl sm:text-6xl"
+            className="text-4xl sm:text-6xl justify-self-center"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
           >
@@ -143,11 +143,11 @@ export const V7PhaseNarrative = ({
           </motion.span>
         </div>
 
-        {/* Row 2: Titles - abaixo do VS, centralizados */}
-        <div className="flex items-center justify-center gap-6 sm:gap-12">
+        {/* Row 2: Titles - Grid simétrico com 3 colunas */}
+        <div className="grid grid-cols-3 items-center justify-items-center w-full gap-4">
           {/* Left Title */}
           <motion.div
-            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#ff6b6b] text-center"
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#ff6b6b] text-center justify-self-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -155,12 +155,12 @@ export const V7PhaseNarrative = ({
             {leftTitle}
           </motion.div>
 
-          {/* Spacer invisível para manter alinhamento com VS */}
-          <div className="w-8 sm:w-12" />
+          {/* Espaçador central vazio para manter simetria */}
+          <div />
 
           {/* Right Title */}
           <motion.div
-            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#4ecdc4] text-center"
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#4ecdc4] text-center justify-self-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}

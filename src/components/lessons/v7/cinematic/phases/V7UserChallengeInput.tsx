@@ -121,11 +121,12 @@ export const V7UserChallengeInput = ({
         />
       )}
 
-      <div className="space-y-4">
+      {/* ✅ FIX: Container com max-height e overflow para não estourar a tela */}
+      <div className="space-y-3 max-h-[70vh] overflow-y-auto px-1">
       {/* Header com instrução */}
-      <div className="text-center mb-4">
+      <div className="text-center mb-2">
         <motion.p 
-          className="text-xl font-bold text-yellow-400"
+          className="text-lg font-bold text-yellow-400"
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
@@ -133,13 +134,13 @@ export const V7UserChallengeInput = ({
         </motion.p>
       </div>
 
-      {/* Desafio original */}
-      <div className="bg-white/[0.02] border-2 border-amber-500/30 rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
+      {/* Desafio original - mais compacto */}
+      <div className="bg-white/[0.02] border-2 border-amber-500/30 rounded-xl p-3">
+        <div className="flex items-center gap-2 mb-2">
           <span className="px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded">DESAFIO</span>
-          <span className="text-white/50 text-sm">Reescreva este prompt</span>
+          <span className="text-white/50 text-xs">Reescreva este prompt</span>
         </div>
-        <div className="bg-black/40 rounded-lg p-4 font-mono text-sm text-amber-300">
+        <div className="bg-black/40 rounded-lg p-3 font-mono text-sm text-amber-300">
           "{userChallenge.challengePrompt}"
         </div>
       </div>
@@ -186,18 +187,22 @@ export const V7UserChallengeInput = ({
         )}
       </AnimatePresence>
 
-      {/* Input do usuário */}
+      {/* Input do usuário - ✅ FIX: onKeyDown removido para permitir espaços */}
       <div className="relative">
         <textarea
           value={userPrompt}
           onChange={(e) => setUserPrompt(e.target.value)}
           placeholder="Escreva seu prompt profissional aqui..."
           disabled={isSubmitting || !!aiFeedback}
-          className="w-full min-h-[120px] bg-black/40 border-2 border-cyan-500/30 rounded-xl p-4 text-white placeholder-white/30 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500/60 transition-colors disabled:opacity-50"
+          className="w-full min-h-[100px] bg-black/40 border-2 border-cyan-500/30 rounded-xl p-3 text-white placeholder-white/30 font-mono text-sm resize-none focus:outline-none focus:border-cyan-500/60 transition-colors disabled:opacity-50"
+          onKeyDown={(e) => {
+            // ✅ FIX: Não bloquear nenhuma tecla - permitir espaços normalmente
+            e.stopPropagation();
+          }}
         />
         
         {/* Contador de caracteres */}
-        <div className="absolute bottom-3 right-3 text-white/30 text-xs">
+        <div className="absolute bottom-2 right-3 text-white/30 text-xs">
           {userPrompt.length} caracteres
         </div>
       </div>
@@ -240,55 +245,55 @@ export const V7UserChallengeInput = ({
         </motion.button>
       )}
 
-      {/* Feedback da IA */}
+      {/* Feedback da IA - mais compacto */}
       <AnimatePresence>
         {aiFeedback && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            {/* Score */}
+            {/* Score - mais compacto */}
             <motion.div
-              className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-xl p-4 text-center`}
+              className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-xl p-3 text-center`}
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center justify-center gap-2">
                 {(aiFeedback.score || 70) >= 70 ? (
-                  <CheckCircle className={`w-6 h-6 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  <CheckCircle className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
                 ) : (
-                  <Sparkles className={`w-6 h-6 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  <Sparkles className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
                 )}
-                <span className={`text-2xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
+                <span className={`text-xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
                   {aiFeedback.score || 70}%
                 </span>
+                <span className="text-white/60 text-sm ml-2">
+                  {(aiFeedback.score || 70) >= 85 ? 'Excelente!' : 
+                   (aiFeedback.score || 70) >= 70 ? 'Bom trabalho!' : 'Continue!'}
+                </span>
               </div>
-              <p className="text-white/60 text-sm">
-                {(aiFeedback.score || 70) >= 85 ? 'Excelente prompt!' : 
-                 (aiFeedback.score || 70) >= 70 ? 'Bom trabalho!' : 'Continue praticando!'}
-              </p>
             </motion.div>
 
-            {/* Resultado da IA */}
-            <div className="bg-white/[0.02] border border-cyan-500/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
+            {/* Resultado da IA - mais compacto */}
+            <div className="bg-white/[0.02] border border-cyan-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span className="text-sm font-bold text-cyan-400">RESULTADO DA IA</span>
+                <span className="text-xs font-bold text-cyan-400">RESULTADO DA IA</span>
               </div>
-              <div className="bg-black/40 rounded-lg p-4 text-sm text-white/80 max-h-[150px] overflow-y-auto whitespace-pre-line">
+              <div className="bg-black/40 rounded-lg p-3 text-xs text-white/80 max-h-[80px] overflow-y-auto whitespace-pre-line">
                 {aiFeedback.response}
               </div>
             </div>
 
-            {/* Feedback do coach */}
-            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🎯</span>
-                <span className="text-sm font-bold text-purple-300">FEEDBACK DO COACH</span>
+            {/* Feedback do coach - mais compacto */}
+            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">🎯</span>
+                <span className="text-xs font-bold text-purple-300">FEEDBACK DO COACH</span>
               </div>
-              <p className="text-white/70 text-sm leading-relaxed">
+              <p className="text-white/70 text-xs leading-relaxed">
                 {aiFeedback.feedback}
               </p>
             </div>
