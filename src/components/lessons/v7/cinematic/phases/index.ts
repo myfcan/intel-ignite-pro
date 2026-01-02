@@ -1,8 +1,13 @@
 // V7 Cinematic Phases - Export all phase components
 
+// Phase Contracts (standardized types)
+export * from '../../v7-phase-contracts';
+
+// Controller
 export { default as V7PhaseController, usePhaseController } from './V7PhaseController';
 export type { V7Phase, V7Scene, V7LessonScript } from './V7PhaseController';
 
+// Phase Components
 export { default as V7PhaseDramatic } from './V7PhaseDramatic';
 export { default as V7PhaseNarrative } from './V7PhaseNarrative';
 export { default as V7PhaseQuiz } from './V7PhaseQuiz';

@@ -9,53 +9,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { V7UserChallengeInput } from './V7UserChallengeInput';
-interface PlaygroundResult {
-  title: string;
-  content: string;
-  score: number;
-  maxScore: number;
-  verdict: 'bad' | 'good' | 'excellent';
-}
-
-interface AudioControl {
-  pause: () => void;
-  play: () => void;
-  togglePlayPause: () => void;
-  isPlaying: boolean;
-  // V7-v2: Novos métodos com fade
-  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
-  pauseWithFade?: (duration?: number) => Promise<void>;
-  resumeWithFade?: (duration?: number) => Promise<void>;
-}
-
-// ✅ V7-vv: User challenge data structure
-interface UserChallenge {
-  instruction: string;
-  challengePrompt: string;
-  hints: string[];
-}
-
-interface V7PhasePlaygroundProps {
-  challengeTitle: string;
-  challengeSubtitle?: string;
-  amateurPrompt: string;
-  amateurResult: PlaygroundResult;
-  professionalPrompt: string;
-  professionalResult: PlaygroundResult;
-  sceneIndex: number;
-  phaseProgress: number;
-  onComplete?: () => void;
-  audioControl?: AudioControl;
-  // V7-v2: Configuração de timeouts
-  timeoutConfig?: {
-    perStep: number;   // segundos por step sem interação
-    hints: string[];
-  };
-  // ✅ V7-vv: User challenge (optional - step 6)
-  userChallenge?: UserChallenge;
-  // ✅ V7-v26: Lesson ID para salvar sessões
-  lessonId?: string;
-}
+import type { 
+  V7PhasePlaygroundProps, 
+  V7PlaygroundResult,
+  V7PlaygroundVerdict,
+  V7AudioControl 
+} from '../../v7-phase-contracts';
 
 // Steps: 0=intro, 1=amateur, 2=amateur-result, 3=professional, 4=professional-result, 5=comparison, 6=userChallenge
 type PlaygroundStep = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -175,7 +134,7 @@ export const V7PhasePlayground = ({
     onCompleteRef.current?.();
   }, [audioPausedByPlayground]);
 
-  const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
+  const getVerdictColor = (verdict: V7PlaygroundVerdict) => {
     switch (verdict) {
       case 'bad': return 'text-red-400';
       case 'good': return 'text-yellow-400';
@@ -183,7 +142,7 @@ export const V7PhasePlayground = ({
     }
   };
 
-  const getVerdictBg = (verdict: PlaygroundResult['verdict']) => {
+  const getVerdictBg = (verdict: V7PlaygroundVerdict) => {
     switch (verdict) {
       case 'bad': return 'bg-red-500/10 border-red-500/30';
       case 'good': return 'bg-yellow-500/10 border-yellow-500/30';
