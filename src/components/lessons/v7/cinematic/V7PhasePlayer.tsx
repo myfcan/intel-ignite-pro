@@ -1250,6 +1250,7 @@ export const V7PhasePlayer = ({
             correctFeedback={extractTextFromContent(quizCorrectFeedback)}
             incorrectFeedback={extractTextFromContent(quizIncorrectFeedback)}
             sceneIndex={currentSceneIndex}
+            phaseProgress={phaseProgress}
             onComplete={handleQuizComplete}
             audioControl={audio}
             isPausedByAnchor={isPausedByAnchor}

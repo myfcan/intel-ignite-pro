@@ -3,20 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface V7PhaseDramaticProps {
-  mainNumber: string;
-  secondaryNumber?: string; // "2%" - shown as contrast during impact scene
-  subtitle: string;
-  highlightWord?: string;
-  impactWord?: string;
-  hookQuestion?: string; // "VOCÊ SABIA?" - shown during letterbox
-  sceneIndex: number;
-  phaseProgress: number;
-  mood?: 'danger' | 'success' | 'neutral';
-  // ✅ V7-v24: Switch to show secondaryNumber as main in certain scenes
-  showSecondaryAsMain?: boolean;
-}
+import type { V7PhaseDramaticProps, V7DramaticMood } from '../../v7-phase-contracts';
 
 const MOOD_COLORS = {
   danger: {

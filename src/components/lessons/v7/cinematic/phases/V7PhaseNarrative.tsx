@@ -3,29 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface ComparisonData {
-  label: string;
-  leftValue: string;
-  rightValue: string;
-  leftColor?: string;
-  rightColor?: string;
-}
-
-interface V7PhaseNarrativeProps {
-  leftTitle: string;
-  rightTitle: string;
-  leftEmoji: string;
-  rightEmoji: string;
-  comparisons: ComparisonData[];
-  warningTitle?: string;
-  warningSubtitle?: string;
-  sceneIndex: number;
-  phaseProgress: number;
-  // ✅ NEW: Center prompt box - displayed between the two sides
-  centerPrompt?: string;
-  centerEmoji?: string;
-}
+import type { V7PhaseNarrativeProps, V7ComparisonData } from '../../v7-phase-contracts';
 
 export const V7PhaseNarrative = ({
   leftTitle,

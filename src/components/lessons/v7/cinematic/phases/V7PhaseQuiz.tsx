@@ -7,69 +7,35 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
 import { useV7ContextualTTS } from '../useV7ContextualTTS';
 import { supabase } from '@/integrations/supabase/client';
+import type { 
+  V7PhaseQuizProps, 
+  V7AudioControl,
+  V7TimeoutConfig,
+  V7ContextualLoopConfig,
+  DEFAULT_TIMEOUT_CONFIG
+} from '../../v7-phase-contracts';
 
-interface QuizOption {
-  id: string;
-  text: string;
-  category: 'good' | 'bad';
-}
+// Default contextual loops for quiz phase
+const DEFAULT_CONTEXTUAL_LOOPS: V7ContextualLoopConfig[] = [
+  { triggerAfter: 5, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
+  { triggerAfter: 12, text: 'Tá pensando muito hein!', volume: 0.5 },
+  { triggerAfter: 18, text: 'Brincadeira, não precisa ter pressa!', volume: 0.5 },
+  { triggerAfter: 26, text: 'Hum, acho que vou tirar uma soneca.', volume: 0.4 }
+];
 
-interface AudioControl {
-  pause: () => void;
-  play: () => void;
-  togglePlayPause: () => void;
-  isPlaying: boolean;
-  // V7-v2: Novos métodos com fade
-  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
-  pauseWithFade?: (duration?: number) => Promise<void>;
-  resumeWithFade?: (duration?: number) => Promise<void>;
-  // V7-v2.1: Estado de interação e efeitos sonoros
-  interactionState?: InteractionState;
-  updateInteractionState?: (state: InteractionState) => void;
-  playSoundEffect?: (effect: SoundEffectType, volume?: number) => void;
-  // V7-v2.2: Contextual loops (TTS para hints audíveis)
-  speakText?: (text: string, volume?: number) => Promise<void>;
-  stopSpeech?: () => void;
-}
-
-// V7-v2.2: Configuração de loops contextuais (TTS durante espera)
-interface ContextualLoopConfig {
-  triggerAfter: number; // Segundos após início da interação
-  text: string;         // Texto a ser falado
-  volume: number;       // Volume (0-1)
-}
-
-interface V7PhaseQuizProps {
-  title: string;
-  subtitle?: string;
-  options: QuizOption[];
-  revealTitle: string;
-  revealMessage: string;
-  revealValue?: string;
-  // ✅ NEW: Separate feedback messages for correct/incorrect results
-  correctFeedback?: string;
-  incorrectFeedback?: string;
-  sceneIndex: number;
-  onComplete?: (selectedIds: string[]) => void;
-  audioControl?: AudioControl;
-  // ✅ V7-v3: isPaused é controlado EXTERNAMENTE pelo anchorText
-  // O quiz NÃO pausa automaticamente ao montar - espera o anchorAction
-  isPausedByAnchor?: boolean;
-  // ✅ V7-v9: Callback when result is shown (to hide player controls)
-  onResultShow?: (isShowing: boolean) => void;
-  // V7-v2: Configuração de timeouts (visual hints)
-  timeoutConfig?: {
-    soft: number;    // 7s - primeira dica
-    medium: number;  // 15s - segunda dica
-    hard: number;    // 30s - auto-avanço
-    hints: string[];
-  };
-  // V7-v2.2: Contextual audio loops (TTS)
-  contextualLoops?: ContextualLoopConfig[];
-}
+// Default timeout configuration
+const DEFAULT_QUIZ_TIMEOUT: V7TimeoutConfig = {
+  soft: 7,
+  medium: 15,
+  hard: 30,
+  hints: [
+    '👆 Estou esperando sua resposta... Selecione as opções acima!',
+    '🤔 Pense com calma... Qual mais combina com você?',
+    '⏰ Vamos continuar a jornada...'
+  ]
+};
 
 export const V7PhaseQuiz = ({
   title,
@@ -81,27 +47,13 @@ export const V7PhaseQuiz = ({
   correctFeedback,
   incorrectFeedback,
   sceneIndex,
+  phaseProgress,
   onComplete,
   audioControl,
-  isPausedByAnchor = false, // ✅ V7-v3: Controlado externamente
-  onResultShow, // ✅ V7-v9: Callback when result is shown
-  timeoutConfig = {
-    soft: 7,
-    medium: 15,
-    hard: 30,
-    hints: [
-      '👆 Estou esperando sua resposta... Selecione as opções acima!',
-      '🤔 Pense com calma... Qual mais combina com você?',
-      '⏰ Vamos continuar a jornada...'
-    ]
-  },
-  // V7-v2.2: Loops contextuais com voz (TTS)
-  contextualLoops = [
-    { triggerAfter: 5, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
-    { triggerAfter: 12, text: 'Tá pensando muito hein!', volume: 0.5 },
-    { triggerAfter: 18, text: 'Brincadeira, não precisa ter pressa!', volume: 0.5 },
-    { triggerAfter: 26, text: 'Hum, acho que vou tirar uma soneca.', volume: 0.4 }
-  ]
+  isPausedByAnchor = false,
+  onResultShow,
+  timeoutConfig = DEFAULT_QUIZ_TIMEOUT,
+  contextualLoops = DEFAULT_CONTEXTUAL_LOOPS
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [optionsRevealed, setOptionsRevealed] = useState(true); // ✅ CORRIGIDO: Opções aparecem IMEDIATAMENTE
