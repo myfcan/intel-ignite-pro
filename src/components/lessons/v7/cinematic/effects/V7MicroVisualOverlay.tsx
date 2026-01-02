@@ -384,6 +384,18 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
                 {content.emoji}
               </span>
             )}
+            {/* ✅ FIX: Description fallback when no image/emoji */}
+            {!content.imageUrl && !content.emoji && content.description && (
+              <motion.div 
+                className="bg-black/80 backdrop-blur-lg rounded-xl px-6 py-4 border border-white/20 shadow-2xl"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                <p className="text-white text-lg md:text-xl font-medium text-center max-w-xs">
+                  {content.description}
+                </p>
+              </motion.div>
+            )}
           </div>
         );
 
