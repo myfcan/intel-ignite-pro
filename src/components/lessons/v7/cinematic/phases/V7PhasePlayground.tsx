@@ -217,9 +217,8 @@ export const V7PhasePlayground = ({
 
   return (
     <div className="w-full h-full flex flex-col relative">
-      {/* ========== ZONE 1: SCROLLABLE CONTENT AREA ========== */}
-      {/* Takes up most of the screen, ends before CTA zone */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-4">
+      {/* ========== MAIN CONTENT: Flex centered with CTA below ========== */}
+      <div className="flex-1 flex flex-col justify-center overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-32">
         <div className="w-full max-w-xl mx-auto">
           {/* Challenge Header - compacto */}
           <motion.div
@@ -269,7 +268,7 @@ export const V7PhasePlayground = ({
           </motion.h3>
 
           {/* Content Area */}
-          <div className="min-h-[200px] flex items-center justify-center">
+          <div className="min-h-[150px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               {/* Step 0: Intro */}
               {currentStep === 0 && (
@@ -418,10 +417,9 @@ export const V7PhasePlayground = ({
         </div>
       </div>
 
-      {/* ========== ZONE 2: CTA BUTTON (Fixed above player) ========== */}
-      {/* Esta zona fica ACIMA do player, nunca sobrepõe */}
+      {/* ========== CTA BUTTON (Fixed above player controls) ========== */}
       {currentStep !== 6 && (
-        <div className="absolute bottom-24 left-0 right-0 px-4 z-[90]">
+        <div className="absolute bottom-28 sm:bottom-24 left-0 right-0 px-4 z-[90]">
           <div className="max-w-xl mx-auto">
             <motion.button
               className="w-full py-3 px-6 text-sm font-bold text-white rounded-full relative overflow-hidden"
