@@ -105,53 +105,62 @@ export const V7PhaseNarrative = ({
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden min-h-screen">
-      {/* Split Screen Header */}
+      {/* Split Screen Header - Estrutura reorganizada para centralização */}
       <motion.div
-        className="flex items-center justify-center gap-4 sm:gap-8 mb-8"
+        className="flex flex-col items-center mb-8"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -30 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Left Side Header */}
-        <div className="text-center">
+        {/* Row 1: Emojis + VS */}
+        <div className="flex items-center justify-center gap-8 sm:gap-16 mb-4">
+          {/* Left Emoji */}
           <motion.span 
-            className="text-4xl sm:text-5xl"
+            className="text-4xl sm:text-6xl"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             {leftEmoji}
           </motion.span>
+
+          {/* VS Divider - centralizado */}
           <motion.div
-            className="text-2xl sm:text-4xl font-bold text-[#ff6b6b] mt-2"
+            className="text-white/30 text-xl sm:text-3xl font-bold"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, type: 'spring' }}
+          >
+            VS
+          </motion.div>
+
+          {/* Right Emoji */}
+          <motion.span 
+            className="text-4xl sm:text-6xl"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          >
+            {rightEmoji}
+          </motion.span>
+        </div>
+
+        {/* Row 2: Titles - abaixo do VS, centralizados */}
+        <div className="flex items-center justify-center gap-6 sm:gap-12">
+          {/* Left Title */}
+          <motion.div
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#ff6b6b] text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
             {leftTitle}
           </motion.div>
-        </div>
 
-        {/* VS Divider */}
-        <motion.div
-          className="text-white/30 text-xl sm:text-2xl font-bold"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.5, type: 'spring' }}
-        >
-          VS
-        </motion.div>
+          {/* Spacer invisível para manter alinhamento com VS */}
+          <div className="w-8 sm:w-12" />
 
-        {/* Right Side Header */}
-        <div className="text-center">
-          <motion.span 
-            className="text-4xl sm:text-5xl"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-          >
-            {rightEmoji}
-          </motion.span>
+          {/* Right Title */}
           <motion.div
-            className="text-2xl sm:text-4xl font-bold text-[#4ecdc4] mt-2"
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#4ecdc4] text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
