@@ -183,6 +183,12 @@ export interface V7Phase {
   mood?: 'danger' | 'success' | 'warning' | 'neutral' | 'dramatic';
   autoAdvance?: boolean;
 
+  // ✅ V7-vv-v3: Visual content for phase
+  visual?: {
+    type?: string;
+    content?: Record<string, unknown>;
+  };
+
   // ✅ V7-vv-v2: MicroVisuals for overlay rendering
   microVisuals?: V7MicroVisual[];
 

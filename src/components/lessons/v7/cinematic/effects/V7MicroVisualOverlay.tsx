@@ -45,8 +45,8 @@ const positionStyles: Record<string, React.CSSProperties> = {
 };
 
 // ✅ CINEMATIC Animation variants using V7CinematicEffects principles
-// Return type is explicit to avoid TypeScript inference issues with framer-motion
-const getAnimationVariants = (type: string, animation?: string): Record<string, any> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getAnimationVariants = (type: string, animation?: string): any => {
   // Custom animation from content
   if (animation === 'zoom-in') {
     return {
