@@ -629,12 +629,18 @@ function generatePhases(
           timeout: scene.interaction.timeout,
         };
       } else if (scene.interaction.type === 'playground') {
+        // ✅ V7-vv FIX: Copiar TODOS os campos do playground
         phase.interaction = {
           type: 'playground',
           amateurPrompt: scene.interaction.amateurPrompt,
           professionalPrompt: scene.interaction.professionalPrompt,
           amateurResult: scene.interaction.amateurResult,
           professionalResult: scene.interaction.professionalResult,
+          // Campos adicionados:
+          amateurScore: scene.interaction.amateurScore,
+          professionalScore: scene.interaction.professionalScore,
+          comparison: scene.interaction.comparison,
+          userChallenge: scene.interaction.userChallenge,
         };
       } else if (scene.interaction.type === 'cta-button') {
         phase.interaction = {
