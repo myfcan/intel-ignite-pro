@@ -27,6 +27,13 @@ interface AudioControl {
   resumeWithFade?: (duration?: number) => Promise<void>;
 }
 
+// ✅ V7-vv: User challenge data structure
+interface UserChallenge {
+  instruction: string;
+  challengePrompt: string;
+  hints: string[];
+}
+
 interface V7PhasePlaygroundProps {
   challengeTitle: string;
   challengeSubtitle?: string;
@@ -43,10 +50,12 @@ interface V7PhasePlaygroundProps {
     perStep: number;   // segundos por step sem interação
     hints: string[];
   };
+  // ✅ V7-vv: User challenge (optional - step 6)
+  userChallenge?: UserChallenge;
 }
 
-// Steps: 0=intro, 1=amateur, 2=amateur-result, 3=professional, 4=professional-result, 5=comparison
-type PlaygroundStep = 0 | 1 | 2 | 3 | 4 | 5;
+// Steps: 0=intro, 1=amateur, 2=amateur-result, 3=professional, 4=professional-result, 5=comparison, 6=userChallenge
+type PlaygroundStep = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export const V7PhasePlayground = ({
   challengeTitle,
@@ -64,7 +73,8 @@ export const V7PhasePlayground = ({
       '⏳ Não se apresse, analise com calma...',
       '💡 Perceba a diferença na estrutura...'
     ]
-  }
+  },
+  userChallenge
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
@@ -119,15 +129,18 @@ export const V7PhasePlayground = ({
     };
   }, [currentStep, timeoutConfig]);
 
+  // ✅ V7-vv: Determine max step based on whether userChallenge exists
+  const maxStep = userChallenge ? 6 : 5;
+
   const handleContinue = useCallback(async () => {
     // Limpar hint ao interagir
     setCurrentHint(null);
 
-    if (currentStep < 5) {
+    if (currentStep < maxStep) {
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
       // ✅ V7-v2: Final step - resume audio with FADE
-      console.log('[V7PhasePlayground] All 6 steps complete');
+      console.log(`[V7PhasePlayground] All ${maxStep + 1} steps complete`);
       const ctrl = audioControlRef.current;
       if (audioPausedByPlayground && ctrl) {
         if (ctrl.resumeWithFade) {
@@ -140,7 +153,7 @@ export const V7PhasePlayground = ({
       }
       onCompleteRef.current?.();
     }
-  }, [currentStep, audioPausedByPlayground]);
+  }, [currentStep, audioPausedByPlayground, maxStep]);
 
   const getVerdictColor = (verdict: PlaygroundResult['verdict']) => {
     switch (verdict) {
@@ -166,6 +179,7 @@ export const V7PhasePlayground = ({
       case 3: return '👍 Prompt Profissional';
       case 4: return 'Resultado do Profissional';
       case 5: return '💡 A Diferença';
+      case 6: return '✏️ Sua Vez!';
     }
   };
 
@@ -176,7 +190,8 @@ export const V7PhasePlayground = ({
       case 2: return 'Ver Prompt Profissional →';
       case 3: return 'Ver Resultado →';
       case 4: return 'Ver Comparação →';
-      case 5: return 'Continuar Aula →';
+      case 5: return userChallenge ? 'Aceitar o Desafio →' : 'Continuar Aula →';
+      case 6: return 'Finalizar Aula →';
     }
   };
 
@@ -373,29 +388,103 @@ export const V7PhasePlayground = ({
               </motion.div>
             </motion.div>
           )}
+
+          {/* Step 6: User Challenge (opcional) */}
+          {currentStep === 6 && userChallenge && (
+            <motion.div
+              key="user-challenge"
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* Instruction */}
+              <div className="text-center mb-4">
+                <motion.p 
+                  className="text-xl font-bold text-yellow-400"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  {userChallenge.instruction}
+                </motion.p>
+              </div>
+
+              {/* Challenge Prompt */}
+              <div className="bg-white/[0.02] border-2 border-amber-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded">DESAFIO</span>
+                  <span className="text-white/50 text-sm">Reescreva este prompt</span>
+                </div>
+                <div className="bg-black/40 rounded-lg p-4 font-mono text-sm text-amber-300">
+                  "{userChallenge.challengePrompt}"
+                </div>
+              </div>
+
+              {/* Hints */}
+              <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-purple-300 mb-3 flex items-center gap-2">
+                  <span>💡</span>
+                  Dicas para um prompt profissional:
+                </h4>
+                <ul className="space-y-2">
+                  {userChallenge.hints.map((hint, idx) => (
+                    <motion.li 
+                      key={idx}
+                      className="flex items-start gap-2 text-white/70 text-sm"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.15 }}
+                    >
+                      <span className="text-cyan-400 font-bold mt-0.5">✓</span>
+                      <span>{hint}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Call to action */}
+              <motion.div 
+                className="text-center pt-2"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <p className="text-white/60 text-sm">
+                  Pratique isso na sua próxima conversa com uma IA!
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Continue Button - PULSING to draw attention */}
         <motion.button
           className="w-full mt-6 py-4 px-8 text-lg font-bold text-white rounded-full relative overflow-hidden"
           style={{
-            background: currentStep === 5
+            background: currentStep >= maxStep
               ? 'linear-gradient(135deg, #00d9a6, #4ecdc4)'
-              : 'linear-gradient(135deg, #667eea, #764ba2)',
+              : currentStep === 5 && userChallenge
+                ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                : 'linear-gradient(135deg, #667eea, #764ba2)',
           }}
           animate={{
             scale: [1, 1.03, 1],
-            boxShadow: currentStep === 5
+            boxShadow: currentStep >= maxStep
               ? [
                   '0 10px 30px rgba(0, 217, 166, 0.4)',
                   '0 15px 50px rgba(0, 217, 166, 0.7)',
                   '0 10px 30px rgba(0, 217, 166, 0.4)',
                 ]
-              : [
-                  '0 10px 30px rgba(102, 126, 234, 0.4)',
-                  '0 15px 50px rgba(102, 126, 234, 0.7)',
-                  '0 10px 30px rgba(102, 126, 234, 0.4)',
-                ],
+              : currentStep === 5 && userChallenge
+                ? [
+                    '0 10px 30px rgba(245, 158, 11, 0.4)',
+                    '0 15px 50px rgba(245, 158, 11, 0.7)',
+                    '0 10px 30px rgba(245, 158, 11, 0.4)',
+                  ]
+                : [
+                    '0 10px 30px rgba(102, 126, 234, 0.4)',
+                    '0 15px 50px rgba(102, 126, 234, 0.7)',
+                    '0 10px 30px rgba(102, 126, 234, 0.4)',
+                  ],
           }}
           transition={{
             duration: 1.5,

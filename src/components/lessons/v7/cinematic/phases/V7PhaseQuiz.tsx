@@ -442,16 +442,17 @@ export const V7PhaseQuiz = ({
       const isPositiveResult = badCount < selectedIds.length / 2;
       
       // Feedback diferenciado baseado no resultado
+      // ✅ V7-vv FIX: NÃO chamar speakFeedback() aqui - o V7PhasePlayer
+      // já gerencia o feedbackAudio pré-gravado. Chamar speakFeedback
+      // aqui causa sobreposição de áudio.
       if (isPositiveResult) {
-        // ✅ CORRETO: Confetti verde + áudio positivo
+        // ✅ CORRETO: Apenas confetti verde (áudio controlado pelo parent)
         fireConfetti();
-        const feedbackText = correctFeedback || 'Você já tem bases sólidas para dominar IA!';
-        speakFeedback(feedbackText);
+        console.log('[V7PhaseQuiz] ✅ Resultado positivo - confetti triggered');
       } else {
-        // ✅ INCORRETO: Som de erro + áudio encorajador
+        // ✅ INCORRETO: Apenas som de erro (áudio controlado pelo parent)
         playErrorSound();
-        const feedbackText = incorrectFeedback || 'Não se preocupe - você está aqui para mudar isso!';
-        speakFeedback(feedbackText);
+        console.log('[V7PhaseQuiz] ❌ Resultado negativo - error sound triggered');
       }
     }, 500);
 

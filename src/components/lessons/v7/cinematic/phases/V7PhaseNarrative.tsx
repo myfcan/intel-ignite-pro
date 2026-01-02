@@ -99,7 +99,7 @@ export const V7PhaseNarrative = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden min-h-screen">
       {/* Split Screen Header */}
       <motion.div
         className="flex items-center justify-center gap-4 sm:gap-8 mb-8"

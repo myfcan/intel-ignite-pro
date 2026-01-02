@@ -561,7 +561,7 @@ export const V7PhaseSecretReveal = ({
               }}
             />
 
-            {/* Título principal: MÉTODO PERFEITO */}
+            {/* Título principal: O MÉTODO */}
             <motion.h1
               className="text-4xl sm:text-5xl md:text-7xl font-black text-center mb-4 relative z-10"
               style={{
@@ -574,7 +574,7 @@ export const V7PhaseSecretReveal = ({
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              MÉTODO PERFEITO
+              O MÉTODO
             </motion.h1>
 
             {/* Subtítulo */}
