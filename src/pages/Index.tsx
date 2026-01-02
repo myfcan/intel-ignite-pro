@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import dashboardMockup from "@/assets/dashboard-mockup.jpg";
 import lessonMockup from "@/assets/lesson-mockup.jpg";
 import chatMockup from "@/assets/chat-mockup.jpg";
@@ -34,13 +35,23 @@ const Index = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <motion.div 
+              className="flex items-center gap-2 cursor-pointer" 
+              onClick={() => navigate('/')}
+              initial={{ opacity: 0, y: -20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                duration: 0.6, 
+                ease: [0.22, 1, 0.36, 1],
+                delay: 0.1
+              }}
+            >
               <img 
                 src={logoAiliv} 
                 alt="Ailiv" 
                 className="h-12 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-110 hover:brightness-125 hover:drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]"
               />
-            </div>
+            </motion.div>
             <Button onClick={() => navigate('/auth?mode=signup')} className="gradient-hero text-white">
               Começar Agora
               <ArrowRight className="ml-2 w-4 h-4" />
