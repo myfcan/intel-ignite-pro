@@ -274,13 +274,13 @@ export const V7PhasePlayground = ({
               {currentStep === 0 && (
                 <motion.div
                   key="intro"
-                  className="text-center py-4"
+                  className="text-center py-8 sm:py-12"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                 >
-                  <div className="text-5xl sm:text-6xl mb-3">🆚</div>
-                  <p className="text-white/70 text-sm">
+                  <div className="text-6xl sm:text-7xl mb-4">🆚</div>
+                  <p className="text-white/70 text-sm sm:text-base">
                     Veja a diferença entre prompts
                   </p>
                 </motion.div>
