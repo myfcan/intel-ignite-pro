@@ -1613,7 +1613,6 @@ export const V7PhasePlayer = ({
             : (showControls && !isQuizResultShowing)
         }
         isLocked={false} // ✅ V7-v17: NUNCA bloquear controles - usuário precisa poder pausar/resumir sempre
-        hidePlayPause={true} // ✅ V7-vv: Esconde play/pause para evitar dessincronização áudio/fases
       />
 
       {/* Audio/Play Indicator */}
