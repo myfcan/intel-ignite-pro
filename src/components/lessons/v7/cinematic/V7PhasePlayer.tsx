@@ -1630,7 +1630,10 @@ export const V7PhasePlayer = ({
       </AnimatePresence>
 
       {/* V7-vv-v4: MicroVisual Overlay - renders word-triggered micro-visuals with sounds */}
-      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && (
+      {/* Hide during dramatic/revelation phases as they have their own prominent visuals */}
+      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && 
+       currentPhase?.type !== 'dramatic' && 
+       currentPhase?.type !== 'revelation' && (
         <V7MicroVisualOverlay
           microVisuals={currentPhase.microVisuals}
           currentTime={hasAudio ? audio.currentTime : internalTime}
