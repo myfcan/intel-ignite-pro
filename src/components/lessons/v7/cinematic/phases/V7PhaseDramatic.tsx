@@ -295,7 +295,7 @@ export const V7PhaseDramatic = ({
         <AnimatePresence>
           {showNumberGlow && (
             <motion.div
-              className="text-[18vw] sm:text-[22vw] md:text-[25vw] font-black leading-none select-none"
+              className="text-[clamp(3rem,12vw,8rem)] sm:text-[clamp(4rem,14vw,10rem)] md:text-[clamp(5rem,15vw,12rem)] font-black leading-none select-none"
               style={{
                 background: colors.gradient,
                 WebkitBackgroundClip: 'text',
