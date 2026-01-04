@@ -297,24 +297,25 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         }
       }
       
-      // ✅ FIX 2: Garantir que temos um objeto antes de acessar propriedades
-      // Às vezes o Supabase retorna um objeto com comportamento proxy estranho
+      // ✅ FIX 2: FORÇAR cópia profunda via JSON.stringify/parse
+      // Supabase JSONB pode retornar objetos com comportamento proxy que não respondem a .phases
       if (rawContent && typeof rawContent === 'object') {
-        // Forçar uma cópia profunda do objeto para garantir acesso normal às propriedades
         try {
           const stringified = JSON.stringify(rawContent);
           const reparsed = JSON.parse(stringified);
-          console.log('[useV7PhaseScript] 🔄 Content re-parsed for safety, phases check:', {
+          console.log('[useV7PhaseScript] 🔄 Content deep-cloned via JSON:', {
             hasPhases: !!reparsed?.phases,
             phasesIsArray: Array.isArray(reparsed?.phases),
-            phasesLength: Array.isArray(reparsed?.phases) ? reparsed.phases.length : 0
+            phasesLength: Array.isArray(reparsed?.phases) ? reparsed.phases.length : 0,
+            allKeys: Object.keys(reparsed || {})
           });
-          // Só sobrescreve se reparse funcionou e tem mais chaves
-          if (reparsed && Object.keys(reparsed).length > 0) {
+          // ✅ SEMPRE usar reparsed se tiver qualquer conteúdo
+          // Isso garante que objetos proxy do Supabase sejam normalizados
+          if (reparsed) {
             rawContent = reparsed;
           }
         } catch (e) {
-          console.warn('[useV7PhaseScript] ⚠️ Re-parse failed, continuing with original:', e);
+          console.warn('[useV7PhaseScript] ⚠️ JSON deep-clone failed:', e);
         }
       }
 
