@@ -268,25 +268,13 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       });
 
       // ============================================================================
-      // 🔧 CRITICAL FIX: Garantir que content seja um objeto, não string JSON
-      // Supabase às vezes retorna jsonb como string dependendo da configuração
+      // 🔧 CRITICAL FIX v2: Garantir que content seja um objeto puro JavaScript
+      // Supabase retorna objetos Proxy que podem não responder a .phases corretamente
+      // SOLUÇÃO: Deep clone IMEDIATO via JSON para garantir objeto puro
       // ============================================================================
       let rawContent = data.content;
       
-      // ============================================================================
-      // 🔧 CRITICAL FIX: Garantir que content é objeto válido
-      // Supabase JSONB pode retornar de várias formas dependendo do driver/versão
-      // ============================================================================
-      console.log('[useV7PhaseScript] 🔍 RAW CONTENT DEBUG:', {
-        rawContentType: typeof rawContent,
-        rawContentIsNull: rawContent === null,
-        rawContentIsUndefined: rawContent === undefined,
-        rawContentConstructor: rawContent?.constructor?.name,
-        rawContentIsArray: Array.isArray(rawContent),
-        rawContentKeys: rawContent && typeof rawContent === 'object' ? Object.keys(rawContent).slice(0, 10) : 'N/A'
-      });
-      
-      // ✅ FIX 1: Se content veio como string, fazer parse
+      // ✅ STEP 1: Se content é string, fazer parse
       if (typeof rawContent === 'string') {
         try {
           console.log('[useV7PhaseScript] ⚠️ Content veio como STRING - fazendo parse JSON');
@@ -297,31 +285,29 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         }
       }
       
-      // ✅ FIX 2: FORÇAR cópia profunda via JSON.stringify/parse
-      // Supabase JSONB pode retornar objetos com comportamento proxy que não respondem a .phases
+      // ✅ STEP 2: FORÇAR deep clone IMEDIATO - isso resolve o problema do Proxy do Supabase
+      // O Supabase pode retornar objetos Proxy que não respondem a .phases após cache clear
       if (rawContent && typeof rawContent === 'object') {
         try {
-          const stringified = JSON.stringify(rawContent);
-          const reparsed = JSON.parse(stringified);
-          console.log('[useV7PhaseScript] 🔄 Content deep-cloned via JSON:', {
-            hasPhases: !!reparsed?.phases,
-            phasesIsArray: Array.isArray(reparsed?.phases),
-            phasesLength: Array.isArray(reparsed?.phases) ? reparsed.phases.length : 0,
-            allKeys: Object.keys(reparsed || {})
-          });
-          // ✅ SEMPRE usar reparsed se tiver qualquer conteúdo
-          // Isso garante que objetos proxy do Supabase sejam normalizados
-          if (reparsed) {
-            rawContent = reparsed;
-          }
+          // Serializar para string e reparsar - isso GARANTE um objeto JavaScript puro
+          rawContent = JSON.parse(JSON.stringify(rawContent));
+          console.log('[useV7PhaseScript] ✅ Content deep-cloned successfully');
         } catch (e) {
-          console.warn('[useV7PhaseScript] ⚠️ JSON deep-clone failed:', e);
+          console.error('[useV7PhaseScript] ❌ Deep clone failed:', e);
         }
       }
-
-      // ✅ GARANTIA ABSOLUTA: Verificar phases IMEDIATAMENTE após parse
-      const rawContentObj = rawContent as Record<string, any>;
       
+      // ✅ STEP 3: Verificar phases IMEDIATAMENTE - antes de qualquer outra operação
+      const rawContentObj = rawContent as Record<string, any>;
+      const phasesCheck = rawContentObj?.phases;
+      console.log('[useV7PhaseScript] 🔍 IMMEDIATE PHASES CHECK:', {
+        hasPhases: !!phasesCheck,
+        phasesIsArray: Array.isArray(phasesCheck),
+        phasesLength: Array.isArray(phasesCheck) ? phasesCheck.length : 0,
+        contentKeys: rawContentObj ? Object.keys(rawContentObj) : [],
+        contentType: typeof rawContent
+      });
+
       // 🔍 ULTRA DEBUG - Verificar TODAS as formas de acessar phases
       console.log('[useV7PhaseScript] 🔍 ULTRA DEBUG - Acessando phases de várias formas:', {
         direct: rawContentObj?.phases,
