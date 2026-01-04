@@ -191,24 +191,14 @@ export const V7PhasePlayer = ({
     }
   }, [audio.isPlaying, effectiveIsPlaying, hasAudio]);
 
-  // ✅ V7-v6 FIX: Track if we're in an interactive phase that should block progression
-  const [lockedPhaseIndex, setLockedPhaseIndex] = useState<number | null>(null);
-  const [interactionComplete, setInteractionComplete] = useState(false);
   // ✅ V7-v9: Track when quiz result is showing to hide controls
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
-  // ✅ V7-v15: Track if we're navigating backwards to prevent re-locking
-  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
-  // ✅ V7-vv Definitive: Track feedback audio playback
-  const [isPlayingFeedbackAudio, setIsPlayingFeedbackAudio] = useState(false);
+  // ✅ V7-vv Definitive: Track feedback audio playback via machine
   const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
-  // ✅ V7-v18: Track transition particles for dramatic phase changes
-  const [showTransitionParticles, setShowTransitionParticles] = useState(false);
-  const [transitionParticleColor, setTransitionParticleColor] = useState<'cyan' | 'gold' | 'emerald' | 'purple'>('cyan');
   const previousPhaseRef = useRef<string | null>(null);
 
   // ✅ Level 4: XState machine integration via adapter
-  // The adapter syncs with machine but legacy states are still used for full compatibility
-  // This enables gradual migration and provides state machine benefits (debugging, predictability)
+  // ALL state now comes from the machine - no more scattered useState!
   const machineAdapter = useV7PlayerAdapter({
     script,
     hasAudio,
@@ -218,6 +208,17 @@ export const V7PhasePlayer = ({
     onComplete,
     onExit,
   });
+
+  // ✅ EXTRACT STATE FROM MACHINE - These replace the old useState hooks
+  const { 
+    lockedPhaseIndex, 
+    interactionComplete, 
+    showTransitionParticles, 
+    transitionParticleColor,
+    isNavigatingBack,
+    isPlayingFeedbackAudio,
+    triggerParticles,
+  } = machineAdapter;
 
   // ✅ Log machine state for debugging
   useEffect(() => {
@@ -405,8 +406,7 @@ export const V7PhasePlayer = ({
     // Sem esse lock, a fase mudaria automaticamente antes da interação/animação completar
     if ((isBlockingPhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
       console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - BLOCKING lesson completion`);
-      setLockedPhaseIndex(currentPhaseIndex);
-      setInteractionComplete(false);
+      machineAdapter.lockPhase(currentPhaseIndex);
     }
     
     // ✅ V7-v30: Log blocking state for debugging
@@ -415,14 +415,7 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
-  // ✅ V7-v6: Reset lock when interaction completes and advances manually
-  useEffect(() => {
-    if (interactionComplete && lockedPhaseIndex !== null) {
-      console.log(`[V7PhasePlayer] 🔓 UNLOCKING phase - interaction complete`);
-      setLockedPhaseIndex(null);
-      setInteractionComplete(false);
-    }
-  }, [interactionComplete, lockedPhaseIndex]);
+  // ✅ V7-v6: Reset lock when interaction completes - now handled by machine unlockPhase action
 
   // ✅ V7-v18: Trigger particle burst on specific phase transitions
   useEffect(() => {
@@ -444,17 +437,11 @@ export const V7PhasePlayer = ({
         currentPhaseType === 'gamification';
       
       if (isRevelationToPlayground) {
-        setTransitionParticleColor('cyan');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('cyan');
       } else if (isInteractionToSecretReveal) {
-        setTransitionParticleColor('gold');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('gold');
       } else if (isPlaygroundToGamification) {
-        setTransitionParticleColor('emerald');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('emerald');
       }
     }
     
@@ -656,14 +643,13 @@ export const V7PhasePlayer = ({
       console.log(`  To:   [${prevPhaseIndex}] "${prevPhase?.id}" (${prevPhase?.type})`);
 
       // ✅ V7-v15: Mark that we're navigating back (prevents re-locking)
-      setIsNavigatingBack(true);
+      machineAdapter.setIsNavigatingBack(true);
 
       // ✅ V7-v15: Reset ALL interaction states
       if (lockedPhaseIndex !== null) {
         console.log(`  🔓 Unlocking phase for back navigation`);
-        setLockedPhaseIndex(null);
+        machineAdapter.unlockPhase();
       }
-      setInteractionComplete(false);
       setIsQuizResultShowing(false);
 
       // ✅ V7-v16: Reset audio interaction state (so togglePlayPause works again)
@@ -688,7 +674,7 @@ export const V7PhasePlayer = ({
       
       // ✅ V7-v15: Clear navigation flag after a short delay
       setTimeout(() => {
-        setIsNavigatingBack(false);
+        machineAdapter.setIsNavigatingBack(false);
       }, 500);
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio, lockedPhaseIndex]);
@@ -710,14 +696,14 @@ export const V7PhasePlayer = ({
     console.log(`  FeedbackAudios:`, feedbackAudios ? Object.keys(feedbackAudios) : 'NONE');
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
-    setInteractionComplete(true);
+    machineAdapter.setInteractionComplete(true);
 
     // ✅ V7-vv Definitive: Helper to continue after feedback
     const continueToNextPhase = () => {
       // ✅ V7-vv-v3: CRITICAL FIX - Unlock FIRST, then navigate
       if (lockedPhaseIndex !== null) {
         console.log(`  🔓 Unlocking phase ${lockedPhaseIndex}`);
-        setLockedPhaseIndex(null);
+        machineAdapter.unlockPhase();
       }
 
       // ✅ V7-vv-v3: ALWAYS seek audio to next phase start - NO EXCEPTIONS
@@ -776,7 +762,7 @@ export const V7PhasePlayer = ({
         console.log(`  ⏸️ Main audio PAUSED for feedback playback`);
       }
 
-      setIsPlayingFeedbackAudio(true);
+      machineAdapter.playFeedbackAudio(feedbackAudio.url);
 
       // Create or reuse audio element for feedback
       if (!feedbackAudioRef.current) {
@@ -789,21 +775,21 @@ export const V7PhasePlayer = ({
       // When feedback audio ends, continue to next phase
       feedbackEl.onended = () => {
         console.log(`  ✅ Feedback audio COMPLETED`);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioEnded();
         continueToNextPhase();
       };
 
       // Handle errors gracefully - continue anyway
       feedbackEl.onerror = (e) => {
         console.error(`  ❌ Feedback audio ERROR:`, e);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioError();
         continueToNextPhase();
       };
 
       // Play feedback audio
       feedbackEl.play().catch(err => {
         console.error(`  ❌ Feedback audio PLAY error:`, err);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioError();
         continueToNextPhase();
       });
     } else {
@@ -831,7 +817,7 @@ export const V7PhasePlayer = ({
     isInBlockingPhaseRef.current = false;
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
-    setInteractionComplete(true);
+    machineAdapter.setInteractionComplete(true);
 
     // ✅ V7-v30: Check if this is the LAST phase - if so, complete the lesson!
     if (!nextPhase) {
@@ -1136,8 +1122,8 @@ export const V7PhasePlayer = ({
             const nextPhase = scaledScript.phases[nextPhaseIndex];
 
             // ✅ FIX: Unlock and reset state FIRST
-            setLockedPhaseIndex(null);
-            setInteractionComplete(true);
+            machineAdapter.unlockPhase();
+            machineAdapter.setInteractionComplete(true);
             
             // ✅ Resume anchor system BEFORE playing audio
             manualResume();
@@ -1439,9 +1425,9 @@ export const V7PhasePlayer = ({
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
                 if (lockedPhaseIndex !== null) {
                   console.log('[V7PhasePlayer] 🔓 Unlocking revelation/PERFEITO phase');
-                  setLockedPhaseIndex(null);
+                  machineAdapter.unlockPhase();
                 }
-                setInteractionComplete(true);
+                machineAdapter.setInteractionComplete(true);
                 goToNextPhase(false, fromIndex);
               }}
             />
@@ -1520,9 +1506,9 @@ export const V7PhasePlayer = ({
               // ✅ V7-v11 FIX: FIRST unlock phase
               if (lockedPhaseIndex !== null) {
                 console.log('[V7PhasePlayer] 🔓 Unlocking secret-reveal phase');
-                setLockedPhaseIndex(null);
+                machineAdapter.unlockPhase();
               }
-              setInteractionComplete(true);
+              machineAdapter.setInteractionComplete(true);
               
               // ✅ V7-v23 FIX: SEEK to next phase startTime ANTES de resumir
               // Isso evita repetir a narração da fase secret-reveal
