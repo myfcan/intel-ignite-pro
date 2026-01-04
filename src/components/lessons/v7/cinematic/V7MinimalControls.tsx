@@ -119,18 +119,16 @@ export const V7MinimalControls = ({
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
         <div className={`w-full max-w-sm ${V7_CLASSES.controlBar}`}>
-          {/* Progress Bar - Clickable with cyan gradient */}
+          {/* Progress Bar - THIN LINE at top of controls */}
           <div 
-            className={V7_CLASSES.progressBg}
+            className="relative h-1 bg-white/10 cursor-pointer overflow-hidden"
             onClick={handleProgressClick}
           >
-            {/* Progress Fill */}
+            {/* Progress Fill - MUST stay h-1, only fills width */}
             <motion.div
-              className={`absolute inset-y-0 left-0 ${V7_CLASSES.progressFill}`}
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 to-cyan-500 rounded-full"
               style={{ width: `${progress * 100}%` }}
             />
-            {/* Hover indicator */}
-            <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-colors" />
           </div>
 
           {/* Controls Row */}
