@@ -1055,60 +1055,53 @@ export const V7PhasePlayer = ({
         );
 
       case 'narrative':
-      case 'comparison': // ✅ V7-v30: COMPARISON usa mesmo renderizador que NARRATIVE (leftCard/rightCard)
-        // CORRECT: Scene 0 has main comparison items, Scene 1 has detailed comparisons, Scene 2 has warning
-        const scene0Content = getSceneContent(0); // Main comparison items
-        const scene1Content = getSceneContent(1); // Detailed comparisons
-        const scene2Warning = getSceneContent(2); // Warning/urgency section
-        const narrativeContent = getCombinedSceneContent();
-
-        // ✅ V7-vv: Extract visual content for split-screen (left/right + centerPrompt)
-        const narrativeVisualContent = (currentPhase as any).visual?.content || {};
-        const leftVisual = narrativeVisualContent.left || {};
-        const rightVisual = narrativeVisualContent.right || {};
+      case 'comparison': {
+        // ✅ V7-vv FIX: Extract data from phase.visual.content (not scenes!)
+        const compVisualContent = (currentPhase as any).visual?.content || {};
+        const compLeft = compVisualContent.left || {};
+        const compRight = compVisualContent.right || {};
         
-        // ✅ Center prompt - look for centerPrompt or first item as example prompt
-        const centerPrompt = narrativeVisualContent.centerPrompt || narrativeVisualContent.examplePrompt || '';
-        const centerEmoji = narrativeVisualContent.centerEmoji || '🍌';
-
-        // Extract left/right from scene 0 items (format: {label, value, isNegative/isPositive})
-        const mainItems = scene0Content.items || [];
-        const leftItem = mainItems.find((item: any) => item.isNegative) || mainItems[0] || {};
-        const rightItem = mainItems.find((item: any) => item.isPositive) || mainItems[1] || {};
-
-        // Build comparisons array from scene 1 items (format: {label, left, right})
-        const detailedItems = scene1Content.items || [];
-        const comparisons = detailedItems.length > 0
-          ? detailedItems.map((item: any) => ({
-              label: item.label || '',
-              leftValue: item.left || '',
-              rightValue: item.right || '',
+        // ✅ V7-vv: items são arrays de STRINGS no formato do banco
+        const leftItems = Array.isArray(compLeft.items) ? compLeft.items : [];
+        const rightItems = Array.isArray(compRight.items) ? compRight.items : [];
+        
+        // Build comparisons from the items arrays (zip left and right)
+        const maxItems = Math.max(leftItems.length, rightItems.length);
+        const compComparisons = maxItems > 0
+          ? Array.from({ length: maxItems }, (_, i) => ({
+              label: '',
+              leftValue: typeof leftItems[i] === 'string' ? leftItems[i] : (leftItems[i]?.text || ''),
+              rightValue: typeof rightItems[i] === 'string' ? rightItems[i] : (rightItems[i]?.text || ''),
               leftColor: '#ff6b6b',
               rightColor: '#4ecdc4'
             }))
-          : [{
-              label: scene0Content.mainText || 'Comparação',
-              leftValue: leftItem.value || '',
-              rightValue: rightItem.value || '',
-              leftColor: '#ff6b6b',
-              rightColor: '#4ecdc4'
-            }];
+          : [{ label: 'Comparação', leftValue: '', rightValue: '', leftColor: '#ff6b6b', rightColor: '#4ecdc4' }];
+
+        console.log('[V7PhasePlayer] 🎬 Comparison/Narrative phase:', {
+          phaseId: currentPhase.id,
+          leftLabel: compLeft.label,
+          rightLabel: compRight.label,
+          leftItems,
+          rightItems,
+          centerPrompt: compVisualContent.centerPrompt
+        });
 
         return (
           <V7PhaseNarrative
-            leftTitle={leftVisual.label || leftItem.label || '98% BRINCANDO'}
-            rightTitle={rightVisual.label || rightItem.label || '2% DOMINANDO'}
-            leftEmoji={leftVisual.emoji || '😂'}
-            rightEmoji={rightVisual.emoji || '💰'}
-            comparisons={comparisons}
-            warningTitle={scene2Warning.mainText || scene2Warning.highlightWord || ''}
-            warningSubtitle={scene2Warning.subtitle || ''}
+            leftTitle={compLeft.label || '98% BRINCANDO'}
+            rightTitle={compRight.label || '2% DOMINANDO'}
+            leftEmoji={compLeft.emoji || '😂'}
+            rightEmoji={compRight.emoji || '💰'}
+            comparisons={compComparisons}
+            warningTitle=""
+            warningSubtitle=""
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
-            centerPrompt={centerPrompt}
-            centerEmoji={centerEmoji}
+            centerPrompt={compVisualContent.centerPrompt || ''}
+            centerEmoji={compVisualContent.centerEmoji || '🍌'}
           />
         );
+      }
 
       case 'interaction':
         // ✅ V7-vv: Check interaction type FIRST
