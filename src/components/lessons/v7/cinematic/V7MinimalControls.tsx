@@ -48,6 +48,7 @@ interface V7MinimalControlsProps {
   // Visibility & State
   isVisible?: boolean;
   isLocked?: boolean; // ✅ Bloqueia controles durante interação
+  hidePlayPause?: boolean; // ✅ Esconde play/pause para evitar dessincronização
 }
 
 export const V7MinimalControls = ({
@@ -69,7 +70,8 @@ export const V7MinimalControls = ({
   onExit,
   onSeek,
   isVisible = true,
-  isLocked = false
+  isLocked = false,
+  hidePlayPause = false
 }: V7MinimalControlsProps) => {
   
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -152,23 +154,25 @@ export const V7MinimalControls = ({
                 <SkipBack className="w-4 h-4" />
               </button>
 
-              {/* Play/Pause - Primary */}
-              <button
-                onClick={onTogglePlay}
-                disabled={isLocked}
-                className={isLocked 
-                  ? `${V7_CLASSES.buttonPrimary} bg-white/30 cursor-not-allowed`
-                  : V7_CLASSES.buttonPrimary
-                }
-                aria-label={isLocked ? 'Aguardando interação' : isPlaying ? 'Pausar' : 'Reproduzir'}
-                title={isLocked ? 'Complete a interação para continuar' : undefined}
-              >
-                {isPlaying ? (
-                  <Pause className={`w-5 h-5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
-                ) : (
-                  <Play className={`w-5 h-5 ml-0.5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
-                )}
-              </button>
+              {/* Play/Pause - Hidden in V7-vv to prevent desync */}
+              {!hidePlayPause && (
+                <button
+                  onClick={onTogglePlay}
+                  disabled={isLocked}
+                  className={isLocked 
+                    ? `${V7_CLASSES.buttonPrimary} bg-white/30 cursor-not-allowed`
+                    : V7_CLASSES.buttonPrimary
+                  }
+                  aria-label={isLocked ? 'Aguardando interação' : isPlaying ? 'Pausar' : 'Reproduzir'}
+                  title={isLocked ? 'Complete a interação para continuar' : undefined}
+                >
+                  {isPlaying ? (
+                    <Pause className={`w-5 h-5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
+                  ) : (
+                    <Play className={`w-5 h-5 ml-0.5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
+                  )}
+                </button>
+              )}
 
               {/* Next */}
               <button
