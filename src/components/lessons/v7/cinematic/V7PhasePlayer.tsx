@@ -1004,33 +1004,48 @@ export const V7PhasePlayer = ({
           );
         }
 
-        // Use combined content from ALL scenes for progressive reveal
+        // ✅ V7-vv FIX: Get content from phase.visual.content FIRST (database format)
+        // Then fallback to scenes (legacy format)
+        const dramaticVisualContent = (currentPhase as any).visual?.content || {};
         const dramaticContent = getCombinedSceneContent();
+        
         // Get impactWord from scene 5 specifically (impact scene)
         const impactScene = getSceneContent(5);
         // Get hookQuestion from scene 0 specifically (letterbox scene)
         const letterboxScene = getSceneContent(0);
 
         // ✅ CRITICAL: Ensure hookQuestion is always shown at start
-        // Fallback to "VOCÊ SABIA?" if not defined in database
-        const extractedHook = letterboxScene.hookQuestion || letterboxScene.mainText || dramaticContent.hookQuestion || '';
+        // V7-vv stores in visual.content.hookQuestion
+        const extractedHook = dramaticVisualContent.hookQuestion || letterboxScene.hookQuestion || letterboxScene.mainText || dramaticContent.hookQuestion || '';
         const hookQuestion = extractedHook || 'VOCÊ SABIA?';
 
-        console.log('[V7PhasePlayer] Dramatic phase - hookQuestion:', hookQuestion, 'sceneIndex:', currentSceneIndex);
+        console.log('[V7PhasePlayer] 🎬 Dramatic phase rendering:', {
+          phaseId: currentPhase.id,
+          visualContentNumber: dramaticVisualContent.number,
+          visualContentShowSecondary: dramaticVisualContent.showSecondaryAsMain,
+          phaseMood: currentPhase.mood,
+          hookQuestion,
+          sceneIndex: currentSceneIndex
+        });
 
-        // ✅ V7-v24: Determine if we should show 2% as main number based on scene content
-        // When narration talks about the 2% (success side), flip the display
-        const showSecondaryAsMain = dramaticContent.showSecondaryAsMain || 
-          (currentPhase.mood === 'success') ||
-          (dramaticContent.subtitle?.toLowerCase().includes('2%') || dramaticContent.subtitle?.toLowerCase().includes('dominam'));
+        // ✅ V7-vv FIX: Read showSecondaryAsMain from visual.content FIRST!
+        // This is where the database stores it in V7-vv format
+        const showSecondaryAsMain = dramaticVisualContent.showSecondaryAsMain === true ||
+          dramaticContent.showSecondaryAsMain === true ||
+          (currentPhase.mood === 'success');
+
+        // ✅ V7-vv FIX: Read number and secondaryNumber from visual.content
+        const mainNumber = String(dramaticVisualContent.number || dramaticContent.number || '98%');
+        const secondaryNumber = dramaticVisualContent.secondaryNumber || dramaticContent.secondaryNumber || '2%';
+        const subtitle = dramaticVisualContent.subtitle || dramaticContent.subtitle || currentPhase.title || '';
 
         return (
           <V7PhaseDramatic
-            mainNumber={String(dramaticContent.number || '98%')}
-            secondaryNumber={dramaticContent.secondaryNumber || '2%'}
-            subtitle={dramaticContent.subtitle || currentPhase.title}
-            highlightWord={dramaticContent.highlightWord}
-            impactWord={impactScene.mainText || dramaticContent.highlightWord || ''}
+            mainNumber={mainNumber}
+            secondaryNumber={secondaryNumber}
+            subtitle={subtitle}
+            highlightWord={dramaticVisualContent.highlightWord || dramaticContent.highlightWord}
+            impactWord={impactScene.mainText || dramaticVisualContent.highlightWord || dramaticContent.highlightWord || ''}
             hookQuestion={hookQuestion}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
@@ -1048,13 +1063,13 @@ export const V7PhasePlayer = ({
         const narrativeContent = getCombinedSceneContent();
 
         // ✅ V7-vv: Extract visual content for split-screen (left/right + centerPrompt)
-        const visualContent = (currentPhase as any).visual?.content || {};
-        const leftVisual = visualContent.left || {};
-        const rightVisual = visualContent.right || {};
+        const narrativeVisualContent = (currentPhase as any).visual?.content || {};
+        const leftVisual = narrativeVisualContent.left || {};
+        const rightVisual = narrativeVisualContent.right || {};
         
         // ✅ Center prompt - look for centerPrompt or first item as example prompt
-        const centerPrompt = visualContent.centerPrompt || visualContent.examplePrompt || '';
-        const centerEmoji = visualContent.centerEmoji || '🍌';
+        const centerPrompt = narrativeVisualContent.centerPrompt || narrativeVisualContent.examplePrompt || '';
+        const centerEmoji = narrativeVisualContent.centerEmoji || '🍌';
 
         // Extract left/right from scene 0 items (format: {label, value, isNegative/isPositive})
         const mainItems = scene0Content.items || [];

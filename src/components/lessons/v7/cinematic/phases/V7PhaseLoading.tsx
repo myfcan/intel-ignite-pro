@@ -1,4 +1,4 @@
-// V7PhaseLoading - Cinematic loading phase
+// V7PhaseLoading - Elegant minimal loading bar (não ocupa tela toda)
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
@@ -7,7 +7,7 @@ interface V7PhaseLoadingProps {
   duration?: number;
 }
 
-export default function V7PhaseLoading({ onComplete, duration = 3000 }: V7PhaseLoadingProps) {
+export default function V7PhaseLoading({ onComplete, duration = 2500 }: V7PhaseLoadingProps) {
   const [progress, setProgress] = useState(0);
 
   // ✅ FIX: Use ref to store onComplete so the effect doesn't re-run when callback changes
@@ -17,93 +17,51 @@ export default function V7PhaseLoading({ onComplete, duration = 3000 }: V7PhaseL
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
-        const next = prev + Math.random() * 15;
+        const next = prev + Math.random() * 20;
         return Math.min(next, 100);
       });
-    }, 100);
+    }, 80);
 
     const timer = setTimeout(() => {
       setProgress(100);
-      setTimeout(() => onCompleteRef.current(), 300);
+      setTimeout(() => onCompleteRef.current(), 200);
     }, duration);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, [duration]); // ✅ Only depend on duration, not onComplete
+  }, [duration]);
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-      {/* Particle effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-primary/30"
-            initial={{ 
-              x: Math.random() * window.innerWidth, 
-              y: Math.random() * window.innerHeight,
-              scale: 0
-            }}
-            animate={{ 
-              y: [null, -100],
-              scale: [0, 1, 0],
-              opacity: [0, 0.6, 0]
-            }}
-            transition={{ 
-              duration: 2 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 flex flex-col items-center gap-8">
-        {/* Pulsing logo */}
-        <motion.div
-          className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center"
-          animate={{ 
-            scale: [1, 1.1, 1],
-            boxShadow: [
-              '0 0 20px rgba(var(--primary), 0.3)',
-              '0 0 40px rgba(var(--primary), 0.5)',
-              '0 0 20px rgba(var(--primary), 0.3)'
-            ]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <span className="text-3xl font-bold text-primary-foreground">V7</span>
-        </motion.div>
-
-        {/* Loading text */}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* Minimal centered loading bar */}
+      <motion.div
+        className="flex flex-col items-center gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* Subtle loading text */}
         <motion.p
-          className="text-muted-foreground text-sm tracking-wider"
-          animate={{ opacity: [0.5, 1, 0.5] }}
+          className="text-muted-foreground/60 text-sm tracking-widest uppercase"
+          animate={{ opacity: [0.4, 0.8, 0.4] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         >
-          Preparando experiência...
+          Carregando...
         </motion.p>
 
-        {/* Progress bar */}
-        <div className="w-48 h-1 bg-muted/20 rounded-full overflow-hidden">
+        {/* Elegant progress bar */}
+        <div className="w-64 h-1 bg-muted/20 rounded-full overflow-hidden backdrop-blur-sm">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-primary/50 rounded-full"
+            className="h-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           />
         </div>
-
-        {/* Progress percentage */}
-        <motion.span
-          className="text-muted-foreground text-xs font-mono"
-          key={Math.floor(progress)}
-        >
-          {Math.floor(progress)}%
-        </motion.span>
-      </div>
+      </motion.div>
     </div>
   );
 }
