@@ -258,9 +258,14 @@ export function useV7PlayerMachine(): UseV7PlayerMachineReturn {
     send({ type: 'EXIT' });
   }, [send]);
   
+  // Convert state value to string representation for debugging
+  const stateString = typeof stateValue === 'string' 
+    ? stateValue 
+    : JSON.stringify(stateValue);
+  
   return {
     // State
-    state: state.value as string,
+    state: stateString,
     isIdle,
     isLoading,
     isReady,
