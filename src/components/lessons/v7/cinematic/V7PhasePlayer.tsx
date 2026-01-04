@@ -909,10 +909,7 @@ export const V7PhasePlayer = ({
   const seconds = Math.floor(scaledScript.totalDuration % 60);
   const totalDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-  // Show loading screen
-  if (isLoading) {
-    return <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />;
-  }
+  // Loading is now rendered as an overlay inside the main return, not a replacement
 
   // Extract scene content with fallbacks (cast to any for flexible DB data)
   const getSceneContent = (sceneIndex: number = 0): any => {
@@ -1692,6 +1689,10 @@ export const V7PhasePlayer = ({
         />
       )}
 
+      {/* Loading overlay - elegant bottom bar, doesn't cover player */}
+      {isLoading && (
+        <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />
+      )}
 
       {/* Debug Panel */}
       <V7DebugPanel
