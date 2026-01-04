@@ -34,7 +34,7 @@ export default function V7PhaseLoading({ onComplete, duration = 2500 }: V7PhaseL
   }, [duration]);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
       {/* Minimal centered loading bar */}
       <motion.div
         className="flex flex-col items-center gap-4"
