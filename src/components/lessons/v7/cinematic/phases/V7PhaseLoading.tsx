@@ -1,4 +1,4 @@
-// V7PhaseLoading - Elegant minimal loading bar (não ocupa tela toda)
+// V7PhaseLoading - Elegant bottom progress bar (player style)
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 
@@ -10,7 +10,6 @@ interface V7PhaseLoadingProps {
 export default function V7PhaseLoading({ onComplete, duration = 2500 }: V7PhaseLoadingProps) {
   const [progress, setProgress] = useState(0);
 
-  // ✅ FIX: Use ref to store onComplete so the effect doesn't re-run when callback changes
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
@@ -34,34 +33,32 @@ export default function V7PhaseLoading({ onComplete, duration = 2500 }: V7PhaseL
   }, [duration]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      {/* Minimal centered loading bar */}
-      <motion.div
-        className="flex flex-col items-center gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.4 }}
-      >
+    <motion.div
+      className="fixed bottom-16 left-0 right-0 z-40 pointer-events-none"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="mx-auto max-w-xl px-6">
+        {/* Elegant progress bar - player style */}
+        <div className="h-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+          <motion.div
+            className="h-full bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-400 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          />
+        </div>
         {/* Subtle loading text */}
         <motion.p
-          className="text-muted-foreground/60 text-sm tracking-widest uppercase"
-          animate={{ opacity: [0.4, 0.8, 0.4] }}
+          className="text-white/40 text-xs text-center mt-2 tracking-widest uppercase"
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         >
           Carregando...
         </motion.p>
-
-        {/* Elegant progress bar */}
-        <div className="w-64 h-1 bg-muted/20 rounded-full overflow-hidden backdrop-blur-sm">
-          <motion.div
-            className="h-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          />
-        </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 }
