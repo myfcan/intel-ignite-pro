@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // Admin Hub - Sistema de gestão dual
@@ -190,6 +190,31 @@ export default function Admin() {
                 onClick={() => navigate('/admin/test-card-sync')}
               >
                 Testar Sincronização
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-pink-500/20 bg-pink-500/5 hover:border-pink-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-6 h-6 text-pink-600" />
+                Design Chat Demo
+              </CardTitle>
+              <CardDescription>
+                Escolha o visual do chat de IA
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>🎨 3 estilos: Minimal, Glass, Gradient</p>
+                <p>👁️ Preview interativo lado a lado</p>
+                <p>✅ Clique para selecionar e aplicar</p>
+              </div>
+              <Button
+                className="w-full bg-pink-600 hover:bg-pink-700"
+                onClick={() => navigate('/chat-design-demo')}
+              >
+                Ver Designs
               </Button>
             </CardContent>
           </Card>
