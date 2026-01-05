@@ -68,6 +68,7 @@ const AdminV7vv = lazy(() => import("./pages/AdminV7vv"));
 const V7CinematicDemo = lazy(() => import("./pages/V7CinematicDemo"));
 const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
 const V7LessonTest = lazy(() => import("./pages/V7LessonTest"));
+const ChatDesignDemo = lazy(() => import("./pages/ChatDesignDemo"));
 
 const queryClient = new QueryClient();
 
@@ -192,6 +193,7 @@ const App = () => (
               <Route path="/prompt-library/:categoryId" element={<PromptCategory />} />
               <Route path="/ai-playground" element={<AIPlayground />} />
               <Route path="/curso-exclusivo" element={<CursoExclusivo />} />
+              <Route path="/chat-design-demo" element={<ChatDesignDemo />} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
