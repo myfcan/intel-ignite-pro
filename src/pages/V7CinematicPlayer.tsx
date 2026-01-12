@@ -3,14 +3,16 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useV7PhaseScript } from '@/hooks/useV7PhaseScript';
 import { V7PhasePlayer } from '@/components/lessons/v7/cinematic/V7PhasePlayer';
-import { Loader2, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function V7CinematicPlayer() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch lesson from database - NO FALLBACK
   // ✅ V7-vv: Also fetch feedbackAudios for quiz feedback narration
@@ -28,6 +30,30 @@ export default function V7CinematicPlayer() {
   // Handle exit
   const handleExit = () => {
     navigate('/dashboard');
+  };
+
+  // Hard refresh - clear all cache and reload
+  const handleHardRefresh = async () => {
+    toast({
+      title: '🔄 Limpando cache...',
+      description: 'Aguarde enquanto limpamos todos os dados em cache.',
+    });
+    
+    // Clear React Query cache
+    queryClient.clear();
+    
+    // Clear browser cache for this page
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      } catch (e) {
+        console.warn('Failed to clear browser caches:', e);
+      }
+    }
+    
+    // Force reload the page
+    window.location.reload();
   };
 
   // Render loading state
@@ -71,7 +97,7 @@ export default function V7CinematicPlayer() {
               </p>
             </div>
           </div>
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center">
             <Button variant="outline" onClick={handleExit}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar
@@ -79,6 +105,10 @@ export default function V7CinematicPlayer() {
             <Button onClick={refetch}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Tentar Novamente
+            </Button>
+            <Button variant="destructive" onClick={handleHardRefresh}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Limpar Cache
             </Button>
           </div>
         </div>
