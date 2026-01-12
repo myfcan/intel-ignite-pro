@@ -268,17 +268,28 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       });
 
       // ============================================================================
-      // 🔧 CRITICAL FIX v3: SOLUÇÃO DEFINITIVA - Parse RADICAL do content
+      // 🔧 CRITICAL FIX v4: SOLUÇÃO DEFINITIVA - Parse inteligente do content
       // ============================================================================
       let parsedContent: any = null;
       
       // STEP 1: Garantir que temos um objeto JavaScript puro
       try {
-        const contentToParse = typeof data.content === 'string' 
-          ? data.content 
-          : JSON.stringify(data.content);
-        parsedContent = JSON.parse(contentToParse);
-        console.log('[useV7PhaseScript] ✅ Content parsed successfully');
+        if (typeof data.content === 'string') {
+          // Se for string, faz parse
+          parsedContent = JSON.parse(data.content);
+        } else if (data.content && typeof data.content === 'object') {
+          // Se já for objeto, usa diretamente (Supabase já fez o parse)
+          parsedContent = data.content;
+        } else {
+          throw new Error('Content is null or undefined');
+        }
+        
+        console.log('[useV7PhaseScript] ✅ Content parsed successfully:', {
+          contentType: typeof data.content,
+          parsedKeys: Object.keys(parsedContent || {}),
+          hasPhases: !!parsedContent?.phases,
+          phasesLength: parsedContent?.phases?.length
+        });
       } catch (e) {
         console.error('[useV7PhaseScript] ❌ Failed to parse content:', e);
         throw new Error('Formato de conteúdo inválido');
@@ -360,11 +371,15 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ============================================================================
       // ❌ NENHUMA PHASE ENCONTRADA - ERRO
       // ============================================================================
+      const contentKeys = Object.keys(parsedContent || {});
       console.error('[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA!', {
-        contentKeys: Object.keys(parsedContent || {}),
-        stringPreview: JSON.stringify(parsedContent).substring(0, 300)
+        contentKeys,
+        hasPhases: !!parsedContent?.phases,
+        phasesType: typeof parsedContent?.phases,
+        phasesIsArray: Array.isArray(parsedContent?.phases),
+        stringPreview: JSON.stringify(parsedContent).substring(0, 500)
       });
-      throw new Error('Nenhum act encontrado na aula. Verifique o conteúdo no banco de dados.');
+      throw new Error(`Nenhuma phase encontrada na aula. Keys disponíveis: [${contentKeys.join(', ')}]. Verifique o conteúdo no banco de dados.`);
       // Código legacy removido - toda lógica está no caminho V7-vv acima
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
@@ -789,10 +804,10 @@ function transformActsToPhases(
   hasCinematicFlow: boolean = false,
   wordTimestamps: Array<{ word: string; start: number; end: number }> = []
 ): V7Phase[] {
-  // ⚠️ NO FALLBACK - If no acts, throw error immediately
+  // ⚠️ NO FALLBACK - If no acts/phases, throw error immediately
   if (!acts || acts.length === 0) {
-    console.error('[transformActsToPhases] ❌ ERRO CRÍTICO: Nenhum act encontrado no banco de dados!');
-    throw new Error('Nenhum act encontrado na aula. Verifique o conteúdo no banco de dados.');
+    console.error('[transformActsToPhases] ❌ ERRO CRÍTICO: Nenhuma phase/act encontrada no banco de dados!');
+    throw new Error('Nenhuma phase encontrada na aula. Verifique se o conteúdo foi salvo corretamente.');
   }
 
   let currentTime = 0;
