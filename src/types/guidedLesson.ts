@@ -211,6 +211,13 @@ export interface ExperienceCardConfig {
   props?: ExperienceCardProps; // Props para DynamicExperienceCard (retrocompatibilidade)
 }
 
+// 🎯 V7: Desafio do usuário com feedback de IA
+export interface UserChallengeConfig {
+  instruction: string;       // Instrução para o usuário
+  challengePrompt: string;   // Prompt de exemplo do desafio
+  hints: string[];           // Dicas para o usuário
+}
+
 export interface GuidedLessonData {
   id: string;
   title: string;
@@ -223,6 +230,7 @@ export interface GuidedLessonData {
   contentVersion?: number; // Para cache-busting: incrementa quando conteúdo mudar
   schemaVersion?: number; // 🆕 Para FASE 4 - controlar versão da estrutura
   experienceCards?: ExperienceCardConfig[]; // 🆕 V5: Experience cards configurados com animações INCRÍVEIS
+  userChallenge?: UserChallengeConfig; // 🆕 V7: Desafio do usuário com feedback de IA
 }
 
 export interface GuidedLessonProps {
