@@ -42,6 +42,7 @@ export const V7UserChallengeInput = ({
   const [showHints, setShowHints] = useState(false);
   const [earnedAchievements, setEarnedAchievements] = useState<PromptAchievement[]>([]);
   const [showAchievementToast, setShowAchievementToast] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const { checkAndAwardAchievements } = usePromptAchievements();
 
@@ -211,11 +212,17 @@ export const V7UserChallengeInput = ({
         <motion.div 
           className="relative"
           animate={{
-            boxShadow: [
-              '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)',
-              '0 0 25px rgba(6, 182, 212, 0.4), 0 0 50px rgba(168, 85, 247, 0.25)',
-              '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)'
-            ]
+            boxShadow: isFocused 
+              ? [
+                  '0 0 25px rgba(6, 182, 212, 0.5), 0 0 50px rgba(168, 85, 247, 0.3)',
+                  '0 0 40px rgba(6, 182, 212, 0.7), 0 0 80px rgba(168, 85, 247, 0.5)',
+                  '0 0 25px rgba(6, 182, 212, 0.5), 0 0 50px rgba(168, 85, 247, 0.3)'
+                ]
+              : [
+                  '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)',
+                  '0 0 25px rgba(6, 182, 212, 0.4), 0 0 50px rgba(168, 85, 247, 0.25)',
+                  '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)'
+                ]
           }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           style={{ borderRadius: '0.75rem' }}
@@ -229,7 +236,7 @@ export const V7UserChallengeInput = ({
             }}
             animate={{
               backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              opacity: [0.4, 0.8, 0.4]
+              opacity: isFocused ? [0.6, 1, 0.6] : [0.4, 0.8, 0.4]
             }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -241,12 +248,111 @@ export const V7UserChallengeInput = ({
             disabled={isSubmitting || !!aiFeedback}
             className={`h-24 sm:h-28 ${V7_CLASSES.inputField} relative z-10`}
             onKeyDown={(e) => e.stopPropagation()}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
           />
           
           {/* Inner glow overlay */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-cyan-500/10 via-transparent to-purple-500/10 pointer-events-none z-20" />
           
-          {/* Corner sparkles */}
+          {/* Floating particles - only visible when focused */}
+          <AnimatePresence>
+            {isFocused && (
+              <>
+                {/* Particle 1 - orbiting top */}
+                <motion.div 
+                  className="absolute w-2 h-2 rounded-full bg-cyan-400 z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                    scale: [0.8, 1.2, 0.8],
+                    x: [-20, 20, 60, 100, 60, 20, -20],
+                    y: [-8, -12, -8, -4, -8, -12, -8]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ top: 0, left: '20%' }}
+                />
+                
+                {/* Particle 2 - orbiting right */}
+                <motion.div 
+                  className="absolute w-1.5 h-1.5 rounded-full bg-purple-400 z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0.4, 0.9, 0.4],
+                    scale: [0.6, 1, 0.6],
+                    x: [4, 8, 4, 0, 4, 8, 4],
+                    y: [0, 30, 60, 90, 60, 30, 0]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  style={{ right: -6, top: '20%' }}
+                />
+                
+                {/* Particle 3 - orbiting bottom */}
+                <motion.div 
+                  className="absolute w-1 h-1 rounded-full bg-white z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0.3, 0.8, 0.3],
+                    scale: [0.5, 1.5, 0.5],
+                    x: [100, 60, 20, -20, 20, 60, 100],
+                    y: [4, 8, 6, 4, 6, 8, 4]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  style={{ bottom: -4, right: '30%' }}
+                />
+                
+                {/* Particle 4 - orbiting left */}
+                <motion.div 
+                  className="absolute w-1.5 h-1.5 rounded-full bg-cyan-300 z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                    scale: [0.7, 1.1, 0.7],
+                    x: [-6, -10, -6, -2, -6, -10, -6],
+                    y: [80, 50, 20, -10, 20, 50, 80]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                  style={{ left: -4, bottom: '20%' }}
+                />
+                
+                {/* Particle 5 - floating center top */}
+                <motion.div 
+                  className="absolute w-1 h-1 rounded-full bg-purple-300 z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0.2, 0.7, 0.2],
+                    scale: [0.4, 1.2, 0.4],
+                    y: [-10, -16, -10]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+                  style={{ top: 0, left: '50%' }}
+                />
+                
+                {/* Particle 6 - sparkle effect top right */}
+                <motion.div 
+                  className="absolute w-2 h-2 z-30 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0, 1, 0],
+                    scale: [0.3, 1, 0.3],
+                    rotate: [0, 180, 360]
+                  }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                  style={{ top: -8, right: '25%' }}
+                >
+                  <Sparkles className="w-full h-full text-yellow-300" />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+          
+          {/* Corner sparkles - always visible */}
           <motion.div 
             className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 z-20 pointer-events-none"
             animate={{ 
