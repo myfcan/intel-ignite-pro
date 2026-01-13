@@ -149,7 +149,8 @@ const TrailDetail = () => {
     }
     
     // V7 Cinematic lessons use dedicated route
-    if (lesson.model === 'v7' || lesson.lesson_type === 'v7-cinematic') {
+    // Suporta: model='v7', model='v7-cinematic', ou lesson_type='v7-cinematic'
+    if (lesson.model === 'v7' || lesson.model === 'v7-cinematic' || lesson.lesson_type === 'v7-cinematic') {
       navigate(`/v7/${lesson.id}`);
       return;
     }
