@@ -1675,6 +1675,7 @@ export const V7PhasePlayer = ({
       </AnimatePresence>
 
       {/* Captions - ✅ V7-v17: HIDE during interactive phases but SHOW during all others */}
+      {/* ✅ V7-v32: CTA-button interactions should SHOW captions (they have continuous narration) */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
@@ -1682,8 +1683,9 @@ export const V7PhasePlayer = ({
           isVisible={
             // ✅ V7-v17: Show captions when audio is playing OR when we have any audio time
             // Hide only during interactive phases that control their own content
+            // ✅ V7-v32: Exception for CTA-button interactions - they have continuous narration
             (audio.isPlaying || audio.currentTime > 0.5) &&
-            currentPhase?.type !== 'interaction' &&
+            (currentPhase?.type !== 'interaction' || (currentPhase?.interaction as any)?.type === 'cta-button') &&
             currentPhase?.type !== 'playground' &&
             currentPhase?.type !== 'gamification' &&
             currentPhase?.type !== 'secret-reveal' // ✅ secret-reveal has its own narration
