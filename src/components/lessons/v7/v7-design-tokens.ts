@@ -272,14 +272,26 @@ export const buildSafeAreaStyle = (position: 'top' | 'bottom' | 'left' | 'right'
 
 /**
  * Get word highlight class based on state
+ * @deprecated Mantido para compatibilidade - novo modelo usa frases completas
  */
 export const getCaptionWordClass = (state: 'past' | 'current' | 'future') => {
-  switch (state) {
-    case 'current':
-      return 'text-cyan-400 font-semibold scale-105';
-    case 'past':
-      return 'text-white/50';
-    case 'future':
-      return 'text-white/30';
-  }
+  // Novo modelo: texto uniforme sem destaque palavra por palavra
+  return 'text-white font-medium';
 };
+
+/**
+ * Caption sentence container classes
+ */
+export const V7_CAPTION_SENTENCE = {
+  container: `
+    bg-black/75 backdrop-blur-md rounded-lg
+    px-5 py-3 sm:px-6 sm:py-3.5
+    max-w-[85vw] sm:max-w-2xl md:max-w-3xl
+    border border-white/10 shadow-lg
+  `.trim().replace(/\s+/g, ' '),
+  text: `
+    text-center text-white font-medium
+    text-base sm:text-lg md:text-xl
+    leading-relaxed tracking-wide
+  `.trim().replace(/\s+/g, ' '),
+} as const;
