@@ -207,19 +207,71 @@ export const V7UserChallengeInput = ({
           )}
         </AnimatePresence>
 
-        {/* Input do usuário - altura fixa responsiva - DESTAQUE VISUAL */}
-        <div className="relative">
+        {/* Input do usuário - altura fixa responsiva - DESTAQUE VISUAL BRILHANTE */}
+        <motion.div 
+          className="relative"
+          animate={{
+            boxShadow: [
+              '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)',
+              '0 0 25px rgba(6, 182, 212, 0.4), 0 0 50px rgba(168, 85, 247, 0.25)',
+              '0 0 15px rgba(6, 182, 212, 0.2), 0 0 30px rgba(168, 85, 247, 0.1)'
+            ]
+          }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          style={{ borderRadius: '0.75rem' }}
+        >
+          {/* Animated gradient border */}
+          <motion.div 
+            className="absolute -inset-[2px] rounded-xl pointer-events-none z-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(168, 85, 247, 0.6), rgba(6, 182, 212, 0.6))',
+              backgroundSize: '200% 200%'
+            }}
+            animate={{
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              opacity: [0.4, 0.8, 0.4]
+            }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
           <textarea
             value={userPrompt}
             onChange={(e) => setUserPrompt(e.target.value)}
             placeholder="Escreva seu prompt profissional aqui..."
             disabled={isSubmitting || !!aiFeedback}
-            className={`h-24 sm:h-28 ${V7_CLASSES.inputField}`}
+            className={`h-24 sm:h-28 ${V7_CLASSES.inputField} relative z-10`}
             onKeyDown={(e) => e.stopPropagation()}
           />
-          {/* Glow effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
-        </div>
+          
+          {/* Inner glow overlay */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-cyan-500/10 via-transparent to-purple-500/10 pointer-events-none z-20" />
+          
+          {/* Corner sparkles */}
+          <motion.div 
+            className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400 z-20 pointer-events-none"
+            animate={{ 
+              opacity: [0.3, 1, 0.3],
+              scale: [0.8, 1.2, 0.8]
+            }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+          />
+          <motion.div 
+            className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-purple-400 z-20 pointer-events-none"
+            animate={{ 
+              opacity: [0.3, 1, 0.3],
+              scale: [0.8, 1.2, 0.8]
+            }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+          />
+          <motion.div 
+            className="absolute top-1/2 left-1/2 w-1 h-1 rounded-full bg-white z-20 pointer-events-none"
+            animate={{ 
+              opacity: [0.2, 0.8, 0.2],
+              scale: [0.5, 1.5, 0.5]
+            }}
+            transition={{ duration: 2.5, repeat: Infinity, delay: 1.2 }}
+          />
+        </motion.div>
 
         {/* Erro */}
         <AnimatePresence>
