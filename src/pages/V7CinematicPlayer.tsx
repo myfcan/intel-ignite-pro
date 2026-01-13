@@ -32,11 +32,11 @@ export default function V7CinematicPlayer() {
     navigate('/dashboard');
   };
 
-  // Hard refresh - clear all cache and reload
+  // Hard refresh - clear cache and refetch WITHOUT reloading page
   const handleHardRefresh = async () => {
     toast({
       title: '🔄 Limpando cache...',
-      description: 'Aguarde enquanto limpamos todos os dados em cache.',
+      description: 'Recarregando dados do servidor...',
     });
     
     // Clear React Query cache
@@ -52,8 +52,14 @@ export default function V7CinematicPlayer() {
       }
     }
     
-    // Force reload the page
-    window.location.reload();
+    // Refetch the lesson data instead of reloading the page
+    // This avoids race conditions where the page reloads before data is ready
+    await refetch();
+    
+    toast({
+      title: '✅ Cache limpo!',
+      description: 'Dados recarregados do servidor.',
+    });
   };
 
   // Render loading state
