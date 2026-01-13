@@ -133,15 +133,37 @@ export const V7UserChallengeInput = ({
           {userChallenge.instruction}
         </motion.p>
 
-        {/* Desafio original - compacto */}
+        {/* Desafio original - compacto com destaque pulsante */}
         <div className="bg-white/[0.02] border border-amber-500/30 rounded-lg p-2 sm:p-3">
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-amber-500 text-black text-[10px] sm:text-xs font-bold rounded">DESAFIO</span>
             <span className="text-white/50 text-[10px] sm:text-xs">Reescreva este prompt</span>
           </div>
-          <div className="bg-black/40 rounded p-2 font-mono text-xs sm:text-sm text-amber-300">
-            "{userChallenge.challengePrompt}"
-          </div>
+          <motion.div 
+            className="bg-black/40 rounded p-2 font-mono text-xs sm:text-sm text-amber-300 relative overflow-hidden"
+            animate={{ 
+              boxShadow: [
+                '0 0 8px rgba(251, 191, 36, 0.2)',
+                '0 0 20px rgba(251, 191, 36, 0.5)',
+                '0 0 8px rgba(251, 191, 36, 0.2)'
+              ]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <motion.span
+              animate={{ 
+                opacity: [0.7, 1, 0.7],
+                textShadow: [
+                  '0 0 4px rgba(251, 191, 36, 0.3)',
+                  '0 0 12px rgba(251, 191, 36, 0.8)',
+                  '0 0 4px rgba(251, 191, 36, 0.3)'
+                ]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              "{userChallenge.challengePrompt}"
+            </motion.span>
+          </motion.div>
         </div>
 
         {/* Botão de dicas inline */}
