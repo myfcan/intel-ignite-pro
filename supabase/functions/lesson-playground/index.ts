@@ -29,19 +29,18 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Use getClaims for JWT validation (works with signing-keys)
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    // Use getUser to validate the session - this works with the auth header
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error('Auth error:', claimsError);
-      return new Response(JSON.stringify({ error: 'Unauthorized - invalid token' }), {
+    if (userError || !user) {
+      console.error('Auth error:', userError?.message || 'No user found');
+      return new Response(JSON.stringify({ error: 'Unauthorized - please login again' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
