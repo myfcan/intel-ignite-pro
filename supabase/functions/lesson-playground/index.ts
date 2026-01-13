@@ -16,8 +16,8 @@ serve(async (req) => {
     const { lessonId, prompt } = await req.json();
     
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), {
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -29,13 +29,19 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    // Use getClaims for JWT validation (works with signing-keys)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error('Auth error:', claimsError);
+      return new Response(JSON.stringify({ error: 'Unauthorized - invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -126,7 +132,7 @@ Responda em português brasileiro, tom encorajador mas direto.`;
     const { error: insertError } = await supabaseClient
       .from('user_playground_sessions')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         lesson_id: lessonId,
         user_prompt: prompt,
         ai_response: responseText,

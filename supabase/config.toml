@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.v7-vv]
 verify_jwt = false
+
+[functions.lesson-playground]
+verify_jwt = false
+
+[functions.claude-interact]
+verify_jwt = false
