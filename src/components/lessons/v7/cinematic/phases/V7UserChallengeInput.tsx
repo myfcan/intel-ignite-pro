@@ -4,13 +4,16 @@
  * ✅ V7-v27: Integrado com sistema de achievements
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Send, Sparkles, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react';
 import { usePromptAchievements, type PromptAchievement } from '@/hooks/usePromptAchievements';
 import { V7AchievementToast } from './V7AchievementToast';
 import { V7_CLASSES } from '../../v7-design-tokens';
+
+// Som sutil de foco (soft chime)
+const FOCUS_SOUND_URL = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1pZmhvd4eXqLrM3erx9fXy7ujf1cy9sKSYjYN6c21oZGJhYGBgYWNlZ2xwdHl+hIqRmKCorrfAyczR1dja3N3d3dza19PQzMjDvrq2sq+sqqusr7K2u8DFyszQ1NfZ29zc3Nza19PRzcnEwLy4tLGvrq2trq+xs7a5vMDDxsnLzdDS09TV1dTT0tDOzMrIxcPBv726uLe3uLq8v8LFyMrMz9DS09TU1NTT0tHPzcvJx8XDwb++vb2+v8HDxcfJy83P0NDR0dHR0dDPzszKyMbEw8LBwMDAv7+/v8DBwsPFxsjJysvMzMzMy8vKycjHxsXEw8LCwcHBwcHCwsPExcbHyMnKysrKysrJycjIx8bFxMPDwsLCwsLCwsPDxMXGx8jIycrKysnJycjIx8bGxcTEw8PDw8PDw8PExMXGxsfIyMjIyMjIx8fGxsXFxMTEw8PDw8PDxMTExcXGxsfHx8fHx8fHxsbGxcXExMTEw8TExMTExMXFxcbGxsbGxsbGxsbFxcXFxcXExMTExMTExMXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxQ==';
 
 interface UserChallenge {
   instruction: string;
@@ -43,8 +46,27 @@ export const V7UserChallengeInput = ({
   const [earnedAchievements, setEarnedAchievements] = useState<PromptAchievement[]>([]);
   const [showAchievementToast, setShowAchievementToast] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  
+  const focusSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const { checkAndAwardAchievements } = usePromptAchievements();
+
+  // Inicializar o som de foco
+  useEffect(() => {
+    focusSoundRef.current = new Audio(FOCUS_SOUND_URL);
+    focusSoundRef.current.volume = 0.15; // Volume baixo e sutil
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    // Tocar som sutil ao focar
+    if (focusSoundRef.current) {
+      focusSoundRef.current.currentTime = 0;
+      focusSoundRef.current.play().catch(() => {
+        // Ignorar erro se autoplay for bloqueado
+      });
+    }
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!userPrompt.trim() || isSubmitting) return;
@@ -134,37 +156,17 @@ export const V7UserChallengeInput = ({
           {userChallenge.instruction}
         </motion.p>
 
-        {/* Desafio original - compacto com destaque pulsante */}
+        {/* Desafio original - compacto SEM pulsação (pulsação vai na caixa de input) */}
         <div className="bg-white/[0.02] border border-amber-500/30 rounded-lg p-2 sm:p-3">
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-amber-500 text-black text-[10px] sm:text-xs font-bold rounded">DESAFIO</span>
             <span className="text-white/50 text-[10px] sm:text-xs">Reescreva este prompt</span>
           </div>
-          <motion.div 
-            className="bg-black/40 rounded p-2 font-mono text-xs sm:text-sm text-amber-300 relative overflow-hidden"
-            animate={{ 
-              boxShadow: [
-                '0 0 8px rgba(251, 191, 36, 0.2)',
-                '0 0 20px rgba(251, 191, 36, 0.5)',
-                '0 0 8px rgba(251, 191, 36, 0.2)'
-              ]
-            }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <motion.span
-              animate={{ 
-                opacity: [0.7, 1, 0.7],
-                textShadow: [
-                  '0 0 4px rgba(251, 191, 36, 0.3)',
-                  '0 0 12px rgba(251, 191, 36, 0.8)',
-                  '0 0 4px rgba(251, 191, 36, 0.3)'
-                ]
-              }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
+          <div className="bg-black/40 rounded p-2 font-mono text-xs sm:text-sm text-amber-300 relative overflow-hidden">
+            <span className="opacity-90">
               "{userChallenge.challengePrompt}"
-            </motion.span>
-          </motion.div>
+            </span>
+          </div>
         </div>
 
         {/* Botão de dicas inline */}
@@ -248,85 +250,150 @@ export const V7UserChallengeInput = ({
             disabled={isSubmitting || !!aiFeedback}
             className={`h-24 sm:h-28 ${V7_CLASSES.inputField} relative z-10`}
             onKeyDown={(e) => e.stopPropagation()}
-            onFocus={() => setIsFocused(true)}
+            onFocus={handleFocus}
             onBlur={() => setIsFocused(false)}
           />
           
           {/* Inner glow overlay */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-cyan-500/10 via-transparent to-purple-500/10 pointer-events-none z-20" />
           
-          {/* Floating particles - only visible when focused */}
+          {/* Floating particles with light trails - only visible when focused */}
           <AnimatePresence>
             {isFocused && (
               <>
-                {/* Particle 1 - orbiting top */}
+                {/* Particle 1 with trail - orbiting top */}
                 <motion.div 
-                  className="absolute w-2 h-2 rounded-full bg-cyan-400 z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
-                    opacity: [0.5, 1, 0.5],
-                    scale: [0.8, 1.2, 0.8],
+                    opacity: 1,
+                    scale: 1,
                     x: [-20, 20, 60, 100, 60, 20, -20],
                     y: [-8, -12, -8, -4, -8, -12, -8]
                   }}
                   exit={{ opacity: 0, scale: 0 }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   style={{ top: 0, left: '20%' }}
-                />
+                >
+                  {/* Trail effect */}
+                  <motion.div 
+                    className="absolute w-8 h-2 rounded-full blur-sm"
+                    style={{ 
+                      background: 'linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.6))',
+                      right: '100%',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                  {/* Core particle */}
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                </motion.div>
                 
-                {/* Particle 2 - orbiting right */}
+                {/* Particle 2 with trail - orbiting right */}
                 <motion.div 
-                  className="absolute w-1.5 h-1.5 rounded-full bg-purple-400 z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
-                    opacity: [0.4, 0.9, 0.4],
-                    scale: [0.6, 1, 0.6],
+                    opacity: 1,
+                    scale: 1,
                     x: [4, 8, 4, 0, 4, 8, 4],
                     y: [0, 30, 60, 90, 60, 30, 0]
                   }}
                   exit={{ opacity: 0, scale: 0 }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                   style={{ right: -6, top: '20%' }}
-                />
+                >
+                  {/* Trail effect */}
+                  <motion.div 
+                    className="absolute w-1.5 h-6 rounded-full blur-sm"
+                    style={{ 
+                      background: 'linear-gradient(180deg, transparent, rgba(168, 85, 247, 0.6))',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)'
+                    }}
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                  />
+                  {/* Core particle */}
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
+                </motion.div>
                 
-                {/* Particle 3 - orbiting bottom */}
+                {/* Particle 3 with trail - orbiting bottom */}
                 <motion.div 
-                  className="absolute w-1 h-1 rounded-full bg-white z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
-                    opacity: [0.3, 0.8, 0.3],
-                    scale: [0.5, 1.5, 0.5],
+                    opacity: 1,
+                    scale: 1,
                     x: [100, 60, 20, -20, 20, 60, 100],
                     y: [4, 8, 6, 4, 6, 8, 4]
                   }}
                   exit={{ opacity: 0, scale: 0 }}
                   transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                   style={{ bottom: -4, right: '30%' }}
-                />
+                >
+                  {/* Trail effect */}
+                  <motion.div 
+                    className="absolute w-6 h-1 rounded-full blur-sm"
+                    style={{ 
+                      background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.5), transparent)',
+                      left: '100%',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                    animate={{ opacity: [0.2, 0.6, 0.2] }}
+                    transition={{ duration: 1.1, repeat: Infinity }}
+                  />
+                  {/* Core particle */}
+                  <div className="w-1 h-1 rounded-full bg-white shadow-[0_0_5px_rgba(255,255,255,0.9)]" />
+                </motion.div>
                 
-                {/* Particle 4 - orbiting left */}
+                {/* Particle 4 with trail - orbiting left */}
                 <motion.div 
-                  className="absolute w-1.5 h-1.5 rounded-full bg-cyan-300 z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
-                    opacity: [0.5, 1, 0.5],
-                    scale: [0.7, 1.1, 0.7],
+                    opacity: 1,
+                    scale: 1,
                     x: [-6, -10, -6, -2, -6, -10, -6],
                     y: [80, 50, 20, -10, 20, 50, 80]
                   }}
                   exit={{ opacity: 0, scale: 0 }}
                   transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
                   style={{ left: -4, bottom: '20%' }}
-                />
+                >
+                  {/* Trail effect */}
+                  <motion.div 
+                    className="absolute w-1.5 h-5 rounded-full blur-sm"
+                    style={{ 
+                      background: 'linear-gradient(0deg, transparent, rgba(103, 232, 249, 0.6))',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)'
+                    }}
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 1.3, repeat: Infinity }}
+                  />
+                  {/* Core particle */}
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_6px_rgba(103,232,249,0.8)]" />
+                </motion.div>
                 
-                {/* Particle 5 - floating center top */}
+                {/* Particle 5 - floating center top with glow pulse */}
                 <motion.div 
                   className="absolute w-1 h-1 rounded-full bg-purple-300 z-30 pointer-events-none"
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ 
                     opacity: [0.2, 0.7, 0.2],
                     scale: [0.4, 1.2, 0.4],
-                    y: [-10, -16, -10]
+                    y: [-10, -16, -10],
+                    boxShadow: [
+                      '0 0 4px rgba(196, 181, 253, 0.4)',
+                      '0 0 12px rgba(196, 181, 253, 0.9)',
+                      '0 0 4px rgba(196, 181, 253, 0.4)'
+                    ]
                   }}
                   exit={{ opacity: 0, scale: 0 }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
@@ -346,7 +413,7 @@ export const V7UserChallengeInput = ({
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
                   style={{ top: -8, right: '25%' }}
                 >
-                  <Sparkles className="w-full h-full text-yellow-300" />
+                  <Sparkles className="w-full h-full text-yellow-300 drop-shadow-[0_0_4px_rgba(253,224,71,0.8)]" />
                 </motion.div>
               </>
             )}
