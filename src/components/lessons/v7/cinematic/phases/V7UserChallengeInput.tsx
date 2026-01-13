@@ -244,6 +244,14 @@ export const V7UserChallengeInput = ({
             className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold text-sm rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: userPrompt.trim() && !isSubmitting ? 1.02 : 1 }}
             whileTap={{ scale: userPrompt.trim() && !isSubmitting ? 0.98 : 1 }}
+            animate={userPrompt.trim() && !isSubmitting ? {
+              boxShadow: [
+                '0 0 10px rgba(6, 182, 212, 0.3)',
+                '0 0 25px rgba(6, 182, 212, 0.6), 0 0 40px rgba(168, 85, 247, 0.4)',
+                '0 0 10px rgba(6, 182, 212, 0.3)'
+              ]
+            } : {}}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >
             {isSubmitting ? (
               <>
