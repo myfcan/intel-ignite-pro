@@ -296,6 +296,16 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       }
 
       // STEP 2: Buscar phases de TODAS as fontes possíveis
+      // ✅ DEBUG v5: Log raw phases for diagnosis
+      console.log('[useV7PhaseScript] 🔍 RAW PHASES CHECK:', {
+        phasesExists: 'phases' in parsedContent,
+        phasesType: typeof parsedContent?.phases,
+        phasesIsArray: Array.isArray(parsedContent?.phases),
+        phasesLength: Array.isArray(parsedContent?.phases) ? parsedContent.phases.length : 'N/A',
+        firstPhaseType: Array.isArray(parsedContent?.phases) && parsedContent.phases[0] ? parsedContent.phases[0].type : 'N/A',
+        contentKeys: Object.keys(parsedContent || {}).slice(0, 10),
+      });
+      
       const phasesArray = 
         parsedContent?.phases ||
         parsedContent?.cinematic_flow?.phases ||
@@ -309,7 +319,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         cinematic_flow_phases: !!parsedContent?.cinematic_flow?.phases,
         cinematic_flow_acts: !!parsedContent?.cinematic_flow?.acts,
         foundPhases: !!phasesArray,
-        phasesLength: Array.isArray(phasesArray) ? phasesArray.length : 0
+        phasesLength: Array.isArray(phasesArray) ? phasesArray.length : 0,
+        phasesArrayType: typeof phasesArray,
+        phasesArrayIsArray: Array.isArray(phasesArray),
       });
 
       // ✅ DEBUG: Save raw content for V7DebugPanel
@@ -394,14 +406,18 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       // ❌ NENHUMA PHASE ENCONTRADA - ERRO
       // ============================================================================
       const contentKeys = Object.keys(parsedContent || {});
-      console.error('[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA!', {
-        contentKeys,
+      const phasesDebug = {
         hasPhases: !!parsedContent?.phases,
         phasesType: typeof parsedContent?.phases,
         phasesIsArray: Array.isArray(parsedContent?.phases),
+        phasesLength: Array.isArray(parsedContent?.phases) ? parsedContent.phases.length : 0,
+      };
+      console.error('[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA!', {
+        contentKeys,
+        ...phasesDebug,
         stringPreview: JSON.stringify(parsedContent).substring(0, 500)
       });
-      throw new Error(`Nenhuma phase encontrada na aula. Keys disponíveis: [${contentKeys.join(', ')}]. Verifique o conteúdo no banco de dados.`);
+      throw new Error(`Nenhum act encontrado na aula. Keys: [${contentKeys.join(', ')}]. phases: ${JSON.stringify(phasesDebug)}. Verifique o conteúdo no banco de dados.`);
       // Código legacy removido - toda lógica está no caminho V7-vv acima
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
