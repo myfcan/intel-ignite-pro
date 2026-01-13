@@ -322,23 +322,42 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         console.log('[useV7PhaseScript] ✅✅✅ PHASES ENCONTRADAS:', phasesArray.length);
         setDetectionPath('v7-vv');
 
-        // Normalizar timestamps
-        const rawTimestamps = (data.word_timestamps as unknown as RawWordTimestamp[] | null) || [];
-        const timestamps: WordTimestamp[] = rawTimestamps.map((ts: RawWordTimestamp) => ({
-          word: ts.word || '',
-          start: ts.start ?? ts.start_time ?? 0,
-          end: ts.end ?? ts.end_time ?? 0
-        }));
+        // ✅ V7-vv: PRIORITY - Get timestamps from content.audio.mainAudio.wordTimestamps FIRST
+        let timestamps: WordTimestamp[] = [];
+        const mainAudioTimestamps = parsedContent?.audio?.mainAudio?.wordTimestamps;
+        
+        if (Array.isArray(mainAudioTimestamps) && mainAudioTimestamps.length > 0) {
+          console.log('[useV7PhaseScript] ✅ Using wordTimestamps from content.audio.mainAudio');
+          timestamps = mainAudioTimestamps.map((ts: RawWordTimestamp) => ({
+            word: ts.word || '',
+            start: ts.start ?? ts.start_time ?? 0,
+            end: ts.end ?? ts.end_time ?? 0
+          }));
+        } else {
+          // Fallback to lesson-level word_timestamps
+          const rawTimestamps = (data.word_timestamps as unknown as RawWordTimestamp[] | null) || [];
+          timestamps = rawTimestamps.map((ts: RawWordTimestamp) => ({
+            word: ts.word || '',
+            start: ts.start ?? ts.start_time ?? 0,
+            end: ts.end ?? ts.end_time ?? 0
+          }));
+        }
+        
+        console.log('[useV7PhaseScript] 📊 Timestamps count:', timestamps.length);
 
         // Calcular duração total
         const totalDuration = parsedContent.metadata?.totalDuration ||
+          parsedContent.audio?.mainAudio?.duration ||
           (timestamps.length > 0 ? timestamps[timestamps.length - 1].end : 120);
 
-        // Resolver URL do áudio
-        const audioUrlResolved = data.audio_url || 
+        // ✅ V7-vv: PRIORITY - Resolve audio URL from content.audio.mainAudio.url FIRST
+        const audioUrlResolved = 
+          parsedContent.audio?.mainAudio?.url ||
+          data.audio_url || 
           parsedContent.audioConfig?.url || 
-          parsedContent.audio?.mainAudio?.url || 
           '';
+        
+        console.log('[useV7PhaseScript] 🔊 Audio URL resolved:', audioUrlResolved ? 'YES' : 'NO');
 
         // Criar script
         const lessonScript: V7LessonScript = {
@@ -355,6 +374,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         console.log('[useV7PhaseScript] ✅ Script criado:', {
           id: lessonScript.id,
           phases: lessonScript.phases.length,
+          timestamps: timestamps.length,
+          audioUrl: !!audioUrlResolved,
+          totalDuration,
         });
 
         // Extrair feedbackAudios
@@ -362,7 +384,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         setFeedbackAudios(feedbackAudiosData);
 
         setScript(lessonScript);
-        setAudioUrl(data.audio_url || null);
+        setAudioUrl(audioUrlResolved || null);
         setWordTimestamps(timestamps);
         setIsLoading(false);
         return;
