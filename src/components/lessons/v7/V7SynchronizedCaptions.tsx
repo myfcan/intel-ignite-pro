@@ -1,17 +1,16 @@
 // src/components/lessons/v7/V7SynchronizedCaptions.tsx
-// ✅ ULTRA-MINIMAL: Single line captions that don't block UI
-// - Single line only (no wrapping)
-// - Very compact height
-// - Positioned at bottom edge
-// - Only shows current word + small context
+// ✅ LEGENDA ESTÁTICA COM FRASE COMPLETA
+// - Exibe 1-2 frases por vez (não palavra por palavra)
+// - Transição suave entre frases
+// - Leitura natural e confortável
+// - Não distrai do visual
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   V7_SPACING, 
   V7_LAYERS, 
   V7_CLASSES,
-  getCaptionWordClass 
 } from './v7-design-tokens';
 
 interface WordTimestamp {
@@ -20,15 +19,22 @@ interface WordTimestamp {
   end: number;
 }
 
+interface Sentence {
+  text: string;
+  startTime: number;
+  endTime: number;
+  words: WordTimestamp[];
+}
+
 interface V7SynchronizedCaptionsProps {
   wordTimestamps: WordTimestamp[];
   currentTime: number;
   isVisible?: boolean;
   className?: string;
-  maxWords?: number;
+  maxWords?: number; // Mantido para compatibilidade, mas não usado no novo modelo
 }
 
-// Clean markdown and filter non-spoken words
+// Limpa markdown e filtra palavras não-faladas
 const cleanWord = (word: string): string | null => {
   if (word.startsWith('#')) return null;
   if (word === '**' || word === '*' || word === '__' || word === '_') return null;
@@ -51,85 +57,121 @@ const cleanWord = (word: string): string | null => {
   return cleaned;
 };
 
+// Verifica se a palavra termina uma frase
+const isSentenceEnd = (word: string): boolean => {
+  return /[.!?:;]$/.test(word);
+};
+
 export const V7SynchronizedCaptions = ({
   wordTimestamps,
   currentTime,
   isVisible = true,
   className = '',
-  maxWords = 6, // Reduced from 12 to 6 for single line
 }: V7SynchronizedCaptionsProps) => {
-  const cleanedTimestamps = useMemo(() => {
-    return wordTimestamps
-      .map((w, index) => {
-        const cleaned = cleanWord(w.word);
-        if (!cleaned) return null;
-        return { ...w, word: cleaned, originalIndex: index };
-      })
-      .filter(Boolean) as (WordTimestamp & { originalIndex: number })[];
+  const [displayedSentence, setDisplayedSentence] = useState<Sentence | null>(null);
+  const lastSentenceRef = useRef<string>('');
+
+  // Limpa e agrupa palavras em sentenças
+  const sentences = useMemo(() => {
+    const cleanedWords: WordTimestamp[] = [];
+    
+    wordTimestamps.forEach((w) => {
+      const cleaned = cleanWord(w.word);
+      if (cleaned) {
+        cleanedWords.push({ ...w, word: cleaned });
+      }
+    });
+
+    if (cleanedWords.length === 0) return [];
+
+    const result: Sentence[] = [];
+    let currentSentence: WordTimestamp[] = [];
+    let sentenceStartTime = 0;
+
+    cleanedWords.forEach((word, index) => {
+      if (currentSentence.length === 0) {
+        sentenceStartTime = word.start;
+      }
+      
+      currentSentence.push(word);
+
+      // Cria nova frase quando:
+      // 1. Encontra pontuação final
+      // 2. Ou acumula ~12-15 palavras (para frases longas sem pontuação)
+      // 3. Ou há uma pausa longa (>1.5s) entre palavras
+      const isEnd = isSentenceEnd(word.word);
+      const isTooLong = currentSentence.length >= 15;
+      const nextWord = cleanedWords[index + 1];
+      const hasLongPause = nextWord && (nextWord.start - word.end) > 1.5;
+
+      if (isEnd || isTooLong || hasLongPause || index === cleanedWords.length - 1) {
+        const text = currentSentence.map(w => w.word).join(' ');
+        result.push({
+          text,
+          startTime: sentenceStartTime,
+          endTime: word.end,
+          words: [...currentSentence],
+        });
+        currentSentence = [];
+      }
+    });
+
+    return result;
   }, [wordTimestamps]);
 
-  const currentWordIndex = useMemo(() => {
-    return cleanedTimestamps.findIndex(
-      (word) => currentTime >= word.start && currentTime < word.end
-    );
-  }, [cleanedTimestamps, currentTime]);
+  // Encontra a frase atual baseado no tempo
+  const currentSentence = useMemo(() => {
+    return sentences.find(
+      (sentence) => currentTime >= sentence.startTime && currentTime < sentence.endTime + 0.5
+    ) || null;
+  }, [sentences, currentTime]);
 
-  // Get visible words - fewer words, centered on current
-  const visibleWords = useMemo(() => {
-    if (currentWordIndex < 0) return [];
-
-    const halfWindow = Math.floor(maxWords / 2);
-    let startIdx = Math.max(0, currentWordIndex - halfWindow);
-    let endIdx = Math.min(cleanedTimestamps.length, startIdx + maxWords);
-
-    if (endIdx - startIdx < maxWords) {
-      startIdx = Math.max(0, endIdx - maxWords);
+  // Atualiza a frase exibida com transição suave
+  useEffect(() => {
+    if (currentSentence && currentSentence.text !== lastSentenceRef.current) {
+      lastSentenceRef.current = currentSentence.text;
+      setDisplayedSentence(currentSentence);
     }
+  }, [currentSentence]);
 
-    return cleanedTimestamps.slice(startIdx, endIdx).map((word, idx) => ({
-      ...word,
-      absoluteIndex: startIdx + idx,
-    }));
-  }, [cleanedTimestamps, currentWordIndex, maxWords]);
-
-  const getWordState = (absoluteIndex: number): 'past' | 'current' | 'future' => {
-    if (absoluteIndex < currentWordIndex) return 'past';
-    if (absoluteIndex === currentWordIndex) return 'current';
-    return 'future';
-  };
-
-  if (!isVisible || visibleWords.length === 0) return null;
+  if (!isVisible || !displayedSentence) return null;
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key={displayedSentence.text}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
         className={`v7-captions fixed left-0 right-0 flex justify-center px-4 sm:px-6 pointer-events-none ${className}`}
         style={{
-          // ✅ FIX: Position JUST ABOVE the player controls with safe area support
           bottom: V7_SPACING.positions.captions.bottom,
           paddingLeft: V7_SPACING.safeArea.left,
           paddingRight: V7_SPACING.safeArea.right,
           zIndex: V7_LAYERS.captions,
         }}
       >
-        {/* Clean minimal caption - safe distance above all controls */}
-        <div className={V7_CLASSES.captionContainer}>
-          <p className="text-center text-xs sm:text-sm md:text-base flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
-            {visibleWords.map((word) => {
-              const state = getWordState(word.absoluteIndex);
-              return (
-                <span
-                  key={`${word.absoluteIndex}-${word.word}`}
-                  className={`transition-all duration-150 ${getCaptionWordClass(state)}`}
-                >
-                  {word.word}
-                </span>
-              );
-            })}
+        {/* Container de legenda estática */}
+        <div 
+          className="
+            bg-black/75 backdrop-blur-md rounded-lg
+            px-5 py-3 sm:px-6 sm:py-3.5
+            max-w-[85vw] sm:max-w-2xl md:max-w-3xl
+            border border-white/10 shadow-lg
+          "
+        >
+          <p 
+            className="
+              text-center text-white font-medium
+              text-base sm:text-lg md:text-xl
+              leading-relaxed tracking-wide
+            "
+            style={{
+              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+            }}
+          >
+            {displayedSentence.text}
           </p>
         </div>
       </motion.div>
