@@ -12,10 +12,11 @@
  * O = Otimização
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Check, X, GripHorizontal, Trophy, Sparkles } from 'lucide-react';
+import { Check, X, GripHorizontal, Trophy, Sparkles, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface PerfeitoItem {
   id: string;
@@ -50,6 +51,9 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
+  // Sound effects
+  const { playSound, unlockAudio } = useV7SoundEffects(0.6, true);
+  
   // Slots state: which meaning id is in each slot (null if empty)
   const [slots, setSlots] = useState<(string | null)[]>(Array(8).fill(null));
   // Available draggable cards (shuffled meanings)
@@ -67,6 +71,17 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
   // Touch state for mobile
   const [touchDragging, setTouchDragging] = useState<string | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  // Animation state
+  const [isEntering, setIsEntering] = useState(true);
+  const [lastPlacedSlot, setLastPlacedSlot] = useState<number | null>(null);
+
+  // Unlock audio on mount
+  useEffect(() => {
+    unlockAudio();
+    // Entrance animation complete after delay
+    const timer = setTimeout(() => setIsEntering(false), 1000);
+    return () => clearTimeout(timer);
+  }, [unlockAudio]);
 
   const launchConfetti = useCallback(() => {
     const count = 200;
@@ -85,7 +100,10 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
     fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
     fire(0.1, { spread: 120, startVelocity: 45 });
-  }, []);
+    
+    // Play completion sound
+    playSound('completion');
+  }, [playSound]);
 
   const checkAllCorrect = useCallback((currentSlots: (string | null)[]) => {
     const allFilled = currentSlots.every((s) => s !== null);
@@ -113,6 +131,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     e.dataTransfer.setData('text/plain', itemId);
     e.dataTransfer.effectAllowed = 'move';
     setDraggingId(itemId);
+    playSound('click-soft');
   };
 
   const handleDragEnd = () => {
@@ -137,6 +156,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     // Check if slot is already filled
     if (slots[slotIndex] !== null) {
       // Shake animation feedback
+      playSound('error');
       const newFeedback = [...slotFeedback];
       newFeedback[slotIndex] = 'shake';
       setSlotFeedback(newFeedback);
@@ -155,10 +175,16 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     const isCorrect = itemId === correctItem.id;
 
     if (isCorrect) {
+      // Play success sound with pitch based on progress
+      const filledCount = slots.filter(s => s !== null).length;
+      playSound('quiz-correct');
+      playSound('letter-reveal', { pitch: filledCount });
+      
       // Place the card in the slot
       const newSlots = [...slots];
       newSlots[slotIndex] = itemId;
       setSlots(newSlots);
+      setLastPlacedSlot(slotIndex);
 
       // Remove from available cards
       setAvailableCards((prev) => prev.filter((c) => c.id !== itemId));
@@ -168,9 +194,15 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
       newFeedback[slotIndex] = 'correct';
       setSlotFeedback(newFeedback);
 
+      // Clear last placed after animation
+      setTimeout(() => setLastPlacedSlot(null), 800);
+
       // Check if all correct
       checkAllCorrect(newSlots);
     } else {
+      // Play error sound
+      playSound('quiz-wrong');
+      
       // Show incorrect feedback and return card
       const newFeedback = [...slotFeedback];
       newFeedback[slotIndex] = 'incorrect';
@@ -191,6 +223,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     setTouchDragging(itemId);
+    playSound('click-soft');
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -237,37 +270,65 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
 
   const getSlotBorderColor = (index: number) => {
     const feedback = slotFeedback[index];
-    if (feedback === 'correct') return 'border-green-500 bg-green-500/20';
-    if (feedback === 'incorrect' || feedback === 'shake') return 'border-red-500 bg-red-500/20 animate-shake';
-    if (dragOverSlot === index) return 'border-cyan-400 bg-cyan-500/10';
+    if (feedback === 'correct') return 'border-green-500 bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.5)]';
+    if (feedback === 'incorrect' || feedback === 'shake') return 'border-red-500 bg-red-500/20 animate-shake shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+    if (dragOverSlot === index) return 'border-cyan-400 bg-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.4)] scale-[1.02]';
     if (slots[index]) return 'border-green-500/50 bg-green-500/10';
-    return 'border-white/30 bg-white/5';
+    return 'border-white/30 bg-white/5 hover:border-white/50 hover:bg-white/10';
   };
 
   const getCardById = (id: string) => PERFEITO_DATA.find((item) => item.id === id);
 
   const handleContinue = () => {
+    playSound('click-confirm');
     onComplete(score, 8);
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Header - Compact */}
+    <motion.div 
+      className="w-full h-full flex flex-col overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header - Compact with staggered entrance */}
       <motion.div
         className="text-center py-3 px-4 shrink-0"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: -30, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-2">
-          <span className="text-base">🧩</span>
+        <motion.div 
+          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-2"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4, type: "spring", stiffness: 200 }}
+        >
+          <motion.span 
+            className="text-base"
+            animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+          >
+            🧩
+          </motion.span>
           <span className="text-xs font-bold text-purple-300">EXERCÍCIO FINAL</span>
-        </div>
-        <h2 className="text-base sm:text-lg font-bold text-white mb-0.5">
+        </motion.div>
+        <motion.h2 
+          className="text-base sm:text-lg font-bold text-white mb-0.5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           Monte o Método PERFEITO
-        </h2>
-        <p className="text-white/60 text-xs">
+        </motion.h2>
+        <motion.p 
+          className="text-white/60 text-xs"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
+        >
           Arraste cada significado para a letra correta
-        </p>
+        </motion.p>
       </motion.div>
 
       {/* Main content - Side by side layout */}
@@ -471,7 +532,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
           animation: shake 0.5s ease-in-out;
         }
       `}</style>
-    </div>
+    </motion.div>
   );
 };
 
