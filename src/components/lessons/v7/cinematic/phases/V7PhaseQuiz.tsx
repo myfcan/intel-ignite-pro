@@ -277,11 +277,12 @@ export const V7PhaseQuiz = ({
     // 🆕 V7-v2.1: Tocar efeito sonoro de seleção
     playSound('click-soft');
 
-    // ✅ Do NOT pause audio on option selection - let narration continue
+    // ✅ SINGLE SELECT: Apenas uma opção pode ser selecionada por vez
+    // Se já está selecionada, desseleciona. Caso contrário, seleciona apenas esta.
     setSelectedIds(prev =>
       prev.includes(id)
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
+        ? [] // Desselecionar se já está selecionada
+        : [id] // Selecionar apenas esta opção (substitui qualquer seleção anterior)
     );
   }, [isRevealed, optionsEnabled, playSound]);
 
