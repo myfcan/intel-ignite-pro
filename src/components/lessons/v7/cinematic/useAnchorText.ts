@@ -72,7 +72,8 @@ interface UseAnchorTextProps {
   enabled?: boolean;
   
   // Callbacks de ação
-  onPause?: () => void;
+  /** @param keywordTime - Tempo exato onde a keyword termina (para seek-back preciso) */
+  onPause?: (keywordTime?: number) => void;
   onResume?: () => void;
   onShow?: (targetId: string, payload?: any) => void;
   onHide?: (targetId: string, payload?: any) => void;
@@ -235,7 +236,8 @@ export function useAnchorText({
         case 'pause':
           stateRef.current.pausedByAnchor = true;
           setIsPausedByAnchorState(true); // ✅ V7-v5: Atualiza state para causar re-render
-          onPause?.();
+          // ✅ V7-v42: Passa keywordTime exato (wordTs.end) para seek-back preciso no Player
+          onPause?.(wordTs.end);
           break;
           
         case 'resume':
