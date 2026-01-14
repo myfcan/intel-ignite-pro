@@ -276,7 +276,7 @@ export default function Admin() {
                 <Button
                   variant="outline"
                   className="flex-1 min-w-[140px] border-emerald-500/50 hover:bg-emerald-500/10"
-                  onClick={() => window.open('https://github.com/user/repo/blob/main/docs/V7-JSON-SCHEMA-DOCUMENTATION.md', '_blank')}
+                  onClick={() => navigate('/admin/v7/docs')}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Ver Documentação
