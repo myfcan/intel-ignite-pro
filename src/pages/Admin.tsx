@@ -1,11 +1,28 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+// JSON Modelo Padrão Aula 1 V7-vv - Espelho exato da aula funcionando
+import V7Aula1ModeloPadrao from '@/data/v7-aula1-modelo-padrao.json';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+
+  const copyJsonToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(V7Aula1ModeloPadrao, null, 2));
+      setCopied(true);
+      toast.success('JSON copiado para a área de transferência!');
+      setTimeout(() => setCopied(false), 3000);
+    } catch (err) {
+      toast.error('Erro ao copiar JSON');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -216,6 +233,54 @@ export default function Admin() {
               >
                 Ver Designs
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card JSON Modelo Padrão V7-vv */}
+          <Card className="border-2 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40 transition-colors md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileJson className="w-6 h-6 text-emerald-600" />
+                JSON Modelo Padrão Aula 1 - V7-vv
+              </CardTitle>
+              <CardDescription>
+                Espelho exato da Aula 1 funcionando - Use como referência para criar novas aulas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✅ 11 cenas completas (dramatic, narrative, interaction, playground, revelation, cta, gamification)</p>
+                <p>✅ anchorText.pauseAt APENAS em cenas interativas (quiz, playground, cta)</p>
+                <p>✅ Método PERFEITO com letter-reveal</p>
+                <p>✅ Quiz 4 opções com feedback narrado</p>
+                <p>✅ Playground amador vs profissional</p>
+                <p>✅ CTA com 2 botões corretos (Continuar/Voltar)</p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={copyJsonToClipboard}
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar JSON Modelo
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin/v7/create')}
+                >
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Ir para Pipeline V7
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

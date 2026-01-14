@@ -1,0 +1,350 @@
+{
+  "$schema": "V7-vv Pipeline Input Schema",
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "98% brinca. 2% lucra R$ 30K/mês.",
+  "difficulty": "intermediate",
+  "category": "Fundamentos de IA",
+  "tags": ["prompts", "método-perfeito", "profissional", "ChatGPT", "monetização"],
+  "learningObjectives": [
+    "Identificar a diferença entre uso amador e profissional de IA",
+    "Dominar o Método PERFEITO de prompting",
+    "Aplicar prompts estruturados na prática"
+  ],
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "generate_audio": true,
+  "fail_on_audio_error": false,
+
+  "scenes": [
+    {
+      "id": "cena-1-abertura-explosiva",
+      "title": "O Número Chocante",
+      "type": "dramatic",
+      "narration": "Noventa e oito por cento. Das pessoas que usam inteligência artificial hoje tratam ela como brinquedo.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "VOCÊ SABIA?",
+          "mainValue": "98%",
+          "secondaryValue": "",
+          "subtitle": "das pessoas tratam IA como brinquedo",
+          "highlightWord": "98%"
+        },
+        "effects": {
+          "mood": "danger",
+          "particles": "ember",
+          "glow": true,
+          "shake": true
+        },
+        "microVisuals": [
+          {
+            "id": "micro-98",
+            "anchorText": "Noventa e oito",
+            "type": "number",
+            "content": {
+              "value": "98%",
+              "color": "#ef4444",
+              "animation": "scale-bounce"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "cena-2-contexto-brinquedo",
+      "title": "Brinquedo",
+      "type": "narrative",
+      "narration": "Sim. Você ouviu bem. Brinquedo. Agora vou te mostrar a diferença brutal entre brincar e dominar. Prepare-se.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "mainText": "BRINQUEDO",
+          "items": [],
+          "impactWord": "BRINQUEDO"
+        },
+        "effects": {
+          "mood": "danger",
+          "particles": "sparks",
+          "glow": true
+        }
+      }
+    },
+
+    {
+      "id": "cena-3-quiz-autoavaliacao",
+      "title": "Auto-Avaliação",
+      "type": "interaction",
+      "narration": "Suas últimas cinco interações com IA foram para criar conteúdo profissional, aprender algo específico, ou apenas curiosidade e brincadeira? Seja honesto e escolha agora.",
+      "anchorText": {
+        "pauseAt": "agora"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "title": "AUTO-AVALIAÇÃO",
+          "subtitle": "Seja honesto - não há julgamento",
+          "question": "Suas últimas 5 interações com IA foram para:"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Suas últimas 5 interações com IA foram para:",
+        "options": [
+          {
+            "id": "opt-1",
+            "text": "Criar conteúdo profissional",
+            "emoji": "💼",
+            "category": "good",
+            "feedback": {
+              "title": "Excelente!",
+              "subtitle": "Você já está no caminho dos 2%!",
+              "mood": "success",
+              "narration": "Parabéns! Você já está usando IA de forma estratégica."
+            }
+          },
+          {
+            "id": "opt-2",
+            "text": "Aprender algo específico",
+            "emoji": "📚",
+            "category": "good",
+            "feedback": {
+              "title": "Bom caminho!",
+              "subtitle": "Continue evoluindo.",
+              "mood": "success",
+              "narration": "Aprender é o primeiro passo para dominar."
+            }
+          },
+          {
+            "id": "opt-3",
+            "text": "Curiosidade e brincadeira",
+            "emoji": "🎮",
+            "category": "bad",
+            "feedback": {
+              "title": "Você está nos 98%",
+              "subtitle": "Hora de mudar!",
+              "mood": "warning",
+              "narration": "Sem problemas! Vou te mostrar o método agora."
+            }
+          },
+          {
+            "id": "opt-4",
+            "text": "Não uso muito IA",
+            "emoji": "🤷",
+            "category": "bad",
+            "feedback": {
+              "title": "Está perdendo oportunidades!",
+              "subtitle": "Vamos mudar isso hoje.",
+              "mood": "danger",
+              "narration": "Você está deixando dinheiro na mesa. Vamos resolver isso."
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "cena-4-exemplos-amadores",
+      "title": "O que os 98% pedem",
+      "type": "narrative",
+      "narration": "Os noventa e oito por cento pedem: Conta uma piada sobre banana. Escreve como pirata. Faz um poema sobre meu gato. Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "O que os 98% pedem:",
+          "mainText": "Prompts Amadores",
+          "items": [
+            { "icon": "🍌", "text": "Conta uma piada sobre banana" },
+            { "icon": "🏴‍☠️", "text": "Escreve como pirata" },
+            { "icon": "🐱", "text": "Faz um poema sobre meu gato" }
+          ]
+        },
+        "effects": {
+          "mood": "danger"
+        }
+      }
+    },
+
+    {
+      "id": "cena-5-revelacao-30k",
+      "title": "R$ 30.000",
+      "type": "dramatic",
+      "narration": "Trinta mil reais por mês. Não é fantasia. É o que profissionais ganham usando IA do jeito certo. Eles conhecem o segredo.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "",
+          "mainValue": "R$ 30.000",
+          "secondaryValue": "por mês",
+          "subtitle": "É o que os 2% faturam",
+          "highlightWord": "30.000"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti",
+          "glow": true
+        }
+      }
+    },
+
+    {
+      "id": "cena-6-intro-metodo",
+      "title": "O Segredo",
+      "type": "narrative",
+      "narration": "O segredo é o método PERFEITO. Veja como isso transforma seus resultados.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Eles conhecem o segredo",
+          "mainText": "O Método PERFEITO",
+          "impactWord": "PERFEITO"
+        },
+        "effects": {
+          "mood": "mysterious",
+          "glow": true
+        }
+      }
+    },
+
+    {
+      "id": "cena-7-playground-comparativo",
+      "title": "Desafio Prático",
+      "type": "playground",
+      "narration": "Agora vamos comparar na prática. Dois prompts para o mesmo objetivo: criar copy que vende. Veja a diferença brutal nos resultados. Pronto? Vamos testar.",
+      "anchorText": {
+        "pauseAt": "testar"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "DESAFIO PRÁTICO",
+          "subtitle": "Compare os resultados"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "amateurPrompt": "Me ajude a vender mais",
+        "professionalPrompt": "Atue como consultor de vendas B2B com 15 anos de experiência.\n\nContexto: Minha empresa vende software para restaurantes. Ticket médio R$ 500/mês. Conversão atual 2%.\n\nObjetivo: Criar sequência de 5 emails de follow-up para aumentar conversão para 5%.\n\nFormato: Cada email com assunto chamativo + corpo persuasivo + CTA claro.",
+        "amateurResult": {
+          "title": "Resultado Amador",
+          "content": "Aqui estão algumas dicas para vender mais:\n1. Conheça seu cliente\n2. Ofereça valor\n3. Faça follow-up\n4. Seja persistente\n5. Peça indicações",
+          "score": 15,
+          "verdict": "Genérico e inútil"
+        },
+        "professionalResult": {
+          "title": "Resultado Profissional",
+          "content": "📧 Email 1 - Assunto: \"João, o restaurante ao lado está economizando 40h/mês\"\n\nOlá João,\n\nSei que gerenciar um restaurante consome todo seu tempo. O Bistrô da Esquina tinha o mesmo problema até implementar nossa solução.\n\nResultado: 40 horas mensais economizadas em gestão de estoque.\n\n[CTA: Quer ver como?]\n\n📧 Email 2 - Assunto: \"Seus concorrentes estão te ultrapassando\"\n...",
+          "score": 95,
+          "verdict": "Específico e vendedor"
+        }
+      }
+    },
+
+    {
+      "id": "cena-8-metodo-perfeito",
+      "title": "Método PERFEITO",
+      "type": "revelation",
+      "narration": "O segredo é o método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante.",
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "title": "MÉTODO PERFEITO",
+          "letters": [
+            { "letter": "P", "meaning": "Persona", "subtitle": "Defina quem a IA deve ser" },
+            { "letter": "E", "meaning": "Especificidade", "subtitle": "Elimine ambiguidade" },
+            { "letter": "R", "meaning": "Resultado", "subtitle": "Deixe claro o objetivo" },
+            { "letter": "F", "meaning": "Formato", "subtitle": "Estruture a saída" },
+            { "letter": "E", "meaning": "Exemplos", "subtitle": "Forneça referências" },
+            { "letter": "I", "meaning": "Instruções", "subtitle": "Detalhe cada passo" },
+            { "letter": "T", "meaning": "Tom", "subtitle": "Defina a personalidade" },
+            { "letter": "O", "meaning": "Otimização", "subtitle": "Refine sempre" }
+          ],
+          "finalStamp": "MÉTODO PERFEITO ✓"
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true,
+          "particles": "sparks"
+        }
+      }
+    },
+
+    {
+      "id": "cena-9-transformacao",
+      "title": "Transformação",
+      "type": "narrative",
+      "narration": "A diferença entre brincar e lucrar está no método. E você está prestes a dominá-lo.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "A diferença entre brincar e lucrar",
+          "mainText": "Está no método",
+          "items": [
+            { "icon": "🎮", "text": "Brincar = R$ 0" },
+            { "icon": "💰", "text": "Dominar = R$ 30K/mês" }
+          ]
+        },
+        "effects": {
+          "mood": "success"
+        }
+      }
+    },
+
+    {
+      "id": "cena-10-cta-decisao",
+      "title": "Sua Escolha",
+      "type": "cta",
+      "narration": "A pergunta é: você quer continuar nos noventa e oito por cento ou entrar para os dois por cento que dominam? A escolha é sua. Decida agora.",
+      "anchorText": {
+        "pauseAt": "agora"
+      },
+      "visual": {
+        "type": "result",
+        "content": {
+          "emoji": "🎯",
+          "title": "O QUE VOCÊ VAI FAZER AGORA?",
+          "message": "A decisão é sua",
+          "ctaText": "Continuar Aprendendo"
+        }
+      },
+      "interaction": {
+        "type": "cta-button",
+        "options": [
+          { "id": "continue", "label": "Continuar Aprendendo", "emoji": "🚀", "variant": "positive", "action": "next" },
+          { "id": "later", "label": "Voltar Depois", "emoji": "↩️", "variant": "negative", "action": "exit" }
+        ]
+      }
+    },
+
+    {
+      "id": "cena-11-gamificacao-final",
+      "title": "Conquistas",
+      "type": "gamification",
+      "narration": "Parabéns! Você completou a aula. Agora você conhece o método dos dois por cento. Continue praticando e veja seus resultados se multiplicarem.",
+      "visual": {
+        "type": "result",
+        "content": {
+          "emoji": "🏆",
+          "title": "PARABÉNS!",
+          "message": "Você agora conhece o método dos 2%",
+          "metrics": [
+            { "label": "Conquista", "value": "Revelação dos 2%", "isHighlight": true },
+            { "label": "Método", "value": "PERFEITO Dominado", "isHighlight": true },
+            { "label": "Status", "value": "Pronto para Lucrar", "isHighlight": false }
+          ],
+          "achievements": [
+            { "emoji": "✅", "text": "Revelação dos 2% Completa" },
+            { "emoji": "✅", "text": "Método PERFEITO Dominado" },
+            { "emoji": "✅", "text": "Pronto para Lucrar" }
+          ],
+          "xpGained": 150
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti",
+          "glow": true
+        }
+      }
+    }
+  ]
+}
