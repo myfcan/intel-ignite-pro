@@ -206,6 +206,7 @@ export default function V7CinematicPlayer() {
         lessonTitle={script.title}
         lessonId={script.id}
         onComplete={handleFullComplete}
+        onExit={handleExit}
       />
     );
   }

@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { CheckCircle, Trophy, Award } from 'lucide-react';
+import { CheckCircle, Trophy, Award, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { useV7SoundEffects } from '../useV7SoundEffects';
@@ -14,13 +14,15 @@ interface V7ExerciseResultCardProps {
   score: number;
   total: number;
   onViewRewards: () => void;
+  onExit?: () => void;
 }
 
 export const V7ExerciseResultCard = ({
   lessonTitle,
   score,
   total,
-  onViewRewards
+  onViewRewards,
+  onExit
 }: V7ExerciseResultCardProps) => {
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const percentage = Math.round((score / total) * 100);
@@ -101,6 +103,27 @@ export const V7ExerciseResultCard = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      {/* ✅ Exit Button - Top Left */}
+      {onExit && (
+        <motion.button
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[200] w-10 h-10 sm:w-12 sm:h-12 
+                     rounded-full bg-black/40 backdrop-blur-sm border border-white/10
+                     flex items-center justify-center text-white/60 hover:text-white 
+                     hover:bg-black/60 hover:border-white/20 transition-all duration-200"
+          onClick={() => {
+            playSound('click-soft');
+            onExit();
+          }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+      )}
+
       <motion.div
         className="relative max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 overflow-hidden"
         initial={{ opacity: 0, scale: 0.9, y: 20 }}

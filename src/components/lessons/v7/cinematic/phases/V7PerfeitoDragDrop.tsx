@@ -27,6 +27,7 @@ interface PerfeitoItem {
 
 interface V7PerfeitoDragDropProps {
   onComplete: (score: number, total: number) => void;
+  onExit?: () => void;
 }
 
 const PERFEITO_DATA: PerfeitoItem[] = [
@@ -50,7 +51,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
+export const V7PerfeitoDragDrop = ({ onComplete, onExit }: V7PerfeitoDragDropProps) => {
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects(0.6, true);
   
@@ -344,11 +345,31 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
 
   return (
     <motion.div 
-      className="w-full h-full flex flex-col overflow-hidden"
+      className="w-full h-full flex flex-col overflow-hidden relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* ✅ Exit Button - Top Left */}
+      {onExit && (
+        <motion.button
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 z-[200] w-10 h-10 sm:w-12 sm:h-12 
+                     rounded-full bg-black/40 backdrop-blur-sm border border-white/10
+                     flex items-center justify-center text-white/60 hover:text-white 
+                     hover:bg-black/60 hover:border-white/20 transition-all duration-200"
+          onClick={() => {
+            playSound('click-soft');
+            onExit();
+          }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+      )}
       {/* Header - Compact with staggered entrance */}
       <motion.div
         className="text-center py-3 px-4 shrink-0"
