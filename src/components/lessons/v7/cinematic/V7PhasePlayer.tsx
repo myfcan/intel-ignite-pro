@@ -1653,27 +1653,19 @@ export const V7PhasePlayer = ({
         />
       )}
 
-      {/* V7-vv-v5: Narrative Visual Overlay - fills visual gaps during narration */}
-      {/* Shows ambient visuals when phase doesn't have specific content */}
-      {/* Enable for dramatic/narrative/secret-reveal phases that might have visual gaps */}
-      {(currentPhase?.type === 'dramatic' || 
-        currentPhase?.type === 'narrative' || 
-        currentPhase?.type === 'secret-reveal' ||
-        currentPhase?.type === 'revelation') && (
-        <V7NarrativeVisualOverlay
-          wordTimestamps={wordTimestamps}
-          currentTime={hasAudio ? audio.currentTime : internalTime}
-          isPlaying={effectiveIsPlaying}
-          mood={
-            currentPhase?.mood === 'danger' ? 'dramatic' :
-            currentPhase?.mood === 'success' ? 'inspiring' :
-            currentPhase?.type === 'secret-reveal' ? 'mysterious' :
-            currentPhase?.type === 'revelation' ? 'energetic' :
-            'mysterious'
-          }
-          enabled={effectiveIsPlaying}
-        />
-      )}
+      {/* V7-vv-v5: Narrative Visual Overlay - fills visual gaps during "segredo dos 2%" narration */}
+      {/* Active during specific time range when narrator reveals the secret method */}
+      {/* Time range: ~52s to ~70s - "Agora eu vou te mostrar o segredo desses dois por cento..." */}
+      <V7NarrativeVisualOverlay
+        wordTimestamps={wordTimestamps}
+        currentTime={hasAudio ? audio.currentTime : internalTime}
+        isPlaying={effectiveIsPlaying}
+        mood="mysterious"
+        enabled={effectiveIsPlaying && 
+          (hasAudio ? audio.currentTime : internalTime) >= 52 && 
+          (hasAudio ? audio.currentTime : internalTime) <= 70
+        }
+      />
 
       {/* Phase Content - Cinematic Fade Transition */}
       <AnimatePresence mode="wait">
