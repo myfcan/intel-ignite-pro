@@ -443,58 +443,43 @@ export const V7UserChallengeInput = ({
                 </div>
               </motion.div>
 
-              {/* Prompt + IA em row compacta */}
-              <div className="grid grid-cols-2 gap-2">
-                {/* Seu prompt */}
-                <motion.div 
-                  className="bg-white/[0.03] border border-white/10 rounded-lg p-1.5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  <p className="text-white/40 text-[8px] uppercase font-bold mb-0.5">Seu prompt</p>
-                  <p className="text-white/60 text-[10px] italic line-clamp-2">"{userPrompt}"</p>
-                </motion.div>
-
-                {/* Resposta IA toggle */}
-                <motion.details 
-                  className="bg-white/[0.02] border border-cyan-500/20 rounded-lg"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <summary className="flex items-center gap-1 p-1.5 cursor-pointer text-[10px] text-cyan-400 font-medium">
-                    <Sparkles className="w-2.5 h-2.5" />
-                    Resposta da IA
-                  </summary>
-                  <div className="px-1.5 pb-1.5">
-                    <div className="bg-black/40 rounded p-1.5 text-[9px] text-white/75 max-h-20 overflow-y-auto whitespace-pre-line">
-                      {aiFeedback.response}
-                    </div>
-                  </div>
-                </motion.details>
-              </div>
-
-              {/* Botão continuar - menor */}
-              <motion.button
-                onClick={onComplete}
-                className="w-full py-2.5 px-3 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm rounded-lg flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              {/* Dois botões: Voltar ao prompt + Continuar */}
+              <motion.div 
+                className="grid grid-cols-2 gap-2"
                 initial={{ opacity: 0 }}
-                animate={{ 
-                  opacity: 1,
-                  boxShadow: [
-                    '0 0 10px rgba(34, 197, 94, 0.3)',
-                    '0 0 20px rgba(34, 197, 94, 0.5)',
-                    '0 0 10px rgba(34, 197, 94, 0.3)'
-                  ]
-                }}
-                transition={{ delay: 0.5, duration: 1.5, repeat: Infinity }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
               >
-                <CheckCircle className="w-4 h-4" />
-                Continuar
-              </motion.button>
+                {/* Voltar ao prompt */}
+                <motion.button
+                  onClick={() => setAIFeedback(null)}
+                  className="py-2.5 px-3 bg-white/10 border border-white/20 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-white/15 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="text-base">✏️</span>
+                  Tentar novamente
+                </motion.button>
+
+                {/* Continuar */}
+                <motion.button
+                  onClick={onComplete}
+                  className="py-2.5 px-3 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm rounded-lg flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  animate={{ 
+                    boxShadow: [
+                      '0 0 10px rgba(34, 197, 94, 0.3)',
+                      '0 0 20px rgba(34, 197, 94, 0.5)',
+                      '0 0 10px rgba(34, 197, 94, 0.3)'
+                    ]
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Continuar
+                </motion.button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
