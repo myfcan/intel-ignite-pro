@@ -175,10 +175,10 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     const isCorrect = itemId === correctItem.id;
 
     if (isCorrect) {
-      // Play success sound with pitch based on progress
+      // 🎯 Play satisfying snap sound + ascending sparkle based on progress
       const filledCount = slots.filter(s => s !== null).length;
-      playSound('quiz-correct');
-      playSound('letter-reveal', { pitch: filledCount });
+      playSound('snap-success'); // Som de encaixe satisfatório
+      playSound('letter-reveal', { pitch: filledCount }); // Tom mais agudo conforme progresso
       
       // Place the card in the slot
       const newSlots = [...slots];
@@ -200,8 +200,8 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
       // Check if all correct
       checkAllCorrect(newSlots);
     } else {
-      // Play error sound
-      playSound('quiz-wrong');
+      // ❌ Play error snap sound - clear but not aggressive
+      playSound('snap-error');
       
       // Show incorrect feedback and return card
       const newFeedback = [...slotFeedback];
