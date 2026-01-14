@@ -28,6 +28,7 @@ import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
+import { V7SecretRevelation3D } from './effects/V7SecretRevelation3D';
 import {
   V7LessonScript,
   V7Phase,
@@ -1653,18 +1654,15 @@ export const V7PhasePlayer = ({
         />
       )}
 
-      {/* V7-vv-v5: Narrative Visual Overlay - fills visual gaps during "segredo dos 2%" narration */}
-      {/* Active during specific time range when narrator reveals the secret method */}
-      {/* Time range: ~52s to ~70s - "Agora eu vou te mostrar o segredo desses dois por cento..." */}
-      <V7NarrativeVisualOverlay
-        wordTimestamps={wordTimestamps}
-        currentTime={hasAudio ? audio.currentTime : internalTime}
-        isPlaying={effectiveIsPlaying}
-        mood="mysterious"
+      {/* V7-vv-v6: 3D Cinematic Secret Revelation - sophisticated Three.js effects */}
+      {/* Active during "segredo dos 2%" narration: ~52s to ~70s */}
+      <V7SecretRevelation3D
         enabled={effectiveIsPlaying && 
           (hasAudio ? audio.currentTime : internalTime) >= 52 && 
           (hasAudio ? audio.currentTime : internalTime) <= 70
         }
+        intensity={1}
+        currentTime={hasAudio ? audio.currentTime : internalTime}
       />
 
       {/* Phase Content - Cinematic Fade Transition */}
