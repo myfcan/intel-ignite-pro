@@ -1,7 +1,7 @@
 // V7 Cinematic Player Page - Uses phase-based player with database lessons ONLY
 // ⚠️ NO FALLBACK - Always uses database script
 // ✅ V7-vv: Includes post-lesson flow (exercise, results, rewards)
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useV7PhaseScript } from '@/hooks/useV7PhaseScript';
 import { V7PhasePlayer } from '@/components/lessons/v7/cinematic/V7PhasePlayer';
@@ -10,6 +10,7 @@ import { Loader2, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function V7CinematicPlayer() {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -20,9 +21,32 @@ export default function V7CinematicPlayer() {
   // ✅ V7-vv: Track if lesson content is complete (show post-lesson flow)
   const [showPostLessonFlow, setShowPostLessonFlow] = useState(false);
   
+  // ✅ Track trail_id for proper navigation back to trail
+  const [trailId, setTrailId] = useState<string | null>(null);
+  
   // Fetch lesson from database - NO FALLBACK
   // ✅ V7-vv: Also fetch feedbackAudios for quiz feedback narration
   const { script, audioUrl, wordTimestamps, isLoading, error, refetch, rawContent, detectionPath, feedbackAudios } = useV7PhaseScript(lessonId);
+
+  // ✅ Fetch trail_id when lesson loads
+  useEffect(() => {
+    if (!lessonId) return;
+    
+    const fetchTrailId = async () => {
+      const { data } = await supabase
+        .from('lessons')
+        .select('trail_id')
+        .eq('id', lessonId)
+        .single();
+      
+      if (data?.trail_id) {
+        setTrailId(data.trail_id);
+        console.log('[V7CinematicPlayer] Trail ID loaded:', data.trail_id);
+      }
+    };
+    
+    fetchTrailId();
+  }, [lessonId]);
 
   // Handle lesson content completion - triggers post-lesson flow
   const handleLessonContentComplete = () => {
@@ -30,18 +54,22 @@ export default function V7CinematicPlayer() {
     setShowPostLessonFlow(true);
   };
 
-  // Handle full lesson completion (after rewards) - navigate to dashboard
+  // Handle full lesson completion (after rewards) - navigate back to trail
   const handleFullComplete = () => {
     toast({
       title: '🎉 Aula Completa!',
       description: 'Você completou a experiência cinematográfica!',
     });
-    setTimeout(() => navigate('/dashboard'), 1000);
+    // ✅ Navigate back to trail instead of dashboard
+    const destination = trailId ? `/trails/${trailId}` : '/dashboard';
+    console.log('[V7CinematicPlayer] Navigating to:', destination);
+    setTimeout(() => navigate(destination), 1000);
   };
 
-  // Handle exit
+  // Handle exit - navigate back to trail
   const handleExit = () => {
-    navigate('/dashboard');
+    const destination = trailId ? `/trails/${trailId}` : '/dashboard';
+    navigate(destination);
   };
 
   // Hard refresh - clear cache and refetch WITHOUT reloading page
