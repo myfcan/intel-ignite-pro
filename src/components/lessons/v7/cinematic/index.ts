@@ -23,3 +23,6 @@ export { useV7CinematicAudio } from "./useV7CinematicAudio";
 // V7 Cinematic Hooks - Phase 5 (Advanced)
 export { useV7SoundEffects } from "./useV7SoundEffects";
 export { useV7ActPreloader } from "./useV7ActPreloader";
+
+// V7 Post-Lesson Flow (V7-vv)
+export { V7PostLessonFlow } from "./V7PostLessonFlow";

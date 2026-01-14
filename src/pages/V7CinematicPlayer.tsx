@@ -1,8 +1,11 @@
 // V7 Cinematic Player Page - Uses phase-based player with database lessons ONLY
 // ⚠️ NO FALLBACK - Always uses database script
+// ✅ V7-vv: Includes post-lesson flow (exercise, results, rewards)
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useV7PhaseScript } from '@/hooks/useV7PhaseScript';
 import { V7PhasePlayer } from '@/components/lessons/v7/cinematic/V7PhasePlayer';
+import { V7PostLessonFlow } from '@/components/lessons/v7/cinematic/V7PostLessonFlow';
 import { Loader2, AlertCircle, ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -14,17 +17,26 @@ export default function V7CinematicPlayer() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // ✅ V7-vv: Track if lesson content is complete (show post-lesson flow)
+  const [showPostLessonFlow, setShowPostLessonFlow] = useState(false);
+  
   // Fetch lesson from database - NO FALLBACK
   // ✅ V7-vv: Also fetch feedbackAudios for quiz feedback narration
   const { script, audioUrl, wordTimestamps, isLoading, error, refetch, rawContent, detectionPath, feedbackAudios } = useV7PhaseScript(lessonId);
 
-  // Handle lesson completion
-  const handleComplete = () => {
+  // Handle lesson content completion - triggers post-lesson flow
+  const handleLessonContentComplete = () => {
+    console.log('[V7CinematicPlayer] ✅ Lesson content complete - showing post-lesson flow');
+    setShowPostLessonFlow(true);
+  };
+
+  // Handle full lesson completion (after rewards) - navigate to dashboard
+  const handleFullComplete = () => {
     toast({
       title: '🎉 Aula Completa!',
       description: 'Você completou a experiência cinematográfica!',
     });
-    setTimeout(() => navigate('/dashboard'), 2000);
+    setTimeout(() => navigate('/dashboard'), 1000);
   };
 
   // Handle exit
@@ -128,15 +140,27 @@ export default function V7CinematicPlayer() {
     title: script.title,
     phases: script.phases?.length,
     hasAudio: !!audioUrl,
-    timestamps: wordTimestamps?.length
+    timestamps: wordTimestamps?.length,
+    showPostLessonFlow
   });
+
+  // ✅ V7-vv: Show post-lesson flow after lesson content completes
+  if (showPostLessonFlow) {
+    return (
+      <V7PostLessonFlow
+        lessonTitle={script.title}
+        lessonId={script.id}
+        onComplete={handleFullComplete}
+      />
+    );
+  }
 
   return (
     <V7PhasePlayer
       script={script}
       audioUrl={audioUrl || undefined}
       wordTimestamps={wordTimestamps}
-      onComplete={handleComplete}
+      onComplete={handleLessonContentComplete}
       onExit={handleExit}
       rawContent={rawContent}
       detectionPath={detectionPath}
