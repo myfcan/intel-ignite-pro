@@ -399,91 +399,91 @@ export const V7UserChallengeInput = ({
           )}
         </AnimatePresence>
 
-        {/* ========== SEÇÃO DE RESULTADO COMPACTA (cabe na viewport) ========== */}
+        {/* ========== SEÇÃO DE RESULTADO - LAYOUT PROFISSIONAL ========== */}
         <AnimatePresence>
           {aiFeedback && (
             <motion.div
               key="result-section"
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 }}
-              className="flex flex-col gap-2"
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+              className="flex flex-col gap-4 sm:gap-5"
             >
-              {/* Header + Score inline - compacto */}
+              {/* Header + Score - Design Premium */}
               <motion.div 
-                className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-lg p-2 sm:p-3 flex items-center justify-between`}
+                className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-xl p-4 sm:p-5 flex items-center justify-between`}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">✨</span>
-                  <span className="text-sm font-bold text-white">Resultado</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">✨</span>
+                  <span className="text-base sm:text-lg font-bold text-white">Resultado</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   {(aiFeedback.score || 70) >= 70 ? (
-                    <CheckCircle className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
+                    <CheckCircle className={`w-6 h-6 ${getScoreColor(aiFeedback.score || 70)}`} />
                   ) : (
-                    <Sparkles className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
+                    <Sparkles className={`w-6 h-6 ${getScoreColor(aiFeedback.score || 70)}`} />
                   )}
-                  <span className={`text-2xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
+                  <span className={`text-3xl sm:text-4xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
                     {aiFeedback.score || 70}%
                   </span>
                 </div>
               </motion.div>
 
-              {/* Coach feedback - compacto com scroll */}
+              {/* Coach Feedback - Área maior e mais legível */}
               <motion.div 
-                className="bg-gradient-to-r from-purple-500/15 to-cyan-500/15 border border-purple-500/20 rounded-lg p-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-purple-500/25 rounded-xl p-4 sm:p-5"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <div className="flex items-start gap-2">
-                  <span className="text-base flex-shrink-0">🎯</span>
+                <div className="flex items-start gap-3">
+                  <span className="text-xl flex-shrink-0 mt-0.5">🎯</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-white/50 text-[9px] uppercase font-bold mb-0.5">Feedback</p>
-                    <p className="text-white/85 text-xs leading-snug max-h-16 overflow-y-auto pr-1">
+                    <p className="text-white/50 text-xs uppercase font-bold tracking-wide mb-2">Feedback</p>
+                    <p className="text-white/90 text-sm sm:text-base leading-relaxed max-h-24 sm:max-h-28 overflow-y-auto pr-2 scrollbar-thin">
                       {aiFeedback.feedback}
                     </p>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Dois botões: Voltar ao prompt + Continuar */}
+              {/* Botões de ação - Maiores e mais espaçados */}
               <motion.div 
-                className="grid grid-cols-2 gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                className="grid grid-cols-2 gap-3 sm:gap-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                {/* Voltar ao prompt */}
+                {/* Tentar novamente */}
                 <motion.button
                   onClick={() => setAIFeedback(null)}
-                  className="py-2.5 px-3 bg-white/10 border border-white/20 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-white/15 transition-colors"
+                  className="py-3.5 sm:py-4 px-4 bg-white/5 border border-white/15 text-white font-semibold text-sm sm:text-base rounded-xl flex items-center justify-center gap-2.5 hover:bg-white/10 hover:border-white/25 transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <span className="text-base">✏️</span>
+                  <span className="text-lg">✏️</span>
                   Tentar novamente
                 </motion.button>
 
-                {/* Continuar */}
+                {/* Continuar - Destaque principal */}
                 <motion.button
                   onClick={onComplete}
-                  className="py-2.5 px-3 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm rounded-lg flex items-center justify-center gap-2"
+                  className="py-3.5 sm:py-4 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm sm:text-base rounded-xl flex items-center justify-center gap-2.5 shadow-lg shadow-green-500/20"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   animate={{ 
                     boxShadow: [
-                      '0 0 10px rgba(34, 197, 94, 0.3)',
-                      '0 0 20px rgba(34, 197, 94, 0.5)',
-                      '0 0 10px rgba(34, 197, 94, 0.3)'
+                      '0 4px 20px rgba(34, 197, 94, 0.25)',
+                      '0 8px 35px rgba(34, 197, 94, 0.4)',
+                      '0 4px 20px rgba(34, 197, 94, 0.25)'
                     ]
                   }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <CheckCircle className="w-4 h-4" />
+                  <CheckCircle className="w-5 h-5" />
                   Continuar
                 </motion.button>
               </motion.div>
