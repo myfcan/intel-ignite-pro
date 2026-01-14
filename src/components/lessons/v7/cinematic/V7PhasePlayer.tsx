@@ -1655,11 +1655,12 @@ export const V7PhasePlayer = ({
       )}
 
       {/* V7-vv-v6: 3D Cinematic Secret Revelation - sophisticated Three.js effects */}
-      {/* Active during "segredo dos 2%" narration: ~52s to ~70s */}
+      {/* Active during "segredo dos 2%" narration: ~52s to ~65s, STOPS before revelation phase */}
       <V7SecretRevelation3D
         enabled={effectiveIsPlaying && 
           (hasAudio ? audio.currentTime : internalTime) >= 52 && 
-          (hasAudio ? audio.currentTime : internalTime) <= 70
+          (hasAudio ? audio.currentTime : internalTime) <= 65 &&
+          currentPhase?.type !== 'revelation'
         }
         intensity={1}
         currentTime={hasAudio ? audio.currentTime : internalTime}
