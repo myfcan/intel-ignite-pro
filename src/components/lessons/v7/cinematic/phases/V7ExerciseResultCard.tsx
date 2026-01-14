@@ -1,0 +1,186 @@
+/**
+ * V7ExerciseResultCard - Card de resultado do exercício V7
+ * Mostra percentual de acerto, conquistas e botão para ver recompensas
+ */
+
+import { motion } from 'framer-motion';
+import { CheckCircle, Trophy, Award } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
+
+interface V7ExerciseResultCardProps {
+  lessonTitle: string;
+  score: number;
+  total: number;
+  onViewRewards: () => void;
+}
+
+export const V7ExerciseResultCard = ({
+  lessonTitle,
+  score,
+  total,
+  onViewRewards
+}: V7ExerciseResultCardProps) => {
+  const [animatedPercent, setAnimatedPercent] = useState(0);
+  const percentage = Math.round((score / total) * 100);
+
+  useEffect(() => {
+    // Animar percentual
+    const duration = 1500;
+    const start = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedPercent(Math.round(percentage * eased));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+
+    // Confetti ao carregar
+    if (percentage >= 70) {
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          zIndex: 9999
+        });
+      }, 500);
+    }
+  }, [percentage]);
+
+  const getScoreColor = () => {
+    if (percentage >= 80) return 'text-green-500';
+    if (percentage >= 60) return 'text-yellow-500';
+    return 'text-orange-500';
+  };
+
+  const getScoreBg = () => {
+    if (percentage >= 80) return 'from-green-500/20 to-emerald-500/20 border-green-500/30';
+    if (percentage >= 60) return 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30';
+    return 'from-orange-500/20 to-red-500/20 border-orange-500/30';
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <motion.div
+        className="relative max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      >
+        {/* Check icon at top */}
+        <motion.div
+          className="flex justify-center mb-6"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+        >
+          <div className="w-20 h-20 rounded-full border-4 border-slate-200 bg-white flex items-center justify-center shadow-lg">
+            <CheckCircle className="w-12 h-12 text-slate-800" strokeWidth={2} />
+          </div>
+        </motion.div>
+
+        {/* Title */}
+        <motion.div
+          className="text-center mb-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center justify-center gap-2">
+            <span className="text-2xl">🎉</span>
+            Parabéns!
+          </h2>
+        </motion.div>
+
+        {/* Subtitle */}
+        <motion.p
+          className="text-center text-slate-500 mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+        >
+          Você completou a aula
+        </motion.p>
+
+        {/* Lesson title */}
+        <motion.h3
+          className="text-center text-lg font-bold text-indigo-600 mb-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          {lessonTitle}
+        </motion.h3>
+
+        {/* Score card */}
+        <motion.div
+          className={`bg-gradient-to-br ${getScoreBg()} rounded-xl p-4 mb-4 border`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="text-center text-slate-600 text-sm font-medium uppercase tracking-wide mb-2">
+            Desempenho de Exercícios
+          </div>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <div className={`text-4xl font-bold ${getScoreColor()}`}>
+                {animatedPercent}%
+              </div>
+              <div className="text-xs text-slate-500 mt-1">de acerto</div>
+            </div>
+            <div className="w-px h-12 bg-slate-200" />
+            <div className="text-center">
+              <div className={`text-4xl font-bold ${getScoreColor()}`}>
+                {score}/{total}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">corretas</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Achievement badge */}
+        <motion.div
+          className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center">
+            <Trophy className="w-6 h-6 text-amber-600" />
+          </div>
+          <div>
+            <div className="font-bold text-amber-700">Aula Dominada</div>
+            <div className="text-sm text-amber-600/80">Conteúdo concluído com sucesso</div>
+          </div>
+        </motion.div>
+
+        {/* CTA Button */}
+        <motion.button
+          onClick={onViewRewards}
+          className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold text-lg rounded-xl flex items-center justify-center gap-2 shadow-lg"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          whileHover={{ 
+            scale: 1.02,
+            boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)'
+          }}
+          whileTap={{ scale: 0.98 }}
+        >
+          Ver Recompensas
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+};
+
+export default V7ExerciseResultCard;
