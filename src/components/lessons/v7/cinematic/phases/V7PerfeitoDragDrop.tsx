@@ -74,13 +74,50 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
   // Animation state
   const [isEntering, setIsEntering] = useState(true);
   const [lastPlacedSlot, setLastPlacedSlot] = useState<number | null>(null);
+  // ✅ V7-v43: Animação de entrada - significados piscam, depois letras
+  const [animationPhase, setAnimationPhase] = useState<'blink-meanings' | 'blink-letters' | 'ready'>('blink-meanings');
+  const [blinkingLetterIndex, setBlinkingLetterIndex] = useState<number>(-1);
+  const [meaningBlinkCount, setMeaningBlinkCount] = useState(0);
 
-  // Unlock audio on mount
+  // Unlock audio on mount + entrada animada
   useEffect(() => {
     unlockAudio();
-    // Entrance animation complete after delay
-    const timer = setTimeout(() => setIsEntering(false), 1000);
-    return () => clearTimeout(timer);
+    
+    // ✅ V7-v43: Sequência de animação de entrada
+    // Fase 1: Significados piscam 3 vezes em conjunto (0-1.5s)
+    const blinkInterval = setInterval(() => {
+      setMeaningBlinkCount(prev => {
+        if (prev >= 5) { // 6 transições = 3 blinks completos
+          clearInterval(blinkInterval);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 300); // 300ms por transição
+    
+    // Fase 2: Letras piscam uma por vez (1.8s - 3.4s)
+    const startLetterBlink = setTimeout(() => {
+      setAnimationPhase('blink-letters');
+      let letterIndex = 0;
+      const letterInterval = setInterval(() => {
+        setBlinkingLetterIndex(letterIndex);
+        letterIndex++;
+        if (letterIndex >= 8) {
+          clearInterval(letterInterval);
+          // Fase 3: Ready para interação
+          setTimeout(() => {
+            setAnimationPhase('ready');
+            setBlinkingLetterIndex(-1);
+            setIsEntering(false);
+          }, 200);
+        }
+      }, 200); // 200ms por letra
+    }, 1800);
+    
+    return () => {
+      clearInterval(blinkInterval);
+      clearTimeout(startLetterBlink);
+    };
   }, [unlockAudio]);
 
   const launchConfetti = useCallback(() => {
@@ -381,16 +418,26 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.05 * index }}
               >
-                {/* Letter badge - Smaller */}
-                <div className={`
-                  w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg shrink-0
-                  ${slots[index] 
-                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
-                    : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
-                  }
-                `}>
+                {/* Letter badge - Smaller - ✅ V7-v43: Animação de piscar em sanfona */}
+                <motion.div 
+                  className={`
+                    w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg shrink-0
+                    ${slots[index] 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
+                    }
+                  `}
+                  animate={{
+                    opacity: animationPhase === 'blink-letters' && blinkingLetterIndex === index ? 0.3 : 1,
+                    scale: animationPhase === 'blink-letters' && blinkingLetterIndex === index ? 1.15 : 1,
+                    boxShadow: animationPhase === 'blink-letters' && blinkingLetterIndex === index
+                      ? '0 0 20px rgba(168, 85, 247, 0.8)'
+                      : 'none'
+                  }}
+                  transition={{ duration: 0.1 }}
+                >
                   {item.letter}
-                </div>
+                </motion.div>
 
                 {/* Slot area - Compact */}
                 <div className="flex-1 min-w-0 h-8 rounded-md bg-black/20 border border-dashed border-white/20 flex items-center justify-center px-2">
@@ -449,18 +496,29 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
                     transition-colors touch-none
                     ${draggingId === item.id || touchDragging === item.id ? 'opacity-50 scale-95' : ''}
                   `}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, item.id)}
+                  draggable={animationPhase === 'ready'}
+                  onDragStart={(e) => animationPhase === 'ready' && handleDragStart(e as unknown as React.DragEvent, item.id)}
                   onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, item.id)}
+                  onTouchStart={(e) => animationPhase === 'ready' && handleTouchStart(e, item.id)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                   layout
                   initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  animate={{ 
+                    opacity: animationPhase === 'blink-meanings' 
+                      ? (meaningBlinkCount % 2 === 0 ? 1 : 0.3)  // Pisca entre 100% e 30% opacidade
+                      : 1,
+                    scale: animationPhase === 'blink-meanings'
+                      ? (meaningBlinkCount % 2 === 0 ? 1 : 0.95)
+                      : 1,
+                    boxShadow: animationPhase === 'blink-meanings' && meaningBlinkCount % 2 === 0
+                      ? '0 0 15px rgba(56, 189, 248, 0.5)'
+                      : 'none'
+                  }}
                   exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={animationPhase === 'ready' ? { scale: 1.05 } : {}}
+                  whileTap={animationPhase === 'ready' ? { scale: 0.95 } : {}}
+                  transition={{ duration: 0.15 }}
                 >
                   <div className="flex items-center gap-1.5">
                     <GripHorizontal className="w-3 h-3 text-white/40" />
