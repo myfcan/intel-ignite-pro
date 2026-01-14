@@ -94,22 +94,36 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
   }, []);
 
   // Unlock audio on user interaction
-  const unlockAudio = useCallback(() => {
-    if (isUnlockedRef.current) return;
-    
+  const unlockAudio = useCallback(async () => {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") {
-      ctx.resume();
+      try {
+        await ctx.resume();
+        console.log('[useV7SoundEffects] ✅ AudioContext resumed');
+      } catch (e) {
+        console.warn('[useV7SoundEffects] Failed to resume AudioContext:', e);
+      }
     }
     isUnlockedRef.current = true;
   }, [getAudioContext]);
 
-  // Play synthesized sounds
-  const playSound = useCallback((type: SoundType, config?: Partial<SoundConfig>) => {
+  // Play synthesized sounds - with auto-resume
+  const playSound = useCallback(async (type: SoundType, config?: Partial<SoundConfig>) => {
     if (!enabled) return;
     
     const ctx = getAudioContext();
-    if (ctx.state === "suspended") return;
+    
+    // ✅ Auto-resume if suspended (fixes sound not playing issue)
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+        isUnlockedRef.current = true;
+        console.log('[useV7SoundEffects] ✅ Auto-resumed AudioContext for sound:', type);
+      } catch (e) {
+        console.warn('[useV7SoundEffects] ⚠️ Cannot resume AudioContext:', e);
+        return;
+      }
+    }
 
     const volume = (config?.volume ?? 1) * masterVolume;
 

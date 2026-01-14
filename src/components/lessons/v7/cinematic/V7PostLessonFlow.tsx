@@ -20,11 +20,13 @@ import { registerGamificationEvent, GamificationResult } from '@/services/gamifi
 import { useUserGamification } from '@/hooks/useUserGamification';
 import { supabase } from '@/integrations/supabase/client';
 
-// Tipo para próxima aula
+// Tipo para próxima aula com preview
 interface NextLesson {
   id: string;
   title: string;
   order_index: number;
+  description?: string | null;
+  estimated_time?: number | null;
 }
 
 // Flow stages
@@ -71,10 +73,10 @@ export const V7PostLessonFlow = ({
         
         if (!currentLesson?.trail_id) return;
         
-        // Buscar próxima aula da mesma trilha
+        // Buscar próxima aula da mesma trilha com descrição
         const { data: next } = await supabase
           .from('lessons')
-          .select('id, title, order_index')
+          .select('id, title, order_index, description, estimated_time')
           .eq('trail_id', currentLesson.trail_id)
           .eq('is_active', true)
           .gt('order_index', currentLesson.order_index)
