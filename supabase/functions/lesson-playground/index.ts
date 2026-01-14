@@ -93,20 +93,15 @@ Responda em português brasileiro.`;
     const responseText = aiData.choices[0]?.message?.content || '';
 
     // Get detailed feedback on the prompt
-    const feedbackSystemPrompt = `Você é um coach de prompts. Analise o prompt do usuário e dê feedback ESPECÍFICO e ACIONÁVEL.
+    const feedbackSystemPrompt = `Você é um coach de prompts. Dê feedback CURTO e DIRETO.
 
-ESTRUTURA DO FEEDBACK (máximo 3 frases):
-1. Um ponto POSITIVO específico (o que está bom)
-2. Uma SUGESTÃO CONCRETA de melhoria (ex: "Adicione X para obter Y")
-3. Opcional: Exemplo rápido de como melhorar
+REGRA CRÍTICA: Responda em NO MÁXIMO 2 FRASES CURTAS (máximo 150 caracteres total).
 
-CRITÉRIOS DE AVALIAÇÃO:
-- Clareza: O objetivo está claro?
-- Contexto: Há informações suficientes?
-- Especificidade: É específico ou vago?
-- Formato: Indica o formato desejado da resposta?
+FORMATO:
+- 1ª frase: O que pode melhorar
+- 2ª frase: Como melhorar (dica prática)
 
-Responda em português brasileiro, tom encorajador mas direto.`;
+Seja direto, sem introduções. Português brasileiro.`;
 
     const feedbackResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -120,7 +115,7 @@ Responda em português brasileiro, tom encorajador mas direto.`;
           { role: 'system', content: feedbackSystemPrompt },
           { role: 'user', content: `Analise este prompt:\n\n"${prompt}"` }
         ],
-        max_tokens: 300,
+        max_tokens: 100,
       }),
     });
 
