@@ -194,18 +194,17 @@ export function useAnchorText({
   }, [wordTimestamps, normalizeWord]);
 
   // Verifica se o tempo atual está próximo de uma palavra
-  // ✅ V7-v40 FIX: Janela ULTRA-TIGHT de 100ms para evitar áudio "vazando"
-  // O problema era que com 300ms, o áudio continuava por mais ~200ms após a keyword
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 100): boolean => {
+  // ✅ V7-v41 FIX: Janela de 400ms - equilibra detecção confiável + seek-back no Player
+  // O Player faz seek-back se passar do ponto, então podemos usar janela maior aqui
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 400): boolean => {
     const windowSec = windowMs / 1000;
     // ✅ CRÍTICO: Tempo atual deve ser >= end da palavra (frase completa falada)
-    // E dentro de uma janela MUITO curta após o end para parar RÁPIDO
     const isAfterWordEnd = time >= wordTs.end;
     const isWithinWindow = time <= wordTs.end + windowSec;
     const result = isAfterWordEnd && isWithinWindow;
     
     if (result) {
-      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (tight ${windowMs}ms window)`);
+      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (window ${windowMs}ms)`);
     }
     
     return result;
@@ -353,16 +352,15 @@ export function useAnchorText({
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // ✅ V7-v40: Se keywordTime está disponível, usar detecção direta por tempo
-      // Janela ULTRA-TIGHT de 150ms para parar IMEDIATAMENTE após a keyword
-      // O problema era que com 500ms, o narrador continuava falando "E..." da próxima frase
+      // ✅ V7-v41: Se keywordTime está disponível, usar detecção direta por tempo
+      // Janela de 500ms para detecção CONFIÁVEL - o Player faz seek-back se precisar
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const windowMs = 150; // ✅ V7-v40: Janela MUITO curta para pausas precisas
+        const windowMs = 500; // ✅ V7-v41: Janela ampla para não perder detecção
         const windowSec = windowMs / 1000;
         const isNear = currentTime >= action.keywordTime && currentTime <= action.keywordTime + windowSec;
 
         if (isNear) {
-          console.log(`[AnchorText] 🎯 V7-v40 TIGHT MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(3)}s (current: ${timeStr}s, window: ${windowMs}ms)`);
+          console.log(`[AnchorText] 🎯 V7-v41 MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(3)}s (current: ${timeStr}s, window: ${windowMs}ms)`);
           // Create synthetic wordTs for compatibility
           const syntheticWordTs: WordTimestamp = {
             word: action.keyword,
