@@ -392,117 +392,107 @@ export const V7UserChallengeInput = ({
           )}
         </AnimatePresence>
 
-        {/* ========== SEÇÃO DE RESULTADO (aparece após enviar) ========== */}
+        {/* ========== SEÇÃO DE RESULTADO COMPACTA (cabe na viewport) ========== */}
         <AnimatePresence>
           {aiFeedback && (
             <motion.div
               key="result-section"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-              className="flex flex-col gap-3"
+              transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 }}
+              className="flex flex-col gap-2"
             >
-              {/* Mini header do resultado */}
+              {/* Header + Score inline - compacto */}
               <motion.div 
-                className="flex items-center justify-center gap-2"
+                className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border rounded-lg p-2 sm:p-3 flex items-center justify-between`}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  <span className="text-sm font-bold text-white">Resultado</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(aiFeedback.score || 70) >= 70 ? (
+                    <CheckCircle className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  ) : (
+                    <Sparkles className={`w-5 h-5 ${getScoreColor(aiFeedback.score || 70)}`} />
+                  )}
+                  <span className={`text-2xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
+                    {aiFeedback.score || 70}%
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* Coach feedback - compacto com scroll */}
+              <motion.div 
+                className="bg-gradient-to-r from-purple-500/15 to-cyan-500/15 border border-purple-500/20 rounded-lg p-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <span className="text-2xl">✨</span>
-                <span className="text-lg font-bold text-white">Resultado da Análise</span>
-              </motion.div>
-
-              {/* Score grande e destacado */}
-              <motion.div
-                className={`bg-gradient-to-r ${getScoreBg(aiFeedback.score || 70)} border-2 rounded-xl p-4 flex flex-col items-center justify-center gap-2`}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-              >
-                <div className="flex items-center gap-3">
-                  {(aiFeedback.score || 70) >= 70 ? (
-                    <CheckCircle className={`w-8 h-8 ${getScoreColor(aiFeedback.score || 70)}`} />
-                  ) : (
-                    <Sparkles className={`w-8 h-8 ${getScoreColor(aiFeedback.score || 70)}`} />
-                  )}
-                  <span className={`text-4xl font-bold ${getScoreColor(aiFeedback.score || 70)}`}>
-                    {aiFeedback.score || 70}%
-                  </span>
-                </div>
-                <span className="text-white/80 text-sm font-medium">
-                  {(aiFeedback.score || 70) >= 85 ? '🎉 Excelente trabalho!' : 
-                   (aiFeedback.score || 70) >= 70 ? '👍 Bom trabalho!' : 
-                   (aiFeedback.score || 70) >= 50 ? '💪 Continue praticando!' : '📝 Tente novamente!'}
-                </span>
-              </motion.div>
-
-              {/* Coach feedback - mais visual */}
-              <motion.div 
-                className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 rounded-xl p-3"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">🎯</span>
-                  <div>
-                    <p className="text-white/60 text-[10px] uppercase font-bold mb-1">Feedback do Coach</p>
-                    <p className="text-white/90 text-sm leading-relaxed">
+                <div className="flex items-start gap-2">
+                  <span className="text-base flex-shrink-0">🎯</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white/50 text-[9px] uppercase font-bold mb-0.5">Feedback</p>
+                    <p className="text-white/85 text-xs leading-snug max-h-16 overflow-y-auto pr-1">
                       {aiFeedback.feedback}
                     </p>
                   </div>
                 </div>
               </motion.div>
 
-              {/* O que você escreveu - preview */}
-              <motion.div 
-                className="bg-white/[0.03] border border-white/10 rounded-lg p-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <p className="text-white/40 text-[10px] uppercase font-bold mb-1">Seu prompt</p>
-                <p className="text-white/60 text-xs italic line-clamp-2">"{userPrompt}"</p>
-              </motion.div>
+              {/* Prompt + IA em row compacta */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Seu prompt */}
+                <motion.div 
+                  className="bg-white/[0.03] border border-white/10 rounded-lg p-1.5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <p className="text-white/40 text-[8px] uppercase font-bold mb-0.5">Seu prompt</p>
+                  <p className="text-white/60 text-[10px] italic line-clamp-2">"{userPrompt}"</p>
+                </motion.div>
 
-              {/* Resultado da IA - toggle para expandir */}
-              <motion.details 
-                className="bg-white/[0.02] border border-cyan-500/30 rounded-lg"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                <summary className="flex items-center gap-2 p-2 cursor-pointer text-xs text-cyan-400 font-medium">
-                  <Sparkles className="w-3 h-3" />
-                  Ver resposta completa da IA
-                </summary>
-                <div className="p-2 pt-0">
-                  <div className="bg-black/40 rounded p-2 text-[10px] sm:text-xs text-white/80 max-h-32 overflow-y-auto whitespace-pre-line">
-                    {aiFeedback.response}
+                {/* Resposta IA toggle */}
+                <motion.details 
+                  className="bg-white/[0.02] border border-cyan-500/20 rounded-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <summary className="flex items-center gap-1 p-1.5 cursor-pointer text-[10px] text-cyan-400 font-medium">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Resposta da IA
+                  </summary>
+                  <div className="px-1.5 pb-1.5">
+                    <div className="bg-black/40 rounded p-1.5 text-[9px] text-white/75 max-h-20 overflow-y-auto whitespace-pre-line">
+                      {aiFeedback.response}
+                    </div>
                   </div>
-                </div>
-              </motion.details>
+                </motion.details>
+              </div>
 
-              {/* Botão de continuar */}
+              {/* Botão continuar - menor */}
               <motion.button
                 onClick={onComplete}
-                className="w-full py-4 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-base rounded-xl flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-3 bg-gradient-to-r from-green-500 to-emerald-500 text-black font-bold text-sm rounded-lg flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0 }}
                 animate={{ 
-                  opacity: 1, 
-                  y: 0,
+                  opacity: 1,
                   boxShadow: [
-                    '0 0 15px rgba(34, 197, 94, 0.3)',
-                    '0 0 30px rgba(34, 197, 94, 0.5)',
-                    '0 0 15px rgba(34, 197, 94, 0.3)'
+                    '0 0 10px rgba(34, 197, 94, 0.3)',
+                    '0 0 20px rgba(34, 197, 94, 0.5)',
+                    '0 0 10px rgba(34, 197, 94, 0.3)'
                   ]
                 }}
-                transition={{ delay: 0.8, duration: 2, repeat: Infinity }}
+                transition={{ delay: 0.5, duration: 1.5, repeat: Infinity }}
               >
-                <CheckCircle className="w-5 h-5" />
+                <CheckCircle className="w-4 h-4" />
                 Continuar
               </motion.button>
             </motion.div>
