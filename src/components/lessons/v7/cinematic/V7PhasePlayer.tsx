@@ -250,6 +250,37 @@ export const V7PhasePlayer = ({
   const currentPhaseIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : rawCurrentPhaseIndex;
   const currentPhase = scaledScript.phases[currentPhaseIndex] || null;
 
+  // ✅ V7-vv PADRÃO: Determina se o play deve ser BLOQUEADO
+  // Fases interativas exigem que o usuário complete a ação antes de continuar
+  const isPlayLocked = useMemo(() => {
+    if (!currentPhase) return false;
+    
+    // Tipos de fases que BLOQUEIAM o play
+    const interactivePhaseTypes = [
+      'interaction',      // Quiz de múltipla escolha
+      'playground',       // Chat/Playground de prática
+      'quiz',             // Quiz alternativo
+      'exercise',         // Exercícios diversos
+      'cta',              // Call to action com botão
+      'secret-reveal',    // Revelação que exige atenção
+    ];
+    
+    const isInteractivePhase = interactivePhaseTypes.includes(currentPhase.type);
+    
+    // Revelation com PERFEITO também bloqueia (animação especial)
+    const isRevelationWithPERFEITO = currentPhase.type === 'revelation' && 
+      (currentPhase.title?.toLowerCase().includes('perfeito') || 
+       String((currentPhase.scenes?.[0]?.content as Record<string, unknown>)?.mainText || '').toLowerCase().includes('perfeito'));
+    
+    const shouldLock = isInteractivePhase || isRevelationWithPERFEITO;
+    
+    if (shouldLock) {
+      console.log(`[V7PhasePlayer] 🔒 Play BLOQUEADO - fase "${currentPhase.id}" (${currentPhase.type}) requer interação`);
+    }
+    
+    return shouldLock;
+  }, [currentPhase]);
+
   // Load audio
   useEffect(() => {
     if (audioUrl) {
@@ -515,6 +546,15 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.id, currentPhase?.type, currentPhaseIndex, scaledScript.phases, audio.currentTime, audio.isPlaying, hasAudio, audio]);
 
+  // ✅ V7-vv PADRÃO: Callback seguro para toggle play que respeita o lock
+  const safeTogglePlayPause = useCallback(() => {
+    if (isPlayLocked) {
+      console.log('[V7PhasePlayer] ⛔ Play BLOQUEADO - complete a interação primeiro');
+      return;
+    }
+    audio.togglePlayPause();
+  }, [isPlayLocked, audio]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -522,13 +562,14 @@ export const V7PhasePlayer = ({
       if (e.key === 'ArrowLeft') goToPreviousPhase();
       if (e.key === ' ') {
         e.preventDefault();
-        audio.togglePlayPause();
+        // ✅ V7-vv: Usar callback seguro que respeita o lock
+        safeTogglePlayPause();
       }
       if (e.key === 'm' || e.key === 'M') audio.toggleMute();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [audio, currentPhaseIndex]);
+  }, [audio, currentPhaseIndex, safeTogglePlayPause]);
 
   // ✅ CRITICAL FIX: Calculate current scene based on currentTime
   // MUST be called BEFORE any early returns to maintain consistent hooks order
@@ -1609,7 +1650,7 @@ export const V7PhasePlayer = ({
         canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
         currentPhase={currentPhaseIndex}
         totalPhases={scaledScript.phases.length}
-        onTogglePlay={audio.togglePlayPause}
+        onTogglePlay={safeTogglePlayPause}
         onToggleMute={audio.toggleMute}
         onVolumeChange={audio.setVolume}
         onPrevious={goToPreviousPhase}
@@ -1625,7 +1666,7 @@ export const V7PhasePlayer = ({
             ? true
             : (showControls && !isQuizResultShowing)
         }
-        isLocked={false} // ✅ V7-v17: NUNCA bloquear controles - usuário precisa poder pausar/resumir sempre
+        isLocked={isPlayLocked} // ✅ V7-vv PADRÃO: Bloqueia play durante fases interativas
       />
 
       {/* Audio/Play Indicator */}
