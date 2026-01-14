@@ -362,8 +362,17 @@ export const V7PhasePlayer = ({
     enabled: shouldEnableAnchors,
     onPause: () => {
       if (audio.isPlaying) {
+        // ✅ V7-v40: PAUSA INSTANTÂNEA - para IMEDIATAMENTE
         audio.pause();
-        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE - palavra detectada!`);
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE INSTANTÂNEO @ ${audio.currentTime.toFixed(3)}s`);
+        
+        // ✅ V7-v40: Se passou da keyword, faz seek-back para posição exata
+        // Isso evita que o usuário ouça "E..." da próxima frase
+        const pauseAction = anchorActions.find(a => a.type === 'pause' && a.keywordTime);
+        if (pauseAction?.keywordTime && audio.currentTime > pauseAction.keywordTime + 0.1) {
+          console.log(`[V7PhasePlayer] ⏪ SEEK-BACK: ${audio.currentTime.toFixed(3)}s → ${pauseAction.keywordTime.toFixed(3)}s`);
+          audio.seekTo(pauseAction.keywordTime);
+        }
       }
     },
     onResume: () => {
