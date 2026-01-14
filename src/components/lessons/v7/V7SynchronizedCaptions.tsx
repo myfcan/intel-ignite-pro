@@ -136,6 +136,57 @@ export const V7SynchronizedCaptions = ({
 
   if (!isVisible || !displayedSentence) return null;
 
+  // ✅ V7-vv: Processa texto com destaque semântico por cores
+  const renderHighlightedText = (text: string) => {
+    // Regex patterns para diferentes tipos de destaque
+    const patterns = [
+      // 💚 Verde: Valores monetários (R$ XX.XXX, mil reais, etc)
+      { regex: /(R\$\s*[\d.,]+|[\d.,]+\s*(?:mil|milhões?|bilhões?)\s*(?:reais|de reais)?)/gi, color: 'text-green-400' },
+      // 🔴 Vermelho: Porcentagens e números chocantes
+      { regex: /(\d+(?:[.,]\d+)?%)/g, color: 'text-red-400' },
+      // 💛 Amarelo: Palavras-chave especiais
+      { regex: /\b(PERFEITO|MÉTODO|PROMPTS?|IA|INTELIGÊNCIA ARTIFICIAL|GRATUITO|GRÁTIS|EXCLUSIVO|AGORA|HOJE)\b/gi, color: 'text-yellow-400' },
+    ];
+
+    // Divide o texto em partes e aplica cores
+    let result: React.ReactNode[] = [];
+    let remainingText = text;
+    let key = 0;
+
+    // Processa cada pattern
+    patterns.forEach(({ regex, color }) => {
+      const parts = remainingText.split(regex);
+      const matches = remainingText.match(regex) || [];
+      
+      if (matches.length > 0) {
+        result = [];
+        parts.forEach((part, index) => {
+          if (part) {
+            // Verifica se esta parte é um match
+            const isMatch = matches.some(m => m.toLowerCase() === part.toLowerCase());
+            if (isMatch) {
+              result.push(
+                <span key={key++} className={`${color} font-semibold`}>
+                  {part}
+                </span>
+              );
+            } else {
+              result.push(<span key={key++}>{part}</span>);
+            }
+          }
+        });
+        remainingText = ''; // Já processado
+      }
+    });
+
+    // Se nenhum pattern foi encontrado, retorna texto original
+    if (result.length === 0) {
+      return text;
+    }
+
+    return result;
+  };
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -146,32 +197,39 @@ export const V7SynchronizedCaptions = ({
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={`v7-captions fixed left-0 right-0 flex justify-center px-4 sm:px-6 pointer-events-none ${className}`}
         style={{
-          bottom: V7_SPACING.positions.captions.bottom,
+          // ✅ Posição mais alta para dar respiro (100px em vez de 80px)
+          bottom: '100px',
           paddingLeft: V7_SPACING.safeArea.left,
           paddingRight: V7_SPACING.safeArea.right,
           zIndex: V7_LAYERS.captions,
         }}
       >
-        {/* Container de legenda estática */}
+        {/* Container de legenda com ajustes V7-vv */}
         <div 
           className="
-            bg-black/75 backdrop-blur-md rounded-lg
-            px-5 py-3 sm:px-6 sm:py-3.5
+            backdrop-blur-md rounded-lg
             max-w-[85vw] sm:max-w-2xl md:max-w-3xl
-            border border-white/10 shadow-lg
+            border border-white/10 shadow-xl
           "
+          style={{
+            // ✅ Fundo mais escuro (0.8 em vez de 0.75)
+            background: 'rgba(0, 0, 0, 0.8)',
+            // ✅ Mais padding vertical (16px 24px)
+            padding: '16px 24px',
+          }}
         >
           <p 
             className="
               text-center text-white font-medium
-              text-base sm:text-lg md:text-xl
               leading-relaxed tracking-wide
             "
             style={{
-              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+              // ✅ Fonte maior (20px mobile, 22px desktop)
+              fontSize: 'clamp(20px, 4vw, 22px)',
+              textShadow: '0 2px 4px rgba(0,0,0,0.9)',
             }}
           >
-            {displayedSentence.text}
+            {renderHighlightedText(displayedSentence.text)}
           </p>
         </div>
       </motion.div>
