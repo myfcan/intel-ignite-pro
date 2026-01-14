@@ -27,6 +27,7 @@ import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
+import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
 import {
   V7LessonScript,
   V7Phase,
@@ -1649,6 +1650,28 @@ export const V7PhasePlayer = ({
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
           visualType={(currentPhase as any).visual?.type}
+        />
+      )}
+
+      {/* V7-vv-v5: Narrative Visual Overlay - fills visual gaps during narration */}
+      {/* Shows ambient visuals when phase doesn't have specific content */}
+      {/* Enable for dramatic/narrative/secret-reveal phases that might have visual gaps */}
+      {(currentPhase?.type === 'dramatic' || 
+        currentPhase?.type === 'narrative' || 
+        currentPhase?.type === 'secret-reveal' ||
+        currentPhase?.type === 'revelation') && (
+        <V7NarrativeVisualOverlay
+          wordTimestamps={wordTimestamps}
+          currentTime={hasAudio ? audio.currentTime : internalTime}
+          isPlaying={effectiveIsPlaying}
+          mood={
+            currentPhase?.mood === 'danger' ? 'dramatic' :
+            currentPhase?.mood === 'success' ? 'inspiring' :
+            currentPhase?.type === 'secret-reveal' ? 'mysterious' :
+            currentPhase?.type === 'revelation' ? 'energetic' :
+            'mysterious'
+          }
+          enabled={effectiveIsPlaying}
         />
       )}
 
