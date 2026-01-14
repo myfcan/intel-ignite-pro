@@ -233,9 +233,15 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
 
     setIsLoading(true);
     setError(null);
+    // ✅ Reset state to prevent stale data issues
+    setScript(null);
+    setRawContent(null);
+    setDetectionPath(null);
 
     try {
       console.log('[useV7PhaseScript] 📡 Fetching from Supabase...');
+      
+      // ✅ Force fresh fetch - bypass any caching
       const { data, error: fetchError } = await supabase
         .from('lessons')
         .select('*')
@@ -268,7 +274,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       });
 
       // ============================================================================
-      // 🔧 CRITICAL FIX v4: SOLUÇÃO DEFINITIVA - Parse inteligente do content
+      // 🔧 CRITICAL FIX v5: SOLUÇÃO DEFINITIVA - Parse inteligente do content
       // ============================================================================
       let parsedContent: any = null;
       
@@ -278,8 +284,8 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           // Se for string, faz parse
           parsedContent = JSON.parse(data.content);
         } else if (data.content && typeof data.content === 'object') {
-          // Se já for objeto, usa diretamente (Supabase já fez o parse)
-          parsedContent = data.content;
+          // ✅ Deep clone to avoid reference issues with Supabase cache
+          parsedContent = JSON.parse(JSON.stringify(data.content));
         } else {
           throw new Error('Content is null or undefined');
         }
@@ -288,7 +294,8 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           contentType: typeof data.content,
           parsedKeys: Object.keys(parsedContent || {}),
           hasPhases: !!parsedContent?.phases,
-          phasesLength: parsedContent?.phases?.length
+          phasesLength: parsedContent?.phases?.length,
+          phasesIsArray: Array.isArray(parsedContent?.phases)
         });
       } catch (e) {
         console.error('[useV7PhaseScript] ❌ Failed to parse content:', e);
