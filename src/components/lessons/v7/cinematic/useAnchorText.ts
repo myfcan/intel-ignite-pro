@@ -194,18 +194,18 @@ export function useAnchorText({
   }, [wordTimestamps, normalizeWord]);
 
   // Verifica se o tempo atual está próximo de uma palavra
-  // ✅ V7-v3 FIX: Para multi-word, só trigger APÓS a palavra terminar (usar end time)
-  // Window de 300ms APÓS o end da palavra para garantir que a frase completa foi falada
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 300): boolean => {
+  // ✅ V7-v40 FIX: Janela ULTRA-TIGHT de 100ms para evitar áudio "vazando"
+  // O problema era que com 300ms, o áudio continuava por mais ~200ms após a keyword
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 100): boolean => {
     const windowSec = windowMs / 1000;
     // ✅ CRÍTICO: Tempo atual deve ser >= end da palavra (frase completa falada)
-    // E dentro de uma janela razoável após o end
+    // E dentro de uma janela MUITO curta após o end para parar RÁPIDO
     const isAfterWordEnd = time >= wordTs.end;
     const isWithinWindow = time <= wordTs.end + windowSec;
     const result = isAfterWordEnd && isWithinWindow;
     
     if (result) {
-      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s is AFTER word end ${wordTs.end.toFixed(2)}s (within ${windowMs}ms window)`);
+      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (tight ${windowMs}ms window)`);
     }
     
     return result;
@@ -353,15 +353,16 @@ export function useAnchorText({
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // ✅ V7-vv: Se keywordTime está disponível, usar detecção direta por tempo
-      // Isso é mais preciso e eficiente que buscar pela keyword nos wordTimestamps
+      // ✅ V7-v40: Se keywordTime está disponível, usar detecção direta por tempo
+      // Janela ULTRA-TIGHT de 150ms para parar IMEDIATAMENTE após a keyword
+      // O problema era que com 500ms, o narrador continuava falando "E..." da próxima frase
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const windowMs = 500; // 500ms window for V7-vv (more forgiving)
+        const windowMs = 150; // ✅ V7-v40: Janela MUITO curta para pausas precisas
         const windowSec = windowMs / 1000;
         const isNear = currentTime >= action.keywordTime && currentTime <= action.keywordTime + windowSec;
 
         if (isNear) {
-          console.log(`[AnchorText] 🎯 V7-vv DIRECT MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(1)}s (current: ${timeStr}s)`);
+          console.log(`[AnchorText] 🎯 V7-v40 TIGHT MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(3)}s (current: ${timeStr}s, window: ${windowMs}ms)`);
           // Create synthetic wordTs for compatibility
           const syntheticWordTs: WordTimestamp = {
             word: action.keyword,
