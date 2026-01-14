@@ -26,7 +26,7 @@ export default function V7CinematicPlayer() {
   
   // Fetch lesson from database - NO FALLBACK
   // ✅ V7-vv: Also fetch feedbackAudios for quiz feedback narration
-  const { script, audioUrl, wordTimestamps, isLoading, error, refetch, rawContent, detectionPath, feedbackAudios } = useV7PhaseScript(lessonId);
+  const { script, audioUrl, wordTimestamps, isLoading, error, refetch, rawContent, detectionPath, feedbackAudios, isNonV7Lesson, lessonType } = useV7PhaseScript(lessonId);
 
   // ✅ Fetch trail_id when lesson loads
   useEffect(() => {
@@ -115,13 +115,27 @@ export default function V7CinematicPlayer() {
     }
   }, [error, script, isLoading, refetch]);
 
-  // Render loading state
-  if (isLoading) {
+  // ✅ FALLBACK: Redirecionar automaticamente para player correto se não for V7
+  useEffect(() => {
+    if (isNonV7Lesson && lessonId && !isLoading) {
+      console.log('[V7CinematicPlayer] ⚠️ Aula não é V7, redirecionando para player correto:', {
+        lessonId,
+        lessonType,
+      });
+      // Redirecionar para o player interativo/guided
+      navigate(`/lessons/${lessonId}`, { replace: true });
+    }
+  }, [isNonV7Lesson, lessonId, lessonType, isLoading, navigate]);
+
+  // Render loading state (também enquanto redireciona)
+  if (isLoading || isNonV7Lesson) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Carregando experiência cinematográfica...</p>
+          <p className="text-muted-foreground">
+            {isNonV7Lesson ? 'Redirecionando para o player correto...' : 'Carregando experiência cinematográfica...'}
+          </p>
           <p className="text-xs text-muted-foreground/60">Lesson ID: {lessonId}</p>
         </div>
       </div>

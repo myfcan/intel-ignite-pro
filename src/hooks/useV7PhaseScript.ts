@@ -207,6 +207,9 @@ interface UseV7PhaseScriptResult {
   detectionPath: 'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null;
   // ✅ V7-vv Definitive: Feedback audios for quiz
   feedbackAudios: Record<string, FeedbackAudioSegment> | null;
+  // ✅ Fallback: Indica se aula não é V7 e deve redirecionar
+  isNonV7Lesson: boolean;
+  lessonType: string | null;
 }
 
 export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScriptResult {
@@ -220,6 +223,9 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
   const [detectionPath, setDetectionPath] = useState<'v7-vv' | 'emergency' | 'v7-v3' | 'legacy' | 'error' | null>(null);
   // ✅ V7-vv Definitive: Feedback audios for quiz
   const [feedbackAudios, setFeedbackAudios] = useState<Record<string, FeedbackAudioSegment> | null>(null);
+  // ✅ Fallback: Para aulas não-V7
+  const [isNonV7Lesson, setIsNonV7Lesson] = useState(false);
+  const [lessonType, setLessonType] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchLesson = useCallback(async () => {
@@ -437,7 +443,27 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       }
 
       // ============================================================================
-      // ❌ NENHUMA PHASE ENCONTRADA - ERRO
+      // ✅ FALLBACK: Detectar aula não-V7 (guided, interactive, etc.) e sinalizar
+      // ============================================================================
+      const detectedLessonType = data.lesson_type || 'unknown';
+      const contentVersion = parsedContent?.contentVersion || parsedContent?.version || null;
+      const hasSections = Array.isArray(parsedContent?.sections);
+      
+      // Se tem "sections" (formato V1/V5) ou lesson_type não é cinematográfico
+      if (hasSections || contentVersion === 'v1' || detectedLessonType === 'guided' || detectedLessonType === 'interactive') {
+        console.log('[useV7PhaseScript] ⚠️ Aula não é V7 cinematográfica, sinalizando para redirecionamento:', {
+          lessonType: detectedLessonType,
+          contentVersion,
+          hasSections,
+        });
+        setIsNonV7Lesson(true);
+        setLessonType(detectedLessonType);
+        setIsLoading(false);
+        return;
+      }
+      
+      // ============================================================================
+      // ❌ NENHUMA PHASE ENCONTRADA E NÃO É FORMATO CONHECIDO - ERRO REAL
       // ============================================================================
       const contentKeys = Object.keys(parsedContent || {});
       const phasesDebug = {
@@ -452,7 +478,6 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         stringPreview: JSON.stringify(parsedContent).substring(0, 500)
       });
       throw new Error(`Nenhum act encontrado na aula. Keys: [${contentKeys.join(', ')}]. phases: ${JSON.stringify(phasesDebug)}. Verifique o conteúdo no banco de dados.`);
-      // Código legacy removido - toda lógica está no caminho V7-vv acima
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
       setError(err.message);
@@ -471,7 +496,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
     fetchLesson();
   }, [fetchLesson]);
 
-  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson, rawContent, detectionPath, feedbackAudios };
+  return { script, audioUrl, wordTimestamps, isLoading, error, refetch: fetchLesson, rawContent, detectionPath, feedbackAudios, isNonV7Lesson, lessonType };
 }
 
 // ============================================================================
