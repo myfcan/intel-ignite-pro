@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useV7ContextualTTS } from '../useV7ContextualTTS';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 import { supabase } from '@/integrations/supabase/client';
 import type { 
   V7PhaseQuizProps, 
@@ -67,6 +68,9 @@ export const V7PhaseQuiz = ({
   const [optionsEnabled, setOptionsEnabled] = useState(false);
   const [showEnableEffect, setShowEnableEffect] = useState(false);
   const [showBlockedTooltip, setShowBlockedTooltip] = useState(false);
+  
+  // ✅ Sound effects hook
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
   const {
@@ -271,8 +275,7 @@ export const V7PhaseQuiz = ({
     }
 
     // 🆕 V7-v2.1: Tocar efeito sonoro de seleção
-    const ctrl = audioControlRef.current;
-    ctrl?.playSoundEffect?.('click', 0.3);
+    playSound('click-soft');
 
     // ✅ Do NOT pause audio on option selection - let narration continue
     setSelectedIds(prev =>
@@ -280,15 +283,14 @@ export const V7PhaseQuiz = ({
         ? prev.filter(i => i !== id)
         : [...prev, id]
     );
-  }, [isRevealed, optionsEnabled]);
+  }, [isRevealed, optionsEnabled, playSound]);
 
   // ✅ FASE 1: Primeiro clique revela as opções
   const handleRevealOptions = useCallback(() => {
     console.log('[V7PhaseQuiz] 🎯 REVELAR VERDADE clicked - showing options');
-    const ctrl = audioControlRef.current;
-    ctrl?.playSoundEffect?.('reveal', 0.5);
+    playSound('reveal');
     setOptionsRevealed(true);
-  }, []);
+  }, [playSound]);
 
   // ✅ V7-v3.1: Função para falar o feedback com TTS
   const speakFeedback = useCallback(async (feedbackText: string) => {
@@ -360,11 +362,9 @@ export const V7PhaseQuiz = ({
 
   // ✅ V7-v3.2: Som de erro para respostas incorretas
   const playErrorSound = useCallback(() => {
-    const ctrl = audioControlRef.current;
-    // Usar efeito sonoro de erro
-    ctrl?.playSoundEffect?.('error', 0.6);
+    playSound('quiz-wrong');
     console.log('[V7PhaseQuiz] 🔊 Som de erro tocado');
-  }, []);
+  }, [playSound]);
 
   // ✅ FASE 1: Segundo clique confirma a resposta
   const handleConfirm = useCallback(() => {
@@ -374,15 +374,16 @@ export const V7PhaseQuiz = ({
     console.log('[V7PhaseQuiz] ✅ CONFIRMAR clicked - showing results');
 
     // 🆕 V7-v2.1: Tocar efeito de revelação
+    playSound('click-confirm');
     const ctrl = audioControlRef.current;
     // Parar qualquer TTS em andamento
     ctrl?.stopSpeech?.();
-    ctrl?.playSoundEffect?.('success', 0.5);
     ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
     setTimeout(() => {
       setShowResult(true);
+      playSound('reveal');
       
       // ✅ V7-v9: Notify parent that result is showing (to hide player controls)
       onResultShow?.(true);
@@ -398,11 +399,12 @@ export const V7PhaseQuiz = ({
       // já gerencia o feedbackAudio pré-gravado. Chamar speakFeedback
       // aqui causa sobreposição de áudio.
       if (isPositiveResult) {
-        // ✅ CORRETO: Apenas confetti verde (áudio controlado pelo parent)
+        // ✅ CORRETO: Confetti verde + som de acerto
+        playSound('quiz-correct');
         fireConfetti();
         console.log('[V7PhaseQuiz] ✅ Resultado positivo - confetti triggered');
       } else {
-        // ✅ INCORRETO: Apenas som de erro (áudio controlado pelo parent)
+        // ✅ INCORRETO: Som de erro
         playErrorSound();
         console.log('[V7PhaseQuiz] ❌ Resultado negativo - error sound triggered');
       }
@@ -415,7 +417,7 @@ export const V7PhaseQuiz = ({
       console.log('[V7PhaseQuiz] ✅ Feedback completo - chamando onComplete');
       onComplete?.(selectedIds);
     }, 4500); // Delay para dar tempo do feedback ser falado
-  }, [selectedIds, onComplete, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback, stopTts]);
+  }, [selectedIds, onComplete, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback, stopTts, playSound]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'

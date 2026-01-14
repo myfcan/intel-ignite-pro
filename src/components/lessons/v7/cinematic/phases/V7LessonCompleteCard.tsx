@@ -6,7 +6,9 @@
 
 import { motion } from 'framer-motion';
 import { Rocket } from 'lucide-react';
+import { useEffect } from 'react';
 import livAvatarImg from '@/assets/liv-avatar.png';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface V7LessonCompleteCardProps {
   onContinue: () => void;
@@ -15,6 +17,13 @@ interface V7LessonCompleteCardProps {
 export const V7LessonCompleteCard = ({
   onContinue
 }: V7LessonCompleteCardProps) => {
+  // Sound effects
+  const { playSound } = useV7SoundEffects(0.6, true);
+  
+  // ✅ Play completion sound on mount
+  useEffect(() => {
+    playSound('completion');
+  }, [playSound]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
       <motion.div
@@ -85,7 +94,10 @@ export const V7LessonCompleteCard = ({
 
         {/* CTA Button */}
         <motion.button
-          onClick={onContinue}
+          onClick={() => {
+            playSound('click-confirm');
+            onContinue();
+          }}
           className="w-full py-4 px-6 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold text-lg rounded-xl flex items-center justify-center gap-2 shadow-lg"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
