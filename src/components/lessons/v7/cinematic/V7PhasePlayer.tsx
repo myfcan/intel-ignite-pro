@@ -360,18 +360,19 @@ export const V7PhasePlayer = ({
     isPlaying: audio.isPlaying,
     phaseId: currentPhase?.id || '',
     enabled: shouldEnableAnchors,
-    onPause: () => {
+    onPause: (triggeredKeywordTime?: number) => {
       if (audio.isPlaying) {
-        // ✅ V7-v40: PAUSA INSTANTÂNEA - para IMEDIATAMENTE
+        // ✅ V7-v42: PAUSA INSTANTÂNEA - para IMEDIATAMENTE
         audio.pause();
-        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE INSTANTÂNEO @ ${audio.currentTime.toFixed(3)}s`);
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE @ ${audio.currentTime.toFixed(3)}s (keywordTime: ${triggeredKeywordTime?.toFixed(3) || 'N/A'}s)`);
         
-        // ✅ V7-v40: Se passou da keyword, faz seek-back para posição exata
-        // Isso evita que o usuário ouça "E..." da próxima frase
-        const pauseAction = anchorActions.find(a => a.type === 'pause' && a.keywordTime);
-        if (pauseAction?.keywordTime && audio.currentTime > pauseAction.keywordTime + 0.1) {
-          console.log(`[V7PhasePlayer] ⏪ SEEK-BACK: ${audio.currentTime.toFixed(3)}s → ${pauseAction.keywordTime.toFixed(3)}s`);
-          audio.seekTo(pauseAction.keywordTime);
+        // ✅ V7-v42: SEMPRE faz seek-back para a posição exata da keyword
+        // Isso GARANTE que o usuário não ouça nada após a keyword (ex: "E..." da próxima frase)
+        // Usamos o keywordTime passado pelo callback, não procuramos na lista
+        if (triggeredKeywordTime !== undefined && triggeredKeywordTime > 0) {
+          // Sempre seek-back, mesmo se diferença for mínima - isso corta qualquer vazamento
+          console.log(`[V7PhasePlayer] ⏪ SEEK-BACK GARANTIDO: ${audio.currentTime.toFixed(3)}s → ${triggeredKeywordTime.toFixed(3)}s`);
+          audio.seekTo(triggeredKeywordTime);
         }
       }
     },
