@@ -1,0 +1,457 @@
+{
+  "title": "A Arte dos Prompts Profissionais",
+  "subtitle": "Domine a comunicação com IA e multiplique seus resultados",
+  "difficulty": "beginner",
+  "category": "fundamentos",
+  "tags": ["prompts", "iniciante", "pratico", "fundamentos", "chatgpt"],
+  "learningObjectives": [
+    "Entender por que a maioria das pessoas falha ao usar IA",
+    "Dominar a estrutura de um prompt profissional",
+    "Aplicar o método CRAFT para criar prompts eficientes",
+    "Transformar prompts amadores em profissionais"
+  ],
+  "generate_audio": true,
+  "fail_on_audio_error": false,
+
+  "scenes": [
+    {
+      "id": "abertura-impacto",
+      "title": "Estatística Chocante",
+      "type": "dramatic",
+      "narration": "Você sabia que 87% das pessoas que usam ChatGPT estão desperdiçando o potencial da ferramenta? Isso mesmo. Quase 9 em cada 10 usuários obtêm resultados medíocres, não porque a IA seja ruim, mas porque não sabem se comunicar com ela.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "Por que seus prompts não funcionam?",
+          "number": "87%",
+          "secondaryNumber": "9 em 10",
+          "subtitle": "desperdiçam o potencial da IA",
+          "mood": "danger",
+          "countUp": true
+        },
+        "effects": {
+          "mood": "danger",
+          "particles": "ember",
+          "glow": true,
+          "vignette": true
+        }
+      }
+    },
+
+    {
+      "id": "problema-contexto",
+      "title": "O Problema Real",
+      "type": "narrative",
+      "narration": "O problema não é a inteligência artificial. O problema é a comunicação. Quando você escreve 'me ajuda a fazer um texto', a IA não tem ideia do que você realmente precisa. É como pedir a um chef que cozinhe algo, sem dizer o quê, para quem, ou quando.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "O Problema Real",
+          "mainText": "A IA não lê mentes. Ela lê prompts.",
+          "items": [
+            { "icon": "❓", "text": "Prompts vagos = Respostas genéricas" },
+            { "icon": "🎯", "text": "Prompts específicos = Respostas precisas" },
+            { "icon": "💡", "text": "A qualidade do output depende do input" }
+          ],
+          "highlightWord": "comunicação"
+        },
+        "effects": {
+          "mood": "neutral"
+        }
+      }
+    },
+
+    {
+      "id": "comparacao-amador-pro",
+      "title": "Amador vs Profissional",
+      "type": "comparison",
+      "narration": "Veja a diferença entre um prompt amador e um profissional. Do lado esquerdo, o que a maioria faz. Do lado direito, o que os especialistas fazem. A diferença nos resultados é absurda.",
+      "visual": {
+        "type": "split-screen",
+        "content": {
+          "left": {
+            "label": "❌ Prompt Amador",
+            "mood": "danger",
+            "emoji": "😰",
+            "items": [
+              "\"Escreve um texto sobre vendas\"",
+              "Sem contexto ou objetivo",
+              "Resultado: texto genérico e inútil",
+              "Tempo perdido refazendo"
+            ]
+          },
+          "right": {
+            "label": "✅ Prompt Profissional",
+            "mood": "success",
+            "emoji": "🚀",
+            "items": [
+              "Contexto + Objetivo + Formato",
+              "Especifica tom e público-alvo",
+              "Resultado: conteúdo pronto para usar",
+              "Economia de horas de trabalho"
+            ]
+          }
+        },
+        "effects": {
+          "mood": "neutral"
+        }
+      }
+    },
+
+    {
+      "id": "quiz-identificacao",
+      "title": "Quiz: Identifique o Erro",
+      "type": "interaction",
+      "narration": "Agora é sua vez de aplicar o que aprendeu. Analise esses prompts e identifique qual deles é profissional. Escolha a alternativa correta.",
+      "anchorText": {
+        "pauseAt": "correta"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "Qual destes prompts é profissional?",
+          "mood": "neutral"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "options": [
+          {
+            "id": "a",
+            "text": "Escreva um email de vendas",
+            "emoji": "📧",
+            "category": "bad",
+            "feedback": {
+              "title": "Quase!",
+              "subtitle": "Esse prompt é muito vago. Falta contexto sobre o produto, público e objetivo.",
+              "mood": "warning",
+              "narration": "Esse prompt não especifica para quem, sobre o quê, nem qual o objetivo do email."
+            }
+          },
+          {
+            "id": "b",
+            "text": "Me ajuda com marketing",
+            "emoji": "📢",
+            "category": "bad",
+            "feedback": {
+              "title": "Não é esse",
+              "subtitle": "Extremamente vago. Marketing de quê? Para quem? Qual canal?",
+              "mood": "danger",
+              "narration": "Esse é um dos piores tipos de prompt. A IA não tem como adivinhar o que você precisa."
+            }
+          },
+          {
+            "id": "c",
+            "text": "Atue como copywriter especialista em SaaS B2B. Crie um email de prospecção para CTOs, focando em redução de custos. Tom: profissional. Máximo 150 palavras.",
+            "emoji": "✨",
+            "category": "good",
+            "feedback": {
+              "title": "Excelente!",
+              "subtitle": "Você identificou corretamente! Esse prompt tem: papel, contexto, objetivo, tom e limitação.",
+              "mood": "success",
+              "narration": "Perfeito! Esse prompt tem todos os elementos: papel definido, público específico, objetivo claro, tom determinado e limite de tamanho."
+            }
+          },
+          {
+            "id": "d",
+            "text": "Faz um texto bom pra mim",
+            "emoji": "📝",
+            "category": "bad",
+            "feedback": {
+              "title": "Definitivamente não",
+              "subtitle": "Texto sobre o quê? Bom em que sentido? Para qual finalidade?",
+              "mood": "danger",
+              "narration": "Esse prompt não dá nenhuma informação útil para a IA trabalhar."
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "revelacao-craft",
+      "title": "O Método CRAFT",
+      "type": "revelation",
+      "narration": "Agora vou te ensinar o método que vai transformar seus prompts para sempre. O método CRAFT. C de Contexto. R de Resultado. A de Ação. F de Formato. T de Tom. Memorize essas cinco letras.",
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "CRAFT",
+          "letters": [
+            { 
+              "letter": "C", 
+              "meaning": "Contexto", 
+              "subtitle": "Quem você é? Qual a situação?" 
+            },
+            { 
+              "letter": "R", 
+              "meaning": "Resultado", 
+              "subtitle": "O que você quer alcançar?" 
+            },
+            { 
+              "letter": "A", 
+              "meaning": "Ação", 
+              "subtitle": "O que a IA deve fazer?" 
+            },
+            { 
+              "letter": "F", 
+              "meaning": "Formato", 
+              "subtitle": "Como deve ser entregue?" 
+            },
+            { 
+              "letter": "T", 
+              "meaning": "Tom", 
+              "subtitle": "Formal, casual, técnico?" 
+            }
+          ],
+          "finalStamp": "MÉTODO CRAFT ✓"
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true,
+          "particles": "sparks"
+        }
+      }
+    },
+
+    {
+      "id": "exemplo-craft-aplicado",
+      "title": "CRAFT na Prática",
+      "type": "narrative",
+      "narration": "Veja como aplicar o método CRAFT em um prompt real. Contexto: você é um gerente de marketing de uma startup de tecnologia. Resultado: quer aumentar conversões do site. Ação: criar headlines para landing page. Formato: cinco opções, máximo 10 palavras cada. Tom: persuasivo e moderno.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "CRAFT Aplicado",
+          "items": [
+            { "icon": "🎯", "text": "C: Gerente de marketing, startup de tech" },
+            { "icon": "🏆", "text": "R: Aumentar conversões do site" },
+            { "icon": "⚡", "text": "A: Criar headlines para landing page" },
+            { "icon": "📐", "text": "F: 5 opções, máximo 10 palavras" },
+            { "icon": "🎨", "text": "T: Persuasivo e moderno" }
+          ]
+        },
+        "effects": {
+          "mood": "success"
+        }
+      }
+    },
+
+    {
+      "id": "playground-pratica",
+      "title": "Hora de Praticar",
+      "type": "playground",
+      "narration": "Agora você vai ver a diferença na prática. Vou mostrar um prompt amador e um profissional sobre o mesmo tema. Compare os resultados e depois tente criar o seu próprio prompt usando o método CRAFT. Analise com atenção.",
+      "anchorText": {
+        "pauseAt": "atenção"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "Laboratório de Prompts",
+          "subtitle": "Compare e aprenda",
+          "instruction": "Analise os dois prompts e seus resultados"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "amateurPrompt": "Escreve um post pro LinkedIn sobre inteligência artificial",
+        "professionalPrompt": "Atue como especialista em personal branding no LinkedIn. Crie um post sobre como profissionais podem usar IA para aumentar produtividade. Público: executivos e empreendedores. Estrutura: gancho provocativo, 3 dicas práticas, CTA no final. Tom: inspirador mas prático. Máximo 200 palavras. Use emojis estratégicos.",
+        "amateurResult": {
+          "title": "Resultado do Prompt Amador",
+          "content": "A inteligência artificial está mudando o mundo. Ela pode fazer muitas coisas como escrever textos, criar imagens e analisar dados. As empresas estão usando cada vez mais. É importante ficar atualizado sobre essas tecnologias. O futuro é digital.",
+          "score": 3,
+          "verdict": "bad"
+        },
+        "professionalResult": {
+          "title": "Resultado do Prompt Profissional",
+          "content": "🚀 Você está usando IA do jeito ERRADO.\n\nA maioria dos profissionais trata a IA como um buscador glorificado. Mas os top performers? Eles a usam como um multiplicador de produtividade.\n\n3 formas de fazer o mesmo:\n\n1️⃣ Delegue o primeiro rascunho - Economize 2h por dia em emails e documentos\n\n2️⃣ Use como sparring partner - Teste suas ideias antes de apresentar ao time\n\n3️⃣ Automatize o repetitivo - Relatórios, análises, resumos de reunião\n\nA IA não vai substituir você. Mas profissionais que dominam IA vão substituir os que não dominam.\n\n💡 Qual dessas você vai implementar primeiro?\n\n#IA #Produtividade #Liderança",
+          "score": 9,
+          "verdict": "excellent"
+        },
+        "userChallenge": {
+          "instruction": "Agora crie um prompt profissional usando CRAFT para gerar um email de apresentação pessoal",
+          "challengePrompt": "Use o método CRAFT: Contexto + Resultado + Ação + Formato + Tom",
+          "hints": [
+            "C: Defina quem você é e sua situação",
+            "R: Qual seu objetivo com o email?",
+            "A: O que a IA deve criar exatamente?",
+            "F: Quantas palavras? Qual estrutura?",
+            "T: Formal, casual, confiante?"
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "quiz-craft",
+      "title": "Quiz: Método CRAFT",
+      "type": "interaction",
+      "narration": "Vamos verificar se você memorizou o método. O que significa a letra R no método CRAFT? Selecione a opção certa.",
+      "anchorText": {
+        "pauseAt": "certa"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "No método CRAFT, o que significa a letra R?",
+          "mood": "neutral"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "options": [
+          {
+            "id": "a",
+            "text": "Resposta",
+            "emoji": "💬",
+            "category": "bad",
+            "feedback": {
+              "title": "Não é isso",
+              "subtitle": "Resposta não faz parte do CRAFT",
+              "mood": "warning"
+            }
+          },
+          {
+            "id": "b",
+            "text": "Resultado",
+            "emoji": "🎯",
+            "category": "good",
+            "feedback": {
+              "title": "Isso mesmo!",
+              "subtitle": "R = Resultado - O que você quer alcançar com o prompt",
+              "mood": "success",
+              "narration": "Exatamente! O R de Resultado define claramente o objetivo que você quer alcançar com aquele prompt."
+            }
+          },
+          {
+            "id": "c",
+            "text": "Revisão",
+            "emoji": "📝",
+            "category": "bad",
+            "feedback": {
+              "title": "Incorreto",
+              "subtitle": "Revisão não é uma das letras do CRAFT",
+              "mood": "danger"
+            }
+          },
+          {
+            "id": "d",
+            "text": "Referência",
+            "emoji": "📚",
+            "category": "bad",
+            "feedback": {
+              "title": "Não é essa",
+              "subtitle": "Embora referências sejam úteis, não é o significado do R no CRAFT",
+              "mood": "warning"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "dica-secreta",
+      "title": "Dica dos Especialistas",
+      "type": "secret-reveal",
+      "narration": "Agora vou compartilhar uma dica que poucos conhecem. O segredo dos melhores prompts é começar definindo o PAPEL da IA antes de qualquer coisa. Quando você diz 'Atue como', a IA assume toda a expertise daquele papel. Guarde isso.",
+      "anchorText": {
+        "pauseAt": "isso"
+      },
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "🔒 O Segredo Revelado",
+          "mainText": "Sempre comece com: 'Atue como [especialista]...'",
+          "items": [
+            { "icon": "🎭", "text": "A IA assume o conhecimento do papel" },
+            { "icon": "🧠", "text": "Respostas mais profundas e especializadas" },
+            { "icon": "✨", "text": "Vocabulário e perspectiva do expert" }
+          ]
+        },
+        "effects": {
+          "mood": "dramatic",
+          "glow": true,
+          "particles": "sparks",
+          "vignette": true
+        }
+      }
+    },
+
+    {
+      "id": "resumo-final",
+      "title": "Resumo da Aula",
+      "type": "narrative",
+      "narration": "Vamos recapitular o que você aprendeu hoje. Primeiro, prompts vagos geram resultados ruins. Segundo, o método CRAFT estrutura prompts profissionais: Contexto, Resultado, Ação, Formato e Tom. Terceiro, sempre defina o papel da IA. Com essas técnicas, você já está à frente de 87% dos usuários.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "O Que Você Aprendeu",
+          "items": [
+            { "icon": "1️⃣", "text": "Prompts vagos = resultados ruins" },
+            { "icon": "2️⃣", "text": "Método CRAFT: C-R-A-F-T" },
+            { "icon": "3️⃣", "text": "Sempre defina o papel da IA" },
+            { "icon": "🏆", "text": "Você agora está no top 13%" }
+          ]
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true
+        }
+      }
+    },
+
+    {
+      "id": "cta-proxima-aula",
+      "title": "Continue sua Jornada",
+      "type": "cta",
+      "narration": "Parabéns por completar esta aula! Você deu o primeiro passo para dominar a comunicação com IA. Na próxima aula, vamos aprofundar ainda mais com técnicas avançadas. Clique para ver seus resultados.",
+      "anchorText": {
+        "pauseAt": "resultados"
+      },
+      "visual": {
+        "type": "cta",
+        "content": {
+          "title": "🎉 Aula Concluída!",
+          "message": "Você está pronto para ver seus resultados?"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti"
+        }
+      },
+      "interaction": {
+        "type": "cta-button",
+        "buttonText": "Ver Meus Resultados",
+        "action": "next-phase"
+      }
+    },
+
+    {
+      "id": "resultado-gamificacao",
+      "title": "Seus Resultados",
+      "type": "gamification",
+      "narration": "Incrível! Você completou a aula A Arte dos Prompts Profissionais. Você agora domina o método CRAFT e está pronto para criar prompts que realmente funcionam. Continue praticando e veja seus resultados com IA se transformarem.",
+      "visual": {
+        "type": "result",
+        "content": {
+          "emoji": "🏆",
+          "title": "Missão Cumprida!",
+          "message": "Você agora domina a arte dos prompts profissionais",
+          "metrics": [
+            { "label": "Método Aprendido", "value": "CRAFT", "isHighlight": true },
+            { "label": "Nível Alcançado", "value": "Top 13%", "isHighlight": true },
+            { "label": "XP Conquistado", "value": "+200", "isHighlight": false },
+            { "label": "Aula Concluída", "value": "1 de 10", "isHighlight": false }
+          ],
+          "ctaText": "Próxima Aula"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti",
+          "glow": true
+        }
+      }
+    }
+  ]
+}
