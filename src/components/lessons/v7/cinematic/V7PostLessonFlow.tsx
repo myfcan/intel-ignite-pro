@@ -59,6 +59,7 @@ export const V7PostLessonFlow = ({
   
   // ✅ Próxima aula recomendada
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
+  const [trailId, setTrailId] = useState<string | null>(null);
   
   // ✅ Buscar próxima aula da trilha
   useEffect(() => {
@@ -72,6 +73,9 @@ export const V7PostLessonFlow = ({
           .single();
         
         if (!currentLesson?.trail_id) return;
+        
+        // Salvar trail_id para navegação
+        setTrailId(currentLesson.trail_id);
         
         // Buscar próxima aula da mesma trilha com descrição
         const { data: next } = await supabase
@@ -174,16 +178,28 @@ export const V7PostLessonFlow = ({
     setStage('results');
   }, []);
 
-  const handleRewardsContinue = useCallback(() => {
-    console.log('[V7PostLessonFlow] Flow Complete → Trail');
-    onComplete();
-  }, [onComplete]);
+  // ✅ Ir para trilha da aula atual
+  const handleGoToTrail = useCallback(() => {
+    if (trailId) {
+      console.log('[V7PostLessonFlow] Going to trail:', trailId);
+      navigate(`/trail/${trailId}`);
+    } else {
+      // Fallback para dashboard se não tiver trail
+      navigate('/dashboard');
+    }
+  }, [trailId, navigate]);
+  
+  // ✅ Ir para dashboard
+  const handleGoToDashboard = useCallback(() => {
+    console.log('[V7PostLessonFlow] Going to dashboard');
+    navigate('/dashboard');
+  }, [navigate]);
   
   // ✅ Ir direto para próxima aula
   const handleGoToNextLesson = useCallback(() => {
     if (nextLesson) {
       console.log('[V7PostLessonFlow] Going to next lesson:', nextLesson.id);
-      navigate(`/v7-cinematic/${nextLesson.id}`);
+      navigate(`/v7/${nextLesson.id}`);
     }
   }, [nextLesson, navigate]);
 
@@ -231,8 +247,8 @@ export const V7PostLessonFlow = ({
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
           nextLesson={nextLesson}
-          onBack={handleRewardsBack}
-          onContinue={handleRewardsContinue}
+          onBack={handleGoToDashboard}
+          onContinue={handleGoToTrail}
           onNextLesson={handleGoToNextLesson}
         />
       )}
