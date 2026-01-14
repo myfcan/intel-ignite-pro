@@ -67,6 +67,7 @@ interface V7UserChallengeInputProps {
   userChallenge: UserChallenge;
   lessonId?: string;
   onComplete: () => void;
+  onResultModeChange?: (isResultMode: boolean) => void;
 }
 
 interface AIFeedback {
@@ -78,7 +79,8 @@ interface AIFeedback {
 export const V7UserChallengeInput = ({
   userChallenge,
   lessonId,
-  onComplete
+  onComplete,
+  onResultModeChange
 }: V7UserChallengeInputProps) => {
   const [userPrompt, setUserPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -194,6 +196,11 @@ export const V7UserChallengeInput = ({
 
   // ✅ V7-v44: Modo resultado - após enviar, esconde seção do desafio
   const isResultMode = !!aiFeedback;
+
+  // Notificar o pai quando muda para modo resultado
+  useEffect(() => {
+    onResultModeChange?.(isResultMode);
+  }, [isResultMode, onResultModeChange]);
 
   return (
     <>

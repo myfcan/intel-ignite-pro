@@ -43,6 +43,7 @@ export const V7PhasePlayground = ({
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
+  const [isUserChallengeResultMode, setIsUserChallengeResultMode] = useState(false);
 
   // Sound effects
   const { playSound } = useV7SoundEffects(0.6, true);
@@ -198,52 +199,69 @@ export const V7PhasePlayground = ({
       {/* ========== MAIN CONTENT: Flex centered with CTA below ========== */}
       <div className="flex-1 flex flex-col justify-center overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-40 sm:pb-36">
         <div className="w-full max-w-xl mx-auto">
-          {/* Challenge Header - compacto */}
-          <motion.div
-            className="text-center mb-2 sm:mb-3"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <motion.div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-1.5"
-            >
-              <span className="text-base">🎮</span>
-              <span className="text-xs sm:text-sm font-bold text-purple-300">DESAFIO PRÁTICO</span>
-            </motion.div>
+          {/* Challenge Header - esconde quando está no modo resultado do desafio */}
+          <AnimatePresence>
+            {!(currentStep === 6 && isUserChallengeResultMode) && (
+              <motion.div
+                className="text-center mb-2 sm:mb-3"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.3 } }}
+              >
+                <motion.div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-1.5"
+                >
+                  <span className="text-base">🎮</span>
+                  <span className="text-xs sm:text-sm font-bold text-purple-300">DESAFIO PRÁTICO</span>
+                </motion.div>
 
-            <h2 className="text-base sm:text-lg font-bold text-white">
-              {challengeTitle}
-            </h2>
-            {challengeSubtitle && (
-              <p className="text-white/60 text-xs">{challengeSubtitle}</p>
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  {challengeTitle}
+                </h2>
+                {challengeSubtitle && (
+                  <p className="text-white/60 text-xs">{challengeSubtitle}</p>
+                )}
+              </motion.div>
             )}
-          </motion.div>
+          </AnimatePresence>
 
-          {/* Step Indicator - compacto */}
-          <div className="flex justify-center gap-1 mb-2">
-            {[0, 1, 2, 3, 4, 5].map((step) => (
-              <div
-                key={step}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  step === currentStep
-                    ? 'bg-purple-500'
-                    : step < currentStep
-                      ? 'bg-purple-500/50'
-                      : 'bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
+          {/* Step Indicator - esconde no modo resultado */}
+          <AnimatePresence>
+            {!(currentStep === 6 && isUserChallengeResultMode) && (
+              <motion.div 
+                className="flex justify-center gap-1 mb-2"
+                exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.3 } }}
+              >
+                {[0, 1, 2, 3, 4, 5].map((step) => (
+                  <div
+                    key={step}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      step === currentStep
+                        ? 'bg-purple-500'
+                        : step < currentStep
+                          ? 'bg-purple-500/50'
+                          : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Current Step Title */}
-          <motion.h3
-            key={currentStep}
-            className="text-center text-sm sm:text-base font-semibold text-white/80 mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {getStepTitle()}
-          </motion.h3>
+          {/* Current Step Title - esconde no modo resultado */}
+          <AnimatePresence>
+            {!(currentStep === 6 && isUserChallengeResultMode) && (
+              <motion.h3
+                key={currentStep}
+                className="text-center text-sm sm:text-base font-semibold text-white/80 mb-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.3 } }}
+              >
+                {getStepTitle()}
+              </motion.h3>
+            )}
+          </AnimatePresence>
 
           {/* Content Area */}
           <div className="min-h-[150px] flex items-center justify-center">
@@ -387,6 +405,7 @@ export const V7PhasePlayground = ({
                     userChallenge={userChallenge}
                     lessonId={lessonId}
                     onComplete={handleUserChallengeComplete}
+                    onResultModeChange={setIsUserChallengeResultMode}
                   />
                 </motion.div>
               )}
