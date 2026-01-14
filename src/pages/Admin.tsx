@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -256,9 +256,9 @@ export default function Admin() {
                 <p>✅ Playground amador vs profissional</p>
                 <p>✅ CTA com 2 botões corretos (Continuar/Voltar)</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                  className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700"
                   onClick={copyJsonToClipboard}
                 >
                   {copied ? (
@@ -275,6 +275,15 @@ export default function Admin() {
                 </Button>
                 <Button
                   variant="outline"
+                  className="flex-1 min-w-[140px] border-emerald-500/50 hover:bg-emerald-500/10"
+                  onClick={() => window.open('https://github.com/user/repo/blob/main/docs/V7-JSON-SCHEMA-DOCUMENTATION.md', '_blank')}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Ver Documentação
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-[140px]"
                   onClick={() => navigate('/admin/v7/create')}
                 >
                   <Rocket className="w-4 h-4 mr-2" />
