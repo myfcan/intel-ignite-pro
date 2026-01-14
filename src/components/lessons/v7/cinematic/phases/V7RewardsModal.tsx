@@ -76,6 +76,9 @@ export const V7RewardsModal = ({
 }: V7RewardsModalProps) => {
   const [showCoins, setShowCoins] = useState(false);
   
+  // ✅ Detectar se é revisão (aula já completada anteriormente)
+  const isReview = xpDelta === 0 && coinsDelta === 0;
+  
   // Sound effects
   const { playSound } = useV7SoundEffects(0.6, true);
   const soundPlayedRef = useRef(false);
@@ -106,41 +109,45 @@ export const V7RewardsModal = ({
       setTimeout(() => playSound('count-up'), 800);
     }
     
-    // Confetti
-    setTimeout(() => {
-      if (isNewPatent) {
-        // Confetti especial para nova patente
-        const count = 200;
-        const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
+    // Confetti - só se não for revisão
+    if (!isReview) {
+      setTimeout(() => {
+        if (isNewPatent) {
+          // Confetti especial para nova patente
+          const count = 200;
+          const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
 
-        function fire(particleRatio: number, opts: confetti.Options) {
+          function fire(particleRatio: number, opts: confetti.Options) {
+            confetti({
+              ...defaults,
+              ...opts,
+              particleCount: Math.floor(count * particleRatio),
+            });
+          }
+
+          fire(0.25, { spread: 26, startVelocity: 55 });
+          fire(0.2, { spread: 60 });
+          fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+          fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        } else {
           confetti({
-            ...defaults,
-            ...opts,
-            particleCount: Math.floor(count * particleRatio),
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            zIndex: 9999
           });
         }
+      }, 300);
+    }
 
-        fire(0.25, { spread: 26, startVelocity: 55 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-      } else {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          zIndex: 9999
-        });
-      }
-    }, 300);
-
-    // Moedas caindo com som
-    setTimeout(() => {
-      setShowCoins(true);
-      playSound('reveal');
-    }, 500);
-  }, [isNewPatent, playSound]);
+    // Moedas caindo com som - só se não for revisão
+    if (!isReview) {
+      setTimeout(() => {
+        setShowCoins(true);
+        playSound('reveal');
+      }, 500);
+    }
+  }, [isNewPatent, isReview, playSound]);
 
   return (
     <>
@@ -197,6 +204,8 @@ export const V7RewardsModal = ({
           >
             {isNewPatent ? (
               <>🎉 Nova Patente Desbloqueada!</>
+            ) : isReview ? (
+              <>📚 Aula Revisada</>
             ) : (
               <>✨ Recompensas</>
             )}
@@ -210,6 +219,18 @@ export const V7RewardsModal = ({
               transition={{ delay: 0.3 }}
             >
               Você subiu para <span className="font-bold">{patentName}</span>. Poucos alunos chegam aqui!
+            </motion.p>
+          )}
+          
+          {/* ✅ Mensagem de revisão */}
+          {isReview && !isNewPatent && (
+            <motion.p 
+              className="text-center text-slate-400 text-sm mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              Você já completou esta aula antes. Sem recompensas adicionais, mas seu progresso foi atualizado!
             </motion.p>
           )}
 
