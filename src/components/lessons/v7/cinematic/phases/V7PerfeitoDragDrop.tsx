@@ -127,10 +127,28 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     }
   }, [launchConfetti]);
 
+  // 📳 Haptic feedback helper for mobile
+  const triggerHaptic = useCallback((pattern: 'success' | 'error' | 'light') => {
+    if ('vibrate' in navigator) {
+      switch (pattern) {
+        case 'success':
+          navigator.vibrate([10, 50, 20]); // Short-pause-longer (satisfying snap)
+          break;
+        case 'error':
+          navigator.vibrate([50, 30, 50]); // Two quick buzzes
+          break;
+        case 'light':
+          navigator.vibrate(5); // Very subtle tap
+          break;
+      }
+    }
+  }, []);
+
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
     e.dataTransfer.setData('text/plain', itemId);
     e.dataTransfer.effectAllowed = 'move';
     setDraggingId(itemId);
+    triggerHaptic('light'); // 📳 Sutil ao começar a arrastar
     playSound('click-soft');
   };
 
@@ -179,6 +197,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
       const filledCount = slots.filter(s => s !== null).length;
       playSound('snap-success'); // Som de encaixe satisfatório
       playSound('letter-reveal', { pitch: filledCount }); // Tom mais agudo conforme progresso
+      triggerHaptic('success'); // 📳 Vibração satisfatória de encaixe
       
       // Place the card in the slot
       const newSlots = [...slots];
@@ -202,6 +221,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     } else {
       // ❌ Play error snap sound - clear but not aggressive
       playSound('snap-error');
+      triggerHaptic('error'); // 📳 Vibração dupla de erro
       
       // Show incorrect feedback and return card
       const newFeedback = [...slotFeedback];
@@ -223,6 +243,7 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
     const touch = e.touches[0];
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
     setTouchDragging(itemId);
+    triggerHaptic('light'); // 📳 Feedback sutil ao tocar
     playSound('click-soft');
   };
 
