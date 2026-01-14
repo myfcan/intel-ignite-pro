@@ -251,44 +251,116 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header */}
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* Header - Compact */}
       <motion.div
-        className="text-center py-4 px-4"
+        className="text-center py-3 px-4 shrink-0"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-3">
-          <span className="text-lg">🧩</span>
-          <span className="text-sm font-bold text-purple-300">EXERCÍCIO FINAL</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-2">
+          <span className="text-base">🧩</span>
+          <span className="text-xs font-bold text-purple-300">EXERCÍCIO FINAL</span>
         </div>
-        <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
+        <h2 className="text-base sm:text-lg font-bold text-white mb-0.5">
           Monte o Método PERFEITO
         </h2>
-        <p className="text-white/60 text-sm">
-          Arraste cada significado e solte ao lado da letra correta
+        <p className="text-white/60 text-xs">
+          Arraste cada significado para a letra correta
         </p>
       </motion.div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 px-4 pb-4 overflow-auto">
-        {/* LEFT: Draggable cards */}
+      {/* Main content - Side by side layout */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 px-3 pb-3 min-h-0">
+        {/* LEFT: PERFEITO slots - More compact */}
         <motion.div
-          className="flex-1 order-2 lg:order-1"
+          className="lg:flex-1 order-1 min-h-0"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="text-white/50 text-xs uppercase tracking-wide mb-2 text-center lg:text-left">
+          <div className="text-white/50 text-xs uppercase tracking-wide mb-1.5 text-center">
+            Método PERFEITO
+          </div>
+          {/* 2-column grid for desktop, single column for mobile */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 h-auto">
+            {PERFEITO_DATA.map((item, index) => (
+              <motion.div
+                key={item.id}
+                className={`
+                  flex items-center gap-2 p-2 rounded-lg border-2 transition-all duration-200
+                  ${getSlotBorderColor(index)}
+                `}
+                data-slot-index={index}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 * index }}
+              >
+                {/* Letter badge - Smaller */}
+                <div className={`
+                  w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg shrink-0
+                  ${slots[index] 
+                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                    : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
+                  }
+                `}>
+                  {item.letter}
+                </div>
+
+                {/* Slot area - Compact */}
+                <div className="flex-1 min-w-0 h-8 rounded-md bg-black/20 border border-dashed border-white/20 flex items-center justify-center px-2">
+                  {slots[index] ? (
+                    <motion.div
+                      className="flex items-center gap-1 text-white font-medium text-xs truncate"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                    >
+                      <Check className="w-3 h-3 text-green-400 shrink-0" />
+                      <span className="truncate">{getCardById(slots[index]!)?.meaning}</span>
+                    </motion.div>
+                  ) : (
+                    <span className="text-white/30 text-xs">Arraste</span>
+                  )}
+                </div>
+
+                {/* Feedback icon - Only show for correct */}
+                <AnimatePresence>
+                  {slotFeedback[index] === 'incorrect' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      className="shrink-0"
+                    >
+                      <X className="w-4 h-4 text-red-400" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* RIGHT: Draggable cards - Horizontal wrap */}
+        <motion.div
+          className="lg:w-72 order-2 shrink-0"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="text-white/50 text-xs uppercase tracking-wide mb-1.5 text-center">
             Significados
           </div>
-          <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+          <div className="flex flex-wrap gap-1.5 justify-center">
             <AnimatePresence mode="popLayout">
               {availableCards.map((item) => (
                 <motion.div
                   key={item.id}
                   className={`
-                    px-4 py-3 rounded-lg cursor-grab active:cursor-grabbing select-none
+                    px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing select-none
                     bg-gradient-to-r from-slate-700 to-slate-600 border border-white/20
                     text-white font-medium text-sm
                     hover:from-slate-600 hover:to-slate-500 hover:border-cyan-400/50
@@ -308,8 +380,8 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <GripHorizontal className="w-4 h-4 text-white/40" />
+                  <div className="flex items-center gap-1.5">
+                    <GripHorizontal className="w-3 h-3 text-white/40" />
                     <span>{item.meaning}</span>
                   </div>
                 </motion.div>
@@ -319,93 +391,14 @@ export const V7PerfeitoDragDrop = ({ onComplete }: V7PerfeitoDragDropProps) => {
           
           {availableCards.length === 0 && !isComplete && (
             <motion.div
-              className="text-center py-8"
+              className="text-center py-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <Sparkles className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-              <p className="text-white/60 text-sm">Todos os cards foram posicionados!</p>
+              <Sparkles className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
+              <p className="text-white/60 text-xs">Todos posicionados!</p>
             </motion.div>
           )}
-        </motion.div>
-
-        {/* RIGHT: PERFEITO slots */}
-        <motion.div
-          className="order-1 lg:order-2 lg:w-80"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="text-white/50 text-xs uppercase tracking-wide mb-2 text-center">
-            Método PERFEITO
-          </div>
-          <div className="space-y-2">
-            {PERFEITO_DATA.map((item, index) => (
-              <motion.div
-                key={item.id}
-                className={`
-                  flex items-center gap-3 p-2 rounded-lg border-2 transition-all duration-200
-                  ${getSlotBorderColor(index)}
-                `}
-                data-slot-index={index}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                {/* Letter badge */}
-                <div className={`
-                  w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl
-                  ${slots[index] 
-                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
-                    : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
-                  }
-                `}>
-                  {item.letter}
-                </div>
-
-                {/* Slot area */}
-                <div className="flex-1 h-10 rounded-lg bg-black/20 border border-dashed border-white/20 flex items-center justify-center">
-                  {slots[index] ? (
-                    <motion.div
-                      className="flex items-center gap-2 text-white font-medium text-sm"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                    >
-                      <Check className="w-4 h-4 text-green-400" />
-                      {getCardById(slots[index]!)?.meaning}
-                    </motion.div>
-                  ) : (
-                    <span className="text-white/30 text-sm">Arraste aqui</span>
-                  )}
-                </div>
-
-                {/* Feedback icon */}
-                <AnimatePresence>
-                  {slotFeedback[index] === 'correct' && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                    >
-                      <Check className="w-6 h-6 text-green-400" />
-                    </motion.div>
-                  )}
-                  {slotFeedback[index] === 'incorrect' && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0 }}
-                    >
-                      <X className="w-6 h-6 text-red-400" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
       </div>
 

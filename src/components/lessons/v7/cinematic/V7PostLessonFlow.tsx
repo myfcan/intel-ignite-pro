@@ -28,7 +28,6 @@ type FlowStage =
 interface V7PostLessonFlowProps {
   lessonTitle: string;
   lessonId: string;
-  avatarUrl?: string;
   // Callbacks
   onComplete: () => void;
 }
@@ -36,7 +35,6 @@ interface V7PostLessonFlowProps {
 export const V7PostLessonFlow = ({
   lessonTitle,
   lessonId,
-  avatarUrl,
   onComplete
 }: V7PostLessonFlowProps) => {
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
@@ -130,30 +128,6 @@ export const V7PostLessonFlow = ({
     onComplete();
   }, [onComplete]);
 
-  // ✅ Get user avatar from database
-  const [userAvatar, setUserAvatar] = useState<string | undefined>(avatarUrl);
-  
-  useEffect(() => {
-    const fetchUserAvatar = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('users')
-          .select('avatar_url')
-          .eq('id', user.id)
-          .single();
-        
-        if (data?.avatar_url) {
-          setUserAvatar(data.avatar_url);
-        }
-      }
-    };
-    
-    if (!avatarUrl) {
-      fetchUserAvatar();
-    }
-  }, [avatarUrl]);
-
   return (
     <AnimatePresence mode="wait">
       {/* Stage 1: Lesson Complete Card */}
@@ -161,7 +135,6 @@ export const V7PostLessonFlow = ({
         <V7LessonCompleteCard
           key="lesson-complete"
           onContinue={handleLessonCompleteNext}
-          avatarUrl={userAvatar}
         />
       )}
 
