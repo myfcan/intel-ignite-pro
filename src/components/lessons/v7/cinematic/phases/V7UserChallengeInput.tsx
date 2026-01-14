@@ -15,6 +15,48 @@ import { V7_CLASSES } from '../../v7-design-tokens';
 // Som sutil de foco (soft chime)
 const FOCUS_SOUND_URL = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1pZmhvd4eXqLrM3erx9fXy7ujf1cy9sKSYjYN6c21oZGJhYGBgYWNlZ2xwdHl+hIqRmKCorrfAyczR1dja3N3d3dza19PQzMjDvrq2sq+sqqusr7K2u8DFyszQ1NfZ29zc3Nza19PRzcnEwLy4tLGvrq2trq+xs7a5vMDDxsnLzdDS09TV1dTT0tDOzMrIxcPBv726uLe3uLq8v8LFyMrMz9DS09TU1NTT0tHPzcvJx8XDwb++vb2+v8HDxcfJy83P0NDR0dHR0dDPzszKyMbEw8LBwMDAv7+/v8DBwsPFxsjJysvMzMzMy8vKycjHxsXEw8LCwcHBwcHCwsPExcbHyMnKysrKysrJycjIx8bFxMPDwsLCwsLCwsPDxMXGx8jIycrKysnJycjIx8bGxcTEw8PDw8PDw8PExMXGxsfIyMjIyMjIx8fGxsXFxMTEw8PDw8PDxMTExcXGxsfHx8fHx8fHxsbGxcXExMTEw8TExMTExMXFxcbGxsbGxsbGxsbFxcXFxcXExMTExMTExMXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxcXFxQ==';
 
+/**
+ * ✅ V7-v43: Detecta prompts de "lixo" (caracteres aleatórios, sem sentido)
+ * Regras:
+ * - Caracteres repetitivos (wwwevwevwev...)
+ * - Sem palavras reais de pelo menos 3 letras
+ * - Padrões suspeitos de teclas aleatórias
+ */
+function detectGibberishPrompt(text: string): boolean {
+  // Remove espaços para análise
+  const cleaned = text.replace(/\s+/g, '').toLowerCase();
+  
+  // Se muito curto, não é gibberish (será tratado por isTooShort)
+  if (cleaned.length < 10) return false;
+  
+  // 1. Detectar padrões repetitivos (ex: "wevwevwev", "asdasdasd")
+  const repeatingPattern = /(.{2,5})\1{3,}/i;
+  if (repeatingPattern.test(cleaned)) return true;
+  
+  // 2. Detectar excesso de consoantes consecutivas (ex: "wvwvwvw", "bcdfghjk")
+  const consonantStreak = /[bcdfghjklmnpqrstvwxyz]{7,}/i;
+  if (consonantStreak.test(cleaned)) return true;
+  
+  // 3. Detectar ausência de vogais em textos longos
+  const vowelCount = (cleaned.match(/[aeiouáàâãéèêíïóôõöúç]/gi) || []).length;
+  const vowelRatio = vowelCount / cleaned.length;
+  if (cleaned.length > 15 && vowelRatio < 0.15) return true;
+  
+  // 4. Detectar teclado mashing (letras adjacentes repetidas)
+  const keyboardMash = /(?:qw|we|er|rt|ty|yu|ui|io|op|as|sd|df|fg|gh|hj|jk|kl|zx|xc|cv|vb|bn|nm){4,}/i;
+  if (keyboardMash.test(cleaned)) return true;
+  
+  // 5. Verificar se há pelo menos 2 palavras reais de 3+ caracteres
+  const words = text.toLowerCase().split(/\s+/);
+  const realWords = words.filter(w => 
+    /^[a-záàâãéèêíïóôõöúç]{3,}$/i.test(w) && 
+    !/^(.)\1+$/.test(w) // não é letra repetida
+  );
+  if (text.length > 20 && realWords.length < 2) return true;
+  
+  return false;
+}
+
 interface UserChallenge {
   instruction: string;
   challengePrompt: string;
@@ -91,16 +133,31 @@ export const V7UserChallengeInput = ({
         throw new Error(data.error);
       }
 
-      // Analisar o feedback para extrair uma pontuação aproximada
+      // ✅ V7-v43: VALIDAÇÃO REAL do prompt antes de atribuir score
+      // Prompts de lixo/ilegíveis devem receber score baixo
       const feedbackText = data.aiFeedback || '';
-      let score = 70; // Pontuação padrão
+      const promptText = userPrompt.trim();
       
-      if (feedbackText.toLowerCase().includes('excelente') || feedbackText.toLowerCase().includes('ótimo')) {
+      // Verificar se o prompt é válido (não é lixo/caracteres repetidos)
+      const isGibberish = detectGibberishPrompt(promptText);
+      const isTooShort = promptText.length < 15;
+      const hasNoRealWords = !/\b[a-záàâãéèêíïóôõöúç]{3,}\b/i.test(promptText);
+      
+      let score = 70; // Pontuação padrão para prompts válidos
+      
+      // ✅ REGRA CRÍTICA: Prompts inválidos recebem score MUITO baixo
+      if (isGibberish || hasNoRealWords) {
+        score = 15; // Prompt é lixo/ilegível
+      } else if (isTooShort) {
+        score = 35; // Prompt muito curto
+      } else if (feedbackText.toLowerCase().includes('excelente') || feedbackText.toLowerCase().includes('ótimo')) {
         score = 90;
       } else if (feedbackText.toLowerCase().includes('bom') || feedbackText.toLowerCase().includes('legal')) {
         score = 75;
       } else if (feedbackText.toLowerCase().includes('melhorar') || feedbackText.toLowerCase().includes('falta')) {
         score = 60;
+      } else if (feedbackText.toLowerCase().includes('ilegível') || feedbackText.toLowerCase().includes('não podemos')) {
+        score = 20; // IA detectou que é ilegível
       }
 
       setAIFeedback({
