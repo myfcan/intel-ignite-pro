@@ -224,8 +224,8 @@ export const V7SynchronizedCaptions = ({
               leading-relaxed tracking-wide
             "
             style={{
-              // ✅ Fonte maior (20px mobile, 22px desktop)
-              fontSize: 'clamp(20px, 4vw, 22px)',
+              // ✅ Fonte 20px fixo
+              fontSize: '20px',
               textShadow: '0 2px 4px rgba(0,0,0,0.9)',
             }}
           >
