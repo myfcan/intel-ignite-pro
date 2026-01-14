@@ -448,10 +448,8 @@ export const V7UserChallengeInput = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-cyan-400/80 text-[10px] sm:text-xs uppercase font-bold tracking-wider mb-1.5">Feedback do Coach</p>
-                    <p className="text-white/90 text-sm sm:text-[15px] leading-relaxed line-clamp-4">
-                      {aiFeedback.feedback.length > 280 
-                        ? aiFeedback.feedback.slice(0, 280) + '...' 
-                        : aiFeedback.feedback}
+                    <p className="text-white/90 text-sm sm:text-[15px] leading-relaxed">
+                      {aiFeedback.feedback}
                     </p>
                   </div>
                 </div>
