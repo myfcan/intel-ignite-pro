@@ -197,7 +197,9 @@ export const V7PhasePlayground = ({
   return (
     <div className="w-full h-full flex flex-col relative">
       {/* ========== MAIN CONTENT: Flex centered with CTA below ========== */}
-      <div className="flex-1 flex flex-col justify-center overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-40 sm:pb-36">
+      <div className={`flex-1 flex flex-col justify-center overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 ${
+        currentStep === 6 && isUserChallengeResultMode ? 'pb-24 sm:pb-20' : 'pb-40 sm:pb-36'
+      }`}>
         <div className="w-full max-w-xl mx-auto">
           {/* Challenge Header - esconde quando está no modo resultado do desafio */}
           <AnimatePresence>
