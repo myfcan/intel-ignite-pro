@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { V7MinimalControls } from './V7MinimalControls';
 import { V7AudioIndicator } from './V7AudioIndicator';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
+import { V7ExitConfirmModal } from './V7ExitConfirmModal';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
@@ -127,6 +128,7 @@ export const V7PhasePlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // ✅ DEBUG LOGS SOLICITADOS
   console.log('[V7PhasePlayer DEBUG] ==========================================');
@@ -1655,7 +1657,7 @@ export const V7PhasePlayer = ({
         onVolumeChange={audio.setVolume}
         onPrevious={goToPreviousPhase}
         onNext={goToNextPhase}
-        onExit={onExit}
+        onExit={() => setShowExitConfirm(true)}
         isVisible={
           // ✅ V7-v13: Always show controls during interactive phases
           // User needs X button visible during CTA/quiz/playground to exit if needed
@@ -1784,6 +1786,16 @@ export const V7PhasePlayer = ({
         fullScript={scaledScript}
         rawContent={rawContent}
         detectionPath={detectionPath || undefined}
+      />
+
+      {/* ✅ Exit Confirmation Modal */}
+      <V7ExitConfirmModal
+        isOpen={showExitConfirm}
+        onConfirmExit={() => {
+          setShowExitConfirm(false);
+          onExit?.();
+        }}
+        onContinue={() => setShowExitConfirm(false)}
       />
     </div>
   );
