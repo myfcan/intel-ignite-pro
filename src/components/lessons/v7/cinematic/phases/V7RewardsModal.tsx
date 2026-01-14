@@ -5,9 +5,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Zap, Coins, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Trophy, Zap, Coins, X, ArrowRight, ArrowLeft, Play, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useV7SoundEffects } from '../useV7SoundEffects';
+
+// Tipo para próxima aula
+interface NextLesson {
+  id: string;
+  title: string;
+  order_index: number;
+}
 
 interface V7RewardsModalProps {
   xpDelta: number;
@@ -16,8 +23,10 @@ interface V7RewardsModalProps {
   newCoins: number;
   patentName: string;
   isNewPatent?: boolean;
+  nextLesson?: NextLesson | null;
   onContinue: () => void;
   onBack: () => void;
+  onNextLesson?: () => void;
 }
 
 // Hook personalizado para animar contadores
@@ -58,8 +67,10 @@ export const V7RewardsModal = ({
   newCoins,
   patentName,
   isNewPatent = false,
+  nextLesson,
   onContinue,
-  onBack
+  onBack,
+  onNextLesson
 }: V7RewardsModalProps) => {
   const [showCoins, setShowCoins] = useState(false);
   
@@ -253,36 +264,79 @@ export const V7RewardsModal = ({
             </div>
           </motion.div>
 
+          {/* ✅ Próxima aula recomendada */}
+          {nextLesson && (
+            <motion.div 
+              className="bg-gradient-to-r from-emerald-500/10 to-sky-500/10 rounded-xl p-4 border border-emerald-500/30"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-400 uppercase tracking-wide">Próxima aula</p>
+                  <p className="text-sm font-medium text-slate-200 truncate">{nextLesson.title}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <motion.div 
-            className="flex gap-3 mt-6"
+            className="flex flex-col gap-3 mt-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <motion.button
-              onClick={() => {
-                playSound('click-soft');
-                onBack();
-              }}
-              className="flex-1 h-12 border border-slate-700 rounded-xl text-slate-300 font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </motion.button>
-            <motion.button
-              onClick={() => {
-                playSound('click-confirm');
-                onContinue();
-              }}
-              className="flex-1 h-12 bg-sky-600 hover:bg-sky-500 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Continuar
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
+            {/* ✅ Botão de próxima aula (destaque) */}
+            {nextLesson && onNextLesson && (
+              <motion.button
+                onClick={() => {
+                  playSound('click-confirm');
+                  onNextLesson();
+                }}
+                className="w-full h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Play className="w-4 h-4" />
+                Começar Próxima Aula
+              </motion.button>
+            )}
+            
+            {/* Botões secundários */}
+            <div className="flex gap-3">
+              <motion.button
+                onClick={() => {
+                  playSound('click-soft');
+                  onBack();
+                }}
+                className="flex-1 h-12 border border-slate-700 rounded-xl text-slate-300 font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </motion.button>
+              <motion.button
+                onClick={() => {
+                  playSound('click-confirm');
+                  onContinue();
+                }}
+                className={`flex-1 h-12 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors ${
+                  nextLesson 
+                    ? 'border border-slate-700 text-slate-300 hover:bg-slate-800' 
+                    : 'bg-sky-600 hover:bg-sky-500 text-white'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {nextLesson ? 'Ir para Trilha' : 'Continuar'}
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            </div>
           </motion.div>
         </motion.div>
       </div>
