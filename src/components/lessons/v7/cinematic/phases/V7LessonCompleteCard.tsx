@@ -1,19 +1,19 @@
 /**
  * V7LessonCompleteCard - Card de conclusão de aula V7-vv
  * Exibe parabéns ao aluno e botão para continuar para exercícios
+ * ✅ Usa avatar da Liv (não do usuário)
  */
 
 import { motion } from 'framer-motion';
 import { Rocket } from 'lucide-react';
+import livAvatarImg from '@/assets/liv-avatar.png';
 
 interface V7LessonCompleteCardProps {
   onContinue: () => void;
-  avatarUrl?: string;
 }
 
 export const V7LessonCompleteCard = ({
-  onContinue,
-  avatarUrl = '/placeholder.svg'
+  onContinue
 }: V7LessonCompleteCardProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
@@ -47,11 +47,11 @@ export const V7LessonCompleteCard = ({
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             />
             
-            {/* Avatar container */}
-            <div className="relative w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-200">
+            {/* Liv Avatar container */}
+            <div className="relative w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gradient-to-br from-purple-100 to-cyan-100">
               <img
-                src={avatarUrl}
-                alt="Avatar"
+                src={livAvatarImg}
+                alt="Liv - Assistente de IA"
                 className="w-full h-full object-cover"
               />
             </div>
