@@ -17,3 +17,10 @@ export { default as V7PhaseLoading } from './V7PhaseLoading';
 export { default as V7PhaseCTA } from './V7PhaseCTA';
 export { default as V7PhaseSecretReveal } from './V7PhaseSecretReveal';
 export { default as V7PhaseMethodReveal } from './V7PhaseMethodReveal';
+
+// ✅ V7-vv: Novos componentes de fluxo final
+export { default as V7LessonCompleteCard } from './V7LessonCompleteCard';
+export { default as V7PerfeitoDragDrop } from './V7PerfeitoDragDrop';
+export { default as V7ExerciseResultCard } from './V7ExerciseResultCard';
+export { default as V7RewardsModal } from './V7RewardsModal';
+export { default as V7UserChallengeInput } from './V7UserChallengeInput';

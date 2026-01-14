@@ -560,7 +560,7 @@ export const V7UserChallengeInput = ({
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <CheckCircle className="w-4 h-4" />
-                Continuar Aula
+                Continuar
               </motion.button>
             </motion.div>
           )}
