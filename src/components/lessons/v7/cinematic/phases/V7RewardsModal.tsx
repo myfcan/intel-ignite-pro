@@ -9,11 +9,13 @@ import { Trophy, Zap, Coins, X, ArrowRight, ArrowLeft, Play, BookOpen } from 'lu
 import confetti from 'canvas-confetti';
 import { useV7SoundEffects } from '../useV7SoundEffects';
 
-// Tipo para próxima aula
+// Tipo para próxima aula com preview de conteúdo
 interface NextLesson {
   id: string;
   title: string;
   order_index: number;
+  description?: string | null;
+  estimated_time?: number | null;
 }
 
 interface V7RewardsModalProps {
@@ -264,21 +266,29 @@ export const V7RewardsModal = ({
             </div>
           </motion.div>
 
-          {/* ✅ Próxima aula recomendada */}
+          {/* ✅ Próxima aula recomendada com preview */}
           {nextLesson && (
             <motion.div 
-              className="bg-gradient-to-r from-emerald-500/10 to-sky-500/10 rounded-xl p-4 border border-emerald-500/30"
+              className="mt-4 bg-gradient-to-r from-emerald-500/10 to-sky-500/10 rounded-xl p-4 border border-emerald-500/30"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.55 }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-5 h-5 text-emerald-400" />
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-6 h-6 text-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-slate-400 uppercase tracking-wide">Próxima aula</p>
-                  <p className="text-sm font-medium text-slate-200 truncate">{nextLesson.title}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] text-emerald-400 uppercase tracking-wide font-medium">Próxima aula</p>
+                    {nextLesson.estimated_time && (
+                      <span className="text-[10px] text-slate-500">• {nextLesson.estimated_time} min</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-slate-100 leading-tight mb-1">{nextLesson.title}</p>
+                  {nextLesson.description && (
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{nextLesson.description}</p>
+                  )}
                 </div>
               </div>
             </motion.div>
