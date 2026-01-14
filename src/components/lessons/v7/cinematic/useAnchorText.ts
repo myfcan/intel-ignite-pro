@@ -354,20 +354,27 @@ export function useAnchorText({
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // ✅ V7-v41: Se keywordTime está disponível, usar detecção direta por tempo
-      // Janela de 500ms para detecção CONFIÁVEL - o Player faz seek-back se precisar
+      // ✅ V7-v43: Se keywordTime está disponível, usar detecção PREVENTIVA por tempo
+      // PROBLEMA: "faz." termina em 63.425s e "Eles" começa em 63.634s (gap de 209ms)
+      // SOLUÇÃO: Pausar 100ms ANTES do keywordTime para garantir que não vaze
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const windowMs = 500; // ✅ V7-v41: Janela ampla para não perder detecção
+        const preemptiveMs = action.type === 'pause' ? 100 : 0; // ✅ Pausa preventiva apenas para pause actions
+        const preemptiveSec = preemptiveMs / 1000;
+        const windowMs = 400; // Janela de detecção após o ponto
         const windowSec = windowMs / 1000;
-        const isNear = currentTime >= action.keywordTime && currentTime <= action.keywordTime + windowSec;
+        
+        // ✅ V7-v43: Para pause actions, detectar 100ms ANTES do keywordTime
+        // Isso garante que o áudio para ANTES da próxima frase começar
+        const triggerPoint = action.keywordTime - preemptiveSec;
+        const isNear = currentTime >= triggerPoint && currentTime <= action.keywordTime + windowSec;
 
         if (isNear) {
-          console.log(`[AnchorText] 🎯 V7-v41 MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(3)}s (current: ${timeStr}s, window: ${windowMs}ms)`);
-          // Create synthetic wordTs for compatibility
+          console.log(`[AnchorText] 🎯 V7-v43 PREVENTIVE MATCH! "${action.keyword}" @ ${triggerPoint.toFixed(3)}s (current: ${timeStr}s, keywordTime: ${action.keywordTime.toFixed(3)}s)`);
+          // Create synthetic wordTs - usar o ponto de pausa exato para seek-back
           const syntheticWordTs: WordTimestamp = {
             word: action.keyword,
             start: action.keywordTime - 0.5,
-            end: action.keywordTime,
+            end: action.keywordTime - preemptiveSec, // ✅ O seek-back vai para 100ms ANTES do end
           };
           executeAction(action, syntheticWordTs);
         }
