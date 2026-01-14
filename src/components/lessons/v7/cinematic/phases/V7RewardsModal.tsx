@@ -90,23 +90,36 @@ export const V7RewardsModal = ({
   const animatedTotalCoins = useCountUp(newCoins, 1500);
 
   useEffect(() => {
-    // ✅ Play reward sounds only once
+    // ✅ Play reward sounds only once - SEMPRE tocar, mesmo em revisão
     if (!soundPlayedRef.current) {
       soundPlayedRef.current = true;
       
-      if (isNewPatent) {
-        // Special fanfare for new patent
-        playSound('dramatic-hit');
-        setTimeout(() => playSound('completion'), 300);
-      } else {
-        playSound('success');
-      }
+      // Pequeno delay para garantir que AudioContext seja desbloqueado pela interação
+      const playSounds = async () => {
+        // Som inicial
+        if (isNewPatent) {
+          // Special fanfare for new patent
+          await playSound('dramatic-hit');
+          setTimeout(() => playSound('completion'), 300);
+        } else if (!isReview) {
+          // Sons de sucesso apenas para aulas novas
+          await playSound('success');
+        } else {
+          // Som suave para revisão
+          await playSound('click-confirm');
+        }
+        
+        // Count-up sounds for XP - apenas se ganhou algo
+        if (!isReview) {
+          setTimeout(() => playSound('count-up'), 200);
+          setTimeout(() => playSound('count-up'), 400);
+          setTimeout(() => playSound('count-up'), 600);
+          setTimeout(() => playSound('count-up'), 800);
+        }
+      };
       
-      // Count-up sounds for XP
-      setTimeout(() => playSound('count-up'), 200);
-      setTimeout(() => playSound('count-up'), 400);
-      setTimeout(() => playSound('count-up'), 600);
-      setTimeout(() => playSound('count-up'), 800);
+      // Executa após pequeno delay para garantir interação do usuário
+      setTimeout(playSounds, 100);
     }
     
     // Confetti - só se não for revisão
@@ -137,6 +150,9 @@ export const V7RewardsModal = ({
             zIndex: 9999
           });
         }
+        
+        // ✅ Som de celebração após confetti
+        playSound('completion');
       }, 300);
     }
 

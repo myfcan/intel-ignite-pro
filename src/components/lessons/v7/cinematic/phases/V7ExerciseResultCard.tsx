@@ -29,8 +29,14 @@ export const V7ExerciseResultCard = ({
   const { playSound } = useV7SoundEffects(0.6, true);
 
   useEffect(() => {
-    // ✅ Play success/reveal sound on mount
-    playSound('success');
+    // ✅ Delay para garantir que AudioContext seja desbloqueado
+    const initSounds = async () => {
+      // Play success/reveal sound on mount
+      await playSound('success');
+    };
+    
+    // Pequeno delay para interação do usuário
+    const soundTimeout = setTimeout(initSounds, 100);
     
     // Animar percentual com som de count-up
     const duration = 1500;
@@ -72,8 +78,13 @@ export const V7ExerciseResultCard = ({
           origin: { y: 0.6 },
           zIndex: 9999
         });
+        
+        // ✅ Som de celebração com confetti
+        playSound('completion');
       }, 500);
     }
+    
+    return () => clearTimeout(soundTimeout);
   }, [percentage, playSound]);
 
   const getScoreColor = () => {
