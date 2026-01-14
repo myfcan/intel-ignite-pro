@@ -6,9 +6,11 @@
  * Ele intercepta o onComplete e mostra as telas de conclusão antes de navegar.
  * 
  * ✅ V7-vv: Conectado com sistema de gamificação real do banco de dados
+ * ✅ Mostra próxima aula recomendada no modal de recompensas
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { V7LessonCompleteCard } from './phases/V7LessonCompleteCard';
 import { V7PerfeitoDragDrop } from './phases/V7PerfeitoDragDrop';
@@ -17,6 +19,13 @@ import { V7RewardsModal } from './phases/V7RewardsModal';
 import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 import { useUserGamification } from '@/hooks/useUserGamification';
 import { supabase } from '@/integrations/supabase/client';
+
+// Tipo para próxima aula
+interface NextLesson {
+  id: string;
+  title: string;
+  order_index: number;
+}
 
 // Flow stages
 type FlowStage = 
@@ -37,6 +46,7 @@ export const V7PostLessonFlow = ({
   lessonId,
   onComplete
 }: V7PostLessonFlowProps) => {
+  const navigate = useNavigate();
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
   const [exerciseScore, setExerciseScore] = useState({ score: 0, total: 8 });
   
@@ -44,6 +54,45 @@ export const V7PostLessonFlow = ({
   const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const { stats, refresh: refreshStats } = useUserGamification();
+  
+  // ✅ Próxima aula recomendada
+  const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
+  
+  // ✅ Buscar próxima aula da trilha
+  useEffect(() => {
+    const fetchNextLesson = async () => {
+      try {
+        // Primeiro, buscar a aula atual para obter trail_id e order_index
+        const { data: currentLesson } = await supabase
+          .from('lessons')
+          .select('trail_id, order_index')
+          .eq('id', lessonId)
+          .single();
+        
+        if (!currentLesson?.trail_id) return;
+        
+        // Buscar próxima aula da mesma trilha
+        const { data: next } = await supabase
+          .from('lessons')
+          .select('id, title, order_index')
+          .eq('trail_id', currentLesson.trail_id)
+          .eq('is_active', true)
+          .gt('order_index', currentLesson.order_index)
+          .order('order_index', { ascending: true })
+          .limit(1)
+          .single();
+        
+        if (next) {
+          setNextLesson(next);
+          console.log('[V7PostLessonFlow] Próxima aula encontrada:', next.title);
+        }
+      } catch (error) {
+        console.log('[V7PostLessonFlow] Nenhuma próxima aula encontrada');
+      }
+    };
+    
+    fetchNextLesson();
+  }, [lessonId]);
 
   // ✅ Register lesson completion when entering results stage
   const registerLessonCompletion = useCallback(async () => {
@@ -124,9 +173,17 @@ export const V7PostLessonFlow = ({
   }, []);
 
   const handleRewardsContinue = useCallback(() => {
-    console.log('[V7PostLessonFlow] Flow Complete → Dashboard');
+    console.log('[V7PostLessonFlow] Flow Complete → Trail');
     onComplete();
   }, [onComplete]);
+  
+  // ✅ Ir direto para próxima aula
+  const handleGoToNextLesson = useCallback(() => {
+    if (nextLesson) {
+      console.log('[V7PostLessonFlow] Going to next lesson:', nextLesson.id);
+      navigate(`/v7-cinematic/${nextLesson.id}`);
+    }
+  }, [nextLesson, navigate]);
 
   return (
     <AnimatePresence mode="wait">
@@ -161,7 +218,7 @@ export const V7PostLessonFlow = ({
         />
       )}
 
-      {/* Stage 4: Rewards Modal - ✅ Connected to real gamification data */}
+      {/* Stage 4: Rewards Modal - ✅ Connected to real gamification data + próxima aula */}
       {stage === 'rewards' && gamificationResult && (
         <V7RewardsModal
           key="rewards"
@@ -171,8 +228,10 @@ export const V7PostLessonFlow = ({
           newCoins={gamificationResult.new_coins}
           patentName={gamificationResult.patent_name}
           isNewPatent={gamificationResult.is_new_patent}
+          nextLesson={nextLesson}
           onBack={handleRewardsBack}
           onContinue={handleRewardsContinue}
+          onNextLesson={handleGoToNextLesson}
         />
       )}
     </AnimatePresence>
