@@ -432,19 +432,26 @@ export const V7UserChallengeInput = ({
                 </div>
               </motion.div>
 
-              {/* Coach Feedback - Área maior e mais legível */}
+              {/* Coach Feedback - Box estático sem scroll */}
               <motion.div 
-                className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border border-purple-500/25 rounded-xl p-4 sm:p-5"
+                className="relative bg-gradient-to-br from-cyan-500/10 via-purple-500/8 to-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 sm:p-5 overflow-hidden"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <div className="flex items-start gap-3">
-                  <span className="text-xl flex-shrink-0 mt-0.5">🎯</span>
+                {/* Decorative glow */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+                
+                <div className="flex items-start gap-3 relative z-10">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg">🎯</span>
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-white/50 text-xs uppercase font-bold tracking-wide mb-2">Feedback</p>
-                    <p className="text-white/90 text-sm sm:text-base leading-relaxed max-h-24 sm:max-h-28 overflow-y-auto pr-2 scrollbar-thin">
-                      {aiFeedback.feedback}
+                    <p className="text-cyan-400/80 text-[10px] sm:text-xs uppercase font-bold tracking-wider mb-1.5">Feedback do Coach</p>
+                    <p className="text-white/90 text-sm sm:text-[15px] leading-relaxed line-clamp-4">
+                      {aiFeedback.feedback.length > 280 
+                        ? aiFeedback.feedback.slice(0, 280) + '...' 
+                        : aiFeedback.feedback}
                     </p>
                   </div>
                 </div>
