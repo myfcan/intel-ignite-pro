@@ -1748,6 +1748,37 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
+      {/* ✅ V7-vv-v8: Botão "Continuar" para fases não-interativas quando pausadas por anchor */}
+      {/* Mostra apenas quando isPausedByAnchor está ativo E a fase NÃO tem UI de interação própria */}
+      <AnimatePresence>
+        {isPausedByAnchor && 
+         currentPhase?.type !== 'interaction' && 
+         currentPhase?.type !== 'playground' && 
+         currentPhase?.type !== 'secret-reveal' && 
+         currentPhase?.type !== 'gamification' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50"
+          >
+            <button
+              onClick={() => {
+                console.log('[V7PhasePlayer] ▶️ User clicked Continue - resuming audio');
+                manualResume();
+                if (hasAudio && !audio.isPlaying) {
+                  audio.play();
+                }
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 animate-pulse"
+            >
+              ▶ Continuar
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Captions - ✅ V7-v17: HIDE during interactive phases but SHOW during all others */}
       {/* ✅ V7-v32: CTA-button interactions should SHOW captions (they have continuous narration) */}
       {wordTimestamps.length > 0 && (
