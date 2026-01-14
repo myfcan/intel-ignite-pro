@@ -74,35 +74,48 @@ export async function v7Step4CalculateAnchors(
     // ============================================================
     const sceneAnchorActions: V7AnchorAction[] = [];
 
-    // 2.1 Anchor de pausa (para cenas interativas)
-    if (scene.anchorText?.pauseAt) {
-      const pauseTimestamp = findKeywordTimestamp(
-        scene.anchorText.pauseAt,
-        wordTimestamps,
-        sceneStartTime,
-        sceneEndTime
-      );
+    // ✅ CORREÇÃO CRÍTICA: Definir quais tipos de cena são INTERATIVOS
+    // Apenas estes tipos devem criar anchor de PAUSE
+    const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta', 'gamification'];
+    const isInteractiveScene = INTERACTIVE_SCENE_TYPES.includes(scene.type);
 
-      if (pauseTimestamp !== null) {
-        const pauseAction: V7AnchorAction = {
-          id: `anchor-pause-${scene.id}`,
-          anchorText: scene.anchorText.pauseAt,
-          actionType: 'pause',
-          timestamp: pauseTimestamp,
-          payload: {
-            targetPhaseId: scene.id,
-            interactionType: scene.interaction?.type
-          }
-        };
-        sceneAnchorActions.push(pauseAction);
-        
-        await logger.info(4, 'Calculate Anchors', 
-          `   ⏸️ ${scene.id}: pausa em "${scene.anchorText.pauseAt}" @ ${pauseTimestamp.toFixed(2)}s`
+    // 2.1 Anchor de pausa (APENAS para cenas interativas)
+    if (scene.anchorText?.pauseAt) {
+      // ✅ GUARD: Se a cena NÃO é interativa, ignorar pauseAt e avisar no log
+      if (!isInteractiveScene) {
+        await logger.warn(4, 'Calculate Anchors',
+          `   ⚠️ ${scene.id}: pauseAt ignorado - cena tipo "${scene.type}" não é interativa`
         );
       } else {
-        await logger.warn(4, 'Calculate Anchors',
-          `   ⚠️ ${scene.id}: palavra-chave "${scene.anchorText.pauseAt}" não encontrada`
+        // Cena interativa: criar anchor de pause
+        const pauseTimestamp = findKeywordTimestamp(
+          scene.anchorText.pauseAt,
+          wordTimestamps,
+          sceneStartTime,
+          sceneEndTime
         );
+
+        if (pauseTimestamp !== null) {
+          const pauseAction: V7AnchorAction = {
+            id: `anchor-pause-${scene.id}`,
+            anchorText: scene.anchorText.pauseAt,
+            actionType: 'pause',
+            timestamp: pauseTimestamp,
+            payload: {
+              targetPhaseId: scene.id,
+              interactionType: scene.interaction?.type
+            }
+          };
+          sceneAnchorActions.push(pauseAction);
+          
+          await logger.info(4, 'Calculate Anchors', 
+            `   ⏸️ ${scene.id}: pausa em "${scene.anchorText.pauseAt}" @ ${pauseTimestamp.toFixed(2)}s`
+          );
+        } else {
+          await logger.warn(4, 'Calculate Anchors',
+            `   ⚠️ ${scene.id}: palavra-chave "${scene.anchorText.pauseAt}" não encontrada`
+          );
+        }
       }
     }
 
