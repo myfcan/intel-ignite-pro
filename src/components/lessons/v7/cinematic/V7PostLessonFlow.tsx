@@ -4,14 +4,19 @@
  * 
  * Este componente é um wrapper que NÃO modifica o V7PhasePlayer existente.
  * Ele intercepta o onComplete e mostra as telas de conclusão antes de navegar.
+ * 
+ * ✅ V7-vv: Conectado com sistema de gamificação real do banco de dados
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { V7LessonCompleteCard } from './phases/V7LessonCompleteCard';
 import { V7PerfeitoDragDrop } from './phases/V7PerfeitoDragDrop';
 import { V7ExerciseResultCard } from './phases/V7ExerciseResultCard';
 import { V7RewardsModal } from './phases/V7RewardsModal';
+import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
+import { useUserGamification } from '@/hooks/useUserGamification';
+import { supabase } from '@/integrations/supabase/client';
 
 // Flow stages
 type FlowStage = 
@@ -24,13 +29,6 @@ interface V7PostLessonFlowProps {
   lessonTitle: string;
   lessonId: string;
   avatarUrl?: string;
-  // Gamification data (mock por enquanto, depois conectar com DB)
-  xpDelta?: number;
-  coinsDelta?: number;
-  newPowerScore?: number;
-  newCoins?: number;
-  patentName?: string;
-  isNewPatent?: boolean;
   // Callbacks
   onComplete: () => void;
 }
@@ -39,16 +37,64 @@ export const V7PostLessonFlow = ({
   lessonTitle,
   lessonId,
   avatarUrl,
-  xpDelta = 150,
-  coinsDelta = 50,
-  newPowerScore = 1250,
-  newCoins = 350,
-  patentName = 'Prompt Pioneer',
-  isNewPatent = false,
   onComplete
 }: V7PostLessonFlowProps) => {
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
   const [exerciseScore, setExerciseScore] = useState({ score: 0, total: 8 });
+  
+  // ✅ Gamification state from database
+  const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { stats, refresh: refreshStats } = useUserGamification();
+
+  // ✅ Register lesson completion when entering results stage
+  const registerLessonCompletion = useCallback(async () => {
+    if (isRegistering || gamificationResult) return;
+    
+    setIsRegistering(true);
+    console.log('[V7PostLessonFlow] Registering lesson completion:', lessonId);
+    
+    try {
+      const result = await registerGamificationEvent('lesson_completed', lessonId, {
+        exerciseScore: exerciseScore.score,
+        exerciseTotal: exerciseScore.total,
+        completedAt: new Date().toISOString()
+      });
+      
+      if (result) {
+        console.log('[V7PostLessonFlow] Gamification result:', result);
+        setGamificationResult(result);
+        // Refresh stats to get updated totals
+        await refreshStats();
+      } else {
+        console.warn('[V7PostLessonFlow] No gamification result returned');
+        // Set default values if registration fails
+        setGamificationResult({
+          xp_delta: 100,
+          coins_delta: 25,
+          new_power_score: stats?.powerScore || 100,
+          new_coins: stats?.coins || 25,
+          new_patent_level: stats?.patentLevel || 1,
+          patent_name: stats?.patentName || 'Operador Básico de I.A.',
+          is_new_patent: false
+        });
+      }
+    } catch (error) {
+      console.error('[V7PostLessonFlow] Error registering completion:', error);
+      // Set fallback values
+      setGamificationResult({
+        xp_delta: 100,
+        coins_delta: 25,
+        new_power_score: stats?.powerScore || 100,
+        new_coins: stats?.coins || 25,
+        new_patent_level: stats?.patentLevel || 1,
+        patent_name: stats?.patentName || 'Operador Básico de I.A.',
+        is_new_patent: false
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  }, [lessonId, exerciseScore, isRegistering, gamificationResult, stats, refreshStats]);
 
   // Handlers para navegação entre stages
   const handleLessonCompleteNext = useCallback(() => {
@@ -61,6 +107,13 @@ export const V7PostLessonFlow = ({
     setExerciseScore({ score, total });
     setStage('results');
   }, []);
+
+  // ✅ Register gamification when entering results
+  useEffect(() => {
+    if (stage === 'results' && !gamificationResult && !isRegistering) {
+      registerLessonCompletion();
+    }
+  }, [stage, gamificationResult, isRegistering, registerLessonCompletion]);
 
   const handleViewRewards = useCallback(() => {
     console.log('[V7PostLessonFlow] Results → Rewards');
@@ -77,6 +130,30 @@ export const V7PostLessonFlow = ({
     onComplete();
   }, [onComplete]);
 
+  // ✅ Get user avatar from database
+  const [userAvatar, setUserAvatar] = useState<string | undefined>(avatarUrl);
+  
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('users')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.avatar_url) {
+          setUserAvatar(data.avatar_url);
+        }
+      }
+    };
+    
+    if (!avatarUrl) {
+      fetchUserAvatar();
+    }
+  }, [avatarUrl]);
+
   return (
     <AnimatePresence mode="wait">
       {/* Stage 1: Lesson Complete Card */}
@@ -84,7 +161,7 @@ export const V7PostLessonFlow = ({
         <V7LessonCompleteCard
           key="lesson-complete"
           onContinue={handleLessonCompleteNext}
-          avatarUrl={avatarUrl}
+          avatarUrl={userAvatar}
         />
       )}
 
@@ -111,16 +188,16 @@ export const V7PostLessonFlow = ({
         />
       )}
 
-      {/* Stage 4: Rewards Modal */}
-      {stage === 'rewards' && (
+      {/* Stage 4: Rewards Modal - ✅ Connected to real gamification data */}
+      {stage === 'rewards' && gamificationResult && (
         <V7RewardsModal
           key="rewards"
-          xpDelta={xpDelta}
-          coinsDelta={coinsDelta}
-          newPowerScore={newPowerScore}
-          newCoins={newCoins}
-          patentName={patentName}
-          isNewPatent={isNewPatent}
+          xpDelta={gamificationResult.xp_delta}
+          coinsDelta={gamificationResult.coins_delta}
+          newPowerScore={gamificationResult.new_power_score}
+          newCoins={gamificationResult.new_coins}
+          patentName={gamificationResult.patent_name}
+          isNewPatent={gamificationResult.is_new_patent}
           onBack={handleRewardsBack}
           onContinue={handleRewardsContinue}
         />
