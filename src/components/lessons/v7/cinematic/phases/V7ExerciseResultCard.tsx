@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Trophy, Award } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface V7ExerciseResultCardProps {
   lessonTitle: string;
@@ -23,20 +24,40 @@ export const V7ExerciseResultCard = ({
 }: V7ExerciseResultCardProps) => {
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const percentage = Math.round((score / total) * 100);
+  
+  // Sound effects
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   useEffect(() => {
-    // Animar percentual
+    // ✅ Play success/reveal sound on mount
+    playSound('success');
+    
+    // Animar percentual com som de count-up
     const duration = 1500;
     const start = Date.now();
+    let lastTick = 0;
     
     const animate = () => {
       const elapsed = Date.now() - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedPercent(Math.round(percentage * eased));
+      const newPercent = Math.round(percentage * eased);
+      
+      // Play tick sound every 10%
+      if (Math.floor(newPercent / 10) > lastTick) {
+        lastTick = Math.floor(newPercent / 10);
+        playSound('count-up');
+      }
+      
+      setAnimatedPercent(newPercent);
       
       if (progress < 1) {
         requestAnimationFrame(animate);
+      } else {
+        // ✅ Play completion sound at end
+        if (percentage >= 70) {
+          playSound('quiz-correct');
+        }
       }
     };
     
@@ -53,7 +74,7 @@ export const V7ExerciseResultCard = ({
         });
       }, 500);
     }
-  }, [percentage]);
+  }, [percentage, playSound]);
 
   const getScoreColor = () => {
     if (percentage >= 80) return 'text-green-500';
@@ -165,7 +186,10 @@ export const V7ExerciseResultCard = ({
 
         {/* CTA Button */}
         <motion.button
-          onClick={onViewRewards}
+          onClick={() => {
+            playSound('click-confirm');
+            onViewRewards();
+          }}
           className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold text-lg rounded-xl flex items-center justify-center gap-2 shadow-lg"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -9,6 +9,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { V7UserChallengeInput } from './V7UserChallengeInput';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 import type { 
   V7PhasePlaygroundProps, 
   V7PlaygroundResult,
@@ -42,6 +43,9 @@ export const V7PhasePlayground = ({
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
   const [currentHint, setCurrentHint] = useState<string | null>(null);
+
+  // Sound effects
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -98,11 +102,26 @@ export const V7PhasePlayground = ({
   const handleContinue = useCallback(async () => {
     // Limpar hint ao interagir
     setCurrentHint(null);
+    
+    // ✅ Sound effect on button click
+    playSound('click-confirm');
 
     if (currentStep < maxStep) {
+      // ✅ Play reveal sound for step transitions
+      if (currentStep === 1 || currentStep === 3) {
+        // Showing results - dramatic sound
+        playSound('reveal');
+      } else if (currentStep === 4) {
+        // Showing comparison - success sound
+        playSound('success');
+      } else {
+        playSound('transition-whoosh');
+      }
+      
       setCurrentStep((prev) => (prev + 1) as PlaygroundStep);
     } else {
-      // ✅ V7-v2: Final step - resume audio with FADE
+      // ✅ V7-v2: Final step - completion sound + resume audio with FADE
+      playSound('completion');
       console.log(`[V7PhasePlayground] All ${maxStep + 1} steps complete`);
       const ctrl = audioControlRef.current;
       if (audioPausedByPlayground && ctrl) {
@@ -116,7 +135,7 @@ export const V7PhasePlayground = ({
       }
       onCompleteRef.current?.();
     }
-  }, [currentStep, audioPausedByPlayground, maxStep]);
+  }, [currentStep, audioPausedByPlayground, maxStep, playSound]);
 
   // ✅ V7-v26: Handler quando o userChallenge é completado (após feedback da IA)
   const handleUserChallengeComplete = useCallback(async () => {

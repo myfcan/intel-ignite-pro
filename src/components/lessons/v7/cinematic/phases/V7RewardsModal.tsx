@@ -3,10 +3,11 @@
  * Mostra Power Score, Créditos IA, patente atual e próxima
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Zap, Coins, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface V7RewardsModalProps {
   xpDelta: number;
@@ -62,6 +63,10 @@ export const V7RewardsModal = ({
 }: V7RewardsModalProps) => {
   const [showCoins, setShowCoins] = useState(false);
   
+  // Sound effects
+  const { playSound } = useV7SoundEffects(0.6, true);
+  const soundPlayedRef = useRef(false);
+  
   // Animar os contadores
   const animatedXP = useCountUp(xpDelta, 1200);
   const animatedCoins = useCountUp(coinsDelta, 1200);
@@ -69,6 +74,25 @@ export const V7RewardsModal = ({
   const animatedTotalCoins = useCountUp(newCoins, 1500);
 
   useEffect(() => {
+    // ✅ Play reward sounds only once
+    if (!soundPlayedRef.current) {
+      soundPlayedRef.current = true;
+      
+      if (isNewPatent) {
+        // Special fanfare for new patent
+        playSound('dramatic-hit');
+        setTimeout(() => playSound('completion'), 300);
+      } else {
+        playSound('success');
+      }
+      
+      // Count-up sounds for XP
+      setTimeout(() => playSound('count-up'), 200);
+      setTimeout(() => playSound('count-up'), 400);
+      setTimeout(() => playSound('count-up'), 600);
+      setTimeout(() => playSound('count-up'), 800);
+    }
+    
     // Confetti
     setTimeout(() => {
       if (isNewPatent) {
@@ -98,9 +122,12 @@ export const V7RewardsModal = ({
       }
     }, 300);
 
-    // Moedas caindo
-    setTimeout(() => setShowCoins(true), 500);
-  }, [isNewPatent]);
+    // Moedas caindo com som
+    setTimeout(() => {
+      setShowCoins(true);
+      playSound('reveal');
+    }, 500);
+  }, [isNewPatent, playSound]);
 
   return (
     <>
@@ -233,7 +260,10 @@ export const V7RewardsModal = ({
             transition={{ delay: 0.6 }}
           >
             <motion.button
-              onClick={onBack}
+              onClick={() => {
+                playSound('click-soft');
+                onBack();
+              }}
               className="flex-1 h-12 border border-slate-700 rounded-xl text-slate-300 font-medium flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -242,7 +272,10 @@ export const V7RewardsModal = ({
               Voltar
             </motion.button>
             <motion.button
-              onClick={onContinue}
+              onClick={() => {
+                playSound('click-confirm');
+                onContinue();
+              }}
               className="flex-1 h-12 bg-sky-600 hover:bg-sky-500 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-colors"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
