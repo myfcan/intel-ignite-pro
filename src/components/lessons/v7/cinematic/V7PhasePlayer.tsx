@@ -29,6 +29,7 @@ import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
 import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
 import { V7SecretRevelation3D } from './effects/V7SecretRevelation3D';
+import { V7MethodRevealGlow } from './effects/V7MethodRevealGlow';
 import {
   V7LessonScript,
   V7Phase,
@@ -1664,6 +1665,12 @@ export const V7PhasePlayer = ({
         }
         intensity={1}
         currentTime={hasAudio ? audio.currentTime : internalTime}
+      />
+
+      {/* V7-vv-v7: Subtle golden glow for MÉTODO PERFEITO revelation */}
+      <V7MethodRevealGlow
+        enabled={currentPhase?.type === 'revelation'}
+        intensity={0.8}
       />
 
       {/* Phase Content - Cinematic Fade Transition */}
