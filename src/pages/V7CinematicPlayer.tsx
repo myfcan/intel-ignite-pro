@@ -92,8 +92,10 @@ export default function V7CinematicPlayer() {
       }
     }
     
+    // ✅ Small delay to ensure cache is cleared before refetch
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Refetch the lesson data instead of reloading the page
-    // This avoids race conditions where the page reloads before data is ready
     await refetch();
     
     toast({
@@ -101,6 +103,17 @@ export default function V7CinematicPlayer() {
       description: 'Dados recarregados do servidor.',
     });
   };
+
+  // ✅ Auto-refetch on mount if there's an error
+  useEffect(() => {
+    if (error && script === null && !isLoading) {
+      console.log('[V7CinematicPlayer] Error detected, auto-retry in 500ms...');
+      const timeout = setTimeout(() => {
+        refetch();
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [error, script, isLoading, refetch]);
 
   // Render loading state
   if (isLoading) {
