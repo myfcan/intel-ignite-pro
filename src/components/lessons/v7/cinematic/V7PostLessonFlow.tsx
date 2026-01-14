@@ -41,12 +41,14 @@ interface V7PostLessonFlowProps {
   lessonId: string;
   // Callbacks
   onComplete: () => void;
+  onExit?: () => void;
 }
 
 export const V7PostLessonFlow = ({
   lessonTitle,
   lessonId,
-  onComplete
+  onComplete,
+  onExit
 }: V7PostLessonFlowProps) => {
   const navigate = useNavigate();
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
@@ -210,6 +212,7 @@ export const V7PostLessonFlow = ({
         <V7LessonCompleteCard
           key="lesson-complete"
           onContinue={handleLessonCompleteNext}
+          onExit={onExit}
         />
       )}
 
@@ -221,6 +224,7 @@ export const V7PostLessonFlow = ({
         >
           <V7PerfeitoDragDrop
             onComplete={handleExerciseComplete}
+            onExit={onExit}
           />
         </div>
       )}
@@ -233,6 +237,7 @@ export const V7PostLessonFlow = ({
           score={exerciseScore.score}
           total={exerciseScore.total}
           onViewRewards={handleViewRewards}
+          onExit={onExit}
         />
       )}
 
