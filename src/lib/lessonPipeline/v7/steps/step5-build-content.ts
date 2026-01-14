@@ -46,11 +46,15 @@ export async function v7Step5BuildContent(
   await logger.info(5, 'Build Content', '   📋 Metadata construído');
 
   // ============================================================
-  // 2. CONSTRUIR ESTRUTURA DE ÁUDIO
+  // 2. CONSTRUIR ESTRUTURA DE ÁUDIO (formato esperado pelo useV7PhaseScript)
   // ============================================================
   const audioSection = {
-    url: audio.audioUrl,
-    wordTimestamps: audio.wordTimestamps
+    mainAudio: {
+      id: 'main',
+      url: audio.audioUrl,
+      wordTimestamps: audio.wordTimestamps,
+      duration: audio.totalDuration
+    }
   };
 
   await logger.info(5, 'Build Content', `   🎙️ Áudio: ${audio.wordTimestamps.length} timestamps`);

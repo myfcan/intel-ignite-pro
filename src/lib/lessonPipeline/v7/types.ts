@@ -100,8 +100,13 @@ export interface V7LessonContent {
     phasesCount: number;
   };
   audio: {
-    url: string;
-    wordTimestamps: V7WordTimestamp[];
+    mainAudio: {
+      id: string;
+      url: string;
+      wordTimestamps: V7WordTimestamp[];
+      duration: number;
+    };
+    feedbackAudios?: Record<string, { url: string; duration: number }>;
   };
   phases: V7Phase[];
   /** Anchor actions globais (ordenados por timestamp) */
