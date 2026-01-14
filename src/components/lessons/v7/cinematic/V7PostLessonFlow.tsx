@@ -16,6 +16,7 @@ import { V7LessonCompleteCard } from './phases/V7LessonCompleteCard';
 import { V7PerfeitoDragDrop } from './phases/V7PerfeitoDragDrop';
 import { V7ExerciseResultCard } from './phases/V7ExerciseResultCard';
 import { V7RewardsModal } from './phases/V7RewardsModal';
+import { V7ExitConfirmModal } from './V7ExitConfirmModal';
 import { registerGamificationEvent, GamificationResult } from '@/services/gamification';
 import { useUserGamification } from '@/hooks/useUserGamification';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +54,7 @@ export const V7PostLessonFlow = ({
   const navigate = useNavigate();
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
   const [exerciseScore, setExerciseScore] = useState({ score: 0, total: 8 });
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   
   // ✅ Gamification state from database
   const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
@@ -62,6 +64,11 @@ export const V7PostLessonFlow = ({
   // ✅ Próxima aula recomendada
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
   const [trailId, setTrailId] = useState<string | null>(null);
+  
+  // ✅ Handler para abrir modal de confirmação
+  const handleExitRequest = useCallback(() => {
+    setShowExitConfirm(true);
+  }, []);
   
   // ✅ Buscar próxima aula da trilha
   useEffect(() => {
@@ -212,7 +219,7 @@ export const V7PostLessonFlow = ({
         <V7LessonCompleteCard
           key="lesson-complete"
           onContinue={handleLessonCompleteNext}
-          onExit={onExit}
+          onExit={handleExitRequest}
         />
       )}
 
@@ -224,7 +231,7 @@ export const V7PostLessonFlow = ({
         >
           <V7PerfeitoDragDrop
             onComplete={handleExerciseComplete}
-            onExit={onExit}
+            onExit={handleExitRequest}
           />
         </div>
       )}
@@ -237,7 +244,7 @@ export const V7PostLessonFlow = ({
           score={exerciseScore.score}
           total={exerciseScore.total}
           onViewRewards={handleViewRewards}
-          onExit={onExit}
+          onExit={handleExitRequest}
         />
       )}
 
@@ -257,6 +264,16 @@ export const V7PostLessonFlow = ({
           onNextLesson={handleGoToNextLesson}
         />
       )}
+
+      {/* ✅ Exit Confirmation Modal */}
+      <V7ExitConfirmModal
+        isOpen={showExitConfirm}
+        onConfirmExit={() => {
+          setShowExitConfirm(false);
+          onExit?.();
+        }}
+        onContinue={() => setShowExitConfirm(false)}
+      />
     </AnimatePresence>
   );
 };
