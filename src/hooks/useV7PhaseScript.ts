@@ -279,56 +279,83 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       let parsedContent: any = null;
       
       // STEP 1: Garantir que temos um objeto JavaScript puro
+      // ✅ CRITICAL FIX v6: Handle ALL edge cases in parsing
       try {
-        if (typeof data.content === 'string') {
-          // Se for string, faz parse
-          parsedContent = JSON.parse(data.content);
-        } else if (data.content && typeof data.content === 'object') {
-          // ✅ Deep clone to avoid reference issues with Supabase cache
-          parsedContent = JSON.parse(JSON.stringify(data.content));
-        } else {
+        const rawContent = data.content;
+        
+        console.log('[useV7PhaseScript] 🔍 RAW CONTENT TYPE:', {
+          isNull: rawContent === null,
+          isUndefined: rawContent === undefined,
+          typeOf: typeof rawContent,
+          isObject: rawContent !== null && typeof rawContent === 'object',
+          hasPhasesDirect: rawContent && typeof rawContent === 'object' && 'phases' in rawContent,
+        });
+        
+        if (rawContent === null || rawContent === undefined) {
           throw new Error('Content is null or undefined');
         }
         
+        if (typeof rawContent === 'string') {
+          // Se for string, faz parse
+          parsedContent = JSON.parse(rawContent);
+        } else if (typeof rawContent === 'object') {
+          // ✅ CRITICAL: Supabase já retorna objeto parsed do JSONB
+          // NÃO precisa de JSON.parse - apenas deep clone para evitar mutação
+          parsedContent = JSON.parse(JSON.stringify(rawContent));
+        } else {
+          throw new Error(`Unexpected content type: ${typeof rawContent}`);
+        }
+        
+        // ✅ VALIDATION: Ensure parsedContent is valid object
+        if (parsedContent === null || typeof parsedContent !== 'object') {
+          throw new Error(`Parsed content is not an object: ${typeof parsedContent}`);
+        }
+        
+        const allKeys = Object.keys(parsedContent);
         console.log('[useV7PhaseScript] ✅ Content parsed successfully:', {
-          contentType: typeof data.content,
-          parsedKeys: Object.keys(parsedContent || {}),
-          hasPhases: !!parsedContent?.phases,
-          phasesLength: parsedContent?.phases?.length,
-          phasesIsArray: Array.isArray(parsedContent?.phases)
+          contentType: typeof rawContent,
+          parsedKeys: allKeys,
+          hasPhases: 'phases' in parsedContent,
+          phasesValue: parsedContent.phases,
+          phasesLength: Array.isArray(parsedContent.phases) ? parsedContent.phases.length : 'not-array',
+          phasesIsArray: Array.isArray(parsedContent.phases)
         });
       } catch (e) {
-        console.error('[useV7PhaseScript] ❌ Failed to parse content:', e);
-        throw new Error('Formato de conteúdo inválido');
+        console.error('[useV7PhaseScript] ❌ Failed to parse content:', e, {
+          rawContentType: typeof data.content,
+          rawContentPreview: String(data.content).substring(0, 200)
+        });
+        throw new Error('Formato de conteúdo inválido: ' + (e instanceof Error ? e.message : String(e)));
       }
 
       // STEP 2: Buscar phases de TODAS as fontes possíveis
-      // ✅ DEBUG v5: Log raw phases for diagnosis
-      console.log('[useV7PhaseScript] 🔍 RAW PHASES CHECK:', {
-        phasesExists: 'phases' in parsedContent,
-        phasesType: typeof parsedContent?.phases,
-        phasesIsArray: Array.isArray(parsedContent?.phases),
-        phasesLength: Array.isArray(parsedContent?.phases) ? parsedContent.phases.length : 'N/A',
-        firstPhaseType: Array.isArray(parsedContent?.phases) && parsedContent.phases[0] ? parsedContent.phases[0].type : 'N/A',
-        contentKeys: Object.keys(parsedContent || {}).slice(0, 10),
-      });
+      // ✅ CRITICAL FIX v6: Check each source explicitly
+      let phasesArray: any[] | null = null;
+      let phasesSource = 'none';
       
-      const phasesArray = 
-        parsedContent?.phases ||
-        parsedContent?.cinematic_flow?.phases ||
-        parsedContent?.cinematicFlow?.phases ||
-        parsedContent?.cinematic_flow?.acts ||
-        parsedContent?.cinematicFlow?.acts ||
-        null;
+      if (Array.isArray(parsedContent.phases) && parsedContent.phases.length > 0) {
+        phasesArray = parsedContent.phases;
+        phasesSource = 'content.phases';
+      } else if (Array.isArray(parsedContent?.cinematic_flow?.phases) && parsedContent.cinematic_flow.phases.length > 0) {
+        phasesArray = parsedContent.cinematic_flow.phases;
+        phasesSource = 'content.cinematic_flow.phases';
+      } else if (Array.isArray(parsedContent?.cinematicFlow?.phases) && parsedContent.cinematicFlow.phases.length > 0) {
+        phasesArray = parsedContent.cinematicFlow.phases;
+        phasesSource = 'content.cinematicFlow.phases';
+      } else if (Array.isArray(parsedContent?.cinematic_flow?.acts) && parsedContent.cinematic_flow.acts.length > 0) {
+        phasesArray = parsedContent.cinematic_flow.acts;
+        phasesSource = 'content.cinematic_flow.acts';
+      } else if (Array.isArray(parsedContent?.cinematicFlow?.acts) && parsedContent.cinematicFlow.acts.length > 0) {
+        phasesArray = parsedContent.cinematicFlow.acts;
+        phasesSource = 'content.cinematicFlow.acts';
+      }
 
       console.log('[useV7PhaseScript] 🔍 PHASES DETECTION:', {
-        directPhases: !!parsedContent?.phases,
-        cinematic_flow_phases: !!parsedContent?.cinematic_flow?.phases,
-        cinematic_flow_acts: !!parsedContent?.cinematic_flow?.acts,
+        source: phasesSource,
         foundPhases: !!phasesArray,
-        phasesLength: Array.isArray(phasesArray) ? phasesArray.length : 0,
-        phasesArrayType: typeof phasesArray,
-        phasesArrayIsArray: Array.isArray(phasesArray),
+        phasesLength: phasesArray?.length || 0,
+        firstPhaseType: phasesArray?.[0]?.type || 'N/A',
+        allContentKeys: Object.keys(parsedContent),
       });
 
       // ✅ DEBUG: Save raw content for V7DebugPanel
