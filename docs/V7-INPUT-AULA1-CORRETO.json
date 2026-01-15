@@ -411,5 +411,97 @@
         }
       }
     }
-  ]
+  ],
+  "postLessonExercises": [
+    {
+      "id": "exercise-perfeito-drag-drop",
+      "type": "drag-drop",
+      "title": "Monte o Método PERFEITO",
+      "instruction": "Arraste cada significado para a letra correta",
+      "passingScore": 100,
+      "maxAttempts": null,
+      "data": {
+        "word": "PERFEITO",
+        "items": [
+          {"id": "p", "letter": "P", "meaning": "Persona", "position": 0},
+          {"id": "e1", "letter": "E", "meaning": "Estrutura", "position": 1},
+          {"id": "r", "letter": "R", "meaning": "Resultado", "position": 2},
+          {"id": "f", "letter": "F", "meaning": "Formato", "position": 3},
+          {"id": "e2", "letter": "E", "meaning": "Exemplos", "position": 4},
+          {"id": "i", "letter": "I", "meaning": "Iteração", "position": 5},
+          {"id": "t", "letter": "T", "meaning": "Tom", "position": 6},
+          {"id": "o", "letter": "O", "meaning": "Otimização", "position": 7}
+        ],
+        "shuffleOnStart": true,
+        "showProgressDots": true,
+        "hapticFeedback": true,
+        "soundEffects": {
+          "onCorrect": "snap-success",
+          "onIncorrect": "snap-error",
+          "onComplete": "completion"
+        },
+        "animations": {
+          "entryPhase1": "blink-meanings",
+          "entryPhase2": "blink-letters",
+          "onCorrectDrop": "scale-glow",
+          "onComplete": "confetti"
+        },
+        "successCriteria": "all-correct-positions"
+      },
+      "feedback": {
+        "onComplete": {
+          "title": "🏆 Perfeito!",
+          "message": "Você dominou o método PERFEITO!",
+          "showConfetti": true
+        }
+      }
+    }
+  ],
+  "postLessonFlow": {
+    "stages": [
+      {
+        "id": "lesson_complete",
+        "type": "celebration",
+        "component": "V7LessonCompleteCard",
+        "showStats": true,
+        "showNextButton": true
+      },
+      {
+        "id": "exercise",
+        "type": "interactive",
+        "component": "V7PerfeitoDragDrop",
+        "exerciseId": "exercise-perfeito-drag-drop"
+      },
+      {
+        "id": "results",
+        "type": "summary",
+        "component": "V7ExerciseResultCard",
+        "showScore": true,
+        "showRewardsButton": true,
+        "navigationOptions": ["dashboard", "trail", "next-lesson"]
+      },
+      {
+        "id": "rewards",
+        "type": "modal",
+        "component": "V7RewardsModal",
+        "showXP": true,
+        "showCoins": true,
+        "showPatent": true
+      }
+    ],
+    "gamificationIntegration": {
+      "eventType": "lesson_completion",
+      "registerOnStage": "results",
+      "refreshStatsAfter": true
+    }
+  },
+  "gamification": {
+    "xpReward": 150,
+    "coinsReward": 25,
+    "achievements": [
+      {"id": "metodo-desbloqueado", "title": "Método Desbloqueado", "description": "Aprendeu o método PERFEITO", "icon": "🎯"},
+      {"id": "primeiro-quiz", "title": "Primeiro Quiz", "description": "Completou a autoavaliação", "icon": "📊"}
+    ],
+    "streakMultiplier": true
+  }
 }
