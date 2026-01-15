@@ -411,5 +411,46 @@
         }
       }
     }
-  ]
+  ],
+  "postLessonExercises": [
+    {
+      "id": "exercise-perfeito-drag-drop",
+      "type": "drag-drop",
+      "title": "Monte o Método PERFEITO",
+      "instruction": "Arraste cada significado para a letra correta",
+      "passingScore": 100,
+      "data": {
+        "word": "PERFEITO",
+        "items": [
+          {"letter": "P", "meaning": "Persona específica", "hint": "Quem a IA deve ser"},
+          {"letter": "E", "meaning": "Estrutura clara", "hint": "Organização do prompt"},
+          {"letter": "R", "meaning": "Resultado esperado", "hint": "O que você quer obter"},
+          {"letter": "F", "meaning": "Formato definido", "hint": "Como a resposta deve vir"},
+          {"letter": "E", "meaning": "Exemplos práticos", "hint": "Referências concretas"},
+          {"letter": "I", "meaning": "Iteração contínua", "hint": "Refinar e melhorar"},
+          {"letter": "T", "meaning": "Tom adequado", "hint": "Estilo de comunicação"},
+          {"letter": "O", "meaning": "Otimização constante", "hint": "Sempre aperfeiçoar"}
+        ]
+      },
+      "feedback": {
+        "success": {
+          "title": "PERFEITO! 🎯",
+          "message": "Você dominou o método. Agora aplique em seus prompts!",
+          "xp": 100
+        },
+        "failure": {
+          "title": "Quase lá!",
+          "message": "Revise o método PERFEITO e tente novamente.",
+          "allowRetry": true
+        }
+      }
+    }
+  ],
+  "gamification": {
+    "xpReward": 150,
+    "achievements": [
+      {"id": "ach-2-percent", "title": "Bem-vindo aos 2%", "condition": "complete_lesson"},
+      {"id": "ach-perfeito-master", "title": "Mestre do PERFEITO", "condition": "exercise_100"}
+    ]
+  }
 }
