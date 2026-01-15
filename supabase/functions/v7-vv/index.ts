@@ -683,17 +683,38 @@ function generatePhases(
           timeout: scene.interaction.timeout,
         };
       } else if (scene.interaction.type === 'playground') {
-        // ✅ V7-vv FIX: Copiar TODOS os campos do playground
+        // ✅ FASE 3 FIX: Converter estrutura INPUT para formato V7Contract.ts
+        // INPUT usa: amateurScore, comparison.amateur.response
+        // OUTPUT espera: amateurResult { title, content, score, verdict }
+
+        const comparison = scene.interaction.comparison;
+        const moodToVerdict = (mood: string): string => {
+          switch (mood) {
+            case 'danger': return 'Genérico e sem direcionamento';
+            case 'warning': return 'Parcialmente estruturado';
+            case 'success': return 'Específico, actionável, com números reais';
+            default: return mood;
+          }
+        };
+
         phase.interaction = {
           type: 'playground',
           amateurPrompt: scene.interaction.amateurPrompt,
           professionalPrompt: scene.interaction.professionalPrompt,
-          amateurResult: scene.interaction.amateurResult,
-          professionalResult: scene.interaction.professionalResult,
-          // V7-vv: Campos adicionados para playground completo:
-          amateurScore: scene.interaction.amateurScore,
-          professionalScore: scene.interaction.professionalScore,
-          comparison: scene.interaction.comparison,
+          // ✅ Estrutura correta para Frontend (V7Contract.ts)
+          amateurResult: scene.interaction.amateurResult || (comparison?.amateur ? {
+            title: comparison.amateur.label || 'Resultado Amador',
+            content: comparison.amateur.response || '',
+            score: scene.interaction.amateurScore || 0,
+            verdict: moodToVerdict(comparison.amateur.mood || 'danger'),
+          } : undefined),
+          professionalResult: scene.interaction.professionalResult || (comparison?.professional ? {
+            title: comparison.professional.label || 'Resultado Profissional',
+            content: comparison.professional.response || '',
+            score: scene.interaction.professionalScore || 0,
+            verdict: moodToVerdict(comparison.professional.mood || 'success'),
+          } : undefined),
+          // Manter userChallenge para interatividade
           userChallenge: scene.interaction.userChallenge,
         };
       } else if (scene.interaction.type === 'cta-button') {
