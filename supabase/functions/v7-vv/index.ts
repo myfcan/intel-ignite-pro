@@ -687,7 +687,7 @@ function generatePhases(
         // INPUT usa: amateurScore, comparison.amateur.response
         // OUTPUT espera: amateurResult { title, content, score, verdict }
 
-        const comparison = scene.interaction.comparison;
+        const comparison = scene.interaction.comparison as { amateur?: { label?: string; response?: string; mood?: string }; professional?: { label?: string; response?: string; mood?: string } } | undefined;
         const moodToVerdict = (mood: string): string => {
           switch (mood) {
             case 'danger': return 'Genérico e sem direcionamento';
