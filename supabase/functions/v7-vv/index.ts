@@ -91,29 +91,42 @@ interface Phase {
 }
 
 interface LessonData {
-  model: string;
-  version: string;
+  // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+  schema: string;                    // Bug 7: era "model"
+  version: string;                   // Bug 8: será "1.0.0"
+  title: string;                     // Bug 9: title no root
+  subtitle: string;                  // Bug 9: subtitle no root
+  difficulty: string;
+  category: string;
+  tags: string[];
+  learningObjectives: string[];
+  estimatedDuration: number;
   metadata: {
-    title: string;
-    subtitle: string;
-    difficulty: string;
-    category: string;
-    tags: string[];
-    learningObjectives: string[];
-    totalDuration: number;
+    version: string;                 // Bug 10: metadata.version
     phaseCount: number;
-    createdAt: string;
-    generatedBy: string;
+    totalDuration: number;
+    hasInteractivePhases: boolean;   // Bug 11: flags
+    hasPlayground: boolean;          // Bug 11: flags
+    hasPostLessonExercises: boolean; // Bug 11: flags
   };
   phases: Phase[];
   audio: {
     mainAudio: AudioSegment;
-    feedbackAudios?: Record<string, AudioSegment>;
+    // ✅ FASE 2 FIX: feedbackAudios como ARRAY
+    feedbackAudios?: FeedbackAudioItem[];
   };
   // ✅ FASE 1 FIX: Campos passados direto do INPUT
   postLessonExercises?: any[];
   postLessonFlow?: Record<string, unknown>;
   gamification?: Record<string, unknown>;
+}
+
+// ✅ FASE 2 FIX: Interface para feedbackAudios como array
+interface FeedbackAudioItem {
+  id: string;
+  url: string;
+  wordTimestamps: WordTimestamp[];
+  trigger: string;
 }
 
 // ============================================================================
@@ -950,7 +963,8 @@ Deno.serve(async (req) => {
     // =========================================================================
     console.log('[V7-vv] Step 3: Generating feedback audios...');
 
-    const feedbackAudios: Record<string, AudioSegment> = {};
+    // ✅ FASE 2 FIX: feedbackAudios como ARRAY
+    const feedbackAudios: FeedbackAudioItem[] = [];
 
     for (const scene of input.scenes) {
       if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
@@ -966,13 +980,16 @@ Deno.serve(async (req) => {
             );
 
             if (feedbackResult.success) {
-              feedbackAudios[`feedback-${option.id}`] = {
+              // ✅ FASE 2 FIX: Determinar trigger baseado em isCorrect
+              const trigger = option.isCorrect ? 'quiz-correct-answer' : 'quiz-incorrect-answer';
+
+              feedbackAudios.push({
                 id: `feedback-${option.id}`,
                 url: feedbackResult.url || '',
-                duration: feedbackResult.duration || 0,
                 wordTimestamps: feedbackResult.wordTimestamps || [],
-              };
-              console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s`);
+                trigger,
+              });
+              console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s (${trigger})`);
             } else {
               console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}`);
             }
@@ -981,7 +998,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`[V7-vv] Generated ${Object.keys(feedbackAudios).length} feedback audios`);
+    console.log(`[V7-vv] Generated ${feedbackAudios.length} feedback audios`);
 
     // =========================================================================
     // PASSO 4: GERAR FASES
@@ -1005,25 +1022,35 @@ Deno.serve(async (req) => {
 
     const totalDuration = phases.length > 0 ? phases[phases.length - 1].endTime : mainAudio.duration;
 
+    // ✅ FASE 2 FIX: Calcular flags para metadata
+    const hasInteractivePhases = phases.some(p => ['interaction', 'quiz'].includes(p.type));
+    const hasPlayground = phases.some(p => p.type === 'playground');
+    const hasPostLessonExercises = !!(input.postLessonExercises && input.postLessonExercises.length > 0);
+
     const lessonData: LessonData = {
-      model: 'v7-cinematic',
-      version: 'vv',
+      // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+      schema: 'v7-vv',                           // Bug 7: era "model"
+      version: '1.0.0',                          // Bug 8: formato correto
+      title: input.title,                        // Bug 9: title no root
+      subtitle: input.subtitle || '',            // Bug 9: subtitle no root
+      difficulty: input.difficulty,
+      category: input.category,
+      tags: input.tags,
+      learningObjectives: input.learningObjectives,
+      estimatedDuration: Math.ceil(totalDuration),
       metadata: {
-        title: input.title,
-        subtitle: input.subtitle || '',
-        difficulty: input.difficulty,
-        category: input.category,
-        tags: input.tags,
-        learningObjectives: input.learningObjectives,
-        totalDuration,
+        version: 'v7-vv',                        // Bug 10: metadata.version
         phaseCount: phases.length,
-        createdAt: new Date().toISOString(),
-        generatedBy: 'V7-vv',
+        totalDuration,
+        hasInteractivePhases,                    // Bug 11: flag
+        hasPlayground,                           // Bug 11: flag
+        hasPostLessonExercises,                  // Bug 11: flag
       },
       phases,
       audio: {
         mainAudio,
-        feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
+        // ✅ FASE 2 FIX: feedbackAudios como array
+        feedbackAudios: feedbackAudios.length > 0 ? feedbackAudios : undefined,
       },
       // ✅ FASE 1 FIX: Passar campos direto do INPUT para OUTPUT
       postLessonExercises: input.postLessonExercises,
@@ -1075,7 +1102,7 @@ Deno.serve(async (req) => {
         totalDuration,
         mainAudioDuration: mainAudio.duration,
         wordCount: mainAudio.wordTimestamps.length,
-        feedbackAudioCount: Object.keys(feedbackAudios).length,
+        feedbackAudioCount: feedbackAudios.length,
         hasAudio: !!mainAudio.url,
       },
     };
