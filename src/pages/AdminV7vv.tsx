@@ -28,11 +28,16 @@ import {
   Clock,
   Layers,
   Target,
-  ArrowLeft
+  ArrowLeft,
+  Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-// Roteiro de exemplo
+// ✅ Importar o JSON modelo CORRETO (com scenes, não phases)
+import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
+
+// Roteiro de exemplo SIMPLES (para testes rápidos)
 const EXAMPLE_SCRIPT = `{
   "title": "Minha Primeira Aula V7-vv",
   "subtitle": "Aprenda a usar IA de verdade",
@@ -150,20 +155,18 @@ export default function AdminV7vv() {
     }
   };
 
-  // Carregar exemplo
+  // Carregar exemplo simples
   const loadExample = () => {
-    // Carregar o roteiro completo de exemplo
-    fetch('/docs/V7-VV-ROTEIRO-EXEMPLO.json')
-      .then(res => res.json())
-      .then(data => {
-        setScriptJson(JSON.stringify(data, null, 2));
-        setJsonError(null);
-      })
-      .catch(() => {
-        // Se não encontrar, usar o exemplo embutido
-        setScriptJson(EXAMPLE_SCRIPT);
-        setJsonError(null);
-      });
+    setScriptJson(EXAMPLE_SCRIPT);
+    setJsonError(null);
+    toast.info('Exemplo simples carregado');
+  };
+
+  // ✅ Carregar JSON modelo COMPLETO da Aula 1 (formato correto com scenes)
+  const loadFullModel = () => {
+    setScriptJson(JSON.stringify(V7Aula1InputModelo, null, 2));
+    setJsonError(null);
+    toast.success('JSON modelo COMPLETO da Aula 1 carregado! (10 cenas)');
   };
 
   // Preview da aula
@@ -273,11 +276,11 @@ export default function AdminV7vv() {
                 </Alert>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={handleProcess}
                   disabled={isProcessing || !!jsonError}
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                  className="flex-1 min-w-[140px] bg-cyan-600 hover:bg-cyan-700"
                 >
                   {isProcessing ? (
                     <>
@@ -292,11 +295,19 @@ export default function AdminV7vv() {
                   )}
                 </Button>
                 <Button
+                  variant="default"
+                  onClick={loadFullModel}
+                  className="min-w-[140px] bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Carregar Aula 1 Completa
+                </Button>
+                <Button
                   variant="outline"
                   onClick={loadExample}
                   className="border-gray-600"
                 >
-                  Carregar Exemplo
+                  Exemplo Simples
                 </Button>
               </div>
             </CardContent>
