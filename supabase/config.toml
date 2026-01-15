@@ -1,6 +1,15 @@
 project_id = "pspvppymcdjbwsudxzdx"
 
-[functions.generate-lesson-audio]
+[functions.analyze-audio-quality]
+verify_jwt = false
+
+[functions.claude-interact]
+verify_jwt = false
+
+[functions.collect-reward]
+verify_jwt = false
+
+[functions.elevenlabs-tts-contextual]
 verify_jwt = false
 
 [functions.generate-audio-elevenlabs]
@@ -9,38 +18,56 @@ verify_jwt = false
 [functions.generate-audio-with-timestamps]
 verify_jwt = false
 
+[functions.generate-card-effects]
+verify_jwt = false
+
+[functions.generate-card-effects-v2]
+verify_jwt = false
+
+[functions.generate-daily-missions]
+verify_jwt = false
+
+[functions.generate-lesson-audio]
+verify_jwt = false
+
 [functions.generate-multiple-audios]
 verify_jwt = false
 
 [functions.generate-slide-images]
 verify_jwt = false
 
+[functions.lesson-playground]
+verify_jwt = false
+
 [functions.pipeline-executor]
+verify_jwt = false
+
+[functions.processar-aula]
 verify_jwt = false
 
 [functions.send-daily-mission-notifications]
 verify_jwt = false
 
-[functions.v7-pipeline]
+[functions.unlock-premium-prompt]
+verify_jwt = false
+
+[functions.update-mission-progress]
+verify_jwt = false
+
+[functions.user-progress]
 verify_jwt = false
 
 [functions.v7-code-analysis]
 verify_jwt = false
 
-[functions.v7-regenerate-audio]
-verify_jwt = false
-
-[functions.elevenlabs-tts-contextual]
-verify_jwt = false
-
 [functions.v7-generate-secret-audio]
+verify_jwt = false
+
+[functions.v7-regenerate-audio]
 verify_jwt = false
 
 [functions.v7-vv]
 verify_jwt = false
 
-[functions.lesson-playground]
-verify_jwt = false
-
-[functions.claude-interact]
+[functions.validate-exercise]
 verify_jwt = false
