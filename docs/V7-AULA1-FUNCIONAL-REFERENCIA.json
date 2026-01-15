@@ -1,0 +1,244 @@
+{
+  "id": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
+  "title": "O Fim da Brincadeira com IA",
+  "audio_url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/v7-main-1767194512371.mp3",
+  "content": {
+    "metadata": {
+      "title": "O Fim da Brincadeira com IA",
+      "subtitle": "Como os 2% usam a IA para faturar R$30.000/mês",
+      "category": "fundamentos",
+      "difficulty": "beginner",
+      "phaseCount": 10,
+      "totalDuration": 87.037,
+      "generatedBy": "V7-vv",
+      "createdAt": "2025-12-31T15:22:00.447Z",
+      "tags": ["IA", "produtividade", "método PERFEITO", "prompts"],
+      "learningObjectives": [
+        "Entender a diferença entre usar IA como brinquedo vs ferramenta",
+        "Conhecer o método PERFEITO para prompts profissionais",
+        "Aplicar técnicas dos 2% que lucram com IA"
+      ]
+    },
+    "audio": {
+      "mainAudio": {
+        "id": "main",
+        "url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/v7-main-1767194512371.mp3",
+        "duration": 86.737,
+        "wordTimestamps": [
+          {"word": "Noventa", "start": 0, "end": 0.615},
+          {"word": "e", "start": 0.639, "end": 0.755},
+          {"word": "oito", "start": 0.801, "end": 1.115},
+          {"word": "por", "start": 1.173, "end": 1.324},
+          {"word": "cento", "start": 1.382, "end": 1.753},
+          {"word": "das", "start": 1.8, "end": 1.939},
+          {"word": "pessoas", "start": 1.997, "end": 2.403},
+          {"word": "que", "start": 2.473, "end": 2.589},
+          {"word": "usam", "start": 2.635, "end": 2.961},
+          {"word": "Inteligência", "start": 3.077, "end": 3.924},
+          {"word": "Artificial", "start": 3.947, "end": 4.69},
+          {"word": "hoje", "start": 4.76, "end": 5.306},
+          {"word": "tratam", "start": 5.619, "end": 6.06},
+          {"word": "ela", "start": 6.153, "end": 6.339},
+          {"word": "como", "start": 6.409, "end": 6.653},
+          {"word": "brinquedo.", "start": 6.722, "end": 7.709}
+        ]
+      },
+      "feedbackAudios": {
+        "feedback-opt-98-simples": {
+          "id": "feedback-opt-98-simples",
+          "url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/v7-feedback-opt-98-simples-1767194515681.mp3",
+          "duration": 7.117,
+          "wordTimestamps": []
+        },
+        "feedback-opt-2-contexto": {
+          "id": "feedback-opt-2-contexto",
+          "url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/v7-feedback-opt-2-contexto-1767194517797.mp3",
+          "duration": 6.954,
+          "wordTimestamps": []
+        },
+        "feedback-opt-98-copia": {
+          "id": "feedback-opt-98-copia",
+          "url": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/v7-feedback-opt-98-copia-1767194519999.mp3",
+          "duration": 6.722,
+          "wordTimestamps": []
+        }
+      }
+    },
+    "phases": [
+      {
+        "id": "cena-1-impacto",
+        "type": "dramatic",
+        "title": "98% - O Impacto",
+        "startTime": 0,
+        "endTime": 14.58,
+        "effects": {
+          "mood": "danger",
+          "glow": true,
+          "grain": true,
+          "vignette": true,
+          "particles": "none"
+        },
+        "visual": {
+          "type": "number-reveal",
+          "content": {
+            "number": "98%",
+            "subtitle": "tratam a Inteligência Artificial como brinquedo",
+            "mood": "danger",
+            "effect": "zoom-in",
+            "hookQuestion": "VOCÊ SABIA?"
+          }
+        },
+        "microVisuals": [
+          {
+            "id": "mv-multidao",
+            "type": "image-flash",
+            "triggerTime": 7.709,
+            "duration": 2,
+            "anchorText": "brinquedo",
+            "content": {
+              "description": "Multidão rindo em slow motion",
+              "animation": "fade",
+              "duration": 0.8
+            }
+          }
+        ],
+        "anchorActions": [
+          {
+            "keyword": "brinquedo",
+            "keywordTime": 7.709,
+            "type": "show",
+            "targetId": "mv-multidao",
+            "id": "mv-multidao"
+          }
+        ]
+      },
+      {
+        "id": "cena-6-quiz",
+        "type": "interaction",
+        "title": "Quiz - Como Você Usa a IA?",
+        "startTime": 44.801,
+        "endTime": 51.546,
+        "audioBehavior": {
+          "onStart": "pause",
+          "onComplete": "resume"
+        },
+        "visual": {
+          "type": "quiz",
+          "content": {
+            "question": "Como você usa a I.A. hoje?",
+            "mood": "neutral"
+          }
+        },
+        "interaction": {
+          "type": "quiz",
+          "question": "Como você usa a I.A. hoje?",
+          "options": [
+            {
+              "id": "opt-98-simples",
+              "text": "Perguntas simples e diretas, sem contexto.",
+              "isCorrect": false,
+              "feedback": {
+                "title": "Você está nos 98%.",
+                "subtitle": "Sem problema. Agora você vai virar a chave.",
+                "mood": "warning",
+                "audioId": "feedback-opt-98-simples"
+              }
+            },
+            {
+              "id": "opt-2-contexto",
+              "text": "Com contexto, persona e objetivo claro.",
+              "isCorrect": true,
+              "feedback": {
+                "title": "Você está nos 2%.",
+                "subtitle": "Excelente. Agora você vai formalizar o método.",
+                "mood": "success",
+                "audioId": "feedback-opt-2-contexto"
+              }
+            },
+            {
+              "id": "opt-98-copia",
+              "text": "Copio prompts da internet e adapto por cima.",
+              "isCorrect": false,
+              "feedback": {
+                "title": "Você está nos 98%.",
+                "subtitle": "Sem problema. Agora você vai virar a chave.",
+                "mood": "warning",
+                "audioId": "feedback-opt-98-copia"
+              }
+            }
+          ],
+          "timeout": {
+            "soft": 5,
+            "medium": 12,
+            "hard": 25,
+            "hints": [
+              "Você tem que tomar a decisão.",
+              "Escolhe aí.",
+              "Responda com honestidade."
+            ],
+            "autoSelect": "opt-98-simples"
+          }
+        },
+        "anchorActions": [
+          {
+            "keyword": "representa você",
+            "keywordTime": 51.246,
+            "type": "pause",
+            "id": "pause-cena-6-quiz"
+          }
+        ]
+      },
+      {
+        "id": "cena-10-playground",
+        "type": "playground",
+        "title": "Playground - A Diferença na Prática",
+        "startTime": 87,
+        "endTime": 87.037,
+        "audioBehavior": {
+          "onStart": "pause",
+          "onComplete": "resume"
+        },
+        "visual": {
+          "type": "playground",
+          "content": {
+            "title": "A DIFERENÇA NA PRÁTICA",
+            "subtitle": "Prompt amador vs prompt profissional",
+            "instruction": "Faça o teste agora"
+          }
+        },
+        "interaction": {
+          "type": "playground",
+          "amateurPrompt": "Me dá ideias de negócio",
+          "amateurScore": 10,
+          "professionalPrompt": "Atue como um consultor de negócios com 20 anos de experiência...",
+          "professionalScore": 95,
+          "comparison": {
+            "amateur": {
+              "label": "PROMPT AMADOR",
+              "mood": "danger",
+              "response": "Aqui estão algumas ideias: loja virtual, dropshipping..."
+            },
+            "professional": {
+              "label": "PROMPT PROFISSIONAL (PERFEITO)",
+              "mood": "success",
+              "response": "Baseado no seu perfil de contador..."
+            }
+          },
+          "userChallenge": {
+            "instruction": "Agora é sua vez!...",
+            "challengePrompt": "Me ajuda a escrever um email",
+            "hints": ["Defina a PERSONA...", "Especifique o RESULTADO..."]
+          }
+        },
+        "anchorActions": [
+          {
+            "keyword": "teste agora",
+            "keywordTime": 86.737,
+            "type": "pause",
+            "id": "pause-cena-10-playground"
+          }
+        ]
+      }
+    ]
+  }
+}
