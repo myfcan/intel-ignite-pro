@@ -1,0 +1,321 @@
+{
+  "$schema": "V7-vv Pipeline Input Schema",
+  "_documentation": {
+    "description": "Exemplo de roteiro para o Pipeline V7-vv Cinematográfico",
+    "version": "vv",
+    "rules": [
+      "1. AnchorText é OBRIGATÓRIO para cenas interativas (interaction, playground, secret-reveal)",
+      "2. Cada cena DEVE ter narração (texto que será convertido em áudio)",
+      "3. Visual é obrigatório para todas as cenas",
+      "4. MicroVisuals são ativados por anchorText específico",
+      "5. NÃO há fallbacks - erros no roteiro são rejeitados pelo Pipeline"
+    ]
+  },
+
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "Como usar IA como profissional, não como amador",
+  "difficulty": "intermediate",
+  "category": "Fundamentos de IA",
+  "tags": ["IA", "prompts", "produtividade", "profissional"],
+  "learningObjectives": [
+    "Entender a diferença entre usar IA como amador e profissional",
+    "Aprender a estruturar prompts eficazes",
+    "Praticar com exemplos reais de comparação"
+  ],
+
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "generate_audio": true,
+  "fail_on_audio_error": false,
+
+  "scenes": [
+    {
+      "id": "cena-1-abertura",
+      "title": "Abertura Cinematográfica",
+      "type": "dramatic",
+      "narration": "Você acha que sabe usar inteligência artificial? 30 milhões de pessoas usam ChatGPT todos os dias. Mas menos de 1% realmente sabe usar.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "Você acha que sabe usar IA?",
+          "mainValue": "30M",
+          "secondaryValue": "<1%",
+          "subtitle": "usam ChatGPT diariamente... mas menos de 1% realmente sabe usar",
+          "highlightWord": "1%"
+        },
+        "effects": {
+          "mood": "dramatic",
+          "particles": "sparks",
+          "glow": true
+        },
+        "microVisuals": [
+          {
+            "id": "micro-30m",
+            "anchorText": "30 milhões",
+            "type": "number",
+            "content": {
+              "value": "30M",
+              "color": "#22D3EE",
+              "animation": "count-up"
+            }
+          },
+          {
+            "id": "micro-1percent",
+            "anchorText": "menos de 1%",
+            "type": "badge",
+            "content": {
+              "value": "<1%",
+              "color": "#ff6b6b",
+              "animation": "pulse"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-2-narrativa",
+      "title": "O Problema do Amadorismo",
+      "type": "narrative",
+      "narration": "A maioria trata a IA como um brinquedo. Digita qualquer coisa e espera mágica. O resultado? Respostas genéricas, superficiais, que qualquer pessoa consegue.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "mainText": "A maioria trata a IA como um brinquedo",
+          "items": [
+            "Digita qualquer coisa",
+            "Espera mágica",
+            "Resultado: respostas genéricas"
+          ],
+          "impactWord": "brinquedo"
+        },
+        "effects": {
+          "mood": "danger",
+          "particles": "ember"
+        }
+      }
+    },
+    {
+      "id": "cena-3-comparacao",
+      "title": "Amador vs Profissional",
+      "type": "comparison",
+      "narration": "Veja a diferença. O amador pede: Crie um post para o Instagram. O profissional estrutura: Você é um especialista em marketing digital. Crie um post de carrossel com 5 slides sobre produtividade, usando gatilhos mentais de urgência e escassez.",
+      "visual": {
+        "type": "split-screen",
+        "content": {
+          "leftCard": {
+            "label": "AMADOR",
+            "value": "Genérico",
+            "details": [
+              "Prompt: 'Crie um post para Instagram'",
+              "Resultado: texto genérico",
+              "Tempo perdido: muito"
+            ],
+            "isPositive": false,
+            "prompt": "Crie um post para o Instagram",
+            "result": "Novo post! 📱 Confira as novidades..."
+          },
+          "rightCard": {
+            "label": "PROFISSIONAL",
+            "value": "Estratégico",
+            "details": [
+              "Contexto claro",
+              "Formato específico",
+              "Gatilhos definidos"
+            ],
+            "isPositive": true,
+            "prompt": "Você é um especialista em marketing digital. Crie um post de carrossel com 5 slides sobre produtividade, usando gatilhos mentais de urgência e escassez.",
+            "result": "🚨 VOCÊ ESTÁ PERDENDO TEMPO? 5 técnicas que os CEOs usam para multiplicar resultados..."
+          }
+        },
+        "effects": {
+          "mood": "energetic"
+        }
+      }
+    },
+    {
+      "id": "cena-4-estatistica",
+      "title": "A Estatística Chocante",
+      "type": "dramatic",
+      "narration": "Pessoas que usam IA de forma profissional são até 40% mais produtivas. Não é teoria. É dado de pesquisa da Stanford University.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "mainValue": "40%",
+          "subtitle": "mais produtivos com uso profissional de IA",
+          "source": "Stanford University Research"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti",
+          "glow": true
+        }
+      }
+    },
+    {
+      "id": "cena-5-revelacao",
+      "title": "O Segredo dos Profissionais",
+      "type": "revelation",
+      "narration": "O segredo não é a ferramenta. É como você estrutura o pedido. Contexto. Formato. Exemplos. Tom. Restrições.",
+      "visual": {
+        "type": "letterbox",
+        "content": {
+          "title": "O SEGREDO",
+          "items": [
+            { "icon": "context", "text": "Contexto: Quem você é?" },
+            { "icon": "format", "text": "Formato: Como quer a resposta?" },
+            { "icon": "example", "text": "Exemplos: Referências claras" },
+            { "icon": "tone", "text": "Tom: Formal? Informal?" },
+            { "icon": "constraint", "text": "Restrições: O que evitar?" }
+          ]
+        },
+        "effects": {
+          "mood": "mysterious",
+          "glow": true
+        }
+      }
+    },
+    {
+      "id": "cena-6-quiz",
+      "title": "Hora de Testar",
+      "type": "interaction",
+      "narration": "Vamos testar. Qual destes prompts é mais eficaz para criar um e-mail de vendas? Pense bem antes de responder. A diferença é brutal. Qual você escolhe? Marque agora!",
+      "anchorText": {
+        "pauseAt": "Marque agora"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "title": "AUTO-AVALIAÇÃO",
+          "subtitle": "Teste seu conhecimento"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Qual prompt é mais eficaz para criar um e-mail de vendas?",
+        "options": [
+          {
+            "id": "opt-a",
+            "text": "Crie um e-mail de vendas",
+            "isCorrect": false,
+            "feedback": "Muito genérico. Sem contexto, a IA não sabe para quem, qual produto, ou tom usar."
+          },
+          {
+            "id": "opt-b",
+            "text": "Você é um copywriter. Crie um e-mail de vendas para um curso de Excel, tom urgente, máximo 150 palavras",
+            "isCorrect": true,
+            "feedback": "Perfeito! Contexto (copywriter), produto (curso Excel), tom (urgente), restrição (150 palavras)."
+          },
+          {
+            "id": "opt-c",
+            "text": "Escreva um e-mail bonito para vender algo",
+            "isCorrect": false,
+            "feedback": "'Bonito' e 'algo' são vagos demais. A IA precisa de especificidade."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-7-resultado-quiz",
+      "title": "Resultado do Quiz",
+      "type": "secret-reveal",
+      "narration": "A resposta é a opção B. Por que? Porque ela tem contexto, especificidade, tom e restrição. Esses são os 4 pilares de um prompt profissional.",
+      "anchorText": {
+        "pauseAt": "4 pilares"
+      },
+      "visual": {
+        "type": "result",
+        "content": {
+          "emoji": "✨",
+          "title": "PERFEITO!",
+          "message": "Os 4 pilares de um prompt profissional:",
+          "items": [
+            "1. Contexto: Quem a IA deve ser",
+            "2. Especificidade: O que exatamente você quer",
+            "3. Tom: Como deve soar",
+            "4. Restrições: Limites claros"
+          ]
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "secretContent": "Esses 4 pilares são a base de tudo que você vai aprender nesta trilha."
+      }
+    },
+    {
+      "id": "cena-8-pratica",
+      "title": "Desafio Prático",
+      "type": "playground",
+      "narration": "Agora é sua vez. Vou te mostrar dois prompts. Um amador, um profissional. Sua missão é identificar qual é qual e ver a diferença nos resultados. Pronto para o desafio? Vamos lá!",
+      "anchorText": {
+        "pauseAt": "Vamos lá"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "DESAFIO PRÁTICO",
+          "subtitle": "Compare e aprenda"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "amateurPrompt": "Me dá ideias de negócio",
+        "professionalPrompt": "Você é um consultor de startups. Me dê 5 ideias de negócio digital para 2024, focando em problemas reais de profissionais remotos, com investimento inicial abaixo de R$5.000",
+        "amateurResult": {
+          "title": "Resultado Amador",
+          "content": "1. Loja online\n2. Curso online\n3. App de delivery\n4. Consultoria\n5. Dropshipping",
+          "score": 35,
+          "verdict": "Genérico e sem direcionamento"
+        },
+        "professionalResult": {
+          "title": "Resultado Profissional",
+          "content": "1. Ferramenta de produtividade para home office (R$3k setup)\n2. Plataforma de networking para remotos (R$4k)\n3. Serviço de ergonomia virtual (R$2k)\n4. Comunidade paga de freelancers (R$1k)\n5. Automação de processos para pequenos times (R$4.5k)",
+          "score": 92,
+          "verdict": "Específico, actionável, com números reais"
+        }
+      }
+    },
+    {
+      "id": "cena-9-conclusao",
+      "title": "Recapitulação",
+      "type": "revelation",
+      "narration": "Você acabou de ver a diferença entre brincar com IA e usar IA de verdade. A partir de agora, cada vez que você abrir o ChatGPT, lembre-se: contexto, especificidade, tom e restrições.",
+      "visual": {
+        "type": "letterbox",
+        "content": {
+          "title": "VOCÊ APRENDEU",
+          "items": [
+            "✅ A diferença entre amador e profissional",
+            "✅ Os 4 pilares de um prompt eficaz",
+            "✅ Como estruturar pedidos que funcionam"
+          ]
+        },
+        "effects": {
+          "mood": "success"
+        }
+      }
+    },
+    {
+      "id": "cena-10-gamification",
+      "title": "Parabéns!",
+      "type": "gamification",
+      "narration": "Parabéns! Você completou a primeira aula e já está à frente da maioria. Na próxima aula, vamos mergulhar mais fundo nas técnicas avançadas de prompts. Até lá!",
+      "visual": {
+        "type": "result",
+        "content": {
+          "emoji": "🏆",
+          "title": "AULA CONCLUÍDA!",
+          "message": "Você está no caminho certo",
+          "metrics": [
+            { "label": "XP Ganho", "value": "+150", "isHighlight": true },
+            { "label": "Conquista", "value": "Primeiro Passo", "isHighlight": false },
+            { "label": "Próxima Aula", "value": "Técnicas Avançadas", "isHighlight": false }
+          ],
+          "ctaText": "Continuar para Próxima Aula"
+        },
+        "effects": {
+          "mood": "success",
+          "particles": "confetti"
+        }
+      }
+    }
+  ]
+}
