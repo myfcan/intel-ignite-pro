@@ -108,6 +108,53 @@ export default function Admin() {
           </Card>
         </div>
 
+        {/* V7-vv Pipeline - FIXO E SEMPRE VISÍVEL */}
+        <Card className="border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-cyan-500/10 hover:border-pink-500/50 transition-all cursor-pointer" onClick={() => navigate('/admin/v7-vv')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Rocket className="w-8 h-8 text-pink-500" />
+              Pipeline V7-vv
+              <span className="text-xs bg-pink-600 text-white px-2 py-1 rounded-full ml-2">PRINCIPAL</span>
+            </CardTitle>
+            <CardDescription className="text-base">
+              Sistema definitivo de criação de aulas cinematográficas com scenes e anchorActions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm space-y-2">
+              <p>✅ Scenes com narração e visuais sincronizados</p>
+              <p>✅ AnchorActions para interatividade precisa</p>
+              <p>✅ Áudio ElevenLabs com word timestamps</p>
+              <p>✅ Quiz, Playground e CTA integrados</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                className="flex-1 bg-pink-600 hover:bg-pink-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7-vv');
+                }}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Criar Aula V7-vv
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-pink-500/50 hover:bg-pink-500/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7/pipeline-test');
+                }}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Testar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Cards de acesso rápido */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="border-2 border-primary/20 bg-primary/5 hover:border-primary/40 transition-colors">
