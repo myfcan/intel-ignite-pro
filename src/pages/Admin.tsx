@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-// JSON Modelo Padrão Aula 1 V7-vv - Espelho exato da aula funcionando
-import V7Aula1ModeloPadrao from '@/data/v7-aula1-modelo-padrao.json';
+// JSON Modelo INPUT para Pipeline V7-vv (formato com scenes, não phases)
+import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
@@ -15,7 +15,7 @@ export default function Admin() {
 
   const copyJsonToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(V7Aula1ModeloPadrao, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(V7Aula1InputModelo, null, 2));
       setCopied(true);
       toast.success('JSON copiado para a área de transferência!');
       setTimeout(() => setCopied(false), 3000);
