@@ -110,6 +110,10 @@ interface LessonData {
     mainAudio: AudioSegment;
     feedbackAudios?: Record<string, AudioSegment>;
   };
+  // ✅ FASE 1 FIX: Campos passados direto do INPUT
+  postLessonExercises?: any[];
+  postLessonFlow?: Record<string, unknown>;
+  gamification?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -127,6 +131,10 @@ interface ScriptInput {
   generate_audio?: boolean;
   fail_on_audio_error?: boolean;
   scenes: ScriptScene[];
+  // ✅ FASE 1 FIX: Campos que passam direto para OUTPUT
+  postLessonExercises?: any[];
+  postLessonFlow?: Record<string, unknown>;
+  gamification?: Record<string, unknown>;
 }
 
 interface ScriptScene {
@@ -694,6 +702,174 @@ function generatePhases(
 }
 
 // ============================================================================
+// V7-vv FIX: WORD-BASED TIMING CALCULATION (copiado do v7-pipeline)
+// ============================================================================
+
+/**
+ * ✅ FASE 1 FIX: Calculate phase timings based on KEYWORDS in wordTimestamps
+ *
+ * Para cada fase com anchorText.pauseAt, encontra quando essa palavra é falada
+ * e usa como ponto de trigger para interação.
+ *
+ * Isso substitui a abordagem de estimativa com +10 palavras.
+ */
+function calculateWordBasedTimings(
+  phases: Phase[],
+  wordTimestamps: WordTimestamp[],
+  inputScenes: ScriptScene[]
+): void {
+  if (phases.length === 0 || wordTimestamps.length === 0) return;
+
+  console.log('[V7-vv:WordBased] ✅ Calculating WORD-BASED timings...');
+  console.log('[V7-vv:WordBased] Total words:', wordTimestamps.length);
+
+  const totalAudioDuration = wordTimestamps[wordTimestamps.length - 1].end;
+
+  // Normalize function for word matching
+  const normalize = (word: string): string =>
+    word.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,!?;:'"()[\]{}…]+/g, '')
+      .trim();
+
+  // Find keyword in wordTimestamps - busca EXATA
+  const findKeywordTimeExact = (keyword: string, afterTime: number = 0): number | null => {
+    const keywordParts = keyword.split(/\s+/).map(normalize).filter(w => w.length > 0);
+    if (keywordParts.length === 0) return null;
+
+    // Multi-word: busca sequência
+    if (keywordParts.length > 1) {
+      const MAX_GAP = 3; // palavras de tolerância entre partes
+
+      for (let i = 0; i < wordTimestamps.length; i++) {
+        if (wordTimestamps[i].start < afterTime) continue;
+
+        const firstWordNorm = normalize(wordTimestamps[i].word);
+        if (firstWordNorm !== keywordParts[0]) continue;
+
+        let matchPositions: number[] = [i];
+        let searchStart = i + 1;
+
+        for (let partIdx = 1; partIdx < keywordParts.length; partIdx++) {
+          const targetPart = keywordParts[partIdx];
+          let found = false;
+
+          for (let j = searchStart; j <= Math.min(searchStart + MAX_GAP, wordTimestamps.length - 1); j++) {
+            if (normalize(wordTimestamps[j].word) === targetPart) {
+              matchPositions.push(j);
+              searchStart = j + 1;
+              found = true;
+              break;
+            }
+          }
+
+          if (!found) {
+            matchPositions = [];
+            break;
+          }
+        }
+
+        if (matchPositions.length === keywordParts.length) {
+          const lastIdx = matchPositions[matchPositions.length - 1];
+          const foundTime = wordTimestamps[lastIdx].end;
+          console.log(`[V7-vv:WordBased] ✓ Found multi-word "${keyword}" at ${foundTime.toFixed(2)}s`);
+          return foundTime;
+        }
+      }
+    }
+
+    // Single word: busca direta
+    const target = keywordParts[0];
+    for (const ts of wordTimestamps) {
+      if (ts.start < afterTime) continue;
+
+      const normalizedWord = normalize(ts.word);
+
+      if (normalizedWord === target ||
+          normalizedWord.includes(target) ||
+          target.includes(normalizedWord)) {
+        console.log(`[V7-vv:WordBased] ✓ Found keyword "${keyword}" at ${ts.end.toFixed(2)}s`);
+        return ts.end;
+      }
+    }
+
+    console.warn(`[V7-vv:WordBased] ⚠️ Keyword "${keyword}" NOT found after ${afterTime.toFixed(2)}s`);
+    return null;
+  };
+
+  // Process each phase
+  let lastEndTime = 0;
+
+  phases.forEach((phase, index) => {
+    const inputScene = inputScenes[index];
+    const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(phase.type);
+
+    // Start time: manter o calculado ou usar o fim da fase anterior
+    if (phase.startTime < lastEndTime) {
+      phase.startTime = lastEndTime;
+    }
+
+    // Para fases interativas, encontrar o pauseAt para determinar quando pausar
+    if (isInteractive && inputScene?.anchorText?.pauseAt) {
+      const pauseKeyword = inputScene.anchorText.pauseAt;
+      const keywordTime = findKeywordTimeExact(pauseKeyword, phase.startTime);
+
+      if (keywordTime !== null) {
+        console.log(`[V7-vv:WordBased] Phase ${index + 1} (${phase.type}): pauseAt "${pauseKeyword}" at ${keywordTime.toFixed(2)}s`);
+
+        // Atualizar anchorActions com tempo preciso
+        if (phase.anchorActions) {
+          const pauseAction = phase.anchorActions.find(a => a.type === 'pause');
+          if (pauseAction) {
+            pauseAction.keywordTime = keywordTime;
+          }
+        }
+      }
+    }
+
+    // Calcular endTime baseado na próxima cena
+    if (index < phases.length - 1) {
+      const nextScene = inputScenes[index + 1];
+      if (nextScene?.narration) {
+        // Encontrar primeira palavra significativa da próxima narração
+        const firstWords = nextScene.narration.split(/\s+/).slice(0, 5);
+        for (const word of firstWords) {
+          const cleanWord = word.replace(/[.,!?;:'"()[\]{}…]+/g, '');
+          if (cleanWord.length >= 3) {
+            const wordTime = findKeywordTimeExact(cleanWord, phase.startTime + 0.5);
+            if (wordTime !== null && wordTime > phase.startTime) {
+              // Ajustar para começar um pouco antes da palavra
+              phase.endTime = wordTime - 0.1;
+              console.log(`[V7-vv:WordBased] Phase ${index + 1} ends at ${phase.endTime.toFixed(2)}s (next: "${cleanWord}")`);
+              break;
+            }
+          }
+        }
+      }
+
+      // Fallback se não encontrou
+      if (phase.endTime <= phase.startTime) {
+        phase.endTime = phase.startTime + (totalAudioDuration / phases.length);
+        console.warn(`[V7-vv:WordBased] ⚠️ Phase ${index + 1} using fallback endTime: ${phase.endTime.toFixed(2)}s`);
+      }
+    } else {
+      // Última fase termina no fim do áudio
+      phase.endTime = totalAudioDuration;
+    }
+
+    lastEndTime = phase.endTime;
+
+    console.log(`[V7-vv:WordBased] Phase ${index + 1} "${phase.type}": ${phase.startTime.toFixed(2)}s - ${phase.endTime.toFixed(2)}s`);
+  });
+
+  // Garantir que última fase termina exatamente no fim do áudio
+  if (phases.length > 0) {
+    phases[phases.length - 1].endTime = totalAudioDuration;
+  }
+}
+
+// ============================================================================
 // HANDLER PRINCIPAL
 // ============================================================================
 
@@ -815,6 +991,14 @@ Deno.serve(async (req) => {
     const phases = generatePhases(input.scenes, mainAudio.wordTimestamps, mainAudio.duration);
 
     // =========================================================================
+    // PASSO 4.5: RECALCULAR TIMINGS COM BASE EM KEYWORDS (FASE 1 FIX)
+    // =========================================================================
+    if (mainAudio.wordTimestamps.length > 0) {
+      console.log('[V7-vv] Step 4.5: Recalculating word-based timings...');
+      calculateWordBasedTimings(phases, mainAudio.wordTimestamps, input.scenes);
+    }
+
+    // =========================================================================
     // PASSO 5: CONSTRUIR OUTPUT
     // =========================================================================
     console.log('[V7-vv] Step 5: Building output...');
@@ -841,6 +1025,10 @@ Deno.serve(async (req) => {
         mainAudio,
         feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
       },
+      // ✅ FASE 1 FIX: Passar campos direto do INPUT para OUTPUT
+      postLessonExercises: input.postLessonExercises,
+      postLessonFlow: input.postLessonFlow,
+      gamification: input.gamification,
     };
 
     // =========================================================================
