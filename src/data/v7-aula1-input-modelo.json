@@ -1,0 +1,349 @@
+{
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "Descubra o método PERFEITO para prompts profissionais",
+  "difficulty": "beginner",
+  "category": "Fundamentos de IA",
+  "tags": ["prompts", "método PERFEITO", "IA profissional"],
+  "learningObjectives": [
+    "Entender a diferença entre uso amador e profissional da IA",
+    "Conhecer o método PERFEITO para criar prompts eficazes",
+    "Aplicar o método em situações práticas"
+  ],
+  "generate_audio": true,
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "fail_on_audio_error": false,
+  "scenes": [
+    {
+      "id": "cena-1-abertura",
+      "title": "Abertura Impactante",
+      "type": "dramatic",
+      "narration": "Você está prestes a descobrir algo que vai mudar completamente a forma como você usa inteligência artificial. 97% das pessoas usam IA como amadores. E você pode estar entre elas.",
+      "visual": {
+        "type": "statistic",
+        "content": {
+          "number": "97%",
+          "label": "das pessoas usam IA como amadores",
+          "subtext": "E você pode estar entre elas..."
+        },
+        "effects": {
+          "screenShake": true,
+          "glitch": true,
+          "flash": true
+        },
+        "microVisuals": [
+          {
+            "id": "counter-97",
+            "type": "counter",
+            "anchorText": "97%",
+            "content": { "from": 0, "to": 97, "suffix": "%" }
+          },
+          {
+            "id": "highlight-amadores",
+            "type": "text-highlight",
+            "anchorText": "amadores",
+            "content": { "text": "amadores", "color": "red" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-2-estatistica",
+      "title": "Estatística Chocante",
+      "type": "revelation",
+      "narration": "A diferença entre um amador e um profissional não é talento, não é inteligência. É simplesmente método. E hoje você vai aprender o método.",
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "left": {
+            "label": "AMADOR",
+            "icon": "😕",
+            "color": "red"
+          },
+          "right": {
+            "label": "PROFISSIONAL",
+            "icon": "🚀",
+            "color": "green"
+          }
+        },
+        "effects": {
+          "spotlight": true
+        }
+      }
+    },
+    {
+      "id": "cena-3-quiz",
+      "title": "Quiz de Autoavaliação",
+      "type": "interaction",
+      "narration": "Antes de continuar, deixa eu te fazer uma pergunta. Quando você usa o ChatGPT, você geralmente faz o quê? Escolha sua resposta.",
+      "anchorText": {
+        "pauseAt": "Escolha sua resposta"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "Quando você usa o ChatGPT, você geralmente...",
+          "title": "Autoavaliação"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Quando você usa o ChatGPT, você geralmente...",
+        "options": [
+          {
+            "id": "a",
+            "text": "Digita a primeira coisa que vem na cabeça",
+            "isCorrect": false,
+            "feedback": {
+              "title": "😅 Normal!",
+              "subtitle": "A maioria das pessoas faz isso. Mas hoje você vai aprender a fazer diferente!",
+              "narration": "Tudo bem! A maioria das pessoas começa assim. Mas hoje você vai descobrir que existe uma forma muito mais eficaz.",
+              "mood": "neutral"
+            }
+          },
+          {
+            "id": "b",
+            "text": "Pensa um pouco antes de escrever",
+            "isCorrect": false,
+            "feedback": {
+              "title": "👍 Bom começo!",
+              "subtitle": "Você já está no caminho, mas pode ir muito além!",
+              "narration": "Ótimo que você já pensa antes de escrever! Agora vamos elevar isso para outro nível.",
+              "mood": "positive"
+            }
+          },
+          {
+            "id": "c",
+            "text": "Usa um método estruturado",
+            "isCorrect": true,
+            "feedback": {
+              "title": "🎯 Excelente!",
+              "subtitle": "Você já está no caminho certo! Vamos aprofundar esse método.",
+              "narration": "Perfeito! Você já entendeu o valor de ter um método. Vamos aprofundar o que você já sabe.",
+              "mood": "success"
+            }
+          },
+          {
+            "id": "d",
+            "text": "Copia prompts da internet",
+            "isCorrect": false,
+            "feedback": {
+              "title": "🔍 Interessante!",
+              "subtitle": "Copiar pode funcionar às vezes, mas criar seus próprios prompts é muito mais poderoso!",
+              "narration": "Copiar prompts pode ajudar, mas quando você entende o método por trás, você cria prompts personalizados muito mais eficazes.",
+              "mood": "neutral"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-4-dor",
+      "title": "A Dor do Amador",
+      "type": "dramatic",
+      "narration": "Sabe qual é o problema de usar IA sem método? Respostas genéricas. Muito retrabalho. Tempo perdido. Resultados medíocres. É frustrante, não é?",
+      "visual": {
+        "type": "pain-points",
+        "content": {
+          "title": "O problema de prompts amadores:",
+          "points": [
+            "❌ Respostas genéricas",
+            "❌ Muito retrabalho",
+            "❌ Tempo perdido",
+            "❌ Resultados medíocres"
+          ]
+        },
+        "effects": {
+          "vignette": true,
+          "darkOverlay": true
+        },
+        "microVisuals": [
+          { "id": "pain-1", "type": "icon-appear", "anchorText": "Respostas genéricas", "content": { "icon": "❌", "index": 0 } },
+          { "id": "pain-2", "type": "icon-appear", "anchorText": "Muito retrabalho", "content": { "icon": "❌", "index": 1 } },
+          { "id": "pain-3", "type": "icon-appear", "anchorText": "Tempo perdido", "content": { "icon": "❌", "index": 2 } },
+          { "id": "pain-4", "type": "icon-appear", "anchorText": "Resultados medíocres", "content": { "icon": "❌", "index": 3 } }
+        ]
+      }
+    },
+    {
+      "id": "cena-5-solucao",
+      "title": "A Solução Revelada",
+      "type": "transformation",
+      "narration": "Mas calma. Existe um método que transforma qualquer prompt amador em profissional. E esse método tem nome.",
+      "visual": {
+        "type": "solution-reveal",
+        "content": {
+          "title": "Existe um método...",
+          "subtitle": "que transforma qualquer prompt amador em profissional"
+        },
+        "effects": {
+          "lightBeam": true,
+          "particleExplosion": true
+        }
+      }
+    },
+    {
+      "id": "cena-6-metodo-perfeito",
+      "title": "Revelação do Método PERFEITO",
+      "type": "secret-reveal",
+      "narration": "O método PERFEITO. P de Persona. E de Estrutura. R de Resultado. F de Formato. E de Exemplos. I de Iteração. T de Tom. O de Otimização. Guarde cada letra.",
+      "anchorText": {
+        "pauseAt": "Guarde cada letra"
+      },
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "letters": [
+            { "letter": "P", "meaning": "Persona", "subtitle": "específica", "anchorText": "Persona" },
+            { "letter": "E", "meaning": "Estrutura", "subtitle": "clara", "anchorText": "Estrutura" },
+            { "letter": "R", "meaning": "Resultado", "subtitle": "esperado", "anchorText": "Resultado" },
+            { "letter": "F", "meaning": "Formato", "subtitle": "definido", "anchorText": "Formato" },
+            { "letter": "E", "meaning": "Exemplos", "subtitle": "práticos", "anchorText": "Exemplos" },
+            { "letter": "I", "meaning": "Iteração", "subtitle": "contínua", "anchorText": "Iteração" },
+            { "letter": "T", "meaning": "Tom", "subtitle": "adequado", "anchorText": "Tom" },
+            { "letter": "O", "meaning": "Otimização", "subtitle": "constante", "anchorText": "Otimização" }
+          ]
+        },
+        "effects": {
+          "letterReveal": true,
+          "glowPulse": true,
+          "soundPerLetter": true
+        }
+      }
+    },
+    {
+      "id": "cena-7-playground",
+      "title": "Playground - Amador vs Profissional",
+      "type": "playground",
+      "narration": "Agora veja a diferença na prática. Compare um prompt amador com um prompt profissional usando o método PERFEITO. Faça o teste agora.",
+      "anchorText": {
+        "pauseAt": "teste agora"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "A DIFERENÇA NA PRÁTICA",
+          "subtitle": "Prompt amador vs prompt profissional",
+          "instruction": "Faça o teste agora"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "comparison": {
+          "amateur": {
+            "label": "PROMPT AMADOR",
+            "prompt": "Me dá ideias de negócio",
+            "response": "Aqui estão algumas ideias: loja virtual, dropshipping, afiliados, freelancer, consultoria.",
+            "score": 10,
+            "mood": "danger"
+          },
+          "professional": {
+            "label": "PROMPT PROFISSIONAL (PERFEITO)",
+            "prompt": "Atue como um consultor de negócios com 20 anos de experiência em startups brasileiras. Preciso de 5 ideias de negócio para um profissional de 45 anos que trabalha com contabilidade e quer usar IA para criar uma renda extra de R$5.000/mês. Liste cada ideia com: nome do negócio, investimento inicial, tempo para primeiro faturamento, e potencial de escala.",
+            "response": "Baseado no seu perfil de contador com expertise em números e processos, aqui estão 5 ideias específicas para gerar R$5.000/mês com IA:\n\n1. **Automação de Relatórios Contábeis com IA** - Investimento: R$500 | Primeiro faturamento: 30 dias | Escala: Alta\n\n2. **Consultoria de Precificação Inteligente** - Investimento: R$200 | Primeiro faturamento: 15 dias | Escala: Média\n\n3. **Cursos de IA para Contadores** - Investimento: R$1.000 | Primeiro faturamento: 60 dias | Escala: Muito Alta\n\n4. **Serviço de Análise Preditiva de Fluxo de Caixa** - Investimento: R$800 | Primeiro faturamento: 45 dias | Escala: Alta\n\n5. **Mentoria Individual de Produtividade com IA** - Investimento: R$0 | Primeiro faturamento: 7 dias | Escala: Média",
+            "score": 95,
+            "mood": "success"
+          }
+        },
+        "userChallenge": {
+          "instruction": "Agora é sua vez! Reescreva este prompt amador usando o método PERFEITO:",
+          "challengePrompt": "Me ajuda a escrever um email",
+          "hints": [
+            "Defina a PERSONA: Quem você quer que a IA seja?",
+            "Especifique o RESULTADO: O que você espera receber?",
+            "Determine o FORMATO: Como quer a resposta estruturada?",
+            "Dê EXEMPLOS: Mostre o tom ou estilo desejado"
+          ]
+        }
+      }
+    },
+    {
+      "id": "cena-8-recapitulacao",
+      "title": "Recapitulação",
+      "type": "narrative",
+      "narration": "Vamos recapitular. O método PERFEITO é sua ferramenta para extrair o máximo da inteligência artificial. Use-o sempre.",
+      "visual": {
+        "type": "summary",
+        "content": {
+          "title": "Recapitulando",
+          "text": "O método PERFEITO é sua ferramenta para extrair o máximo da IA."
+        }
+      }
+    },
+    {
+      "id": "cena-9-gamificacao",
+      "title": "Conquistas e XP",
+      "type": "gamification",
+      "narration": "Parabéns! Você completou esta aula e desbloqueou novas conquistas.",
+      "visual": {
+        "type": "achievements",
+        "content": {
+          "title": "🎉 Parabéns!",
+          "achievements": [
+            { "icon": "🎯", "title": "Método Desbloqueado", "description": "Você aprendeu o PERFEITO!" },
+            { "icon": "📊", "title": "Primeiro Quiz", "description": "Completou a autoavaliação" }
+          ],
+          "xpEarned": 150,
+          "coinsEarned": 25
+        },
+        "effects": {
+          "confetti": true,
+          "celebrationSound": true
+        }
+      }
+    },
+    {
+      "id": "cena-10-cta",
+      "title": "Call to Action",
+      "type": "cta",
+      "narration": "Você está pronto para o próximo passo?",
+      "anchorText": {
+        "pauseAt": "pronto"
+      },
+      "visual": {
+        "type": "decision",
+        "content": {
+          "title": "Você está pronto?",
+          "subtitle": "Continue sua jornada para dominar a IA",
+          "primaryButton": {
+            "text": "Continuar para o Exercício",
+            "action": "next-exercise"
+          },
+          "secondaryButton": {
+            "text": "Voltar para a Trilha",
+            "action": "back-to-trail"
+          }
+        },
+        "effects": {
+          "pulse": true
+        }
+      },
+      "interaction": {
+        "type": "cta",
+        "showAfterAudio": true
+      }
+    }
+  ],
+  "postLessonExercises": [
+    {
+      "id": "exercise-perfeito-drag-drop",
+      "type": "drag-drop",
+      "title": "Monte o Método PERFEITO",
+      "instruction": "Arraste cada significado para a letra correta",
+      "passingScore": 100,
+      "data": {
+        "word": "PERFEITO",
+        "items": [
+          { "id": "p", "letter": "P", "meaning": "Persona", "position": 0 },
+          { "id": "e1", "letter": "E", "meaning": "Estrutura", "position": 1 },
+          { "id": "r", "letter": "R", "meaning": "Resultado", "position": 2 },
+          { "id": "f", "letter": "F", "meaning": "Formato", "position": 3 },
+          { "id": "e2", "letter": "E", "meaning": "Exemplos", "position": 4 },
+          { "id": "i", "letter": "I", "meaning": "Iteração", "position": 5 },
+          { "id": "t", "letter": "T", "meaning": "Tom", "position": 6 },
+          { "id": "o", "letter": "O", "meaning": "Otimização", "position": 7 }
+        ]
+      }
+    }
+  ]
+}
