@@ -71,6 +71,7 @@ const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
 const V7LessonTest = lazy(() => import("./pages/V7LessonTest"));
 const ChatDesignDemo = lazy(() => import("./pages/ChatDesignDemo"));
 const V7Documentation = lazy(() => import("./pages/V7Documentation"));
+const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
 
 const queryClient = new QueryClient();
 
@@ -189,6 +190,7 @@ const App = () => (
               <Route path="/v7-test" element={<V7LessonTest />} />
               <Route path="/admin/v7/test" element={<ProtectedRoute><V7LessonTest /></ProtectedRoute>} />
               <Route path="/admin/v7/docs" element={<ProtectedRoute><V7Documentation /></ProtectedRoute>} />
+              <Route path="/admin/3d-demos" element={<ProtectedRoute><Admin3DDemos /></ProtectedRoute>} />
               {/* NEW FEATURES ROUTES */}
               <Route path="/guides" element={<Guides />} />
               <Route path="/guides/:guideId" element={<GuideDetail />} />

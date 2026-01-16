@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -337,6 +337,34 @@ export default function Admin() {
                   Ir para Pipeline V7
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3D Demos */}
+          <Card className="border-2 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 transition-colors md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Box className="w-6 h-6 text-cyan-600" />
+                Demonstrações 3D Avançadas
+                <span className="text-xs bg-cyan-600 text-white px-2 py-1 rounded-full ml-2">NOVO</span>
+              </CardTitle>
+              <CardDescription>
+                Post-Processing, InstancedMesh e Modelos 3D para aulas cinematográficas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✨ Bloom, Depth of Field, Vignette, Chromatic Aberration</p>
+                <p>👥 InstancedMesh para multidões (2000+ objetos)</p>
+                <p>🖥️ Modelos 3D: monitores, smartphones, personagens</p>
+              </div>
+              <Button
+                className="w-full bg-cyan-600 hover:bg-cyan-700"
+                onClick={() => navigate('/admin/3d-demos')}
+              >
+                <Box className="w-4 h-4 mr-2" />
+                Ver Demonstrações 3D
+              </Button>
             </CardContent>
           </Card>
 
