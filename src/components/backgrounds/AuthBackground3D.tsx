@@ -7,24 +7,32 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, MeshTransmissionMaterial, Sparkles, MeshDistortMaterial } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { useBackground3DSafe } from '@/contexts/Background3DContext';
 
 // Props interfaces
 interface ParticleFieldProps {
   count?: number;
+  speedMultiplier?: number;
+}
+
+interface SceneProps {
+  bloomIntensity: number;
+  particleSpeed: number;
+  particleCount: number;
 }
 
 // Glass Orb
-const GlassOrb = memo(() => {
+const GlassOrb = memo(({ speedMultiplier = 1 }: { speedMultiplier?: number }) => {
   const orbRef = useRef<THREE.Mesh>(null);
   
   useFrame(({ clock }) => {
     if (orbRef.current) {
-      orbRef.current.rotation.y = clock.getElapsedTime() * 0.2;
+      orbRef.current.rotation.y = clock.getElapsedTime() * 0.2 * speedMultiplier;
     }
   });
 
   return (
-    <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.4}>
+    <Float speed={1.5 * speedMultiplier} rotationIntensity={0.3} floatIntensity={0.4}>
       <mesh ref={orbRef} position={[0, 0, -2]}>
         <sphereGeometry args={[1.5, 64, 64]} />
         <MeshTransmissionMaterial
@@ -41,7 +49,7 @@ const GlassOrb = memo(() => {
 GlassOrb.displayName = 'GlassOrb';
 
 // Floating Shapes
-const FloatingShapes = memo(() => {
+const FloatingShapes = memo(({ speedMultiplier = 1 }: { speedMultiplier?: number }) => {
   const shapes = useMemo(() => [
     { position: [-3, 2, -3] as [number, number, number], scale: 0.4, color: '#8b5cf6' },
     { position: [3, -1, -4] as [number, number, number], scale: 0.3, color: '#06b6d4' },
@@ -52,13 +60,13 @@ const FloatingShapes = memo(() => {
   return (
     <>
       {shapes.map((shape, i) => (
-        <Float key={i} speed={2 + i * 0.3} rotationIntensity={0.5} floatIntensity={0.6}>
+        <Float key={i} speed={(2 + i * 0.3) * speedMultiplier} rotationIntensity={0.5} floatIntensity={0.6}>
           <mesh position={shape.position} scale={shape.scale}>
             <octahedronGeometry args={[1, 0]} />
             <MeshDistortMaterial
               color={shape.color}
               distort={0.3}
-              speed={2}
+              speed={2 * speedMultiplier}
               roughness={0.1}
               metalness={0.8}
             />
@@ -71,7 +79,7 @@ const FloatingShapes = memo(() => {
 FloatingShapes.displayName = 'FloatingShapes';
 
 // Particle Field
-const ParticleField = memo(({ count = 200 }: ParticleFieldProps) => {
+const ParticleField = memo(({ count = 200, speedMultiplier = 1 }: ParticleFieldProps) => {
   const pointsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
@@ -86,7 +94,7 @@ const ParticleField = memo(({ count = 200 }: ParticleFieldProps) => {
 
   useFrame(({ clock }) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.03;
+      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.03 * speedMultiplier;
     }
   });
 
@@ -107,23 +115,25 @@ const ParticleField = memo(({ count = 200 }: ParticleFieldProps) => {
 });
 ParticleField.displayName = 'ParticleField';
 
-// Scene
-const Scene = memo(() => {
+// Scene with configurable settings
+const Scene = memo(({ bloomIntensity, particleSpeed, particleCount }: SceneProps) => {
+  const actualParticleCount = Math.floor(200 * particleCount);
+  
   return (
     <>
       <ambientLight intensity={0.2} />
       <pointLight position={[0, 0, 2]} intensity={1} color="#6366f1" />
       <pointLight position={[-3, 2, 0]} intensity={0.5} color="#06b6d4" />
       
-      <GlassOrb />
-      <FloatingShapes />
-      <ParticleField />
+      <GlassOrb speedMultiplier={particleSpeed} />
+      <FloatingShapes speedMultiplier={particleSpeed} />
+      <ParticleField count={actualParticleCount} speedMultiplier={particleSpeed} />
       
       <Sparkles
-        count={50}
+        count={Math.floor(50 * particleCount)}
         scale={12}
         size={1.5}
-        speed={0.2}
+        speed={0.2 * particleSpeed}
         color="#c4b5fd"
       />
       
@@ -131,7 +141,7 @@ const Scene = memo(() => {
         <Bloom 
           luminanceThreshold={0.2} 
           luminanceSmoothing={0.9} 
-          intensity={0.8}
+          intensity={0.8 * bloomIntensity}
         />
         <Vignette offset={0.35} darkness={0.6} />
       </EffectComposer>
@@ -145,8 +155,15 @@ interface AuthBackground3DProps {
 }
 
 export const AuthBackground3D = memo(({ className = '' }: AuthBackground3DProps) => {
+  const settings = useBackground3DSafe();
+  
+  if (!settings.enabled) return null;
+
   return (
-    <div className={`absolute inset-0 pointer-events-none ${className}`}>
+    <div 
+      className={`absolute inset-0 pointer-events-none ${className}`}
+      style={{ opacity: settings.opacity }}
+    >
       <Canvas
         camera={{ position: [0, 0, 5], fov: 50 }}
         dpr={[1, 1.5]}
@@ -158,7 +175,11 @@ export const AuthBackground3D = memo(({ className = '' }: AuthBackground3DProps)
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene 
+            bloomIntensity={settings.bloomIntensity}
+            particleSpeed={settings.particleSpeed}
+            particleCount={settings.particleCount}
+          />
         </Suspense>
       </Canvas>
       

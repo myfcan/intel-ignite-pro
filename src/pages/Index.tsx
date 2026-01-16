@@ -63,7 +63,7 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        <HeroBackground3D opacity={0.5} />
+        <HeroBackground3D />
         <div className="absolute inset-0 gradient-mesh opacity-10" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
