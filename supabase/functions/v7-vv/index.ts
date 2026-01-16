@@ -513,7 +513,7 @@ function findNarrationRange(
 
   if (startIdx === -1) return null;
 
-  // ✅ FASE 5 FIX: Encontrar ÚLTIMA palavra da narração com busca mais ampla
+  // ✅ FASE 6 FIX: Encontrar ÚLTIMA palavra da narração com busca mais ampla
   // Antes: buscava apenas em estimatedEndIdx, falhava em narrações longas
   const estimatedEndIdx = Math.min(startIdx + narrationWords.length + 20, wordTimestamps.length - 1);
   let endIdx = startIdx;
@@ -528,7 +528,7 @@ function findNarrationRange(
     }
   }
 
-  // ✅ FASE 5 FIX: Se não encontrou, tentar buscar palavras próximas do fim da narração
+  // ✅ FASE 6 FIX: Se não encontrou, tentar buscar palavras próximas do fim da narração
   if (endIdx === startIdx && narrationWords.length > 3) {
     // Tentar penúltima ou antepenúltima palavra
     for (let wordOffset = 2; wordOffset <= 4; wordOffset++) {
@@ -547,7 +547,7 @@ function findNarrationRange(
     }
   }
 
-  // ✅ FASE 5 FIX: Margem maior para garantir que a narração completa seja incluída
+  // ✅ FASE 6 FIX: Margem maior para garantir que a narração completa seja incluída
   const marginAfterEnd = 0.5; // 500ms de margem
 
   return {
@@ -569,9 +569,8 @@ function generatePhases(
 ): Phase[] {
   const phases: Phase[] = [];
   let lastSearchIdx = 0;
-  let lastEndTime = 0;
 
-  console.log(`\n[Phases] Generating ${scenes.length} phases from ${wordTimestamps.length} words`);
+  console.log(`\n[Phases] ✅ FASE 6: Generating ${scenes.length} phases from ${wordTimestamps.length} words`);
 
   for (const scene of scenes) {
     console.log(`\n[Phase] ${scene.id} (${scene.type})`);
@@ -583,15 +582,20 @@ function generatePhases(
     let endTime: number;
 
     if (range) {
-      startTime = Math.max(range.startTime, lastEndTime);
+      // ✅ FASE 6 FIX: USAR O startTime REAL da narração!
+      // ANTES: startTime = Math.max(range.startTime, lastEndTime) ← ERRADO! Pulava início
+      // AGORA: startTime = range.startTime ← CORRETO! Mantém posição real no áudio
+      startTime = range.startTime;
       endTime = range.endTime;
       lastSearchIdx = range.endIdx + 1;
-      console.log(`[Phase] Timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s`);
+      console.log(`[Phase] ✅ REAL Timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s`);
     } else {
       // Fallback: estimar baseado em palavras
       const wordCount = scene.narration.split(/\s+/).length;
       const estimatedDuration = wordCount / 2.5;
-      startTime = lastEndTime;
+      // Para fallback, usar o endTime da última fase (se existir)
+      const lastPhase = phases[phases.length - 1];
+      startTime = lastPhase ? lastPhase.endTime : 0;
       endTime = startTime + estimatedDuration;
       console.warn(`[Phase] ⚠️ Using estimated timing: ${startTime.toFixed(2)}s - ${endTime.toFixed(2)}s`);
     }
@@ -780,30 +784,37 @@ function generatePhases(
     }
 
     phases.push(phase);
-    lastEndTime = endTime;
+    // ✅ FASE 6: Removido lastEndTime - cada fase tem seu timing REAL
   }
 
-  console.log(`\n[Phases] Generated ${phases.length} phases, total duration: ${lastEndTime.toFixed(2)}s`);
+  // ✅ FASE 6: Calcular duração total baseado na última fase
+  const lastPhaseEndTime = phases.length > 0 ? phases[phases.length - 1].endTime : 0;
+  console.log(`\n[Phases] ✅ Generated ${phases.length} phases, total duration: ${lastPhaseEndTime.toFixed(2)}s`);
 
   return phases;
 }
 
 // ============================================================================
-// V7-vv FIX: WORD-BASED TIMING CALCULATION - FASE 5 REWRITE
+// V7-vv FIX: WORD-BASED TIMING CALCULATION - FASE 6 FINAL
 // ============================================================================
 
 /**
- * ✅ FASE 5 REWRITE: Calculate phase timings based on KEYWORDS in wordTimestamps
+ * ✅ FASE 6 FINAL: Calculate phase timings based on KEYWORDS in wordTimestamps
  *
- * PROBLEMAS ANTERIORES:
- * 1. endTime calculado pela próxima cena cortava narração atual
- * 2. startTime forçado para lastEndTime pulava início da narração
- * 3. Margem de 2s era insuficiente para frases longas
+ * CAUSA RAIZ DOS BUGS ANTERIORES:
+ * - generatePhases() usava: startTime = Math.max(range.startTime, lastEndTime)
+ * - Isso PULAVA o início da narração quando lastEndTime > range.startTime
+ * - calculateWordBasedTimings() adicionava margens de 3s que causavam overlap
  *
- * NOVA ABORDAGEM:
- * - Cada fase mantém seu startTime/endTime REAL baseado na narração
- * - Para fases interativas, endTime é SEMPRE após a narração completa
- * - Transições entre fases não cortam narrações
+ * SOLUÇÃO FASE 6:
+ * 1. generatePhases() agora usa startTime = range.startTime (REAL)
+ * 2. endTime NUNCA ultrapassa nextPhase.startTime (sem overlap)
+ * 3. Margens mínimas (0.3s-0.5s) em vez de excessivas (3s)
+ *
+ * RESULTADO:
+ * - Frontend faz seekTo(nextPhase.startTime) e encontra o início REAL da narração
+ * - Nenhuma parte da narração é pulada
+ * - Fases não se sobrepõem
  */
 function calculateWordBasedTimings(
   phases: Phase[],
@@ -812,7 +823,7 @@ function calculateWordBasedTimings(
 ): void {
   if (phases.length === 0 || wordTimestamps.length === 0) return;
 
-  console.log('[V7-vv:WordBased] ✅ FASE 5: Calculating WORD-BASED timings...');
+  console.log('[V7-vv:WordBased] ✅ FASE 6 FINAL: Calculating WORD-BASED timings...');
   console.log('[V7-vv:WordBased] Total words:', wordTimestamps.length);
 
   const totalAudioDuration = wordTimestamps[wordTimestamps.length - 1].end;
@@ -825,7 +836,7 @@ function calculateWordBasedTimings(
       .replace(/[.,!?;:'"()[\]{}…]+/g, '')
       .trim();
 
-  // ✅ FASE 5: Encontrar ÚLTIMA ocorrência de uma palavra após um tempo
+  // ✅ FASE 6: Encontrar ÚLTIMA ocorrência de uma palavra após um tempo
   const findLastKeywordTime = (keyword: string, afterTime: number = 0, beforeTime: number = totalAudioDuration): number | null => {
     const keywordParts = keyword.split(/\s+/).map(normalize).filter(w => w.length > 0);
     if (keywordParts.length === 0) return null;
@@ -902,7 +913,7 @@ function calculateWordBasedTimings(
     return lastFound;
   };
 
-  // ✅ FASE 5: Encontrar PRIMEIRA ocorrência de uma palavra após um tempo
+  // ✅ FASE 6: Encontrar PRIMEIRA ocorrência de uma palavra após um tempo
   const findFirstKeywordTime = (keyword: string, afterTime: number = 0): { start: number; end: number } | null => {
     const target = normalize(keyword);
     if (!target) return null;
@@ -922,7 +933,7 @@ function calculateWordBasedTimings(
     return null;
   };
 
-  // ✅ FASE 5: Encontrar o FIM REAL de uma narração
+  // ✅ FASE 6: Encontrar o FIM REAL de uma narração
   const findNarrationEndTime = (narration: string, afterTime: number): number | null => {
     const words = narration.split(/\s+/).map(normalize).filter(w => w.length > 0);
     if (words.length === 0) return null;
@@ -952,7 +963,7 @@ function calculateWordBasedTimings(
     return endTime;
   };
 
-  // ✅ FASE 5: Processar cada fase com nova lógica
+  // ✅ FASE 6: Processar cada fase com nova lógica
   phases.forEach((phase, index) => {
     const inputScene = inputScenes[index];
     const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(phase.type);
@@ -960,19 +971,19 @@ function calculateWordBasedTimings(
 
     console.log(`\n[V7-vv:WordBased] === Phase ${index + 1}: "${phase.id}" (${phase.type}) ===`);
 
-    // ✅ FASE 5 FIX: NÃO forçar startTime para lastEndTime
+    // ✅ FASE 6 FIX: NÃO forçar startTime para lastEndTime
     // O startTime REAL é baseado em quando a narração dessa fase começa no áudio
     // O phase.startTime já foi calculado em generatePhases baseado na narração
     const originalStartTime = phase.startTime;
     console.log(`[V7-vv:WordBased] Original startTime: ${originalStartTime.toFixed(2)}s`);
 
-    // ✅ FASE 5: Encontrar o FIM REAL da narração dessa fase
+    // ✅ FASE 6: Encontrar o FIM REAL da narração dessa fase
     const narrationEndTime = findNarrationEndTime(narration, originalStartTime);
     if (narrationEndTime !== null) {
       console.log(`[V7-vv:WordBased] Narration ends at: ${narrationEndTime.toFixed(2)}s`);
     }
 
-    // ✅ FASE 5: Para fases interativas, encontrar o pauseAt
+    // ✅ FASE 6: Para fases interativas, encontrar o pauseAt
     let pauseKeywordTime: number | null = null;
 
     if (isInteractive && inputScene?.anchorText?.pauseAt) {
@@ -995,62 +1006,57 @@ function calculateWordBasedTimings(
       }
     }
 
-    // ✅ FASE 5: Calcular endTime CORRETO
-    // Prioridade:
-    // 1. Para fases interativas: MAX(narrationEnd, pauseAt + margem)
-    // 2. Para fases normais: narrationEnd + pequena margem
-    // 3. Nunca cortar antes do fim da narração
+    // ✅ FASE 6: Calcular endTime CORRETO
+    // REGRA SIMPLES: endTime = quando a narração DESSA FASE termina
+    // NÃO adicionar margens excessivas que causam overlap com próxima fase
 
     let calculatedEndTime = phase.endTime;
 
-    if (narrationEndTime !== null) {
-      // O endTime mínimo é quando a narração termina + margem
-      const minEndFromNarration = narrationEndTime + 0.3;
+    // ✅ FASE 6: Usar a próxima fase como limite máximo
+    const nextPhase = index < phases.length - 1 ? phases[index + 1] : null;
+    const maxEndTime = nextPhase ? nextPhase.startTime : totalAudioDuration;
 
-      if (isInteractive) {
-        // Para fases interativas, garantir tempo para pauseAt + margem generosa
-        if (pauseKeywordTime !== null) {
-          // ✅ FASE 5 FIX: Margem de 3s após pauseAt (era 2s, insuficiente)
-          const minEndFromPause = pauseKeywordTime + 3.0;
-          calculatedEndTime = Math.max(minEndFromNarration, minEndFromPause);
-          console.log(`[V7-vv:WordBased] ✅ Interactive phase: endTime = MAX(${minEndFromNarration.toFixed(2)}s, ${minEndFromPause.toFixed(2)}s) = ${calculatedEndTime.toFixed(2)}s`);
-        } else {
-          // Se não tem pauseAt, usar fim da narração + margem extra
-          calculatedEndTime = minEndFromNarration + 2.0;
-          console.log(`[V7-vv:WordBased] ✅ Interactive phase (no pauseAt): endTime = ${calculatedEndTime.toFixed(2)}s`);
-        }
+    if (narrationEndTime !== null) {
+      // O endTime base é quando a narração termina + pequena margem
+      const baseEndTime = narrationEndTime + 0.3;
+
+      if (isInteractive && pauseKeywordTime !== null) {
+        // Para fases interativas: endTime deve cobrir até o pauseAt + pequena margem
+        // O Frontend vai pausar no pauseAt, então só precisamos garantir que o áudio
+        // PODE tocar até esse ponto
+        const minEndForPause = pauseKeywordTime + 0.5; // Apenas 0.5s de margem (não 3s!)
+        calculatedEndTime = Math.max(baseEndTime, minEndForPause);
+        console.log(`[V7-vv:WordBased] ✅ Interactive phase: endTime = MAX(${baseEndTime.toFixed(2)}s, ${minEndForPause.toFixed(2)}s) = ${calculatedEndTime.toFixed(2)}s`);
       } else {
-        // Para fases normais, usar fim da narração
-        calculatedEndTime = minEndFromNarration;
+        calculatedEndTime = baseEndTime;
         console.log(`[V7-vv:WordBased] Normal phase: endTime = ${calculatedEndTime.toFixed(2)}s`);
+      }
+    } else {
+      // ✅ FASE 6: Fallback quando narrationEndTime não foi encontrado
+      // Usar o endTime original calculado em generatePhases
+      console.warn(`[V7-vv:WordBased] ⚠️ narrationEndTime not found, using original endTime: ${calculatedEndTime.toFixed(2)}s`);
+
+      // Se tiver pauseAt, garantir que endTime cobre até ele
+      if (isInteractive && pauseKeywordTime !== null) {
+        const minEndForPause = pauseKeywordTime + 0.5;
+        if (calculatedEndTime < minEndForPause) {
+          calculatedEndTime = minEndForPause;
+          console.log(`[V7-vv:WordBased] ✅ Adjusted endTime to cover pauseAt: ${calculatedEndTime.toFixed(2)}s`);
+        }
       }
     }
 
-    // ✅ FASE 5: Para fases que NÃO são a última, verificar se não corta a próxima
-    if (index < phases.length - 1) {
-      const nextScene = inputScenes[index + 1];
-      if (nextScene?.narration) {
-        // Encontrar onde a próxima narração COMEÇA
-        const nextWords = nextScene.narration.split(/\s+/).slice(0, 3);
-        for (const word of nextWords) {
-          const cleanWord = word.replace(/[.,!?;:'"()[\]{}…]+/g, '');
-          if (cleanWord.length >= 2) {
-            const firstOccurrence = findFirstKeywordTime(cleanWord, calculatedEndTime - 0.5);
-            if (firstOccurrence !== null && firstOccurrence.start > phase.startTime) {
-              // Próxima narração começa em firstOccurrence.start
-              // Não extender além desse ponto (menos pequena margem)
-              const maxEnd = firstOccurrence.start - 0.1;
-              if (calculatedEndTime > maxEnd && !isInteractive) {
-                console.log(`[V7-vv:WordBased] ⚠️ Capping endTime to ${maxEnd.toFixed(2)}s (next phase starts)`);
-                calculatedEndTime = maxEnd;
-              }
-              break;
-            }
-          }
-        }
-      }
-    } else {
-      // Última fase: termina no fim do áudio
+    // ✅ FASE 6 CRÍTICO: NUNCA extender endTime além do startTime da próxima fase
+    // Isso causava o problema do "pulo" - o Frontend fazia seek para nextPhase.startTime
+    // mas o áudio já estava além desse ponto por causa do endTime estendido
+    if (nextPhase && calculatedEndTime > maxEndTime) {
+      console.log(`[V7-vv:WordBased] ⚠️ FASE 6 FIX: endTime ${calculatedEndTime.toFixed(2)}s > nextPhase.startTime ${maxEndTime.toFixed(2)}s`);
+      console.log(`[V7-vv:WordBased] ⚠️ Capping to ${maxEndTime.toFixed(2)}s to prevent overlap`);
+      calculatedEndTime = maxEndTime;
+    }
+
+    // Última fase: termina no fim do áudio
+    if (!nextPhase) {
       calculatedEndTime = totalAudioDuration;
     }
 
@@ -1072,8 +1078,8 @@ function calculateWordBasedTimings(
     console.log(`\n[V7-vv:WordBased] ✅ Last phase endTime set to totalAudioDuration: ${totalAudioDuration.toFixed(2)}s`);
   }
 
-  // ✅ FASE 5: Log summary
-  console.log('\n[V7-vv:WordBased] === TIMING SUMMARY ===');
+  // ✅ FASE 6: Log summary
+  console.log('\n[V7-vv:WordBased] === FASE 6 TIMING SUMMARY ===');
   phases.forEach((phase, index) => {
     const duration = phase.endTime - phase.startTime;
     const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(phase.type);
