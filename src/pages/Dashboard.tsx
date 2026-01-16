@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 import { useUserGamification } from "@/hooks/useUserGamification";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
+import { DashboardBackground3D } from "@/components/backgrounds";
 
 interface User {
   id: string;
@@ -263,7 +264,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-[#FAFBFC] relative">
+      {/* 3D Background */}
+      <DashboardBackground3D />
+      
       <DashboardHeader user={user!} />
       
       {/* Gamification Header */}
