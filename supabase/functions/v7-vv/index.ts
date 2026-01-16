@@ -422,74 +422,77 @@ function normalizeWord(word: string): string {
     .trim();
 }
 
+// ============================================================================
+// ✅ FASE 6 ANCHOR FIX: Busca de keyword DENTRO do range da cena
+// Similar ao V7 step4-calculate-anchors.ts
+// ============================================================================
+
+/**
+ * Encontra o timestamp de uma palavra-chave DENTRO de um range específico.
+ * Retorna o START da keyword (quando ela começa a ser falada).
+ *
+ * @param keyword - Palavra ou frase a buscar
+ * @param wordTimestamps - Array de timestamps
+ * @param afterTime - Tempo mínimo (início do range)
+ * @param beforeTime - Tempo máximo (fim do range) - NOVO!
+ * @returns start time da keyword ou null
+ */
 function findKeywordTime(
   keyword: string,
   wordTimestamps: WordTimestamp[],
-  afterTime: number = 0
+  afterTime: number = 0,
+  beforeTime: number = Infinity
 ): number | null {
   const keywordParts = keyword.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
 
   if (keywordParts.length === 0) return null;
 
-  // Multi-word: busca com tolerância de gap
-  if (keywordParts.length > 1) {
-    const MAX_GAP = 2;
+  // ✅ FASE 6 ANCHOR FIX: Filtrar timestamps pelo range (como V7 reference)
+  const relevantTimestamps = wordTimestamps.filter(
+    wt => wt.start >= afterTime && wt.start <= beforeTime
+  );
 
-    for (let i = 0; i < wordTimestamps.length; i++) {
-      if (wordTimestamps[i].start < afterTime) continue;
-
-      const firstWordNorm = normalizeWord(wordTimestamps[i].word);
-      if (firstWordNorm !== keywordParts[0]) continue;
-
-      let matchPositions: number[] = [i];
-      let searchStart = i + 1;
-
-      for (let partIdx = 1; partIdx < keywordParts.length; partIdx++) {
-        const targetPart = keywordParts[partIdx];
-        let found = false;
-
-        for (let j = searchStart; j <= Math.min(searchStart + MAX_GAP, wordTimestamps.length - 1); j++) {
-          if (normalizeWord(wordTimestamps[j].word) === targetPart) {
-            matchPositions.push(j);
-            searchStart = j + 1;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          matchPositions = [];
-          break;
-        }
-      }
-
-      if (matchPositions.length === keywordParts.length) {
-        const lastIdx = matchPositions[matchPositions.length - 1];
-        return wordTimestamps[lastIdx].end;
-      }
-    }
-
-    // Fallback: buscar última palavra
-    const lastKeyword = keywordParts[keywordParts.length - 1];
-    for (let i = wordTimestamps.length - 1; i >= 0; i--) {
-      if (wordTimestamps[i].start < afterTime) continue;
-      if (normalizeWord(wordTimestamps[i].word) === lastKeyword) {
-        return wordTimestamps[i].end;
-      }
-    }
-
+  if (relevantTimestamps.length === 0) {
+    console.warn(`[findKeywordTime] ⚠️ No timestamps in range ${afterTime.toFixed(2)}s - ${beforeTime.toFixed(2)}s`);
     return null;
   }
 
-  // Single word
+  // Multi-word: busca sequência
+  if (keywordParts.length > 1) {
+    for (let i = 0; i < relevantTimestamps.length - keywordParts.length + 1; i++) {
+      const windowWords = relevantTimestamps
+        .slice(i, i + keywordParts.length)
+        .map(wt => normalizeWord(wt.word));
+
+      // Match exato ou parcial
+      const windowJoined = windowWords.join(' ');
+      const keywordJoined = keywordParts.join(' ');
+
+      if (windowJoined.includes(keywordJoined) || keywordJoined.includes(windowJoined)) {
+        // ✅ Retorna START da primeira palavra (como V7 reference)
+        const foundTime = relevantTimestamps[i].start;
+        console.log(`[findKeywordTime] ✓ Found multi-word "${keyword}" @ ${foundTime.toFixed(2)}s (START)`);
+        return foundTime;
+      }
+    }
+
+    console.warn(`[findKeywordTime] ⚠️ Multi-word "${keyword}" NOT found in range`);
+    return null;
+  }
+
+  // Single word: busca exata ou parcial
   const target = keywordParts[0];
-  for (const ts of wordTimestamps) {
-    if (ts.start < afterTime) continue;
-    if (normalizeWord(ts.word) === target) {
-      return ts.end;
+  for (const ts of relevantTimestamps) {
+    const normalizedWord = normalizeWord(ts.word);
+
+    if (normalizedWord === target || normalizedWord.includes(target)) {
+      // ✅ Retorna START da palavra (como V7 reference)
+      console.log(`[findKeywordTime] ✓ Found "${keyword}" @ ${ts.start.toFixed(2)}s (START)`);
+      return ts.start;
     }
   }
 
+  console.warn(`[findKeywordTime] ⚠️ "${keyword}" NOT found in range ${afterTime.toFixed(2)}s - ${beforeTime.toFixed(2)}s`);
   return null;
 }
 
@@ -603,32 +606,42 @@ function generatePhases(
     // Anchor Actions
     const anchorActions: AnchorAction[] = [];
 
+    // ✅ FASE 6 ANCHOR FIX: Guard para cenas não-interativas (como V7 reference)
+    const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta', 'gamification'];
+    const isInteractiveScene = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+
     if (scene.anchorText?.pauseAt) {
-      const pauseTime = findKeywordTime(scene.anchorText.pauseAt, wordTimestamps, startTime);
-      if (pauseTime !== null) {
-        anchorActions.push({
-          id: `pause-${scene.id}`,
-          keyword: scene.anchorText.pauseAt,
-          keywordTime: pauseTime,
-          type: 'pause',
-        });
-        console.log(`[Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" @ ${pauseTime.toFixed(2)}s`);
+      // ✅ GUARD: Se a cena NÃO é interativa, ignorar pauseAt
+      if (!isInteractiveScene) {
+        console.warn(`[Phase] ⚠️ ${scene.id}: pauseAt IGNORADO - cena tipo "${scene.type}" não é interativa`);
       } else {
-        // Fallback: pausar a 80% da fase
-        const fallbackTime = startTime + (endTime - startTime) * 0.8;
-        anchorActions.push({
-          id: `pause-${scene.id}`,
-          keyword: scene.anchorText.pauseAt,
-          keywordTime: fallbackTime,
-          type: 'pause',
-        });
-        console.warn(`[Phase] ⚠️ pauseAt fallback @ ${fallbackTime.toFixed(2)}s (80%)`);
+        // ✅ FASE 6 ANCHOR FIX: Buscar DENTRO do range da cena (startTime → endTime)
+        const pauseTime = findKeywordTime(scene.anchorText.pauseAt, wordTimestamps, startTime, endTime);
+        if (pauseTime !== null) {
+          anchorActions.push({
+            id: `pause-${scene.id}`,
+            keyword: scene.anchorText.pauseAt,
+            keywordTime: pauseTime,
+            type: 'pause',
+          });
+          console.log(`[Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" @ ${pauseTime.toFixed(2)}s (dentro do range ${startTime.toFixed(2)}s-${endTime.toFixed(2)}s)`);
+        } else {
+          // Fallback: pausar a 80% da fase
+          const fallbackTime = startTime + (endTime - startTime) * 0.8;
+          anchorActions.push({
+            id: `pause-${scene.id}`,
+            keyword: scene.anchorText.pauseAt,
+            keywordTime: fallbackTime,
+            type: 'pause',
+          });
+          console.warn(`[Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" não encontrado - fallback @ ${fallbackTime.toFixed(2)}s (80%)`);
+        }
       }
     }
 
-    // ✅ V7-vv FIX: Processar transitionAt (antes ignorado!)
+    // ✅ FASE 6 ANCHOR FIX: Processar transitionAt DENTRO do range
     if (scene.anchorText?.transitionAt) {
-      const transitionTime = findKeywordTime(scene.anchorText.transitionAt, wordTimestamps, startTime);
+      const transitionTime = findKeywordTime(scene.anchorText.transitionAt, wordTimestamps, startTime, endTime);
       if (transitionTime !== null) {
         anchorActions.push({
           id: `transition-${scene.id}`,
@@ -639,7 +652,7 @@ function generatePhases(
         });
         console.log(`[Phase] ✓ transitionAt "${scene.anchorText.transitionAt}" @ ${transitionTime.toFixed(2)}s`);
       } else {
-        console.warn(`[Phase] ⚠️ transitionAt "${scene.anchorText.transitionAt}" não encontrado nos timestamps`);
+        console.warn(`[Phase] ⚠️ transitionAt "${scene.anchorText.transitionAt}" não encontrado no range`);
       }
     }
 
@@ -660,7 +673,8 @@ function generatePhases(
 
     const microVisuals: MicroVisual[] = [];
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime);
+      // ✅ FASE 6 ANCHOR FIX: Buscar DENTRO do range da cena
+      const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
       // ✅ Usar duration do content se especificado, senão usar default por tipo
       const duration = (mv.content as any)?.duration || getDefaultDuration(mv.type);
       microVisuals.push({
@@ -683,8 +697,7 @@ function generatePhases(
       }
     });
 
-    // Determinar comportamento de áudio
-    const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(scene.type);
+    // Determinar comportamento de áudio (usa isInteractiveScene definido acima)
 
     // Construir fase
     const phase: Phase = {
@@ -700,7 +713,7 @@ function generatePhases(
       effects: scene.visual.effects,
       microVisuals: microVisuals.length > 0 ? microVisuals : undefined,
       anchorActions: anchorActions.length > 0 ? anchorActions : undefined,
-      audioBehavior: isInteractive ? {
+      audioBehavior: isInteractiveScene ? {
         onStart: 'pause',
         onComplete: 'resume',
       } : undefined,
