@@ -34,7 +34,11 @@ export type V7VisualType =
   | 'quiz-feedback'      // Feedback after answering quiz
   | 'playground'         // Amateur vs professional prompt comparison
   | 'result'             // Result/gamification screen
-  | 'cta';               // Call to action
+  | 'cta'                // Call to action
+  // === 3D VISUAL TYPES ===
+  | '3d-dual-monitors'   // Two 3D monitors with screen content
+  | '3d-abstract'        // Cinematic abstract scene (background)
+  | '3d-number-reveal';  // 3D number with cinematic effects
 
 /**
  * Micro-visual types (overlays during narration)
@@ -394,6 +398,38 @@ export interface V7CTAContent {
   buttonText: string;
 }
 
+// ============================================================================
+// 3D VISUAL CONTENT TYPES
+// ============================================================================
+
+export interface V73DScreenContent {
+  title: string;
+  content: string;
+  style: 'amateur' | 'professional';
+}
+
+export interface V73DDualMonitorsContent {
+  leftScreen: V73DScreenContent;
+  rightScreen: V73DScreenContent;
+  animation?: 'float' | 'static' | 'pulse';
+}
+
+export interface V73DAbstractContent {
+  variant?: 'geometric' | 'organic' | 'particles' | 'mixed';
+  intensity?: 'subtle' | 'normal' | 'intense';
+  primaryColor?: string;
+  secondaryColor?: string;
+}
+
+export interface V73DNumberRevealContent {
+  number: string;
+  subtitle?: string;
+  secondaryNumber?: string;
+  hookQuestion?: string;
+  countUp?: boolean;
+  countUpDuration?: number;
+}
+
 export type V7VisualContent =
   | { type: 'number-reveal'; content: V7NumberRevealContent }
   | { type: 'text-reveal'; content: V7TextRevealContent }
@@ -404,7 +440,11 @@ export type V7VisualContent =
   | { type: 'quiz-feedback'; content: V7QuizFeedbackContent }
   | { type: 'playground'; content: V7PlaygroundContent }
   | { type: 'result'; content: V7ResultContent }
-  | { type: 'cta'; content: V7CTAContent };
+  | { type: 'cta'; content: V7CTAContent }
+  // === 3D Visual Types ===
+  | { type: '3d-dual-monitors'; content: V73DDualMonitorsContent }
+  | { type: '3d-abstract'; content: V73DAbstractContent }
+  | { type: '3d-number-reveal'; content: V73DNumberRevealContent };
 
 // ============================================================================
 // PHASE STRUCTURE

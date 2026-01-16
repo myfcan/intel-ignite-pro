@@ -2,11 +2,26 @@
  * V7VisualRenderer - Renderiza o visual principal de uma fase
  *
  * Mapeia o tipo de visual para o componente correto.
+ * Inclui suporte a visuais 3D cinematográficos.
  */
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
 import type { V7VisualContent, V7PhaseType, V7PhaseEffects } from '@/types/V7Contract';
+
+// Lazy load 3D components para melhor performance
+const V73DDualMonitors = lazy(() => import('./3d/V73DDualMonitors'));
+const V73DAbstractScene = lazy(() => import('./3d/V73DAbstractScene'));
+const V73DNumberReveal = lazy(() => import('./3d/V73DNumberReveal'));
+
+// Loading fallback para componentes 3D
+function Loading3D() {
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-black">
+      <div className="text-cyan-400 animate-pulse">Carregando cena 3D...</div>
+    </div>
+  );
+}
 
 interface V7VisualRendererProps {
   visual: V7VisualContent;
@@ -61,6 +76,47 @@ export default function V7VisualRenderer({ visual, effects, phaseType }: V7Visua
 
       {visual.type === 'result' && (
         <Result content={visual.content} effects={effects} />
+      )}
+
+      {/* ============================================================ */}
+      {/* 3D VISUAL COMPONENTS                                         */}
+      {/* ============================================================ */}
+
+      {visual.type === '3d-dual-monitors' && (
+        <Suspense fallback={<Loading3D />}>
+          <V73DDualMonitors
+            leftScreen={visual.content.leftScreen}
+            rightScreen={visual.content.rightScreen}
+            mood={mood as any}
+            animation={visual.content.animation}
+          />
+        </Suspense>
+      )}
+
+      {visual.type === '3d-abstract' && (
+        <Suspense fallback={<Loading3D />}>
+          <V73DAbstractScene
+            mood={mood as any}
+            variant={visual.content.variant}
+            intensity={visual.content.intensity}
+            primaryColor={visual.content.primaryColor}
+            secondaryColor={visual.content.secondaryColor}
+          />
+        </Suspense>
+      )}
+
+      {visual.type === '3d-number-reveal' && (
+        <Suspense fallback={<Loading3D />}>
+          <V73DNumberReveal
+            number={visual.content.number}
+            subtitle={visual.content.subtitle}
+            secondaryNumber={visual.content.secondaryNumber}
+            hookQuestion={visual.content.hookQuestion}
+            mood={mood as any}
+            countUp={visual.content.countUp}
+            countUpDuration={visual.content.countUpDuration}
+          />
+        </Suspense>
       )}
 
       {/* Particles effect */}

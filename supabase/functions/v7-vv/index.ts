@@ -112,8 +112,8 @@ interface LessonData {
   phases: Phase[];
   audio: {
     mainAudio: AudioSegment;
-    // ✅ FASE 2 FIX: feedbackAudios como ARRAY
-    feedbackAudios?: FeedbackAudioItem[];
+    // ✅ FASE 4 FIX: feedbackAudios como OBJECT (Frontend acessa por key)
+    feedbackAudios?: FeedbackAudiosObject;
   };
   // ✅ FASE 1 FIX: Campos passados direto do INPUT
   postLessonExercises?: any[];
@@ -127,6 +127,20 @@ interface FeedbackAudioItem {
   url: string;
   wordTimestamps: WordTimestamp[];
   trigger: string;
+  duration?: number;
+}
+
+// ✅ FASE 4 FIX: feedbackAudios como OBJECT para Frontend
+// O Frontend acessa como: feedbackAudios?.[feedbackAudioKey]
+// Então precisamos converter de array para objeto indexado por ID
+interface FeedbackAudiosObject {
+  [key: string]: {
+    id: string;
+    url: string;
+    duration: number;
+    wordTimestamps: WordTimestamp[];
+    trigger: string;
+  };
 }
 
 // ============================================================================
@@ -686,6 +700,7 @@ function generatePhases(
         // ✅ FASE 3 FIX: Converter estrutura INPUT para formato V7Contract.ts
         // INPUT usa: amateurScore, comparison.amateur.response
         // OUTPUT espera: amateurResult { title, content, score, verdict }
+        // ✅ FASE 4 FIX: Frontend também procura amateurScore/professionalScore no nível raiz!
 
         const comparison = scene.interaction.comparison as { amateur?: { label?: string; response?: string; mood?: string }; professional?: { label?: string; response?: string; mood?: string } } | undefined;
         const moodToVerdict = (mood: string): string => {
@@ -697,26 +712,39 @@ function generatePhases(
           }
         };
 
+        // ✅ FASE 4 FIX: Extrair scores do INPUT (podem vir de vários lugares)
+        const inputAmateurScore = scene.interaction.amateurScore ??
+                                  (scene.interaction as any).amateurResult?.score ??
+                                  10; // Default baixo para amador
+        const inputProfessionalScore = scene.interaction.professionalScore ??
+                                       (scene.interaction as any).professionalResult?.score ??
+                                       95; // Default alto para profissional
+
         phase.interaction = {
           type: 'playground',
           amateurPrompt: scene.interaction.amateurPrompt,
           professionalPrompt: scene.interaction.professionalPrompt,
+          // ✅ FASE 4 FIX: Scores no nível raiz (Frontend procura aqui!)
+          amateurScore: inputAmateurScore,
+          professionalScore: inputProfessionalScore,
           // ✅ Estrutura correta para Frontend (V7Contract.ts)
           amateurResult: scene.interaction.amateurResult || (comparison?.amateur ? {
             title: comparison.amateur.label || 'Resultado Amador',
             content: comparison.amateur.response || '',
-            score: scene.interaction.amateurScore || 0,
+            score: inputAmateurScore,
             verdict: moodToVerdict(comparison.amateur.mood || 'danger'),
           } : undefined),
           professionalResult: scene.interaction.professionalResult || (comparison?.professional ? {
             title: comparison.professional.label || 'Resultado Profissional',
             content: comparison.professional.response || '',
-            score: scene.interaction.professionalScore || 0,
+            score: inputProfessionalScore,
             verdict: moodToVerdict(comparison.professional.mood || 'success'),
           } : undefined),
           // Manter userChallenge para interatividade
           userChallenge: scene.interaction.userChallenge,
         };
+
+        console.log(`[V7-vv:Playground] Phase "${scene.id}" scores: amateur=${inputAmateurScore}, professional=${inputProfessionalScore}`);
       } else if (scene.interaction.type === 'cta-button') {
         phase.interaction = {
           type: 'cta-button',
@@ -844,21 +872,25 @@ function calculateWordBasedTimings(
       phase.startTime = lastEndTime;
     }
 
-    // Para fases interativas, encontrar o pauseAt para determinar quando pausar
+    // ✅ FASE 4 FIX: Para fases interativas, encontrar o pauseAt E garantir que endTime inclua o pauseAt
+    let pauseKeywordTime: number | null = null;
+
     if (isInteractive && inputScene?.anchorText?.pauseAt) {
       const pauseKeyword = inputScene.anchorText.pauseAt;
-      const keywordTime = findKeywordTimeExact(pauseKeyword, phase.startTime);
+      pauseKeywordTime = findKeywordTimeExact(pauseKeyword, phase.startTime);
 
-      if (keywordTime !== null) {
-        console.log(`[V7-vv:WordBased] Phase ${index + 1} (${phase.type}): pauseAt "${pauseKeyword}" at ${keywordTime.toFixed(2)}s`);
+      if (pauseKeywordTime !== null) {
+        console.log(`[V7-vv:WordBased] Phase ${index + 1} (${phase.type}): pauseAt "${pauseKeyword}" at ${pauseKeywordTime.toFixed(2)}s`);
 
         // Atualizar anchorActions com tempo preciso
         if (phase.anchorActions) {
           const pauseAction = phase.anchorActions.find(a => a.type === 'pause');
           if (pauseAction) {
-            pauseAction.keywordTime = keywordTime;
+            pauseAction.keywordTime = pauseKeywordTime;
           }
         }
+      } else {
+        console.warn(`[V7-vv:WordBased] ⚠️ Phase ${index + 1}: pauseAt "${pauseKeyword}" NOT FOUND in wordTimestamps!`);
       }
     }
 
@@ -879,6 +911,18 @@ function calculateWordBasedTimings(
               break;
             }
           }
+        }
+      }
+
+      // ✅ FASE 4 FIX: CRITICAL - Para fases interativas, garantir que endTime >= pauseAt + margem
+      // O áudio precisa continuar tocando até o pauseAt ser detectado pelo Frontend
+      // Se endTime cortar ANTES do pauseAt, a narração é interrompida prematuramente!
+      if (isInteractive && pauseKeywordTime !== null) {
+        const minimumEndTime = pauseKeywordTime + 2.0; // +2s de margem para completar a frase
+        if (phase.endTime < minimumEndTime) {
+          console.log(`[V7-vv:WordBased] ✅ FASE 4 FIX: Phase ${index + 1} endTime ${phase.endTime.toFixed(2)}s < pauseAt ${pauseKeywordTime.toFixed(2)}s + 2s`);
+          console.log(`[V7-vv:WordBased] ✅ Adjusting endTime from ${phase.endTime.toFixed(2)}s to ${minimumEndTime.toFixed(2)}s`);
+          phase.endTime = minimumEndTime;
         }
       }
 
@@ -984,8 +1028,9 @@ Deno.serve(async (req) => {
     // =========================================================================
     console.log('[V7-vv] Step 3: Generating feedback audios...');
 
-    // ✅ FASE 2 FIX: feedbackAudios como ARRAY
-    const feedbackAudios: FeedbackAudioItem[] = [];
+    // ✅ FASE 4 FIX: feedbackAudios como OBJECT (Frontend acessa por key)
+    // O Frontend faz: feedbackAudios?.[`feedback-${optionId}`]
+    const feedbackAudios: FeedbackAudiosObject = {};
 
     for (const scene of input.scenes) {
       if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
@@ -1001,15 +1046,18 @@ Deno.serve(async (req) => {
             );
 
             if (feedbackResult.success) {
-              // ✅ FASE 2 FIX: Determinar trigger baseado em isCorrect
+              // ✅ FASE 4 FIX: Determinar trigger baseado em isCorrect
               const trigger = option.isCorrect ? 'quiz-correct-answer' : 'quiz-incorrect-answer';
+              const feedbackKey = `feedback-${option.id}`;
 
-              feedbackAudios.push({
-                id: `feedback-${option.id}`,
+              // ✅ FASE 4 FIX: Armazenar como objeto indexado por key
+              feedbackAudios[feedbackKey] = {
+                id: feedbackKey,
                 url: feedbackResult.url || '',
+                duration: feedbackResult.duration || 0,
                 wordTimestamps: feedbackResult.wordTimestamps || [],
                 trigger,
-              });
+              };
               console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s (${trigger})`);
             } else {
               console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}`);
@@ -1019,7 +1067,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`[V7-vv] Generated ${feedbackAudios.length} feedback audios`);
+    console.log(`[V7-vv] Generated ${Object.keys(feedbackAudios).length} feedback audios`);
 
     // =========================================================================
     // PASSO 4: GERAR FASES
@@ -1070,8 +1118,8 @@ Deno.serve(async (req) => {
       phases,
       audio: {
         mainAudio,
-        // ✅ FASE 2 FIX: feedbackAudios como array
-        feedbackAudios: feedbackAudios.length > 0 ? feedbackAudios : undefined,
+        // ✅ FASE 4 FIX: feedbackAudios como objeto (Frontend acessa por key)
+        feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
       },
       // ✅ FASE 1 FIX: Passar campos direto do INPUT para OUTPUT
       postLessonExercises: input.postLessonExercises,
