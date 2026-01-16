@@ -335,9 +335,29 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       }
 
       // STEP 2: Buscar phases de TODAS as fontes possíveis
-      // ✅ CRITICAL FIX v6: Check each source explicitly
+      // ✅ CRITICAL FIX v7: Enhanced logging and source detection
       let phasesArray: any[] | null = null;
       let phasesSource = 'none';
+      
+      // ✅ EXTRA DEBUG: Log all potential phase sources
+      console.log('[useV7PhaseScript] 🔎 Checking phase sources:', {
+        'parsedContent.phases': {
+          exists: 'phases' in parsedContent,
+          isArray: Array.isArray(parsedContent?.phases),
+          length: parsedContent?.phases?.length ?? 'N/A',
+          firstId: parsedContent?.phases?.[0]?.id ?? 'N/A',
+        },
+        'parsedContent.cinematic_flow.phases': {
+          exists: !!parsedContent?.cinematic_flow?.phases,
+          isArray: Array.isArray(parsedContent?.cinematic_flow?.phases),
+          length: parsedContent?.cinematic_flow?.phases?.length ?? 'N/A',
+        },
+        'parsedContent.cinematicFlow.phases': {
+          exists: !!parsedContent?.cinematicFlow?.phases,
+          isArray: Array.isArray(parsedContent?.cinematicFlow?.phases),
+          length: parsedContent?.cinematicFlow?.phases?.length ?? 'N/A',
+        },
+      });
       
       if (Array.isArray(parsedContent.phases) && parsedContent.phases.length > 0) {
         phasesArray = parsedContent.phases;
@@ -361,6 +381,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         foundPhases: !!phasesArray,
         phasesLength: phasesArray?.length || 0,
         firstPhaseType: phasesArray?.[0]?.type || 'N/A',
+        firstPhaseId: phasesArray?.[0]?.id || 'N/A',
         allContentKeys: Object.keys(parsedContent),
       });
 
@@ -471,13 +492,19 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         phasesType: typeof parsedContent?.phases,
         phasesIsArray: Array.isArray(parsedContent?.phases),
         phasesLength: Array.isArray(parsedContent?.phases) ? parsedContent.phases.length : 0,
+        rawPhasesPreview: parsedContent?.phases ? JSON.stringify(parsedContent.phases).substring(0, 200) : 'undefined',
       };
       console.error('[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA!', {
         contentKeys,
         ...phasesDebug,
         stringPreview: JSON.stringify(parsedContent).substring(0, 500)
       });
-      throw new Error(`Nenhum act encontrado na aula. Keys: [${contentKeys.join(', ')}]. phases: ${JSON.stringify(phasesDebug)}. Verifique o conteúdo no banco de dados.`);
+      
+      // ✅ Provide clearer error message with actionable guidance
+      const errorMsg = `Nenhum act encontrado na aula. Keys: [${contentKeys.join(', ')}]. ` +
+        `Phases info: isArray=${phasesDebug.phasesIsArray}, length=${phasesDebug.phasesLength}. ` +
+        `Tente limpar o cache (Ctrl+Shift+R) ou clique em "Limpar Cache".`;
+      throw new Error(errorMsg);
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
       setError(err.message);
