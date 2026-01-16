@@ -137,6 +137,8 @@ function PostProcessing({ mood, bloomIntensity = 1.5 }: { mood: keyof typeof MOO
       <ChromaticAberration
         offset={new THREE.Vector2(0.002, 0.002)}
         blendFunction={BlendFunction.NORMAL}
+        radialModulation={false}
+        modulationOffset={0}
       />
     </EffectComposer>
   );

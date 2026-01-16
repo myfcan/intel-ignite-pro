@@ -19,7 +19,6 @@ import {
 } from '@react-three/drei';
 import * as THREE from 'three';
 import V73DScene from './V73DScene';
-import { useOrbitalObjects, useFloatingParticles } from '@/lib/ecs';
 
 interface V73DAbstractSceneProps {
   mood?: 'danger' | 'success' | 'warning' | 'dramatic' | 'mysterious' | 'neutral';
