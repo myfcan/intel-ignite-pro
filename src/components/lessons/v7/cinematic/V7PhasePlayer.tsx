@@ -1,16 +1,19 @@
 // V7PhasePlayer - Main player component orchestrating all cinematic phases
 // ✅ V7-v2: Uses useV7AudioManager with fade capabilities for interactions
 // ✅ V7-v2: Uses useAnchorText for keyword-based pause sync
+// ✅ Level 4: Integrated with XState machine via useV7PlayerAdapter
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { V7MinimalControls } from './V7MinimalControls';
 import { V7AudioIndicator } from './V7AudioIndicator';
 import { V7CinematicCanvas } from './V7CinematicCanvas';
+import { V7ExitConfirmModal } from './V7ExitConfirmModal';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
+import { useV7PlayerAdapter } from '../state/useV7PlayerAdapter';
 
 import V7PhaseLoading from './phases/V7PhaseLoading';
 import V7PhaseDramatic from './phases/V7PhaseDramatic';
@@ -25,6 +28,9 @@ import V7PhaseSecretReveal from './phases/V7PhaseSecretReveal';
 import V7PhaseMethodReveal from './phases/V7PhaseMethodReveal';
 import { V7TransitionParticles } from './effects/V7TransitionParticles';
 import { V7MicroVisualOverlay } from './effects/V7MicroVisualOverlay';
+import { V7NarrativeVisualOverlay } from './effects/V7NarrativeVisualOverlay';
+import { V7SecretRevelation3D } from './effects/V7SecretRevelation3D';
+import { V7MethodRevealGlow } from './effects/V7MethodRevealGlow';
 import {
   V7LessonScript,
   V7Phase,
@@ -122,6 +128,7 @@ export const V7PhasePlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // ✅ DEBUG LOGS SOLICITADOS
   console.log('[V7PhasePlayer DEBUG] ==========================================');
@@ -189,20 +196,39 @@ export const V7PhasePlayer = ({
     }
   }, [audio.isPlaying, effectiveIsPlaying, hasAudio]);
 
-  // ✅ V7-v6 FIX: Track if we're in an interactive phase that should block progression
-  const [lockedPhaseIndex, setLockedPhaseIndex] = useState<number | null>(null);
-  const [interactionComplete, setInteractionComplete] = useState(false);
   // ✅ V7-v9: Track when quiz result is showing to hide controls
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
-  // ✅ V7-v15: Track if we're navigating backwards to prevent re-locking
-  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
-  // ✅ V7-vv Definitive: Track feedback audio playback
-  const [isPlayingFeedbackAudio, setIsPlayingFeedbackAudio] = useState(false);
+  // ✅ V7-vv Definitive: Track feedback audio playback via machine
   const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
-  // ✅ V7-v18: Track transition particles for dramatic phase changes
-  const [showTransitionParticles, setShowTransitionParticles] = useState(false);
-  const [transitionParticleColor, setTransitionParticleColor] = useState<'cyan' | 'gold' | 'emerald' | 'purple'>('cyan');
   const previousPhaseRef = useRef<string | null>(null);
+
+  // ✅ Level 4: XState machine integration via adapter
+  // ALL state now comes from the machine - no more scattered useState!
+  const machineAdapter = useV7PlayerAdapter({
+    script,
+    hasAudio,
+    audioDuration: audio.duration,
+    audioCurrentTime: audio.currentTime,
+    audioIsPlaying: audio.isPlaying,
+    onComplete,
+    onExit,
+  });
+
+  // ✅ EXTRACT STATE FROM MACHINE - These replace the old useState hooks
+  const { 
+    lockedPhaseIndex, 
+    interactionComplete, 
+    showTransitionParticles, 
+    transitionParticleColor,
+    isNavigatingBack,
+    isPlayingFeedbackAudio,
+    triggerParticles,
+  } = machineAdapter;
+
+  // ✅ Log machine state for debugging
+  useEffect(() => {
+    console.log(`[V7PhasePlayer] 🤖 Machine state: ${machineAdapter.machineState}`);
+  }, [machineAdapter.machineState]);
 
   // Phase controller with fallback timer for no-audio scenarios
   // ✅ Uses scaledScript which has correct timings based on actual audio duration
@@ -225,6 +251,37 @@ export const V7PhasePlayer = ({
   // ✅ V7-v6: Override phase index when locked in interactive phase
   const currentPhaseIndex = lockedPhaseIndex !== null ? lockedPhaseIndex : rawCurrentPhaseIndex;
   const currentPhase = scaledScript.phases[currentPhaseIndex] || null;
+
+  // ✅ V7-vv PADRÃO: Determina se o play deve ser BLOQUEADO
+  // Fases interativas exigem que o usuário complete a ação antes de continuar
+  const isPlayLocked = useMemo(() => {
+    if (!currentPhase) return false;
+    
+    // Tipos de fases que BLOQUEIAM o play
+    const interactivePhaseTypes = [
+      'interaction',      // Quiz de múltipla escolha
+      'playground',       // Chat/Playground de prática
+      'quiz',             // Quiz alternativo
+      'exercise',         // Exercícios diversos
+      'cta',              // Call to action com botão
+      'secret-reveal',    // Revelação que exige atenção
+    ];
+    
+    const isInteractivePhase = interactivePhaseTypes.includes(currentPhase.type);
+    
+    // Revelation com PERFEITO também bloqueia (animação especial)
+    const isRevelationWithPERFEITO = currentPhase.type === 'revelation' && 
+      (currentPhase.title?.toLowerCase().includes('perfeito') || 
+       String((currentPhase.scenes?.[0]?.content as Record<string, unknown>)?.mainText || '').toLowerCase().includes('perfeito'));
+    
+    const shouldLock = isInteractivePhase || isRevelationWithPERFEITO;
+    
+    if (shouldLock) {
+      console.log(`[V7PhasePlayer] 🔒 Play BLOQUEADO - fase "${currentPhase.id}" (${currentPhase.type}) requer interação`);
+    }
+    
+    return shouldLock;
+  }, [currentPhase]);
 
   // Load audio
   useEffect(() => {
@@ -339,10 +396,20 @@ export const V7PhasePlayer = ({
     isPlaying: audio.isPlaying,
     phaseId: currentPhase?.id || '',
     enabled: shouldEnableAnchors,
-    onPause: () => {
+    onPause: (triggeredKeywordTime?: number) => {
       if (audio.isPlaying) {
+        // ✅ V7-v42: PAUSA INSTANTÂNEA - para IMEDIATAMENTE
         audio.pause();
-        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE - palavra detectada!`);
+        console.log(`[V7PhasePlayer] ⏸️ ANCHOR PAUSE @ ${audio.currentTime.toFixed(3)}s (keywordTime: ${triggeredKeywordTime?.toFixed(3) || 'N/A'}s)`);
+        
+        // ✅ V7-v42: SEMPRE faz seek-back para a posição exata da keyword
+        // Isso GARANTE que o usuário não ouça nada após a keyword (ex: "E..." da próxima frase)
+        // Usamos o keywordTime passado pelo callback, não procuramos na lista
+        if (triggeredKeywordTime !== undefined && triggeredKeywordTime > 0) {
+          // Sempre seek-back, mesmo se diferença for mínima - isso corta qualquer vazamento
+          console.log(`[V7PhasePlayer] ⏪ SEEK-BACK GARANTIDO: ${audio.currentTime.toFixed(3)}s → ${triggeredKeywordTime.toFixed(3)}s`);
+          audio.seekTo(triggeredKeywordTime);
+        }
       }
     },
     onResume: () => {
@@ -385,8 +452,7 @@ export const V7PhasePlayer = ({
     // Sem esse lock, a fase mudaria automaticamente antes da interação/animação completar
     if ((isBlockingPhase || isRevelationWithPERFEITO) && lockedPhaseIndex === null) {
       console.log(`[V7PhasePlayer] 🔒 LOCKING phase ${currentPhaseIndex} (${currentPhase?.type}) - BLOCKING lesson completion`);
-      setLockedPhaseIndex(currentPhaseIndex);
-      setInteractionComplete(false);
+      machineAdapter.lockPhase(currentPhaseIndex);
     }
     
     // ✅ V7-v30: Log blocking state for debugging
@@ -395,14 +461,7 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
-  // ✅ V7-v6: Reset lock when interaction completes and advances manually
-  useEffect(() => {
-    if (interactionComplete && lockedPhaseIndex !== null) {
-      console.log(`[V7PhasePlayer] 🔓 UNLOCKING phase - interaction complete`);
-      setLockedPhaseIndex(null);
-      setInteractionComplete(false);
-    }
-  }, [interactionComplete, lockedPhaseIndex]);
+  // ✅ V7-v6: Reset lock when interaction completes - now handled by machine unlockPhase action
 
   // ✅ V7-v18: Trigger particle burst on specific phase transitions
   useEffect(() => {
@@ -424,17 +483,11 @@ export const V7PhasePlayer = ({
         currentPhaseType === 'gamification';
       
       if (isRevelationToPlayground) {
-        setTransitionParticleColor('cyan');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('cyan');
       } else if (isInteractionToSecretReveal) {
-        setTransitionParticleColor('gold');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('gold');
       } else if (isPlaygroundToGamification) {
-        setTransitionParticleColor('emerald');
-        setShowTransitionParticles(true);
-        setTimeout(() => setShowTransitionParticles(false), 1500);
+        triggerParticles('emerald');
       }
     }
     
@@ -495,6 +548,15 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.id, currentPhase?.type, currentPhaseIndex, scaledScript.phases, audio.currentTime, audio.isPlaying, hasAudio, audio]);
 
+  // ✅ V7-vv PADRÃO: Callback seguro para toggle play que respeita o lock
+  const safeTogglePlayPause = useCallback(() => {
+    if (isPlayLocked) {
+      console.log('[V7PhasePlayer] ⛔ Play BLOQUEADO - complete a interação primeiro');
+      return;
+    }
+    audio.togglePlayPause();
+  }, [isPlayLocked, audio]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -502,13 +564,14 @@ export const V7PhasePlayer = ({
       if (e.key === 'ArrowLeft') goToPreviousPhase();
       if (e.key === ' ') {
         e.preventDefault();
-        audio.togglePlayPause();
+        // ✅ V7-vv: Usar callback seguro que respeita o lock
+        safeTogglePlayPause();
       }
       if (e.key === 'm' || e.key === 'M') audio.toggleMute();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [audio, currentPhaseIndex]);
+  }, [audio, currentPhaseIndex, safeTogglePlayPause]);
 
   // ✅ CRITICAL FIX: Calculate current scene based on currentTime
   // MUST be called BEFORE any early returns to maintain consistent hooks order
@@ -636,14 +699,13 @@ export const V7PhasePlayer = ({
       console.log(`  To:   [${prevPhaseIndex}] "${prevPhase?.id}" (${prevPhase?.type})`);
 
       // ✅ V7-v15: Mark that we're navigating back (prevents re-locking)
-      setIsNavigatingBack(true);
+      machineAdapter.setIsNavigatingBack(true);
 
       // ✅ V7-v15: Reset ALL interaction states
       if (lockedPhaseIndex !== null) {
         console.log(`  🔓 Unlocking phase for back navigation`);
-        setLockedPhaseIndex(null);
+        machineAdapter.unlockPhase();
       }
-      setInteractionComplete(false);
       setIsQuizResultShowing(false);
 
       // ✅ V7-v16: Reset audio interaction state (so togglePlayPause works again)
@@ -668,7 +730,7 @@ export const V7PhasePlayer = ({
       
       // ✅ V7-v15: Clear navigation flag after a short delay
       setTimeout(() => {
-        setIsNavigatingBack(false);
+        machineAdapter.setIsNavigatingBack(false);
       }, 500);
     }
   }, [currentPhaseIndex, scaledScript.phases, playSound, goToPhase, hasAudio, audio, lockedPhaseIndex]);
@@ -690,14 +752,14 @@ export const V7PhasePlayer = ({
     console.log(`  FeedbackAudios:`, feedbackAudios ? Object.keys(feedbackAudios) : 'NONE');
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
-    setInteractionComplete(true);
+    machineAdapter.setInteractionComplete(true);
 
     // ✅ V7-vv Definitive: Helper to continue after feedback
     const continueToNextPhase = () => {
       // ✅ V7-vv-v3: CRITICAL FIX - Unlock FIRST, then navigate
       if (lockedPhaseIndex !== null) {
         console.log(`  🔓 Unlocking phase ${lockedPhaseIndex}`);
-        setLockedPhaseIndex(null);
+        machineAdapter.unlockPhase();
       }
 
       // ✅ V7-vv-v3: ALWAYS seek audio to next phase start - NO EXCEPTIONS
@@ -707,17 +769,31 @@ export const V7PhasePlayer = ({
         audio.seekTo(nextStartTime);
       }
 
-      // ✅ V7-v7: Do NOT call manualResume if next phase is secret-reveal
-      if (nextPhase?.type !== 'secret-reveal') {
-        manualResume();
+      // ✅ FIX: SEMPRE dar play no áudio, incluindo para secret-reveal
+      // O secret-reveal precisa do áudio PRINCIPAL tocando para a narração funcionar!
+      manualResume();
 
-        // ✅ Resume audio after seek
-        if (hasAudio) {
+      // ✅ Resume audio after seek - SEMPRE, para qualquer fase
+      // IMPORTANTE: Usar delay maior e retry para garantir que o play funcione
+      if (hasAudio) {
+        const attemptPlay = (attempt: number) => {
+          console.log(`[V7PhasePlayer] 🎵 Attempt ${attempt} to resume audio...`);
+          audio.play();
+          
+          // Verificar se realmente está tocando após 100ms
           setTimeout(() => {
-            audio.play();
-            console.log('[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ' + audio.currentTime?.toFixed(2) + 's');
-          }, 150);
-        }
+            if (!audio.isPlaying) {
+              console.warn(`[V7PhasePlayer] ⚠️ Audio still not playing after attempt ${attempt}`);
+              if (attempt < 3) {
+                attemptPlay(attempt + 1);
+              }
+            } else {
+              console.log(`[V7PhasePlayer] ▶️ Audio RESUMED after quiz @ ${audio.currentTime?.toFixed(2)}s (attempt ${attempt})`);
+            }
+          }, 100);
+        };
+        
+        setTimeout(() => attemptPlay(1), 200);
       }
 
       // ✅ V7-vv-v3: Navigate to next phase AFTER unlock and seek
@@ -742,7 +818,7 @@ export const V7PhasePlayer = ({
         console.log(`  ⏸️ Main audio PAUSED for feedback playback`);
       }
 
-      setIsPlayingFeedbackAudio(true);
+      machineAdapter.playFeedbackAudio(feedbackAudio.url);
 
       // Create or reuse audio element for feedback
       if (!feedbackAudioRef.current) {
@@ -755,21 +831,21 @@ export const V7PhasePlayer = ({
       // When feedback audio ends, continue to next phase
       feedbackEl.onended = () => {
         console.log(`  ✅ Feedback audio COMPLETED`);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioEnded();
         continueToNextPhase();
       };
 
       // Handle errors gracefully - continue anyway
       feedbackEl.onerror = (e) => {
         console.error(`  ❌ Feedback audio ERROR:`, e);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioError();
         continueToNextPhase();
       };
 
       // Play feedback audio
       feedbackEl.play().catch(err => {
         console.error(`  ❌ Feedback audio PLAY error:`, err);
-        setIsPlayingFeedbackAudio(false);
+        machineAdapter.onFeedbackAudioError();
         continueToNextPhase();
       });
     } else {
@@ -797,7 +873,7 @@ export const V7PhasePlayer = ({
     isInBlockingPhaseRef.current = false;
 
     // ✅ V7-v6: Mark interaction as complete to unlock phase
-    setInteractionComplete(true);
+    machineAdapter.setInteractionComplete(true);
 
     // ✅ V7-v30: Check if this is the LAST phase - if so, complete the lesson!
     if (!nextPhase) {
@@ -889,10 +965,7 @@ export const V7PhasePlayer = ({
   const seconds = Math.floor(scaledScript.totalDuration % 60);
   const totalDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-  // Show loading screen
-  if (isLoading) {
-    return <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />;
-  }
+  // Loading is now rendered as an overlay inside the main return, not a replacement
 
   // Extract scene content with fallbacks (cast to any for flexible DB data)
   const getSceneContent = (sceneIndex: number = 0): any => {
@@ -961,86 +1034,127 @@ export const V7PhasePlayer = ({
         if (dramaticVisual?.type === 'text-reveal') {
           const revealContent = dramaticVisual.content || {};
           console.log('[V7PhasePlayer] 🎬 DRAMATIC TEXT-REVEAL detected:', revealContent);
+          // ✅ FIX: Only render V7PhaseMethodReveal if highlightWord is explicitly set
+          // Otherwise use V7PhaseDramatic with just mainText (e.g. "SEJA HONESTO.")
+          if (revealContent.highlightWord) {
+            return (
+              <V7PhaseMethodReveal
+                mainText={revealContent.mainText || 'O MÉTODO'}
+                highlightWord={revealContent.highlightWord}
+              />
+            );
+          }
+          // No highlightWord - render as simple text reveal with V7PhaseDramatic
           return (
-            <V7PhaseMethodReveal
-              mainText={revealContent.mainText || 'O MÉTODO'}
-              highlightWord={revealContent.highlightWord || 'PERFEITO'}
+            <V7PhaseDramatic
+              mainNumber=""
+              subtitle=""
+              hookQuestion={revealContent.mainText || ''}
+              sceneIndex={currentSceneIndex}
+              phaseProgress={phaseProgress}
+              mood={revealContent.mood === 'danger' ? 'danger' : revealContent.mood === 'success' ? 'success' : 'neutral'}
             />
           );
         }
 
-        // Use combined content from ALL scenes for progressive reveal
+        // ✅ V7-vv FIX: Get content from phase.visual.content FIRST (database format)
+        // Then fallback to scenes (legacy format)
+        const dramaticVisualContent = (currentPhase as any).visual?.content || {};
         const dramaticContent = getCombinedSceneContent();
+        
         // Get impactWord from scene 5 specifically (impact scene)
         const impactScene = getSceneContent(5);
         // Get hookQuestion from scene 0 specifically (letterbox scene)
         const letterboxScene = getSceneContent(0);
 
         // ✅ CRITICAL: Ensure hookQuestion is always shown at start
-        // Fallback to "VOCÊ SABIA?" if not defined in database
-        const extractedHook = letterboxScene.hookQuestion || letterboxScene.mainText || dramaticContent.hookQuestion || '';
+        // V7-vv stores in visual.content.hookQuestion
+        const extractedHook = dramaticVisualContent.hookQuestion || letterboxScene.hookQuestion || letterboxScene.mainText || dramaticContent.hookQuestion || '';
         const hookQuestion = extractedHook || 'VOCÊ SABIA?';
 
-        console.log('[V7PhasePlayer] Dramatic phase - hookQuestion:', hookQuestion, 'sceneIndex:', currentSceneIndex);
+        console.log('[V7PhasePlayer] 🎬 Dramatic phase rendering:', {
+          phaseId: currentPhase.id,
+          visualContentNumber: dramaticVisualContent.number,
+          visualContentShowSecondary: dramaticVisualContent.showSecondaryAsMain,
+          phaseMood: currentPhase.mood,
+          hookQuestion,
+          sceneIndex: currentSceneIndex
+        });
+
+        // ✅ V7-vv FIX: Read showSecondaryAsMain from visual.content FIRST!
+        // This is where the database stores it in V7-vv format
+        const showSecondaryAsMain = dramaticVisualContent.showSecondaryAsMain === true ||
+          dramaticContent.showSecondaryAsMain === true ||
+          (currentPhase.mood === 'success');
+
+        // ✅ V7-vv FIX: Read number and secondaryNumber from visual.content
+        const mainNumber = String(dramaticVisualContent.number || dramaticContent.number || '98%');
+        const secondaryNumber = dramaticVisualContent.secondaryNumber || dramaticContent.secondaryNumber || '2%';
+        const subtitle = dramaticVisualContent.subtitle || dramaticContent.subtitle || currentPhase.title || '';
 
         return (
           <V7PhaseDramatic
-            mainNumber={String(dramaticContent.number || '98%')}
-            secondaryNumber={dramaticContent.secondaryNumber || '2%'}
-            subtitle={dramaticContent.subtitle || currentPhase.title}
-            highlightWord={dramaticContent.highlightWord}
-            impactWord={impactScene.mainText || dramaticContent.highlightWord || ''}
+            mainNumber={mainNumber}
+            secondaryNumber={secondaryNumber}
+            subtitle={subtitle}
+            highlightWord={dramaticVisualContent.highlightWord || dramaticContent.highlightWord}
+            impactWord={impactScene.mainText || dramaticVisualContent.highlightWord || dramaticContent.highlightWord || ''}
             hookQuestion={hookQuestion}
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
             mood={currentPhase.mood === 'danger' ? 'danger' : currentPhase.mood === 'success' ? 'success' : 'neutral'}
+            showSecondaryAsMain={showSecondaryAsMain}
           />
         );
 
       case 'narrative':
-      case 'comparison': // ✅ V7-v30: COMPARISON usa mesmo renderizador que NARRATIVE (leftCard/rightCard)
-        // CORRECT: Scene 0 has main comparison items, Scene 1 has detailed comparisons, Scene 2 has warning
-        const scene0Content = getSceneContent(0); // Main comparison items
-        const scene1Content = getSceneContent(1); // Detailed comparisons
-        const scene2Warning = getSceneContent(2); // Warning/urgency section
-        const narrativeContent = getCombinedSceneContent();
-
-        // Extract left/right from scene 0 items (format: {label, value, isNegative/isPositive})
-        const mainItems = scene0Content.items || [];
-        const leftItem = mainItems.find((item: any) => item.isNegative) || mainItems[0] || {};
-        const rightItem = mainItems.find((item: any) => item.isPositive) || mainItems[1] || {};
-
-        // Build comparisons array from scene 1 items (format: {label, left, right})
-        const detailedItems = scene1Content.items || [];
-        const comparisons = detailedItems.length > 0
-          ? detailedItems.map((item: any) => ({
-              label: item.label || '',
-              leftValue: item.left || '',
-              rightValue: item.right || '',
+      case 'comparison': {
+        // ✅ V7-vv FIX: Extract data from phase.visual.content (not scenes!)
+        const compVisualContent = (currentPhase as any).visual?.content || {};
+        const compLeft = compVisualContent.left || {};
+        const compRight = compVisualContent.right || {};
+        
+        // ✅ V7-vv: items são arrays de STRINGS no formato do banco
+        const leftItems = Array.isArray(compLeft.items) ? compLeft.items : [];
+        const rightItems = Array.isArray(compRight.items) ? compRight.items : [];
+        
+        // Build comparisons from the items arrays (zip left and right)
+        const maxItems = Math.max(leftItems.length, rightItems.length);
+        const compComparisons = maxItems > 0
+          ? Array.from({ length: maxItems }, (_, i) => ({
+              label: '',
+              leftValue: typeof leftItems[i] === 'string' ? leftItems[i] : (leftItems[i]?.text || ''),
+              rightValue: typeof rightItems[i] === 'string' ? rightItems[i] : (rightItems[i]?.text || ''),
               leftColor: '#ff6b6b',
               rightColor: '#4ecdc4'
             }))
-          : [{
-              label: scene0Content.mainText || 'Comparação',
-              leftValue: leftItem.value || '',
-              rightValue: rightItem.value || '',
-              leftColor: '#ff6b6b',
-              rightColor: '#4ecdc4'
-            }];
+          : [{ label: 'Comparação', leftValue: '', rightValue: '', leftColor: '#ff6b6b', rightColor: '#4ecdc4' }];
+
+        console.log('[V7PhasePlayer] 🎬 Comparison/Narrative phase:', {
+          phaseId: currentPhase.id,
+          leftLabel: compLeft.label,
+          rightLabel: compRight.label,
+          leftItems,
+          rightItems,
+          centerPrompt: compVisualContent.centerPrompt
+        });
 
         return (
           <V7PhaseNarrative
-            leftTitle={leftItem.label || '98% BRINCANDO'}
-            rightTitle={rightItem.label || '2% DOMINANDO'}
-            leftEmoji="😂"
-            rightEmoji="💰"
-            comparisons={comparisons}
-            warningTitle={scene2Warning.mainText || scene2Warning.highlightWord || ''}
-            warningSubtitle={scene2Warning.subtitle || ''}
+            leftTitle={compLeft.label || '98% BRINCANDO'}
+            rightTitle={compRight.label || '2% DOMINANDO'}
+            leftEmoji={compLeft.emoji || '😂'}
+            rightEmoji={compRight.emoji || '💰'}
+            comparisons={compComparisons}
+            warningTitle=""
+            warningSubtitle=""
             sceneIndex={currentSceneIndex}
             phaseProgress={phaseProgress}
+            centerPrompt={compVisualContent.centerPrompt || ''}
+            centerEmoji={compVisualContent.centerEmoji || '🍌'}
           />
         );
+      }
 
       case 'interaction':
         // ✅ V7-vv: Check interaction type FIRST
@@ -1052,7 +1166,15 @@ export const V7PhasePlayer = ({
           const ctaContent = getCombinedSceneContent();
           const ctaButtonText = ctaInteraction.buttonText || 'CONTINUAR';
 
+          // ✅ FIX: Botão só ativa quando narração termina
+          // isPausedByAnchor=true OU áudio está a menos de 2s do fim da fase
+          const phaseEndTime = currentPhase.endTime;
+          const audioNearEnd = hasAudio && phaseEndTime && (audio.currentTime >= phaseEndTime - 2);
+          const ctaButtonEnabled = isPausedByAnchor || audioNearEnd || !hasAudio;
+
           const handleCtaClick = () => {
+            if (!ctaButtonEnabled) return; // Prevent click if disabled
+            
             console.log('[V7PhasePlayer] CTA clicked, resuming audio and advancing');
 
             // Get next phase info for seeking
@@ -1061,8 +1183,8 @@ export const V7PhasePlayer = ({
             const nextPhase = scaledScript.phases[nextPhaseIndex];
 
             // ✅ FIX: Unlock and reset state FIRST
-            setLockedPhaseIndex(null);
-            setInteractionComplete(true);
+            machineAdapter.unlockPhase();
+            machineAdapter.setInteractionComplete(true);
             
             // ✅ Resume anchor system BEFORE playing audio
             manualResume();
@@ -1131,12 +1253,17 @@ export const V7PhasePlayer = ({
                 </div>
               )}
 
-              {/* CTA Button */}
+              {/* CTA Button - ✅ FIX: Só ativo quando narração termina */}
               <button
                 onClick={handleCtaClick}
-                className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xl font-bold rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 animate-pulse"
+                disabled={!ctaButtonEnabled}
+                className={`px-8 py-4 text-xl font-bold rounded-xl shadow-lg transform transition-all duration-300 ${
+                  ctaButtonEnabled
+                    ? 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:scale-105 animate-pulse cursor-pointer'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-60'
+                }`}
               >
-                {ctaButtonText}
+                {ctaButtonEnabled ? ctaButtonText : '⏳ Aguarde a narração...'}
               </button>
             </div>
           );
@@ -1190,6 +1317,7 @@ export const V7PhasePlayer = ({
             correctFeedback={extractTextFromContent(quizCorrectFeedback)}
             incorrectFeedback={extractTextFromContent(quizIncorrectFeedback)}
             sceneIndex={currentSceneIndex}
+            phaseProgress={phaseProgress}
             onComplete={handleQuizComplete}
             audioControl={audio}
             isPausedByAnchor={isPausedByAnchor}
@@ -1292,6 +1420,17 @@ export const V7PhasePlayer = ({
         console.log('  amateurPrompt:', pgAmateurPrompt);
         console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
 
+        // ✅ V7-vv: Extract userChallenge from interaction
+        const pgUserChallenge = playgroundInteraction.userChallenge ? {
+          instruction: playgroundInteraction.userChallenge.instruction || 'Agora é sua vez!',
+          challengePrompt: playgroundInteraction.userChallenge.challengePrompt || '',
+          hints: Array.isArray(playgroundInteraction.userChallenge.hints) 
+            ? playgroundInteraction.userChallenge.hints 
+            : []
+        } : undefined;
+
+        console.log('[V7PhasePlayer] 🎮 userChallenge:', pgUserChallenge);
+
         return (
           <V7PhasePlayground
             challengeTitle={pgTitle}
@@ -1317,6 +1456,8 @@ export const V7PhasePlayer = ({
             onComplete={handlePlaygroundComplete}
             audioControl={audio}
             timeoutConfig={playgroundTimeoutConfig}
+            userChallenge={pgUserChallenge}
+            lessonId={script.id}
           />
         );
 
@@ -1345,9 +1486,9 @@ export const V7PhasePlayer = ({
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
                 if (lockedPhaseIndex !== null) {
                   console.log('[V7PhasePlayer] 🔓 Unlocking revelation/PERFEITO phase');
-                  setLockedPhaseIndex(null);
+                  machineAdapter.unlockPhase();
                 }
-                setInteractionComplete(true);
+                machineAdapter.setInteractionComplete(true);
                 goToNextPhase(false, fromIndex);
               }}
             />
@@ -1426,9 +1567,9 @@ export const V7PhasePlayer = ({
               // ✅ V7-v11 FIX: FIRST unlock phase
               if (lockedPhaseIndex !== null) {
                 console.log('[V7PhasePlayer] 🔓 Unlocking secret-reveal phase');
-                setLockedPhaseIndex(null);
+                machineAdapter.unlockPhase();
               }
-              setInteractionComplete(true);
+              machineAdapter.setInteractionComplete(true);
               
               // ✅ V7-v23 FIX: SEEK to next phase startTime ANTES de resumir
               // Isso evita repetir a narração da fase secret-reveal
@@ -1511,12 +1652,12 @@ export const V7PhasePlayer = ({
         canGoNext={currentPhaseIndex < scaledScript.phases.length - 1}
         currentPhase={currentPhaseIndex}
         totalPhases={scaledScript.phases.length}
-        onTogglePlay={audio.togglePlayPause}
+        onTogglePlay={safeTogglePlayPause}
         onToggleMute={audio.toggleMute}
         onVolumeChange={audio.setVolume}
         onPrevious={goToPreviousPhase}
         onNext={goToNextPhase}
-        onExit={onExit}
+        onExit={() => setShowExitConfirm(true)}
         isVisible={
           // ✅ V7-v13: Always show controls during interactive phases
           // User needs X button visible during CTA/quiz/playground to exit if needed
@@ -1527,7 +1668,7 @@ export const V7PhasePlayer = ({
             ? true
             : (showControls && !isQuizResultShowing)
         }
-        isLocked={false} // ✅ V7-v17: NUNCA bloquear controles - usuário precisa poder pausar/resumir sempre
+        isLocked={isPlayLocked} // ✅ V7-vv PADRÃO: Bloqueia play durante fases interativas
       />
 
       {/* Audio/Play Indicator */}
@@ -1545,14 +1686,35 @@ export const V7PhasePlayer = ({
       </AnimatePresence>
 
       {/* V7-vv-v4: MicroVisual Overlay - renders word-triggered micro-visuals with sounds */}
-      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && (
+      {/* Hide during dramatic/revelation phases as they have their own prominent visuals */}
+      {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && 
+       currentPhase?.type !== 'dramatic' && 
+       currentPhase?.type !== 'revelation' && (
         <V7MicroVisualOverlay
           microVisuals={currentPhase.microVisuals}
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
-          visualType={currentPhase.visual?.type}
+          visualType={(currentPhase as any).visual?.type}
         />
       )}
+
+      {/* V7-vv-v6: 3D Cinematic Secret Revelation - sophisticated Three.js effects */}
+      {/* Active during "segredo dos 2%" narration: ~52s to ~65s, STOPS before revelation phase */}
+      <V7SecretRevelation3D
+        enabled={effectiveIsPlaying && 
+          (hasAudio ? audio.currentTime : internalTime) >= 52 && 
+          (hasAudio ? audio.currentTime : internalTime) <= 65 &&
+          currentPhase?.type !== 'revelation'
+        }
+        intensity={1}
+        currentTime={hasAudio ? audio.currentTime : internalTime}
+      />
+
+      {/* V7-vv-v7: Subtle golden glow for MÉTODO PERFEITO revelation */}
+      <V7MethodRevealGlow
+        enabled={currentPhase?.type === 'revelation'}
+        intensity={0.8}
+      />
 
       {/* Phase Content - Cinematic Fade Transition */}
       <AnimatePresence mode="wait">
@@ -1586,7 +1748,39 @@ export const V7PhasePlayer = ({
         </motion.div>
       </AnimatePresence>
 
+      {/* ✅ V7-vv-v8: Botão "Continuar" para fases não-interativas quando pausadas por anchor */}
+      {/* Mostra apenas quando isPausedByAnchor está ativo E a fase NÃO tem UI de interação própria */}
+      <AnimatePresence>
+        {isPausedByAnchor && 
+         currentPhase?.type !== 'interaction' && 
+         currentPhase?.type !== 'playground' && 
+         currentPhase?.type !== 'secret-reveal' && 
+         currentPhase?.type !== 'gamification' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50"
+          >
+            <button
+              onClick={() => {
+                console.log('[V7PhasePlayer] ▶️ User clicked Continue - resuming audio');
+                manualResume();
+                if (hasAudio && !audio.isPlaying) {
+                  audio.play();
+                }
+              }}
+              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300 animate-pulse"
+            >
+              ▶ Continuar
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Captions - ✅ V7-v17: HIDE during interactive phases but SHOW during all others */}
+      {/* ✅ V7-v32: CTA-button interactions should SHOW captions (they have continuous narration) */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
           wordTimestamps={wordTimestamps}
@@ -1594,8 +1788,9 @@ export const V7PhasePlayer = ({
           isVisible={
             // ✅ V7-v17: Show captions when audio is playing OR when we have any audio time
             // Hide only during interactive phases that control their own content
+            // ✅ V7-v32: Exception for CTA-button interactions - they have continuous narration
             (audio.isPlaying || audio.currentTime > 0.5) &&
-            currentPhase?.type !== 'interaction' &&
+            (currentPhase?.type !== 'interaction' || (currentPhase?.interaction as any)?.type === 'cta-button') &&
             currentPhase?.type !== 'playground' &&
             currentPhase?.type !== 'gamification' &&
             currentPhase?.type !== 'secret-reveal' // ✅ secret-reveal has its own narration
@@ -1604,6 +1799,10 @@ export const V7PhasePlayer = ({
         />
       )}
 
+      {/* Loading overlay - elegant bottom bar, doesn't cover player */}
+      {isLoading && (
+        <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />
+      )}
 
       {/* Debug Panel */}
       <V7DebugPanel
@@ -1618,6 +1817,16 @@ export const V7PhasePlayer = ({
         fullScript={scaledScript}
         rawContent={rawContent}
         detectionPath={detectionPath || undefined}
+      />
+
+      {/* ✅ Exit Confirmation Modal */}
+      <V7ExitConfirmModal
+        isOpen={showExitConfirm}
+        onConfirmExit={() => {
+          setShowExitConfirm(false);
+          onExit?.();
+        }}
+        onContinue={() => setShowExitConfirm(false)}
       />
     </div>
   );

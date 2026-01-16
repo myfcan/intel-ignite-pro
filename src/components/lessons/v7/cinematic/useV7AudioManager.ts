@@ -436,12 +436,22 @@ export const useV7AudioManager = ({
   const play = useCallback(async () => {
     if (mainAudioRef.current) {
       try {
+        // ✅ FIX: Se o volume está em 0 (de um fade out anterior), restaurar
+        if (mainAudioRef.current.volume < 0.1) {
+          const targetVolume = savedVolumeRef.current || volume || 0.8;
+          mainAudioRef.current.volume = targetVolume;
+          console.log(`[V7AudioManager] 🔊 Volume restaurado para ${targetVolume} antes do play`);
+        }
+        
         await mainAudioRef.current.play();
+        console.log(`[V7AudioManager] ▶️ Play executado com sucesso @ ${mainAudioRef.current.currentTime.toFixed(2)}s`);
       } catch (error) {
-        console.error('[V7AudioManager] Erro ao tocar:', error);
+        console.error('[V7AudioManager] ❌ Erro ao tocar:', error);
       }
+    } else {
+      console.warn('[V7AudioManager] ⚠️ mainAudioRef.current é null, não foi possível dar play');
     }
-  }, []);
+  }, [volume]);
 
   // Pause básico
   const pause = useCallback(() => {

@@ -129,6 +129,17 @@ Nos exercícios, você vai aplicar esse conhecimento. Vamos lá! 🚀`
     }
   ],
   
+  // 🎯 DESAFIO DO USUÁRIO - Novo playground com feedback de IA
+  userChallenge: {
+    instruction: 'Agora é sua vez! Escreva um prompt para a IA ajudar você em uma tarefa do seu dia a dia.',
+    challengePrompt: 'Me ajuda a escrever um email',
+    hints: [
+      '💡 Seja específico sobre o que você quer',
+      '📝 Inclua contexto: para quem, sobre o quê',
+      '🎯 Diga o tom desejado: formal, informal, amigável'
+    ]
+  },
+  
   exercisesConfig: [
     {
       id: 'ex-1',

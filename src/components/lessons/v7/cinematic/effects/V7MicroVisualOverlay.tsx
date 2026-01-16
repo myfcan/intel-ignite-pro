@@ -30,21 +30,28 @@ interface V7MicroVisualOverlayProps {
   visualType?: string; // Type of main visual for smart positioning
 }
 
-// Position mapping for micro-visuals
+// Position mapping for micro-visuals - V7-v33: Posições que NÃO sobrepõem conteúdo principal
+// Micro-visuals devem aparecer em áreas periféricas, não no centro da tela
 const positionStyles: Record<string, React.CSSProperties> = {
-  center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
-  top: { top: '12%', left: '50%', transform: 'translateX(-50%)' },
-  bottom: { bottom: '15%', left: '50%', transform: 'translateX(-50%)' },
-  left: { top: '50%', left: '12%', transform: 'translateY(-50%)' },
-  right: { top: '50%', right: '12%', transform: 'translateY(-50%)' },
-  'top-left': { top: '15%', left: '15%' },
-  'top-right': { top: '15%', right: '15%' },
-  'bottom-left': { bottom: '20%', left: '15%' },
-  'bottom-right': { bottom: '20%', right: '15%' },
+  // Centro agora é mais alto para não sobrepor conteúdo VS
+  center: { top: '35%', left: '50%', transform: 'translate(-50%, -50%)' },
+  // Topo da tela - área segura
+  top: { top: '8%', left: '50%', transform: 'translateX(-50%)' },
+  // Bottom agora é bem acima do player (75% da altura = 25% de baixo)
+  bottom: { top: '70%', left: '50%', transform: 'translate(-50%, -50%)' },
+  // Laterais - ajustadas para não sobrepor conteúdo
+  left: { top: '40%', left: '5%', transform: 'translateY(-50%)' },
+  right: { top: '40%', right: '5%', transform: 'translateY(-50%)' },
+  // Cantos - áreas mais seguras
+  'top-left': { top: '10%', left: '10%' },
+  'top-right': { top: '10%', right: '10%' },
+  'bottom-left': { bottom: '20%', left: '10%' },
+  'bottom-right': { bottom: '20%', right: '10%' },
 };
 
 // ✅ CINEMATIC Animation variants using V7CinematicEffects principles
-const getAnimationVariants = (type: string, animation?: string) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getAnimationVariants = (type: string, animation?: string): any => {
   // Custom animation from content
   if (animation === 'zoom-in') {
     return {
@@ -95,7 +102,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           opacity: 1,
           y: 0,
           rotateX: 0,
-          transition: { type: 'spring', stiffness: 400, damping: 15 }
+          transition: { type: 'spring' as const, stiffness: 400, damping: 15 }
         },
         exit: { scale: 0.7, opacity: 0, y: -30, transition: { duration: 0.25 } },
       };
@@ -107,7 +114,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           scale: 1,
           opacity: 1,
           y: 0,
-          transition: { type: 'spring', stiffness: 150, damping: 12 }
+          transition: { type: 'spring' as const, stiffness: 150, damping: 12 }
         },
         exit: { scale: 1.8, opacity: 0, transition: { duration: 0.5, ease: EASING.dramatic } },
       };
@@ -143,7 +150,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           opacity: 1,
           rotateX: 0,
           scale: 1,
-          transition: { type: 'spring', stiffness: 120, damping: 18 }
+          transition: { type: 'spring' as const, stiffness: 120, damping: 18 }
         },
         exit: { y: -60, opacity: 0, scale: 0.95, transition: { duration: 0.35 } },
       };
@@ -155,7 +162,7 @@ const getAnimationVariants = (type: string, animation?: string) => {
           scale: 1,
           opacity: 1,
           rotate: 0,
-          transition: { type: 'spring', stiffness: 250, damping: 14 }
+          transition: { type: 'spring' as const, stiffness: 250, damping: 14 }
         },
         exit: { scale: 0.6, opacity: 0, rotate: 45, transition: { duration: 0.2 } },
       };
@@ -294,32 +301,39 @@ const CountingNumber: React.FC<{ from: number; to: number; prefix?: string; suff
 };
 
 const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentTime, visualType }) => {
-  // V7-vv: Smart positioning based on type and visual context
+  // V7-v33: Smart positioning - EVITAR sobreposição com conteúdo principal
   const getPosition = () => {
     const { type, content } = microVisual;
 
-    // For highlight type, side determines position
-    if (type === 'highlight' && content.side) {
-      return content.side; // 'left' or 'right'
-    }
-
-    // For split-screen visual, adjust positioning
-    if (visualType === 'split-screen') {
-      if (content.side === 'left') return 'left';
-      if (content.side === 'right') return 'right';
-    }
-
-    // Use explicit position or default based on type
+    // ✅ Posição explícita tem prioridade
     if (content.position) return content.position;
 
-    // Smart defaults per type
+    // ✅ V7-v33: Para split-screen/comparison, usar cantos superiores (não centro)
+    if (visualType === 'split-screen' || visualType === 'comparison') {
+      if (content.side === 'left') return 'top-left';
+      if (content.side === 'right') return 'top-right';
+      // Default para split-screen: topo (acima do VS)
+      return 'top';
+    }
+
+    // ✅ V7-v33: Para quiz, posicionar nos cantos para não cobrir opções
+    if (visualType === 'quiz') {
+      return 'top';
+    }
+
+    // For highlight type, side determines position
+    if (type === 'highlight' && content.side) {
+      return content.side === 'left' ? 'top-left' : 'top-right';
+    }
+
+    // ✅ V7-v33: Smart defaults - preferir topo e cantos
     switch (type) {
-      case 'image-flash': return 'center';
-      case 'text-pop': return 'center';
-      case 'number-count': return 'center';
-      case 'highlight': return 'left';
-      case 'text-highlight': return 'bottom';
-      default: return 'center';
+      case 'image-flash': return 'top'; // Antes era 'center'
+      case 'text-pop': return 'top';    // Antes era 'bottom' que ainda sobrepunha
+      case 'number-count': return 'top';
+      case 'highlight': return 'top-left';
+      case 'text-highlight': return 'top';
+      default: return 'top';
     }
   };
 
@@ -370,40 +384,64 @@ const MicroVisualItem: React.FC<MicroVisualItemProps> = ({ microVisual, currentT
                 {content.emoji}
               </span>
             )}
+            {/* ✅ FIX: Description fallback when no image/emoji */}
+            {!content.imageUrl && !content.emoji && content.description && (
+              <motion.div 
+                className="bg-black/80 backdrop-blur-lg rounded-xl px-6 py-4 border border-white/20 shadow-2xl"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                <p className="text-white text-lg md:text-xl font-medium text-center max-w-xs">
+                  {content.description}
+                </p>
+              </motion.div>
+            )}
           </div>
         );
 
       // TEXT-POP: Text with emoji pops in dramatically
+      // ✅ V7-v25: Emoji centralizado, texto abaixo - layout vertical
       case 'text-pop':
         return (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
+            {/* Emoji grande e centralizado */}
             {content.emoji && (
               <motion.span
-                className="text-5xl md:text-6xl"
+                className="text-6xl md:text-7xl lg:text-8xl block"
                 animate={{
-                  y: [0, -8, 0],
-                  scale: [1, 1.1, 1],
+                  y: [0, -10, 0],
+                  scale: [1, 1.15, 1],
                 }}
                 transition={{
-                  duration: 0.6,
+                  duration: 0.8,
                   repeat: Infinity,
-                  repeatType: 'reverse'
+                  repeatType: 'reverse',
+                  ease: 'easeInOut'
+                }}
+                style={{
+                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.3))'
                 }}
               >
                 {content.emoji}
               </motion.span>
             )}
-            <div
-              className="px-8 py-4 rounded-2xl backdrop-blur-xl border border-white/20"
-              style={{
-                background: 'linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(168,85,247,0.15) 100%)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
-              }}
-            >
-              <p className="text-xl md:text-2xl font-bold text-white text-center">
-                {content.text || content.words?.join(' • ')}
-              </p>
-            </div>
+            {/* Texto abaixo do emoji */}
+            {(content.text || content.words) && (
+              <motion.div
+                className="px-6 py-3 rounded-xl backdrop-blur-xl border border-white/20 max-w-[90vw]"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(34,211,238,0.2) 0%, rgba(168,85,247,0.2) 100%)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-lg md:text-xl lg:text-2xl font-bold text-white text-center">
+                  {content.text || content.words?.join(' • ')}
+                </p>
+              </motion.div>
+            )}
           </div>
         );
 

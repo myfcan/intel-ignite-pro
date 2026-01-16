@@ -1,333 +1,224 @@
-/**
- * ECS World - Sistema de Entidades com Miniplex
- *
- * Arquitetura profissional para gerenciar objetos 3D nas aulas V7
- */
-
 import { World } from 'miniplex';
 import * as THREE from 'three';
 
-// ============================================================================
-// COMPONENTES ECS
-// ============================================================================
+// ============================================
+// ENTITY COMPONENT SYSTEM - Professional 3D
+// ============================================
 
-export interface Transform {
+// Component Types
+export interface TransformComponent {
   position: THREE.Vector3;
   rotation: THREE.Euler;
   scale: THREE.Vector3;
 }
 
-export interface Velocity {
+export interface VelocityComponent {
   linear: THREE.Vector3;
   angular: THREE.Vector3;
 }
 
-export interface Orbital {
+export interface OrbitalComponent {
   center: THREE.Vector3;
   radius: number;
   speed: number;
   phase: number;
-  axis: 'x' | 'y' | 'z' | 'xy' | 'xz' | 'yz';
+  axis: 'x' | 'y' | 'z' | 'xz';
 }
 
-export interface Pulse {
-  frequency: number;
+export interface PulseComponent {
+  baseScale: number;
   amplitude: number;
+  frequency: number;
   phase: number;
-  property: 'scale' | 'opacity' | 'emissive';
 }
 
-export interface Glow {
+export interface GlowComponent {
   color: THREE.Color;
   intensity: number;
-  pulseSpeed?: number;
+  pulseSpeed: number;
 }
 
-export interface Trail {
+export interface TrailComponent {
   length: number;
-  color: THREE.Color;
   width: number;
-  positions: THREE.Vector3[];
-}
-
-export interface Lifetime {
-  current: number;
-  max: number;
-  fadeStart: number;
-}
-
-export interface Mesh3D {
-  geometry: THREE.BufferGeometry;
-  material: THREE.Material;
-  mesh?: THREE.Mesh;
-}
-
-export interface Model3D {
-  url: string;
-  loaded: boolean;
-  scene?: THREE.Group;
-}
-
-export interface ScreenContent {
-  type: 'text' | 'image' | 'video' | 'code';
-  content: string;
-  style?: 'amateur' | 'professional' | 'neutral';
-}
-
-export interface Device {
-  type: 'monitor' | 'smartphone' | 'tablet' | 'laptop';
-  screenContent?: ScreenContent;
-  screenGlow?: boolean;
-}
-
-export interface Crowd {
-  count: number;
-  spread: THREE.Vector3;
-  movement: 'walking' | 'standing' | 'random';
-  holdingDevice: boolean;
-}
-
-export interface ParticleEmitter {
-  rate: number;
-  lifetime: number;
-  velocity: THREE.Vector3;
-  spread: number;
   color: THREE.Color;
-  size: number;
+  decay: number;
 }
 
-export interface CameraTarget {
-  lookAt: THREE.Vector3;
-  distance: number;
-  orbitSpeed: number;
+export interface ParticleComponent {
+  lifetime: number;
+  age: number;
+  fadeIn: number;
+  fadeOut: number;
 }
 
-// ============================================================================
-// ENTIDADE
-// ============================================================================
-
-export interface Entity {
-  id?: string;
-  transform?: Transform;
-  velocity?: Velocity;
-  orbital?: Orbital;
-  pulse?: Pulse;
-  glow?: Glow;
-  trail?: Trail;
-  lifetime?: Lifetime;
-  mesh3D?: Mesh3D;
-  model3D?: Model3D;
-  device?: Device;
-  crowd?: Crowd;
-  particleEmitter?: ParticleEmitter;
-  cameraTarget?: CameraTarget;
+export interface InstancedComponent {
+  meshId: string;
+  instanceId: number;
 }
 
-// ============================================================================
-// WORLD
-// ============================================================================
+export interface MaterialComponent {
+  type: 'physical' | 'transmission' | 'basic' | 'emissive';
+  color: THREE.Color;
+  emissive?: THREE.Color;
+  emissiveIntensity?: number;
+  metalness?: number;
+  roughness?: number;
+  transmission?: number;
+  opacity?: number;
+}
 
-export const world = new World<Entity>();
+export interface HelixComponent {
+  strand: 1 | 2;
+  index: number;
+  totalCount: number;
+  helixRadius: number;
+  helixHeight: number;
+  rotationSpeed: number;
+}
 
-// ============================================================================
-// QUERIES (para sistemas acessarem entidades específicas)
-// ============================================================================
+export interface GalaxyComponent {
+  arm: number;
+  distanceFromCenter: number;
+  armSpread: number;
+  verticalSpread: number;
+  rotationSpeed: number;
+}
 
-export const queries = {
-  // Entidades com transformação
-  withTransform: world.with('transform'),
+export interface FloatComponent {
+  amplitude: THREE.Vector3;
+  frequency: THREE.Vector3;
+  phase: THREE.Vector3;
+}
 
-  // Entidades que se movem
-  withVelocity: world.with('transform', 'velocity'),
+export interface WaveComponent {
+  amplitude: number;
+  frequency: number;
+  waveSpeed: number;
+  waveOffset: number;
+}
 
-  // Entidades em órbita
-  withOrbital: world.with('transform', 'orbital'),
+export interface ConnectionComponent {
+  targetId: string;
+  pulseSpeed: number;
+  pulsePhase: number;
+}
 
-  // Entidades com pulsação
-  withPulse: world.with('transform', 'pulse'),
+export interface RingComponent {
+  innerRadius: number;
+  outerRadius: number;
+  rotationSpeed: number;
+  tilt: number;
+}
 
-  // Entidades com glow
-  withGlow: world.with('glow'),
+export interface CrystalComponent {
+  facets: number;
+  iridescence: number;
+  refractionIndex: number;
+}
 
-  // Entidades com trail
-  withTrail: world.with('transform', 'trail'),
-
-  // Entidades com tempo de vida
-  withLifetime: world.with('lifetime'),
-
-  // Dispositivos
-  devices: world.with('device', 'transform'),
-
-  // Multidões
-  crowds: world.with('crowd', 'transform'),
-
-  // Emissores de partículas
-  particleEmitters: world.with('particleEmitter', 'transform'),
-
-  // Alvos de câmera
-  cameraTargets: world.with('cameraTarget'),
+// Complete Entity Type
+export type Entity = {
+  id: string;
+  transform: TransformComponent;
+  velocity?: VelocityComponent;
+  orbital?: OrbitalComponent;
+  pulse?: PulseComponent;
+  glow?: GlowComponent;
+  trail?: TrailComponent;
+  particle?: ParticleComponent;
+  instanced?: InstancedComponent;
+  material?: MaterialComponent;
+  helix?: HelixComponent;
+  galaxy?: GalaxyComponent;
+  float?: FloatComponent;
+  wave?: WaveComponent;
+  connection?: ConnectionComponent;
+  ring?: RingComponent;
+  crystal?: CrystalComponent;
+  // Tags
+  isCore?: true;
+  isOrbiter?: true;
+  isParticle?: true;
+  isStructure?: true;
+  isLight?: true;
+  isConnector?: true;
+  needsMatrixUpdate?: true;
 };
 
-// ============================================================================
-// FACTORY FUNCTIONS
-// ============================================================================
+// Create the main world
+export const world = new World<Entity>();
 
-export function createTransform(
-  x = 0, y = 0, z = 0,
-  rx = 0, ry = 0, rz = 0,
-  sx = 1, sy = 1, sz = 1
-): Transform {
-  return {
-    position: new THREE.Vector3(x, y, z),
-    rotation: new THREE.Euler(rx, ry, rz),
-    scale: new THREE.Vector3(sx, sy, sz),
-  };
-}
+// Queries for different entity types
+export const queries = {
+  // All entities with transform (basically everything)
+  withTransform: world.with('transform'),
+  
+  // Moving entities
+  moving: world.with('transform', 'velocity'),
+  
+  // Orbital entities
+  orbiting: world.with('transform', 'orbital'),
+  
+  // Pulsing entities
+  pulsing: world.with('transform', 'pulse'),
+  
+  // Glowing entities
+  glowing: world.with('glow'),
+  
+  // Floating entities
+  floating: world.with('transform', 'float'),
+  
+  // Wave-affected entities
+  waving: world.with('transform', 'wave'),
+  
+  // Particles
+  particles: world.with('transform', 'particle'),
+  
+  // Helix particles
+  helixParticles: world.with('transform', 'helix'),
+  
+  // Galaxy particles
+  galaxyParticles: world.with('transform', 'galaxy'),
+  
+  // Ring entities
+  rings: world.with('transform', 'ring'),
+  
+  // Crystals
+  crystals: world.with('transform', 'crystal'),
+  
+  // Instanced mesh entities
+  instanced: world.with('transform', 'instanced'),
+  
+  // Entities that need matrix updates
+  needsUpdate: world.with('transform', 'needsMatrixUpdate'),
+  
+  // Core entities
+  cores: world.with('transform', 'isCore'),
+  
+  // Orbiters
+  orbiters: world.with('transform', 'isOrbiter'),
+  
+  // Structures
+  structures: world.with('transform', 'isStructure'),
+  
+  // Lights
+  lights: world.with('transform', 'isLight'),
+  
+  // Connectors
+  connectors: world.with('transform', 'isConnector'),
+};
 
-export function createVelocity(
-  lx = 0, ly = 0, lz = 0,
-  ax = 0, ay = 0, az = 0
-): Velocity {
-  return {
-    linear: new THREE.Vector3(lx, ly, lz),
-    angular: new THREE.Vector3(ax, ay, az),
-  };
-}
+// Utility function to create entity IDs
+let entityIdCounter = 0;
+export const createEntityId = (prefix: string = 'entity') => {
+  return `${prefix}_${++entityIdCounter}`;
+};
 
-export function createOrbital(
-  radius: number,
-  speed: number,
-  axis: Orbital['axis'] = 'y',
-  center = new THREE.Vector3()
-): Orbital {
-  return {
-    center,
-    radius,
-    speed,
-    phase: Math.random() * Math.PI * 2,
-    axis,
-  };
-}
-
-export function createPulse(
-  frequency: number,
-  amplitude: number,
-  property: Pulse['property'] = 'scale'
-): Pulse {
-  return {
-    frequency,
-    amplitude,
-    phase: Math.random() * Math.PI * 2,
-    property,
-  };
-}
-
-export function createGlow(
-  color: string | number,
-  intensity: number,
-  pulseSpeed?: number
-): Glow {
-  return {
-    color: new THREE.Color(color),
-    intensity,
-    pulseSpeed,
-  };
-}
-
-export function createDevice(
-  type: Device['type'],
-  screenContent?: ScreenContent
-): Device {
-  return {
-    type,
-    screenContent,
-    screenGlow: true,
-  };
-}
-
-// ============================================================================
-// SISTEMAS
-// ============================================================================
-
-export function orbitalSystem(delta: number, time: number): void {
-  for (const entity of queries.withOrbital) {
-    const { transform, orbital } = entity;
-    const angle = time * orbital.speed + orbital.phase;
-
-    switch (orbital.axis) {
-      case 'y':
-        transform.position.x = orbital.center.x + Math.cos(angle) * orbital.radius;
-        transform.position.z = orbital.center.z + Math.sin(angle) * orbital.radius;
-        break;
-      case 'x':
-        transform.position.y = orbital.center.y + Math.cos(angle) * orbital.radius;
-        transform.position.z = orbital.center.z + Math.sin(angle) * orbital.radius;
-        break;
-      case 'z':
-        transform.position.x = orbital.center.x + Math.cos(angle) * orbital.radius;
-        transform.position.y = orbital.center.y + Math.sin(angle) * orbital.radius;
-        break;
-      case 'xy':
-        transform.position.x = orbital.center.x + Math.cos(angle) * orbital.radius;
-        transform.position.y = orbital.center.y + Math.sin(angle) * orbital.radius * 0.5;
-        transform.position.z = orbital.center.z + Math.sin(angle * 1.5) * orbital.radius * 0.3;
-        break;
-    }
-  }
-}
-
-export function velocitySystem(delta: number): void {
-  for (const entity of queries.withVelocity) {
-    const { transform, velocity } = entity;
-    transform.position.add(velocity.linear.clone().multiplyScalar(delta));
-    transform.rotation.x += velocity.angular.x * delta;
-    transform.rotation.y += velocity.angular.y * delta;
-    transform.rotation.z += velocity.angular.z * delta;
-  }
-}
-
-export function pulseSystem(time: number): void {
-  for (const entity of queries.withPulse) {
-    const { transform, pulse } = entity;
-    const value = 1 + Math.sin(time * pulse.frequency + pulse.phase) * pulse.amplitude;
-
-    if (pulse.property === 'scale') {
-      transform.scale.setScalar(value);
-    }
-  }
-}
-
-export function lifetimeSystem(delta: number): void {
-  const toRemove: Entity[] = [];
-
-  for (const entity of queries.withLifetime) {
-    entity.lifetime!.current += delta;
-    if (entity.lifetime!.current >= entity.lifetime!.max) {
-      toRemove.push(entity);
-    }
-  }
-
-  for (const entity of toRemove) {
+// Reset world (useful for cleanup)
+export const resetWorld = () => {
+  for (const entity of world) {
     world.remove(entity);
   }
-}
-
-export function trailSystem(): void {
-  for (const entity of queries.withTrail) {
-    const { transform, trail } = entity;
-    trail.positions.unshift(transform.position.clone());
-    if (trail.positions.length > trail.length) {
-      trail.positions.pop();
-    }
-  }
-}
-
-// ============================================================================
-// CLEANUP
-// ============================================================================
-
-export function clearWorld(): void {
-  for (const entity of world.entities) {
-    world.remove(entity);
-  }
-}
+  entityIdCounter = 0;
+};

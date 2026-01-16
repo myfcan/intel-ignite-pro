@@ -7,7 +7,7 @@
 
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import type { V7VisualContent, V7PhaseType } from '@/types/V7Contract';
+import type { V7VisualContent, V7PhaseType, V7PhaseEffects } from '@/types/V7Contract';
 
 // Lazy load 3D components para melhor performance
 const V73DDualMonitors = lazy(() => import('./3d/V73DDualMonitors'));
@@ -25,7 +25,7 @@ function Loading3D() {
 
 interface V7VisualRendererProps {
   visual: V7VisualContent;
-  effects?: Record<string, unknown>;
+  effects?: V7PhaseEffects;
   phaseType: V7PhaseType;
 }
 
@@ -139,8 +139,17 @@ export default function V7VisualRenderer({ visual, effects, phaseType }: V7Visua
 // ============================================================================
 
 function NumberReveal({ content, effects }: { content: any; effects?: any }) {
-  const mood = effects?.mood || 'neutral';
+  const mood = effects?.mood || content?.mood || 'neutral';
   const numberColor = mood === 'danger' ? 'text-red-500' : mood === 'success' ? 'text-green-500' : 'text-cyan-400';
+
+  // ✅ FIX: Support showSecondaryAsMain flag - quando true, mostra secondaryNumber como principal
+  const mainNumber = content.showSecondaryAsMain && content.secondaryNumber 
+    ? content.secondaryNumber 
+    : content.number;
+  
+  const secondaryNumber = content.showSecondaryAsMain && content.secondaryNumber 
+    ? content.number 
+    : content.secondaryNumber;
 
   return (
     <div className="text-center px-8">
@@ -164,17 +173,19 @@ function NumberReveal({ content, effects }: { content: any; effects?: any }) {
           textShadow: `0 0 60px currentColor`,
         }}
       >
-        {content.number}
+        {mainNumber}
       </motion.div>
 
-      {content.secondaryNumber && (
+      {secondaryNumber && (
         <motion.div
-          className="text-4xl md:text-6xl font-bold text-green-400 mt-2"
+          className={`text-4xl md:text-6xl font-bold mt-2 ${
+            content.showSecondaryAsMain ? 'text-cyan-400' : 'text-green-400'
+          }`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          {content.secondaryNumber}
+          {secondaryNumber}
         </motion.div>
       )}
 

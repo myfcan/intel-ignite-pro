@@ -7,69 +7,36 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import type { InteractionState, SoundEffectType } from '../useV7AudioManager';
 import { useV7ContextualTTS } from '../useV7ContextualTTS';
+import { useV7SoundEffects } from '../useV7SoundEffects';
 import { supabase } from '@/integrations/supabase/client';
+import type { 
+  V7PhaseQuizProps, 
+  V7AudioControl,
+  V7TimeoutConfig,
+  V7ContextualLoopConfig,
+  DEFAULT_TIMEOUT_CONFIG
+} from '../../v7-phase-contracts';
 
-interface QuizOption {
-  id: string;
-  text: string;
-  category: 'good' | 'bad';
-}
+// Default contextual loops for quiz phase
+const DEFAULT_CONTEXTUAL_LOOPS: V7ContextualLoopConfig[] = [
+  { triggerAfter: 5, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
+  { triggerAfter: 12, text: 'Tá pensando muito hein!', volume: 0.5 },
+  { triggerAfter: 18, text: 'Brincadeira, não precisa ter pressa!', volume: 0.5 },
+  { triggerAfter: 26, text: 'Hum, acho que vou tirar uma soneca.', volume: 0.4 }
+];
 
-interface AudioControl {
-  pause: () => void;
-  play: () => void;
-  togglePlayPause: () => void;
-  isPlaying: boolean;
-  // V7-v2: Novos métodos com fade
-  fadeToVolume?: (volume: number, duration?: number) => Promise<void>;
-  pauseWithFade?: (duration?: number) => Promise<void>;
-  resumeWithFade?: (duration?: number) => Promise<void>;
-  // V7-v2.1: Estado de interação e efeitos sonoros
-  interactionState?: InteractionState;
-  updateInteractionState?: (state: InteractionState) => void;
-  playSoundEffect?: (effect: SoundEffectType, volume?: number) => void;
-  // V7-v2.2: Contextual loops (TTS para hints audíveis)
-  speakText?: (text: string, volume?: number) => Promise<void>;
-  stopSpeech?: () => void;
-}
-
-// V7-v2.2: Configuração de loops contextuais (TTS durante espera)
-interface ContextualLoopConfig {
-  triggerAfter: number; // Segundos após início da interação
-  text: string;         // Texto a ser falado
-  volume: number;       // Volume (0-1)
-}
-
-interface V7PhaseQuizProps {
-  title: string;
-  subtitle?: string;
-  options: QuizOption[];
-  revealTitle: string;
-  revealMessage: string;
-  revealValue?: string;
-  // ✅ NEW: Separate feedback messages for correct/incorrect results
-  correctFeedback?: string;
-  incorrectFeedback?: string;
-  sceneIndex: number;
-  onComplete?: (selectedIds: string[]) => void;
-  audioControl?: AudioControl;
-  // ✅ V7-v3: isPaused é controlado EXTERNAMENTE pelo anchorText
-  // O quiz NÃO pausa automaticamente ao montar - espera o anchorAction
-  isPausedByAnchor?: boolean;
-  // ✅ V7-v9: Callback when result is shown (to hide player controls)
-  onResultShow?: (isShowing: boolean) => void;
-  // V7-v2: Configuração de timeouts (visual hints)
-  timeoutConfig?: {
-    soft: number;    // 7s - primeira dica
-    medium: number;  // 15s - segunda dica
-    hard: number;    // 30s - auto-avanço
-    hints: string[];
-  };
-  // V7-v2.2: Contextual audio loops (TTS)
-  contextualLoops?: ContextualLoopConfig[];
-}
+// Default timeout configuration
+const DEFAULT_QUIZ_TIMEOUT: V7TimeoutConfig = {
+  soft: 7,
+  medium: 15,
+  hard: 30,
+  hints: [
+    '👆 Estou esperando sua resposta... Selecione as opções acima!',
+    '🤔 Pense com calma... Qual mais combina com você?',
+    '⏰ Vamos continuar a jornada...'
+  ]
+};
 
 export const V7PhaseQuiz = ({
   title,
@@ -81,27 +48,13 @@ export const V7PhaseQuiz = ({
   correctFeedback,
   incorrectFeedback,
   sceneIndex,
+  phaseProgress,
   onComplete,
   audioControl,
-  isPausedByAnchor = false, // ✅ V7-v3: Controlado externamente
-  onResultShow, // ✅ V7-v9: Callback when result is shown
-  timeoutConfig = {
-    soft: 7,
-    medium: 15,
-    hard: 30,
-    hints: [
-      '👆 Estou esperando sua resposta... Selecione as opções acima!',
-      '🤔 Pense com calma... Qual mais combina com você?',
-      '⏰ Vamos continuar a jornada...'
-    ]
-  },
-  // V7-v2.2: Loops contextuais com voz (TTS)
-  contextualLoops = [
-    { triggerAfter: 5, text: 'Responda pra gente seguir em frente.', volume: 0.5 },
-    { triggerAfter: 12, text: 'Tá pensando muito hein!', volume: 0.5 },
-    { triggerAfter: 18, text: 'Brincadeira, não precisa ter pressa!', volume: 0.5 },
-    { triggerAfter: 26, text: 'Hum, acho que vou tirar uma soneca.', volume: 0.4 }
-  ]
+  isPausedByAnchor = false,
+  onResultShow,
+  timeoutConfig = DEFAULT_QUIZ_TIMEOUT,
+  contextualLoops = DEFAULT_CONTEXTUAL_LOOPS
 }: V7PhaseQuizProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [optionsRevealed, setOptionsRevealed] = useState(true); // ✅ CORRIGIDO: Opções aparecem IMEDIATAMENTE
@@ -115,6 +68,9 @@ export const V7PhaseQuiz = ({
   const [optionsEnabled, setOptionsEnabled] = useState(false);
   const [showEnableEffect, setShowEnableEffect] = useState(false);
   const [showBlockedTooltip, setShowBlockedTooltip] = useState(false);
+  
+  // ✅ Sound effects hook
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
   const {
@@ -319,24 +275,23 @@ export const V7PhaseQuiz = ({
     }
 
     // 🆕 V7-v2.1: Tocar efeito sonoro de seleção
-    const ctrl = audioControlRef.current;
-    ctrl?.playSoundEffect?.('click', 0.3);
+    playSound('click-soft');
 
-    // ✅ Do NOT pause audio on option selection - let narration continue
+    // ✅ SINGLE SELECT: Apenas uma opção pode ser selecionada por vez
+    // Se já está selecionada, desseleciona. Caso contrário, seleciona apenas esta.
     setSelectedIds(prev =>
       prev.includes(id)
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
+        ? [] // Desselecionar se já está selecionada
+        : [id] // Selecionar apenas esta opção (substitui qualquer seleção anterior)
     );
-  }, [isRevealed, optionsEnabled]);
+  }, [isRevealed, optionsEnabled, playSound]);
 
   // ✅ FASE 1: Primeiro clique revela as opções
   const handleRevealOptions = useCallback(() => {
     console.log('[V7PhaseQuiz] 🎯 REVELAR VERDADE clicked - showing options');
-    const ctrl = audioControlRef.current;
-    ctrl?.playSoundEffect?.('reveal', 0.5);
+    playSound('reveal');
     setOptionsRevealed(true);
-  }, []);
+  }, [playSound]);
 
   // ✅ V7-v3.1: Função para falar o feedback com TTS
   const speakFeedback = useCallback(async (feedbackText: string) => {
@@ -408,11 +363,9 @@ export const V7PhaseQuiz = ({
 
   // ✅ V7-v3.2: Som de erro para respostas incorretas
   const playErrorSound = useCallback(() => {
-    const ctrl = audioControlRef.current;
-    // Usar efeito sonoro de erro
-    ctrl?.playSoundEffect?.('error', 0.6);
+    playSound('quiz-wrong');
     console.log('[V7PhaseQuiz] 🔊 Som de erro tocado');
-  }, []);
+  }, [playSound]);
 
   // ✅ FASE 1: Segundo clique confirma a resposta
   const handleConfirm = useCallback(() => {
@@ -422,15 +375,16 @@ export const V7PhaseQuiz = ({
     console.log('[V7PhaseQuiz] ✅ CONFIRMAR clicked - showing results');
 
     // 🆕 V7-v2.1: Tocar efeito de revelação
+    playSound('click-confirm');
     const ctrl = audioControlRef.current;
     // Parar qualquer TTS em andamento
     ctrl?.stopSpeech?.();
-    ctrl?.playSoundEffect?.('success', 0.5);
     ctrl?.updateInteractionState?.('idle');
 
     setIsRevealed(true);
     setTimeout(() => {
       setShowResult(true);
+      playSound('reveal');
       
       // ✅ V7-v9: Notify parent that result is showing (to hide player controls)
       onResultShow?.(true);
@@ -442,16 +396,18 @@ export const V7PhaseQuiz = ({
       const isPositiveResult = badCount < selectedIds.length / 2;
       
       // Feedback diferenciado baseado no resultado
+      // ✅ V7-vv FIX: NÃO chamar speakFeedback() aqui - o V7PhasePlayer
+      // já gerencia o feedbackAudio pré-gravado. Chamar speakFeedback
+      // aqui causa sobreposição de áudio.
       if (isPositiveResult) {
-        // ✅ CORRETO: Confetti verde + áudio positivo
+        // ✅ CORRETO: Confetti verde + som de acerto
+        playSound('quiz-correct');
         fireConfetti();
-        const feedbackText = correctFeedback || 'Você já tem bases sólidas para dominar IA!';
-        speakFeedback(feedbackText);
+        console.log('[V7PhaseQuiz] ✅ Resultado positivo - confetti triggered');
       } else {
-        // ✅ INCORRETO: Som de erro + áudio encorajador
+        // ✅ INCORRETO: Som de erro
         playErrorSound();
-        const feedbackText = incorrectFeedback || 'Não se preocupe - você está aqui para mudar isso!';
-        speakFeedback(feedbackText);
+        console.log('[V7PhaseQuiz] ❌ Resultado negativo - error sound triggered');
       }
     }, 500);
 
@@ -462,7 +418,7 @@ export const V7PhaseQuiz = ({
       console.log('[V7PhaseQuiz] ✅ Feedback completo - chamando onComplete');
       onComplete?.(selectedIds);
     }, 4500); // Delay para dar tempo do feedback ser falado
-  }, [selectedIds, onComplete, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback, stopTts]);
+  }, [selectedIds, onComplete, options, correctFeedback, incorrectFeedback, fireConfetti, playErrorSound, speakFeedback, stopTts, playSound]);
 
   const badCount = selectedIds.filter(id => 
     options.find(o => o.id === id)?.category === 'bad'
@@ -472,21 +428,21 @@ export const V7PhaseQuiz = ({
 
   // ✅ V7-v15: Quando resultado aparece, container usa justify-center e esconde opções
   return (
-    <div className={`w-full h-full flex flex-col items-center p-4 sm:p-6 pb-28 relative overflow-hidden ${showResult ? 'justify-center' : 'justify-start pt-6 sm:pt-10'}`}>
+    <div className={`w-full h-full flex flex-col items-center p-3 sm:p-4 md:p-6 pb-28 relative overflow-hidden ${showResult ? 'justify-center' : 'justify-start pt-4 sm:pt-6 md:pt-10'}`}>
       <div className="w-full max-w-2xl">
         {/* ✅ V7-v15: Quiz Header - Escondido quando resultado aparece */}
         {!showResult && (
           <motion.div
-            className="text-center mb-6"
+            className="text-center mb-3 sm:mb-4 md:mb-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -20 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 px-2">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-white/60">{subtitle}</p>
+              <p className="text-white/60 text-xs sm:text-sm">{subtitle}</p>
             )}
           </motion.div>
         )}
@@ -578,8 +534,8 @@ export const V7PhaseQuiz = ({
                     <motion.div
                       key={option.id}
                       className={`
-                        min-h-[48px] sm:min-h-[56px]
-                      relative flex items-center gap-4 p-4 rounded-xl
+                        min-h-[40px] sm:min-h-[48px] md:min-h-[56px]
+                      relative flex items-center gap-2 sm:gap-3 md:gap-4 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl
                       border-2 transition-all overflow-hidden
                       ${isOptionDisabled 
                         ? 'cursor-not-allowed opacity-50 border-white/5 bg-white/[0.01]'
@@ -611,7 +567,7 @@ export const V7PhaseQuiz = ({
                     {/* Checkbox */}
                     <motion.div
                       className={`
-                        w-6 h-6 rounded-md border-2 flex items-center justify-center
+                        w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 flex items-center justify-center
                         transition-colors flex-shrink-0
                         ${isOptionDisabled
                           ? 'border-white/10'
@@ -633,7 +589,7 @@ export const V7PhaseQuiz = ({
                       <AnimatePresence>
                         {isSelected && (
                           <motion.span
-                            className="text-white text-sm font-bold"
+                            className="text-white text-xs sm:text-sm font-bold"
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0 }}
@@ -644,7 +600,7 @@ export const V7PhaseQuiz = ({
                       </AnimatePresence>
                     </motion.div>
 
-                    <span className={`${isOptionDisabled ? 'text-white/50' : 'text-white/90'}`}>{option.text}</span>
+                    <span className={`text-sm sm:text-base ${isOptionDisabled ? 'text-white/50' : 'text-white/90'}`}>{option.text}</span>
 
                     {/* Feedback indicator */}
                     {showFeedback && isSelected && (

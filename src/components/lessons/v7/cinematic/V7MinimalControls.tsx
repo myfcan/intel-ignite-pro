@@ -12,6 +12,12 @@ import {
   SkipForward,
   X
 } from "lucide-react";
+import { 
+  V7_SPACING, 
+  V7_LAYERS, 
+  V7_CLASSES,
+  V7_TYPOGRAPHY 
+} from "../v7-design-tokens";
 
 interface V7MinimalControlsProps {
   // Playback state
@@ -42,6 +48,7 @@ interface V7MinimalControlsProps {
   // Visibility & State
   isVisible?: boolean;
   isLocked?: boolean; // ✅ Bloqueia controles durante interação
+  hidePlayPause?: boolean; // ✅ Esconde play/pause para evitar dessincronização
 }
 
 export const V7MinimalControls = ({
@@ -63,7 +70,8 @@ export const V7MinimalControls = ({
   onExit,
   onSeek,
   isVisible = true,
-  isLocked = false
+  isLocked = false,
+  hidePlayPause = false
 }: V7MinimalControlsProps) => {
   
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -76,14 +84,15 @@ export const V7MinimalControls = ({
 
   return (
     <>
-      {/* Exit Button - Top Left */}
+      {/* Exit Button - Top Left with safe area support */}
       {onExit && (
         <motion.button
-          className="absolute top-4 left-4 z-[150] w-10 h-10 rounded-full 
-                     bg-black/40 backdrop-blur-md border border-white/10
-                     flex items-center justify-center
-                     text-white/60 hover:text-white hover:bg-black/60
-                     transition-all duration-200"
+          className={`absolute ${V7_CLASSES.exitButton}`}
+          style={{
+            top: V7_SPACING.positions.exitButton.top,
+            left: V7_SPACING.positions.exitButton.left,
+            zIndex: V7_LAYERS.exitButton,
+          }}
           onClick={onExit}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -20 }}
@@ -95,9 +104,15 @@ export const V7MinimalControls = ({
         </motion.button>
       )}
 
-      {/* Unified Control Bar - Bottom Center */}
+      {/* Unified Control Bar - Bottom Center - Safe area support for notch/gestures */}
       <motion.div
-        className="fixed bottom-4 left-0 right-0 z-[100] flex justify-center px-4"
+        className="fixed left-0 right-0 flex justify-center px-4"
+        style={{
+          bottom: V7_SPACING.positions.controlBar.bottom,
+          paddingLeft: V7_SPACING.positions.controlBar.paddingX,
+          paddingRight: V7_SPACING.positions.controlBar.paddingX,
+          zIndex: V7_LAYERS.controls,
+        }}
         initial={{ opacity: 0, y: 30 }}
         animate={{ 
           opacity: isVisible ? 1 : 0, 
@@ -105,26 +120,24 @@ export const V7MinimalControls = ({
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <div className="w-full max-w-sm bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-          {/* Progress Bar - Clickable */}
+        <div className={`w-full max-w-sm ${V7_CLASSES.controlBar}`}>
+          {/* Progress Bar - THIN LINE at top of controls */}
           <div 
-            className="h-1 bg-white/10 cursor-pointer group relative"
+            className="relative h-1 bg-white/10 cursor-pointer overflow-hidden"
             onClick={handleProgressClick}
           >
-            {/* Progress Fill */}
+            {/* Progress Fill - MUST stay h-1, only fills width */}
             <motion.div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-pink-500"
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 to-cyan-500 rounded-full"
               style={{ width: `${progress * 100}%` }}
             />
-            {/* Hover indicator */}
-            <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors" />
           </div>
 
           {/* Controls Row */}
           <div className="flex items-center justify-between px-3 py-2.5 gap-2">
             {/* Left: Time */}
             <div className="flex items-center gap-2 min-w-[80px]">
-              <span className="text-[11px] text-white/50 font-mono tabular-nums">
+              <span className={`text-[11px] text-white/50 ${V7_TYPOGRAPHY.mono}`}>
                 {currentTime}
               </span>
             </div>
@@ -135,45 +148,37 @@ export const V7MinimalControls = ({
               <button
                 onClick={onPrevious}
                 disabled={!canGoPrevious}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all
-                  ${canGoPrevious
-                    ? 'text-white/70 hover:text-white hover:bg-white/10 active:scale-95'
-                    : 'text-white/20 cursor-not-allowed'
-                  }`}
+                className={canGoPrevious ? V7_CLASSES.buttonSecondary : `${V7_CLASSES.buttonSecondary} ${V7_CLASSES.buttonDisabled}`}
                 aria-label="Seção anterior"
               >
                 <SkipBack className="w-4 h-4" />
               </button>
 
-              {/* Play/Pause - Primary */}
-              <button
-                onClick={onTogglePlay}
-                disabled={isLocked}
-                className={`w-12 h-12 rounded-full flex items-center justify-center
-                           transition-all shadow-lg
-                           ${isLocked 
-                             ? 'bg-white/30 cursor-not-allowed' 
-                             : 'bg-white hover:bg-white/90 active:scale-95'
-                           }`}
-                aria-label={isLocked ? 'Aguardando interação' : isPlaying ? 'Pausar' : 'Reproduzir'}
-                title={isLocked ? 'Complete a interação para continuar' : undefined}
-              >
-                {isPlaying ? (
-                  <Pause className={`w-5 h-5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
-                ) : (
-                  <Play className={`w-5 h-5 ml-0.5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
-                )}
-              </button>
+              {/* Play/Pause - Hidden in V7-vv to prevent desync */}
+              {!hidePlayPause && (
+                <button
+                  onClick={onTogglePlay}
+                  disabled={isLocked}
+                  className={isLocked 
+                    ? `${V7_CLASSES.buttonPrimary} bg-white/30 cursor-not-allowed`
+                    : V7_CLASSES.buttonPrimary
+                  }
+                  aria-label={isLocked ? 'Aguardando interação' : isPlaying ? 'Pausar' : 'Reproduzir'}
+                  title={isLocked ? 'Complete a interação para continuar' : undefined}
+                >
+                  {isPlaying ? (
+                    <Pause className={`w-5 h-5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
+                  ) : (
+                    <Play className={`w-5 h-5 ml-0.5 ${isLocked ? 'text-black/40' : 'text-black'}`} />
+                  )}
+                </button>
+              )}
 
               {/* Next */}
               <button
                 onClick={onNext}
                 disabled={!canGoNext}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all
-                  ${canGoNext
-                    ? 'text-white/70 hover:text-white hover:bg-white/10 active:scale-95'
-                    : 'text-white/20 cursor-not-allowed'
-                  }`}
+                className={canGoNext ? V7_CLASSES.buttonSecondary : `${V7_CLASSES.buttonSecondary} ${V7_CLASSES.buttonDisabled}`}
                 aria-label="Próxima seção"
               >
                 <SkipForward className="w-4 h-4" />
@@ -211,27 +216,27 @@ export const V7MinimalControls = ({
                                [&::-webkit-slider-thumb]:w-2
                                [&::-webkit-slider-thumb]:h-2
                                [&::-webkit-slider-thumb]:rounded-full
-                               [&::-webkit-slider-thumb]:bg-white"
+                               [&::-webkit-slider-thumb]:bg-cyan-400"
                     aria-label="Volume"
                   />
                 </div>
               </div>
               
               {/* Duration */}
-              <span className="text-[11px] text-white/50 font-mono tabular-nums">
+              <span className={`text-[11px] text-white/50 ${V7_TYPOGRAPHY.mono}`}>
                 {duration}
               </span>
             </div>
           </div>
 
-          {/* Phase Indicator - Subtle dots */}
+          {/* Phase Indicator - Subtle dots with cyan active */}
           <div className="flex items-center justify-center gap-1.5 pb-2">
             {Array.from({ length: totalPhases }).map((_, i) => (
               <div
                 key={i}
                 className={`h-1 rounded-full transition-all duration-300 ${
                   i === currentPhase 
-                    ? 'w-4 bg-white' 
+                    ? 'w-4 bg-cyan-400' 
                     : i < currentPhase 
                       ? 'w-1.5 bg-white/40' 
                       : 'w-1.5 bg-white/20'

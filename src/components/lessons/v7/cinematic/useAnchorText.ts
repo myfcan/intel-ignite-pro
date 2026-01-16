@@ -72,7 +72,8 @@ interface UseAnchorTextProps {
   enabled?: boolean;
   
   // Callbacks de ação
-  onPause?: () => void;
+  /** @param keywordTime - Tempo exato onde a keyword termina (para seek-back preciso) */
+  onPause?: (keywordTime?: number) => void;
   onResume?: () => void;
   onShow?: (targetId: string, payload?: any) => void;
   onHide?: (targetId: string, payload?: any) => void;
@@ -194,18 +195,17 @@ export function useAnchorText({
   }, [wordTimestamps, normalizeWord]);
 
   // Verifica se o tempo atual está próximo de uma palavra
-  // ✅ V7-v3 FIX: Para multi-word, só trigger APÓS a palavra terminar (usar end time)
-  // Window de 300ms APÓS o end da palavra para garantir que a frase completa foi falada
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 300): boolean => {
+  // ✅ V7-v41 FIX: Janela de 400ms - equilibra detecção confiável + seek-back no Player
+  // O Player faz seek-back se passar do ponto, então podemos usar janela maior aqui
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 400): boolean => {
     const windowSec = windowMs / 1000;
     // ✅ CRÍTICO: Tempo atual deve ser >= end da palavra (frase completa falada)
-    // E dentro de uma janela razoável após o end
     const isAfterWordEnd = time >= wordTs.end;
     const isWithinWindow = time <= wordTs.end + windowSec;
     const result = isAfterWordEnd && isWithinWindow;
     
     if (result) {
-      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s is AFTER word end ${wordTs.end.toFixed(2)}s (within ${windowMs}ms window)`);
+      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (window ${windowMs}ms)`);
     }
     
     return result;
@@ -236,7 +236,8 @@ export function useAnchorText({
         case 'pause':
           stateRef.current.pausedByAnchor = true;
           setIsPausedByAnchorState(true); // ✅ V7-v5: Atualiza state para causar re-render
-          onPause?.();
+          // ✅ V7-v42: Passa keywordTime exato (wordTs.end) para seek-back preciso no Player
+          onPause?.(wordTs.end);
           break;
           
         case 'resume':
@@ -353,20 +354,27 @@ export function useAnchorText({
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // ✅ V7-vv: Se keywordTime está disponível, usar detecção direta por tempo
-      // Isso é mais preciso e eficiente que buscar pela keyword nos wordTimestamps
+      // ✅ V7-v43: Se keywordTime está disponível, usar detecção PREVENTIVA por tempo
+      // PROBLEMA: "faz." termina em 63.425s e "Eles" começa em 63.634s (gap de 209ms)
+      // SOLUÇÃO: Pausar 100ms ANTES do keywordTime para garantir que não vaze
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const windowMs = 500; // 500ms window for V7-vv (more forgiving)
+        const preemptiveMs = action.type === 'pause' ? 100 : 0; // ✅ Pausa preventiva apenas para pause actions
+        const preemptiveSec = preemptiveMs / 1000;
+        const windowMs = 400; // Janela de detecção após o ponto
         const windowSec = windowMs / 1000;
-        const isNear = currentTime >= action.keywordTime && currentTime <= action.keywordTime + windowSec;
+        
+        // ✅ V7-v43: Para pause actions, detectar 100ms ANTES do keywordTime
+        // Isso garante que o áudio para ANTES da próxima frase começar
+        const triggerPoint = action.keywordTime - preemptiveSec;
+        const isNear = currentTime >= triggerPoint && currentTime <= action.keywordTime + windowSec;
 
         if (isNear) {
-          console.log(`[AnchorText] 🎯 V7-vv DIRECT MATCH! "${action.keyword}" at keywordTime ${action.keywordTime.toFixed(1)}s (current: ${timeStr}s)`);
-          // Create synthetic wordTs for compatibility
+          console.log(`[AnchorText] 🎯 V7-v43 PREVENTIVE MATCH! "${action.keyword}" @ ${triggerPoint.toFixed(3)}s (current: ${timeStr}s, keywordTime: ${action.keywordTime.toFixed(3)}s)`);
+          // Create synthetic wordTs - usar o ponto de pausa exato para seek-back
           const syntheticWordTs: WordTimestamp = {
             word: action.keyword,
             start: action.keywordTime - 0.5,
-            end: action.keywordTime,
+            end: action.keywordTime - preemptiveSec, // ✅ O seek-back vai para 100ms ANTES do end
           };
           executeAction(action, syntheticWordTs);
         }

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import dashboardMockup from "@/assets/dashboard-mockup.jpg";
 import lessonMockup from "@/assets/lesson-mockup.jpg";
 import chatMockup from "@/assets/chat-mockup.jpg";
@@ -20,6 +21,7 @@ import botMockup from "@/assets/bot-mockup.jpg";
 import iphoneChatMockup from "@/assets/iphone-chat-mockup.jpg";
 import iphoneChatHero from "@/assets/iphone-chat-hero.jpg";
 import { usePrefetchMainPages } from "@/hooks/usePrefetch";
+import logoAiliv from "@/assets/ailiv-logo-new.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -33,14 +35,23 @@ const Index = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 gradient-hero rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold gradient-hero bg-clip-text text-transparent">
-                Inteligência Ignite
-              </span>
-            </div>
+            <motion.div 
+              className="flex items-center gap-2 cursor-pointer" 
+              onClick={() => navigate('/')}
+              initial={{ opacity: 0, y: -20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                duration: 0.6, 
+                ease: [0.22, 1, 0.36, 1],
+                delay: 0.1
+              }}
+            >
+              <img 
+                src={logoAiliv} 
+                alt="Ailiv" 
+                className="h-12 sm:h-14 w-auto object-contain transition-all duration-300 hover:scale-110 hover:brightness-125 hover:drop-shadow-[0_0_12px_rgba(255,215,0,0.6)]"
+              />
+            </motion.div>
             <Button onClick={() => navigate('/auth?mode=signup')} className="gradient-hero text-white">
               Começar Agora
               <ArrowRight className="ml-2 w-4 h-4" />

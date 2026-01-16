@@ -1,0 +1,521 @@
+{
+  "schema": "v7-vv",
+  "version": "1.0.0",
+  "title": "O Fim da Brincadeira com IA",
+  "subtitle": "Descubra o método PERFEITO para prompts profissionais",
+  "difficulty": "iniciante",
+  "category": "Fundamentos de IA",
+  "tags": ["prompts", "método PERFEITO", "IA profissional"],
+  "estimatedDuration": 180,
+  "learningObjectives": [
+    "Entender a diferença entre uso amador e profissional da IA",
+    "Conhecer o método PERFEITO para criar prompts eficazes",
+    "Aplicar o método em situações práticas"
+  ],
+
+  "metadata": {
+    "version": "v7-vv",
+    "phaseCount": 10,
+    "totalDuration": 180,
+    "hasInteractivePhases": true,
+    "hasPlayground": true,
+    "hasPostLessonExercises": true
+  },
+
+  "audio": {
+    "mainAudio": {
+      "url": "URL_DO_AUDIO_PRINCIPAL",
+      "duration": 87.037,
+      "wordTimestamps": []
+    },
+    "feedbackAudios": [
+      {
+        "id": "quiz-correct",
+        "url": "URL_AUDIO_CORRETO",
+        "wordTimestamps": [],
+        "trigger": "quiz-correct-answer"
+      },
+      {
+        "id": "quiz-incorrect",
+        "url": "URL_AUDIO_INCORRETO",
+        "wordTimestamps": [],
+        "trigger": "quiz-incorrect-answer"
+      },
+      {
+        "id": "playground-success",
+        "url": "URL_AUDIO_PLAYGROUND_SUCESSO",
+        "wordTimestamps": [],
+        "trigger": "playground-complete"
+      },
+      {
+        "id": "cta-motivacional",
+        "url": "URL_AUDIO_CTA",
+        "wordTimestamps": [],
+        "trigger": "cta-decision"
+      }
+    ]
+  },
+
+  "phases": [
+    {
+      "id": "fase-1-abertura",
+      "type": "dramatic",
+      "title": "Abertura Impactante",
+      "startTime": 0,
+      "endTime": 12.5,
+      "effects": {
+        "screenShake": true,
+        "glitch": true,
+        "flash": true
+      },
+      "visual": {
+        "type": "statistic",
+        "content": {
+          "number": "97%",
+          "label": "das pessoas usam IA como amadores",
+          "subtext": "E você pode estar entre elas..."
+        }
+      },
+      "microVisuals": [
+        {
+          "type": "counter",
+          "triggerTime": 2.5,
+          "content": { "from": 0, "to": 97, "suffix": "%" }
+        },
+        {
+          "type": "text-highlight",
+          "triggerTime": 8.0,
+          "content": { "text": "amadores", "color": "red" }
+        }
+      ],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-2-estatistica",
+      "type": "revelation",
+      "title": "Estatística Chocante",
+      "startTime": 12.5,
+      "endTime": 25.0,
+      "effects": {
+        "spotlight": true
+      },
+      "visual": {
+        "type": "comparison",
+        "content": {
+          "left": {
+            "label": "AMADOR",
+            "icon": "😕",
+            "color": "red"
+          },
+          "right": {
+            "label": "PROFISSIONAL",
+            "icon": "🚀",
+            "color": "green"
+          }
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-3-quiz",
+      "type": "interaction",
+      "title": "Quiz de Autoavaliação",
+      "startTime": 25.0,
+      "endTime": 38.0,
+      "effects": {},
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "Quando você usa o ChatGPT, você geralmente...",
+          "options": [
+            { "id": "a", "text": "Digita a primeira coisa que vem na cabeça" },
+            { "id": "b", "text": "Pensa um pouco antes de escrever" },
+            { "id": "c", "text": "Usa um método estruturado" },
+            { "id": "d", "text": "Copia prompts da internet" }
+          ],
+          "correctOptionId": "c",
+          "feedbackCorrect": {
+            "title": "🎯 Excelente!",
+            "message": "Você já está no caminho certo! Vamos aprofundar esse método."
+          },
+          "feedbackIncorrect": {
+            "title": "😅 Normal!",
+            "message": "A maioria das pessoas faz isso. Mas hoje você vai aprender a fazer diferente!"
+          }
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": [
+        {
+          "id": "pause-quiz",
+          "type": "pause",
+          "keyword": "geralmente",
+          "keywordTime": 28.5
+        }
+      ],
+      "audioBehavior": {
+        "onStart": "pause",
+        "onCorrect": "play-feedback-correct",
+        "onIncorrect": "play-feedback-incorrect",
+        "onComplete": "resume"
+      },
+      "interaction": {
+        "type": "quiz",
+        "minScore": 0,
+        "showFeedback": true
+      }
+    },
+
+    {
+      "id": "fase-4-dor",
+      "type": "dramatic",
+      "title": "A Dor do Amador",
+      "startTime": 38.0,
+      "endTime": 50.0,
+      "effects": {
+        "vignette": true,
+        "darkOverlay": true
+      },
+      "visual": {
+        "type": "pain-points",
+        "content": {
+          "title": "O problema de prompts amadores:",
+          "points": [
+            "❌ Respostas genéricas",
+            "❌ Muito retrabalho",
+            "❌ Tempo perdido",
+            "❌ Resultados medíocres"
+          ]
+        }
+      },
+      "microVisuals": [
+        {
+          "type": "icon-appear",
+          "triggerTime": 40.0,
+          "content": { "icon": "❌", "index": 0 }
+        },
+        {
+          "type": "icon-appear",
+          "triggerTime": 42.0,
+          "content": { "icon": "❌", "index": 1 }
+        },
+        {
+          "type": "icon-appear",
+          "triggerTime": 44.0,
+          "content": { "icon": "❌", "index": 2 }
+        },
+        {
+          "type": "icon-appear",
+          "triggerTime": 46.0,
+          "content": { "icon": "❌", "index": 3 }
+        }
+      ],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-5-solucao",
+      "type": "transformation",
+      "title": "A Solução Revelada",
+      "startTime": 50.0,
+      "endTime": 58.0,
+      "effects": {
+        "lightBeam": true,
+        "particleExplosion": true
+      },
+      "visual": {
+        "type": "solution-reveal",
+        "content": {
+          "title": "Existe um método...",
+          "subtitle": "que transforma qualquer prompt amador em profissional"
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-6-metodo-perfeito",
+      "type": "revelation",
+      "title": "Revelação do Método PERFEITO",
+      "startTime": 58.0,
+      "endTime": 78.0,
+      "effects": {
+        "letterReveal": true,
+        "glowPulse": true,
+        "soundPerLetter": true
+      },
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "letters": [
+            { "letter": "P", "meaning": "Persona", "subtitle": "específica", "anchorText": "Persona" },
+            { "letter": "E", "meaning": "Estrutura", "subtitle": "clara", "anchorText": "Estrutura" },
+            { "letter": "R", "meaning": "Resultado", "subtitle": "esperado", "anchorText": "Resultado" },
+            { "letter": "F", "meaning": "Formato", "subtitle": "definido", "anchorText": "Formato" },
+            { "letter": "E", "meaning": "Exemplos", "subtitle": "práticos", "anchorText": "Exemplos" },
+            { "letter": "I", "meaning": "Iteração", "subtitle": "contínua", "anchorText": "Iteração" },
+            { "letter": "T", "meaning": "Tom", "subtitle": "adequado", "anchorText": "Tom" },
+            { "letter": "O", "meaning": "Otimização", "subtitle": "constante", "anchorText": "Otimização" }
+          ]
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-7-playground",
+      "type": "interaction",
+      "title": "Playground - Amador vs Profissional",
+      "startTime": 78.0,
+      "endTime": 86.0,
+      "effects": {},
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "A DIFERENÇA NA PRÁTICA",
+          "subtitle": "Prompt amador vs prompt profissional",
+          "instruction": "Faça o teste agora"
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": [
+        {
+          "id": "pause-playground",
+          "type": "pause",
+          "keyword": "teste agora",
+          "keywordTime": 85.5
+        }
+      ],
+      "audioBehavior": {
+        "onStart": "pause",
+        "onComplete": "resume"
+      },
+      "interaction": {
+        "type": "playground",
+        "comparison": {
+          "amateur": {
+            "label": "PROMPT AMADOR",
+            "prompt": "Me dá ideias de negócio",
+            "response": "Aqui estão algumas ideias: loja virtual, dropshipping, afiliados, freelancer, consultoria.",
+            "score": 10,
+            "mood": "danger"
+          },
+          "professional": {
+            "label": "PROMPT PROFISSIONAL (PERFEITO)",
+            "prompt": "Atue como um consultor de negócios com 20 anos de experiência em startups brasileiras. Preciso de 5 ideias de negócio para um profissional de 45 anos que trabalha com contabilidade e quer usar IA para criar uma renda extra de R$5.000/mês. Liste cada ideia com: nome do negócio, investimento inicial, tempo para primeiro faturamento, e potencial de escala.",
+            "response": "Baseado no seu perfil de contador com expertise em números e processos, aqui estão 5 ideias específicas para gerar R$5.000/mês com IA:\n\n1. **Automação de Relatórios Contábeis com IA** - Investimento: R$500 | Primeiro faturamento: 30 dias | Escala: Alta\n\n2. **Consultoria de Precificação Inteligente** - Investimento: R$200 | Primeiro faturamento: 15 dias | Escala: Média\n\n3. **Cursos de IA para Contadores** - Investimento: R$1.000 | Primeiro faturamento: 60 dias | Escala: Muito Alta\n\n4. **Serviço de Análise Preditiva de Fluxo de Caixa** - Investimento: R$800 | Primeiro faturamento: 45 dias | Escala: Alta\n\n5. **Mentoria Individual de Produtividade com IA** - Investimento: R$0 | Primeiro faturamento: 7 dias | Escala: Média",
+            "score": 95,
+            "mood": "success"
+          }
+        },
+        "userChallenge": {
+          "instruction": "Agora é sua vez! Reescreva este prompt amador usando o método PERFEITO:",
+          "challengePrompt": "Me ajuda a escrever um email",
+          "hints": [
+            "Defina a PERSONA: Quem você quer que a IA seja?",
+            "Especifique o RESULTADO: O que você espera receber?",
+            "Determine o FORMATO: Como quer a resposta estruturada?",
+            "Dê EXEMPLOS: Mostre o tom ou estilo desejado"
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "fase-8-detalhamento",
+      "type": "narrative",
+      "title": "Detalhamento do Método",
+      "startTime": 86.0,
+      "endTime": 87.0,
+      "effects": {},
+      "visual": {
+        "type": "summary",
+        "content": {
+          "title": "Recapitulando",
+          "text": "O método PERFEITO é sua ferramenta para extrair o máximo da IA."
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-9-gamificacao",
+      "type": "gamification",
+      "title": "Conquistas e XP",
+      "startTime": 87.0,
+      "endTime": 87.02,
+      "effects": {
+        "confetti": true,
+        "celebrationSound": true
+      },
+      "visual": {
+        "type": "achievements",
+        "content": {
+          "title": "🎉 Parabéns!",
+          "achievements": [
+            { "icon": "🎯", "title": "Método Desbloqueado", "description": "Você aprendeu o PERFEITO!" },
+            { "icon": "📊", "title": "Primeiro Quiz", "description": "Completou a autoavaliação" }
+          ],
+          "xpEarned": 150,
+          "coinsEarned": 25
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": []
+    },
+
+    {
+      "id": "fase-10-cta",
+      "type": "cta",
+      "title": "Call to Action",
+      "startTime": 87.02,
+      "endTime": 87.037,
+      "effects": {
+        "pulse": true
+      },
+      "visual": {
+        "type": "decision",
+        "content": {
+          "title": "Você está pronto?",
+          "subtitle": "Continue sua jornada para dominar a IA",
+          "primaryButton": {
+            "text": "Continuar para o Exercício",
+            "action": "next-exercise"
+          },
+          "secondaryButton": {
+            "text": "Voltar para a Trilha",
+            "action": "back-to-trail"
+          }
+        }
+      },
+      "microVisuals": [],
+      "anchorActions": [
+        {
+          "id": "pause-cta",
+          "type": "pause",
+          "keyword": "pronto",
+          "keywordTime": 87.0
+        }
+      ],
+      "audioBehavior": {
+        "onStart": "pause"
+      },
+      "interaction": {
+        "type": "cta",
+        "showAfterAudio": true
+      }
+    }
+  ],
+
+  "postLessonExercises": [
+    {
+      "id": "exercise-perfeito-drag-drop",
+      "type": "drag-drop",
+      "title": "Monte o Método PERFEITO",
+      "instruction": "Arraste cada significado para a letra correta",
+      "passingScore": 100,
+      "maxAttempts": null,
+      "data": {
+        "word": "PERFEITO",
+        "items": [
+          { "id": "p", "letter": "P", "meaning": "Persona", "position": 0 },
+          { "id": "e1", "letter": "E", "meaning": "Estrutura", "position": 1 },
+          { "id": "r", "letter": "R", "meaning": "Resultado", "position": 2 },
+          { "id": "f", "letter": "F", "meaning": "Formato", "position": 3 },
+          { "id": "e2", "letter": "E", "meaning": "Exemplos", "position": 4 },
+          { "id": "i", "letter": "I", "meaning": "Iteração", "position": 5 },
+          { "id": "t", "letter": "T", "meaning": "Tom", "position": 6 },
+          { "id": "o", "letter": "O", "meaning": "Otimização", "position": 7 }
+        ],
+        "shuffleOnStart": true,
+        "showProgressDots": true,
+        "hapticFeedback": true,
+        "soundEffects": {
+          "onCorrect": "snap-success",
+          "onIncorrect": "snap-error",
+          "onComplete": "completion"
+        },
+        "animations": {
+          "entryPhase1": "blink-meanings",
+          "entryPhase2": "blink-letters",
+          "onCorrectDrop": "scale-glow",
+          "onComplete": "confetti"
+        },
+        "successCriteria": "all-correct-positions"
+      },
+      "feedback": {
+        "onComplete": {
+          "title": "🏆 Perfeito!",
+          "message": "Você dominou o método PERFEITO!",
+          "showConfetti": true
+        }
+      }
+    }
+  ],
+
+  "postLessonFlow": {
+    "stages": [
+      {
+        "id": "lesson_complete",
+        "type": "celebration",
+        "component": "V7LessonCompleteCard",
+        "showStats": true,
+        "showNextButton": true
+      },
+      {
+        "id": "exercise",
+        "type": "interactive",
+        "component": "V7PerfeitoDragDrop",
+        "exerciseId": "exercise-perfeito-drag-drop"
+      },
+      {
+        "id": "results",
+        "type": "summary",
+        "component": "V7ExerciseResultCard",
+        "showScore": true,
+        "showRewardsButton": true,
+        "navigationOptions": ["dashboard", "trail", "next-lesson"]
+      },
+      {
+        "id": "rewards",
+        "type": "modal",
+        "component": "V7RewardsModal",
+        "showXP": true,
+        "showCoins": true,
+        "showPatent": true
+      }
+    ],
+    "gamificationIntegration": {
+      "eventType": "lesson_completion",
+      "registerOnStage": "results",
+      "refreshStatsAfter": true
+    }
+  },
+
+  "gamification": {
+    "xpReward": 150,
+    "coinsReward": 25,
+    "achievements": [
+      {
+        "id": "metodo-desbloqueado",
+        "title": "Método Desbloqueado",
+        "description": "Aprendeu o método PERFEITO",
+        "icon": "🎯"
+      },
+      {
+        "id": "primeiro-quiz",
+        "title": "Primeiro Quiz",
+        "description": "Completou a autoavaliação",
+        "icon": "📊"
+      }
+    ],
+    "streakMultiplier": true
+  }
+}

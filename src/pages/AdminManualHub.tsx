@@ -120,7 +120,7 @@ export default function AdminManualHub() {
                   Pipeline automatizado com scenes, narração e anchorActions
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 space-y-2">
                 <Button
                   onClick={() => navigate('/admin/v7-vv')}
                   className="w-full bg-pink-600 hover:bg-pink-700"
@@ -128,6 +128,15 @@ export default function AdminManualHub() {
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Criar V7-vv
+                </Button>
+                <Button
+                  onClick={() => navigate('/admin/v7/pipeline-test')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Testar Pipeline
                 </Button>
               </CardContent>
             </Card>

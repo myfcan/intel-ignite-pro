@@ -1,11 +1,28 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+// JSON Modelo INPUT para Pipeline V7-vv (formato com scenes, não phases)
+import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
 
 // Admin Hub - Sistema de gestão dual
 export default function Admin() {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+
+  const copyJsonToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(V7Aula1InputModelo, null, 2));
+      setCopied(true);
+      toast.success('JSON copiado para a área de transferência!');
+      setTimeout(() => setCopied(false), 3000);
+    } catch (err) {
+      toast.error('Erro ao copiar JSON');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -90,6 +107,53 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
+
+        {/* V7-vv Pipeline - FIXO E SEMPRE VISÍVEL */}
+        <Card className="border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-cyan-500/10 hover:border-pink-500/50 transition-all cursor-pointer" onClick={() => navigate('/admin/v7-vv')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Rocket className="w-8 h-8 text-pink-500" />
+              Pipeline V7-vv
+              <span className="text-xs bg-pink-600 text-white px-2 py-1 rounded-full ml-2">PRINCIPAL</span>
+            </CardTitle>
+            <CardDescription className="text-base">
+              Sistema definitivo de criação de aulas cinematográficas com scenes e anchorActions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm space-y-2">
+              <p>✅ Scenes com narração e visuais sincronizados</p>
+              <p>✅ AnchorActions para interatividade precisa</p>
+              <p>✅ Áudio ElevenLabs com word timestamps</p>
+              <p>✅ Quiz, Playground e CTA integrados</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                className="flex-1 bg-pink-600 hover:bg-pink-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7-vv');
+                }}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Criar Aula V7-vv
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-pink-500/50 hover:bg-pink-500/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7/pipeline-test');
+                }}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Testar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Cards de acesso rápido */}
         <div className="grid gap-6 md:grid-cols-3">
@@ -190,6 +254,116 @@ export default function Admin() {
                 onClick={() => navigate('/admin/test-card-sync')}
               >
                 Testar Sincronização
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-pink-500/20 bg-pink-500/5 hover:border-pink-500/40 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-6 h-6 text-pink-600" />
+                Design Chat Demo
+              </CardTitle>
+              <CardDescription>
+                Escolha o visual do chat de IA
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>🎨 3 estilos: Minimal, Glass, Gradient</p>
+                <p>👁️ Preview interativo lado a lado</p>
+                <p>✅ Clique para selecionar e aplicar</p>
+              </div>
+              <Button
+                className="w-full bg-pink-600 hover:bg-pink-700"
+                onClick={() => navigate('/chat-design-demo')}
+              >
+                Ver Designs
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card JSON Modelo Padrão V7-vv */}
+          <Card className="border-2 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40 transition-colors md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileJson className="w-6 h-6 text-emerald-600" />
+                JSON Modelo Padrão Aula 1 - V7-vv
+              </CardTitle>
+              <CardDescription>
+                Espelho exato da Aula 1 funcionando - Use como referência para criar novas aulas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✅ 11 cenas completas (dramatic, narrative, interaction, playground, revelation, cta, gamification)</p>
+                <p>✅ anchorText.pauseAt APENAS em cenas interativas (quiz, playground, cta)</p>
+                <p>✅ Método PERFEITO com letter-reveal</p>
+                <p>✅ Quiz 4 opções com feedback narrado</p>
+                <p>✅ Playground amador vs profissional</p>
+                <p>✅ CTA com 2 botões corretos (Continuar/Voltar)</p>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <Button
+                  className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700"
+                  onClick={copyJsonToClipboard}
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar JSON Modelo
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-[140px] border-emerald-500/50 hover:bg-emerald-500/10"
+                  onClick={() => navigate('/admin/v7/docs')}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Ver Documentação
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-[140px]"
+                  onClick={() => navigate('/admin/v7/create')}
+                >
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Ir para Pipeline V7
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3D Demos */}
+          <Card className="border-2 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 transition-colors md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Box className="w-6 h-6 text-cyan-600" />
+                Demonstrações 3D Avançadas
+                <span className="text-xs bg-cyan-600 text-white px-2 py-1 rounded-full ml-2">NOVO</span>
+              </CardTitle>
+              <CardDescription>
+                Post-Processing, InstancedMesh e Modelos 3D para aulas cinematográficas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✨ Bloom, Depth of Field, Vignette, Chromatic Aberration</p>
+                <p>👥 InstancedMesh para multidões (2000+ objetos)</p>
+                <p>🖥️ Modelos 3D: monitores, smartphones, personagens</p>
+              </div>
+              <Button
+                className="w-full bg-cyan-600 hover:bg-cyan-700"
+                onClick={() => navigate('/admin/3d-demos')}
+              >
+                <Box className="w-4 h-4 mr-2" />
+                Ver Demonstrações 3D
               </Button>
             </CardContent>
           </Card>

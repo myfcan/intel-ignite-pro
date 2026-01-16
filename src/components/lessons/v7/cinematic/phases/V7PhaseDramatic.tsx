@@ -3,18 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface V7PhaseDramaticProps {
-  mainNumber: string;
-  secondaryNumber?: string; // "2%" - shown as contrast during impact scene
-  subtitle: string;
-  highlightWord?: string;
-  impactWord?: string;
-  hookQuestion?: string; // "VOCÊ SABIA?" - shown during letterbox
-  sceneIndex: number;
-  phaseProgress: number;
-  mood?: 'danger' | 'success' | 'neutral';
-}
+import type { V7PhaseDramaticProps, V7DramaticMood } from '../../v7-phase-contracts';
 
 const MOOD_COLORS = {
   danger: {
@@ -50,9 +39,13 @@ export const V7PhaseDramatic = ({
   sceneIndex,
   phaseProgress,
   mood = 'danger',
+  showSecondaryAsMain = false,
 }: V7PhaseDramaticProps) => {
-  const colors = MOOD_COLORS[mood];
-  const [countValue, setCountValue] = useState(mainNumber);
+  // ✅ V7-v24: Determine which number to show as main based on prop
+  const displayNumber = showSecondaryAsMain && secondaryNumber ? secondaryNumber : mainNumber;
+  const displayColors = showSecondaryAsMain ? MOOD_COLORS.success : MOOD_COLORS[mood];
+  const colors = displayColors;
+  const [countValue, setCountValue] = useState(displayNumber);
   const [revealedLetters, setRevealedLetters] = useState(0);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; angle: number }[]>([]);
   const [countUpStarted, setCountUpStarted] = useState(false);
@@ -76,6 +69,8 @@ export const V7PhaseDramatic = ({
   const showCountUp = sceneIndex >= 1; // ✅ Count-up começa mais cedo
   const showExplosion = sceneIndex >= 0; // ✅ Partículas desde o início!
   const showSubtitle = sceneIndex >= 3;
+  // ✅ FIX: Mostrar o 2% (secondaryNumber) a partir da cena 2, não apenas no impact (cena 4)
+  const showSecondaryNumber = sceneIndex >= 2 && secondaryNumber;
   const showImpact = sceneIndex >= 4;
 
   // Debug log for scene transitions
@@ -87,10 +82,10 @@ export const V7PhaseDramatic = ({
   useEffect(() => {
     if (showCountUp && !countUpStarted) {
       setCountUpStarted(true);
-      const numericMatch = mainNumber.match(/^(\d+)/);
+      const numericMatch = displayNumber.match(/^(\d+)/);
       if (numericMatch) {
         const targetNum = parseInt(numericMatch[1]);
-        const suffix = mainNumber.replace(/^\d+/, '');
+        const suffix = displayNumber.replace(/^\d+/, '');
         const duration = 1500;
         const startTime = Date.now();
 
@@ -104,7 +99,7 @@ export const V7PhaseDramatic = ({
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            setCountValue(mainNumber);
+            setCountValue(displayNumber);
           }
         };
         requestAnimationFrame(animate);
@@ -206,9 +201,9 @@ export const V7PhaseDramatic = ({
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.h2
-              className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-wide text-center px-4"
+              className="text-xl sm:text-3xl md:text-4xl lg:text-6xl font-black text-white tracking-wide text-center px-6 max-w-[90vw] mx-auto break-words"
               style={{
-                textShadow: `0 0 60px ${colors.glow}, 0 0 120px ${colors.glow}`,
+                textShadow: `0 0 40px ${colors.glow}, 0 0 80px ${colors.glow}`,
               }}
               animate={{
                 scale: [1, 1.05, 1],
@@ -300,7 +295,7 @@ export const V7PhaseDramatic = ({
         <AnimatePresence>
           {showNumberGlow && (
             <motion.div
-              className="text-[20vw] sm:text-[25vw] font-black leading-none select-none"
+              className="text-[clamp(3rem,12vw,8rem)] sm:text-[clamp(4rem,14vw,10rem)] md:text-[clamp(5rem,15vw,12rem)] font-black leading-none select-none"
               style={{
                 background: colors.gradient,
                 WebkitBackgroundClip: 'text',
@@ -326,7 +321,7 @@ export const V7PhaseDramatic = ({
         <AnimatePresence>
           {showSubtitle && subtitle && subtitle.length > 0 && (
             <motion.div
-              className="mt-4 text-lg sm:text-2xl md:text-3xl"
+              className="mt-2 sm:mt-4 text-sm sm:text-lg md:text-2xl lg:text-3xl px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -343,9 +338,9 @@ export const V7PhaseDramatic = ({
           )}
         </AnimatePresence>
 
-        {/* Secondary Number (2%) - shows as contrast during impact scene */}
+        {/* Secondary Number (2%) - ✅ FIX: shows earlier during scene 2+ */}
         <AnimatePresence>
-          {showImpact && secondaryNumber && (
+          {showSecondaryNumber && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-4 sm:gap-8"
               initial={{ opacity: 0, y: 30 }}
@@ -362,7 +357,7 @@ export const V7PhaseDramatic = ({
                   filter: `drop-shadow(0 0 20px ${colors.glow})`,
                 }}
                 initial={{ scale: 1 }}
-                animate={{ scale: 0.6, opacity: 0.7 }}
+                animate={{ scale: showImpact ? 0.6 : 0.8, opacity: showImpact ? 0.7 : 0.9 }}
               >
                 {mainNumber}
               </motion.div>

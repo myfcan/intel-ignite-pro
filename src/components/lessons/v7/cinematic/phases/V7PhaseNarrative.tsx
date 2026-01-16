@@ -3,26 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface ComparisonData {
-  label: string;
-  leftValue: string;
-  rightValue: string;
-  leftColor?: string;
-  rightColor?: string;
-}
-
-interface V7PhaseNarrativeProps {
-  leftTitle: string;
-  rightTitle: string;
-  leftEmoji: string;
-  rightEmoji: string;
-  comparisons: ComparisonData[];
-  warningTitle?: string;
-  warningSubtitle?: string;
-  sceneIndex: number;
-  phaseProgress: number;
-}
+import type { V7PhaseNarrativeProps, V7ComparisonData } from '../../v7-phase-contracts';
 
 export const V7PhaseNarrative = ({
   leftTitle,
@@ -34,6 +15,8 @@ export const V7PhaseNarrative = ({
   warningSubtitle,
   sceneIndex,
   phaseProgress,
+  centerPrompt,
+  centerEmoji,
 }: V7PhaseNarrativeProps) => {
   const [animatedValues, setAnimatedValues] = useState<Map<number, { left: number; right: number }>>(new Map());
   const [showWarning, setShowWarning] = useState(false);
@@ -99,54 +82,63 @@ export const V7PhaseNarrative = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Split Screen Header */}
+    <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden min-h-screen">
+      {/* Split Screen Header - ✅ FIX: Estrutura simétrica para centralização perfeita */}
       <motion.div
-        className="flex items-center justify-center gap-4 sm:gap-8 mb-8"
+        className="flex flex-col items-center mb-8 w-full max-w-3xl"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: sceneIndex >= 0 ? 1 : 0, y: sceneIndex >= 0 ? 0 : -30 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Left Side Header */}
-        <div className="text-center">
+        {/* Row 1: Emojis + VS - Grid simétrico com 3 colunas iguais */}
+        <div className="grid grid-cols-3 items-center justify-items-center w-full gap-4 mb-4">
+          {/* Left Emoji - Centralizado na primeira coluna */}
           <motion.span 
-            className="text-4xl sm:text-5xl"
+            className="text-4xl sm:text-6xl justify-self-center"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
             {leftEmoji}
           </motion.span>
+
+          {/* VS Divider - Centralizado perfeitamente na coluna do meio */}
           <motion.div
-            className="text-2xl sm:text-4xl font-bold text-[#ff6b6b] mt-2"
+            className="text-white/30 text-xl sm:text-3xl font-bold justify-self-center"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, type: 'spring' }}
+          >
+            VS
+          </motion.div>
+
+          {/* Right Emoji - Centralizado na terceira coluna */}
+          <motion.span 
+            className="text-4xl sm:text-6xl justify-self-center"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          >
+            {rightEmoji}
+          </motion.span>
+        </div>
+
+        {/* Row 2: Titles - Grid simétrico com 3 colunas */}
+        <div className="grid grid-cols-3 items-center justify-items-center w-full gap-4">
+          {/* Left Title */}
+          <motion.div
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#ff6b6b] text-center justify-self-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
             {leftTitle}
           </motion.div>
-        </div>
 
-        {/* VS Divider */}
-        <motion.div
-          className="text-white/30 text-xl sm:text-2xl font-bold"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.5, type: 'spring' }}
-        >
-          VS
-        </motion.div>
+          {/* Espaçador central vazio para manter simetria */}
+          <div />
 
-        {/* Right Side Header */}
-        <div className="text-center">
-          <motion.span 
-            className="text-4xl sm:text-5xl"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-          >
-            {rightEmoji}
-          </motion.span>
+          {/* Right Title */}
           <motion.div
-            className="text-2xl sm:text-4xl font-bold text-[#4ecdc4] mt-2"
+            className="text-xl sm:text-3xl md:text-4xl font-bold text-[#4ecdc4] text-center justify-self-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -156,7 +148,26 @@ export const V7PhaseNarrative = ({
         </div>
       </motion.div>
 
-      {/* Comparison Rows */}
+      {/* ✅ Center Prompt Box - positioned between the headers and comparisons */}
+      {centerPrompt && (
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5, type: 'spring' }}
+        >
+          <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="flex items-center gap-3 justify-center">
+              {centerEmoji && (
+                <span className="text-2xl sm:text-3xl">{centerEmoji}</span>
+              )}
+              <span className="text-lg sm:text-xl font-medium text-white/90">
+                {centerPrompt}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
       <div className="w-full max-w-4xl space-y-4">
         {comparisons.map((comp, index) => (
           <motion.div

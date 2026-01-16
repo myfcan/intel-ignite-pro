@@ -18,7 +18,9 @@ type SoundType =
   | "quiz-wrong"
   | "progress-tick"
   | "completion"
-  | "letter-reveal";
+  | "letter-reveal"
+  | "snap-success"    // Som de encaixe positivo (drag-drop correto)
+  | "snap-error";     // Som de encaixe negativo (drag-drop errado)
 
 interface SoundConfig {
   volume: number;
@@ -94,22 +96,36 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
   }, []);
 
   // Unlock audio on user interaction
-  const unlockAudio = useCallback(() => {
-    if (isUnlockedRef.current) return;
-    
+  const unlockAudio = useCallback(async () => {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") {
-      ctx.resume();
+      try {
+        await ctx.resume();
+        console.log('[useV7SoundEffects] ✅ AudioContext resumed');
+      } catch (e) {
+        console.warn('[useV7SoundEffects] Failed to resume AudioContext:', e);
+      }
     }
     isUnlockedRef.current = true;
   }, [getAudioContext]);
 
-  // Play synthesized sounds
-  const playSound = useCallback((type: SoundType, config?: Partial<SoundConfig>) => {
+  // Play synthesized sounds - with auto-resume
+  const playSound = useCallback(async (type: SoundType, config?: Partial<SoundConfig>) => {
     if (!enabled) return;
     
     const ctx = getAudioContext();
-    if (ctx.state === "suspended") return;
+    
+    // ✅ Auto-resume if suspended (fixes sound not playing issue)
+    if (ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+        isUnlockedRef.current = true;
+        console.log('[useV7SoundEffects] ✅ Auto-resumed AudioContext for sound:', type);
+      } catch (e) {
+        console.warn('[useV7SoundEffects] ⚠️ Cannot resume AudioContext:', e);
+        return;
+      }
+    }
 
     const volume = (config?.volume ?? 1) * masterVolume;
 
@@ -216,6 +232,29 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
         setTimeout(() => {
           createOscillatorSound(ctx, letterFreq * 2, 0.1, "sine", volume * 0.15);
         }, 50);
+        break;
+
+      case "snap-success":
+        // 🎯 Som de encaixe satisfatório - "pop" + sparkle ascendente
+        // Pop inicial (impacto do encaixe)
+        createOscillatorSound(ctx, 300, 0.04, "sine", volume * 0.5);
+        createOscillatorSound(ctx, 600, 0.03, "sine", volume * 0.3);
+        // Sparkle ascendente (confirmação positiva)
+        setTimeout(() => createOscillatorSound(ctx, 800, 0.08, "sine", volume * 0.35), 30);
+        setTimeout(() => createOscillatorSound(ctx, 1000, 0.08, "sine", volume * 0.3), 60);
+        setTimeout(() => createOscillatorSound(ctx, 1200, 0.1, "sine", volume * 0.25), 90);
+        // Brilho final
+        setTimeout(() => createOscillatorSound(ctx, 1600, 0.15, "triangle", volume * 0.2), 120);
+        break;
+
+      case "snap-error":
+        // ❌ Som de erro no encaixe - buzzer curto + descida
+        // Buzz inicial
+        createOscillatorSound(ctx, 180, 0.08, "sawtooth", volume * 0.25);
+        createOscillatorSound(ctx, 220, 0.08, "sawtooth", volume * 0.2);
+        // Descida (feedback negativo claro mas não agressivo)
+        setTimeout(() => createOscillatorSound(ctx, 150, 0.12, "square", volume * 0.15), 50);
+        setTimeout(() => createOscillatorSound(ctx, 100, 0.15, "sine", volume * 0.1), 100);
         break;
     }
   }, [enabled, masterVolume, getAudioContext]);

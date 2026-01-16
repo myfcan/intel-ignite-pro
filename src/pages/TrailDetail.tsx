@@ -149,7 +149,8 @@ const TrailDetail = () => {
     }
     
     // V7 Cinematic lessons use dedicated route
-    if (lesson.model === 'v7' || lesson.lesson_type === 'v7-cinematic') {
+    // Suporta: model='v7', model='v7-cinematic', ou lesson_type='v7-cinematic'
+    if (lesson.model === 'v7' || lesson.model === 'v7-cinematic' || lesson.lesson_type === 'v7-cinematic') {
       navigate(`/v7/${lesson.id}`);
       return;
     }
@@ -364,9 +365,18 @@ const TrailDetail = () => {
                       <div className="flex-1 min-w-0 space-y-3">
                         {/* Título e Descrição */}
                         <div>
-                          <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 mb-1">
-                            Aula {index + 1}: {lesson.title}
-                          </h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
+                              Aula {index + 1}: {lesson.title}
+                            </h3>
+                            {/* ✅ Badge de Concluída */}
+                            {isCompleted && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200 flex-shrink-0">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Concluída
+                              </span>
+                            )}
+                          </div>
                           {lesson.description && (
                             <p className="text-xs text-gray-600 line-clamp-1">
                               {lesson.description}

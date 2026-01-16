@@ -702,7 +702,7 @@ function generatePhases(
         // OUTPUT espera: amateurResult { title, content, score, verdict }
         // ✅ FASE 4 FIX: Frontend também procura amateurScore/professionalScore no nível raiz!
 
-        const comparison = scene.interaction.comparison;
+        const comparison = scene.interaction.comparison as { amateur?: { label?: string; response?: string; mood?: string }; professional?: { label?: string; response?: string; mood?: string } } | undefined;
         const moodToVerdict = (mood: string): string => {
           switch (mood) {
             case 'danger': return 'Genérico e sem direcionamento';

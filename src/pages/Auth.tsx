@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Brain } from "lucide-react";
 import { usePrefetchMainPages } from "@/hooks/usePrefetch";
+import { AuthBackground3D } from "@/components/backgrounds";
 
 const Auth = () => {
   // Prefetch Dashboard and Onboarding while user fills login form
@@ -181,8 +182,9 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 gradient-primary">
-      <Card className="w-full max-w-md shadow-medium">
+    <div className="min-h-screen flex items-center justify-center p-4 gradient-primary relative overflow-hidden">
+      <AuthBackground3D />
+      <Card className="w-full max-w-md shadow-medium relative z-10">
         <CardHeader className="text-center">
           <div className="mx-auto w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center text-primary-foreground mb-4">
             <Brain className="w-8 h-8" />

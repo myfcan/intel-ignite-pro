@@ -1,3 +1,6 @@
+// V7 Design Tokens - Single source of truth
+export * from "../v7-design-tokens";
+
 // V7 Cinematic Components - Phase 1 (Infrastructure)
 export { V7ImmersivePlayer } from "./V7ImmersivePlayer";
 export { V7MinimalTimeline } from "./V7MinimalTimeline";
@@ -20,3 +23,6 @@ export { useV7CinematicAudio } from "./useV7CinematicAudio";
 // V7 Cinematic Hooks - Phase 5 (Advanced)
 export { useV7SoundEffects } from "./useV7SoundEffects";
 export { useV7ActPreloader } from "./useV7ActPreloader";
+
+// V7 Post-Lesson Flow (V7-vv)
+export { V7PostLessonFlow } from "./V7PostLessonFlow";
