@@ -2,7 +2,8 @@
 // 3D BACKGROUND CONTROLS - Settings Panel
 // ============================================
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings2, Sparkles, Gauge, Eye, RotateCcw, X, Zap } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -10,22 +11,23 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useBackground3D } from '@/contexts/Background3DContext';
 
-export const Background3DControls = memo(() => {
+const ControlsContent = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { settings, updateSettings, resetSettings, toggleEnabled } = useBackground3D();
 
   return (
     <>
-      {/* Floating Toggle Button - More prominent */}
+      {/* Floating Toggle Button - Using Portal to escape any overflow:hidden */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[9999] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-purple-600 shadow-xl shadow-primary/30 flex items-center justify-center text-white hover:scale-105 transition-all border-2 border-white/20"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 shadow-xl shadow-purple-500/30 flex items-center justify-center text-white hover:scale-105 transition-all border-2 border-white/20"
+        style={{ zIndex: 99999 }}
         whileHover={{ scale: 1.1, rotate: 90 }}
         whileTap={{ scale: 0.95 }}
         title="Configurações 3D"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1, type: "spring" }}
+        initial={{ opacity: 0, scale: 0, y: 50 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
       >
         <Settings2 className="w-6 h-6" />
       </motion.button>
@@ -38,7 +40,8 @@ export const Background3DControls = memo(() => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-20 right-4 z-50 w-80 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl overflow-hidden"
+            className="fixed bottom-24 right-6 w-80 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl overflow-hidden"
+            style={{ zIndex: 99999 }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
@@ -171,6 +174,24 @@ export const Background3DControls = memo(() => {
         )}
       </AnimatePresence>
     </>
+  );
+});
+
+ControlsContent.displayName = 'ControlsContent';
+
+export const Background3DControls = memo(() => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use portal to render at document.body level, escaping any overflow:hidden
+  if (!mounted) return null;
+
+  return createPortal(
+    <ControlsContent />,
+    document.body
   );
 });
 
