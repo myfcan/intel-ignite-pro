@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, FileText, FolderOpen, Activity, ArrowLeft, Trash2 } from 'lucide-react';
+import { Rocket, FileText, FolderOpen, Activity, ArrowLeft, Trash2, Film } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPipelineHub() {
@@ -23,6 +23,29 @@ export default function AdminPipelineHub() {
             </p>
           </div>
         </div>
+
+        {/* V7-VV Pipeline - Destaque */}
+        <Card className="border-2 border-purple-500/50 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:border-purple-500 transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline/v7-create')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Film className="w-6 h-6 text-purple-500" />
+              🎬 Pipeline V7-VV (Novo!)
+            </CardTitle>
+            <CardDescription>
+              Sistema cinematográfico com fases, narração sincronizada, efeitos visuais e exercícios integrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>✨ Validação → Narração → Áudio → Âncoras → Conteúdo → Consolidação → Ativação</p>
+              <p>🎯 Suporte a múltiplas fases com visual effects e anchor actions</p>
+            </div>
+            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Film className="w-4 h-4 mr-2" />
+              Criar Lição V7-VV
+            </Button>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline/create-single')}>
