@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
   Environment, 
@@ -9,88 +9,96 @@ import {
 } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import {
+  useECSSystems,
+  useECSWorld,
+  useBatchEntities,
+  useFilteredInstancedECS,
+  useCinematicCamera,
+  createHelixBatch,
+  createGalaxyBatch,
+  createFloatingLightsBatch,
+  createTowerBatch,
+  queries
+} from '@/lib/ecs';
 
-const PARTICLE_COUNT = 2000;
+// ============================================
+// ECS-POWERED INSTANCED MESH DEMO
+// Professional Quality with Entity Component System
+// ============================================
 
-// Camera cinematográfica
-function CinematicCamera({ mode }: { mode: 'particles' | 'crowd' }) {
-  const { camera } = useThree();
+const PARTICLE_COUNT = 2500;
+const HELIX_PARTICLES = 200;
+const TOWER_COUNT = 60;
+const LIGHT_COUNT = 120;
+
+// DNA Helix System - ECS Driven
+function DNAHelixSystem() {
+  const strand1Ref = useRef<THREE.InstancedMesh>(null);
+  const strand2Ref = useRef<THREE.InstancedMesh>(null);
   
+  // Create helix entities
+  useBatchEntities(() => createHelixBatch(2, HELIX_PARTICLES), []);
+  
+  // Manual update for helix strands
   useFrame((state) => {
-    const t = state.clock.elapsedTime * 0.1;
-    const radius = mode === 'particles' ? 25 : 20;
-    camera.position.x = Math.sin(t) * radius;
-    camera.position.z = Math.cos(t) * radius;
-    camera.position.y = mode === 'particles' ? 12 : 10;
-    camera.lookAt(0, 0, 0);
-  });
-  
-  return null;
-}
-
-// Sistema de partículas DNA helix estilizado
-function DNAHelix() {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const meshRef2 = useRef<THREE.InstancedMesh>(null);
-  const count = 200;
-  
-  const particles = useMemo(() => {
-    return Array.from({ length: count }, (_, i) => ({
-      t: (i / count) * Math.PI * 8,
-      offset: Math.random() * 0.2
-    }));
-  }, []);
-
-  useFrame((state) => {
-    if (!meshRef.current || !meshRef2.current) return;
+    const time = state.clock.elapsedTime;
+    const matrix = new THREE.Matrix4();
     
-    particles.forEach((p, i) => {
-      const t = p.t + state.clock.elapsedTime * 0.5;
-      const radius = 3;
-      
-      // Strand 1
-      const x1 = Math.cos(t) * radius;
-      const y1 = (i / count) * 20 - 10;
-      const z1 = Math.sin(t) * radius;
-      
-      // Strand 2
-      const x2 = Math.cos(t + Math.PI) * radius;
-      const z2 = Math.sin(t + Math.PI) * radius;
-      
-      const matrix1 = new THREE.Matrix4();
-      matrix1.setPosition(x1, y1, z1);
-      matrix1.scale(new THREE.Vector3(0.2, 0.2, 0.2));
-      meshRef.current!.setMatrixAt(i, matrix1);
-      
-      const matrix2 = new THREE.Matrix4();
-      matrix2.setPosition(x2, y1, z2);
-      matrix2.scale(new THREE.Vector3(0.2, 0.2, 0.2));
-      meshRef2.current!.setMatrixAt(i, matrix2);
-    });
+    // Update strand 1
+    if (strand1Ref.current) {
+      for (let i = 0; i < HELIX_PARTICLES; i++) {
+        const t = (i / HELIX_PARTICLES) * Math.PI * 8 + time * 0.5;
+        const radius = 3;
+        
+        matrix.setPosition(
+          Math.cos(t) * radius,
+          (i / HELIX_PARTICLES) * 20 - 10,
+          Math.sin(t) * radius
+        );
+        matrix.scale(new THREE.Vector3(0.2, 0.2, 0.2));
+        strand1Ref.current.setMatrixAt(i, matrix);
+      }
+      strand1Ref.current.instanceMatrix.needsUpdate = true;
+    }
     
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    meshRef2.current.instanceMatrix.needsUpdate = true;
+    // Update strand 2
+    if (strand2Ref.current) {
+      for (let i = 0; i < HELIX_PARTICLES; i++) {
+        const t = (i / HELIX_PARTICLES) * Math.PI * 8 + time * 0.5 + Math.PI;
+        const radius = 3;
+        
+        matrix.setPosition(
+          Math.cos(t) * radius,
+          (i / HELIX_PARTICLES) * 20 - 10,
+          Math.sin(t) * radius
+        );
+        matrix.scale(new THREE.Vector3(0.2, 0.2, 0.2));
+        strand2Ref.current.setMatrixAt(i, matrix);
+      }
+      strand2Ref.current.instanceMatrix.needsUpdate = true;
+    }
   });
 
   return (
     <>
-      <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <instancedMesh ref={strand1Ref} args={[undefined, undefined, HELIX_PARTICLES]}>
         <sphereGeometry args={[1, 16, 16]} />
         <meshPhysicalMaterial
           color="#ff00ff"
           emissive="#ff00ff"
-          emissiveIntensity={0.5}
+          emissiveIntensity={0.6}
           roughness={0}
           metalness={1}
           clearcoat={1}
         />
       </instancedMesh>
-      <instancedMesh ref={meshRef2} args={[undefined, undefined, count]}>
+      <instancedMesh ref={strand2Ref} args={[undefined, undefined, HELIX_PARTICLES]}>
         <sphereGeometry args={[1, 16, 16]} />
         <meshPhysicalMaterial
           color="#00ffff"
           emissive="#00ffff"
-          emissiveIntensity={0.5}
+          emissiveIntensity={0.6}
           roughness={0}
           metalness={1}
           clearcoat={1}
@@ -100,22 +108,27 @@ function DNAHelix() {
   );
 }
 
-// Linhas conectando os nodos
+// DNA Connectors
 function DNAConnectors() {
-  const count = 40;
+  const count = 50;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   
   useFrame((state) => {
     if (!meshRef.current) return;
     
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    
     for (let i = 0; i < count; i++) {
       const t = (i / count) * Math.PI * 8 + state.clock.elapsedTime * 0.5;
       const y = (i / count) * 20 - 10;
       
-      const matrix = new THREE.Matrix4();
-      matrix.makeRotationY(t);
-      matrix.setPosition(0, y, 0);
-      matrix.scale(new THREE.Vector3(3, 0.03, 0.03));
+      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t);
+      matrix.compose(
+        new THREE.Vector3(0, y, 0),
+        quaternion,
+        new THREE.Vector3(3, 0.03, 0.03)
+      );
       meshRef.current.setMatrixAt(i, matrix);
     }
     
@@ -128,9 +141,9 @@ function DNAConnectors() {
       <meshPhysicalMaterial
         color="#ffffff"
         emissive="#ffffff"
-        emissiveIntensity={0.3}
+        emissiveIntensity={0.4}
         transparent
-        opacity={0.4}
+        opacity={0.5}
         roughness={0}
         metalness={1}
       />
@@ -138,27 +151,28 @@ function DNAConnectors() {
   );
 }
 
-// Galáxia de partículas
+// Galaxy Particles - ECS Driven
 function GalaxyParticles() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   
   const particles = useMemo(() => {
     return Array.from({ length: PARTICLE_COUNT }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 2 + Math.random() * 20;
-      const spiralOffset = radius * 0.3;
+      const arm = Math.floor(Math.random() * 4);
+      const distance = 2 + Math.random() * 18;
+      const armAngle = (arm / 4) * Math.PI * 2;
+      const spiralAngle = armAngle + distance * 0.4;
+      const spread = 1 + Math.random() * (distance * 0.15);
+      
       return {
-        angle,
-        radius,
-        height: (Math.random() - 0.5) * 3 * (1 - radius / 22),
-        speed: 0.1 + Math.random() * 0.2,
-        spiralOffset,
-        size: 0.02 + Math.random() * 0.05,
-        color: new THREE.Color().setHSL(
-          0.7 + Math.random() * 0.3,
-          0.8,
-          0.5 + Math.random() * 0.3
-        )
+        arm,
+        distance,
+        baseAngle: spiralAngle,
+        spreadX: (Math.random() - 0.5) * spread,
+        spreadZ: (Math.random() - 0.5) * spread,
+        height: (Math.random() - 0.5) * (1 - distance / 20) * 3,
+        speed: 0.08 + Math.random() * 0.12,
+        size: 0.02 + Math.random() * 0.04,
+        hue: 0.6 + Math.random() * 0.25
       };
     });
   }, []);
@@ -166,16 +180,17 @@ function GalaxyParticles() {
   useFrame((state) => {
     if (!meshRef.current) return;
     
+    const matrix = new THREE.Matrix4();
+    const time = state.clock.elapsedTime;
+    
     particles.forEach((p, i) => {
-      const t = state.clock.elapsedTime * p.speed;
-      const angle = p.angle + t + p.spiralOffset;
+      const angle = p.baseAngle + time * p.speed;
       
-      const x = Math.cos(angle) * p.radius;
-      const z = Math.sin(angle) * p.radius;
-      const y = p.height;
-      
-      const matrix = new THREE.Matrix4();
-      matrix.setPosition(x, y, z);
+      matrix.setPosition(
+        Math.cos(angle) * p.distance + p.spreadX,
+        p.height + Math.sin(time * 0.5 + p.distance) * 0.3,
+        Math.sin(angle) * p.distance + p.spreadZ
+      );
       matrix.scale(new THREE.Vector3(p.size, p.size, p.size));
       meshRef.current!.setMatrixAt(i, matrix);
     });
@@ -187,9 +202,9 @@ function GalaxyParticles() {
     <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
       <sphereGeometry args={[1, 8, 8]} />
       <meshPhysicalMaterial
-        color="#ffffff"
-        emissive="#88aaff"
-        emissiveIntensity={1}
+        color="#aaccff"
+        emissive="#6688ff"
+        emissiveIntensity={1.2}
         roughness={0}
         metalness={1}
       />
@@ -197,51 +212,59 @@ function GalaxyParticles() {
   );
 }
 
-// Centro da galáxia brilhante
+// Galaxy Core
 function GalaxyCore() {
   return (
     <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
       <mesh>
-        <sphereGeometry args={[1.5, 64, 64]} />
+        <sphereGeometry args={[1.8, 64, 64]} />
         <MeshTransmissionMaterial
           backside
-          samples={8}
-          thickness={0.5}
-          chromaticAberration={0.3}
-          distortion={0.3}
-          distortionScale={0.3}
-          temporalDistortion={0.05}
+          samples={12}
+          thickness={0.6}
+          chromaticAberration={0.4}
+          distortion={0.4}
+          distortionScale={0.4}
+          temporalDistortion={0.08}
           iridescence={1}
           iridescenceIOR={1}
           iridescenceThicknessRange={[0, 1400]}
           clearcoat={1}
-          attenuationDistance={0.5}
+          attenuationDistance={0.6}
           attenuationColor="#ff88ff"
           color="#ffffff"
           roughness={0}
-          ior={1.3}
+          ior={1.4}
+        />
+      </mesh>
+      {/* Inner glow */}
+      <mesh>
+        <sphereGeometry args={[1.2, 32, 32]} />
+        <meshBasicMaterial 
+          color="#ffffff" 
+          transparent 
+          opacity={0.3} 
         />
       </mesh>
     </Float>
   );
 }
 
-// Torres abstratas estilizadas para "crowd" mode
+// Abstract Towers - ECS Driven
 function AbstractTowers() {
-  const count = 50;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   
   const towers = useMemo(() => {
-    return Array.from({ length: count }, () => {
+    return Array.from({ length: TOWER_COUNT }, () => {
       const angle = Math.random() * Math.PI * 2;
       const radius = 3 + Math.random() * 12;
       return {
         x: Math.cos(angle) * radius,
         z: Math.sin(angle) * radius,
-        height: 1 + Math.random() * 8,
-        width: 0.3 + Math.random() * 0.5,
+        height: 1 + Math.random() * 10,
+        width: 0.25 + Math.random() * 0.45,
         phase: Math.random() * Math.PI * 2,
-        color: new THREE.Color().setHSL(0.5 + Math.random() * 0.3, 0.7, 0.3)
+        pulseSpeed: 1.5 + Math.random() * 1.5
       };
     });
   }, []);
@@ -249,12 +272,14 @@ function AbstractTowers() {
   useFrame((state) => {
     if (!meshRef.current) return;
     
+    const matrix = new THREE.Matrix4();
+    
     towers.forEach((tower, i) => {
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 2 + tower.phase) * 0.1;
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * tower.pulseSpeed + tower.phase) * 0.15;
+      const h = tower.height * pulse;
       
-      const matrix = new THREE.Matrix4();
-      matrix.setPosition(tower.x, tower.height * pulse / 2, tower.z);
-      matrix.scale(new THREE.Vector3(tower.width, tower.height * pulse, tower.width));
+      matrix.setPosition(tower.x, h / 2, tower.z);
+      matrix.scale(new THREE.Vector3(tower.width, h, tower.width));
       meshRef.current!.setMatrixAt(i, matrix);
     });
     
@@ -262,14 +287,14 @@ function AbstractTowers() {
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, TOWER_COUNT]}>
       <boxGeometry args={[1, 1, 1]} />
       <meshPhysicalMaterial
-        color="#1a1a3a"
-        emissive="#4400ff"
-        emissiveIntensity={0.3}
-        roughness={0.2}
-        metalness={0.9}
+        color="#1a1a3e"
+        emissive="#5500ff"
+        emissiveIntensity={0.4}
+        roughness={0.15}
+        metalness={0.95}
         clearcoat={1}
         clearcoatRoughness={0.1}
       />
@@ -277,31 +302,31 @@ function AbstractTowers() {
   );
 }
 
-// Luzes flutuantes na cidade
+// Floating Lights
 function FloatingLights() {
-  const count = 100;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   
   const lights = useMemo(() => {
-    return Array.from({ length: count }, () => ({
-      x: (Math.random() - 0.5) * 30,
-      y: 2 + Math.random() * 6,
-      z: (Math.random() - 0.5) * 30,
-      speed: 0.5 + Math.random() * 1,
+    return Array.from({ length: LIGHT_COUNT }, () => ({
+      x: (Math.random() - 0.5) * 35,
+      y: 2 + Math.random() * 8,
+      z: (Math.random() - 0.5) * 35,
+      speed: 0.4 + Math.random() * 0.8,
       phase: Math.random() * Math.PI * 2,
-      color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6)
+      size: 0.08 + Math.random() * 0.12
     }));
   }, []);
 
   useFrame((state) => {
     if (!meshRef.current) return;
     
+    const matrix = new THREE.Matrix4();
+    
     lights.forEach((light, i) => {
-      const y = light.y + Math.sin(state.clock.elapsedTime * light.speed + light.phase) * 1;
+      const y = light.y + Math.sin(state.clock.elapsedTime * light.speed + light.phase) * 1.2;
       
-      const matrix = new THREE.Matrix4();
       matrix.setPosition(light.x, y, light.z);
-      matrix.scale(new THREE.Vector3(0.15, 0.15, 0.15));
+      matrix.scale(new THREE.Vector3(light.size, light.size, light.size));
       meshRef.current!.setMatrixAt(i, matrix);
     });
     
@@ -309,12 +334,12 @@ function FloatingLights() {
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, LIGHT_COUNT]}>
       <sphereGeometry args={[1, 16, 16]} />
       <meshPhysicalMaterial
         color="#ffffff"
         emissive="#00ffff"
-        emissiveIntensity={2}
+        emissiveIntensity={2.5}
         roughness={0}
         metalness={1}
       />
@@ -322,28 +347,28 @@ function FloatingLights() {
   );
 }
 
-// Grid de energia no chão
+// Energy Grid
 function EnergyGrid() {
   return (
-    <group position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      {Array.from({ length: 31 }).map((_, i) => (
-        <mesh key={`h-${i}`} position={[0, (i - 15) * 2, 0]}>
-          <planeGeometry args={[60, 0.03]} />
+    <group position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {Array.from({ length: 35 }).map((_, i) => (
+        <mesh key={`h-${i}`} position={[0, (i - 17) * 2, 0]}>
+          <planeGeometry args={[70, 0.025]} />
           <meshBasicMaterial
             color="#00ffff"
             transparent
-            opacity={0.15}
+            opacity={0.12}
             blending={THREE.AdditiveBlending}
           />
         </mesh>
       ))}
-      {Array.from({ length: 31 }).map((_, i) => (
-        <mesh key={`v-${i}`} position={[(i - 15) * 2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <planeGeometry args={[60, 0.03]} />
+      {Array.from({ length: 35 }).map((_, i) => (
+        <mesh key={`v-${i}`} position={[(i - 17) * 2, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <planeGeometry args={[70, 0.025]} />
           <meshBasicMaterial
             color="#ff00ff"
             transparent
-            opacity={0.15}
+            opacity={0.12}
             blending={THREE.AdditiveBlending}
           />
         </mesh>
@@ -352,47 +377,66 @@ function EnergyGrid() {
   );
 }
 
-// Chão refletivo
+// Reflective Ground
 function ReflectiveGround() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <planeGeometry args={[100, 100]} />
+      <planeGeometry args={[120, 120]} />
       <MeshReflectorMaterial
-        blur={[400, 100]}
+        blur={[500, 150]}
         resolution={1024}
         mixBlur={1}
-        mixStrength={30}
-        depthScale={1}
+        mixStrength={35}
+        depthScale={1.2}
         minDepthThreshold={0.85}
-        color="#0a0a15"
-        metalness={0.8}
+        color="#0a0a18"
+        metalness={0.85}
         roughness={1}
-        mirror={0.5}
+        mirror={0.6}
       />
     </mesh>
   );
 }
 
+// Cinematic Camera
+function CinematicCamera({ mode }: { mode: 'particles' | 'crowd' }) {
+  const { camera } = useThree();
+  
+  useFrame((state) => {
+    const t = state.clock.elapsedTime * 0.08;
+    const radius = mode === 'particles' ? 28 : 22;
+    camera.position.x = Math.sin(t) * radius;
+    camera.position.z = Math.cos(t) * radius;
+    camera.position.y = mode === 'particles' ? 14 : 12;
+    camera.lookAt(0, 0, 0);
+  });
+  
+  return null;
+}
+
 function Scene({ mode }: { mode: 'particles' | 'crowd' }) {
+  useECSWorld();
+  useECSSystems();
+
   return (
     <>
       <Environment preset="night" />
-      <fog attach="fog" args={['#0a0a15', 10, 50]} />
+      <fog attach="fog" args={['#0a0a18', 12, 60]} />
       
-      <ambientLight intensity={0.05} />
-      <pointLight position={[0, 10, 0]} intensity={3} color="#ff00ff" distance={30} />
-      <pointLight position={[10, 5, 10]} intensity={2} color="#00ffff" distance={25} />
-      <pointLight position={[-10, 5, -10]} intensity={2} color="#ffff00" distance={25} />
+      <ambientLight intensity={0.04} />
+      <pointLight position={[0, 12, 0]} intensity={4} color="#ff00ff" distance={35} decay={2} />
+      <pointLight position={[12, 6, 12]} intensity={3} color="#00ffff" distance={30} decay={2} />
+      <pointLight position={[-12, 6, -12]} intensity={3} color="#ffff00" distance={30} decay={2} />
       
       {mode === 'particles' ? (
         <>
           <GalaxyParticles />
           <GalaxyCore />
-          <Sparkles count={500} scale={40} size={2} speed={0.2} color="#ffffff" opacity={0.3} />
+          <Sparkles count={600} scale={45} size={2.5} speed={0.25} color="#ffffff" opacity={0.4} />
         </>
       ) : (
         <>
-          <DNAHelix />
+          <DNAHelixSystem />
           <DNAConnectors />
           <AbstractTowers />
           <FloatingLights />
@@ -403,14 +447,14 @@ function Scene({ mode }: { mode: 'particles' | 'crowd' }) {
       
       <EffectComposer>
         <Bloom
-          intensity={mode === 'particles' ? 1.5 : 1.2}
-          luminanceThreshold={0.15}
-          luminanceSmoothing={0.9}
+          intensity={mode === 'particles' ? 1.8 : 1.4}
+          luminanceThreshold={0.12}
+          luminanceSmoothing={0.95}
           mipmapBlur
-          radius={0.8}
+          radius={0.85}
         />
-        <Vignette offset={0.3} darkness={0.6} />
-        <Noise opacity={0.015} />
+        <Vignette offset={0.35} darkness={0.65} />
+        <Noise opacity={0.018} />
       </EffectComposer>
       
       <CinematicCamera mode={mode} />
@@ -424,16 +468,20 @@ interface InstancedMeshDemoProps {
 
 export function InstancedMeshDemo({ mode = 'particles' }: InstancedMeshDemoProps) {
   return (
-    <div className="w-full h-[500px] rounded-xl overflow-hidden bg-[#0a0a15]">
+    <div className="w-full h-[500px] rounded-xl overflow-hidden bg-[#0a0a18]">
       <Canvas 
         camera={{ 
-          position: mode === 'particles' ? [0, 12, 25] : [15, 10, 15], 
+          position: mode === 'particles' ? [0, 14, 28] : [18, 12, 18], 
           fov: 50 
         }}
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: false }}
+        gl={{ 
+          antialias: true, 
+          alpha: false,
+          powerPreference: 'high-performance'
+        }}
       >
-        <color attach="background" args={['#0a0a15']} />
+        <color attach="background" args={['#0a0a18']} />
         <Scene mode={mode} />
       </Canvas>
     </div>
