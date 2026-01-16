@@ -294,40 +294,91 @@ const Dashboard = () => {
 
         {/* Hero Section - PALETA PRINCIPAL COM DEGRADÊ */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden transition-all duration-300 mx-2 xs:mx-0"
+          initial={{ opacity: 0, y: 20, rotateX: 10 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 0.8, type: "spring" }}
+          whileHover={{ 
+            scale: 1.02, 
+            rotateX: -2,
+            rotateY: 2,
+            transition: { duration: 0.3 }
+          }}
+          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden mx-2 xs:mx-0"
           style={{
-            background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
-            border: '1px solid rgba(131, 123, 255, 0.3)',
+            background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 50%, #9333ea 100%)',
+            border: '1px solid rgba(167, 139, 250, 0.4)',
             boxShadow: `
-              0 4px 20px rgba(131, 123, 255, 0.2),
-              0 0 40px rgba(131, 123, 255, 0.1)
-            `
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.border = '1px solid rgba(131, 123, 255, 0.6)';
-            e.currentTarget.style.boxShadow = `
-              0 8px 30px rgba(131, 123, 255, 0.3),
-              0 0 60px rgba(131, 123, 255, 0.15)
-            `;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.border = '1px solid rgba(131, 123, 255, 0.3)';
-            e.currentTarget.style.boxShadow = `
-              0 4px 20px rgba(131, 123, 255, 0.2),
-              0 0 40px rgba(131, 123, 255, 0.1)
-            `;
+              0 25px 50px -12px rgba(131, 123, 255, 0.4),
+              0 0 60px rgba(147, 51, 234, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2)
+            `,
+            transformStyle: 'preserve-3d',
+            perspective: '1000px'
           }}
         >
-          {/* Textura de Pontos */}
-          <div 
-            className="absolute inset-0 pointer-events-none opacity-70"
+          {/* Animated Floating Particles */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full bg-white/30"
+                style={{
+                  width: Math.random() * 6 + 2,
+                  height: Math.random() * 6 + 2,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  x: [0, Math.random() * 20 - 10, 0],
+                  opacity: [0.3, 0.8, 0.3],
+                  scale: [1, 1.5, 1],
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeInOut"
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Glowing Orbs for 3D depth */}
+          <motion.div 
+            className="absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none"
             style={{
-              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.3) 1.5px, transparent 1.5px)',
-              backgroundSize: '24px 24px',
-              backgroundPosition: '0 0'
+              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
+              filter: 'blur(20px)'
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.5, 0.8, 0.5]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
+          <motion.div 
+            className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, transparent 70%)',
+              filter: 'blur(15px)'
+            }}
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.4, 0.7, 0.4]
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          />
+          
+          {/* Textura de Pontos - Enhanced */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1.5px, transparent 1.5px)',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0',
+              opacity: 0.8
             }}
           />
           
