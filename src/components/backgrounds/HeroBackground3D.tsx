@@ -7,10 +7,12 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, Float, MeshTransmissionMaterial, Sparkles } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { useBackground3DSafe } from '@/contexts/Background3DContext';
 
 // Props interfaces
 interface GalaxyArmsProps {
   particleCount?: number;
+  speedMultiplier?: number;
 }
 
 interface EnergyRingProps {
@@ -18,15 +20,22 @@ interface EnergyRingProps {
   speed: number;
   tilt: number;
   color: string;
+  speedMultiplier?: number;
+}
+
+interface SceneProps {
+  bloomIntensity: number;
+  particleSpeed: number;
+  particleCount: number;
 }
 
 // Animated Galaxy Core
-const GalaxyCore = memo(() => {
+const GalaxyCore = memo(({ speedMultiplier = 1 }: { speedMultiplier?: number }) => {
   const coreRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+    const t = clock.getElapsedTime() * speedMultiplier;
     if (coreRef.current) {
       coreRef.current.rotation.y = t * 0.2;
       coreRef.current.rotation.z = Math.sin(t * 0.3) * 0.1;
@@ -37,7 +46,7 @@ const GalaxyCore = memo(() => {
   });
 
   return (
-    <Float speed={1} rotationIntensity={0.3} floatIntensity={0.5}>
+    <Float speed={1 * speedMultiplier} rotationIntensity={0.3} floatIntensity={0.5}>
       <group>
         {/* Inner Core */}
         <mesh ref={coreRef}>
@@ -68,7 +77,7 @@ const GalaxyCore = memo(() => {
 GalaxyCore.displayName = 'GalaxyCore';
 
 // Spiral Galaxy Arms
-const GalaxyArms = memo(({ particleCount = 2000 }: GalaxyArmsProps) => {
+const GalaxyArms = memo(({ particleCount = 2000, speedMultiplier = 1 }: GalaxyArmsProps) => {
   const pointsRef = useRef<THREE.Points>(null);
   
   const { positions, colors } = useMemo(() => {
@@ -101,7 +110,7 @@ const GalaxyArms = memo(({ particleCount = 2000 }: GalaxyArmsProps) => {
 
   useFrame(({ clock }) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.05;
+      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.05 * speedMultiplier;
     }
   });
 
@@ -125,12 +134,12 @@ const GalaxyArms = memo(({ particleCount = 2000 }: GalaxyArmsProps) => {
 GalaxyArms.displayName = 'GalaxyArms';
 
 // Energy Ring Component
-const EnergyRing = memo(({ radius, speed, tilt, color }: EnergyRingProps) => {
+const EnergyRing = memo(({ radius, speed, tilt, color, speedMultiplier = 1 }: EnergyRingProps) => {
   const ringRef = useRef<THREE.Mesh>(null);
   
   useFrame(({ clock }) => {
     if (ringRef.current) {
-      ringRef.current.rotation.z = clock.getElapsedTime() * speed * 0.3;
+      ringRef.current.rotation.z = clock.getElapsedTime() * speed * 0.3 * speedMultiplier;
     }
   });
 
@@ -144,7 +153,7 @@ const EnergyRing = memo(({ radius, speed, tilt, color }: EnergyRingProps) => {
 EnergyRing.displayName = 'EnergyRing';
 
 // Orbital Energy Rings
-const EnergyRings = memo(() => {
+const EnergyRings = memo(({ speedMultiplier = 1 }: { speedMultiplier?: number }) => {
   const rings = useMemo(() => [
     { radius: 1.2, speed: 1, tilt: 0.3, color: '#8b5cf6' },
     { radius: 1.8, speed: -0.7, tilt: -0.5, color: '#06b6d4' },
@@ -154,15 +163,17 @@ const EnergyRings = memo(() => {
   return (
     <>
       {rings.map((ring, i) => (
-        <EnergyRing key={i} {...ring} />
+        <EnergyRing key={i} {...ring} speedMultiplier={speedMultiplier} />
       ))}
     </>
   );
 });
 EnergyRings.displayName = 'EnergyRings';
 
-// Scene
-const Scene = memo(() => {
+// Scene with configurable settings
+const Scene = memo(({ bloomIntensity, particleSpeed, particleCount }: SceneProps) => {
+  const actualParticleCount = Math.floor(2000 * particleCount);
+  
   return (
     <>
       {/* Lighting */}
@@ -172,16 +183,16 @@ const Scene = memo(() => {
       <pointLight position={[-3, -2, -2]} intensity={0.3} color="#a78bfa" />
       
       {/* Main Elements */}
-      <GalaxyCore />
-      <GalaxyArms />
-      <EnergyRings />
+      <GalaxyCore speedMultiplier={particleSpeed} />
+      <GalaxyArms particleCount={actualParticleCount} speedMultiplier={particleSpeed} />
+      <EnergyRings speedMultiplier={particleSpeed} />
       
       {/* Ambient Sparkles */}
       <Sparkles
-        count={100}
+        count={Math.floor(100 * particleCount)}
         scale={10}
         size={2}
-        speed={0.3}
+        speed={0.3 * particleSpeed}
         color="#a78bfa"
       />
       
@@ -193,7 +204,7 @@ const Scene = memo(() => {
         <Bloom 
           luminanceThreshold={0.1} 
           luminanceSmoothing={0.9} 
-          intensity={1.2}
+          intensity={1.2 * bloomIntensity}
         />
         <Vignette offset={0.4} darkness={0.7} />
       </EffectComposer>
@@ -204,17 +215,19 @@ Scene.displayName = 'Scene';
 
 interface HeroBackground3DProps {
   className?: string;
-  opacity?: number;
 }
 
 export const HeroBackground3D = memo(({ 
-  className = '',
-  opacity = 0.7
+  className = ''
 }: HeroBackground3DProps) => {
+  const settings = useBackground3DSafe();
+  
+  if (!settings.enabled) return null;
+
   return (
     <div 
       className={`absolute inset-0 pointer-events-none overflow-hidden ${className}`}
-      style={{ opacity }}
+      style={{ opacity: settings.opacity }}
     >
       <Canvas
         camera={{ position: [0, 2, 5], fov: 50, near: 0.1, far: 100 }}
@@ -227,7 +240,11 @@ export const HeroBackground3D = memo(({
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene 
+            bloomIntensity={settings.bloomIntensity}
+            particleSpeed={settings.particleSpeed}
+            particleCount={settings.particleCount}
+          />
         </Suspense>
       </Canvas>
       

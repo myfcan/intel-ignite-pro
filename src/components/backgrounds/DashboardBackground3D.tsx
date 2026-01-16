@@ -7,20 +7,28 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Sparkles } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { useBackground3DSafe } from '@/contexts/Background3DContext';
 
 // Props interfaces
 interface AmbientParticlesProps {
   count?: number;
+  speedMultiplier?: number;
+}
+
+interface SceneProps {
+  bloomIntensity: number;
+  particleSpeed: number;
+  particleCount: number;
 }
 
 // Subtle Wave Grid
-const WaveGrid = memo(() => {
+const WaveGrid = memo(({ speedMultiplier = 1 }: { speedMultiplier?: number }) => {
   const geometryRef = useRef<THREE.PlaneGeometry>(null);
   
   useFrame(({ clock }) => {
     if (geometryRef.current) {
       const positions = geometryRef.current.attributes.position;
-      const time = clock.getElapsedTime();
+      const time = clock.getElapsedTime() * speedMultiplier;
       
       for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i);
@@ -47,7 +55,7 @@ const WaveGrid = memo(() => {
 WaveGrid.displayName = 'WaveGrid';
 
 // Ambient Particles
-const AmbientParticles = memo(({ count = 80 }: AmbientParticlesProps) => {
+const AmbientParticles = memo(({ count = 80, speedMultiplier = 1 }: AmbientParticlesProps) => {
   const pointsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
@@ -62,7 +70,7 @@ const AmbientParticles = memo(({ count = 80 }: AmbientParticlesProps) => {
 
   useFrame(({ clock }) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.02;
+      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.02 * speedMultiplier;
     }
   });
 
@@ -83,21 +91,23 @@ const AmbientParticles = memo(({ count = 80 }: AmbientParticlesProps) => {
 });
 AmbientParticles.displayName = 'AmbientParticles';
 
-// Scene
-const Scene = memo(() => {
+// Scene with configurable settings
+const Scene = memo(({ bloomIntensity, particleSpeed, particleCount }: SceneProps) => {
+  const actualParticleCount = Math.floor(80 * particleCount);
+  
   return (
     <>
       <ambientLight intensity={0.1} />
       <pointLight position={[0, 5, 5]} intensity={0.3} color="#8b5cf6" />
       
-      <WaveGrid />
-      <AmbientParticles />
+      <WaveGrid speedMultiplier={particleSpeed} />
+      <AmbientParticles count={actualParticleCount} speedMultiplier={particleSpeed} />
       
       <Sparkles
-        count={30}
+        count={Math.floor(30 * particleCount)}
         scale={15}
         size={1}
-        speed={0.1}
+        speed={0.1 * particleSpeed}
         color="#c4b5fd"
         opacity={0.3}
       />
@@ -106,7 +116,7 @@ const Scene = memo(() => {
         <Bloom 
           luminanceThreshold={0.5} 
           luminanceSmoothing={0.9} 
-          intensity={0.3}
+          intensity={0.3 * bloomIntensity}
         />
       </EffectComposer>
     </>
@@ -116,17 +126,20 @@ Scene.displayName = 'Scene';
 
 interface DashboardBackground3DProps {
   className?: string;
-  enabled?: boolean;
 }
 
 export const DashboardBackground3D = memo(({ 
-  className = '',
-  enabled = true
+  className = ''
 }: DashboardBackground3DProps) => {
-  if (!enabled) return null;
+  const settings = useBackground3DSafe();
+  
+  if (!settings.enabled) return null;
   
   return (
-    <div className={`fixed inset-0 pointer-events-none z-0 ${className}`}>
+    <div 
+      className={`fixed inset-0 pointer-events-none z-0 ${className}`}
+      style={{ opacity: settings.opacity }}
+    >
       <Canvas
         camera={{ position: [0, 0, 8], fov: 50 }}
         dpr={[1, 1]}
@@ -138,7 +151,11 @@ export const DashboardBackground3D = memo(({
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <Scene 
+            bloomIntensity={settings.bloomIntensity}
+            particleSpeed={settings.particleSpeed}
+            particleCount={settings.particleCount}
+          />
         </Suspense>
       </Canvas>
     </div>
