@@ -10,7 +10,6 @@ import { Background3DProvider } from "@/contexts/Background3DContext";
 import { URLFixer } from "@/components/URLFixer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardSkeleton, TrailDetailSkeleton } from "@/components/skeletons";
-import { Background3DControls } from "@/components/backgrounds";
 
 // Critical pages - loaded immediately
 import Index from "./pages/Index";
@@ -126,7 +125,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <URLFixer />
-            <Background3DControls />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
