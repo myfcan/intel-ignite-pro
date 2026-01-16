@@ -1,25 +1,62 @@
 /**
  * React Hooks para integrar ECS com React Three Fiber
+ * NOTA: Este arquivo está sendo gradualmente substituído por hooks.ts
+ * Mantido para compatibilidade com código legado
  */
 
 import { useFrame } from '@react-three/fiber';
 import { useCallback, useEffect, useRef } from 'react';
+import { world, queries, resetWorld, Entity } from './world';
 import {
-  world,
-  queries,
   orbitalSystem,
   velocitySystem,
   pulseSystem,
-  lifetimeSystem,
-  trailSystem,
-  clearWorld,
-  Entity,
-  createTransform,
-  createOrbital,
-  createPulse,
-  createGlow,
-  createVelocity,
-} from './world';
+  particleLifecycleSystem,
+} from './systems';
+import * as THREE from 'three';
+
+// Helper functions para criar componentes
+function createTransform(x: number, y: number, z: number) {
+  return {
+    position: new THREE.Vector3(x, y, z),
+    rotation: new THREE.Euler(0, 0, 0),
+    scale: new THREE.Vector3(1, 1, 1),
+  };
+}
+
+function createOrbital(radius: number, speed: number, axis: 'x' | 'y' | 'z' | 'xz' = 'y') {
+  return {
+    center: new THREE.Vector3(0, 0, 0),
+    radius,
+    speed,
+    phase: Math.random() * Math.PI * 2,
+    axis,
+  };
+}
+
+function createPulse(frequency: number, amplitude: number, _type: 'scale' | 'opacity' = 'scale') {
+  return {
+    baseScale: 1,
+    amplitude,
+    frequency,
+    phase: Math.random() * Math.PI * 2,
+  };
+}
+
+function createGlow(color: string, intensity: number, pulseSpeed: number = 1) {
+  return {
+    color: new THREE.Color(color),
+    intensity,
+    pulseSpeed,
+  };
+}
+
+function createVelocity(x: number, y: number, z: number) {
+  return {
+    linear: new THREE.Vector3(x, y, z),
+    angular: new THREE.Vector3(0, 0, 0),
+  };
+}
 
 /**
  * Hook para executar sistemas ECS a cada frame
@@ -27,11 +64,10 @@ import {
 export function useECSSystems() {
   useFrame((state, delta) => {
     const time = state.clock.elapsedTime;
-    orbitalSystem(delta, time);
+    orbitalSystem(time);
     velocitySystem(delta);
     pulseSystem(time);
-    lifetimeSystem(delta);
-    trailSystem();
+    particleLifecycleSystem(delta);
   });
 }
 
@@ -82,30 +118,9 @@ export function useEntities(count: number, factory: (index: number) => Entity) {
 export function useClearWorldOnUnmount() {
   useEffect(() => {
     return () => {
-      clearWorld();
+      resetWorld();
     };
   }, []);
-}
-
-/**
- * Hook para criar dispositivo (monitor, smartphone, etc.)
- */
-export function useDevice(
-  type: 'monitor' | 'smartphone' | 'tablet' | 'laptop',
-  position: [number, number, number],
-  screenContent?: { type: 'text' | 'code'; content: string; style?: 'amateur' | 'professional' }
-) {
-  return useEntity({
-    id: `device-${type}-${Math.random().toString(36).slice(2)}`,
-    transform: createTransform(...position),
-    device: {
-      type,
-      screenContent,
-      screenGlow: true,
-    },
-    pulse: createPulse(0.5, 0.02, 'scale'),
-    glow: createGlow('#00ffff', 0.5, 2),
-  });
 }
 
 /**
@@ -125,7 +140,7 @@ export function useOrbitalObjects(
       Math.sin((i / count) * Math.PI * 2) * radius
     ),
     orbital: createOrbital(radius, speed + Math.random() * 0.2, 'y'),
-    pulse: createPulse(1 + Math.random(), 0.1, 'scale'),
+    pulse: createPulse(1 + Math.random(), 0.1),
     glow: createGlow(color, 0.5 + Math.random() * 0.5),
   }));
 }
@@ -146,7 +161,7 @@ export function useFloatingParticles(count: number, spread: number = 10) {
       Math.random() * 0.05 + 0.02,
       (Math.random() - 0.5) * 0.1
     ),
-    pulse: createPulse(0.5 + Math.random() * 2, 0.3, 'scale'),
+    pulse: createPulse(0.5 + Math.random() * 2, 0.3),
     glow: createGlow(
       Math.random() > 0.5 ? '#00ffff' : '#ff00ff',
       0.3 + Math.random() * 0.7
@@ -155,5 +170,5 @@ export function useFloatingParticles(count: number, spread: number = 10) {
 }
 
 // Re-export úteis
-export { world, queries, clearWorld };
+export { world, queries, resetWorld as clearWorld };
 export type { Entity };

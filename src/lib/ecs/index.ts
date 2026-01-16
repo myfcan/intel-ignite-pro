@@ -74,3 +74,12 @@ export {
   useCinematicCamera,
   useECSQueries
 } from './hooks';
+
+// Legacy hooks (from useECS.ts)
+export {
+  useEntity,
+  useEntities,
+  useClearWorldOnUnmount,
+  useOrbitalObjects,
+  useFloatingParticles,
+} from './useECS';
