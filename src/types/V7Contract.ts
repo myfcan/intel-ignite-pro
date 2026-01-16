@@ -26,7 +26,11 @@ export type V7VisualType =
   | 'quiz-feedback'      // Feedback após responder quiz
   | 'playground'         // Comparação prompt amador vs profissional
   | 'result'             // Tela de resultado/gamificação
-  | 'cta';               // Call to action
+  | 'cta'                // Call to action
+  // === 3D VISUAL TYPES ===
+  | '3d-dual-monitors'   // Dois monitores 3D com conteúdo nas telas
+  | '3d-abstract'        // Cena abstrata cinematográfica (background)
+  | '3d-number-reveal';  // Número em 3D com efeitos cinematográficos
 
 /**
  * Tipos de micro-visual (overlays que aparecem durante narração)
@@ -287,6 +291,38 @@ export interface V7CTAContent {
   buttonText: string;
 }
 
+// ============================================================================
+// 3D VISUAL CONTENT TYPES
+// ============================================================================
+
+export interface V73DScreenContent {
+  title: string;
+  content: string;
+  style: 'amateur' | 'professional';
+}
+
+export interface V73DDualMonitorsContent {
+  leftScreen: V73DScreenContent;
+  rightScreen: V73DScreenContent;
+  animation?: 'float' | 'static' | 'pulse';
+}
+
+export interface V73DAbstractContent {
+  variant?: 'geometric' | 'organic' | 'particles' | 'mixed';
+  intensity?: 'subtle' | 'normal' | 'intense';
+  primaryColor?: string;
+  secondaryColor?: string;
+}
+
+export interface V73DNumberRevealContent {
+  number: string;
+  subtitle?: string;
+  secondaryNumber?: string;
+  hookQuestion?: string;
+  countUp?: boolean;
+  countUpDuration?: number;
+}
+
 export type V7VisualContent =
   | { type: 'number-reveal'; content: V7NumberRevealContent }
   | { type: 'text-reveal'; content: V7TextRevealContent }
@@ -297,7 +333,11 @@ export type V7VisualContent =
   | { type: 'quiz-feedback'; content: V7QuizFeedbackContent }
   | { type: 'playground'; content: V7PlaygroundContent }
   | { type: 'result'; content: V7ResultContent }
-  | { type: 'cta'; content: V7CTAContent };
+  | { type: 'cta'; content: V7CTAContent }
+  // === 3D Visual Types ===
+  | { type: '3d-dual-monitors'; content: V73DDualMonitorsContent }
+  | { type: '3d-abstract'; content: V73DAbstractContent }
+  | { type: '3d-number-reveal'; content: V73DNumberRevealContent };
 
 // ============================================================================
 // ANCHOR ACTIONS
