@@ -16,15 +16,18 @@ export const Background3DControls = memo(() => {
 
   return (
     <>
-      {/* Floating Toggle Button */}
+      {/* Floating Toggle Button - More prominent */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 w-12 h-12 rounded-full bg-primary/90 backdrop-blur-sm shadow-lg flex items-center justify-center text-white hover:bg-primary transition-colors"
-        whileHover={{ scale: 1.1 }}
+        className="fixed bottom-6 right-6 z-[9999] w-14 h-14 rounded-full bg-gradient-to-br from-primary to-purple-600 shadow-xl shadow-primary/30 flex items-center justify-center text-white hover:scale-105 transition-all border-2 border-white/20"
+        whileHover={{ scale: 1.1, rotate: 90 }}
         whileTap={{ scale: 0.95 }}
         title="Configurações 3D"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1, type: "spring" }}
       >
-        <Settings2 className="w-5 h-5" />
+        <Settings2 className="w-6 h-6" />
       </motion.button>
 
       {/* Settings Panel */}
