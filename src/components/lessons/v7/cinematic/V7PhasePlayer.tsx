@@ -1462,45 +1462,42 @@ export const V7PhasePlayer = ({
         );
 
       case 'revelation':
-        // Combine content from ALL revelation scenes
+        // ✅ V7-v31 UNIVERSAL FIX: Use currentPhase.visual FIRST (immediate, not timing-based)
+        // Then fallback to getCombinedSceneContent() for legacy/scene-based data
+        const revelationVisual = (currentPhase as any).visual;
+        const revelationVisualType = revelationVisual?.type;
+        const revelationVisualContent = revelationVisual?.content || {};
+        
+        // Combine content from scenes (timing-based fallback)
         const revelationContent = getCombinedSceneContent();
-
-        // ✅ V7-v30 FIX: Check if this is a "PERFEITO" method reveal
-        // CRITICAL: Use currentPhase.visual?.content?.word FIRST (not timing-dependent)
-        // The getCombinedSceneContent() is timing-based and returns empty at phase start
-        const phaseVisualWord = (currentPhase as any).visual?.content?.word?.toLowerCase();
-        const phaseVisualType = (currentPhase as any).visual?.type;
-        const mainTextStr = extractTextFromContent(revelationContent.mainText);
         
-        const isPerfeitoMethod =
-          phaseVisualWord === 'perfeito' ||  // ✅ Direct check - always works
-          phaseVisualType === 'letter-reveal' ||  // ✅ Visual type for PERFEITO
-          mainTextStr?.toLowerCase().includes('perfeito') ||
-          revelationContent.title?.toLowerCase().includes('perfeito') ||
-          currentPhase.title?.toLowerCase().includes('perfeito');
-        
-        if (isPerfeitoMethod) {
-          console.log('[V7PhasePlayer] ✅ PERFEITO detected via:', {
-            phaseVisualWord,
-            phaseVisualType,
-            phaseTitle: currentPhase.title
-          });
-        }
+        // ✅ UNIVERSAL: Merge visual content with scene content (visual takes priority)
+        const mergedRevelationContent = {
+          ...revelationContent,
+          ...revelationVisualContent, // Visual content overwrites scene content
+        };
 
-        // ✅ V7-v21: PERFEITO phase uses ONLY the synced component - NO CTA overlay
-        // The V7PhasePERFEITOSynced handles the entire narration from "Eles" to "constante"
-        if (isPerfeitoMethod) {
+        console.log('[V7PhasePlayer] 🎬 Revelation phase:', {
+          visualType: revelationVisualType,
+          visualContent: revelationVisualContent,
+          mergedContent: mergedRevelationContent,
+          phaseTitle: currentPhase.title
+        });
+
+        // ✅ V7-v31: Check visual.type to determine which component to render
+        // This is UNIVERSAL - works for ANY visual type, not just "perfeito"
+        if (revelationVisualType === 'letter-reveal') {
+          // Letter reveal visual (e.g., PERFEITO, MÉTODO, any vertical word)
           return (
             <V7PhasePERFEITOSynced
               wordTimestamps={wordTimestamps}
               currentTime={audio.currentTime}
               isPlaying={audio.isPlaying}
               onComplete={() => {
-                console.log('[V7PhasePlayer] PERFEITO synced animation complete - advancing');
-                // ✅ V7-v12: Unlock and advance when PERFEITO animation completes
+                console.log('[V7PhasePlayer] Letter-reveal animation complete - advancing');
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
                 if (lockedPhaseIndex !== null) {
-                  console.log('[V7PhasePlayer] 🔓 Unlocking revelation/PERFEITO phase');
+                  console.log('[V7PhasePlayer] 🔓 Unlocking revelation phase');
                   machineAdapter.unlockPhase();
                 }
                 machineAdapter.setInteractionComplete(true);
@@ -1516,7 +1513,8 @@ export const V7PhasePlayer = ({
           return 'negative';
         };
 
-        const ctaOptions = (revelationContent.options || content.options || []).map((opt: any) => ({
+        // ✅ V7-v31: Use mergedRevelationContent (visual + scenes merged)
+        const ctaOptions = (mergedRevelationContent.options || content.options || []).map((opt: any) => ({
           label: opt.label || '',
           emoji: opt.emoji || '🎯',
           variant: mapVariant(opt.variant || 'primary')
@@ -1532,8 +1530,8 @@ export const V7PhasePlayer = ({
 
         return (
           <V7PhaseCTA
-            title={extractTextFromContent(revelationContent.mainText) || extractTextFromContent(content.mainText) || currentPhase.title}
-            subtitle={extractTextFromContent(revelationContent.subtitle) || extractTextFromContent(content.subtitle) || ''}
+            title={extractTextFromContent(mergedRevelationContent.mainText) || extractTextFromContent(content.mainText) || currentPhase.title}
+            subtitle={extractTextFromContent(mergedRevelationContent.subtitle) || extractTextFromContent(content.subtitle) || ''}
             options={ctaOptions.length > 0 ? ctaOptions : [
               { label: 'Revisar', emoji: '📚', variant: 'negative' },
               { label: 'Continuar', emoji: '🚀', variant: 'positive' }
