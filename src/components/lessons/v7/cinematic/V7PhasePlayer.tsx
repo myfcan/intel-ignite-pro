@@ -1465,12 +1465,27 @@ export const V7PhasePlayer = ({
         // Combine content from ALL revelation scenes
         const revelationContent = getCombinedSceneContent();
 
-        // Check if this is a "PERFEITO" method reveal
+        // ✅ V7-v30 FIX: Check if this is a "PERFEITO" method reveal
+        // CRITICAL: Use currentPhase.visual?.content?.word FIRST (not timing-dependent)
+        // The getCombinedSceneContent() is timing-based and returns empty at phase start
+        const phaseVisualWord = (currentPhase as any).visual?.content?.word?.toLowerCase();
+        const phaseVisualType = (currentPhase as any).visual?.type;
         const mainTextStr = extractTextFromContent(revelationContent.mainText);
+        
         const isPerfeitoMethod =
+          phaseVisualWord === 'perfeito' ||  // ✅ Direct check - always works
+          phaseVisualType === 'letter-reveal' ||  // ✅ Visual type for PERFEITO
           mainTextStr?.toLowerCase().includes('perfeito') ||
           revelationContent.title?.toLowerCase().includes('perfeito') ||
           currentPhase.title?.toLowerCase().includes('perfeito');
+        
+        if (isPerfeitoMethod) {
+          console.log('[V7PhasePlayer] ✅ PERFEITO detected via:', {
+            phaseVisualWord,
+            phaseVisualType,
+            phaseTitle: currentPhase.title
+          });
+        }
 
         // ✅ V7-v21: PERFEITO phase uses ONLY the synced component - NO CTA overlay
         // The V7PhasePERFEITOSynced handles the entire narration from "Eles" to "constante"
