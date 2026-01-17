@@ -800,6 +800,55 @@ function generatePhases(
     // ✅ FASE 6: Removido lastEndTime - cada fase tem seu timing REAL
   }
 
+  // ============================================================================
+  // ✅ FASE 7 CRITICAL FIX: Garantir que phases NÃO se sobreponham
+  // ============================================================================
+  // PROBLEMA DESCOBERTO: Phase N+1 pode começar ANTES de Phase N terminar
+  // Isso faz o Player pular phases porque ele usa startTime para determinar fase ativa
+  //
+  // EXEMPLO DO BUG:
+  // - Phase 9: startTime=75.976s, endTime=80.976s
+  // - Phase 10: startTime=75.72s (ANTES da Phase 9!)
+  // → Player encontra Phase 10 primeiro e PULA Phase 9!
+  //
+  // SOLUÇÃO: Garantir ordem sequencial - Phase N+1.startTime >= Phase N.endTime
+  // ============================================================================
+
+  console.log('\n[Phases] ✅ FASE 7: Validando ordem sequencial das phases...');
+
+  // Primeiro, ordenar phases por startTime para garantir ordem correta
+  phases.sort((a, b) => a.startTime - b.startTime);
+
+  // Depois, garantir que não há sobreposição
+  for (let i = 1; i < phases.length; i++) {
+    const prevPhase = phases[i - 1];
+    const currPhase = phases[i];
+
+    if (currPhase.startTime < prevPhase.endTime) {
+      const overlap = prevPhase.endTime - currPhase.startTime;
+      console.log(`[Phases] ⚠️ OVERLAP DETECTADO: Phase "${currPhase.id}" começa em ${currPhase.startTime.toFixed(2)}s mas Phase "${prevPhase.id}" termina em ${prevPhase.endTime.toFixed(2)}s (overlap: ${overlap.toFixed(2)}s)`);
+
+      // CORREÇÃO: Ajustar startTime da phase atual para começar após a anterior
+      // Adicionar pequena margem de 0.1s para garantir transição suave
+      const newStartTime = prevPhase.endTime + 0.1;
+      console.log(`[Phases] ✅ CORRIGINDO: "${currPhase.id}" startTime ${currPhase.startTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+      currPhase.startTime = newStartTime;
+
+      // Se o endTime ficou menor que o startTime, ajustar também
+      if (currPhase.endTime <= currPhase.startTime) {
+        const minDuration = 3.0; // Duração mínima de 3 segundos
+        currPhase.endTime = currPhase.startTime + minDuration;
+        console.log(`[Phases] ✅ Ajustando endTime para ${currPhase.endTime.toFixed(2)}s (duração mínima)`);
+      }
+    }
+  }
+
+  // Log do resultado final
+  console.log('\n[Phases] ✅ FASE 7: Ordem final das phases:');
+  phases.forEach((p, i) => {
+    console.log(`  [${i}] "${p.id}" (${p.type}): ${p.startTime.toFixed(2)}s - ${p.endTime.toFixed(2)}s`);
+  });
+
   // ✅ FASE 6: Calcular duração total baseado na última fase
   const lastPhaseEndTime = phases.length > 0 ? phases[phases.length - 1].endTime : 0;
   console.log(`\n[Phases] ✅ Generated ${phases.length} phases, total duration: ${lastPhaseEndTime.toFixed(2)}s`);
