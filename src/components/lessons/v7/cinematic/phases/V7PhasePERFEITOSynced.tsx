@@ -67,9 +67,24 @@ export const V7PhasePERFEITOSynced = ({
   const completedRef = useRef(false);
   const loggedRef = useRef(false);
   const playedSoundsRef = useRef<Set<number>>(new Set());
+  const mountTimeRef = useRef<number>(Date.now());
   
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
+
+  // ✅ V7-v50 FIX: Show content IMMEDIATELY on mount to prevent race conditions
+  // The narration may have already started when this component mounts
+  useEffect(() => {
+    const timeSinceMount = Date.now() - mountTimeRef.current;
+    
+    // ✅ CRITICAL: If we mount and currentTime > 0, the audio is already playing
+    // Show content immediately to prevent empty/broken state
+    if (currentTime > 0 && !showContent) {
+      console.log(`[V7PhasePERFEITOSynced] ⚡ IMMEDIATE SHOW - mounted at ${currentTime.toFixed(1)}s (already playing)`);
+      setShowContent(true);
+      playSound('reveal');
+    }
+  }, []); // Only run on mount
 
   // ✅ Log inicial das palavras relevantes (apenas uma vez)
   useEffect(() => {
@@ -95,7 +110,7 @@ export const V7PhasePERFEITOSynced = ({
     }
   }, [wordTimestamps]);
 
-  // ✅ Mostrar conteúdo SOMENTE quando "PERFEITO" for falado
+  // ✅ Mostrar conteúdo quando "PERFEITO" for falado OU após fallback timer
   useEffect(() => {
     if (showContent) return;
     
@@ -105,8 +120,21 @@ export const V7PhasePERFEITOSynced = ({
       setShowContent(true);
       playSound('reveal');
       console.log(`[V7PhasePERFEITOSynced] 🎬 "PERFEITO" falado @ ${currentTime.toFixed(1)}s - mostrando layout`);
+      return;
     }
-  }, [showContent, currentTime, wordTimestamps, playSound]);
+    
+    // ✅ V7-v50 FIX: Fallback - if audio is playing and we're past phase start, show content
+    // This prevents blank screen during race conditions
+    if (isPlaying && currentTime > 0) {
+      const timeSinceMount = Date.now() - mountTimeRef.current;
+      // If we've been mounted for 500ms+ and audio is playing, force show
+      if (timeSinceMount > 500) {
+        console.log(`[V7PhasePERFEITOSynced] ⚡ FALLBACK SHOW - ${timeSinceMount}ms since mount, audio @ ${currentTime.toFixed(1)}s`);
+        setShowContent(true);
+        playSound('reveal');
+      }
+    }
+  }, [showContent, currentTime, wordTimestamps, playSound, isPlaying]);
 
   // ✅ Atualizar visibleCount e tocar sons baseado em anchorText
   useEffect(() => {

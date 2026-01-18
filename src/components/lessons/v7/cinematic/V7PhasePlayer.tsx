@@ -988,7 +988,9 @@ export const V7PhasePlayer = ({
   };
 
   // For phases that need progressive content (combines scenes UP TO currentTime)
-  const getCombinedSceneContent = (): any => {
+  // ✅ V7-v50 FIX: Added includeImmediate flag to include first scene immediately
+  // This prevents race conditions where relativeTime ≈ 0 returns empty content
+  const getCombinedSceneContent = (includeImmediate: boolean = false): any => {
     if (!currentPhase?.scenes) return {};
 
     const effectiveTime = hasAudio ? audio.currentTime : internalTime;
@@ -996,11 +998,14 @@ export const V7PhasePlayer = ({
     const relativeTime = effectiveTime - phaseStartTime;
 
     // Merge only scenes that have STARTED (not future scenes)
+    // ✅ V7-v50: When includeImmediate=true, ALWAYS include scene 0 to prevent empty content at phase start
     const combined: any = {};
     currentPhase.scenes
-      .filter(scene => {
+      .filter((scene, idx) => {
         const sceneStart = scene.startTime ?? 0;
-        return relativeTime >= sceneStart; // Only include scenes that have started
+        // ✅ Include first scene immediately if flag is set, OR if scene has started
+        if (includeImmediate && idx === 0) return true;
+        return relativeTime >= sceneStart;
       })
       .forEach((scene, idx) => {
         console.log('[V7 SCENE DEBUG] Including scene in combined:', {
@@ -1462,14 +1467,14 @@ export const V7PhasePlayer = ({
         );
 
       case 'revelation':
-        // ✅ V7-v31 UNIVERSAL FIX: Use currentPhase.visual FIRST (immediate, not timing-based)
-        // Then fallback to getCombinedSceneContent() for legacy/scene-based data
+        // ✅ V7-v50 FIX: IMMEDIATE DETECTION - Check multiple sources for letter-reveal
+        // This prevents race conditions where visual.type isn't loaded yet at phase start
         const revelationVisual = (currentPhase as any).visual;
         const revelationVisualType = revelationVisual?.type;
         const revelationVisualContent = revelationVisual?.content || {};
         
-        // Combine content from scenes (timing-based fallback)
-        const revelationContent = getCombinedSceneContent();
+        // ✅ V7-v50: Use includeImmediate=true to get scene 0 content immediately
+        const revelationContent = getCombinedSceneContent(true);
         
         // ✅ UNIVERSAL: Merge visual content with scene content (visual takes priority)
         const mergedRevelationContent = {
@@ -1477,16 +1482,34 @@ export const V7PhasePlayer = ({
           ...revelationVisualContent, // Visual content overwrites scene content
         };
 
-        console.log('[V7PhasePlayer] 🎬 Revelation phase:', {
+        // ✅ V7-v50 FIX: Multi-source detection for letter-reveal / PERFEITO
+        // Check ALL possible indicators - not just visual.type
+        const isPerfeitoByTitle = currentPhase.title?.toLowerCase().includes('perfeito') || 
+                                   currentPhase.id?.toLowerCase().includes('perfeito');
+        const isPerfeitoByVisualType = revelationVisualType === 'letter-reveal';
+        const isPerfeitoByVisualWord = revelationVisualContent?.word?.toLowerCase() === 'perfeito';
+        const isPerfeitoBySceneContent = mergedRevelationContent?.word?.toLowerCase() === 'perfeito' ||
+                                          mergedRevelationContent?.highlightWord?.toLowerCase() === 'perfeito';
+        
+        // ✅ UNIFIED DETECTION: Any positive signal = render V7PhasePERFEITOSynced
+        const shouldRenderLetterReveal = isPerfeitoByVisualType || 
+                                          isPerfeitoByTitle || 
+                                          isPerfeitoByVisualWord || 
+                                          isPerfeitoBySceneContent;
+
+        console.log('[V7PhasePlayer] 🎬 Revelation phase DETECTION:', {
+          phaseId: currentPhase.id,
+          phaseTitle: currentPhase.title,
           visualType: revelationVisualType,
-          visualContent: revelationVisualContent,
-          mergedContent: mergedRevelationContent,
-          phaseTitle: currentPhase.title
+          isPerfeitoByTitle,
+          isPerfeitoByVisualType,
+          isPerfeitoByVisualWord,
+          isPerfeitoBySceneContent,
+          shouldRenderLetterReveal,
         });
 
-        // ✅ V7-v31: Check visual.type to determine which component to render
-        // This is UNIVERSAL - works for ANY visual type, not just "perfeito"
-        if (revelationVisualType === 'letter-reveal') {
+        // ✅ V7-v50: Use unified detection instead of just visual.type
+        if (shouldRenderLetterReveal) {
           // Letter reveal visual (e.g., PERFEITO, MÉTODO, any vertical word)
           return (
             <V7PhasePERFEITOSynced
