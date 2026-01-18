@@ -25,7 +25,7 @@ export default function AdminPipelineHub() {
         </div>
 
         {/* V7-VV Pipeline - Destaque */}
-        <Card className="border-2 border-purple-500/50 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:border-purple-500 transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline/v7-create')}>
+        <Card className="border-2 border-purple-500/50 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:border-purple-500 transition-colors cursor-pointer" onClick={() => navigate('/admin/v7-vv')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Film className="w-6 h-6 text-purple-500" />
