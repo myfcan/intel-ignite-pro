@@ -134,7 +134,8 @@ function generatePipelineDebug(
   inputScenes: ScriptScene[],
   mainAudio: AudioSegment,
   phases: Phase[],
-  inputText: string
+  inputText: string,
+  feedbackAudios: FeedbackAudiosObject = {}
 ): V7PipelineDebugReport {
   console.log('[DEBUG] Generating pipeline debug report...');
   
@@ -145,6 +146,12 @@ function generatePipelineDebug(
   
   // ========== NÍVEL 2: ANÁLISE DE TIMELINE ==========
   const timelineDebug = analyzeTimeline(inputScenes, phases, mainAudio, allIssues);
+  
+  // ========== FASE 4: VALIDAÇÃO DE FEEDBACK AUDIOS ==========
+  analyzeFeedbackAudios(inputScenes, feedbackAudios, allIssues);
+  
+  // ========== FASE 5: DETECÇÃO DE ANCHORS NÃO ENCONTRADOS ==========
+  analyzeUnfoundAnchors(inputScenes, phases, mainAudio.wordTimestamps, allIssues);
   
   // ========== SUMÁRIO ==========
   const summary = calculateSummary(allIssues);
@@ -493,6 +500,173 @@ function calculateSummary(allIssues: V7DebugIssue[]): V7PipelineDebugReport['sum
     primaryRecommendation,
     healthScore,
   };
+}
+
+// ============================================================================
+// FASE 4: VALIDAÇÃO DE FEEDBACK AUDIOS
+// ============================================================================
+
+function analyzeFeedbackAudios(
+  inputScenes: ScriptScene[],
+  feedbackAudios: FeedbackAudiosObject,
+  allIssues: V7DebugIssue[]
+): void {
+  // Coletar todos os feedbacks esperados das scenes interativas
+  const expectedFeedbacks: Array<{ optionId: string; sceneId: string; hasNarration: boolean }> = [];
+  
+  for (const scene of inputScenes) {
+    if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
+      for (const option of scene.interaction.options) {
+        expectedFeedbacks.push({
+          optionId: option.id,
+          sceneId: scene.id,
+          hasNarration: !!(option.feedback?.narration),
+        });
+      }
+    }
+  }
+  
+  // Verificar feedbacks que deveriam ter áudio mas não têm
+  for (const expected of expectedFeedbacks) {
+    if (expected.hasNarration) {
+      const feedbackKey = `feedback-${expected.optionId}`;
+      const audio = feedbackAudios[feedbackKey];
+      
+      if (!audio) {
+        allIssues.push(createDebugIssue(
+          'high',
+          'audio',
+          `Feedback audio não gerado para opção ${expected.optionId}`,
+          `Scene ${expected.sceneId} tem narração de feedback mas audio não foi gerado`,
+          'generateAudio falhou ou não foi chamado para este feedback',
+          'Verificar logs de geração de feedback audios',
+          { optionId: expected.optionId, sceneId: expected.sceneId }
+        ));
+      } else if (!audio.url) {
+        allIssues.push(createDebugIssue(
+          'high',
+          'audio',
+          `Feedback audio sem URL para opção ${expected.optionId}`,
+          `Audio foi gerado mas URL está vazia`,
+          'Upload para Supabase Storage falhou',
+          'Verificar bucket lesson-audios e permissões',
+          { optionId: expected.optionId, feedbackKey }
+        ));
+      } else if (audio.duration === 0) {
+        allIssues.push(createDebugIssue(
+          'medium',
+          'audio',
+          `Feedback audio com duração zero para opção ${expected.optionId}`,
+          `Audio URL existe mas duration = 0`,
+          'wordTimestamps vazios ou mal processados',
+          'Verificar resposta do ElevenLabs para este feedback',
+          { optionId: expected.optionId, url: audio.url }
+        ));
+      }
+    }
+  }
+  
+  // Log estatísticas
+  const feedbackCount = Object.keys(feedbackAudios).length;
+  const expectedWithNarration = expectedFeedbacks.filter(f => f.hasNarration).length;
+  console.log(`[DEBUG] Feedback audios: ${feedbackCount}/${expectedWithNarration} gerados`);
+}
+
+// ============================================================================
+// FASE 5: DETECÇÃO DE ANCHORS NÃO ENCONTRADOS
+// ============================================================================
+
+function analyzeUnfoundAnchors(
+  inputScenes: ScriptScene[],
+  phases: Phase[],
+  wordTimestamps: WordTimestamp[],
+  allIssues: V7DebugIssue[]
+): void {
+  if (wordTimestamps.length === 0) {
+    console.log('[DEBUG] No wordTimestamps available for anchor analysis');
+    return;
+  }
+  
+  // Normalizar palavras do áudio para busca
+  const normalizedWords = wordTimestamps.map(wt => ({
+    ...wt,
+    normalized: wt.word.toLowerCase().replace(/[.,!?;:'"]/g, ''),
+  }));
+  
+  // Coletar todos os anchors definidos nas scenes
+  const definedAnchors: Array<{ 
+    sceneId: string; 
+    anchorType: 'pauseAt' | 'transitionAt' | 'microVisual';
+    anchorText: string;
+  }> = [];
+  
+  for (const scene of inputScenes) {
+    if (scene.anchorText?.pauseAt) {
+      definedAnchors.push({
+        sceneId: scene.id,
+        anchorType: 'pauseAt',
+        anchorText: scene.anchorText.pauseAt,
+      });
+    }
+    if (scene.anchorText?.transitionAt) {
+      definedAnchors.push({
+        sceneId: scene.id,
+        anchorType: 'transitionAt',
+        anchorText: scene.anchorText.transitionAt,
+      });
+    }
+    if (scene.visual?.microVisuals) {
+      for (const mv of scene.visual.microVisuals) {
+        definedAnchors.push({
+          sceneId: scene.id,
+          anchorType: 'microVisual',
+          anchorText: mv.anchorText,
+        });
+      }
+    }
+  }
+  
+  // Verificar se cada anchor foi encontrado nos wordTimestamps
+  const unfoundAnchors: Array<typeof definedAnchors[0]> = [];
+  
+  for (const anchor of definedAnchors) {
+    const anchorWords = anchor.anchorText.toLowerCase().split(/\s+/);
+    const lastWord = anchorWords[anchorWords.length - 1].replace(/[.,!?;:'"]/g, '');
+    
+    // Procurar a palavra âncora nos timestamps
+    const found = normalizedWords.some(wt => wt.normalized === lastWord);
+    
+    if (!found) {
+      unfoundAnchors.push(anchor);
+    }
+  }
+  
+  // Reportar anchors não encontrados
+  if (unfoundAnchors.length > 0) {
+    const groupedByScene: Record<string, string[]> = {};
+    
+    for (const anchor of unfoundAnchors) {
+      if (!groupedByScene[anchor.sceneId]) {
+        groupedByScene[anchor.sceneId] = [];
+      }
+      groupedByScene[anchor.sceneId].push(`${anchor.anchorType}: "${anchor.anchorText}"`);
+    }
+    
+    for (const [sceneId, anchors] of Object.entries(groupedByScene)) {
+      allIssues.push(createDebugIssue(
+        'high',
+        'sync',
+        `${anchors.length} anchor(s) não encontrado(s) em ${sceneId}`,
+        `Anchors: ${anchors.join(', ')}`,
+        'Palavra âncora não aparece nos wordTimestamps - pode ter sido alterada pelo TTS ou a narração não inclui essa palavra',
+        'Verificar se a palavra existe exatamente no texto da narração e usar palavras mais distintivas',
+        { sceneId, unfoundAnchors: anchors }
+      ));
+    }
+  }
+  
+  // Log estatísticas
+  console.log(`[DEBUG] Anchors: ${definedAnchors.length} definidos, ${unfoundAnchors.length} não encontrados`);
 }
 
 const corsHeaders = {
@@ -1836,7 +2010,8 @@ Deno.serve(async (req) => {
       input.scenes,
       mainAudio,
       phases,
-      fullNarrationForDebug
+      fullNarrationForDebug,
+      feedbackAudios // ✅ FASE 4: Incluir para validação
     );
 
     // =========================================================================
