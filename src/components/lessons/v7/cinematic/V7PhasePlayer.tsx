@@ -39,6 +39,7 @@ import {
   V7MicroVisual,
   usePhaseController
 } from './phases/V7PhaseController';
+import { useV7PlayerDebugger } from '@/lib/v7Debug/playerDebugger';
 
 interface WordTimestamp {
   word: string;
@@ -144,6 +145,9 @@ export const V7PhasePlayer = ({
 
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
+
+  // ✅ V7-DEBUG: Player debugger for runtime metrics (Levels 3-5)
+  const debugger_ = useV7PlayerDebugger(script?.id || 'unknown', script?.title || 'Unknown Lesson');
 
   // ✅ V7-v30 FIX: Track if we're in a blocking interactive phase
   // This ref is used to prevent onComplete from being called when audio ends
@@ -493,6 +497,80 @@ export const V7PhasePlayer = ({
     
     previousPhaseRef.current = currentPhaseType || null;
   }, [currentPhase?.type]);
+
+  // ✅ V7-DEBUG: Register planned events from timeline
+  useEffect(() => {
+    if (!scaledScript?.phases) return;
+    
+    scaledScript.phases.forEach((phase, index) => {
+      // Register phase start
+      debugger_.registerPlannedEvent(
+        `phase_${index}_start`,
+        phase.startTime,
+        null
+      );
+      
+      // Register anchor actions
+      if (phase.anchorActions) {
+        phase.anchorActions.forEach((anchor: any, actionIndex: number) => {
+          debugger_.registerPlannedEvent(
+            `anchor_${index}_${actionIndex}`,
+            anchor.keywordTime || 0,
+            anchor.keyword
+          );
+        });
+      }
+    });
+    
+    console.log('[V7PhasePlayer] 🐛 DEBUG: Planned events registered');
+  }, [scaledScript?.phases, debugger_]);
+
+  // ✅ V7-DEBUG: Record phase transitions
+  useEffect(() => {
+    if (!currentPhase || isLoading) return;
+    
+    debugger_.recordEventExecution(
+      `phase_${currentPhaseIndex}_start`,
+      'executed',
+      audio.currentTime,
+      null,
+      { attempts: 1, usedFallback: false }
+    );
+    
+    debugger_.recordPlayerEvent('phase_change', Date.now(), {
+      phaseIndex: currentPhaseIndex,
+      phaseType: currentPhase.type,
+      phaseId: currentPhase.id,
+    });
+    
+    debugger_.captureStateSnapshot(
+      effectiveIsPlaying ? 'playing' : 'paused',
+      currentPhaseIndex,
+      internalTime,
+      hasAudio ? audio.currentTime : null
+    );
+  }, [currentPhaseIndex, currentPhase?.id, isLoading]);
+
+  // ✅ V7-DEBUG: Record audio events
+  useEffect(() => {
+    if (!hasAudio) return;
+    
+    const eventType = audio.isPlaying ? 'play' : 'pause';
+    debugger_.recordPlayerEvent(eventType, Date.now(), {
+      currentTime: audio.currentTime,
+    });
+  }, [audio.isPlaying, hasAudio]);
+
+  // ✅ V7-DEBUG: Log report on unmount (development only)
+  useEffect(() => {
+    return () => {
+      if (import.meta.env.DEV) {
+        debugger_.logCurrentState();
+        const report = debugger_.generateReport();
+        console.log('[V7PhasePlayer] 🐛 Final Debug Report:', report.summary);
+      }
+    };
+  }, []);
 
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
