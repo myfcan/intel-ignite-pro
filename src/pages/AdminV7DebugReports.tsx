@@ -313,12 +313,14 @@ export default function AdminV7DebugReports() {
   };
 
   // Calcular verificações REAIS baseadas nos dados do report
+  // Agora passa execution_report para verificação completa
   const realVerifications = useMemo<CorrectionVerification[]>(() => {
     if (!selectedLessonReport) return [];
     return analyzeCorrections(
       selectedLessonReport.audio_report,
       selectedLessonReport.timeline_report,
-      selectedLessonReport.all_issues
+      selectedLessonReport.all_issues,
+      selectedLessonReport.execution_report // ✅ Novo: dados de execução do player
     );
   }, [selectedLessonReport]);
 

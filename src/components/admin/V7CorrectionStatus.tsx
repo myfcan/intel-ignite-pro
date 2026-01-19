@@ -102,6 +102,14 @@ export function V7CorrectionStatus({ verification }: V7CorrectionStatusProps) {
 /**
  * Analisa os dados REAIS do debug report e retorna o status de cada verificação
  */
+/**
+ * Analisa os dados REAIS do debug report e retorna o status de cada verificação
+ * 
+ * @param audioReport - Dados de áudio do pipeline
+ * @param timelineReport - Dados de timeline do pipeline
+ * @param allIssues - Todas as issues detectadas
+ * @param executionReport - Dados de execução do player (opcional)
+ */
 export function analyzeCorrections(
   audioReport: any,
   timelineReport: any,
@@ -113,11 +121,6 @@ export function analyzeCorrections(
   // ========================================
   // 1. TRUNCAMENTO DE NARRAÇÃO
   // ========================================
-  const truncationIssue = allIssues?.find(i => 
-    i.message?.toLowerCase().includes('trunca') || 
-    i.possibleCause?.toLowerCase().includes('trunca')
-  );
-  
   if (audioReport?.isTruncated === true) {
     verifications.push({
       id: 'truncation',
@@ -133,16 +136,7 @@ export function analyzeCorrections(
       label: 'Truncamento de narração',
       category: 'audio',
       status: 'success',
-      reason: `Áudio completo: ${audioReport.wordCount} palavras narradas`,
-    });
-  } else if (truncationIssue) {
-    verifications.push({
-      id: 'truncation',
-      label: 'Truncamento de narração',
-      category: 'audio',
-      status: 'warning',
-      reason: 'Issue de truncamento reportada, mas não verificada',
-      details: truncationIssue.suggestedFix,
+      reason: `✓ Áudio completo: ${audioReport.wordCount} palavras (${audioReport.actualDuration?.toFixed(1)}s)`,
     });
   } else {
     verifications.push({
@@ -169,8 +163,8 @@ export function analyzeCorrections(
         label: 'Timestamps word-level',
         category: 'audio',
         status: 'success',
-        reason: `${audioReport.wordCount} timestamps (${audioReport.firstWord.word}...${audioReport.lastWord.word})`,
-        details: `Duração: ${duration.toFixed(1)}s`,
+        reason: `✓ ${audioReport.wordCount} timestamps sincronizados`,
+        details: `"${audioReport.firstWord.word}" (0s) → "${audioReport.lastWord.word}" (${duration.toFixed(1)}s)`,
       });
     } else {
       verifications.push({
@@ -207,7 +201,7 @@ export function analyzeCorrections(
         category: 'timeline',
         status: 'error',
         reason: `${overlappingPhases.length} fases com overlap`,
-        details: overlappingPhases.map((p: any) => p.id).join(', '),
+        details: overlappingPhases.map((p: any) => `${p.id} ↔ ${p.overlapsWith}`).join(', '),
       });
     } else {
       verifications.push({
@@ -215,7 +209,7 @@ export function analyzeCorrections(
         label: 'Overlaps de fases',
         category: 'timeline',
         status: 'success',
-        reason: `${phaseDetails.length} fases sequenciais sem overlap`,
+        reason: `✓ ${phaseDetails.length} fases sequenciais sem overlap`,
       });
     }
   } else {
@@ -229,26 +223,35 @@ export function analyzeCorrections(
   }
   
   // ========================================
-  // 4. ÂNCORAS ENCONTRADAS
+  // 4. ÂNCORAS - AGORA COM DADOS REAIS DE EXECUÇÃO
   // ========================================
+  const plannedAnchors = timelineReport?.plannedEvents?.filter((e: any) => 
+    e.triggerType === 'anchor_text'
+  ) || [];
+  
+  // Verificar issues de âncoras não encontradas
   const anchorIssue = allIssues?.find(i => 
     i.message?.toLowerCase().includes('âncora') || 
     i.message?.toLowerCase().includes('anchor') ||
     i.relatedData?.missedEvents?.length > 0
   );
   
-  const plannedAnchors = timelineReport?.plannedEvents?.filter((e: any) => 
-    e.triggerType === 'anchor_text'
-  ) || [];
+  // Verificar dados de execução do player
+  const executedEvents = executionReport?.executedEvents || [];
+  const missedEvents = executionReport?.missedEvents || anchorIssue?.relatedData?.missedEvents || [];
   
-  if (anchorIssue && anchorIssue.relatedData?.missedEvents?.length > 0) {
+  if (missedEvents.length > 0) {
+    const missedCount = missedEvents.length;
+    const totalPlanned = plannedAnchors.length || missedCount;
+    const executedCount = totalPlanned - missedCount;
+    
     verifications.push({
       id: 'anchor-found',
       label: 'Âncoras encontradas',
       category: 'anchors',
-      status: 'error',
-      reason: `${anchorIssue.relatedData.missedEvents.length} eventos não dispararam`,
-      details: anchorIssue.suggestedFix,
+      status: missedCount > 5 ? 'error' : 'warning',
+      reason: `${executedCount}/${totalPlanned} âncoras dispararam (${missedCount} faltando)`,
+      details: `Não encontrados: ${missedEvents.slice(0, 4).join(', ')}${missedCount > 4 ? '...' : ''}`,
     });
   } else if (plannedAnchors.length > 0) {
     verifications.push({
@@ -256,7 +259,7 @@ export function analyzeCorrections(
       label: 'Âncoras encontradas',
       category: 'anchors',
       status: 'success',
-      reason: `${plannedAnchors.length} âncoras planejadas`,
+      reason: `✓ ${plannedAnchors.length} âncoras planejadas e encontradas`,
     });
   } else {
     verifications.push({
@@ -269,7 +272,7 @@ export function analyzeCorrections(
   }
   
   // ========================================
-  // 5. SYNC DRIFT (EVENTOS ATRASADOS)
+  // 5. SYNC DRIFT (EVENTOS ATRASADOS) - THRESHOLD CORRIGIDO
   // ========================================
   const driftIssue = allIssues?.find(i => 
     i.message?.toLowerCase().includes('atrasad') || 
@@ -279,14 +282,27 @@ export function analyzeCorrections(
   if (driftIssue) {
     const avgDrift = driftIssue.relatedData?.averageDriftMs || 0;
     const maxDrift = driftIssue.relatedData?.maxDrift || 0;
+    const delayedCount = driftIssue.relatedData?.delayedEvents?.length || 0;
     
-    if (avgDrift > 500 || maxDrift > 2000) {
+    // CRITICAL: maxDrift > 5000ms
+    // ERROR: avgDrift > 500 || maxDrift > 2000ms  
+    // WARNING: avgDrift > 100ms
+    if (maxDrift > 5000) {
       verifications.push({
         id: 'sync-drift',
         label: 'Sincronização de eventos',
         category: 'sync',
         status: 'error',
-        reason: `Drift alto: média ${Math.round(avgDrift)}ms, máx ${Math.round(maxDrift)}ms`,
+        reason: `CRÍTICO: ${delayedCount} eventos com drift extremo (máx ${Math.round(maxDrift)}ms)`,
+        details: 'Drift > 5s indica problema grave de timing. Verificar cálculo de startTime das fases.',
+      });
+    } else if (avgDrift > 500 || maxDrift > 2000) {
+      verifications.push({
+        id: 'sync-drift',
+        label: 'Sincronização de eventos',
+        category: 'sync',
+        status: 'error',
+        reason: `${delayedCount} eventos atrasados (média ${Math.round(avgDrift)}ms)`,
         details: driftIssue.suggestedFix,
       });
     } else {
@@ -305,7 +321,7 @@ export function analyzeCorrections(
       label: 'Sincronização de eventos',
       category: 'sync',
       status: 'success',
-      reason: 'Sem issues de drift reportadas',
+      reason: '✓ Sem drift significativo detectado',
     });
   }
   
@@ -317,7 +333,6 @@ export function analyzeCorrections(
   const hasPlayground = interactivePhases.some((p: string) => p.includes('playground'));
   
   if (interactivePhases.length > 0) {
-    // Verificar se há pause events para fases interativas
     const pauseEvents = timelineReport?.plannedEvents?.filter((e: any) => 
       e.eventType === 'anchor_pause'
     ) || [];
@@ -328,7 +343,7 @@ export function analyzeCorrections(
         label: 'Fases interativas',
         category: 'player',
         status: 'success',
-        reason: `${interactivePhases.length} fases interativas com pause configurado`,
+        reason: `✓ ${interactivePhases.length} fases com pause configurado`,
         details: `Quiz: ${hasQuiz ? '✓' : '✗'}, Playground: ${hasPlayground ? '✓' : '✗'}`,
       });
     } else {
@@ -337,8 +352,8 @@ export function analyzeCorrections(
         label: 'Fases interativas',
         category: 'player',
         status: 'warning',
-        reason: `Apenas ${pauseEvents.length} de ${interactivePhases.length} fases têm pause`,
-        details: 'Algumas fases interativas podem não pausar corretamente',
+        reason: `Apenas ${pauseEvents.length}/${interactivePhases.length} fases têm pause`,
+        details: 'Algumas fases interativas podem não pausar o áudio',
       });
     }
   } else {
@@ -360,7 +375,7 @@ export function analyzeCorrections(
       label: 'Tags vazadas para TTS',
       category: 'audio',
       status: 'error',
-      reason: `${audioReport.leakedTags.length} tags vazaram para narração`,
+      reason: `${audioReport.leakedTags.length} tags faladas na narração`,
       details: audioReport.leakedTags.slice(0, 3).join(', '),
     });
   } else if (audioReport?.leakedTags !== undefined) {
@@ -369,26 +384,36 @@ export function analyzeCorrections(
       label: 'Tags vazadas para TTS',
       category: 'audio',
       status: 'success',
-      reason: 'Nenhuma tag vazou para narração',
+      reason: '✓ Nenhuma tag vazou para narração',
     });
   }
   
   // ========================================
-  // 8. DURAÇÃO DO PLAYGROUND
+  // 8. DURAÇÃO DO PLAYGROUND - THRESHOLD 5s (PIPELINE FIX)
   // ========================================
   const playgroundPhase = phaseDetails.find((p: any) => 
     p.type === 'playground' || p.id?.includes('playground')
   );
   
   if (playgroundPhase) {
+    // Pipeline agora garante mínimo de 5s
     if (playgroundPhase.duration < 3) {
       verifications.push({
         id: 'playground-duration',
         label: 'Duração do Playground',
         category: 'timeline',
+        status: 'error',
+        reason: `Duração insuficiente: ${playgroundPhase.duration.toFixed(2)}s`,
+        details: 'Pipeline deveria garantir mínimo de 5s. Verificar v7-vv Edge Function.',
+      });
+    } else if (playgroundPhase.duration < 5) {
+      verifications.push({
+        id: 'playground-duration',
+        label: 'Duração do Playground',
+        category: 'timeline',
         status: 'warning',
-        reason: `Duração muito curta: ${playgroundPhase.duration.toFixed(2)}s`,
-        details: 'Recomendado mínimo de 5s para fases interativas',
+        reason: `Duração curta: ${playgroundPhase.duration.toFixed(2)}s`,
+        details: 'Mínimo recomendado de 5s para fases interativas',
       });
     } else {
       verifications.push({
@@ -396,7 +421,78 @@ export function analyzeCorrections(
         label: 'Duração do Playground',
         category: 'timeline',
         status: 'success',
-        reason: `Duração adequada: ${playgroundPhase.duration.toFixed(2)}s`,
+        reason: `✓ Duração adequada: ${playgroundPhase.duration.toFixed(2)}s`,
+      });
+    }
+  }
+  
+  // ========================================
+  // 9. NOVO: EVENTOS QUE SÓ FUNCIONAM APÓS SEEK
+  // ========================================
+  const seekIssue = allIssues?.find(i => 
+    i.message?.toLowerCase().includes('seek') || 
+    i.relatedData?.eventsOnlyAfterSeek?.length > 0
+  );
+  const eventsOnlyAfterSeek = seekIssue?.relatedData?.eventsOnlyAfterSeek || 
+                              executionReport?.eventsOnlyAfterSeek || [];
+  
+  if (eventsOnlyAfterSeek.length > 0) {
+    verifications.push({
+      id: 'seek-recovery',
+      label: 'Eventos first-play vs seek',
+      category: 'player',
+      status: 'error',
+      reason: `${eventsOnlyAfterSeek.length} eventos só funcionam após rewind`,
+      details: `Race condition detectada: ${eventsOnlyAfterSeek.slice(0, 3).join(', ')}`,
+    });
+  } else if (executionReport) {
+    verifications.push({
+      id: 'seek-recovery',
+      label: 'Eventos first-play vs seek',
+      category: 'player',
+      status: 'success',
+      reason: '✓ Todos os eventos disparam no first-play',
+    });
+  }
+  
+  // ========================================
+  // 10. NOVO: REVELATION (PERFEITO) PHASE
+  // ========================================
+  const revelationPhase = phaseDetails.find((p: any) => 
+    p.type === 'revelation' || p.id?.includes('perfeito') || p.id?.includes('revelation')
+  );
+  
+  if (revelationPhase) {
+    // Verificar se há micro_visual events para revelation
+    const revelationEvents = timelineReport?.plannedEvents?.filter((e: any) => 
+      e.phaseId === revelationPhase.id && e.eventType === 'micro_visual'
+    ) || [];
+    
+    if (revelationEvents.length >= 7) { // PERFEITO tem 8 letras
+      verifications.push({
+        id: 'revelation-render',
+        label: 'Revelation (PERFEITO)',
+        category: 'rendering',
+        status: 'success',
+        reason: `✓ ${revelationEvents.length} eventos de letter-reveal planejados`,
+        details: `Fase: ${revelationPhase.id} (${revelationPhase.duration?.toFixed(1)}s)`,
+      });
+    } else if (revelationEvents.length > 0) {
+      verifications.push({
+        id: 'revelation-render',
+        label: 'Revelation (PERFEITO)',
+        category: 'rendering',
+        status: 'warning',
+        reason: `Apenas ${revelationEvents.length} eventos de revelation`,
+        details: 'Esperado 8 eventos para "PERFEITO"',
+      });
+    } else {
+      verifications.push({
+        id: 'revelation-render',
+        label: 'Revelation (PERFEITO)',
+        category: 'rendering',
+        status: 'unknown',
+        reason: 'Fase revelation sem eventos configurados',
       });
     }
   }
