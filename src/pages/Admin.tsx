@@ -43,6 +43,90 @@ export default function Admin() {
           </p>
         </div>
 
+        {/* ========== CARDS FIXOS V7 ========== */}
+        <div className="grid gap-4 md:grid-cols-2 p-4 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-orange-500/5 rounded-xl border-2 border-pink-500/20">
+          {/* V7-vv Pipeline - FIXO */}
+          <Card className="border-2 border-pink-500/40 bg-gradient-to-br from-pink-500/15 to-purple-500/10 hover:border-pink-500/60 transition-all cursor-pointer shadow-lg shadow-pink-500/10" onClick={() => navigate('/admin/v7-vv')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Rocket className="w-7 h-7 text-pink-500" />
+                Pipeline V7-vv
+                <span className="text-xs bg-pink-600 text-white px-2 py-1 rounded-full">PRINCIPAL</span>
+              </CardTitle>
+              <CardDescription>
+                Criação de aulas cinematográficas com scenes e anchorActions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm grid grid-cols-2 gap-1">
+                <p>✅ Scenes sincronizadas</p>
+                <p>✅ AnchorActions</p>
+                <p>✅ ElevenLabs TTS</p>
+                <p>✅ Quiz + Playground</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1 bg-pink-600 hover:bg-pink-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/admin/v7-vv');
+                  }}
+                >
+                  <Rocket className="w-4 h-4 mr-1" />
+                  Criar Aula
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-pink-500/50 hover:bg-pink-500/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/admin/v7/pipeline-test');
+                  }}
+                >
+                  <Activity className="w-4 h-4 mr-1" />
+                  Testar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Debug Hardcore - FIXO */}
+          <Card className="border-2 border-orange-500/40 bg-gradient-to-br from-orange-500/15 to-amber-500/10 hover:border-orange-500/60 transition-all cursor-pointer shadow-lg shadow-orange-500/10" onClick={() => navigate('/admin/v7/debug-reports')}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Bug className="w-7 h-7 text-orange-500" />
+                Debug Hardcore
+                <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full">V7</span>
+              </CardTitle>
+              <CardDescription>
+                Análise profunda de pipeline e player V7
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm grid grid-cols-2 gap-1">
+                <p>🔍 Health Score</p>
+                <p>⚠️ Issues detalhados</p>
+                <p>📊 Root cause</p>
+                <p>✅ Checklist correções</p>
+              </div>
+              <Button
+                size="sm"
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7/debug-reports');
+                }}
+              >
+                <Bug className="w-4 h-4 mr-1" />
+                Ver Debug Reports
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ========== SISTEMAS PRINCIPAIS ========== */}
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="border-2 border-purple-500/20 bg-purple-500/5 hover:border-purple-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/pipeline')}>
             <CardHeader>
@@ -107,53 +191,6 @@ export default function Admin() {
             </CardContent>
           </Card>
         </div>
-
-        {/* V7-vv Pipeline - FIXO E SEMPRE VISÍVEL */}
-        <Card className="border-2 border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-cyan-500/10 hover:border-pink-500/50 transition-all cursor-pointer" onClick={() => navigate('/admin/v7-vv')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Rocket className="w-8 h-8 text-pink-500" />
-              Pipeline V7-vv
-              <span className="text-xs bg-pink-600 text-white px-2 py-1 rounded-full ml-2">PRINCIPAL</span>
-            </CardTitle>
-            <CardDescription className="text-base">
-              Sistema definitivo de criação de aulas cinematográficas com scenes e anchorActions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm space-y-2">
-              <p>✅ Scenes com narração e visuais sincronizados</p>
-              <p>✅ AnchorActions para interatividade precisa</p>
-              <p>✅ Áudio ElevenLabs com word timestamps</p>
-              <p>✅ Quiz, Playground e CTA integrados</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="lg"
-                className="flex-1 bg-pink-600 hover:bg-pink-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/admin/v7-vv');
-                }}
-              >
-                <Rocket className="w-4 h-4 mr-2" />
-                Criar Aula V7-vv
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-pink-500/50 hover:bg-pink-500/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/admin/v7/pipeline-test');
-                }}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Testar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Cards de acesso rápido */}
         <div className="grid gap-6 md:grid-cols-3">
@@ -340,36 +377,6 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          {/* Card Debug Hardcore */}
-          <Card className="border-2 border-orange-500/20 bg-orange-500/5 hover:border-orange-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/v7/debug-reports')}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bug className="w-6 h-6 text-orange-600" />
-                Debug Hardcore
-                <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full ml-2">V7</span>
-              </CardTitle>
-              <CardDescription>
-                Análise profunda de pipeline e player
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-2 mb-4">
-                <p>🔍 Health Score por aula</p>
-                <p>⚠️ Issues de áudio, timeline, renderização</p>
-                <p>📊 Root cause analysis</p>
-              </div>
-              <Button
-                className="w-full bg-orange-600 hover:bg-orange-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/admin/v7/debug-reports');
-                }}
-              >
-                <Bug className="w-4 h-4 mr-2" />
-                Ver Debug Reports
-              </Button>
-            </CardContent>
-          </Card>
 
           {/* Card 3D Demos */}
           <Card className="border-2 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 transition-colors md:col-span-2">
