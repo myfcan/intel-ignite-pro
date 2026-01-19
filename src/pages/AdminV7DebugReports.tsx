@@ -320,9 +320,40 @@ export default function AdminV7DebugReports() {
             </CardContent>
           </Card>
         ) : filteredReports?.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Nenhum debug report encontrado</p>
+          <Card className="border-dashed border-2 border-muted">
+            <CardContent className="p-12 text-center space-y-4">
+              <Activity className="w-16 h-16 mx-auto text-muted-foreground/50" />
+              <div>
+                <h3 className="text-lg font-semibold text-muted-foreground">Nenhum Debug Report Encontrado</h3>
+                <p className="text-sm text-muted-foreground/70 mt-2 max-w-md mx-auto">
+                  Os debug reports são gerados automaticamente quando uma aula V7 é processada pelo pipeline 
+                  ou quando um usuário assiste uma aula no player.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin/v7-vv')}
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Ir para Pipeline V7-VV
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => window.location.reload()}
+                >
+                  Atualizar Página
+                </Button>
+              </div>
+              <div className="mt-6 p-4 bg-muted/30 rounded-lg text-left max-w-lg mx-auto">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Como gerar debug reports:</p>
+                <ol className="text-xs text-muted-foreground/70 space-y-1 list-decimal list-inside">
+                  <li>Execute o pipeline V7-VV para criar/atualizar uma aula</li>
+                  <li>O debug report é salvo automaticamente após conclusão</li>
+                  <li>Ou assista uma aula V7 - o player também gera reports</li>
+                </ol>
+              </div>
             </CardContent>
           </Card>
         ) : (
