@@ -587,25 +587,42 @@ function analyzeUnfoundAnchors(
     return;
   }
   
+  // ✅ V7-vv SYSTEMIC FIX: Normalização melhorada para match mais robusto
+  const normalizeForSearch = (word: string): string => {
+    return word
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[.,!?;:'"()[\]{}…\-]+/g, '')
+      .trim();
+  };
+  
   // Normalizar palavras do áudio para busca
   const normalizedWords = wordTimestamps.map(wt => ({
     ...wt,
-    normalized: wt.word.toLowerCase().replace(/[.,!?;:'"]/g, ''),
+    normalized: normalizeForSearch(wt.word),
   }));
   
-  // Coletar todos os anchors definidos nas scenes
+  // Coletar todos os anchors definidos nas scenes COM range de tempo
   const definedAnchors: Array<{ 
     sceneId: string; 
     anchorType: 'pauseAt' | 'transitionAt' | 'microVisual';
     anchorText: string;
+    phaseStartTime?: number;
+    phaseEndTime?: number;
   }> = [];
   
-  for (const scene of inputScenes) {
+  for (let i = 0; i < inputScenes.length; i++) {
+    const scene = inputScenes[i];
+    const phase = phases[i]; // Fase correspondente para obter timing
+    
     if (scene.anchorText?.pauseAt) {
       definedAnchors.push({
         sceneId: scene.id,
         anchorType: 'pauseAt',
         anchorText: scene.anchorText.pauseAt,
+        phaseStartTime: phase?.startTime,
+        phaseEndTime: phase?.endTime,
       });
     }
     if (scene.anchorText?.transitionAt) {
@@ -613,6 +630,8 @@ function analyzeUnfoundAnchors(
         sceneId: scene.id,
         anchorType: 'transitionAt',
         anchorText: scene.anchorText.transitionAt,
+        phaseStartTime: phase?.startTime,
+        phaseEndTime: phase?.endTime,
       });
     }
     if (scene.visual?.microVisuals) {
@@ -621,27 +640,65 @@ function analyzeUnfoundAnchors(
           sceneId: scene.id,
           anchorType: 'microVisual',
           anchorText: mv.anchorText,
+          phaseStartTime: phase?.startTime,
+          phaseEndTime: phase?.endTime,
         });
       }
     }
   }
   
-  // Verificar se cada anchor foi encontrado nos wordTimestamps
-  const unfoundAnchors: Array<typeof definedAnchors[0]> = [];
+  // ✅ V7-vv SYSTEMIC FIX: Busca de anchor DENTRO do range correto
+  const unfoundAnchors: Array<typeof definedAnchors[0] & { searchedRange?: string }> = [];
   
   for (const anchor of definedAnchors) {
-    const anchorWords = anchor.anchorText.toLowerCase().split(/\s+/);
-    const lastWord = anchorWords[anchorWords.length - 1].replace(/[.,!?;:'"]/g, '');
+    const anchorWords = anchor.anchorText.split(/\s+/).map(normalizeForSearch).filter(w => w.length > 0);
     
-    // Procurar a palavra âncora nos timestamps
-    const found = normalizedWords.some(wt => wt.normalized === lastWord);
+    if (anchorWords.length === 0) {
+      unfoundAnchors.push({ ...anchor, searchedRange: 'invalid anchor text' });
+      continue;
+    }
+    
+    // Filtrar timestamps pelo range da fase (se disponível)
+    const relevantWords = anchor.phaseStartTime !== undefined && anchor.phaseEndTime !== undefined
+      ? normalizedWords.filter(wt => wt.start >= anchor.phaseStartTime! && wt.end <= anchor.phaseEndTime!)
+      : normalizedWords;
+    
+    // Procurar todas as palavras do anchor na sequência
+    let found = false;
+    
+    if (anchorWords.length === 1) {
+      // Single word: busca exata ou parcial
+      const target = anchorWords[0];
+      found = relevantWords.some(wt => 
+        wt.normalized === target || 
+        wt.normalized.includes(target) || 
+        target.includes(wt.normalized)
+      );
+    } else {
+      // Multi-word: busca sequencial
+      for (let i = 0; i <= relevantWords.length - anchorWords.length; i++) {
+        const windowMatch = anchorWords.every((aw, offset) => {
+          const wt = relevantWords[i + offset];
+          return wt && (wt.normalized === aw || wt.normalized.includes(aw) || aw.includes(wt.normalized));
+        });
+        if (windowMatch) {
+          found = true;
+          break;
+        }
+      }
+    }
     
     if (!found) {
-      unfoundAnchors.push(anchor);
+      unfoundAnchors.push({
+        ...anchor,
+        searchedRange: anchor.phaseStartTime !== undefined 
+          ? `${anchor.phaseStartTime.toFixed(1)}s-${anchor.phaseEndTime?.toFixed(1)}s (${relevantWords.length} words)`
+          : 'full audio'
+      });
     }
   }
   
-  // Reportar anchors não encontrados
+  // Reportar anchors não encontrados com detalhes de range
   if (unfoundAnchors.length > 0) {
     const groupedByScene: Record<string, string[]> = {};
     
@@ -649,7 +706,9 @@ function analyzeUnfoundAnchors(
       if (!groupedByScene[anchor.sceneId]) {
         groupedByScene[anchor.sceneId] = [];
       }
-      groupedByScene[anchor.sceneId].push(`${anchor.anchorType}: "${anchor.anchorText}"`);
+      groupedByScene[anchor.sceneId].push(
+        `${anchor.anchorType}: "${anchor.anchorText}" (range: ${anchor.searchedRange})`
+      );
     }
     
     for (const [sceneId, anchors] of Object.entries(groupedByScene)) {
@@ -657,16 +716,19 @@ function analyzeUnfoundAnchors(
         'high',
         'sync',
         `${anchors.length} anchor(s) não encontrado(s) em ${sceneId}`,
-        `Anchors: ${anchors.join(', ')}`,
-        'Palavra âncora não aparece nos wordTimestamps - pode ter sido alterada pelo TTS ou a narração não inclui essa palavra',
-        'Verificar se a palavra existe exatamente no texto da narração e usar palavras mais distintivas',
+        `Anchors: ${anchors.join('; ')}`,
+        'anchor_not_found',
+        'Verificar se a palavra existe exatamente no texto da narração e usar palavras mais distintivas. Considerar usar a última palavra de uma frase.',
         { sceneId, unfoundAnchors: anchors }
       ));
     }
   }
   
-  // Log estatísticas
-  console.log(`[DEBUG] Anchors: ${definedAnchors.length} definidos, ${unfoundAnchors.length} não encontrados`);
+  // Log estatísticas detalhadas
+  console.log(`[DEBUG] Anchors: ${definedAnchors.length} definidos, ${definedAnchors.length - unfoundAnchors.length} encontrados, ${unfoundAnchors.length} não encontrados`);
+  if (unfoundAnchors.length > 0) {
+    console.log(`[DEBUG] Unfound anchors:`, unfoundAnchors.map(a => `"${a.anchorText}" in ${a.sceneId}`));
+  }
 }
 
 const corsHeaders = {
@@ -1787,10 +1849,33 @@ function calculateWordBasedTimings(
       calculatedEndTime = totalAudioDuration;
     }
 
-    // Garantir endTime > startTime
+    // ✅ V7-vv SYSTEMIC FIX: Garantir duração mínima para fases interativas
+    // Problema: playground/interaction phases com duração < 1s são inutilizáveis
+    // Solução: Fases interativas DEVEM ter pelo menos 5s para permitir interação
+    const minPhaseDuration = isInteractive ? 5.0 : 1.0;
+    const currentDuration = calculatedEndTime - phase.startTime;
+    
+    if (currentDuration < minPhaseDuration) {
+      console.warn(`[V7-vv:WordBased] ⚠️ Phase "${phase.id}" too short: ${currentDuration.toFixed(2)}s < min ${minPhaseDuration}s`);
+      
+      // Para fases interativas, NÃO é problema se áudio é curto
+      // O áudio pausa na interação e só continua após user responder
+      // Então podemos estender endTime sem problemas de overlap de áudio
+      if (isInteractive) {
+        // Estender até o mínimo, respeitando limite do áudio
+        calculatedEndTime = Math.min(phase.startTime + minPhaseDuration, totalAudioDuration);
+        console.log(`[V7-vv:WordBased] ✅ Interactive phase extended to: ${calculatedEndTime.toFixed(2)}s`);
+      } else {
+        // Para fases não-interativas, usar fallback mínimo
+        calculatedEndTime = phase.startTime + minPhaseDuration;
+        console.warn(`[V7-vv:WordBased] ⚠️ Using fallback endTime: ${calculatedEndTime.toFixed(2)}s`);
+      }
+    }
+
+    // Garantir endTime > startTime (safety net)
     if (calculatedEndTime <= phase.startTime) {
-      calculatedEndTime = phase.startTime + 5.0; // Fallback: 5 segundos mínimo
-      console.warn(`[V7-vv:WordBased] ⚠️ Using fallback endTime: ${calculatedEndTime.toFixed(2)}s`);
+      calculatedEndTime = phase.startTime + 5.0;
+      console.warn(`[V7-vv:WordBased] ⚠️ CRITICAL: endTime <= startTime, forced to: ${calculatedEndTime.toFixed(2)}s`);
     }
 
     // ✅ Aplicar o endTime calculado
