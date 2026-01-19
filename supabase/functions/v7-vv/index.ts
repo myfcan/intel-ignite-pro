@@ -814,39 +814,51 @@ function generatePhases(
   // SOLUÇÃO: Garantir ordem sequencial - Phase N+1.startTime >= Phase N.endTime
   // ============================================================================
 
-  console.log('\n[Phases] ✅ FASE 7: Validando ordem sequencial das phases...');
+  console.log('\n[Phases] ✅ FASE 7: Garantindo ordem SEQUENCIAL das phases...');
 
-  // Primeiro, ordenar phases por startTime para garantir ordem correta
-  phases.sort((a, b) => a.startTime - b.startTime);
+  // ============================================================================
+  // ✅ FASE 7 v2: NÃO ordenar por startTime! Manter ordem do INPUT.
+  // ============================================================================
+  // PROBLEMA DO sort():
+  // - Phase 9: startTime=75.629s
+  // - Phase 10: startTime=75.373s
+  // - sort() colocaria Phase 10 ANTES de Phase 9, quebrando a ordem da aula!
+  //
+  // SOLUÇÃO: Manter ordem do INPUT e ajustar startTime sequencialmente
+  // Phase[N+1].startTime deve ser >= Phase[N].endTime
+  // ============================================================================
 
-  // Depois, garantir que não há sobreposição
+  // NÃO USAR: phases.sort((a, b) => a.startTime - b.startTime);
+
+  // Garantir que cada phase começa DEPOIS da anterior terminar
   for (let i = 1; i < phases.length; i++) {
     const prevPhase = phases[i - 1];
     const currPhase = phases[i];
 
+    // Se a phase atual começa ANTES da anterior terminar, ajustar
     if (currPhase.startTime < prevPhase.endTime) {
       const overlap = prevPhase.endTime - currPhase.startTime;
-      console.log(`[Phases] ⚠️ OVERLAP DETECTADO: Phase "${currPhase.id}" começa em ${currPhase.startTime.toFixed(2)}s mas Phase "${prevPhase.id}" termina em ${prevPhase.endTime.toFixed(2)}s (overlap: ${overlap.toFixed(2)}s)`);
+      console.log(`[Phases] ⚠️ OVERLAP: "${currPhase.id}" startTime(${currPhase.startTime.toFixed(2)}s) < "${prevPhase.id}" endTime(${prevPhase.endTime.toFixed(2)}s) - overlap: ${overlap.toFixed(2)}s`);
 
-      // CORREÇÃO: Ajustar startTime da phase atual para começar após a anterior
-      // Adicionar pequena margem de 0.1s para garantir transição suave
-      const newStartTime = prevPhase.endTime + 0.1;
-      console.log(`[Phases] ✅ CORRIGINDO: "${currPhase.id}" startTime ${currPhase.startTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+      // CORREÇÃO: Phase atual começa após a anterior + pequena margem
+      const newStartTime = prevPhase.endTime + 0.05; // 50ms de margem
+      console.log(`[Phases] ✅ FIX: "${currPhase.id}" startTime ${currPhase.startTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
       currPhase.startTime = newStartTime;
+    }
 
-      // Se o endTime ficou menor que o startTime, ajustar também
-      if (currPhase.endTime <= currPhase.startTime) {
-        const minDuration = 3.0; // Duração mínima de 3 segundos
-        currPhase.endTime = currPhase.startTime + minDuration;
-        console.log(`[Phases] ✅ Ajustando endTime para ${currPhase.endTime.toFixed(2)}s (duração mínima)`);
-      }
+    // Se o endTime ficou menor/igual ao startTime, ajustar
+    if (currPhase.endTime <= currPhase.startTime) {
+      const minDuration = 3.0; // Duração mínima de 3 segundos
+      currPhase.endTime = currPhase.startTime + minDuration;
+      console.log(`[Phases] ✅ FIX: "${currPhase.id}" endTime ajustado para ${currPhase.endTime.toFixed(2)}s (min duration)`);
     }
   }
 
   // Log do resultado final
-  console.log('\n[Phases] ✅ FASE 7: Ordem final das phases:');
+  console.log('\n[Phases] ✅ FASE 7: Ordem SEQUENCIAL garantida:');
   phases.forEach((p, i) => {
-    console.log(`  [${i}] "${p.id}" (${p.type}): ${p.startTime.toFixed(2)}s - ${p.endTime.toFixed(2)}s`);
+    const duration = p.endTime - p.startTime;
+    console.log(`  [${i}] "${p.id}" (${p.type}): ${p.startTime.toFixed(2)}s → ${p.endTime.toFixed(2)}s (${duration.toFixed(2)}s)`);
   });
 
   // ✅ FASE 6: Calcular duração total baseado na última fase
