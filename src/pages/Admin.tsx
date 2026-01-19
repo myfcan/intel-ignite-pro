@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen, Box } from 'lucide-react';
+import { Rocket, Wrench, MessageSquare, Activity, Trash2, ArrowLeft, Timer, Palette, FileJson, Copy, CheckCircle, BookOpen, Box, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -340,30 +340,61 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          {/* Card 3D Demos */}
-          <Card className="border-2 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 transition-colors md:col-span-3">
+          {/* Card Debug Hardcore */}
+          <Card className="border-2 border-orange-500/20 bg-orange-500/5 hover:border-orange-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/v7/debug-reports')}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Box className="w-6 h-6 text-cyan-600" />
-                Demonstrações 3D Avançadas
-                <span className="text-xs bg-cyan-600 text-white px-2 py-1 rounded-full ml-2">NOVO</span>
+              <CardTitle className="flex items-center gap-2">
+                <Bug className="w-6 h-6 text-orange-600" />
+                Debug Hardcore
+                <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full ml-2">V7</span>
               </CardTitle>
               <CardDescription>
-                Post-Processing, InstancedMesh e Modelos 3D para aulas cinematográficas
+                Análise profunda de pipeline e player
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-sm space-y-2 mb-4">
-                <p>✨ Bloom, Depth of Field, Vignette, Chromatic Aberration</p>
-                <p>👥 InstancedMesh para multidões (2000+ objetos)</p>
-                <p>🖥️ Modelos 3D: monitores, smartphones, personagens</p>
+                <p>🔍 Health Score por aula</p>
+                <p>⚠️ Issues de áudio, timeline, renderização</p>
+                <p>📊 Root cause analysis</p>
+              </div>
+              <Button
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/v7/debug-reports');
+                }}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                Ver Debug Reports
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Card 3D Demos */}
+          <Card className="border-2 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 transition-colors md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Box className="w-6 h-6 text-cyan-600" />
+                Demos 3D
+                <span className="text-xs bg-cyan-600 text-white px-2 py-1 rounded-full ml-2">NOVO</span>
+              </CardTitle>
+              <CardDescription>
+                Post-Processing, InstancedMesh e Modelos 3D
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm space-y-2 mb-4">
+                <p>✨ Bloom, Depth of Field, Vignette</p>
+                <p>👥 InstancedMesh para multidões</p>
+                <p>🖥️ Modelos 3D cinematográficos</p>
               </div>
               <Button
                 className="w-full bg-cyan-600 hover:bg-cyan-700"
                 onClick={() => navigate('/admin/3d-demos')}
               >
                 <Box className="w-4 h-4 mr-2" />
-                Ver Demonstrações 3D
+                Ver Demos 3D
               </Button>
             </CardContent>
           </Card>
