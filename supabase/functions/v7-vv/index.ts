@@ -9,12 +9,491 @@
  * 3. Gerar áudios de feedback (narrações dos feedbacks do quiz)
  * 4. Calcular timing baseado em wordTimestamps
  * 5. Gerar V7LessonData exato conforme contrato
+ * 6. Gerar DEBUG REPORT automático para diagnóstico
  *
- * @version VV-Definitive
+ * @version VV-Definitive + Debug
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ============================================================================
+// TIPOS DE DEBUG - Schema inline (Deno não suporta import do frontend)
+// ============================================================================
+
+interface V7DebugIssue {
+  id: string;
+  level: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  category: 'audio' | 'timing' | 'rendering' | 'interaction' | 'sync' | 'data';
+  message: string;
+  details: string;
+  possibleCause: string;
+  suggestedFix: string;
+  relatedData: Record<string, unknown> | null;
+}
+
+interface V7DebugTimelineEvent {
+  eventId: string;
+  eventType: string;
+  phaseId: string;
+  triggerType: 'time' | 'anchor_text' | 'fallback' | 'manual' | 'auto';
+  expectedAt: number;
+  anchorText: string | null;
+  targetId: string | null;
+  payload: Record<string, unknown> | null;
+}
+
+interface V7PipelineDebugReport {
+  lessonId: string;
+  lessonTitle: string;
+  generatedAt: string;
+  schemaVersion: string;
+  source: 'pipeline';
+  
+  // Nível 1: Áudio
+  audio: {
+    audioUrl: string | null;
+    actualDuration: number;
+    expectedDuration: number;
+    inputText: string;
+    inputTextLength: number;
+    spokenText: string;
+    spokenTextLength: number;
+    wordCount: number;
+    firstWord: { word: string; start: number; end: number } | null;
+    lastWord: { word: string; start: number; end: number } | null;
+    isTruncated: boolean;
+    truncationDetails: { missingWords: string[]; percentageSpoken: number } | null;
+    leakedTags: string[];
+    issues: V7DebugIssue[];
+  };
+  
+  // Nível 2: Timeline Planejada
+  timeline: {
+    plannedEvents: V7DebugTimelineEvent[];
+    totalPhases: number;
+    totalEvents: number;
+    interactivePhases: string[];
+    eventsByType: Record<string, number>;
+    phaseDetails: Array<{
+      id: string;
+      type: string;
+      startTime: number;
+      endTime: number;
+      duration: number;
+      hasOverlap: boolean;
+      overlapsWith: string | null;
+    }>;
+    issues: V7DebugIssue[];
+  };
+  
+  // Sumário
+  summary: {
+    severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+    totalIssues: number;
+    issuesBySeverity: Record<string, number>;
+    issuesByCategory: Record<string, number>;
+    rootCauseCandidates: string[];
+    primaryRecommendation: string;
+    healthScore: number;
+  };
+  
+  allIssues: V7DebugIssue[];
+}
+
+let debugIssueCounter = 0;
+
+function createDebugIssue(
+  level: V7DebugIssue['level'],
+  category: V7DebugIssue['category'],
+  message: string,
+  details: string,
+  possibleCause: string,
+  suggestedFix: string,
+  relatedData?: Record<string, unknown>
+): V7DebugIssue {
+  return {
+    id: `issue_${++debugIssueCounter}_${Date.now()}`,
+    level,
+    category,
+    message,
+    details,
+    possibleCause,
+    suggestedFix,
+    relatedData: relatedData || null,
+  };
+}
+
+// ============================================================================
+// GERADOR DE DEBUG AUTOMÁTICO
+// ============================================================================
+
+function generatePipelineDebug(
+  lessonId: string,
+  lessonTitle: string,
+  inputScenes: ScriptScene[],
+  mainAudio: AudioSegment,
+  phases: Phase[],
+  inputText: string
+): V7PipelineDebugReport {
+  console.log('[DEBUG] Generating pipeline debug report...');
+  
+  const allIssues: V7DebugIssue[] = [];
+  
+  // ========== NÍVEL 1: ANÁLISE DE ÁUDIO ==========
+  const audioDebug = analyzeAudio(inputText, mainAudio, allIssues);
+  
+  // ========== NÍVEL 2: ANÁLISE DE TIMELINE ==========
+  const timelineDebug = analyzeTimeline(inputScenes, phases, mainAudio, allIssues);
+  
+  // ========== SUMÁRIO ==========
+  const summary = calculateSummary(allIssues);
+  
+  const report: V7PipelineDebugReport = {
+    lessonId,
+    lessonTitle,
+    generatedAt: new Date().toISOString(),
+    schemaVersion: '1.0.0',
+    source: 'pipeline',
+    audio: audioDebug,
+    timeline: timelineDebug,
+    summary,
+    allIssues,
+  };
+  
+  console.log(`[DEBUG] ✅ Report generated: ${allIssues.length} issues, health score: ${summary.healthScore}`);
+  return report;
+}
+
+function analyzeAudio(
+  inputText: string,
+  mainAudio: AudioSegment,
+  allIssues: V7DebugIssue[]
+): V7PipelineDebugReport['audio'] {
+  const wordTimestamps = mainAudio.wordTimestamps || [];
+  const spokenWords = wordTimestamps.map(wt => wt.word);
+  const spokenText = spokenWords.join(' ');
+  
+  // Detectar tags que vazaram para TTS
+  const tagPatterns = [
+    /\[pause:\d+\.?\d*\]/gi,
+    /\[contextual\]/gi,
+    /\[sound:[^\]]+\]/gi,
+    /\[effect:[^\]]+\]/gi,
+  ];
+  
+  const leakedTags: string[] = [];
+  for (const pattern of tagPatterns) {
+    const matches = spokenText.match(pattern);
+    if (matches) {
+      leakedTags.push(...matches);
+    }
+  }
+  
+  // Detectar truncamento
+  const inputWords = inputText.split(/\s+/).filter(w => w.length > 0);
+  const expectedWordCount = inputWords.length;
+  const actualWordCount = spokenWords.length;
+  const percentageSpoken = expectedWordCount > 0 
+    ? (actualWordCount / expectedWordCount) * 100 
+    : 100;
+  
+  const isTruncated = percentageSpoken < 90;
+  
+  // Gerar issues
+  const issues: V7DebugIssue[] = [];
+  
+  if (leakedTags.length > 0) {
+    const issue = createDebugIssue(
+      'critical',
+      'audio',
+      `${leakedTags.length} tag(s) vazaram para TTS`,
+      `Tags detectadas na narração: ${leakedTags.join(', ')}`,
+      'cleanTextForTTS não removeu todas as tags antes de enviar para ElevenLabs',
+      'Verificar regex de limpeza em cleanTextForTTS',
+      { leakedTags }
+    );
+    issues.push(issue);
+    allIssues.push(issue);
+  }
+  
+  if (isTruncated) {
+    const missingCount = expectedWordCount - actualWordCount;
+    const issue = createDebugIssue(
+      'high',
+      'audio',
+      `Áudio truncado: ${percentageSpoken.toFixed(1)}% narrado`,
+      `Esperado: ${expectedWordCount} palavras, Narrado: ${actualWordCount} palavras (faltam ${missingCount})`,
+      'ElevenLabs pode ter cortado o texto por limite de caracteres ou erro de streaming',
+      'Verificar limite de caracteres do ElevenLabs (5000) e qualidade da conexão',
+      { expectedWordCount, actualWordCount, percentageSpoken }
+    );
+    issues.push(issue);
+    allIssues.push(issue);
+  }
+  
+  if (!mainAudio.url) {
+    const issue = createDebugIssue(
+      'critical',
+      'audio',
+      'Áudio não foi gerado',
+      'mainAudio.url está vazio',
+      'Falha na geração ou upload do áudio para Supabase Storage',
+      'Verificar ELEVENLABS_API_KEY e bucket lesson-audios',
+      {}
+    );
+    issues.push(issue);
+    allIssues.push(issue);
+  }
+  
+  if (mainAudio.duration === 0 && mainAudio.url) {
+    const issue = createDebugIssue(
+      'high',
+      'audio',
+      'Duração do áudio é zero',
+      'mainAudio.duration = 0 mas URL existe',
+      'wordTimestamps podem estar vazios ou mal processados',
+      'Verificar processWordTimestamps e resposta do ElevenLabs',
+      {}
+    );
+    issues.push(issue);
+    allIssues.push(issue);
+  }
+  
+  return {
+    audioUrl: mainAudio.url || null,
+    actualDuration: mainAudio.duration,
+    expectedDuration: (inputWords.length / 2.5), // ~2.5 palavras por segundo
+    inputText: inputText.substring(0, 500) + (inputText.length > 500 ? '...' : ''),
+    inputTextLength: inputText.length,
+    spokenText: spokenText.substring(0, 500) + (spokenText.length > 500 ? '...' : ''),
+    spokenTextLength: spokenText.length,
+    wordCount: actualWordCount,
+    firstWord: wordTimestamps[0] || null,
+    lastWord: wordTimestamps[wordTimestamps.length - 1] || null,
+    isTruncated,
+    truncationDetails: isTruncated ? {
+      missingWords: inputWords.slice(actualWordCount),
+      percentageSpoken,
+    } : null,
+    leakedTags,
+    issues,
+  };
+}
+
+function analyzeTimeline(
+  inputScenes: ScriptScene[],
+  phases: Phase[],
+  mainAudio: AudioSegment,
+  allIssues: V7DebugIssue[]
+): V7PipelineDebugReport['timeline'] {
+  const issues: V7DebugIssue[] = [];
+  const plannedEvents: V7DebugTimelineEvent[] = [];
+  const phaseDetails: V7PipelineDebugReport['timeline']['phaseDetails'] = [];
+  
+  // Analisar cada fase
+  for (let i = 0; i < phases.length; i++) {
+    const phase = phases[i];
+    const nextPhase = phases[i + 1];
+    
+    const duration = phase.endTime - phase.startTime;
+    const hasOverlap = nextPhase ? phase.endTime > nextPhase.startTime : false;
+    
+    phaseDetails.push({
+      id: phase.id,
+      type: phase.type,
+      startTime: phase.startTime,
+      endTime: phase.endTime,
+      duration,
+      hasOverlap,
+      overlapsWith: hasOverlap ? nextPhase.id : null,
+    });
+    
+    // Issue: Overlap
+    if (hasOverlap) {
+      const issue = createDebugIssue(
+        'critical',
+        'timing',
+        `Fase ${phase.id} sobrepõe ${nextPhase.id}`,
+        `${phase.id} termina em ${phase.endTime.toFixed(2)}s mas ${nextPhase.id} começa em ${nextPhase.startTime.toFixed(2)}s`,
+        'calculateWordBasedTimings não respeitou limite de nextPhase.startTime',
+        'Verificar lógica de cap no calculateWordBasedTimings',
+        { phaseEndTime: phase.endTime, nextPhaseStartTime: nextPhase.startTime }
+      );
+      issues.push(issue);
+      allIssues.push(issue);
+    }
+    
+    // Issue: Duração inválida
+    if (duration <= 0) {
+      const issue = createDebugIssue(
+        'critical',
+        'timing',
+        `Fase ${phase.id} tem duração inválida`,
+        `startTime: ${phase.startTime.toFixed(2)}s, endTime: ${phase.endTime.toFixed(2)}s, duration: ${duration.toFixed(2)}s`,
+        'endTime foi calculado antes ou igual ao startTime',
+        'Verificar fallback de duração mínima em generatePhases',
+        { startTime: phase.startTime, endTime: phase.endTime }
+      );
+      issues.push(issue);
+      allIssues.push(issue);
+    }
+    
+    // Adicionar eventos planejados
+    plannedEvents.push({
+      eventId: `phase_start_${phase.id}`,
+      eventType: 'phase_start',
+      phaseId: phase.id,
+      triggerType: 'time',
+      expectedAt: phase.startTime,
+      anchorText: null,
+      targetId: null,
+      payload: { type: phase.type },
+    });
+    
+    plannedEvents.push({
+      eventId: `phase_end_${phase.id}`,
+      eventType: 'phase_end',
+      phaseId: phase.id,
+      triggerType: 'time',
+      expectedAt: phase.endTime,
+      anchorText: null,
+      targetId: null,
+      payload: null,
+    });
+    
+    // Eventos de anchor
+    if (phase.anchorActions) {
+      for (const anchor of phase.anchorActions) {
+        plannedEvents.push({
+          eventId: `anchor_${anchor.id}`,
+          eventType: `anchor_${anchor.type}`,
+          phaseId: phase.id,
+          triggerType: 'anchor_text',
+          expectedAt: anchor.keywordTime,
+          anchorText: anchor.keyword,
+          targetId: anchor.targetId || null,
+          payload: null,
+        });
+      }
+    }
+    
+    // Eventos de microVisuals
+    if (phase.microVisuals) {
+      for (const mv of phase.microVisuals) {
+        plannedEvents.push({
+          eventId: `micro_${mv.id}`,
+          eventType: 'micro_visual',
+          phaseId: phase.id,
+          triggerType: 'anchor_text',
+          expectedAt: mv.triggerTime,
+          anchorText: mv.anchorText,
+          targetId: mv.id,
+          payload: { type: mv.type },
+        });
+      }
+    }
+  }
+  
+  // Verificar se última fase termina no fim do áudio
+  const lastPhase = phases[phases.length - 1];
+  if (lastPhase && Math.abs(lastPhase.endTime - mainAudio.duration) > 0.5) {
+    const issue = createDebugIssue(
+      'medium',
+      'timing',
+      'Última fase não termina no fim do áudio',
+      `Última fase termina em ${lastPhase.endTime.toFixed(2)}s, áudio tem ${mainAudio.duration.toFixed(2)}s`,
+      'Cálculo de timing não sincronizou com duração real do áudio',
+      'Verificar atribuição de lastPhase.endTime = totalAudioDuration',
+      { lastPhaseEndTime: lastPhase.endTime, audioDuration: mainAudio.duration }
+    );
+    issues.push(issue);
+    allIssues.push(issue);
+  }
+  
+  // Contar eventos por tipo
+  const eventsByType: Record<string, number> = {};
+  for (const event of plannedEvents) {
+    eventsByType[event.eventType] = (eventsByType[event.eventType] || 0) + 1;
+  }
+  
+  // Identificar fases interativas
+  const interactivePhases = phases
+    .filter(p => ['interaction', 'quiz', 'playground', 'secret-reveal'].includes(p.type))
+    .map(p => p.id);
+  
+  return {
+    plannedEvents,
+    totalPhases: phases.length,
+    totalEvents: plannedEvents.length,
+    interactivePhases,
+    eventsByType,
+    phaseDetails,
+    issues,
+  };
+}
+
+function calculateSummary(allIssues: V7DebugIssue[]): V7PipelineDebugReport['summary'] {
+  const issuesBySeverity: Record<string, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    info: 0,
+  };
+  
+  const issuesByCategory: Record<string, number> = {};
+  const rootCauseCandidates: string[] = [];
+  
+  for (const issue of allIssues) {
+    issuesBySeverity[issue.level]++;
+    issuesByCategory[issue.category] = (issuesByCategory[issue.category] || 0) + 1;
+    
+    if (issue.possibleCause && !rootCauseCandidates.includes(issue.possibleCause)) {
+      rootCauseCandidates.push(issue.possibleCause);
+    }
+  }
+  
+  // Determinar severidade geral
+  let severity: V7PipelineDebugReport['summary']['severity'] = 'info';
+  if (issuesBySeverity.critical > 0) {
+    severity = 'critical';
+  } else if (issuesBySeverity.high > 0) {
+    severity = 'high';
+  } else if (issuesBySeverity.medium > 0) {
+    severity = 'medium';
+  } else if (issuesBySeverity.low > 0) {
+    severity = 'low';
+  }
+  
+  // Calcular health score (100 - penalidades)
+  let healthScore = 100;
+  healthScore -= issuesBySeverity.critical * 30;
+  healthScore -= issuesBySeverity.high * 15;
+  healthScore -= issuesBySeverity.medium * 5;
+  healthScore -= issuesBySeverity.low * 1;
+  healthScore = Math.max(0, healthScore);
+  
+  // Recomendação principal
+  let primaryRecommendation = 'Aula gerada sem problemas detectados.';
+  if (severity === 'critical') {
+    primaryRecommendation = 'CRÍTICO: Corrigir issues críticas antes de publicar.';
+  } else if (severity === 'high') {
+    primaryRecommendation = 'ATENÇÃO: Revisar issues de alta severidade.';
+  } else if (severity === 'medium') {
+    primaryRecommendation = 'Verificar issues de média severidade para melhor experiência.';
+  }
+  
+  return {
+    severity,
+    totalIssues: allIssues.length,
+    issuesBySeverity,
+    issuesByCategory,
+    rootCauseCandidates,
+    primaryRecommendation,
+    healthScore,
+  };
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1342,6 +1821,25 @@ Deno.serve(async (req) => {
     };
 
     // =========================================================================
+    // PASSO 5.5: GERAR DEBUG REPORT AUTOMÁTICO
+    // =========================================================================
+    console.log('[V7-vv] Step 5.5: Generating debug report...');
+    
+    const fullNarrationForDebug = input.scenes
+      .map(s => s.narration.trim())
+      .filter(n => n.length > 0)
+      .join('\n\n');
+    
+    const debugReport = generatePipelineDebug(
+      'pending', // ID será preenchido após salvar
+      input.title,
+      input.scenes,
+      mainAudio,
+      phases,
+      fullNarrationForDebug
+    );
+
+    // =========================================================================
     // PASSO 6: SALVAR NO BANCO
     // =========================================================================
     console.log('[V7-vv] Step 6: Saving to database...');
@@ -1373,9 +1871,12 @@ Deno.serve(async (req) => {
 
     const lessonId = lesson.id;
     console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
+    
+    // Atualizar lessonId no debug report
+    debugReport.lessonId = lessonId;
 
     // =========================================================================
-    // RESPOSTA
+    // RESPOSTA COM DEBUG REPORT
     // =========================================================================
     const response = {
       success: true,
@@ -1385,14 +1886,17 @@ Deno.serve(async (req) => {
         totalDuration,
         mainAudioDuration: mainAudio.duration,
         wordCount: mainAudio.wordTimestamps.length,
-        feedbackAudioCount: feedbackAudios.length,
+        feedbackAudioCount: Object.keys(feedbackAudios).length,
         hasAudio: !!mainAudio.url,
       },
+      // ✅ DEBUG REPORT AUTOMÁTICO
+      debug: debugReport,
     };
 
     console.log('================================================');
     console.log('[V7-vv] ✅ Pipeline completed successfully');
     console.log('[V7-vv] Stats:', JSON.stringify(response.stats));
+    console.log(`[V7-vv] Debug: ${debugReport.allIssues.length} issues, health score: ${debugReport.summary.healthScore}`);
     console.log('================================================');
 
     return new Response(JSON.stringify(response), {
