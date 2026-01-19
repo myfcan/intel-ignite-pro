@@ -29,7 +29,9 @@ import {
   Layers,
   Target,
   ArrowLeft,
-  Copy
+  Copy,
+  Bug,
+  FileBarChart
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -200,9 +202,20 @@ export default function AdminV7vv() {
               </p>
             </div>
           </div>
-          <Badge variant="outline" className="text-cyan-400 border-cyan-400">
-            v7-vv
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin/v7/debug-reports')}
+              className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20"
+            >
+              <Bug className="w-4 h-4 mr-2" />
+              Debug Reports
+            </Button>
+            <Badge variant="outline" className="text-cyan-400 border-cyan-400">
+              v7-vv
+            </Badge>
+          </div>
         </div>
 
         {/* Características */}

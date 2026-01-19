@@ -2054,32 +2054,47 @@ Deno.serve(async (req) => {
     // PASSO 6.5: PERSISTIR DEBUG REPORT NO BANCO
     // =========================================================================
     console.log('[V7-vv] Step 6.5: Persisting debug report...');
+    console.log('[V7-vv] Debug Report Data:', JSON.stringify({
+      lesson_id: lessonId,
+      lesson_title: input.title,
+      health_score: debugReport.summary.healthScore,
+      severity: debugReport.summary.severity,
+      total_issues: debugReport.allIssues.length,
+    }, null, 2));
     
     try {
-      const { error: debugError } = await supabase
+      const debugInsertData = {
+        lesson_id: lessonId,
+        lesson_title: input.title,
+        generated_at: debugReport.generatedAt,
+        source: debugReport.source,
+        schema_version: debugReport.schemaVersion,
+        health_score: debugReport.summary.healthScore,
+        severity: debugReport.summary.severity,
+        total_issues: debugReport.allIssues.length,
+        audio_report: debugReport.audio,
+        timeline_report: debugReport.timeline,
+        summary_report: debugReport.summary,
+        all_issues: debugReport.allIssues,
+      };
+      
+      console.log('[V7-vv] Inserting debug report with data:', Object.keys(debugInsertData).join(', '));
+      
+      const { data: debugData, error: debugError } = await supabase
         .from('v7_debug_reports')
-        .insert({
-          lesson_id: lessonId,
-          lesson_title: input.title,
-          generated_at: debugReport.generatedAt,
-          source: debugReport.source,
-          schema_version: debugReport.schemaVersion,
-          health_score: debugReport.summary.healthScore,
-          severity: debugReport.summary.severity,
-          total_issues: debugReport.allIssues.length,
-          audio_report: debugReport.audio,
-          timeline_report: debugReport.timeline,
-          summary_report: debugReport.summary,
-          all_issues: debugReport.allIssues,
-        });
+        .insert(debugInsertData)
+        .select('id')
+        .single();
 
       if (debugError) {
-        console.warn('[V7-vv] ⚠️ Failed to save debug report:', debugError.message);
+        console.error('[V7-vv] ❌ Failed to save debug report:', debugError.message);
+        console.error('[V7-vv] Debug Error Details:', JSON.stringify(debugError, null, 2));
       } else {
-        console.log('[V7-vv] ✅ Debug report persisted successfully');
+        console.log('[V7-vv] ✅ Debug report persisted successfully with ID:', debugData?.id);
       }
     } catch (debugSaveError: any) {
-      console.warn('[V7-vv] ⚠️ Debug report save error:', debugSaveError.message);
+      console.error('[V7-vv] ❌ Debug report save error:', debugSaveError.message);
+      console.error('[V7-vv] Stack:', debugSaveError.stack);
     }
 
     // =========================================================================

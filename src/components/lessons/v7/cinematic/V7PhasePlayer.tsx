@@ -561,16 +561,33 @@ export const V7PhasePlayer = ({
     });
   }, [audio.isPlaying, hasAudio]);
 
-  // ✅ V7-DEBUG: Log report on unmount (development only)
+  // ✅ V7-DEBUG: Save and log report on unmount (both dev and production)
   useEffect(() => {
     return () => {
+      const report = debugger_.generateReport();
+      
+      // Log em desenvolvimento
       if (import.meta.env.DEV) {
         debugger_.logCurrentState();
-        const report = debugger_.generateReport();
         console.log('[V7PhasePlayer] 🐛 Final Debug Report:', report.summary);
       }
+      
+      // Persistir em produção e desenvolvimento (async, não bloqueia unmount)
+      if (script?.id && script.id !== 'unknown') {
+        import('@/lib/v7Debug/saveDebugReport').then(({ saveDebugReport }) => {
+          saveDebugReport(report).then(result => {
+            if (result.success) {
+              console.log('[V7PhasePlayer] ✅ Player debug report saved:', result.reportId);
+            } else {
+              console.warn('[V7PhasePlayer] ⚠️ Failed to save player debug report:', result.error);
+            }
+          });
+        }).catch(err => {
+          console.warn('[V7PhasePlayer] ⚠️ Could not import saveDebugReport:', err);
+        });
+      }
     };
-  }, []);
+  }, [script?.id]);
 
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
