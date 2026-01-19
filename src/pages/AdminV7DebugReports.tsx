@@ -14,7 +14,7 @@
  * - Issues agrupadas por categoria
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +24,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
@@ -42,10 +41,16 @@ import {
   Layers,
   Eye,
   Send,
-  ClipboardCheck,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Shield
 } from 'lucide-react';
+import { 
+  V7CorrectionStatus, 
+  analyzeCorrections, 
+  getCorrectionStats,
+  type CorrectionVerification 
+} from '@/components/admin/V7CorrectionStatus';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -89,12 +94,7 @@ interface V7Lesson {
   created_at: string;
 }
 
-interface CorrectionItem {
-  id: string;
-  label: string;
-  checked: boolean;
-  category: 'audio' | 'timeline' | 'rendering' | 'anchors' | 'player';
-}
+// CorrectionItem agora é importado do V7CorrectionStatus
 
 const severityColors: Record<string, string> = {
   critical: 'bg-red-500',
@@ -119,16 +119,7 @@ const healthScoreColor = (score: number): string => {
   return 'text-red-500';
 };
 
-const defaultCorrections: CorrectionItem[] = [
-  { id: 'truncation', label: 'Truncamento de narração corrigido', checked: false, category: 'audio' },
-  { id: 'timestamps', label: 'Timestamps word-level sincronizados', checked: false, category: 'audio' },
-  { id: 'phase-overlap', label: 'Overlaps de fases eliminados', checked: false, category: 'timeline' },
-  { id: 'anchor-found', label: 'Todas as âncoras encontradas', checked: false, category: 'anchors' },
-  { id: 'revelation-render', label: 'Revelation renderiza no first-play', checked: false, category: 'rendering' },
-  { id: 'seek-rewind', label: 'Eventos funcionam após seek/rewind', checked: false, category: 'player' },
-  { id: 'quiz-trigger', label: 'Quiz dispara corretamente', checked: false, category: 'player' },
-  { id: 'playground-loads', label: 'Playground carrega com dados', checked: false, category: 'player' },
-];
+// Verificações agora são calculadas dinamicamente pelo V7CorrectionStatus
 
 const HealthScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 40;
@@ -232,7 +223,6 @@ export default function AdminV7DebugReports() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
-  const [corrections, setCorrections] = useState<CorrectionItem[]>(defaultCorrections);
   const [analysisJson, setAnalysisJson] = useState<string>('');
 
   // Fetch V7 lessons for selector
@@ -322,11 +312,17 @@ export default function AdminV7DebugReports() {
       : 0,
   };
 
-  const handleCorrectionToggle = (id: string) => {
-    setCorrections(prev => prev.map(c => 
-      c.id === id ? { ...c, checked: !c.checked } : c
-    ));
-  };
+  // Calcular verificações REAIS baseadas nos dados do report
+  const realVerifications = useMemo<CorrectionVerification[]>(() => {
+    if (!selectedLessonReport) return [];
+    return analyzeCorrections(
+      selectedLessonReport.audio_report,
+      selectedLessonReport.timeline_report,
+      selectedLessonReport.all_issues
+    );
+  }, [selectedLessonReport]);
+
+  const correctionStats = useMemo(() => getCorrectionStats(realVerifications), [realVerifications]);
 
   const handleSendForAnalysis = () => {
     if (!selectedLessonId) {
@@ -339,7 +335,7 @@ export default function AdminV7DebugReports() {
       return;
     }
 
-    // Generate analysis JSON
+    // Generate analysis JSON com verificações REAIS
     const analysisPayload = {
       lesson_id: selectedLessonId,
       lesson_title: selectedLesson?.title,
@@ -351,8 +347,16 @@ export default function AdminV7DebugReports() {
       timeline_report: selectedLessonReport.timeline_report,
       summary_report: selectedLessonReport.summary_report,
       all_issues: selectedLessonReport.all_issues,
-      corrections_applied: corrections.filter(c => c.checked).map(c => c.label),
-      corrections_pending: corrections.filter(c => !c.checked).map(c => c.label),
+      // Verificações REAIS baseadas em dados
+      verifications: realVerifications.map(v => ({
+        id: v.id,
+        label: v.label,
+        status: v.status,
+        reason: v.reason,
+      })),
+      verification_stats: correctionStats,
+      corrections_applied: realVerifications.filter(v => v.status === 'success').map(v => v.label),
+      corrections_pending: realVerifications.filter(v => v.status !== 'success').map(v => v.label),
       generated_at: new Date().toISOString(),
     };
 
@@ -362,17 +366,6 @@ export default function AdminV7DebugReports() {
     navigator.clipboard.writeText(JSON.stringify(analysisPayload, null, 2));
     toast.success('JSON copiado para a área de transferência! Cole na próxima mensagem.');
   };
-
-  const correctionsByCategory = {
-    audio: corrections.filter(c => c.category === 'audio'),
-    timeline: corrections.filter(c => c.category === 'timeline'),
-    anchors: corrections.filter(c => c.category === 'anchors'),
-    rendering: corrections.filter(c => c.category === 'rendering'),
-    player: corrections.filter(c => c.category === 'player'),
-  };
-
-  const completedCount = corrections.filter(c => c.checked).length;
-  const totalCount = corrections.length;
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -488,44 +481,43 @@ export default function AdminV7DebugReports() {
                 </Button>
               </div>
 
-              {/* Coluna 2: Checklist de Correções */}
+              {/* Coluna 2: Status de Verificações REAIS */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium flex items-center gap-2">
-                    <ClipboardCheck className="w-4 h-4 text-green-500" />
-                    Correções Aplicadas
+                    <Shield className="w-4 h-4 text-cyan-500" />
+                    Verificações Reais
                   </label>
-                  <Badge variant="outline" className={completedCount === totalCount ? 'bg-green-500/10 text-green-400' : ''}>
-                    {completedCount}/{totalCount}
-                  </Badge>
+                  {correctionStats.total > 0 && (
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        correctionStats.hasErrors 
+                          ? 'bg-red-500/10 text-red-400 border-red-500/30' 
+                          : correctionStats.hasWarnings
+                            ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                            : 'bg-green-500/10 text-green-400 border-green-500/30'
+                      }
+                    >
+                      {correctionStats.success}/{correctionStats.total - correctionStats.unknown} OK
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                  {Object.entries(correctionsByCategory).map(([category, items]) => (
-                    <div key={category}>
-                      <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
-                        {category}
-                      </p>
-                      <div className="space-y-2">
-                        {items.map((item) => (
-                          <div key={item.id} className="flex items-center gap-3">
-                            <Checkbox 
-                              id={item.id}
-                              checked={item.checked}
-                              onCheckedChange={() => handleCorrectionToggle(item.id)}
-                            />
-                            <label 
-                              htmlFor={item.id}
-                              className={`text-sm cursor-pointer ${item.checked ? 'text-green-400 line-through' : ''}`}
-                            >
-                              {item.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {realVerifications.length > 0 ? (
+                  <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
+                    {realVerifications.map((verification) => (
+                      <V7CorrectionStatus key={verification.id} verification={verification} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 bg-muted/20 rounded-lg border-2 border-dashed border-muted text-center">
+                    <Shield className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Selecione uma aula para ver as verificações
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Coluna 3: JSON Preview */}
