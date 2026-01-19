@@ -5,6 +5,9 @@
  * Painel para visualizar e filtrar debug reports do pipeline e player V7.
  * 
  * Features:
+ * - Seletor de aula para análise
+ * - Botão para enviar para análise AI
+ * - Checklist de correções aplicadas
  * - Lista de todos os reports com filtros por severidade
  * - Detalhes expandíveis de cada report
  * - Health score visual
@@ -16,11 +19,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
   Search, 
@@ -35,9 +40,14 @@ import {
   Clock,
   Play,
   Layers,
-  Eye
+  Eye,
+  Send,
+  ClipboardCheck,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface DebugReport {
   id: string;
@@ -57,6 +67,21 @@ interface DebugReport {
   summary_report: any;
   all_issues: any[];
   created_at: string;
+}
+
+interface V7Lesson {
+  id: string;
+  title: string;
+  model: string;
+  status: string;
+  created_at: string;
+}
+
+interface CorrectionItem {
+  id: string;
+  label: string;
+  checked: boolean;
+  category: 'audio' | 'timeline' | 'rendering' | 'anchors' | 'player';
 }
 
 const severityColors: Record<string, string> = {
@@ -81,6 +106,17 @@ const healthScoreColor = (score: number): string => {
   if (score >= 40) return 'text-orange-500';
   return 'text-red-500';
 };
+
+const defaultCorrections: CorrectionItem[] = [
+  { id: 'truncation', label: 'Truncamento de narração corrigido', checked: false, category: 'audio' },
+  { id: 'timestamps', label: 'Timestamps word-level sincronizados', checked: false, category: 'audio' },
+  { id: 'phase-overlap', label: 'Overlaps de fases eliminados', checked: false, category: 'timeline' },
+  { id: 'anchor-found', label: 'Todas as âncoras encontradas', checked: false, category: 'anchors' },
+  { id: 'revelation-render', label: 'Revelation renderiza no first-play', checked: false, category: 'rendering' },
+  { id: 'seek-rewind', label: 'Eventos funcionam após seek/rewind', checked: false, category: 'player' },
+  { id: 'quiz-trigger', label: 'Quiz dispara corretamente', checked: false, category: 'player' },
+  { id: 'playground-loads', label: 'Playground carrega com dados', checked: false, category: 'player' },
+];
 
 const HealthScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 40;
@@ -183,6 +219,25 @@ export default function AdminV7DebugReports() {
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>('');
+  const [corrections, setCorrections] = useState<CorrectionItem[]>(defaultCorrections);
+  const [analysisJson, setAnalysisJson] = useState<string>('');
+
+  // Fetch V7 lessons for selector
+  const { data: v7Lessons } = useQuery({
+    queryKey: ['v7-lessons-selector'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('id, title, model, status, created_at')
+        .or('model.like.v7%,lesson_type.eq.v7')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data as V7Lesson[];
+    },
+  });
 
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['v7-debug-reports', severityFilter],
@@ -203,6 +258,10 @@ export default function AdminV7DebugReports() {
     },
   });
 
+  // Get selected lesson's latest report
+  const selectedLessonReport = reports?.find(r => r.lesson_id === selectedLessonId);
+  const selectedLesson = v7Lessons?.find(l => l.id === selectedLessonId);
+
   const filteredReports = reports?.filter(report => 
     report.lesson_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     report.lesson_id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -217,6 +276,58 @@ export default function AdminV7DebugReports() {
       : 0,
   };
 
+  const handleCorrectionToggle = (id: string) => {
+    setCorrections(prev => prev.map(c => 
+      c.id === id ? { ...c, checked: !c.checked } : c
+    ));
+  };
+
+  const handleSendForAnalysis = () => {
+    if (!selectedLessonId) {
+      toast.error('Selecione uma aula primeiro');
+      return;
+    }
+
+    if (!selectedLessonReport) {
+      toast.warning('Nenhum debug report encontrado para esta aula. Execute o pipeline primeiro.');
+      return;
+    }
+
+    // Generate analysis JSON
+    const analysisPayload = {
+      lesson_id: selectedLessonId,
+      lesson_title: selectedLesson?.title,
+      report_id: selectedLessonReport.id,
+      health_score: selectedLessonReport.health_score,
+      severity: selectedLessonReport.severity,
+      total_issues: selectedLessonReport.total_issues,
+      audio_report: selectedLessonReport.audio_report,
+      timeline_report: selectedLessonReport.timeline_report,
+      summary_report: selectedLessonReport.summary_report,
+      all_issues: selectedLessonReport.all_issues,
+      corrections_applied: corrections.filter(c => c.checked).map(c => c.label),
+      corrections_pending: corrections.filter(c => !c.checked).map(c => c.label),
+      generated_at: new Date().toISOString(),
+    };
+
+    setAnalysisJson(JSON.stringify(analysisPayload, null, 2));
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(JSON.stringify(analysisPayload, null, 2));
+    toast.success('JSON copiado para a área de transferência! Cole na próxima mensagem.');
+  };
+
+  const correctionsByCategory = {
+    audio: corrections.filter(c => c.category === 'audio'),
+    timeline: corrections.filter(c => c.category === 'timeline'),
+    anchors: corrections.filter(c => c.category === 'anchors'),
+    rendering: corrections.filter(c => c.category === 'rendering'),
+    player: corrections.filter(c => c.category === 'player'),
+  };
+
+  const completedCount = corrections.filter(c => c.checked).length;
+  const totalCount = corrections.length;
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -227,11 +338,169 @@ export default function AdminV7DebugReports() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">V7 Debug Reports</h1>
-              <p className="text-muted-foreground">Análise de pipeline e player</p>
+              <h1 className="text-2xl font-bold">V7 Debug Hardcore</h1>
+              <p className="text-muted-foreground">Análise profunda de pipeline e player</p>
             </div>
           </div>
         </div>
+
+        {/* === NOVO: Painel de Análise === */}
+        <Card className="border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/5 to-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-orange-500" />
+              Análise de Aula V7
+              <Badge variant="outline" className="ml-2 bg-orange-500/10 text-orange-400 border-orange-500/30">
+                Debug Hardcore
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Selecione uma aula, marque as correções aplicadas e envie para análise
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Coluna 1: Seletor de Aula */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Selecionar Aula V7</label>
+                  <Select value={selectedLessonId} onValueChange={setSelectedLessonId}>
+                    <SelectTrigger className="w-full">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Escolha uma aula..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {v7Lessons?.map((lesson) => (
+                        <SelectItem key={lesson.id} value={lesson.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="truncate max-w-[200px]">{lesson.title}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {lesson.status}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedLessonReport && (
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Health Score</span>
+                      <span className={`text-lg font-bold ${healthScoreColor(selectedLessonReport.health_score)}`}>
+                        {selectedLessonReport.health_score}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Severidade</span>
+                      <Badge variant={severityBadgeVariants[selectedLessonReport.severity]}>
+                        {selectedLessonReport.severity}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Issues</span>
+                      <span className="text-sm">{selectedLessonReport.total_issues}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Source</span>
+                      <Badge variant="outline">{selectedLessonReport.source}</Badge>
+                    </div>
+                  </div>
+                )}
+
+                {selectedLessonId && !selectedLessonReport && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm text-yellow-400">
+                      ⚠️ Nenhum debug report encontrado para esta aula. Execute o pipeline V7-VV primeiro.
+                    </p>
+                  </div>
+                )}
+
+                <Button 
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                  onClick={handleSendForAnalysis}
+                  disabled={!selectedLessonId}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar para Análise
+                </Button>
+              </div>
+
+              {/* Coluna 2: Checklist de Correções */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <ClipboardCheck className="w-4 h-4 text-green-500" />
+                    Correções Aplicadas
+                  </label>
+                  <Badge variant="outline" className={completedCount === totalCount ? 'bg-green-500/10 text-green-400' : ''}>
+                    {completedCount}/{totalCount}
+                  </Badge>
+                </div>
+
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                  {Object.entries(correctionsByCategory).map(([category, items]) => (
+                    <div key={category}>
+                      <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                        {category}
+                      </p>
+                      <div className="space-y-2">
+                        {items.map((item) => (
+                          <div key={item.id} className="flex items-center gap-3">
+                            <Checkbox 
+                              id={item.id}
+                              checked={item.checked}
+                              onCheckedChange={() => handleCorrectionToggle(item.id)}
+                            />
+                            <label 
+                              htmlFor={item.id}
+                              className={`text-sm cursor-pointer ${item.checked ? 'text-green-400 line-through' : ''}`}
+                            >
+                              {item.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Coluna 3: JSON Preview */}
+              <div className="space-y-4">
+                <label className="text-sm font-medium">JSON para Análise</label>
+                {analysisJson ? (
+                  <div className="relative">
+                    <pre className="p-4 bg-black/50 rounded-lg text-xs text-green-400 max-h-[300px] overflow-auto font-mono">
+                      {analysisJson}
+                    </pre>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(analysisJson);
+                        toast.success('JSON copiado!');
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-8 bg-muted/20 rounded-lg border-2 border-dashed border-muted text-center">
+                    <Activity className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Selecione uma aula e clique em "Enviar para Análise" para gerar o JSON
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Separator className="my-6" />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-4">
@@ -391,11 +660,24 @@ export default function AdminV7DebugReports() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/v7-cinematic/${report.lesson_id}`);
+                              navigate(`/v7-lesson/${report.lesson_id}`);
                             }}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             Ver Aula
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLessonId(report.lesson_id);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              toast.info('Aula selecionada para análise');
+                            }}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1" />
+                            Analisar
                           </Button>
                           {expandedReport === report.id ? (
                             <ChevronDown className="w-5 h-5" />
