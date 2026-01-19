@@ -370,19 +370,31 @@ export default function AdminV7DebugReports() {
                       <SelectValue placeholder="Escolha uma aula..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {v7Lessons?.map((lesson) => (
-                        <SelectItem key={lesson.id} value={lesson.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="truncate max-w-[200px]">{lesson.title}</span>
-                            <Badge 
-                              variant={lesson.is_active ? "default" : "outline"} 
-                              className={`text-xs ${lesson.is_active ? 'bg-green-600' : ''}`}
-                            >
-                              {lesson.is_active ? 'Ativa' : 'Inativa'}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {v7Lessons?.map((lesson) => {
+                        // Contar quantos debug reports existem para esta aula
+                        const lessonReportsCount = reports?.filter(r => r.lesson_id === lesson.id).length || 0;
+                        const createdDate = format(new Date(lesson.created_at), 'dd/MM/yyyy');
+                        
+                        return (
+                          <SelectItem key={lesson.id} value={lesson.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="truncate max-w-[180px]">{lesson.title}</span>
+                              <span className="text-xs text-muted-foreground">({createdDate})</span>
+                              <Badge 
+                                variant={lesson.is_active ? "default" : "outline"} 
+                                className={`text-xs ${lesson.is_active ? 'bg-green-600' : ''}`}
+                              >
+                                {lesson.is_active ? 'Ativa' : 'Inativa'}
+                              </Badge>
+                              {lessonReportsCount > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {lessonReportsCount} reports
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
