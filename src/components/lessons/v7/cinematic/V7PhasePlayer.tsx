@@ -499,38 +499,63 @@ export const V7PhasePlayer = ({
   }, [currentPhase?.type]);
 
   // ✅ V7-DEBUG: Register planned events from timeline
+  // IDs devem corresponder aos gerados pelo pipelineDebugger para matching correto
   useEffect(() => {
     if (!scaledScript?.phases) return;
     
-    scaledScript.phases.forEach((phase, index) => {
-      // Register phase start
+    scaledScript.phases.forEach((phase) => {
+      // Register phase start usando phase.id (corresponde ao pipeline)
       debugger_.registerPlannedEvent(
-        `phase_${index}_start`,
+        `phase_start_${phase.id}`,
         phase.startTime,
         null
       );
       
-      // Register anchor actions
+      // Register phase end
+      debugger_.registerPlannedEvent(
+        `phase_end_${phase.id}`,
+        phase.endTime,
+        null
+      );
+      
+      // Register anchor actions usando IDs do pipeline
       if (phase.anchorActions) {
-        phase.anchorActions.forEach((anchor: any, actionIndex: number) => {
+        phase.anchorActions.forEach((anchor: any) => {
+          // Pipeline usa: anchor.id para anchor_show, anchor_pause-${phaseId} para pause
+          const anchorId = anchor.type === 'pause' 
+            ? `anchor_pause-${phase.id}`
+            : `anchor_${anchor.id || anchor.targetId}`;
+          
           debugger_.registerPlannedEvent(
-            `anchor_${index}_${actionIndex}`,
+            anchorId,
             anchor.keywordTime || 0,
             anchor.keyword
           );
         });
       }
+      
+      // Register micro visuals
+      if (phase.microVisuals) {
+        phase.microVisuals.forEach((mv: any) => {
+          debugger_.registerPlannedEvent(
+            `micro_${mv.id}`,
+            mv.triggerTime || 0,
+            mv.anchorText
+          );
+        });
+      }
     });
     
-    console.log('[V7PhasePlayer] 🐛 DEBUG: Planned events registered');
+    console.log('[V7PhasePlayer] 🐛 DEBUG: Planned events registered with correct IDs');
   }, [scaledScript?.phases, debugger_]);
 
   // ✅ V7-DEBUG: Record phase transitions
   useEffect(() => {
     if (!currentPhase || isLoading) return;
     
+    // Usar phase.id para corresponder aos IDs do pipeline
     debugger_.recordEventExecution(
-      `phase_${currentPhaseIndex}_start`,
+      `phase_start_${currentPhase.id}`,
       'executed',
       audio.currentTime,
       null,
