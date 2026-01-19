@@ -128,14 +128,24 @@ export function useV7PlayerDebugger(lessonId: string, lessonTitle: string) {
 
     // Track if event only worked after seek
     if (stateRef.current.seekCount > 0 && status === 'executed') {
-      // Check if this event was previously missed
-      const previousMiss = stateRef.current.executedEvents.find(
-        e => e.eventId === eventId && e.status === 'not_fired'
+      // Check if this event was previously missed OR if this is a second execution
+      const previousExecution = stateRef.current.executedEvents.find(
+        e => e.eventId === eventId && (e.status === 'not_fired' || e.status === 'skipped')
       );
-      if (previousMiss) {
+      if (previousExecution) {
         stateRef.current.eventsOnlyAfterSeek.add(eventId);
+        console.log(`[V7Debug] ⚠️ Event "${eventId}" only worked after seek (seekCount: ${stateRef.current.seekCount})`);
       }
     }
+  }, []);
+
+  /**
+   * Marca um evento como recuperado após seek/rewind
+   * Útil quando um evento renderiza após rewind mas não no first-play
+   */
+  const markEventRecoveredAfterSeek = useCallback((eventId: string, reason?: string) => {
+    stateRef.current.eventsOnlyAfterSeek.add(eventId);
+    console.log(`[V7Debug] ⚠️ Event "${eventId}" marked as recovered after seek. Reason: ${reason || 'unknown'}`);
   }, []);
 
   /**
@@ -288,6 +298,7 @@ export function useV7PlayerDebugger(lessonId: string, lessonTitle: string) {
     captureStateSnapshot,
     markEventOutsideViewport,
     markEventBeforeAssetReady,
+    markEventRecoveredAfterSeek,
     generateReport,
     logCurrentState,
   };
