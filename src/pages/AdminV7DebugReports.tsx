@@ -73,7 +73,7 @@ interface V7Lesson {
   id: string;
   title: string;
   model: string;
-  status: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -229,7 +229,7 @@ export default function AdminV7DebugReports() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lessons')
-        .select('id, title, model, status, created_at')
+        .select('id, title, model, is_active, created_at')
         .or('model.like.v7%,lesson_type.eq.v7')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -374,8 +374,11 @@ export default function AdminV7DebugReports() {
                         <SelectItem key={lesson.id} value={lesson.id}>
                           <div className="flex items-center gap-2">
                             <span className="truncate max-w-[200px]">{lesson.title}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {lesson.status}
+                            <Badge 
+                              variant={lesson.is_active ? "default" : "outline"} 
+                              className={`text-xs ${lesson.is_active ? 'bg-green-600' : ''}`}
+                            >
+                              {lesson.is_active ? 'Ativa' : 'Inativa'}
                             </Badge>
                           </div>
                         </SelectItem>
