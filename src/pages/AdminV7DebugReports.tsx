@@ -49,6 +49,18 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
+// Helper para priorizar severidade
+const getSeverityPriority = (severity: string): number => {
+  const priorities: Record<string, number> = {
+    critical: 5,
+    high: 4,
+    medium: 3,
+    low: 2,
+    info: 1,
+  };
+  return priorities[severity] || 0;
+};
+
 interface DebugReport {
   id: string;
   lesson_id: string;
@@ -258,8 +270,42 @@ export default function AdminV7DebugReports() {
     },
   });
 
-  // Get selected lesson's latest report
-  const selectedLessonReport = reports?.find(r => r.lesson_id === selectedLessonId);
+  // Get all reports for selected lesson and combine them intelligently
+  const lessonReports = reports?.filter(r => r.lesson_id === selectedLessonId) || [];
+  
+  // Priorizar pipeline report (tem dados de áudio completos)
+  // Se houver player report mais recente, combinar os dados
+  const pipelineReport = lessonReports.find(r => r.source === 'pipeline');
+  const playerReport = lessonReports.find(r => r.source === 'player');
+  const combinedReport = lessonReports.find(r => r.source === 'combined');
+  
+  // Usar combined se existir, senão criar merged report
+  const selectedLessonReport = combinedReport || (() => {
+    if (!pipelineReport && !playerReport) return undefined;
+    if (!pipelineReport) return playerReport;
+    if (!playerReport) return pipelineReport;
+    
+    // Merge: player tem execution data, pipeline tem audio/timeline data
+    return {
+      ...playerReport, // dados mais recentes de execução
+      audio_report: pipelineReport.audio_report, // audio do pipeline
+      timeline_report: pipelineReport.timeline_report, // timeline do pipeline
+      // Combinar issues de ambos
+      all_issues: [
+        ...(pipelineReport.all_issues || []),
+        ...(playerReport.all_issues || []),
+      ],
+      // Pior health score
+      health_score: Math.min(pipelineReport.health_score, playerReport.health_score),
+      // Pior severity
+      severity: getSeverityPriority(pipelineReport.severity) > getSeverityPriority(playerReport.severity) 
+        ? pipelineReport.severity 
+        : playerReport.severity,
+      total_issues: (pipelineReport.total_issues || 0) + (playerReport.total_issues || 0),
+      source: 'merged' as const,
+    };
+  })();
+  
   const selectedLesson = v7Lessons?.find(l => l.id === selectedLessonId);
 
   const filteredReports = reports?.filter(report => 
