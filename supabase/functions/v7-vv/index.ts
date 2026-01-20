@@ -1545,6 +1545,19 @@ function generatePhases(
 
   // NÃO USAR: phases.sort((a, b) => a.startTime - b.startTime);
 
+  // ✅ V7-vv FIX: Verificar PRIMEIRA fase interativa também (loop começa em i=1)
+  const INTERACTIVE_TYPES_CHECK = ['interaction', 'playground', 'quiz', 'secret-reveal', 'cta', 'gamification'];
+  const MIN_INTERACTIVE_DURATION_CHECK = 5.0;
+  
+  if (phases.length > 0 && INTERACTIVE_TYPES_CHECK.includes(phases[0].type)) {
+    const firstPhase = phases[0];
+    const duration = firstPhase.endTime - firstPhase.startTime;
+    if (duration < MIN_INTERACTIVE_DURATION_CHECK) {
+      console.log(`[Phases] ✅ INTERACTIVE FIX (first): "${firstPhase.id}" duration ${duration.toFixed(2)}s → ${MIN_INTERACTIVE_DURATION_CHECK}s`);
+      firstPhase.endTime = firstPhase.startTime + MIN_INTERACTIVE_DURATION_CHECK;
+    }
+  }
+
   // Garantir que cada phase começa DEPOIS da anterior terminar
   for (let i = 1; i < phases.length; i++) {
     const prevPhase = phases[i - 1];
@@ -1566,6 +1579,19 @@ function generatePhases(
       const minDuration = 3.0; // Duração mínima de 3 segundos
       currPhase.endTime = currPhase.startTime + minDuration;
       console.log(`[Phases] ✅ FIX: "${currPhase.id}" endTime ajustado para ${currPhase.endTime.toFixed(2)}s (min duration)`);
+    }
+    
+    // ✅ V7-vv FIX: Fases INTERATIVAS precisam de duração MÍNIMA de 5 segundos
+    const INTERACTIVE_TYPES = ['interaction', 'playground', 'quiz', 'secret-reveal', 'cta', 'gamification'];
+    if (INTERACTIVE_TYPES.includes(currPhase.type)) {
+      const currDuration = currPhase.endTime - currPhase.startTime;
+      const MIN_INTERACTIVE_DURATION = 5.0; // 5 segundos mínimo para interação
+      
+      if (currDuration < MIN_INTERACTIVE_DURATION) {
+        const oldEndTime = currPhase.endTime;
+        currPhase.endTime = currPhase.startTime + MIN_INTERACTIVE_DURATION;
+        console.log(`[Phases] ✅ INTERACTIVE FIX: "${currPhase.id}" (${currPhase.type}) duration ${currDuration.toFixed(2)}s → ${MIN_INTERACTIVE_DURATION}s (endTime: ${oldEndTime.toFixed(2)}s → ${currPhase.endTime.toFixed(2)}s)`);
+      }
     }
   }
 
