@@ -558,7 +558,7 @@ export default function AdminV7DebugReports() {
         </Card>
 
         {/* === Pipeline Bug Tracker (Atemporal) === */}
-        <V7PipelineBugTracker />
+        <V7PipelineBugTracker lessonContext={selectedLesson?.title} />
 
         <Separator className="my-6" />
 

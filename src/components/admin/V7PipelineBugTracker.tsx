@@ -11,9 +11,16 @@
  * Quando novos bugs são descobertos via debug de aulas, adicionar aqui.
  */
 
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { 
   CheckCircle, 
   XCircle, 
@@ -21,8 +28,11 @@ import {
   GitBranch,
   Wrench,
   Bug,
-  Zap
+  Zap,
+  Plus,
+  AlertTriangle
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export type BugStatus = 'fixed' | 'pending' | 'in-progress';
 
@@ -46,7 +56,7 @@ export interface PipelineBug {
  * 2. Bug é corrigido no código → mudar status para 'fixed' + adicionar fixedIn/fixedDate
  * 3. Bug está sendo trabalhado → status 'in-progress'
  */
-export const PIPELINE_BUGS: PipelineBug[] = [
+const INITIAL_PIPELINE_BUGS: PipelineBug[] = [
   // ========================================
   // BUGS CORRIGIDOS (FIXED)
   // ========================================
@@ -148,13 +158,13 @@ const statusConfig: Record<BugStatus, {
   },
 };
 
-const categoryConfig: Record<string, { icon: React.ElementType; color: string }> = {
-  audio: { icon: Zap, color: 'text-purple-400' },
-  timeline: { icon: Clock, color: 'text-blue-400' },
-  anchors: { icon: GitBranch, color: 'text-cyan-400' },
-  phases: { icon: Wrench, color: 'text-orange-400' },
-  ids: { icon: Bug, color: 'text-pink-400' },
-  general: { icon: Bug, color: 'text-gray-400' },
+const categoryConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+  audio: { icon: Zap, color: 'text-purple-400', label: 'Áudio' },
+  timeline: { icon: Clock, color: 'text-blue-400', label: 'Timeline' },
+  anchors: { icon: GitBranch, color: 'text-cyan-400', label: 'Âncoras' },
+  phases: { icon: Wrench, color: 'text-orange-400', label: 'Fases' },
+  ids: { icon: Bug, color: 'text-pink-400', label: 'IDs' },
+  general: { icon: Bug, color: 'text-gray-400', label: 'Geral' },
 };
 
 interface BugItemProps {
@@ -186,6 +196,11 @@ function BugItem({ bug }: BugItemProps) {
                   Corrigido: {bug.fixedDate}
                 </p>
               )}
+              {bug.discoveredIn && bug.status !== 'fixed' && (
+                <p className="text-xs text-purple-400/70 mt-1">
+                  Descoberto em: {bug.discoveredIn}
+                </p>
+              )}
             </div>
             <Badge 
               variant="outline" 
@@ -215,13 +230,164 @@ function BugItem({ bug }: BugItemProps) {
   );
 }
 
-export function V7PipelineBugTracker() {
-  const fixedBugs = PIPELINE_BUGS.filter(b => b.status === 'fixed');
-  const pendingBugs = PIPELINE_BUGS.filter(b => b.status === 'pending');
-  const inProgressBugs = PIPELINE_BUGS.filter(b => b.status === 'in-progress');
+interface AddBugFormProps {
+  onAddBug: (bug: PipelineBug) => void;
+  lessonContext?: string;
+}
+
+function AddBugForm({ onAddBug, lessonContext }: AddBugFormProps) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<PipelineBug['category']>('general');
+  const [notes, setNotes] = useState('');
+
+  const handleSubmit = () => {
+    if (!title.trim() || !description.trim()) {
+      toast.error('Título e descrição são obrigatórios');
+      return;
+    }
+
+    const newBug: PipelineBug = {
+      id: `bug-${Date.now()}`,
+      title: title.trim(),
+      description: description.trim(),
+      status: 'pending',
+      category,
+      discoveredIn: lessonContext || `Debug ${new Date().toLocaleDateString('pt-BR')}`,
+      notes: notes.trim() || undefined,
+    };
+
+    onAddBug(newBug);
+    toast.success('Bug registrado como PENDENTE');
+    
+    // Reset form
+    setTitle('');
+    setDescription('');
+    setCategory('general');
+    setNotes('');
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Registrar Bug
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            Registrar Novo Bug do Pipeline
+          </DialogTitle>
+          <DialogDescription>
+            Adicione um novo bug descoberto durante análise de aula. Será registrado como PENDENTE.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="bug-title">Título do Bug *</Label>
+            <Input
+              id="bug-title"
+              placeholder="Ex: Âncoras não encontradas em fases interativas"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="bug-description">Descrição *</Label>
+            <Textarea
+              id="bug-description"
+              placeholder="Descreva o comportamento incorreto do pipeline..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="bug-category">Categoria</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as PipelineBug['category'])}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(categoryConfig).map(([key, config]) => {
+                  const Icon = config.icon;
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${config.color}`} />
+                        <span>{config.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="bug-notes">Notas Adicionais</Label>
+            <Textarea
+              id="bug-notes"
+              placeholder="Detalhes técnicos, referências, sugestões de fix..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+          
+          {lessonContext && (
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+              🔍 Contexto: {lessonContext}
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <Bug className="w-4 h-4 mr-2" />
+            Registrar Bug
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface V7PipelineBugTrackerProps {
+  lessonContext?: string; // Título da aula sendo analisada
+}
+
+export function V7PipelineBugTracker({ lessonContext }: V7PipelineBugTrackerProps) {
+  const [bugs, setBugs] = useState<PipelineBug[]>(INITIAL_PIPELINE_BUGS);
+
+  const handleAddBug = (newBug: PipelineBug) => {
+    setBugs(prev => [newBug, ...prev]);
+  };
+
+  const fixedBugs = bugs.filter(b => b.status === 'fixed');
+  const pendingBugs = bugs.filter(b => b.status === 'pending');
+  const inProgressBugs = bugs.filter(b => b.status === 'in-progress');
   
   const stats = {
-    total: PIPELINE_BUGS.length,
+    total: bugs.length,
     fixed: fixedBugs.length,
     pending: pendingBugs.length,
     inProgress: inProgressBugs.length,
@@ -230,16 +396,21 @@ export function V7PipelineBugTracker() {
   return (
     <Card className="border-2 border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-pink-500/5">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Bug className="w-5 h-5 text-purple-500" />
-          Pipeline V7-vv Bug Tracker
-          <Badge variant="outline" className="ml-2 bg-purple-500/10 text-purple-400 border-purple-500/30">
-            Atemporal
-          </Badge>
-        </CardTitle>
-        <CardDescription>
-          Status atual do código do pipeline • Não depende de dados de aulas
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Bug className="w-5 h-5 text-purple-500" />
+              Pipeline V7-vv Bug Tracker
+              <Badge variant="outline" className="ml-2 bg-purple-500/10 text-purple-400 border-purple-500/30">
+                Atemporal
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Status atual do código do pipeline • Não depende de dados de aulas
+            </CardDescription>
+          </div>
+          <AddBugForm onAddBug={handleAddBug} lessonContext={lessonContext} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Stats */}
@@ -283,7 +454,7 @@ export function V7PipelineBugTracker() {
               ✨ Todos os bugs conhecidos foram corrigidos!
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Novos bugs serão adicionados quando descobertos via debug de aulas
+              Use o botão "Registrar Bug" para adicionar novos bugs descobertos
             </p>
           </div>
         )}
@@ -312,3 +483,6 @@ export function createPipelineBug(
     discoveredIn,
   };
 }
+
+// Re-export bugs for external access
+export const PIPELINE_BUGS = INITIAL_PIPELINE_BUGS;
