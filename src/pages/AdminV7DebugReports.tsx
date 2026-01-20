@@ -43,8 +43,10 @@ import {
   Send,
   Sparkles,
   BookOpen,
-  Shield
+  Shield,
+  Bug
 } from 'lucide-react';
+import { V7PipelineBugTracker } from '@/components/admin/V7PipelineBugTracker';
 import { 
   V7CorrectionStatus, 
   analyzeCorrections, 
@@ -554,6 +556,9 @@ export default function AdminV7DebugReports() {
             </div>
           </CardContent>
         </Card>
+
+        {/* === Pipeline Bug Tracker (Atemporal) === */}
+        <V7PipelineBugTracker />
 
         <Separator className="my-6" />
 
