@@ -339,10 +339,11 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       let phasesArray: any[] | null = null;
       let phasesSource = 'none';
       
-      // ✅ EXTRA DEBUG: Log all potential phase sources
-      console.log('[useV7PhaseScript] 🔎 Checking phase sources:', {
+      // ✅ EXTRA DEBUG: Log all potential phase sources with deep inspection
+      const phasesInspection = {
         'parsedContent.phases': {
           exists: 'phases' in parsedContent,
+          value: parsedContent?.phases,
           isArray: Array.isArray(parsedContent?.phases),
           length: parsedContent?.phases?.length ?? 'N/A',
           firstId: parsedContent?.phases?.[0]?.id ?? 'N/A',
@@ -357,32 +358,52 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
           isArray: Array.isArray(parsedContent?.cinematicFlow?.phases),
           length: parsedContent?.cinematicFlow?.phases?.length ?? 'N/A',
         },
+      };
+      console.log('[useV7PhaseScript] 🔎 Checking phase sources:', phasesInspection);
+      
+      // ✅ FIX CRÍTICO: Verificar TODAS as propriedades do content
+      const allKeys = Object.keys(parsedContent);
+      console.log('[useV7PhaseScript] 📋 ALL CONTENT KEYS:', allKeys);
+      
+      // ✅ FIX: Usar verificação mais robusta
+      const directPhases = parsedContent?.phases;
+      const cfPhases = parsedContent?.cinematic_flow?.phases;
+      const cFPhases = parsedContent?.cinematicFlow?.phases;
+      const cfActs = parsedContent?.cinematic_flow?.acts;
+      const cFActs = parsedContent?.cinematicFlow?.acts;
+      
+      console.log('[useV7PhaseScript] 🧪 DIRECT CHECK:', {
+        directPhases: { isArray: Array.isArray(directPhases), length: directPhases?.length },
+        cfPhases: { isArray: Array.isArray(cfPhases), length: cfPhases?.length },
+        cFPhases: { isArray: Array.isArray(cFPhases), length: cFPhases?.length },
+        cfActs: { isArray: Array.isArray(cfActs), length: cfActs?.length },
+        cFActs: { isArray: Array.isArray(cFActs), length: cFActs?.length },
       });
       
-      if (Array.isArray(parsedContent.phases) && parsedContent.phases.length > 0) {
-        phasesArray = parsedContent.phases;
+      if (Array.isArray(directPhases) && directPhases.length > 0) {
+        phasesArray = directPhases;
         phasesSource = 'content.phases';
-      } else if (Array.isArray(parsedContent?.cinematic_flow?.phases) && parsedContent.cinematic_flow.phases.length > 0) {
-        phasesArray = parsedContent.cinematic_flow.phases;
+      } else if (Array.isArray(cfPhases) && cfPhases.length > 0) {
+        phasesArray = cfPhases;
         phasesSource = 'content.cinematic_flow.phases';
-      } else if (Array.isArray(parsedContent?.cinematicFlow?.phases) && parsedContent.cinematicFlow.phases.length > 0) {
-        phasesArray = parsedContent.cinematicFlow.phases;
+      } else if (Array.isArray(cFPhases) && cFPhases.length > 0) {
+        phasesArray = cFPhases;
         phasesSource = 'content.cinematicFlow.phases';
-      } else if (Array.isArray(parsedContent?.cinematic_flow?.acts) && parsedContent.cinematic_flow.acts.length > 0) {
-        phasesArray = parsedContent.cinematic_flow.acts;
+      } else if (Array.isArray(cfActs) && cfActs.length > 0) {
+        phasesArray = cfActs;
         phasesSource = 'content.cinematic_flow.acts';
-      } else if (Array.isArray(parsedContent?.cinematicFlow?.acts) && parsedContent.cinematicFlow.acts.length > 0) {
-        phasesArray = parsedContent.cinematicFlow.acts;
+      } else if (Array.isArray(cFActs) && cFActs.length > 0) {
+        phasesArray = cFActs;
         phasesSource = 'content.cinematicFlow.acts';
       }
 
-      console.log('[useV7PhaseScript] 🔍 PHASES DETECTION:', {
+      console.log('[useV7PhaseScript] 🔍 PHASES DETECTION RESULT:', {
         source: phasesSource,
         foundPhases: !!phasesArray,
         phasesLength: phasesArray?.length || 0,
         firstPhaseType: phasesArray?.[0]?.type || 'N/A',
         firstPhaseId: phasesArray?.[0]?.id || 'N/A',
-        allContentKeys: Object.keys(parsedContent),
+        allContentKeys: allKeys,
       });
 
       // ✅ DEBUG: Save raw content for V7DebugPanel
