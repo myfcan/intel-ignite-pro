@@ -356,49 +356,73 @@ export default function AdminV7DebugReports() {
         throw new Error(`Erro ao buscar aula: ${fetchError?.message || 'Aula não encontrada'}`);
       }
 
-      // 2. Extrair content original (contém scenes)
-      const content = lesson.content as any;
-      
-      // ✅ Verificar se tem scenes no formato esperado
-      let scenes = null;
-      if (content?.scenes && Array.isArray(content.scenes)) {
-        scenes = content.scenes;
-      } else if (content?.phases && Array.isArray(content.phases)) {
-        // Tentar converter phases para scenes
-        scenes = content.phases.map((phase: any, index: number) => ({
-          id: phase.id || `scene-${index + 1}`,
-          title: phase.title || `Cena ${index + 1}`,
-          type: phase.type || 'dramatic',
-          narration: phase.narration?.text || phase.narration || '',
-          visual: phase.visual || {},
-          anchorText: phase.anchorText || {},
-          quiz: phase.quiz || null,
-        }));
+      // 2. ✅ PRIMEIRO: Buscar input original do pipeline_executions
+      const { data: pipelineExecution } = await supabase
+        .from('pipeline_executions')
+        .select('input_data')
+        .eq('lesson_id', selectedLessonId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let pipelineInput: any = null;
+
+      if (pipelineExecution?.input_data) {
+        // ✅ Usar input original que já tem narrações completas
+        const originalInput = pipelineExecution.input_data as any;
+        console.log('[Regenerate] ✅ Usando input original do pipeline_executions');
+        
+        pipelineInput = {
+          title: originalInput.title || lesson.title,
+          subtitle: originalInput.subtitle || lesson.description || '',
+          difficulty: originalInput.difficulty || lesson.difficulty_level || 'beginner',
+          scenes: originalInput.scenes,
+          trail_id: lesson.trail_id,
+          order_index: lesson.order_index,
+          postLessonExercises: originalInput.postLessonExercises,
+          postLessonFlow: originalInput.postLessonFlow,
+          gamification: originalInput.gamification,
+        };
+      } else {
+        // Fallback: tentar extrair do content
+        const content = lesson.content as any;
+        
+        // Verificar se tem scenes com narração
+        if (content?.scenes && Array.isArray(content.scenes)) {
+          const hasNarration = content.scenes.some((s: any) => s.narration && s.narration.trim());
+          if (hasNarration) {
+            pipelineInput = {
+              title: lesson.title,
+              subtitle: content?.subtitle || lesson.description || '',
+              difficulty: content?.difficulty || lesson.difficulty_level || 'beginner',
+              scenes: content.scenes,
+              trail_id: lesson.trail_id,
+              order_index: lesson.order_index,
+              postLessonExercises: content?.postLessonExercises,
+              postLessonFlow: content?.postLessonFlow,
+              gamification: content?.gamification,
+            };
+          }
+        }
       }
 
-      if (!scenes || scenes.length === 0) {
-        toast.error('Esta aula não contém scenes válidas para regeneração. Formato incompatível.');
+      if (!pipelineInput || !pipelineInput.scenes || pipelineInput.scenes.length === 0) {
+        toast.error('Não foi possível recuperar os dados originais para regeneração. Falta input_data no pipeline_executions.');
         setIsRegenerating(false);
         return;
       }
 
-      // 3. Preparar input para v7-vv
-      const pipelineInput = {
-        title: lesson.title,
-        subtitle: content?.subtitle || lesson.description || '',
-        difficulty: content?.difficulty || lesson.difficulty_level || 'beginner',
-        scenes: scenes,
-        trail_id: lesson.trail_id,
-        order_index: lesson.order_index,
-        // Preservar outros campos
-        postLessonExercises: content?.postLessonExercises,
-        postLessonFlow: content?.postLessonFlow,
-        gamification: content?.gamification,
-      };
+      // Verificar se scenes têm narração
+      const scenesWithNarration = pipelineInput.scenes.filter((s: any) => s.narration && s.narration.trim());
+      if (scenesWithNarration.length === 0) {
+        toast.error('Nenhuma cena possui narração. Impossível regenerar sem texto de narração.');
+        setIsRegenerating(false);
+        return;
+      }
 
-      console.log('[Regenerate] Input:', JSON.stringify(pipelineInput, null, 2).substring(0, 500));
+      console.log('[Regenerate] Input com narrações:', scenesWithNarration.length, 'scenes válidas');
 
-      // 4. Chamar edge function v7-vv
+      // 3. Chamar edge function v7-vv
       const { data: result, error: pipelineError } = await supabase.functions.invoke('v7-vv', {
         body: pipelineInput,
       });
@@ -411,7 +435,7 @@ export default function AdminV7DebugReports() {
         throw new Error(result?.error || 'Pipeline falhou sem mensagem de erro');
       }
 
-      // 5. Deletar aula antiga
+      // 4. Deletar aula antiga
       const { error: deleteError } = await supabase
         .from('lessons')
         .delete()
@@ -419,16 +443,15 @@ export default function AdminV7DebugReports() {
 
       if (deleteError) {
         console.warn('[Regenerate] Aviso: Erro ao deletar aula antiga:', deleteError.message);
-        // Continua mesmo assim, pois a nova foi criada
       }
 
-      // 6. Deletar debug reports antigos
+      // 5. Deletar debug reports antigos
       await supabase
         .from('v7_debug_reports')
         .delete()
         .eq('lesson_id', selectedLessonId);
 
-      // 7. Atualizar seleção e invalidar queries
+      // 6. Atualizar seleção e invalidar queries
       setSelectedLessonId(result.lessonId);
       queryClient.invalidateQueries({ queryKey: ['v7-lessons-selector'] });
       queryClient.invalidateQueries({ queryKey: ['v7-debug-reports'] });
