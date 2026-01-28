@@ -435,13 +435,31 @@ export default function AdminV7DebugReports() {
             
             if (isInteractive && (!anchorText?.pauseAt)) {
               // Usar últimas 2-3 palavras da narração como pauseAt
-              const words = phaseNarration.split(/\s+/).filter((w: string) => w.length > 0);
+              const words = phaseNarration.split(/\s+/).filter((w: string) => w.length > 0 && !w.startsWith('['));
               if (words.length >= 2) {
                 const pauseAt = words.slice(-2).join(' ').replace(/[.,!?;:]/g, '');
                 anchorText = { ...anchorText, pauseAt };
                 console.log(`[Regenerate] ⚡ Auto-pauseAt para ${phase.id}: "${pauseAt}"`);
               } else if (words.length === 1) {
                 anchorText = { ...anchorText, pauseAt: words[0].replace(/[.,!?;:]/g, '') };
+              } else {
+                // Fallback: buscar últimas palavras da cena anterior ou usar default
+                const previousPhaseWords = idx > 0 ? 
+                  wordTimestamps
+                    .filter((w: any) => w.start < startTime)
+                    .slice(-3)
+                    .map((w: any) => w.word)
+                    .join(' ')
+                    .replace(/[.,!?;:]/g, '') : '';
+                
+                if (previousPhaseWords.length > 2) {
+                  anchorText = { ...anchorText, pauseAt: previousPhaseWords };
+                  console.log(`[Regenerate] ⚡ Auto-pauseAt (fallback) para ${phase.id}: "${previousPhaseWords}"`);
+                } else {
+                  // Ultimate fallback: usar "o teste" como pauseAt padrão
+                  anchorText = { ...anchorText, pauseAt: 'o teste' };
+                  console.log(`[Regenerate] ⚡ Auto-pauseAt (default) para ${phase.id}: "o teste"`);
+                }
               }
             }
             
