@@ -384,10 +384,9 @@ export default function AdminV7DebugReports() {
           gamification: originalInput.gamification,
         };
       } else {
-        // Fallback: tentar extrair do content
+        // Fallback 1: tentar extrair do content.scenes
         const content = lesson.content as any;
         
-        // Verificar se tem scenes com narração
         if (content?.scenes && Array.isArray(content.scenes)) {
           const hasNarration = content.scenes.some((s: any) => s.narration && s.narration.trim());
           if (hasNarration) {
@@ -404,10 +403,56 @@ export default function AdminV7DebugReports() {
             };
           }
         }
+
+        // Fallback 2: reconstruir narração a partir de word_timestamps + phases
+        if (!pipelineInput && content?.phases && Array.isArray(content.phases) && lesson.word_timestamps) {
+          console.log('[Regenerate] ⚠️ Fallback: reconstruindo scenes a partir de phases + word_timestamps');
+          
+          const wordTimestamps = lesson.word_timestamps as any[];
+          const phases = content.phases;
+          
+          // Reconstruir narração completa a partir dos timestamps
+          const fullNarration = wordTimestamps.map((w: any) => w.word).join(' ');
+          console.log('[Regenerate] Narração reconstruída:', fullNarration.substring(0, 100) + '...');
+          
+          // Dividir narração entre as phases baseado nos tempos
+          const reconstructedScenes = phases.map((phase: any, idx: number) => {
+            const startTime = phase.startTime || 0;
+            const endTime = phase.endTime || (phases[idx + 1]?.startTime || startTime + 10);
+            
+            // Encontrar palavras neste range de tempo
+            const wordsInRange = wordTimestamps.filter((w: any) => 
+              w.start >= startTime && w.start < endTime
+            );
+            const phaseNarration = wordsInRange.map((w: any) => w.word).join(' ');
+            
+            return {
+              id: phase.id,
+              type: phase.type,
+              narration: phaseNarration || `[Fase ${idx + 1}]`,
+              visual: phase.visual,
+              anchorText: phase.anchorText,
+            };
+          });
+          
+          const validScenes = reconstructedScenes.filter((s: any) => s.narration && s.narration.trim().length > 5);
+          
+          if (validScenes.length >= phases.length * 0.5) { // Pelo menos metade com narração
+            pipelineInput = {
+              title: lesson.title,
+              subtitle: content?.subtitle || lesson.description || '',
+              difficulty: content?.difficulty || lesson.difficulty_level || 'beginner',
+              scenes: reconstructedScenes,
+              trail_id: lesson.trail_id,
+              order_index: lesson.order_index,
+            };
+            console.log('[Regenerate] ✅ Scenes reconstruídas:', reconstructedScenes.length);
+          }
+        }
       }
 
       if (!pipelineInput || !pipelineInput.scenes || pipelineInput.scenes.length === 0) {
-        toast.error('Não foi possível recuperar os dados originais para regeneração. Falta input_data no pipeline_executions.');
+        toast.error('Não foi possível recuperar os dados originais. Aula precisa de input_data ou word_timestamps.');
         setIsRegenerating(false);
         return;
       }
