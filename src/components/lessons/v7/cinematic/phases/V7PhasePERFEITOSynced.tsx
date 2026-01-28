@@ -11,17 +11,28 @@ interface WordTimestamp {
   end: number;
 }
 
+// ✅ V7-v51: Interface para dados dinâmicos do banco
+interface LetterData {
+  letter: string;
+  meaning: string;
+  subtitle: string;
+}
+
 interface V7PhasePERFEITOSyncedProps {
   wordTimestamps: WordTimestamp[];
   currentTime: number;
   isPlaying: boolean;
   onComplete?: () => void;
   exitAnchor?: string;
+  // ✅ V7-v51: Dados dinâmicos do banco
+  lettersData?: LetterData[];
+  word?: string;
+  finalStamp?: string;
 }
 
-// PERFEITO letter meanings com anchorText para cada item
+// PERFEITO letter meanings com anchorText para cada item (FALLBACK se não vier do banco)
 // ✅ FIXED: anchorText deve corresponder à palavra EXATA falada no áudio
-const PERFEITO_MEANINGS = [
+const DEFAULT_PERFEITO_MEANINGS = [
   { letter: 'P', meaning: 'Persona', subtitle: 'específica', anchorText: 'Persona' },
   { letter: 'E', meaning: 'Estrutura', subtitle: 'clara', anchorText: 'Estrutura' },
   { letter: 'R', meaning: 'Resultado', subtitle: 'esperado', anchorText: 'Resultado' },
@@ -61,7 +72,28 @@ export const V7PhasePERFEITOSynced = ({
   isPlaying,
   onComplete,
   exitAnchor = 'teste', // ✅ FIX: "teste" aparece UMA vez @ 86.052s - antes do playground
+  // ✅ V7-v51: Dados dinâmicos do banco
+  lettersData,
+  word = 'PERFEITO',
+  finalStamp,
 }: V7PhasePERFEITOSyncedProps) => {
+  // ✅ V7-v51: Usar dados do banco com fallback para dados hardcoded
+  const PERFEITO_MEANINGS = lettersData?.length 
+    ? lettersData.map((l) => ({
+        letter: l.letter,
+        meaning: l.meaning,
+        subtitle: l.subtitle,
+        anchorText: l.meaning, // Usar meaning como anchorText para sincronização
+      }))
+    : DEFAULT_PERFEITO_MEANINGS;
+  
+  // ✅ V7-v51: Log para debug
+  console.log('[V7PhasePERFEITOSynced] 📊 Initialized with:', {
+    word,
+    lettersFromDB: lettersData?.length || 0,
+    usingFallback: !lettersData?.length,
+    finalStamp,
+  });
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
   const completedRef = useRef(false);

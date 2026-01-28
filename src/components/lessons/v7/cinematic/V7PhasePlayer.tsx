@@ -1602,7 +1602,7 @@ export const V7PhasePlayer = ({
           ...revelationVisualContent, // Visual content overwrites scene content
         };
 
-        // ✅ V7-v50 FIX: Multi-source detection for letter-reveal / PERFEITO
+        // ✅ V7-v51 FIX: Multi-source detection for letter-reveal / PERFEITO
         // Check ALL possible indicators - not just visual.type
         const isPerfeitoByTitle = currentPhase.title?.toLowerCase().includes('perfeito') || 
                                    currentPhase.id?.toLowerCase().includes('perfeito');
@@ -1611,31 +1611,62 @@ export const V7PhasePlayer = ({
         const isPerfeitoBySceneContent = mergedRevelationContent?.word?.toLowerCase() === 'perfeito' ||
                                           mergedRevelationContent?.highlightWord?.toLowerCase() === 'perfeito';
         
-        // ✅ UNIFIED DETECTION: Any positive signal = render V7PhasePERFEITOSynced
+        // ✅ V7-v51: Detecção adicional por phase.id
+        const isPerfeitoByPhaseId = currentPhase.id?.toLowerCase().includes('perfeito');
+        
+        // ✅ V7-v51: Detecção por visual.content.letters (array de letras)
+        const hasLettersArray = Array.isArray(revelationVisualContent?.letters);
+        
+        // ✅ V7-v51: UNIFIED DETECTION - qualquer sinal positivo = renderizar V7PhasePERFEITOSynced
         const shouldRenderLetterReveal = isPerfeitoByVisualType || 
                                           isPerfeitoByTitle || 
                                           isPerfeitoByVisualWord || 
-                                          isPerfeitoBySceneContent;
+                                          isPerfeitoBySceneContent ||
+                                          isPerfeitoByPhaseId ||
+                                          hasLettersArray;
 
-        console.log('[V7PhasePlayer] 🎬 Revelation phase DETECTION:', {
+        // ✅ V7-v51: Log diagnóstico completo antes da decisão
+        console.log('[V7PhasePlayer] 🔴 REVELATION FULL DEBUG:', {
           phaseId: currentPhase.id,
+          phaseType: currentPhase.type,
           phaseTitle: currentPhase.title,
+          // Check visual object
+          hasVisual: !!revelationVisual,
           visualType: revelationVisualType,
+          visualWord: revelationVisualContent?.word,
+          // Check detection results
           isPerfeitoByTitle,
           isPerfeitoByVisualType,
           isPerfeitoByVisualWord,
           isPerfeitoBySceneContent,
+          isPerfeitoByPhaseId,
+          hasLettersArray,
           shouldRenderLetterReveal,
+          // Raw visual for inspection
+          rawVisual: JSON.stringify(revelationVisual || {}).slice(0, 300),
         });
 
-        // ✅ V7-v50: Use unified detection instead of just visual.type
+        // ✅ V7-v51: Use unified detection with robust fallbacks
         if (shouldRenderLetterReveal) {
+          // ✅ V7-v51: Extrair dados do visual.content do banco
+          const lettersFromDB = revelationVisualContent?.letters || [];
+          
+          console.log('[V7PhasePlayer] ✅ RENDERING V7PhasePERFEITOSynced:', {
+            word: revelationVisualContent?.word,
+            lettersCount: lettersFromDB.length,
+            finalStamp: revelationVisualContent?.finalStamp,
+          });
+          
           // Letter reveal visual (e.g., PERFEITO, MÉTODO, any vertical word)
           return (
             <V7PhasePERFEITOSynced
               wordTimestamps={wordTimestamps}
               currentTime={audio.currentTime}
               isPlaying={audio.isPlaying}
+              // ✅ V7-v51: Passar dados do banco
+              lettersData={lettersFromDB}
+              word={revelationVisualContent?.word || 'PERFEITO'}
+              finalStamp={revelationVisualContent?.finalStamp}
               onComplete={() => {
                 console.log('[V7PhasePlayer] Letter-reveal animation complete - advancing');
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
