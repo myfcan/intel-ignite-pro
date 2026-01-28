@@ -391,25 +391,31 @@ export function usePhaseController({
           console.log(`[V7PhaseController] 🎯 Phase "${phase.id}" activated by enterAnchor "${phase.enterAnchor}"`);
         }
       } else {
-        // ✅ V7-v29 FIX: Use >= startTime to find which phase we're in or past
-        // If time is WITHIN the phase (startTime <= time < endTime), it's active
-        // If time is AFTER the phase (time >= endTime), keep looking for later phases
-        // If time is BEFORE the phase (time < startTime), stop - we found our phase
-
-        if (effectiveTime >= phase.startTime) {
-          // We've passed or are at this phase's start
-          if (effectiveTime < phase.endTime) {
-            // We're WITHIN this phase - this is the active one
-            bestIndex = i;
-          } else {
-            // We're PAST this phase - keep it as candidate (handles gaps)
-            // If the next phase hasn't started yet, this is still the best match
-            bestIndex = i;
+        // ✅ V7-v52 FIX: Use TOLERANCE for floating-point comparison
+        // When phase boundaries are exactly equal (phase.endTime === nextPhase.startTime),
+        // floating-point precision issues can cause incorrect phase detection
+        const EPSILON = 0.001; // 1ms tolerance
+        
+        // Check if we've reached or passed this phase's startTime
+        if (effectiveTime >= phase.startTime - EPSILON) {
+          // ✅ V7-v52: ALWAYS update bestIndex when we're at or past startTime
+          // The last phase that matches will be the correct one
+          bestIndex = i;
+          
+          // ✅ V7-v52: If we're clearly PAST this phase's endTime, keep searching
+          // If we're WITHIN the phase, this is the active one but continue
+          // to check for edge cases with identical boundaries
+          if (effectiveTime >= phase.endTime - EPSILON) {
+            // We're at or past endTime - check if next phase exists and should be active
+            const nextPhase = script.phases[i + 1];
+            if (nextPhase && effectiveTime >= nextPhase.startTime - EPSILON) {
+              // Next phase has started - continue loop to update bestIndex
+              continue;
+            }
           }
         } else {
-          // Time is BEFORE this phase's startTime
-          // If we already have a bestIndex, stop searching
-          // Otherwise this phase hasn't started yet and we stay on previous
+          // Time is clearly BEFORE this phase's startTime
+          // Stop searching - we've found the latest applicable phase
           break;
         }
       }
