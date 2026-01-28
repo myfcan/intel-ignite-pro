@@ -1414,6 +1414,18 @@ function generatePhases(
 
     // Determinar comportamento de áudio (usa isInteractiveScene definido acima)
 
+    // ✅ INTERACTIVE FLOOR FIX: Garantir mínimo de 5 segundos para fases interativas
+    // Isso permite tempo suficiente para o usuário interagir com quiz/playground
+    const MIN_INTERACTIVE_DURATION = 5.0;
+    if (isInteractiveScene) {
+      const currentDuration = endTime - startTime;
+      if (currentDuration < MIN_INTERACTIVE_DURATION) {
+        const newEndTime = startTime + MIN_INTERACTIVE_DURATION;
+        console.log(`[Phase] ✅ INTERACTIVE FLOOR: ${scene.id} duration ${currentDuration.toFixed(2)}s < ${MIN_INTERACTIVE_DURATION}s, extended endTime ${endTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s`);
+        endTime = newEndTime;
+      }
+    }
+
     // Construir fase
     const phase: Phase = {
       id: scene.id,
