@@ -415,6 +415,9 @@ export default function AdminV7DebugReports() {
           const fullNarration = wordTimestamps.map((w: any) => w.word).join(' ');
           console.log('[Regenerate] Narração reconstruída:', fullNarration.substring(0, 100) + '...');
           
+          // Tipos de cena que precisam de anchorText.pauseAt
+          const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'quiz', 'cta', 'gamification', 'secret-reveal'];
+          
           // Dividir narração entre as phases baseado nos tempos
           const reconstructedScenes = phases.map((phase: any, idx: number) => {
             const startTime = phase.startTime || 0;
@@ -426,12 +429,28 @@ export default function AdminV7DebugReports() {
             );
             const phaseNarration = wordsInRange.map((w: any) => w.word).join(' ');
             
+            // Determinar anchorText para cenas interativas
+            let anchorText = phase.anchorText;
+            const isInteractive = INTERACTIVE_SCENE_TYPES.includes(phase.type);
+            
+            if (isInteractive && (!anchorText?.pauseAt)) {
+              // Usar últimas 2-3 palavras da narração como pauseAt
+              const words = phaseNarration.split(/\s+/).filter((w: string) => w.length > 0);
+              if (words.length >= 2) {
+                const pauseAt = words.slice(-2).join(' ').replace(/[.,!?;:]/g, '');
+                anchorText = { ...anchorText, pauseAt };
+                console.log(`[Regenerate] ⚡ Auto-pauseAt para ${phase.id}: "${pauseAt}"`);
+              } else if (words.length === 1) {
+                anchorText = { ...anchorText, pauseAt: words[0].replace(/[.,!?;:]/g, '') };
+              }
+            }
+            
             return {
               id: phase.id,
               type: phase.type,
               narration: phaseNarration || `[Fase ${idx + 1}]`,
               visual: phase.visual,
-              anchorText: phase.anchorText,
+              anchorText,
             };
           });
           
