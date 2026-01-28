@@ -15,7 +15,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,9 @@ import {
   Sparkles,
   BookOpen,
   Shield,
-  Bug
+  Bug,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { V7PipelineBugTracker } from '@/components/admin/V7PipelineBugTracker';
 import { 
@@ -221,11 +223,13 @@ const ReportSection = ({
 
 export default function AdminV7DebugReports() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
   const [analysisJson, setAnalysisJson] = useState<string>('');
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Fetch V7 lessons for selector
   const { data: v7Lessons } = useQuery({
@@ -327,6 +331,119 @@ export default function AdminV7DebugReports() {
   }, [selectedLessonReport]);
 
   const correctionStats = useMemo(() => getCorrectionStats(realVerifications), [realVerifications]);
+
+  // ============================================================================
+  // FUNÇÃO: Regenerar aula pelo pipeline V7-vv
+  // ============================================================================
+  const handleRegenerateLesson = async () => {
+    if (!selectedLessonId) {
+      toast.error('Selecione uma aula primeiro');
+      return;
+    }
+
+    setIsRegenerating(true);
+    toast.info('Iniciando regeneração... Isso pode levar alguns segundos.');
+
+    try {
+      // 1. Buscar dados completos da aula
+      const { data: lesson, error: fetchError } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('id', selectedLessonId)
+        .single();
+
+      if (fetchError || !lesson) {
+        throw new Error(`Erro ao buscar aula: ${fetchError?.message || 'Aula não encontrada'}`);
+      }
+
+      // 2. Extrair content original (contém scenes)
+      const content = lesson.content as any;
+      
+      // ✅ Verificar se tem scenes no formato esperado
+      let scenes = null;
+      if (content?.scenes && Array.isArray(content.scenes)) {
+        scenes = content.scenes;
+      } else if (content?.phases && Array.isArray(content.phases)) {
+        // Tentar converter phases para scenes
+        scenes = content.phases.map((phase: any, index: number) => ({
+          id: phase.id || `scene-${index + 1}`,
+          title: phase.title || `Cena ${index + 1}`,
+          type: phase.type || 'dramatic',
+          narration: phase.narration?.text || phase.narration || '',
+          visual: phase.visual || {},
+          anchorText: phase.anchorText || {},
+          quiz: phase.quiz || null,
+        }));
+      }
+
+      if (!scenes || scenes.length === 0) {
+        toast.error('Esta aula não contém scenes válidas para regeneração. Formato incompatível.');
+        setIsRegenerating(false);
+        return;
+      }
+
+      // 3. Preparar input para v7-vv
+      const pipelineInput = {
+        title: lesson.title,
+        subtitle: content?.subtitle || lesson.description || '',
+        difficulty: content?.difficulty || lesson.difficulty_level || 'beginner',
+        scenes: scenes,
+        trail_id: lesson.trail_id,
+        order_index: lesson.order_index,
+        // Preservar outros campos
+        postLessonExercises: content?.postLessonExercises,
+        postLessonFlow: content?.postLessonFlow,
+        gamification: content?.gamification,
+      };
+
+      console.log('[Regenerate] Input:', JSON.stringify(pipelineInput, null, 2).substring(0, 500));
+
+      // 4. Chamar edge function v7-vv
+      const { data: result, error: pipelineError } = await supabase.functions.invoke('v7-vv', {
+        body: pipelineInput,
+      });
+
+      if (pipelineError) {
+        throw new Error(`Erro no pipeline: ${pipelineError.message}`);
+      }
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Pipeline falhou sem mensagem de erro');
+      }
+
+      // 5. Deletar aula antiga
+      const { error: deleteError } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', selectedLessonId);
+
+      if (deleteError) {
+        console.warn('[Regenerate] Aviso: Erro ao deletar aula antiga:', deleteError.message);
+        // Continua mesmo assim, pois a nova foi criada
+      }
+
+      // 6. Deletar debug reports antigos
+      await supabase
+        .from('v7_debug_reports')
+        .delete()
+        .eq('lesson_id', selectedLessonId);
+
+      // 7. Atualizar seleção e invalidar queries
+      setSelectedLessonId(result.lessonId);
+      queryClient.invalidateQueries({ queryKey: ['v7-lessons-selector'] });
+      queryClient.invalidateQueries({ queryKey: ['v7-debug-reports'] });
+
+      toast.success(`✅ Aula regenerada! Nova ID: ${result.lessonId}`, {
+        description: `Health Score: ${result.debug?.summary?.healthScore || 'N/A'}`,
+      });
+
+    } catch (error: any) {
+      console.error('[Regenerate] Erro:', error);
+      toast.error(`Erro na regeneração: ${error.message}`);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   const handleSendForAnalysis = () => {
     if (!selectedLessonId) {
@@ -475,14 +592,35 @@ export default function AdminV7DebugReports() {
                   </div>
                 )}
 
-                <Button 
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                  onClick={handleSendForAnalysis}
-                  disabled={!selectedLessonId}
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Enviar para Análise
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    onClick={handleSendForAnalysis}
+                    disabled={!selectedLessonId}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar para Análise
+                  </Button>
+
+                  <Button 
+                    className="w-full"
+                    variant="outline"
+                    onClick={handleRegenerateLesson}
+                    disabled={!selectedLessonId || isRegenerating}
+                  >
+                    {isRegenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Regenerando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Regenerar Aula
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Coluna 2: Status de Verificações REAIS */}
