@@ -365,7 +365,7 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       const allKeys = Object.keys(parsedContent);
       console.log('[useV7PhaseScript] 📋 ALL CONTENT KEYS:', allKeys);
       
-      // ✅ FIX: Usar verificação mais robusta
+      // ✅ FIX v8: Extração FORÇADA de phases - garantir que funciona
       const directPhases = parsedContent?.phases;
       const cfPhases = parsedContent?.cinematic_flow?.phases;
       const cFPhases = parsedContent?.cinematicFlow?.phases;
@@ -373,28 +373,46 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
       const cFActs = parsedContent?.cinematicFlow?.acts;
       
       console.log('[useV7PhaseScript] 🧪 DIRECT CHECK:', {
-        directPhases: { isArray: Array.isArray(directPhases), length: directPhases?.length },
-        cfPhases: { isArray: Array.isArray(cfPhases), length: cfPhases?.length },
-        cFPhases: { isArray: Array.isArray(cFPhases), length: cFPhases?.length },
-        cfActs: { isArray: Array.isArray(cfActs), length: cfActs?.length },
-        cFActs: { isArray: Array.isArray(cFActs), length: cFActs?.length },
+        directPhases: { exists: directPhases !== undefined, isArray: Array.isArray(directPhases), length: directPhases?.length },
+        cfPhases: { exists: cfPhases !== undefined, isArray: Array.isArray(cfPhases), length: cfPhases?.length },
+        cFPhases: { exists: cFPhases !== undefined, isArray: Array.isArray(cFPhases), length: cFPhases?.length },
+        cfActs: { exists: cfActs !== undefined, isArray: Array.isArray(cfActs), length: cfActs?.length },
+        cFActs: { exists: cFActs !== undefined, isArray: Array.isArray(cFActs), length: cFActs?.length },
       });
       
-      if (Array.isArray(directPhases) && directPhases.length > 0) {
+      // ✅ FIX v8: Verificação mais explícita com fallback forçado
+      if (directPhases && Array.isArray(directPhases) && directPhases.length > 0) {
         phasesArray = directPhases;
         phasesSource = 'content.phases';
-      } else if (Array.isArray(cfPhases) && cfPhases.length > 0) {
+        console.log('[useV7PhaseScript] ✅ FOUND: content.phases with', directPhases.length, 'items');
+      } else if (cfPhases && Array.isArray(cfPhases) && cfPhases.length > 0) {
         phasesArray = cfPhases;
         phasesSource = 'content.cinematic_flow.phases';
-      } else if (Array.isArray(cFPhases) && cFPhases.length > 0) {
+        console.log('[useV7PhaseScript] ✅ FOUND: cinematic_flow.phases');
+      } else if (cFPhases && Array.isArray(cFPhases) && cFPhases.length > 0) {
         phasesArray = cFPhases;
         phasesSource = 'content.cinematicFlow.phases';
-      } else if (Array.isArray(cfActs) && cfActs.length > 0) {
+        console.log('[useV7PhaseScript] ✅ FOUND: cinematicFlow.phases');
+      } else if (cfActs && Array.isArray(cfActs) && cfActs.length > 0) {
         phasesArray = cfActs;
         phasesSource = 'content.cinematic_flow.acts';
-      } else if (Array.isArray(cFActs) && cFActs.length > 0) {
+        console.log('[useV7PhaseScript] ✅ FOUND: cinematic_flow.acts');
+      } else if (cFActs && Array.isArray(cFActs) && cFActs.length > 0) {
         phasesArray = cFActs;
         phasesSource = 'content.cinematicFlow.acts';
+        console.log('[useV7PhaseScript] ✅ FOUND: cinematicFlow.acts');
+      } else {
+        // ✅ FIX v8: ÚLTIMO RECURSO - Buscar por keys que parecem phases
+        console.warn('[useV7PhaseScript] ⚠️ No standard phases found, checking alternatives...');
+        for (const key of allKeys) {
+          const value = parsedContent[key];
+          if (Array.isArray(value) && value.length > 0 && value[0]?.id && (value[0]?.type || value[0]?.visual)) {
+            console.log('[useV7PhaseScript] ✅ FOUND via fallback key:', key, 'with', value.length, 'items');
+            phasesArray = value;
+            phasesSource = `content.${key}`;
+            break;
+          }
+        }
       }
 
       console.log('[useV7PhaseScript] 🔍 PHASES DETECTION RESULT:', {
