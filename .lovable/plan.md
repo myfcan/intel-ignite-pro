@@ -1,99 +1,64 @@
 
-# Diagnóstico Corrigido: Problema no Renderização do Letter-Reveal
 
-## Análise da Screenshot
+# Diagnóstico: Código Antigo em Cache
 
-Olhando cuidadosamente para a screenshot:
-- **"O MÉTODO"** (texto branco)
-- **"PERFEITO"** (texto amarelo dourado horizontal)
-- **"Exemplos práticos."** (legendas da narração)
+## Problema Identificado
 
-Isso NÃO é a fase 8 como pensei inicialmente. O texto "Exemplos práticos" indica que a narração está na fase 9 (onde as letras P-E-R-F-E-I-T-O são explicadas: "Persona específica, Estrutura clara... **Exemplos práticos**").
+A mensagem de erro exibida na tela é:
 
-## O Problema Real
+> "Nenhum act encontrado na aula. **Verifique o conteúdo no banco de dados.**"
 
-A fase 9 (`cena-9-perfeito`) está sendo renderizada, MAS está mostrando o **fallback V7PhaseCTA** em vez do componente correto **V7PhasePERFEITOSynced**.
+Porém, essa mensagem **NÃO EXISTE** no código atual. A mensagem atual (linha 543-545 do `useV7PhaseScript.ts`) é:
 
-### Dados da Fase 9 no Banco (CORRETOS)
-| Campo | Valor |
-|-------|-------|
-| phase.id | cena-9-perfeito |
-| phase.type | revelation |
-| phase.visual.type | letter-reveal |
-| phase.visual.content.word | PERFEITO |
-| phase.visual.content.letters | Array de 8 objetos |
-| phase.startTime | 75.988s |
-| phase.endTime | 82.51s |
-
-### O que Deveria Acontecer
-1. Áudio chega em 75.988s
-2. `currentPhaseIndex` muda para 8 (fase 9)
-3. Switch entra em `case 'revelation'`
-4. `shouldRenderLetterReveal` deveria ser `true`
-5. `V7PhasePERFEITOSynced` é renderizado
-
-### O que Está Acontecendo
-1. Áudio chega em 75.988s
-2. `currentPhaseIndex` muda para 8 (fase 9) ✅
-3. Switch entra em `case 'revelation'` ✅
-4. `shouldRenderLetterReveal` está retornando `false` ❌
-5. Fallback `V7PhaseCTA` é renderizado ❌
-
-## Por Que o Log Não Apareceu
-
-O log `[V7PhasePlayer] 🔴 REVELATION FULL DEBUG` deveria ter aparecido se o código atualizado estivesse rodando. 
-
-**Possíveis razões**:
-1. O preview ainda está usando código antigo (cache do browser ou do Vite HMR)
-2. O build não foi completado
-3. Há um erro de compilação que impediu a atualização
-
-## Ação Recomendada
-
-### Para o Usuário
-
-**Limpar cache e forçar reload**:
-1. Abrir DevTools (F12)
-2. Clicar com botão direito no botão de reload
-3. Selecionar "Empty Cache and Hard Reload"
-4. Ou: usar Ctrl+Shift+R (Windows) / Cmd+Shift+R (Mac)
-
-### Verificação Após Reload
-
-Após o hard refresh, quando a aula chegar na fase 9 (cena-9-perfeito), os seguintes logs devem aparecer no console:
-
-```text
-[V7PhasePlayer] 🔴 REVELATION FULL DEBUG: {
-  phaseId: "cena-9-perfeito",
-  phaseType: "revelation",
-  hasVisual: true,
-  visualType: "letter-reveal",
-  visualWord: "PERFEITO",
-  isPerfeitoByPhaseId: true,
-  hasLettersArray: true,
-  shouldRenderLetterReveal: true,
-  ...
-}
-
-[V7PhasePlayer] ✅ RENDERING V7PhasePERFEITOSynced: {
-  word: "PERFEITO",
-  lettersCount: 8,
-  ...
-}
+```
+"Nenhum act encontrado na aula. Keys: [...]. Phases info: ..."
 ```
 
-Se esses logs aparecerem com `shouldRenderLetterReveal: true`, a animação vertical deveria funcionar.
+Isso confirma que o navegador está executando uma **versão antiga do código em cache**.
 
-Se os logs ainda não aparecerem, isso confirma que há um problema de deployment/compilação que precisa ser investigado.
+## Evidências
 
-## Se o Hard Refresh Não Resolver
+| Verificação | Resultado |
+|------------|-----------|
+| Banco de dados | ✅ CORRETO - 10 phases, version v7-vv |
+| Mensagem de erro atual | `Keys: [...]. Phases info: ...` |
+| Mensagem na screenshot | `Verifique o conteúdo no banco de dados.` |
+| Busca no código | ❌ Texto "Verifique o conteúdo" não encontrado |
 
-Se após o hard refresh o problema persistir e os logs ainda não aparecerem, precisamos:
+## Solução
 
-1. Verificar se há erros de compilação no Vite
-2. Verificar se o arquivo foi salvo corretamente
-3. Forçar uma re-compilação adicionando um comentário simples ao arquivo
+O usuário precisa forçar o navegador a carregar o código atualizado.
 
----
+### Passos para o Usuário
 
-**Resumo**: O código foi aplicado corretamente ao arquivo, mas o preview pode estar usando uma versão em cache. Um hard refresh do browser deve resolver e os logs de debug vão confirmar se a detecção está funcionando.
+1. **Fechar todas as abas** do projeto Lovable/Preview
+2. **Limpar cache completo** do navegador:
+   - Chrome: `Cmd+Shift+Delete` → Selecionar "Imagens e arquivos armazenados em cache" → Limpar dados
+   - Ou: DevTools (F12) → Aba "Application" → Clear storage → Clear site data
+3. **Reabrir** a página da aula
+
+### Alternativa: Hard Refresh
+
+- **Mac**: `Cmd+Shift+R`
+- **Windows**: `Ctrl+Shift+R`
+
+Se o hard refresh não funcionar, é necessário limpar o cache completo conforme acima.
+
+## Validação Esperada
+
+Após limpar o cache corretamente, ao abrir a aula `b840fc4c-c202-41b3-9df0-e05e4aa301e1`:
+
+1. O console deve mostrar logs começando com `[useV7PhaseScript]`
+2. Deve aparecer `✅ FOUND: content.phases with 10 items`
+3. A aula deve carregar normalmente com as 10 phases
+
+## Notas Técnicas
+
+O banco de dados está 100% correto:
+- **phases_length**: 10
+- **first_phase_id**: cena-1-impacto
+- **metadata_version**: v7-vv
+- Todos os campos obrigatórios (id, type, visual, startTime, endTime) presentes
+
+O problema é exclusivamente de **cache do navegador** que está servindo código JavaScript antigo em vez do atualizado.
+
