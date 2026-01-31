@@ -1,8 +1,9 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v29: CLEAN DESIGN - No blue boxes, simple reveal effect with sound
-// P-E-R-F-E-I-T-O stacked vertically with meanings appearing as spoken
+// ✅ V7-v52: FIX - Reveal letras PROGRESSIVAMENTE usando timer interno
+// A fase monta DEPOIS das palavras terem sido faladas, então usamos timer próprio
+// P-E-R-F-E-I-T-O stacked vertically with meanings appearing progressively
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface WordTimestamp {
@@ -30,48 +31,28 @@ interface V7PhasePERFEITOSyncedProps {
   finalStamp?: string;
 }
 
-// PERFEITO letter meanings com anchorText para cada item (FALLBACK se não vier do banco)
-// ✅ FIXED: anchorText deve corresponder à palavra EXATA falada no áudio
+// PERFEITO letter meanings (FALLBACK se não vier do banco)
 const DEFAULT_PERFEITO_MEANINGS = [
-  { letter: 'P', meaning: 'Persona', subtitle: 'específica', anchorText: 'Persona' },
-  { letter: 'E', meaning: 'Estrutura', subtitle: 'clara', anchorText: 'Estrutura' },
-  { letter: 'R', meaning: 'Resultado', subtitle: 'esperado', anchorText: 'Resultado' },
-  { letter: 'F', meaning: 'Formato', subtitle: 'definido', anchorText: 'Formato' },
-  { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos', anchorText: 'Exemplos' },
-  { letter: 'I', meaning: 'Iteração', subtitle: 'contínua', anchorText: 'Iteração' },
-  { letter: 'T', meaning: 'Tom', subtitle: 'adequado', anchorText: 'Tom' },
-  { letter: 'O', meaning: 'Otimização', subtitle: 'constante', anchorText: 'Otimização' },
+  { letter: 'P', meaning: 'Persona', subtitle: 'específica' },
+  { letter: 'E', meaning: 'Estrutura', subtitle: 'clara' },
+  { letter: 'R', meaning: 'Resultado', subtitle: 'esperado' },
+  { letter: 'F', meaning: 'Formato', subtitle: 'definido' },
+  { letter: 'E', meaning: 'Exemplos', subtitle: 'práticos' },
+  { letter: 'I', meaning: 'Iteração', subtitle: 'contínua' },
+  { letter: 'T', meaning: 'Tom', subtitle: 'adequado' },
+  { letter: 'O', meaning: 'Otimização', subtitle: 'constante' },
 ];
 
-// ✅ Busca palavra EXATA no wordTimestamps - retorna o timestamp
-const findExactWordTimestamp = (timestamps: WordTimestamp[], anchor: string): WordTimestamp | null => {
-  if (!timestamps || timestamps.length === 0) return null;
-  
-  const normalizedAnchor = anchor.toLowerCase().replace(/[.,!?;:'"]/g, '');
-  
-  for (const ts of timestamps) {
-    const normalizedWord = ts.word.toLowerCase().replace(/[.,!?;:'"]/g, '');
-    if (normalizedWord === normalizedAnchor) {
-      return ts;
-    }
-  }
-  
-  return null;
-};
-
-// ✅ ANCHORTEXT PURO - retorna true SOMENTE quando palavra foi falada
-const hasWordBeenSpoken = (timestamps: WordTimestamp[], anchor: string, currentTime: number): boolean => {
-  const ts = findExactWordTimestamp(timestamps, anchor);
-  if (!ts) return false;
-  return currentTime >= ts.end;
-};
+// ✅ V7-v52: Intervalo entre cada letra (em ms) - ritmo cinematográfico
+const LETTER_REVEAL_INTERVAL = 700; // 700ms entre cada letra = ~5.6s para todas as 8 letras
+const INITIAL_DELAY = 300; // Delay inicial antes de começar a revelar
 
 export const V7PhasePERFEITOSynced = ({
   wordTimestamps,
   currentTime,
   isPlaying,
   onComplete,
-  exitAnchor = 'teste', // ✅ FIX: "teste" aparece UMA vez @ 86.052s - antes do playground
+  exitAnchor = 'teste',
   // ✅ V7-v51: Dados dinâmicos do banco
   lettersData,
   word = 'PERFEITO',
@@ -83,131 +64,95 @@ export const V7PhasePERFEITOSynced = ({
         letter: l.letter,
         meaning: l.meaning,
         subtitle: l.subtitle,
-        anchorText: l.meaning, // Usar meaning como anchorText para sincronização
       }))
     : DEFAULT_PERFEITO_MEANINGS;
   
-  // ✅ V7-v51: Log para debug
-  console.log('[V7PhasePERFEITOSynced] 📊 Initialized with:', {
-    word,
-    lettersFromDB: lettersData?.length || 0,
-    usingFallback: !lettersData?.length,
-    finalStamp,
-  });
   const [showContent, setShowContent] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
   const completedRef = useRef(false);
-  const loggedRef = useRef(false);
   const playedSoundsRef = useRef<Set<number>>(new Set());
   const mountTimeRef = useRef<number>(Date.now());
+  const revealIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Sound effects
-  const { playSound, unlockAudio } = useV7SoundEffects();
+  const { playSound } = useV7SoundEffects();
 
-  // ✅ V7-v50 FIX: Show content IMMEDIATELY on mount to prevent race conditions
-  // The narration may have already started when this component mounts
+  // ✅ V7-v52: Log de inicialização
   useEffect(() => {
-    const timeSinceMount = Date.now() - mountTimeRef.current;
-    
-    // ✅ CRITICAL: If we mount and currentTime > 0, the audio is already playing
-    // Show content immediately to prevent empty/broken state
-    if (currentTime > 0 && !showContent) {
-      console.log(`[V7PhasePERFEITOSynced] ⚡ IMMEDIATE SHOW - mounted at ${currentTime.toFixed(1)}s (already playing)`);
-      setShowContent(true);
-      playSound('reveal');
-    }
-  }, []); // Only run on mount
+    console.log('[V7PhasePERFEITOSynced] 📊 Mounted:', {
+      word,
+      lettersFromDB: lettersData?.length || 0,
+      usingFallback: !lettersData?.length,
+      finalStamp,
+      currentTime: currentTime.toFixed(1),
+      totalLetters: PERFEITO_MEANINGS.length,
+    });
+  }, []);
 
-  // ✅ Log inicial das palavras relevantes (apenas uma vez)
-  useEffect(() => {
-    if (loggedRef.current || wordTimestamps.length === 0) return;
-    loggedRef.current = true;
-    
-    const relevantWords = ['PERFEITO', 'Persona', 'Estrutura', 'Resultado', 'Formato', 'Exemplos', 'Iteração', 'Tom', 'constante'];
-    const found: string[] = [];
-    const notFound: string[] = [];
-    
-    for (const word of relevantWords) {
-      const ts = findExactWordTimestamp(wordTimestamps, word);
-      if (ts) {
-        found.push(`"${word}" @ ${ts.end.toFixed(1)}s`);
-      } else {
-        notFound.push(word);
-      }
-    }
-    
-    console.log('[V7PhasePERFEITOSynced] ✅ ANCHORTEXT PURO - Palavras encontradas:', found);
-    if (notFound.length > 0) {
-      console.log('[V7PhasePERFEITOSynced] ⚠️ Palavras NÃO encontradas:', notFound);
-    }
-  }, [wordTimestamps]);
-
-  // ✅ Mostrar conteúdo quando "PERFEITO" for falado OU após fallback timer
+  // ✅ V7-v52: Mostrar conteúdo imediatamente e iniciar revelação progressiva
   useEffect(() => {
     if (showContent) return;
     
-    const perfeitoSpoken = hasWordBeenSpoken(wordTimestamps, 'PERFEITO', currentTime);
+    // Mostrar layout imediatamente quando a fase monta
+    console.log(`[V7PhasePERFEITOSynced] 🎬 Phase mounted - starting progressive reveal`);
+    setShowContent(true);
+    playSound('reveal');
     
-    if (perfeitoSpoken) {
-      setShowContent(true);
-      playSound('reveal');
-      console.log(`[V7PhasePERFEITOSynced] 🎬 "PERFEITO" falado @ ${currentTime.toFixed(1)}s - mostrando layout`);
-      return;
-    }
-    
-    // ✅ V7-v50 FIX: Fallback - if audio is playing and we're past phase start, show content
-    // This prevents blank screen during race conditions
-    if (isPlaying && currentTime > 0) {
-      const timeSinceMount = Date.now() - mountTimeRef.current;
-      // If we've been mounted for 500ms+ and audio is playing, force show
-      if (timeSinceMount > 500) {
-        console.log(`[V7PhasePERFEITOSynced] ⚡ FALLBACK SHOW - ${timeSinceMount}ms since mount, audio @ ${currentTime.toFixed(1)}s`);
-        setShowContent(true);
-        playSound('reveal');
-      }
-    }
-  }, [showContent, currentTime, wordTimestamps, playSound, isPlaying]);
-
-  // ✅ Atualizar visibleCount e tocar sons baseado em anchorText
-  useEffect(() => {
-    if (!showContent) return;
-
-    let count = 0;
-    for (let i = 0; i < PERFEITO_MEANINGS.length; i++) {
-      const item = PERFEITO_MEANINGS[i];
-      if (hasWordBeenSpoken(wordTimestamps, item.anchorText, currentTime)) {
-        count++;
-        
-        // ✅ Play sound effect for newly revealed letter
-        if (!playedSoundsRef.current.has(i)) {
-          playedSoundsRef.current.add(i);
-          // Pitch increases with each letter for musical progression
-          playSound('letter-reveal', { pitch: i });
-          console.log(`[V7PhasePERFEITOSynced] 🔊 Sound for letter "${item.letter}"`);
+    // ✅ V7-v52: Iniciar timer para revelar letras progressivamente
+    const startReveal = () => {
+      let letterIndex = 0;
+      
+      revealIntervalRef.current = setInterval(() => {
+        if (letterIndex < PERFEITO_MEANINGS.length) {
+          setVisibleCount(letterIndex + 1);
+          
+          // Tocar som para cada letra
+          if (!playedSoundsRef.current.has(letterIndex)) {
+            playedSoundsRef.current.add(letterIndex);
+            playSound('letter-reveal', { pitch: letterIndex });
+            console.log(`[V7PhasePERFEITOSynced] 🔊 Letter ${letterIndex + 1}/${PERFEITO_MEANINGS.length}: "${PERFEITO_MEANINGS[letterIndex]?.letter}"`);
+          }
+          
+          letterIndex++;
+        } else {
+          // Parar intervalo quando todas as letras foram reveladas
+          if (revealIntervalRef.current) {
+            clearInterval(revealIntervalRef.current);
+            revealIntervalRef.current = null;
+          }
+          console.log(`[V7PhasePERFEITOSynced] ✅ All ${PERFEITO_MEANINGS.length} letters revealed!`);
         }
+      }, LETTER_REVEAL_INTERVAL);
+    };
+    
+    // Pequeno delay antes de começar (efeito dramático)
+    const initialTimer = setTimeout(startReveal, INITIAL_DELAY);
+    
+    return () => {
+      clearTimeout(initialTimer);
+      if (revealIntervalRef.current) {
+        clearInterval(revealIntervalRef.current);
       }
-    }
+    };
+  }, [showContent, playSound, PERFEITO_MEANINGS.length]);
 
-    if (count !== visibleCount) {
-      setVisibleCount(count);
-      console.log(`[V7PhasePERFEITOSynced] 📊 Visible: ${count}/8 @ ${currentTime.toFixed(1)}s`);
-    }
-  }, [showContent, currentTime, wordTimestamps, visibleCount, playSound]);
-
-// ✅ Completar fase SOMENTE quando "teste agora" for falado (antes do playground)
-  // O exitAnchor padrão é "teste agora" - a última frase antes do desafio prático
+  // ✅ V7-v52: Auto-complete quando todas as letras forem reveladas + delay
   useEffect(() => {
     if (completedRef.current) return;
+    if (visibleCount < PERFEITO_MEANINGS.length) return;
     
-    const exitSpoken = hasWordBeenSpoken(wordTimestamps, exitAnchor, currentTime);
+    // Aguardar um pouco após todas as letras serem reveladas
+    const completeTimer = setTimeout(() => {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        playSound('completion');
+        console.log(`[V7PhasePERFEITOSynced] ✅ Phase complete - all letters revealed`);
+        onComplete?.();
+      }
+    }, 2000); // 2 segundos após a última letra
     
-    if (exitSpoken) {
-      completedRef.current = true;
-      playSound('completion');
-      console.log(`[V7PhasePERFEITOSynced] ✅ EXIT "${exitAnchor}" falado @ ${currentTime.toFixed(1)}s - completando fase`);
-      setTimeout(() => onComplete?.(), 800);
-    }
-  }, [currentTime, wordTimestamps, exitAnchor, onComplete, playSound]);
+    return () => clearTimeout(completeTimer);
+  }, [visibleCount, PERFEITO_MEANINGS.length, onComplete, playSound]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden py-4 pb-44 sm:pb-48">
@@ -250,7 +195,11 @@ export const V7PhasePERFEITOSynced = ({
           return (
             <div
               key={index}
-              className="flex items-center gap-3 sm:gap-5"
+              className="flex items-center gap-3 sm:gap-5 transition-all duration-500"
+              style={{
+                opacity: isRevealed ? 1 : 0.15,
+                transform: isRevealed ? 'translateX(0)' : 'translateX(-20px)',
+              }}
             >
               {/* Letter - SMALLER for mobile */}
               <span
@@ -260,7 +209,7 @@ export const V7PhasePERFEITOSynced = ({
                   textShadow: isRevealed 
                     ? '0 0 30px rgba(34, 211, 238, 0.9), 0 0 60px rgba(34, 211, 238, 0.5)' 
                     : 'none',
-                  transform: isNew ? 'scale(1.1)' : 'scale(1)',
+                  transform: isNew ? 'scale(1.2)' : 'scale(1)',
                 }}
               >
                 {item.letter}
@@ -313,7 +262,7 @@ export const V7PhasePERFEITOSynced = ({
           />
         ))}
         <span className="text-xs font-mono text-cyan-400/60 ml-2">
-          {visibleCount}/8
+          {visibleCount}/{PERFEITO_MEANINGS.length}
         </span>
       </div>
     </div>
