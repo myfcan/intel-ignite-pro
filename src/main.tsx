@@ -1,7 +1,29 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { registerSW } from 'virtual:pwa-register';
 import App from "./App.tsx";
 import "./index.css";
+
+// 🔄 PWA: Forçar atualização imediata do Service Worker
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // Atualiza automaticamente sem perguntar ao usuário
+    console.log('[PWA] Nova versão disponível, atualizando...');
+    updateSW(true);
+  },
+  onOfflineReady() {
+    console.log('[PWA] App pronta para uso offline');
+  },
+  onRegisteredSW(swUrl, r) {
+    // Verifica atualizações a cada 1 hora
+    if (r) {
+      setInterval(() => {
+        console.log('[PWA] Verificando atualizações...');
+        r.update();
+      }, 60 * 60 * 1000);
+    }
+  },
+});
 
 // 🧪 Disponibilizar testes no console (desenvolvimento)
 if (import.meta.env.DEV) {
