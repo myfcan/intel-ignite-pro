@@ -1,64 +1,106 @@
 
 
-# Diagnóstico: Código Antigo em Cache
+# Diagnóstico Definitivo: Service Worker Bloqueando Atualização
 
 ## Problema Identificado
 
-A mensagem de erro exibida na tela é:
+O projeto usa **VitePWA com Service Worker** (configurado em `vite.config.ts` linhas 16-50) que está cacheando agressivamente os arquivos JavaScript e impedindo que o navegador carregue a versão atualizada do código.
 
-> "Nenhum act encontrado na aula. **Verifique o conteúdo no banco de dados.**"
-
-Porém, essa mensagem **NÃO EXISTE** no código atual. A mensagem atual (linha 543-545 do `useV7PhaseScript.ts`) é:
-
-```
-"Nenhum act encontrado na aula. Keys: [...]. Phases info: ..."
-```
-
-Isso confirma que o navegador está executando uma **versão antiga do código em cache**.
-
-## Evidências
+### Evidências Conclusivas
 
 | Verificação | Resultado |
-|------------|-----------|
-| Banco de dados | ✅ CORRETO - 10 phases, version v7-vv |
-| Mensagem de erro atual | `Keys: [...]. Phases info: ...` |
-| Mensagem na screenshot | `Verifique o conteúdo no banco de dados.` |
-| Busca no código | ❌ Texto "Verifique o conteúdo" não encontrado |
+|-------------|-----------|
+| Mensagem no screenshot | "Verifique o conteúdo no banco de dados" |
+| Mensagem no código atual | "Keys: [...]. Phases info:..." |
+| Busca no código | ❌ Texto antigo **não existe** em nenhum arquivo |
+| Banco de dados | ✅ 10 phases, `v7-vv`, correto |
+| PWA Service Worker | ✅ Ativo (`registerType: 'autoUpdate'`) |
 
-## Solução
+O Service Worker com `registerType: 'autoUpdate'` pode demorar para detectar novas versões, e enquanto isso, continua servindo o bundle JavaScript antigo.
 
-O usuário precisa forçar o navegador a carregar o código atualizado.
+---
 
-### Passos para o Usuário
+## Solução: Desregistrar Service Worker + Limpar Cache
 
-1. **Fechar todas as abas** do projeto Lovable/Preview
-2. **Limpar cache completo** do navegador:
-   - Chrome: `Cmd+Shift+Delete` → Selecionar "Imagens e arquivos armazenados em cache" → Limpar dados
-   - Ou: DevTools (F12) → Aba "Application" → Clear storage → Clear site data
-3. **Reabrir** a página da aula
+### Para o Usuário - Passo a Passo
 
-### Alternativa: Hard Refresh
+1. **Abrir DevTools** (F12)
+2. **Ir para aba "Application"** (Chrome) ou "Armazenamento" (Firefox)
+3. **No menu lateral, clicar em "Service Workers"**
+4. **Clicar em "Unregister"** em todos os service workers listados
+5. **No menu lateral, clicar em "Clear storage" (Chrome) ou "Limpar dados" (Firefox)**
+6. **Marcar TODAS as opções** (Cache storage, Indexed DB, Local storage, etc.)
+7. **Clicar em "Clear site data"**
+8. **Fechar TODAS as abas** do projeto
+9. **Abrir uma nova aba** e acessar a URL da aula novamente
 
-- **Mac**: `Cmd+Shift+R`
-- **Windows**: `Ctrl+Shift+R`
+### Alternativa: DevTools Network Tab
 
-Se o hard refresh não funcionar, é necessário limpar o cache completo conforme acima.
+1. Abrir DevTools (F12)
+2. Ir para aba "Network"
+3. **Marcar checkbox "Disable cache"**
+4. Manter DevTools aberto
+5. Navegar para a aula
+6. Os logs devem mostrar `[useV7PhaseScript] ✅ FOUND: content.phases with 10 items`
+
+---
+
+## Correção Permanente no Código
+
+Para evitar esse problema no futuro, recomendo adicionar um mecanismo de **cache-busting automático** que força o Service Worker a atualizar quando há nova versão do código.
+
+### Arquivos a Modificar
+
+#### 1. `vite.config.ts`
+Adicionar `skipWaiting: true` e `clientsClaim: true` ao workbox para forçar atualizações imediatas:
+
+```typescript
+workbox: {
+  skipWaiting: true,      // NOVO: Força o novo SW a assumir imediatamente
+  clientsClaim: true,     // NOVO: Toma controle de todos os clientes
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+  // ... resto da config
+}
+```
+
+#### 2. `src/main.tsx`
+Adicionar lógica para detectar e forçar atualização do Service Worker:
+
+```typescript
+import { registerSW } from 'virtual:pwa-register';
+
+// Forçar atualização do SW quando nova versão disponível
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('Nova versão disponível! Atualizar agora?')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('App pronta para uso offline');
+  },
+});
+```
+
+---
 
 ## Validação Esperada
 
-Após limpar o cache corretamente, ao abrir a aula `b840fc4c-c202-41b3-9df0-e05e4aa301e1`:
+Após limpar o Service Worker e cache corretamente:
 
-1. O console deve mostrar logs começando com `[useV7PhaseScript]`
-2. Deve aparecer `✅ FOUND: content.phases with 10 items`
-3. A aula deve carregar normalmente com as 10 phases
+1. Console deve mostrar: `[useV7PhaseScript] ✅ FOUND: content.phases with 10 items`
+2. A aula deve carregar normalmente
+3. O erro "Verifique o conteúdo no banco de dados" não deve aparecer mais
 
-## Notas Técnicas
+---
 
-O banco de dados está 100% correto:
-- **phases_length**: 10
-- **first_phase_id**: cena-1-impacto
-- **metadata_version**: v7-vv
-- Todos os campos obrigatórios (id, type, visual, startTime, endTime) presentes
+## Resumo Técnico
 
-O problema é exclusivamente de **cache do navegador** que está servindo código JavaScript antigo em vez do atualizado.
+| Componente | Status |
+|------------|--------|
+| Banco de dados | ✅ 100% correto (10 phases) |
+| Código fonte | ✅ Atualizado (mensagem diferente) |
+| Navegador do usuário | ❌ Service Worker servindo bundle antigo |
+| Solução | Desregistrar SW + Clear site data |
+| Correção permanente | Adicionar `skipWaiting` + `clientsClaim` ao PWA config |
 
