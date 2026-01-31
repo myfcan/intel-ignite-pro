@@ -1,4 +1,5 @@
 // Hook to load and transform V7 lessons into phase-based format for V7PhasePlayer
+// ⚡ VERSION: 2026-01-31-v2 - Forçar cache bust via versão explícita
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,10 @@ import type {
   normalizeTimestamp,
   extractNarration
 } from '@/types/v7-unified.types';
+
+// 🔥 VERSION MARKER - Se você ver "2026-01-31-v2" no console, o cache foi atualizado
+const HOOK_VERSION = '2026-01-31-v2';
+console.log(`[useV7PhaseScript] 🚀 HOOK VERSION: ${HOOK_VERSION}`);
 
 // ============================================================================
 // DATABASE TYPES - For type-safe data fetching
@@ -533,16 +538,17 @@ export function useV7PhaseScript(lessonId: string | undefined): UseV7PhaseScript
         phasesLength: Array.isArray(parsedContent?.phases) ? parsedContent.phases.length : 0,
         rawPhasesPreview: parsedContent?.phases ? JSON.stringify(parsedContent.phases).substring(0, 200) : 'undefined',
       };
-      console.error('[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA!', {
+      console.error(`[useV7PhaseScript] ❌ NENHUMA PHASE ENCONTRADA! (Hook v${HOOK_VERSION})`, {
         contentKeys,
         ...phasesDebug,
         stringPreview: JSON.stringify(parsedContent).substring(0, 500)
       });
       
-      // ✅ Provide clearer error message with actionable guidance
-      const errorMsg = `Nenhum act encontrado na aula. Keys: [${contentKeys.join(', ')}]. ` +
-        `Phases info: isArray=${phasesDebug.phasesIsArray}, length=${phasesDebug.phasesLength}. ` +
-        `Tente limpar o cache (Ctrl+Shift+R) ou clique em "Limpar Cache".`;
+      // ✅ VERSÃO ÚNICA: Mensagem com versão do hook para detectar cache
+      const errorMsg = `[v${HOOK_VERSION}] Phases não encontradas. ` +
+        `Keys: [${contentKeys.join(', ')}]. ` +
+        `Phases: array=${phasesDebug.phasesIsArray}, count=${phasesDebug.phasesLength}. ` +
+        `Se este erro persistir, limpe o cache: DevTools > Application > Clear Storage.`;
       throw new Error(errorMsg);
     } catch (err: any) {
       console.error('[useV7PhaseScript] Error:', err);
