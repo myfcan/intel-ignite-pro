@@ -647,8 +647,10 @@ function analyzeUnfoundAnchors(
     }
   }
   
-  // ✅ V7-vv SYSTEMIC FIX: Busca de anchor COM LÓGICA GLOBAL para microVisuals
-  const unfoundAnchors: Array<typeof definedAnchors[0] & { searchedRange?: string; foundGlobally?: boolean }> = [];
+  // ✅ V7-vv: Busca de anchor DENTRO do range correto
+  // IMPORTANTE: A narração do acrônimo DEVE estar na mesma cena que os microVisuals
+  // Ver: docs/V7-JSON-TEMPLATE-LETTER-REVEAL.md
+  const unfoundAnchors: Array<typeof definedAnchors[0] & { searchedRange?: string }> = [];
   
   for (const anchor of definedAnchors) {
     const anchorWords = anchor.anchorText.split(/\s+/).map(normalizeForSearch).filter(w => w.length > 0);
@@ -658,44 +660,33 @@ function analyzeUnfoundAnchors(
       continue;
     }
     
-    // PASSO 1: Buscar no range da fase
-    let relevantWords = anchor.phaseStartTime !== undefined && anchor.phaseEndTime !== undefined
+    // Filtrar timestamps pelo range da fase (se disponível)
+    const relevantWords = anchor.phaseStartTime !== undefined && anchor.phaseEndTime !== undefined
       ? normalizedWords.filter(wt => wt.start >= anchor.phaseStartTime! && wt.end <= anchor.phaseEndTime!)
       : normalizedWords;
     
+    // Procurar todas as palavras do anchor na sequência
     let found = false;
-    let foundGlobally = false;
     
-    // Função de busca
-    const searchInWords = (words: typeof normalizedWords): boolean => {
-      if (anchorWords.length === 1) {
-        const target = anchorWords[0];
-        return words.some(wt => 
-          wt.normalized === target || 
-          wt.normalized.includes(target) || 
-          target.includes(wt.normalized)
-        );
-      } else {
-        for (let i = 0; i <= words.length - anchorWords.length; i++) {
-          const windowMatch = anchorWords.every((aw, offset) => {
-            const wt = words[i + offset];
-            return wt && (wt.normalized === aw || wt.normalized.includes(aw) || aw.includes(wt.normalized));
-          });
-          if (windowMatch) return true;
+    if (anchorWords.length === 1) {
+      // Single word: busca exata ou parcial
+      const target = anchorWords[0];
+      found = relevantWords.some(wt => 
+        wt.normalized === target || 
+        wt.normalized.includes(target) || 
+        target.includes(wt.normalized)
+      );
+    } else {
+      // Multi-word: busca sequencial
+      for (let i = 0; i <= relevantWords.length - anchorWords.length; i++) {
+        const windowMatch = anchorWords.every((aw, offset) => {
+          const wt = relevantWords[i + offset];
+          return wt && (wt.normalized === aw || wt.normalized.includes(aw) || aw.includes(wt.normalized));
+        });
+        if (windowMatch) {
+          found = true;
+          break;
         }
-        return false;
-      }
-    };
-    
-    // Buscar no range da fase
-    found = searchInWords(relevantWords);
-    
-    // ✅ SOLUÇÃO B: Se não encontrou no range E é microVisual, buscar GLOBALMENTE
-    if (!found && anchor.anchorType === 'microVisual') {
-      found = searchInWords(normalizedWords);
-      if (found) {
-        foundGlobally = true;
-        console.log(`[DEBUG] ✅ microVisual "${anchor.anchorText}" encontrado via BUSCA GLOBAL (fora do range da fase)`);
       }
     }
     
@@ -1399,25 +1390,10 @@ function generatePhases(
 
     const microVisuals: MicroVisual[] = [];
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      // ✅ V7-vv SOLUÇÃO B: BUSCA GLOBAL para microVisuals
-      // PROBLEMA: Palavras do acrônimo (Persona, Estrutura) são narradas ANTES da fase começar
-      // SOLUÇÃO: 1) Tentar buscar no range da cena
-      //          2) Se não encontrar, buscar em TODO o áudio (busca global)
-      
-      // Primeiro: tentar buscar DENTRO do range da cena
-      let triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
-      
-      // Se não encontrou no range da cena, BUSCAR GLOBALMENTE em todo o áudio
-      if (triggerTime === null) {
-        console.log(`[Phase] 🔍 microVisual "${mv.anchorText}" não encontrado no range ${startTime.toFixed(2)}s-${endTime.toFixed(2)}s - buscando GLOBALMENTE...`);
-        triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, totalDuration);
-        
-        if (triggerTime !== null) {
-          console.log(`[Phase] ✅ GLOBAL MATCH: "${mv.anchorText}" encontrado @ ${triggerTime.toFixed(2)}s (fora do range da fase)`);
-        } else {
-          console.warn(`[Phase] ⚠️ "${mv.anchorText}" NÃO encontrado em TODO o áudio - usando fallback`);
-        }
-      }
+      // ✅ V7-vv: Buscar anchorText DENTRO do range da cena
+      // IMPORTANTE: A narração do acrônimo DEVE estar na mesma cena que os microVisuals
+      // Ver: docs/V7-JSON-TEMPLATE-LETTER-REVEAL.md
+      const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
       
       // ✅ Usar duration do content se especificado, senão usar default por tipo
       const duration = (mv.content as any)?.duration || getDefaultDuration(mv.type);
