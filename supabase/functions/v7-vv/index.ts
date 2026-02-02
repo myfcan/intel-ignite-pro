@@ -879,6 +879,8 @@ interface ScriptInput {
   postLessonExercises?: any[];
   postLessonFlow?: Record<string, unknown>;
   gamification?: Record<string, unknown>;
+  // ✅ DRY-RUN MODE: Validação real sem gerar áudio
+  dry_run?: boolean;
 }
 
 interface ScriptScene {
@@ -927,6 +929,56 @@ interface ValidationError {
   field: string;
   message: string;
   severity: 'error' | 'warning';
+}
+
+// ============================================================================
+// DRY-RUN TYPES - Resultado da validação pré-pipeline
+// ============================================================================
+
+interface DryRunIssue {
+  severity: 'error' | 'warning' | 'info';
+  scene: string;
+  field: string;
+  message: string;
+  suggestion?: string;
+}
+
+interface DryRunAutoFix {
+  scene: string;
+  action: string;
+  field: string;
+  value: string;
+}
+
+interface DryRunSceneAnalysis {
+  id: string;
+  type: string;
+  wordCount: number;
+  estimatedDuration: number;
+  hasInteraction: boolean;
+  hasMicroVisuals: boolean;
+  microVisualCount: number;
+  hasPauseAt: boolean;
+  pauseAtGenerated: boolean;
+}
+
+interface DryRunResult {
+  canProcess: boolean;
+  validationScore: number;
+  issues: DryRunIssue[];
+  autoFixes: DryRunAutoFix[];
+  sceneAnalysis: DryRunSceneAnalysis[];
+  summary: {
+    totalScenes: number;
+    totalWords: number;
+    estimatedDuration: number;
+    interactiveScenes: number;
+    microVisualCount: number;
+    errorCount: number;
+    warningCount: number;
+    infoCount: number;
+  };
+  recommendation: string;
 }
 
 // ============================================================================
@@ -1182,6 +1234,285 @@ function autoGeneratePauseAt(scenes: ScriptScene[]): void {
       }
     }
   });
+}
+
+// ============================================================================
+// DRY-RUN MODE - Validação Real Sem Geração de Áudio
+// ============================================================================
+
+function executeDryRun(input: ScriptInput): DryRunResult {
+  console.log('[V7-vv:DryRun] ========================================');
+  console.log('[V7-vv:DryRun] MODO DRY-RUN - Validação Real');
+  console.log('[V7-vv:DryRun] ========================================');
+
+  const issues: DryRunIssue[] = [];
+  const autoFixes: DryRunAutoFix[] = [];
+  const sceneAnalysis: DryRunSceneAnalysis[] = [];
+
+  // Taxa de narração: ~150 palavras por minuto (2.5 palavras/segundo)
+  const WORDS_PER_SECOND = 2.5;
+
+  let totalWords = 0;
+  let totalMicroVisuals = 0;
+  let interactiveCount = 0;
+
+  // =========================================================================
+  // 1. ANÁLISE DETALHADA DE CADA CENA
+  // =========================================================================
+  input.scenes.forEach((scene, index) => {
+    const sceneId = scene.id || `scene-${index + 1}`;
+    const words = scene.narration?.split(/\s+/).filter(w => w.length > 0) || [];
+    const wordCount = words.length;
+    totalWords += wordCount;
+
+    // Estimar duração baseado em word count
+    let estimatedDuration = wordCount / WORDS_PER_SECOND;
+
+    // Fases interativas têm duração mínima de 5s
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    if (isInteractive) {
+      estimatedDuration = Math.max(estimatedDuration, 5.0);
+      interactiveCount++;
+    }
+
+    const microVisualCount = scene.visual?.microVisuals?.length || 0;
+    totalMicroVisuals += microVisualCount;
+
+    // Verificar se pauseAt será gerado
+    const hasPauseAt = !!scene.anchorText?.pauseAt;
+    let pauseAtGenerated = false;
+
+    if (isInteractive && !hasPauseAt && scene.narration) {
+      // Simular auto-geração
+      const pauseWords = scene.narration
+        .replace(/[.,!?;:'"()[\]{}…]+/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2);
+
+      if (pauseWords.length > 0) {
+        const generatedPauseAt = pauseWords[pauseWords.length - 1];
+        pauseAtGenerated = true;
+        autoFixes.push({
+          scene: sceneId,
+          action: 'pauseAt será gerado automaticamente',
+          field: 'anchorText.pauseAt',
+          value: generatedPauseAt,
+        });
+      } else {
+        issues.push({
+          severity: 'warning',
+          scene: sceneId,
+          field: 'anchorText.pauseAt',
+          message: 'Não foi possível extrair palavra para auto-gerar pauseAt',
+          suggestion: 'Adicione manualmente um pauseAt ou melhore a narração',
+        });
+      }
+    }
+
+    // Validar microVisuals
+    if (scene.visual?.microVisuals) {
+      scene.visual.microVisuals.forEach((mv, mvIdx) => {
+        // Tipo válido?
+        if (!VALID_MICROVISUAL_TYPES.includes(mv.type as any)) {
+          const suggestion = INVALID_MICROVISUAL_TYPES_MAP[mv.type];
+          issues.push({
+            severity: 'error',
+            scene: sceneId,
+            field: `microVisuals[${mvIdx}].type`,
+            message: `Tipo inválido "${mv.type}"`,
+            suggestion: suggestion || `Tipos válidos: ${VALID_MICROVISUAL_TYPES.join(', ')}`,
+          });
+        }
+
+        // anchorText existe na narração?
+        if (mv.anchorText && scene.narration) {
+          const normalizedAnchor = mv.anchorText.toLowerCase();
+          const normalizedNarration = scene.narration.toLowerCase();
+          
+          if (!normalizedNarration.includes(normalizedAnchor)) {
+            issues.push({
+              severity: 'error',
+              scene: sceneId,
+              field: `microVisuals[${mvIdx}].anchorText`,
+              message: `anchorText "${mv.anchorText}" NÃO existe na narração desta cena`,
+              suggestion: 'A narração DEVE conter a palavra-chave. Verifique se está na cena correta.',
+            });
+          }
+        }
+      });
+    }
+
+    // Validar Quiz
+    if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
+      const hasCorrect = scene.interaction.options.some((opt: any) => opt.isCorrect);
+      if (!hasCorrect) {
+        issues.push({
+          severity: 'warning',
+          scene: sceneId,
+          field: 'interaction.options',
+          message: 'Nenhuma opção marcada como correta',
+          suggestion: 'Adicione isCorrect: true em uma opção',
+        });
+      }
+
+      // Verificar feedbacks
+      scene.interaction.options.forEach((opt: any, optIdx: number) => {
+        if (!opt.feedback?.narration && !opt.feedback?.title) {
+          issues.push({
+            severity: 'info',
+            scene: sceneId,
+            field: `interaction.options[${optIdx}].feedback`,
+            message: `Opção "${opt.id}" sem texto de feedback`,
+            suggestion: 'Adicione feedback.narration ou feedback.title para áudio de feedback',
+          });
+        } else if (!opt.feedback?.narration && opt.feedback?.title) {
+          autoFixes.push({
+            scene: sceneId,
+            action: 'Narração de feedback será gerada automaticamente',
+            field: `interaction.options[${optIdx}].feedback.narration`,
+            value: opt.feedback.subtitle 
+              ? `${opt.feedback.title}. ${opt.feedback.subtitle}`
+              : opt.feedback.title,
+          });
+        }
+      });
+    }
+
+    // Validar Playground
+    if (scene.interaction?.type === 'playground') {
+      if (!scene.interaction.amateurPrompt) {
+        issues.push({
+          severity: 'error',
+          scene: sceneId,
+          field: 'interaction.amateurPrompt',
+          message: 'Playground sem amateurPrompt',
+        });
+      }
+      if (!scene.interaction.professionalPrompt) {
+        issues.push({
+          severity: 'error',
+          scene: sceneId,
+          field: 'interaction.professionalPrompt',
+          message: 'Playground sem professionalPrompt',
+        });
+      }
+    }
+
+    // Adicionar análise da cena
+    sceneAnalysis.push({
+      id: sceneId,
+      type: scene.type,
+      wordCount,
+      estimatedDuration: Math.round(estimatedDuration * 10) / 10,
+      hasInteraction: !!scene.interaction,
+      hasMicroVisuals: microVisualCount > 0,
+      microVisualCount,
+      hasPauseAt: hasPauseAt || pauseAtGenerated,
+      pauseAtGenerated,
+    });
+  });
+
+  // =========================================================================
+  // 2. VALIDAÇÕES GLOBAIS
+  // =========================================================================
+  
+  // Título
+  if (!input.title?.trim()) {
+    issues.push({
+      severity: 'error',
+      scene: 'root',
+      field: 'title',
+      message: 'Título é obrigatório',
+    });
+  }
+
+  // Mínimo de cenas
+  if (input.scenes.length === 0) {
+    issues.push({
+      severity: 'error',
+      scene: 'root',
+      field: 'scenes',
+      message: 'Pelo menos uma cena é obrigatória',
+    });
+  }
+
+  // Duração muito curta
+  const estimatedTotalDuration = sceneAnalysis.reduce((sum, s) => sum + s.estimatedDuration, 0);
+  if (estimatedTotalDuration < 30) {
+    issues.push({
+      severity: 'warning',
+      scene: 'root',
+      field: 'duration',
+      message: `Duração estimada muito curta: ${estimatedTotalDuration.toFixed(1)}s`,
+      suggestion: 'Adicione mais conteúdo para uma experiência melhor (mínimo 30s recomendado)',
+    });
+  }
+
+  // Duração muito longa
+  if (estimatedTotalDuration > 600) {
+    issues.push({
+      severity: 'warning',
+      scene: 'root',
+      field: 'duration',
+      message: `Duração estimada muito longa: ${(estimatedTotalDuration / 60).toFixed(1)} minutos`,
+      suggestion: 'Considere dividir em múltiplas aulas (máximo 10min recomendado)',
+    });
+  }
+
+  // =========================================================================
+  // 3. CALCULAR SCORE E RESULTADO
+  // =========================================================================
+  const errorCount = issues.filter(i => i.severity === 'error').length;
+  const warningCount = issues.filter(i => i.severity === 'warning').length;
+  const infoCount = issues.filter(i => i.severity === 'info').length;
+
+  // Score: 100 - (erros * 20) - (warnings * 5) - (infos * 1)
+  let validationScore = 100;
+  validationScore -= errorCount * 20;
+  validationScore -= warningCount * 5;
+  validationScore -= infoCount * 1;
+  validationScore = Math.max(0, Math.min(100, validationScore));
+
+  // Pode processar apenas se não houver erros
+  const canProcess = errorCount === 0;
+
+  // Recomendação
+  let recommendation = '';
+  if (canProcess && warningCount === 0) {
+    recommendation = '✅ JSON aprovado! Pode ser processado pelo Pipeline.';
+  } else if (canProcess) {
+    recommendation = `⚠️ JSON aprovado com ${warningCount} aviso(s). Revisar antes de processar.`;
+  } else {
+    recommendation = `❌ JSON reprovado. Corrija ${errorCount} erro(s) antes de processar.`;
+  }
+
+  const result: DryRunResult = {
+    canProcess,
+    validationScore,
+    issues,
+    autoFixes,
+    sceneAnalysis,
+    summary: {
+      totalScenes: input.scenes.length,
+      totalWords,
+      estimatedDuration: Math.round(estimatedTotalDuration),
+      interactiveScenes: interactiveCount,
+      microVisualCount: totalMicroVisuals,
+      errorCount,
+      warningCount,
+      infoCount,
+    },
+    recommendation,
+  };
+
+  console.log('[V7-vv:DryRun] ========================================');
+  console.log(`[V7-vv:DryRun] Score: ${validationScore}`);
+  console.log(`[V7-vv:DryRun] Pode Processar: ${canProcess}`);
+  console.log(`[V7-vv:DryRun] Erros: ${errorCount}, Avisos: ${warningCount}, Info: ${infoCount}`);
+  console.log(`[V7-vv:DryRun] AutoFixes: ${autoFixes.length}`);
+  console.log('[V7-vv:DryRun] ========================================');
+
+  return result;
 }
 
 // ============================================================================
@@ -2174,10 +2505,32 @@ Deno.serve(async (req) => {
     console.log(`[V7-vv] Title: ${input.title}`);
     console.log(`[V7-vv] Scenes: ${input.scenes?.length || 0}`);
     console.log(`[V7-vv] Voice ID: ${input.voice_id || 'default'}`);
+    console.log(`[V7-vv] Dry Run: ${input.dry_run || false}`);
     console.log('================================================');
 
     // =========================================================================
-    // PASSO 1: VALIDAÇÃO ROBUSTA
+    // DRY-RUN MODE: Validação Real Sem Geração de Áudio
+    // =========================================================================
+    if (input.dry_run === true) {
+      console.log('[V7-vv] 🔍 DRY-RUN MODE ATIVADO');
+      
+      const dryRunResult = executeDryRun(input);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          mode: 'dry_run',
+          ...dryRunResult,
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // =========================================================================
+    // PASSO 1: VALIDAÇÃO ROBUSTA (Modo Normal)
     // =========================================================================
     const validationErrors = validateInput(input);
     if (validationErrors.length > 0) {
