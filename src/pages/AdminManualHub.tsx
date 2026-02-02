@@ -130,6 +130,15 @@ export default function AdminManualHub() {
                   Criar V7-vv
                 </Button>
                 <Button
+                  onClick={() => navigate('/admin/v7/diagnostic')}
+                  className="w-full"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Bug className="w-4 h-4 mr-2" />
+                  Diagnóstico V7
+                </Button>
+                <Button
                   onClick={() => navigate('/admin/v7/pipeline-test')}
                   className="w-full"
                   size="sm"
