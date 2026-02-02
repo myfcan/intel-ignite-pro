@@ -105,11 +105,21 @@ interface PipelineResult {
   };
 }
 
+interface DryRunResult {
+  validationScore: number;
+  issues: Array<{ type: string; message: string; severity: string }>;
+  canProcess: boolean;
+  autoFixes?: string[];
+  simulatedDuration?: number;
+}
+
 export default function AdminV7vv() {
   const navigate = useNavigate();
   const [scriptJson, setScriptJson] = useState(EXAMPLE_SCRIPT);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDryRunning, setIsDryRunning] = useState(false);
   const [result, setResult] = useState<PipelineResult | null>(null);
+  const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
   // Validar JSON em tempo real
@@ -157,10 +167,47 @@ export default function AdminV7vv() {
     }
   };
 
+  // Dry-Run - Validação sem processar
+  const handleDryRun = async () => {
+    if (!validateJson(scriptJson)) return;
+
+    setIsDryRunning(true);
+    setDryRunResult(null);
+
+    try {
+      const script = JSON.parse(scriptJson);
+      console.log('[AdminV7vv] Dry-run validation:', script.title);
+
+      const { data, error } = await supabase.functions.invoke('v7-vv', {
+        body: { ...script, dry_run: true }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log('[AdminV7vv] Dry-run result:', data);
+      setDryRunResult(data as DryRunResult);
+      
+      if (data.canProcess) {
+        toast.success(`Validação: ${data.validationScore}/100 - Pronto para processar!`);
+      } else {
+        toast.warning(`Validação: ${data.validationScore}/100 - Verifique os problemas`);
+      }
+
+    } catch (err: any) {
+      console.error('[AdminV7vv] Dry-run error:', err);
+      toast.error(`Erro na validação: ${err.message}`);
+    } finally {
+      setIsDryRunning(false);
+    }
+  };
+
   // Carregar exemplo simples
   const loadExample = () => {
     setScriptJson(EXAMPLE_SCRIPT);
     setJsonError(null);
+    setDryRunResult(null);
     toast.info('Exemplo simples carregado');
   };
 
@@ -168,6 +215,7 @@ export default function AdminV7vv() {
   const loadFullModel = () => {
     setScriptJson(JSON.stringify(V7Aula1InputModelo, null, 2));
     setJsonError(null);
+    setDryRunResult(null);
     toast.success('JSON modelo COMPLETO da Aula 1 carregado! (10 cenas)');
   };
 
@@ -291,8 +339,26 @@ export default function AdminV7vv() {
 
               <div className="flex flex-wrap gap-2">
                 <Button
+                  onClick={handleDryRun}
+                  disabled={isDryRunning || isProcessing || !!jsonError}
+                  variant="outline"
+                  className="min-w-[140px] border-amber-500 text-amber-400 hover:bg-amber-500/20"
+                >
+                  {isDryRunning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    <>
+                      <FileBarChart className="w-4 h-4 mr-2" />
+                      Dry-Run
+                    </>
+                  )}
+                </Button>
+                <Button
                   onClick={handleProcess}
-                  disabled={isProcessing || !!jsonError}
+                  disabled={isProcessing || isDryRunning || !!jsonError}
                   className="flex-1 min-w-[140px] bg-cyan-600 hover:bg-cyan-700"
                 >
                   {isProcessing ? (
@@ -323,6 +389,56 @@ export default function AdminV7vv() {
                   Exemplo Simples
                 </Button>
               </div>
+
+              {/* Resultado do Dry-Run */}
+              {dryRunResult && (
+                <div className={`p-4 rounded-lg border ${dryRunResult.canProcess ? 'bg-green-900/20 border-green-700' : 'bg-amber-900/20 border-amber-700'}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <FileBarChart className="w-4 h-4" />
+                      Resultado Dry-Run
+                    </h4>
+                    <Badge className={dryRunResult.canProcess ? 'bg-green-600' : 'bg-amber-600'}>
+                      Score: {dryRunResult.validationScore}/100
+                    </Badge>
+                  </div>
+                  
+                  {dryRunResult.simulatedDuration && (
+                    <p className="text-sm text-gray-400 mb-2">
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      Duração estimada: {Math.round(dryRunResult.simulatedDuration)}s
+                    </p>
+                  )}
+                  
+                  {dryRunResult.issues.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      <p className="text-sm font-medium text-amber-400">Problemas ({dryRunResult.issues.length}):</p>
+                      {dryRunResult.issues.slice(0, 5).map((issue, i) => (
+                        <div key={i} className="text-xs bg-gray-800 rounded p-2">
+                          <span className={issue.severity === 'error' ? 'text-red-400' : 'text-amber-400'}>
+                            [{issue.severity}]
+                          </span>{' '}
+                          <span className="text-gray-300">{issue.message}</span>
+                        </div>
+                      ))}
+                      {dryRunResult.issues.length > 5 && (
+                        <p className="text-xs text-gray-500">...e mais {dryRunResult.issues.length - 5} problemas</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {dryRunResult.autoFixes && dryRunResult.autoFixes.length > 0 && (
+                    <div className="mt-2 text-xs text-cyan-400">
+                      <p className="font-medium">Auto-fixes disponíveis:</p>
+                      <ul className="list-disc list-inside">
+                        {dryRunResult.autoFixes.map((fix, i) => (
+                          <li key={i}>{fix}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
