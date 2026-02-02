@@ -1,7 +1,7 @@
 /**
- * V7-vv Pipeline - Cinematographic Lesson Generator
+ * V7-v2 Pipeline - Cinematographic Lesson Generator
  *
- * VERSÃO DEFINITIVA - Baseada no V7Contract.ts
+ * CONTRATO CONGELADO v1.0 - Encerra divergências Pipeline ↔ Banco ↔ Renderer
  *
  * RESPONSABILIDADES:
  * 1. Validar input (JSON de roteiro)
@@ -10,8 +10,10 @@
  * 4. Calcular timing baseado em wordTimestamps
  * 5. Gerar V7LessonData exato conforme contrato
  * 6. Gerar DEBUG REPORT automático para diagnóstico
+ * 7. Converter microVisual.type moderno → legado antes de persistir
+ * 8. Mapear scene.type → phase.type persistível (secret-reveal → revelation, gamification → narrative)
  *
- * @version VV-Definitive + Debug
+ * @version V7-v2 (Contrato Congelado v1.0)
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -982,30 +984,90 @@ interface DryRunResult {
 }
 
 // ============================================================================
-// TIPOS DE MICROVISUAL SUPORTADOS
+// TIPOS DE MICROVISUAL — CONTRATO CONGELADO v1.0
 // ============================================================================
+// INPUT: aceita modernos + legados
+// OUTPUT: SEMPRE legado (banco/renderer são canônicos)
 const VALID_MICROVISUAL_TYPES = [
-  'icon',
-  'text', 
-  'number',
-  'image',
-  'badge',
-  'highlight',
-  'letter-reveal'
+  // Modernos (aliases - serão convertidos antes de salvar)
+  'text', 'number', 'image', 'badge', 'highlight', 'letter-reveal',
+  // Legados (canônicos - passam direto)
+  'image-flash', 'text-pop', 'number-count', 'text-highlight', 'card-reveal'
 ] as const;
 
+// Mapping OBRIGATÓRIO: moderno → legado (nunca persistir moderno)
+const MODERN_TO_LEGACY_MAP: Record<string, string> = {
+  'image': 'image-flash',
+  'text': 'text-pop',
+  'number': 'number-count',
+  'badge': 'card-reveal',
+  // Passthrough (já são canônicos)
+  'highlight': 'highlight',
+  'letter-reveal': 'letter-reveal',
+  'image-flash': 'image-flash',
+  'text-pop': 'text-pop',
+  'number-count': 'number-count',
+  'text-highlight': 'text-highlight',
+  'card-reveal': 'card-reveal'
+};
+
+// Tipos REJEITADOS (sem equivalente no renderer)
 const INVALID_MICROVISUAL_TYPES_MAP: Record<string, string> = {
-  'image-flash': 'image',
-  'text-pop': 'text',
-  'number-count': 'number',
-  'card-reveal': 'Use visual.type="cards-reveal" em vez de microVisual',
-  'text-highlight': 'highlight'
+  'icon': 'Tipo "icon" não é suportado. Use "image" (imageUrl/emoji) ou "badge" (text/icon).'
+};
+
+// Warnings para legados no input (UX - não bloqueia)
+const LEGACY_TYPE_WARNINGS: Record<string, string> = {
+  'image-flash': 'Prefira usar "image" no input',
+  'text-pop': 'Prefira usar "text" no input',
+  'number-count': 'Prefira usar "number" no input',
+  'card-reveal': 'Prefira usar "badge" no input',
+  'text-highlight': 'Prefira usar "highlight" no input'
 };
 
 // ============================================================================
-// TIPOS DE CENA INTERATIVOS (requerem pauseAt)
+// TIPOS DE VISUAL — CONTRATO CONGELADO v1.0
 // ============================================================================
-const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta'];
+const VALID_VISUAL_TYPES = [
+  'number-reveal', 'text-reveal', 'split-screen', 'letter-reveal',
+  'cards-reveal', 'quiz', 'quiz-feedback', 'playground', 'result', 'cta',
+  '3d-dual-monitors', '3d-abstract', '3d-number-reveal'
+] as const;
+
+// Schema mínimo por visual.type
+const VISUAL_CONTENT_SCHEMA: Record<string, { required: string[], optional: string[] }> = {
+  'number-reveal': { required: ['number'], optional: ['secondaryNumber', 'subtitle', 'hookQuestion', 'mood', 'countUp'] },
+  'text-reveal': { required: [], optional: ['title', 'mainText', 'items', 'highlightWord'] },
+  'split-screen': { required: ['left', 'right'], optional: [] },
+  'letter-reveal': { required: ['letters'], optional: ['word', 'finalStamp'] },
+  'cards-reveal': { required: ['cards'], optional: ['title'] },
+  'quiz': { required: [], optional: ['question', 'subtitle'] },
+  'quiz-feedback': { required: [], optional: ['title', 'subtitle'] },
+  'playground': { required: [], optional: ['title', 'subtitle'] },
+  'result': { required: ['title'], optional: ['emoji', 'message', 'metrics'] },
+  'cta': { required: ['buttonText'], optional: ['title', 'subtitle'] },
+  '3d-dual-monitors': { required: ['leftScreen', 'rightScreen'], optional: [] },
+  '3d-abstract': { required: [], optional: ['variant', 'intensity'] },
+  '3d-number-reveal': { required: ['number'], optional: ['subtitle'] }
+};
+
+// ============================================================================
+// MAPEAMENTO scene.type → phase.type PERSISTIDO — CONTRATO CONGELADO v1.0
+// ============================================================================
+// secret-reveal e gamification NÃO existem no banco — mapear para tipos válidos
+const SCENE_TO_PHASE_MAP: Record<string, string> = {
+  'secret-reveal': 'revelation',  // Semanticamente similar
+  'gamification': 'narrative',    // Resultado é narrativo
+};
+
+// ============================================================================
+// CENAS INTERATIVAS (ÚNICA DEFINIÇÃO - NUNCA DUPLICAR)
+// ============================================================================
+// Somente cenas que ESPERAM INPUT do usuário geram:
+// - Auto pauseAt
+// - Duração mínima de 5s
+// - audioBehavior: { onStart: 'pause', onComplete: 'resume' }
+const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground'] as const;
 
 function validateInput(input: ScriptInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -1043,6 +1105,19 @@ function validateInput(input: ScriptInput): ValidationError[] {
   // =========================================================================
   input.scenes.forEach((scene, index) => {
     const sceneId = scene.id || `scene-${index + 1}`;
+
+    // ============================================================================
+    // 2.0 REJEITAR scene.type='cta' (É visual.type, NÃO scene.type)
+    // CONTRATO CONGELADO v1.0
+    // ============================================================================
+    if (scene.type === 'cta') {
+      errors.push({
+        scene: sceneId,
+        field: 'type',
+        message: '"cta" é visual.type, não scene.type. Use scene.type="narrative" com visual.type="cta".',
+        severity: 'error'
+      });
+    }
 
     // 2.1 Narração obrigatória
     if (!scene.narration?.trim()) {
@@ -1176,7 +1251,7 @@ function validateInput(input: ScriptInput): ValidationError[] {
     }
 
     // 2.6 Log de cena interativa (NÃO mais erro se falta pauseAt - será gerado)
-    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type as any);
     if (isInteractive && !scene.anchorText?.pauseAt) {
       console.log(`[V7-vv:Validate] ℹ️ Cena interativa "${sceneId}" sem pauseAt - será gerado automaticamente`);
     }
@@ -1210,7 +1285,7 @@ function autoGeneratePauseAt(scenes: ScriptScene[]): void {
   console.log('[V7-vv:AutoPauseAt] Verificando fases interativas...');
 
   scenes.forEach((scene, index) => {
-    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type as any);
     
     if (isInteractive && !scene.anchorText?.pauseAt && scene.narration) {
       // Extrair última palavra significativa da narração
@@ -1261,6 +1336,18 @@ function executeDryRun(input: ScriptInput): DryRunResult {
   // =========================================================================
   input.scenes.forEach((scene, index) => {
     const sceneId = scene.id || `scene-${index + 1}`;
+    
+    // ✅ CONTRATO CONGELADO v1.0: Rejeitar scene.type='cta'
+    if (scene.type === 'cta') {
+      issues.push({
+        severity: 'error',
+        scene: sceneId,
+        field: 'type',
+        message: '"cta" é visual.type, não scene.type',
+        suggestion: 'Use scene.type="narrative" com visual.type="cta"',
+      });
+    }
+    
     const words = scene.narration?.split(/\s+/).filter(w => w.length > 0) || [];
     const wordCount = words.length;
     totalWords += wordCount;
@@ -1269,7 +1356,7 @@ function executeDryRun(input: ScriptInput): DryRunResult {
     let estimatedDuration = wordCount / WORDS_PER_SECOND;
 
     // Fases interativas têm duração mínima de 5s
-    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type as any);
     if (isInteractive) {
       estimatedDuration = Math.max(estimatedDuration, 5.0);
       interactiveCount++;
@@ -1865,9 +1952,9 @@ function generatePhases(
     // Anchor Actions
     const anchorActions: AnchorAction[] = [];
 
-    // ✅ FASE 6 ANCHOR FIX: Guard para cenas não-interativas (como V7 reference)
-    const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta', 'gamification'];
-    const isInteractiveScene = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    // ✅ CONTRATO CONGELADO v1.0: Usar constante GLOBAL (definida no topo)
+    // NUNCA duplicar a lista aqui - referencia a INTERACTIVE_SCENE_TYPES global
+    const isInteractiveScene = INTERACTIVE_SCENE_TYPES.includes(scene.type as any);
 
     if (scene.anchorText?.pauseAt) {
       // ✅ GUARD: Se a cena NÃO é interativa, ignorar pauseAt
@@ -1937,16 +2024,26 @@ function generatePhases(
       // Ver: docs/V7-JSON-TEMPLATE-LETTER-REVEAL.md
       const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
       
-      // ✅ Usar duration do content se especificado, senão usar default por tipo
-      const duration = (mv.content as any)?.duration || getDefaultDuration(mv.type);
+      // ✅ CONTRATO CONGELADO v1.0: Converter moderno → legado ANTES de salvar
+      const canonicalType = MODERN_TO_LEGACY_MAP[mv.type] || mv.type;
+      
+      // ✅ triggerTime: NUNCA undefined (fallback determinístico)
+      const fallbackTriggerTime = startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1));
+      const safeTriggerTime = triggerTime ?? fallbackTriggerTime;
+      
+      // ✅ duration: NUNCA undefined (fallback por tipo canônico)
+      const safeDuration = (mv.content as any)?.duration || getDefaultDuration(canonicalType);
+      
       microVisuals.push({
         id: mv.id || `mv-${scene.id}-${idx}`,
-        type: mv.type,
+        type: canonicalType,  // ← TIPO CANÔNICO (legado)
         anchorText: mv.anchorText,
-        triggerTime: triggerTime ?? (startTime + (endTime - startTime) * ((idx + 1) / (scene.visual.microVisuals!.length + 1))),
-        duration,
+        triggerTime: safeTriggerTime,  // ← NUNCA undefined
+        duration: safeDuration,         // ← NUNCA undefined
         content: mv.content,
       });
+      
+      console.log(`[MicroVisual] ${mv.id || `mv-${scene.id}-${idx}`}: ${mv.type} → ${canonicalType} @ ${safeTriggerTime.toFixed(2)}s (${safeDuration}s)`);
 
       if (triggerTime !== null) {
         anchorActions.push({
@@ -1973,11 +2070,15 @@ function generatePhases(
       }
     }
 
+    // ✅ CONTRATO CONGELADO v1.0: Mapear scene.type → phase.type persistível
+    // secret-reveal e gamification NÃO existem no banco
+    const persistiblePhaseType = SCENE_TO_PHASE_MAP[scene.type] || scene.type;
+    
     // Construir fase
     const phase: Phase = {
       id: scene.id,
       title: scene.title,
-      type: scene.type,
+      type: persistiblePhaseType,  // ← TIPO MAPEADO PARA PERSISTÊNCIA
       startTime,
       endTime,
       visual: {
@@ -2104,11 +2205,10 @@ function generatePhases(
 
   // NÃO USAR: phases.sort((a, b) => a.startTime - b.startTime);
 
-  // ✅ V7-vv FIX: Verificar PRIMEIRA fase interativa também (loop começa em i=1)
-  const INTERACTIVE_TYPES_CHECK = ['interaction', 'playground', 'quiz', 'secret-reveal', 'cta', 'gamification'];
+  // ✅ CONTRATO CONGELADO v1.0: Usar constante GLOBAL
   const MIN_INTERACTIVE_DURATION_CHECK = 5.0;
   
-  if (phases.length > 0 && INTERACTIVE_TYPES_CHECK.includes(phases[0].type)) {
+  if (phases.length > 0 && INTERACTIVE_SCENE_TYPES.includes(phases[0].type as any)) {
     const firstPhase = phases[0];
     const duration = firstPhase.endTime - firstPhase.startTime;
     if (duration < MIN_INTERACTIVE_DURATION_CHECK) {
@@ -2140,9 +2240,8 @@ function generatePhases(
       console.log(`[Phases] ✅ FIX: "${currPhase.id}" endTime ajustado para ${currPhase.endTime.toFixed(2)}s (min duration)`);
     }
     
-    // ✅ V7-vv FIX: Fases INTERATIVAS precisam de duração MÍNIMA de 5 segundos
-    const INTERACTIVE_TYPES = ['interaction', 'playground', 'quiz', 'secret-reveal', 'cta', 'gamification'];
-    if (INTERACTIVE_TYPES.includes(currPhase.type)) {
+    // ✅ CONTRATO CONGELADO v1.0: Usar constante GLOBAL
+    if (INTERACTIVE_SCENE_TYPES.includes(currPhase.type as any)) {
       const currDuration = currPhase.endTime - currPhase.startTime;
       const MIN_INTERACTIVE_DURATION = 5.0; // 5 segundos mínimo para interação
       

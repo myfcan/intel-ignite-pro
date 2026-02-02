@@ -13,7 +13,12 @@
 // ============================================================================
 
 /**
- * Tipos de cena suportados pelo V7
+ * Tipos de cena suportados no INPUT do Pipeline V7-v2
+ * 
+ * CONTRATO CONGELADO v1.0:
+ * - 'cta' é visual.type, NÃO scene.type
+ * - Para criar CTA: use scene.type="narrative" + visual.type="cta"
+ * - secret-reveal e gamification são mapeados para phase.type persistível
  */
 export type V7SceneType = 
   | 'dramatic'      // Número/estatística impactante
@@ -22,9 +27,8 @@ export type V7SceneType =
   | 'interaction'   // Quiz de múltipla escolha
   | 'playground'    // Comparação prompt amador vs pro
   | 'revelation'    // Revelação letra por letra (PERFEITO)
-  | 'secret-reveal' // Revelação com áudio próprio
-  | 'cta'          // Call-to-action com botão
-  | 'gamification'; // Resultado final com métricas
+  | 'secret-reveal' // Revelação com áudio próprio (mapeia para 'revelation')
+  | 'gamification'; // Resultado final com métricas (mapeia para 'narrative')
 
 /**
  * Tipos de visual suportados
