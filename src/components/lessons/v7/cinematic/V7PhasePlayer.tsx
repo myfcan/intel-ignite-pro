@@ -39,7 +39,7 @@ import {
   V7MicroVisual,
   usePhaseController
 } from './phases/V7PhaseController';
-import { useV7PlayerDebugger } from '@/lib/v7Debug/playerDebugger';
+// Legacy debug system removed - now using V7 Diagnostic Engine
 
 interface WordTimestamp {
   word: string;
@@ -146,8 +146,7 @@ export const V7PhasePlayer = ({
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();
 
-  // ✅ V7-DEBUG: Player debugger for runtime metrics (Levels 3-5)
-  const debugger_ = useV7PlayerDebugger(script?.id || 'unknown', script?.title || 'Unknown Lesson');
+  // Legacy debug system removed - V7 Diagnostic Engine is used on-demand via admin panel
 
   // ✅ V7-v30 FIX: Track if we're in a blocking interactive phase
   // This ref is used to prevent onComplete from being called when audio ends
@@ -497,122 +496,11 @@ export const V7PhasePlayer = ({
     
     previousPhaseRef.current = currentPhaseType || null;
   }, [currentPhase?.type]);
+  // Legacy debug registration removed - V7 Diagnostic Engine analyzes on-demand
 
-  // ✅ V7-DEBUG: Register planned events from timeline
-  // IDs devem corresponder aos gerados pelo pipelineDebugger para matching correto
-  useEffect(() => {
-    if (!scaledScript?.phases) return;
-    
-    scaledScript.phases.forEach((phase) => {
-      // Register phase start usando phase.id (corresponde ao pipeline)
-      debugger_.registerPlannedEvent(
-        `phase_start_${phase.id}`,
-        phase.startTime,
-        null
-      );
-      
-      // Register phase end
-      debugger_.registerPlannedEvent(
-        `phase_end_${phase.id}`,
-        phase.endTime,
-        null
-      );
-      
-      // Register anchor actions usando IDs do pipeline
-      if (phase.anchorActions) {
-        phase.anchorActions.forEach((anchor: any) => {
-          // Pipeline usa: anchor.id para anchor_show, anchor_pause-${phaseId} para pause
-          const anchorId = anchor.type === 'pause' 
-            ? `anchor_pause-${phase.id}`
-            : `anchor_${anchor.id || anchor.targetId}`;
-          
-          debugger_.registerPlannedEvent(
-            anchorId,
-            anchor.keywordTime || 0,
-            anchor.keyword
-          );
-        });
-      }
-      
-      // Register micro visuals
-      if (phase.microVisuals) {
-        phase.microVisuals.forEach((mv: any) => {
-          debugger_.registerPlannedEvent(
-            `micro_${mv.id}`,
-            mv.triggerTime || 0,
-            mv.anchorText
-          );
-        });
-      }
-    });
-    
-    console.log('[V7PhasePlayer] 🐛 DEBUG: Planned events registered with correct IDs');
-  }, [scaledScript?.phases, debugger_]);
+  // Legacy phase transition tracking removed
 
-  // ✅ V7-DEBUG: Record phase transitions
-  useEffect(() => {
-    if (!currentPhase || isLoading) return;
-    
-    // Usar phase.id para corresponder aos IDs do pipeline
-    debugger_.recordEventExecution(
-      `phase_start_${currentPhase.id}`,
-      'executed',
-      audio.currentTime,
-      null,
-      { attempts: 1, usedFallback: false }
-    );
-    
-    debugger_.recordPlayerEvent('phase_change', Date.now(), {
-      phaseIndex: currentPhaseIndex,
-      phaseType: currentPhase.type,
-      phaseId: currentPhase.id,
-    });
-    
-    debugger_.captureStateSnapshot(
-      effectiveIsPlaying ? 'playing' : 'paused',
-      currentPhaseIndex,
-      internalTime,
-      hasAudio ? audio.currentTime : null
-    );
-  }, [currentPhaseIndex, currentPhase?.id, isLoading]);
-
-  // ✅ V7-DEBUG: Record audio events
-  useEffect(() => {
-    if (!hasAudio) return;
-    
-    const eventType = audio.isPlaying ? 'play' : 'pause';
-    debugger_.recordPlayerEvent(eventType, Date.now(), {
-      currentTime: audio.currentTime,
-    });
-  }, [audio.isPlaying, hasAudio]);
-
-  // ✅ V7-DEBUG: Save and log report on unmount (both dev and production)
-  useEffect(() => {
-    return () => {
-      const report = debugger_.generateReport();
-      
-      // Log em desenvolvimento
-      if (import.meta.env.DEV) {
-        debugger_.logCurrentState();
-        console.log('[V7PhasePlayer] 🐛 Final Debug Report:', report.summary);
-      }
-      
-      // Persistir em produção e desenvolvimento (async, não bloqueia unmount)
-      if (script?.id && script.id !== 'unknown') {
-        import('@/lib/v7Debug/saveDebugReport').then(({ saveDebugReport }) => {
-          saveDebugReport(report).then(result => {
-            if (result.success) {
-              console.log('[V7PhasePlayer] ✅ Player debug report saved:', result.reportId);
-            } else {
-              console.warn('[V7PhasePlayer] ⚠️ Failed to save player debug report:', result.error);
-            }
-          });
-        }).catch(err => {
-          console.warn('[V7PhasePlayer] ⚠️ Could not import saveDebugReport:', err);
-        });
-      }
-    };
-  }, [script?.id]);
+  // Legacy debug audio events and report saving removed - V7 Diagnostic Engine analyzes on-demand
 
   // ✅ V7-v5: TODA pausa é controlada APENAS pelo anchorText
   useEffect(() => {
