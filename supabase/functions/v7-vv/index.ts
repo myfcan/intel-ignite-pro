@@ -1598,6 +1598,120 @@ function executeDryRun(input: ScriptInput): DryRunResult {
       }
     }
 
+    // =========================================================================
+    // VALIDAÇÃO PROFUNDA DE visual.content — CONTRATO CONGELADO v1.0
+    // =========================================================================
+    if (scene.visual?.type) {
+      const vType = scene.visual.type;
+      const content = scene.visual.content as Record<string, any> | undefined;
+
+      // PASSO 1: visual.type válido
+      if (!VALID_VISUAL_TYPES.includes(vType as any)) {
+        issues.push({
+          severity: 'error',
+          scene: sceneId,
+          field: 'visual.type',
+          message: `visual.type "${vType}" inválido`,
+          suggestion: `Tipos válidos: ${VALID_VISUAL_TYPES.join(', ')}`,
+        });
+      } else {
+        // PASSO 2: content obrigatório se schema.required.length > 0
+        const schema = VISUAL_CONTENT_SCHEMA[vType];
+        if (schema?.required?.length) {
+          if (!content || typeof content !== 'object') {
+            issues.push({
+              severity: 'error',
+              scene: sceneId,
+              field: 'visual.content',
+              message: `visual.type "${vType}" requer "content" definido`,
+            });
+          } else {
+            // PASSO 3: validar cada campo required
+            for (const field of schema.required) {
+              if (!(field in content) || content[field] === undefined || content[field] === null) {
+                issues.push({
+                  severity: 'error',
+                  scene: sceneId,
+                  field: `visual.content.${field}`,
+                  message: `visual.type "${vType}" requer campo "${field}"`,
+                });
+              }
+            }
+          }
+        }
+
+        // PASSO 4: validação profunda por tipo
+        if (content) {
+          // text-reveal: title OU mainText obrigatório
+          if (vType === 'text-reveal') {
+            if (!content.title && !content.mainText) {
+              issues.push({
+                severity: 'error',
+                scene: sceneId,
+                field: 'visual.content',
+                message: '"text-reveal" requer "title" OU "mainText"',
+              });
+            }
+          }
+
+          // split-screen: estrutura completa
+          if (vType === 'split-screen') {
+            if (!content.left || typeof content.left !== 'object') {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.left', message: '"split-screen" requer objeto "left"' });
+            } else {
+              if (!content.left.label) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.left.label', message: '"split-screen" requer "left.label"' });
+              if (!Array.isArray(content.left.items) || content.left.items.length === 0) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.left.items', message: '"split-screen" requer "left.items[]" não vazio' });
+            }
+            if (!content.right || typeof content.right !== 'object') {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.right', message: '"split-screen" requer objeto "right"' });
+            } else {
+              if (!content.right.label) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.right.label', message: '"split-screen" requer "right.label"' });
+              if (!Array.isArray(content.right.items) || content.right.items.length === 0) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.right.items', message: '"split-screen" requer "right.items[]" não vazio' });
+            }
+          }
+
+          // cards-reveal: cards[] com id e text
+          if (vType === 'cards-reveal') {
+            const cards = content.cards;
+            if (!Array.isArray(cards) || cards.length === 0) {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.cards', message: '"cards-reveal" requer "cards[]" não vazio' });
+            } else {
+              cards.forEach((card: any, i: number) => {
+                if (!card?.id) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.cards[${i}].id`, message: 'card.id é obrigatório' });
+                if (!card?.text) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.cards[${i}].text`, message: 'card.text é obrigatório' });
+              });
+            }
+          }
+
+          // letter-reveal: letters[] com letter e meaning
+          if (vType === 'letter-reveal') {
+            const letters = content.letters;
+            if (!Array.isArray(letters) || letters.length === 0) {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.letters', message: '"letter-reveal" requer "letters[]" não vazio' });
+            } else {
+              letters.forEach((item: any, i: number) => {
+                if (!item?.letter) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.letters[${i}].letter`, message: 'letters[].letter é obrigatório' });
+                if (!item?.meaning) issues.push({ severity: 'error', scene: sceneId, field: `visual.content.letters[${i}].meaning`, message: 'letters[].meaning é obrigatório' });
+              });
+            }
+          }
+
+          // cta: buttonText string não vazia
+          if (vType === 'cta') {
+            if (!content.buttonText || typeof content.buttonText !== 'string' || !content.buttonText.trim()) {
+              issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.buttonText', message: '"cta" requer "buttonText" string não vazia' });
+            }
+          }
+
+          // 3d-dual-monitors: leftScreen e rightScreen
+          if (vType === '3d-dual-monitors') {
+            if (!content.leftScreen) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.leftScreen', message: '"3d-dual-monitors" requer "leftScreen"' });
+            if (!content.rightScreen) issues.push({ severity: 'error', scene: sceneId, field: 'visual.content.rightScreen', message: '"3d-dual-monitors" requer "rightScreen"' });
+          }
+        }
+      }
+    }
+
     // Adicionar análise da cena
     sceneAnalysis.push({
       id: sceneId,
