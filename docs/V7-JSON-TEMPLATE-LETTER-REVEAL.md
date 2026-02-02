@@ -192,95 +192,23 @@ O Pipeline calcula os timestamps dos microVisuals **apenas dentro do range da ce
 
 ---
 
-## ⏱️ Timing e Duração Recomendada
+## ⏱️ Boas Práticas de Narração
 
-### Velocidade de Narração
+O timing real é calculado **automaticamente pelo ElevenLabs** via word-level timestamps. Não há nenhum cálculo manual necessário no JSON.
 
-O ElevenLabs processa narração a aproximadamente **150 palavras por minuto** (2.5 palavras/segundo). Considere isso ao escrever a narração do acrônimo.
-
-### Estrutura Temporal Recomendada
-
-| Elemento | Duração Recomendada | Observação |
-|----------|---------------------|------------|
-| Introdução do acrônimo | 1-2s | "Esse é o método PERFEITO." |
-| Intervalo entre letras | 1.5-2.5s | Tempo para cada significado ser falado |
-| Revelação de cada letra | 0.7s | Animação interna do componente |
-| Pausa final (finalStamp) | 2-3s | Momento de absorção visual |
-| Duração total da cena | 20-35s | Depende do número de letras |
-
-### Cálculo de Duração por Acrônimo
-
-```
-Duração estimada = (N × 2s) + 5s
-
-Onde:
-- N = número de letras
-- 2s = tempo médio por letra + significado
-- 5s = introdução + pausa final
-```
-
-| Acrônimo | Letras | Duração Estimada |
-|----------|--------|------------------|
-| FOCO | 4 | ~13 segundos |
-| PERFEITO | 8 | ~21 segundos |
-| METODOLOGIA | 10 | ~25 segundos |
-
-### Exemplo de Narração com Timing Ideal
-
-```
-"Esse é o método PERFEITO."          → 2s (introdução)
-"Persona específica."                 → 1.5s (letra P)
-"Estrutura clara."                    → 1.5s (letra E)
-"Resultado esperado."                 → 1.5s (letra R)
-"Formato definido."                   → 1.5s (letra F)
-"Exemplos práticos."                  → 1.5s (letra E)
-"Iteração contínua."                  → 1.5s (letra I)
-"Tom adequado."                       → 1.5s (letra T)
-"Otimização constante."               → 1.5s (letra O)
-"Com esse método, seus prompts..."    → 3s (conclusão)
-─────────────────────────────────────────────────
-TOTAL                                 → ~18s
-```
-
-### Configuração de Duration nos MicroVisuals
-
-O campo `duration` em cada microVisual define quanto tempo o efeito visual permanece ativo **após** ser disparado:
-
-```json
-{
-  "id": "mv-p",
-  "anchorText": "Persona",
-  "type": "letter-reveal",
-  "content": { "index": 0 },
-  "duration": 2  // ← Letra fica destacada por 2 segundos
-}
-```
-
-| Valor | Uso Recomendado |
-|-------|-----------------|
-| 1.5s | Acrônimos longos (10+ letras) |
-| 2s | Padrão para maioria dos casos |
-| 2.5s | Acrônimos curtos (4-5 letras) |
-| 3s | Quando há pausa dramática |
-
-### Ritmo da Animação Interna
-
-O componente `V7PhasePERFEITOSynced` usa um intervalo interno de **700ms** para construção progressiva das letras. Isso é independente dos timestamps de narração e garante ritmo consistente mesmo com pequenas variações de áudio.
-
-```typescript
-// Lógica interna do componente
-const LETTER_REVEAL_INTERVAL = 700; // ms entre cada letra
-```
-
-### Boas Práticas de Timing
+### Diretrizes para Escrita
 
 1. **Mantenha significados curtos** (2-3 palavras): "Persona Específica" ✅, não "Persona Específica e Detalhada" ❌
 
-2. **Pause após a última letra**: Adicione uma frase de conclusão antes do `pauseAt` para dar tempo de absorção
+2. **Pause após a última letra**: Adicione uma frase de conclusão antes do `pauseAt` para dar tempo de absorção visual
 
 3. **Evite narrações muito rápidas**: Se o significado tem mais de 3 palavras, considere simplificar
 
-4. **Teste o ritmo**: Use o Debug Panel para verificar se os triggers estão espaçados uniformemente
+4. **Use o Debug Panel**: Verifique se os triggers estão espaçados corretamente após processar
+
+### Ritmo da Animação Interna
+
+O componente `V7PhasePERFEITOSynced` usa um intervalo interno de **700ms** para construção progressiva das letras. Isso garante ritmo consistente independente das variações do áudio.
 
 ---
 
