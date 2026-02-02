@@ -66,7 +66,7 @@ const TestCard = lazy(() => import("./pages/TestCard"));
 const AdminV7Create = lazy(() => import("./pages/AdminV7Create"));
 const AdminV7Preview = lazy(() => import("./pages/AdminV7Preview"));
 const AdminV7vv = lazy(() => import("./pages/AdminV7vv"));
-const AdminV7PipelineTest = lazy(() => import("./pages/AdminV7PipelineTest"));
+const AdminV7Pipeline = lazy(() => import("./pages/AdminV7Pipeline"));
 const AdminV7Diagnostic = lazy(() => import("./pages/AdminV7Diagnostic"));
 const V7CinematicDemo = lazy(() => import("./pages/V7CinematicDemo"));
 const V7CinematicPlayer = lazy(() => import("./pages/V7CinematicPlayer"));
@@ -185,7 +185,9 @@ const App = () => (
                 {/* V7-vv Pipeline - Versão Definitiva */}
                 <Route path="/admin/v7-vv" element={<ProtectedRoute><AdminV7vv /></ProtectedRoute>} />
                 <Route path="/admin/v7/diagnostic" element={<ProtectedRoute><AdminV7Diagnostic /></ProtectedRoute>} />
-                <Route path="/admin/v7/pipeline-test" element={<ProtectedRoute><AdminV7PipelineTest /></ProtectedRoute>} />
+                <Route path="/admin/v7/pipeline" element={<ProtectedRoute><AdminV7Pipeline /></ProtectedRoute>} />
+                {/* Redirect old route to new consolidated page */}
+                <Route path="/admin/v7/pipeline-test" element={<ProtectedRoute><AdminV7Pipeline /></ProtectedRoute>} />
                 <Route path="/v7-lesson/:lessonId" element={<V7CinematicPlayer />} />
                 <Route path="/admin/v7/play/:lessonId" element={<ProtectedRoute><V7CinematicPlayer /></ProtectedRoute>} />
                 {/* PUBLIC V7 DEMO FOR TESTING */}
