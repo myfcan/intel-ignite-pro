@@ -919,58 +919,269 @@ interface ScriptScene {
 }
 
 // ============================================================================
-// VALIDAÇÃO
+// VALIDAÇÃO ROBUSTA - V7-vv Pipeline v1.0.0
 // ============================================================================
 
 interface ValidationError {
   scene: string;
   field: string;
   message: string;
+  severity: 'error' | 'warning';
 }
+
+// ============================================================================
+// TIPOS DE MICROVISUAL SUPORTADOS
+// ============================================================================
+const VALID_MICROVISUAL_TYPES = [
+  'icon',
+  'text', 
+  'number',
+  'image',
+  'badge',
+  'highlight',
+  'letter-reveal'
+] as const;
+
+const INVALID_MICROVISUAL_TYPES_MAP: Record<string, string> = {
+  'image-flash': 'image',
+  'text-pop': 'text',
+  'number-count': 'number',
+  'card-reveal': 'Use visual.type="cards-reveal" em vez de microVisual',
+  'text-highlight': 'highlight'
+};
+
+// ============================================================================
+// TIPOS DE CENA INTERATIVOS (requerem pauseAt)
+// ============================================================================
+const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta'];
 
 function validateInput(input: ScriptInput): ValidationError[] {
   const errors: ValidationError[] = [];
+  const allMicroVisualIds = new Set<string>();
+  const allAnchorTexts = new Map<string, string>(); // anchorText -> sceneId
 
+  console.log('[V7-vv:Validate] ========================================');
+  console.log('[V7-vv:Validate] VALIDAÇÃO ROBUSTA - Iniciando...');
+  console.log('[V7-vv:Validate] ========================================');
+
+  // =========================================================================
+  // 1. VALIDAÇÃO DE ESTRUTURA RAIZ
+  // =========================================================================
   if (!input.title?.trim()) {
-    errors.push({ scene: 'root', field: 'title', message: 'Título é obrigatório' });
+    errors.push({ 
+      scene: 'root', 
+      field: 'title', 
+      message: 'Título é obrigatório',
+      severity: 'error'
+    });
   }
 
   if (!input.scenes || input.scenes.length === 0) {
-    errors.push({ scene: 'root', field: 'scenes', message: 'Pelo menos uma cena é obrigatória' });
+    errors.push({ 
+      scene: 'root', 
+      field: 'scenes', 
+      message: 'Pelo menos uma cena é obrigatória',
+      severity: 'error'
+    });
     return errors;
   }
 
+  // =========================================================================
+  // 2. VALIDAÇÃO DE CADA CENA
+  // =========================================================================
   input.scenes.forEach((scene, index) => {
     const sceneId = scene.id || `scene-${index + 1}`;
 
+    // 2.1 Narração obrigatória
     if (!scene.narration?.trim()) {
       errors.push({
         scene: sceneId,
         field: 'narration',
-        message: `Cena "${sceneId}" não tem narração.`
+        message: `Cena "${sceneId}" não tem narração.`,
+        severity: 'error'
       });
     }
 
+    // 2.2 Visual obrigatório
     if (!scene.visual) {
       errors.push({
         scene: sceneId,
         field: 'visual',
-        message: `Cena "${sceneId}" não tem configuração visual.`
+        message: `Cena "${sceneId}" não tem configuração visual.`,
+        severity: 'error'
       });
     }
 
-    // Cenas interativas DEVEM ter anchorText.pauseAt
-    const isInteractive = ['interaction', 'playground', 'secret-reveal'].includes(scene.type);
-    if (isInteractive && !scene.anchorText?.pauseAt) {
-      errors.push({
-        scene: sceneId,
-        field: 'anchorText.pauseAt',
-        message: `Cena interativa "${sceneId}" DEVE ter anchorText.pauseAt.`
+    // 2.3 Validar microVisuals
+    if (scene.visual?.microVisuals) {
+      scene.visual.microVisuals.forEach((mv, mvIndex) => {
+        const mvId = mv.id || `mv-${sceneId}-${mvIndex}`;
+
+        // 2.3.1 Validar tipo de microVisual
+        if (!VALID_MICROVISUAL_TYPES.includes(mv.type as any)) {
+          const suggestion = INVALID_MICROVISUAL_TYPES_MAP[mv.type];
+          errors.push({
+            scene: sceneId,
+            field: `microVisuals[${mvIndex}].type`,
+            message: `MicroVisual "${mvId}" tem tipo inválido "${mv.type}". ${suggestion ? `Use "${suggestion}" em vez disso.` : `Tipos válidos: ${VALID_MICROVISUAL_TYPES.join(', ')}`}`,
+            severity: 'error'
+          });
+        }
+
+        // 2.3.2 Validar ID único
+        if (allMicroVisualIds.has(mvId)) {
+          errors.push({
+            scene: sceneId,
+            field: `microVisuals[${mvIndex}].id`,
+            message: `MicroVisual ID "${mvId}" está duplicado. IDs devem ser únicos.`,
+            severity: 'error'
+          });
+        }
+        allMicroVisualIds.add(mvId);
+
+        // 2.3.3 Validar anchorText existe na narração
+        if (mv.anchorText && scene.narration) {
+          const normalizedAnchor = mv.anchorText.toLowerCase();
+          const normalizedNarration = scene.narration.toLowerCase();
+          
+          if (!normalizedNarration.includes(normalizedAnchor)) {
+            errors.push({
+              scene: sceneId,
+              field: `microVisuals[${mvIndex}].anchorText`,
+              message: `MicroVisual "${mvId}": anchorText "${mv.anchorText}" NÃO existe na narração desta cena. A narração DEVE conter a palavra-chave.`,
+              severity: 'error'
+            });
+          }
+        }
+
+        // 2.3.4 Verificar anchorText duplicado
+        if (mv.anchorText) {
+          const existingScene = allAnchorTexts.get(mv.anchorText.toLowerCase());
+          if (existingScene && existingScene !== sceneId) {
+            errors.push({
+              scene: sceneId,
+              field: `microVisuals[${mvIndex}].anchorText`,
+              message: `AnchorText "${mv.anchorText}" já usado em "${existingScene}". Keywords devem ser únicas.`,
+              severity: 'warning'
+            });
+          }
+          allAnchorTexts.set(mv.anchorText.toLowerCase(), sceneId);
+        }
       });
+    }
+
+    // 2.4 Validar Quiz
+    if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
+      const optionIds = new Set<string>();
+      let hasCorrectOption = false;
+
+      scene.interaction.options.forEach((opt, optIndex) => {
+        // ID único
+        if (optionIds.has(opt.id)) {
+          errors.push({
+            scene: sceneId,
+            field: `interaction.options[${optIndex}].id`,
+            message: `Option ID "${opt.id}" está duplicado neste quiz.`,
+            severity: 'error'
+          });
+        }
+        optionIds.add(opt.id);
+
+        // Verificar isCorrect
+        if (opt.isCorrect) {
+          hasCorrectOption = true;
+        }
+      });
+
+      if (!hasCorrectOption) {
+        errors.push({
+          scene: sceneId,
+          field: 'interaction.options',
+          message: `Quiz "${sceneId}" não tem nenhuma opção marcada como correta (isCorrect: true).`,
+          severity: 'warning'
+        });
+      }
+    }
+
+    // 2.5 Validar Playground
+    if (scene.interaction?.type === 'playground') {
+      if (!scene.interaction.amateurPrompt) {
+        errors.push({
+          scene: sceneId,
+          field: 'interaction.amateurPrompt',
+          message: `Playground "${sceneId}" não tem amateurPrompt definido.`,
+          severity: 'error'
+        });
+      }
+      if (!scene.interaction.professionalPrompt) {
+        errors.push({
+          scene: sceneId,
+          field: 'interaction.professionalPrompt',
+          message: `Playground "${sceneId}" não tem professionalPrompt definido.`,
+          severity: 'error'
+        });
+      }
+    }
+
+    // 2.6 Log de cena interativa (NÃO mais erro se falta pauseAt - será gerado)
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    if (isInteractive && !scene.anchorText?.pauseAt) {
+      console.log(`[V7-vv:Validate] ℹ️ Cena interativa "${sceneId}" sem pauseAt - será gerado automaticamente`);
     }
   });
 
-  return errors;
+  // =========================================================================
+  // 3. LOG RESULTADO
+  // =========================================================================
+  const errorCount = errors.filter(e => e.severity === 'error').length;
+  const warningCount = errors.filter(e => e.severity === 'warning').length;
+
+  if (errorCount > 0) {
+    console.error(`[V7-vv:Validate] ❌ FALHOU: ${errorCount} erro(s), ${warningCount} aviso(s)`);
+    errors.forEach(e => {
+      console.error(`[V7-vv:Validate]   [${e.severity.toUpperCase()}] ${e.scene}.${e.field}: ${e.message}`);
+    });
+  } else if (warningCount > 0) {
+    console.warn(`[V7-vv:Validate] ⚠️ PASSOU com ${warningCount} aviso(s)`);
+  } else {
+    console.log('[V7-vv:Validate] ✅ PASSOU - Nenhum erro encontrado');
+  }
+
+  // Retornar apenas erros (warnings são informativos)
+  return errors.filter(e => e.severity === 'error');
+}
+
+// ============================================================================
+// AUTO-GERAÇÃO DE pauseAt PARA FASES INTERATIVAS
+// ============================================================================
+function autoGeneratePauseAt(scenes: ScriptScene[]): void {
+  console.log('[V7-vv:AutoPauseAt] Verificando fases interativas...');
+
+  scenes.forEach((scene, index) => {
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type);
+    
+    if (isInteractive && !scene.anchorText?.pauseAt && scene.narration) {
+      // Extrair última palavra significativa da narração
+      const words = scene.narration
+        .replace(/[.,!?;:'"()[\]{}…]+/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2);
+
+      if (words.length > 0) {
+        const lastWord = words[words.length - 1];
+        
+        // Garantir que anchorText existe
+        if (!scene.anchorText) {
+          scene.anchorText = {};
+        }
+        
+        scene.anchorText.pauseAt = lastWord;
+        console.log(`[V7-vv:AutoPauseAt] ✅ "${scene.id}": pauseAt gerado automaticamente = "${lastWord}"`);
+      } else {
+        console.warn(`[V7-vv:AutoPauseAt] ⚠️ "${scene.id}": Não foi possível extrair palavra para pauseAt`);
+      }
+    }
+  });
 }
 
 // ============================================================================
@@ -1966,17 +2177,32 @@ Deno.serve(async (req) => {
     console.log('================================================');
 
     // =========================================================================
-    // PASSO 1: VALIDAÇÃO
+    // PASSO 1: VALIDAÇÃO ROBUSTA
     // =========================================================================
     const validationErrors = validateInput(input);
     if (validationErrors.length > 0) {
       console.error('[V7-vv] ❌ Validation failed:', validationErrors);
+      
+      // Formatar mensagem de erro clara
+      const errorMessages = validationErrors.map(e => `[${e.scene}] ${e.field}: ${e.message}`);
+      
       return new Response(
-        JSON.stringify({ success: false, error: 'Validation failed', validationErrors }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'JSON inválido - Validação falhou', 
+          validationErrors,
+          errorMessages,
+          helpUrl: 'https://docs.ailiv.app/v7-json-template-definitivo'
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     console.log('[V7-vv] ✅ Validation passed');
+
+    // =========================================================================
+    // PASSO 1.5: AUTO-GERAÇÃO DE pauseAt PARA FASES INTERATIVAS
+    // =========================================================================
+    autoGeneratePauseAt(input.scenes);
 
     // =========================================================================
     // PASSO 2: GERAR ÁUDIO PRINCIPAL
@@ -2019,22 +2245,34 @@ Deno.serve(async (req) => {
     }
 
     // =========================================================================
-    // PASSO 3: GERAR ÁUDIOS DE FEEDBACK DO QUIZ
+    // PASSO 3: GERAR ÁUDIOS DE FEEDBACK DO QUIZ (AUTOMÁTICO)
     // =========================================================================
-    console.log('[V7-vv] Step 3: Generating feedback audios...');
+    console.log('[V7-vv] Step 3: Generating feedback audios (automatic)...');
 
-    // ✅ FASE 4 FIX: feedbackAudios como OBJECT (Frontend acessa por key)
-    // O Frontend faz: feedbackAudios?.[`feedback-${optionId}`]
+    // ✅ V7-vv v1.0.0: feedbackAudios como OBJECT + AUTO-GERAÇÃO
+    // Se feedback.narration não existe, gera narração baseada em title/subtitle
     const feedbackAudios: FeedbackAudiosObject = {};
 
     for (const scene of input.scenes) {
       if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
         for (const option of scene.interaction.options) {
-          if (option.feedback?.narration) {
+          // ✅ AUTO-GERAÇÃO: Se não tem narration, gerar a partir de title/subtitle
+          let feedbackNarration = option.feedback?.narration;
+          
+          if (!feedbackNarration && option.feedback?.title) {
+            // Gerar narração automaticamente
+            feedbackNarration = option.feedback.subtitle 
+              ? `${option.feedback.title}. ${option.feedback.subtitle}`
+              : option.feedback.title;
+            
+            console.log(`[V7-vv] ℹ️ Auto-generated narration for ${option.id}: "${feedbackNarration.substring(0, 50)}..."`);
+          }
+
+          if (feedbackNarration) {
             console.log(`[V7-vv] Generating feedback audio for option ${option.id}`);
 
             const feedbackResult = await generateAudio(
-              option.feedback.narration,
+              feedbackNarration,
               voiceId,
               supabase,
               `v7-feedback-${option.id}`
@@ -2055,8 +2293,10 @@ Deno.serve(async (req) => {
               };
               console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s (${trigger})`);
             } else {
-              console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}`);
+              console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}: ${feedbackResult.error}`);
             }
+          } else {
+            console.warn(`[V7-vv] ⚠️ Option ${option.id} has no feedback text to generate audio`);
           }
         }
       }
