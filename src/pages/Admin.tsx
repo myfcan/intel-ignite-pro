@@ -82,7 +82,7 @@ export default function Admin() {
                   className="border-pink-500/50 hover:bg-pink-500/10"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate('/admin/v7/pipeline-test');
+                    navigate('/admin/v7/pipeline');
                   }}
                 >
                   <Activity className="w-4 h-4 mr-1" />
