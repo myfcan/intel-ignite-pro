@@ -92,35 +92,35 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          {/* Debug Hardcore - FIXO */}
-          <Card className="border-2 border-orange-500/40 bg-gradient-to-br from-orange-500/15 to-amber-500/10 hover:border-orange-500/60 transition-all cursor-pointer shadow-lg shadow-orange-500/10" onClick={() => navigate('/admin/v7/debug-reports')}>
+          {/* Debug - FIXO */}
+          <Card className="border-2 border-orange-500/40 bg-gradient-to-br from-orange-500/15 to-amber-500/10 hover:border-orange-500/60 transition-all cursor-pointer shadow-lg shadow-orange-500/10" onClick={() => navigate('/admin/v7/diagnostic')}>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Bug className="w-7 h-7 text-orange-500" />
-                Debug Hardcore
+                Debug
                 <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full">V7</span>
               </CardTitle>
               <CardDescription>
-                Análise profunda de pipeline e player V7
+                Debug Engine V7 - Diagnóstico profundo de aulas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-sm grid grid-cols-2 gap-1">
                 <p>🔍 Health Score</p>
-                <p>⚠️ Issues detalhados</p>
+                <p>⚠️ 60+ validações</p>
                 <p>📊 Root cause</p>
-                <p>✅ Checklist correções</p>
+                <p>✅ Actions corretivas</p>
               </div>
               <Button
                 size="sm"
                 className="w-full bg-orange-600 hover:bg-orange-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate('/admin/v7/debug-reports');
+                  navigate('/admin/v7/diagnostic');
                 }}
               >
                 <Bug className="w-4 h-4 mr-1" />
-                Ver Debug Reports
+                Abrir Debug Engine
               </Button>
             </CardContent>
           </Card>
