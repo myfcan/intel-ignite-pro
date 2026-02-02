@@ -1187,69 +1187,6 @@ export type Database = {
         }
         Relationships: []
       }
-      v7_debug_reports: {
-        Row: {
-          all_issues: Json
-          audio_report: Json | null
-          created_at: string
-          created_by: string | null
-          execution_report: Json | null
-          generated_at: string
-          health_score: number
-          id: string
-          lesson_id: string
-          lesson_title: string
-          player_report: Json | null
-          rendering_report: Json | null
-          schema_version: string
-          severity: string
-          source: string
-          summary_report: Json
-          timeline_report: Json | null
-          total_issues: number
-        }
-        Insert: {
-          all_issues?: Json
-          audio_report?: Json | null
-          created_at?: string
-          created_by?: string | null
-          execution_report?: Json | null
-          generated_at?: string
-          health_score?: number
-          id?: string
-          lesson_id: string
-          lesson_title: string
-          player_report?: Json | null
-          rendering_report?: Json | null
-          schema_version?: string
-          severity?: string
-          source?: string
-          summary_report: Json
-          timeline_report?: Json | null
-          total_issues?: number
-        }
-        Update: {
-          all_issues?: Json
-          audio_report?: Json | null
-          created_at?: string
-          created_by?: string | null
-          execution_report?: Json | null
-          generated_at?: string
-          health_score?: number
-          id?: string
-          lesson_id?: string
-          lesson_title?: string
-          player_report?: Json | null
-          rendering_report?: Json | null
-          schema_version?: string
-          severity?: string
-          source?: string
-          summary_report?: Json
-          timeline_report?: Json | null
-          total_issues?: number
-        }
-        Relationships: []
-      }
       validation_alerts: {
         Row: {
           created_at: string | null
