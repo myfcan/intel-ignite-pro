@@ -85,36 +85,13 @@ export default function AdminManualHub() {
               </CardContent>
             </Card>
 
-            {/* Criação Aula V7 Cinematic */}
-            <Card className="border border-amber-500/30 hover:border-amber-500/50 transition-colors">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Film className="w-5 h-5 text-amber-600" />
-                  Criação Aula V7 Cinematic
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Crie aulas cinematográficas imersivas com 7 fases e sincronização de áudio
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button
-                  onClick={() => navigate('/admin/v7/create')}
-                  className="w-full bg-amber-600 hover:bg-amber-700"
-                  size="sm"
-                >
-                  <Film className="w-4 h-4 mr-2" />
-                  Criar Aula V7
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* V7-vv Pipeline (NOVO) */}
+            {/* V7-vv Pipeline (Sistema Definitivo) */}
             <Card className="border border-pink-500/30 hover:border-pink-500/50 transition-colors bg-pink-500/5">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Sparkles className="w-5 h-5 text-pink-600" />
                   V7-vv Pipeline
-                  <span className="text-xs bg-pink-600 text-white px-1.5 py-0.5 rounded">NOVO</span>
+                  <span className="text-xs bg-pink-600 text-white px-1.5 py-0.5 rounded">DEFINITIVO</span>
                 </CardTitle>
                 <CardDescription className="text-sm">
                   Pipeline automatizado com scenes, narração e anchorActions
@@ -137,38 +114,6 @@ export default function AdminManualHub() {
                 >
                   <Bug className="w-4 h-4 mr-2" />
                   Diagnóstico V7
-                </Button>
-                <Button
-                  onClick={() => navigate('/admin/v7/pipeline-test')}
-                  className="w-full"
-                  size="sm"
-                  variant="outline"
-                >
-                  <TestTube className="w-4 h-4 mr-2" />
-                  Testar Pipeline
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Teste V7 Cinematic */}
-            <Card className="border border-emerald-500/30 hover:border-emerald-500/50 transition-colors">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Play className="w-5 h-5 text-emerald-600" />
-                  Teste V7 Cinematic
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Teste e debug de aulas V7 com visualização de fases e sincronização
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button
-                  onClick={() => navigate('/v7-test')}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  size="sm"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Testar V7
                 </Button>
               </CardContent>
             </Card>
