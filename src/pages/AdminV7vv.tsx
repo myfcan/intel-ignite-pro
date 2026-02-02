@@ -206,11 +206,11 @@ export default function AdminV7vv() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/admin/v7/debug-reports')}
+              onClick={() => navigate('/admin/v7/diagnostic')}
               className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20"
             >
               <Bug className="w-4 h-4 mr-2" />
-              Debug Reports
+              Diagnostic
             </Button>
             <Badge variant="outline" className="text-cyan-400 border-cyan-400">
               v7-vv

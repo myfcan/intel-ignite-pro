@@ -2772,51 +2772,17 @@ Deno.serve(async (req) => {
     debugReport.lessonId = lessonId;
 
     // =========================================================================
-    // PASSO 6.5: PERSISTIR DEBUG REPORT NO BANCO
+    // PASSO 6.5: DEBUG REPORT (RETORNADO NA RESPOSTA - SEM PERSISTÊNCIA)
     // =========================================================================
-    console.log('[V7-vv] Step 6.5: Persisting debug report...');
-    console.log('[V7-vv] Debug Report Data:', JSON.stringify({
+    // ✅ Debug Report é retornado diretamente na resposta
+    // A tabela v7_debug_reports foi removida - análise on-demand via Diagnostic Engine
+    console.log('[V7-vv] 📊 Debug Report Summary:', {
       lesson_id: lessonId,
       lesson_title: input.title,
       health_score: debugReport.summary.healthScore,
       severity: debugReport.summary.severity,
       total_issues: debugReport.allIssues.length,
-    }, null, 2));
-    
-    try {
-      const debugInsertData = {
-        lesson_id: lessonId,
-        lesson_title: input.title,
-        generated_at: debugReport.generatedAt,
-        source: debugReport.source,
-        schema_version: debugReport.schemaVersion,
-        health_score: debugReport.summary.healthScore,
-        severity: debugReport.summary.severity,
-        total_issues: debugReport.allIssues.length,
-        audio_report: debugReport.audio,
-        timeline_report: debugReport.timeline,
-        summary_report: debugReport.summary,
-        all_issues: debugReport.allIssues,
-      };
-      
-      console.log('[V7-vv] Inserting debug report with data:', Object.keys(debugInsertData).join(', '));
-      
-      const { data: debugData, error: debugError } = await supabase
-        .from('v7_debug_reports')
-        .insert(debugInsertData)
-        .select('id')
-        .single();
-
-      if (debugError) {
-        console.error('[V7-vv] ❌ Failed to save debug report:', debugError.message);
-        console.error('[V7-vv] Debug Error Details:', JSON.stringify(debugError, null, 2));
-      } else {
-        console.log('[V7-vv] ✅ Debug report persisted successfully with ID:', debugData?.id);
-      }
-    } catch (debugSaveError: any) {
-      console.error('[V7-vv] ❌ Debug report save error:', debugSaveError.message);
-      console.error('[V7-vv] Stack:', debugSaveError.stack);
-    }
+    });
 
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
