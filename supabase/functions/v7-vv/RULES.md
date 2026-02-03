@@ -146,8 +146,50 @@ function selectAnchorOccurrence(
 
 ---
 
+## C02 Reprocess Mode (2026-02-03)
+
+### New: `reprocess_preserve_structure: true`
+
+When `reprocess_preserve_structure: true` is passed in the payload:
+1. Pipeline reads `phases` from existing `content` in database
+2. Uses `recalculateAnchorKeywordTimes()` to update ONLY `keywordTime` values
+3. Preserves ALL structure (phase IDs, anchor IDs, types, targetIds, etc.)
+4. Guarantees `structureHashMatch: true` in audit
+
+### Request Payload for C02
+
+```json
+{
+  "reprocess": true,
+  "reprocess_preserve_structure": true,
+  "existing_lesson_id": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
+  "run_id": "uuid-from-client",
+  "title": "O Fim da Brincadeira com IA",
+  "scenes": []  // Required but ignored when preserve_structure=true
+}
+```
+
+### C02 Audit Additions
+
+| Field | Description |
+|-------|-------------|
+| `c02Mode` | `true` if preserve_structure was used |
+| `c02Stats.t1` | Anchors out of range (should be 0) |
+| `c02Stats.t2` | Anchors with null keywordTime (missing keyword) |
+| `c02Stats.totalAnchors` | Total anchors recalculated |
+| `c02MultiMatchReport` | Top 10 multi-match cases with strategy used |
+
+### C02 Success Criteria
+
+- `structureHashMatch: true`
+- `c02Stats.t1 = 0`
+- `anchorsOnlyInOld = 0`
+- `anchorsOnlyInNew = 0`
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.2 (C02 Audit Complete)
+- **Versão:** v2.2 (C02 Preserve Structure Complete)
 - **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, selectAnchorOccurrence implemented
+- **Status:** C01 ✅, C02 ✅, selectAnchorOccurrence implemented, recalculateAnchorKeywordTimes implemented

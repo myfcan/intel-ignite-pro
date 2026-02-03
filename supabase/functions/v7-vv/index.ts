@@ -2403,6 +2403,125 @@ function selectAnchorOccurrence(
   };
 }
 
+// ============================================================================
+// C02: REPROCESS FROM OLD CONTENT - Recalculate ONLY keywordTime
+// ============================================================================
+
+interface RecalculatedPhase {
+  phase: any;
+  anchorsRecalculated: number;
+  multiMatchCases: Array<{
+    anchorId: string;
+    keyword: string;
+    occurrencesInRange: number;
+    strategyUsed: AnchorStrategy;
+    selectedTime: number | null;
+    wasInRange: boolean;
+    allMatches: Array<{ word: string; start: number; end: number }>;
+  }>;
+}
+
+/**
+ * ✅ C02: Recalculate ONLY keywordTime for existing anchors
+ * Preserves ALL structure (phase IDs, anchor IDs, types, etc.)
+ * Only updates keywordTime using selectAnchorOccurrence with proper strategy
+ */
+function recalculateAnchorKeywordTimes(
+  phases: any[],
+  wordTimestamps: WordTimestamp[]
+): { 
+  updatedPhases: any[]; 
+  totalAnchorsRecalculated: number;
+  multiMatchReport: RecalculatedPhase['multiMatchCases'];
+  t1Count: number;
+  t2Count: number;
+} {
+  console.log('[C02] recalculateAnchorKeywordTimes: Starting...');
+  
+  const updatedPhases: any[] = [];
+  let totalAnchorsRecalculated = 0;
+  const multiMatchReport: RecalculatedPhase['multiMatchCases'] = [];
+  let t1Count = 0; // Out of range
+  let t2Count = 0; // Null/missing
+  
+  for (const phase of phases) {
+    // Deep clone to avoid mutation
+    const updatedPhase = JSON.parse(JSON.stringify(phase));
+    
+    if (!updatedPhase.anchorActions || !Array.isArray(updatedPhase.anchorActions)) {
+      updatedPhases.push(updatedPhase);
+      continue;
+    }
+    
+    const phaseStartTime = updatedPhase.startTime || 0;
+    const phaseEndTime = updatedPhase.endTime || Infinity;
+    
+    for (let i = 0; i < updatedPhase.anchorActions.length; i++) {
+      const anchor = updatedPhase.anchorActions[i];
+      
+      if (!anchor.keyword) {
+        continue;
+      }
+      
+      // ✅ C02: Apply correct strategy based on anchor type (R3)
+      // pauseAt and endTime derivation → LAST_IN_RANGE
+      // microVisuals (show) → FIRST_IN_RANGE
+      const strategy: AnchorStrategy = anchor.type === 'pause' 
+        ? 'LAST_IN_RANGE' 
+        : 'FIRST_IN_RANGE';
+      
+      const result = selectAnchorOccurrence(
+        anchor.keyword,
+        wordTimestamps,
+        phaseStartTime,
+        phaseEndTime,
+        strategy
+      );
+      
+      const oldKeywordTime = anchor.keywordTime;
+      const newKeywordTime = result.selectedTime;
+      
+      // Update keywordTime
+      anchor.keywordTime = newKeywordTime;
+      totalAnchorsRecalculated++;
+      
+      // Track metrics
+      if (newKeywordTime === null) {
+        t2Count++; // Anchor missing
+      } else if (newKeywordTime < phaseStartTime - ANCHOR_EPS_GLOBAL || newKeywordTime > phaseEndTime + ANCHOR_EPS_GLOBAL) {
+        t1Count++; // Out of range (should not happen with proper implementation)
+      }
+      
+      // Report multi-match cases
+      if (result.matchedCount >= 2 || result.matchedCount === 0) {
+        multiMatchReport.push({
+          anchorId: anchor.id || `${phase.id}_anchor_${i}`,
+          keyword: anchor.keyword,
+          occurrencesInRange: result.matchedCount,
+          strategyUsed: result.strategyUsed,
+          selectedTime: result.selectedTime,
+          wasInRange: result.selectedTime !== null,
+          allMatches: result.allMatches
+        });
+      }
+      
+      console.log(`[C02] Phase "${phase.id}" anchor "${anchor.keyword}": ${oldKeywordTime?.toFixed(2) || 'null'}s → ${newKeywordTime?.toFixed(2) || 'null'}s (strategy: ${strategy}, matches: ${result.matchedCount})`);
+    }
+    
+    updatedPhases.push(updatedPhase);
+  }
+  
+  console.log(`[C02] Recalculated ${totalAnchorsRecalculated} anchors. T1=${t1Count}, T2=${t2Count}, Multi-match cases=${multiMatchReport.length}`);
+  
+  return {
+    updatedPhases,
+    totalAnchorsRecalculated,
+    multiMatchReport,
+    t1Count,
+    t2Count
+  };
+}
+
 /**
  * ✅ Backward-compatible wrapper (FIRST_IN_RANGE for microVisuals)
  * @param keyword - Palavra-chave a buscar
@@ -3247,31 +3366,41 @@ Deno.serve(async (req) => {
 
     // =========================================================================
     // PASSO 1: VALIDAÇÃO ROBUSTA (Modo Normal)
+    // ✅ C02: Skip validation when reprocess_preserve_structure=true (uses old_content)
     // =========================================================================
-    const validationErrors = validateInput(input);
-    if (validationErrors.length > 0) {
-      console.error('[V7-vv] ❌ Validation failed:', validationErrors);
-      
-      // Formatar mensagem de erro clara
-      const errorMessages = validationErrors.map(e => `[${e.scene}] ${e.field}: ${e.message}`);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'JSON inválido - Validação falhou', 
-          validationErrors,
-          errorMessages,
-          helpUrl: 'https://docs.ailiv.app/v7-json-template-definitivo'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const preserveStructureMode = input.reprocess === true && (input as any).reprocess_preserve_structure === true;
+    
+    if (!preserveStructureMode) {
+      const validationErrors = validateInput(input);
+      if (validationErrors.length > 0) {
+        console.error('[V7-vv] ❌ Validation failed:', validationErrors);
+        
+        // Formatar mensagem de erro clara
+        const errorMessages = validationErrors.map(e => `[${e.scene}] ${e.field}: ${e.message}`);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'JSON inválido - Validação falhou', 
+            validationErrors,
+            errorMessages,
+            helpUrl: 'https://docs.ailiv.app/v7-json-template-definitivo'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('[V7-vv] ✅ Validation passed');
+    } else {
+      console.log('[V7-vv] ✅ Validation SKIPPED (reprocess_preserve_structure mode)');
     }
-    console.log('[V7-vv] ✅ Validation passed');
 
     // =========================================================================
     // PASSO 1.5: AUTO-GERAÇÃO DE pauseAt PARA FASES INTERATIVAS
+    // ✅ C02: Skip when preserve_structure (uses existing anchors)
     // =========================================================================
-    autoGeneratePauseAt(input.scenes);
+    if (!preserveStructureMode) {
+      autoGeneratePauseAt(input.scenes);
+    }
 
     // =========================================================================
     // PASSO 2: GERAR OU REUSAR ÁUDIO PRINCIPAL
@@ -3502,9 +3631,15 @@ Deno.serve(async (req) => {
 
     let lessonId: string;
     
-    // ✅ C01: REPROCESS MODE - UPDATE na lição existente COM AUDITORIA v4.1
+    // ✅ C02: REPROCESS MODE - UPDATE na lição existente COM AUDITORIA v4.1
+    // Suporta dois modos:
+    // 1. reprocess_preserve_structure: true → usa phases existentes, recalcula APENAS keywordTime
+    // 2. reprocess_preserve_structure: false (default) → regenera phases a partir de scenes
+    const preserveStructure = (input as any).reprocess_preserve_structure === true;
+    
     if (isReprocess && input.existing_lesson_id) {
       console.log(`[V7-vv] 🔄 REPROCESS: Atualizando lição existente ${input.existing_lesson_id}`);
+      console.log(`[V7-vv] 🔄 REPROCESS MODE: ${preserveStructure ? 'PRESERVE_STRUCTURE (C02)' : 'REGENERATE (C01)'}`);
       
       // Validar run_id obrigatório (idempotency key)
       const runId = (input as any).run_id;
@@ -3516,7 +3651,12 @@ Deno.serve(async (req) => {
         throw new Error('run_id must be a valid UUID');
       }
       
+      // Determinar migration_version baseado no modo
+      const migrationVersion = preserveStructure ? 'v2.2-c02-fix' : 'v2.1-c01-fix';
+      
       let oldContent: any = null;
+      let c02MultiMatchReport: RecalculatedPhase['multiMatchCases'] = [];
+      let c02Stats = { t1: 0, t2: 0, totalAnchors: 0 };
       
       try {
         // 1. Buscar content atual para snapshot
@@ -3540,10 +3680,10 @@ Deno.serve(async (req) => {
           .insert({
             lesson_id: input.existing_lesson_id,
             run_id: runId,
-            migration_version: 'v2.1-c01-fix',
+            migration_version: migrationVersion,
             migration_status: 'in_progress',
             old_content: oldContent,
-            triggered_by: 'v7-vv-reprocess'
+            triggered_by: preserveStructure ? 'v7-vv-c02-preserve' : 'v7-vv-reprocess'
           });
         
         // Tratamento do erro 23505 (duplicate key - idempotência)
@@ -3595,12 +3735,50 @@ Deno.serve(async (req) => {
           }
         }
         
+        // ✅ C02: PRESERVE_STRUCTURE MODE - recalcular APENAS keywordTime
+        let finalLessonData: any;
+        
+        if (preserveStructure && oldContent?.phases) {
+          console.log(`[V7-vv] C02: Using PRESERVE_STRUCTURE mode - recalculating keywordTime only`);
+          
+          // Recalcular apenas keywordTime usando wordTimestamps do banco
+          const recalcResult = recalculateAnchorKeywordTimes(
+            oldContent.phases,
+            mainAudio.wordTimestamps
+          );
+          
+          c02MultiMatchReport = recalcResult.multiMatchReport;
+          c02Stats = {
+            t1: recalcResult.t1Count,
+            t2: recalcResult.t2Count,
+            totalAnchors: recalcResult.totalAnchorsRecalculated
+          };
+          
+          // Preservar estrutura completa, apenas atualizar phases com novos keywordTime
+          finalLessonData = {
+            ...oldContent,
+            phases: recalcResult.updatedPhases,
+            // Atualizar metadata
+            metadata: {
+              ...oldContent.metadata,
+              lastRecalculatedAt: new Date().toISOString(),
+              c02Applied: true,
+              c02Stats
+            }
+          };
+          
+          console.log(`[V7-vv] C02: Recalculated ${c02Stats.totalAnchors} anchors. T1=${c02Stats.t1}, T2=${c02Stats.t2}`);
+        } else {
+          // Modo original: usar lessonData gerado a partir de scenes
+          finalLessonData = lessonData;
+        }
+        
         // 3. Executar UPDATE na lição
         console.log(`[V7-vv] AUDIT: Updating lesson content...`);
         const { error: updateError } = await supabase
           .from('lessons')
           .update({
-            content: lessonData,
+            content: finalLessonData,
             estimated_time: Math.ceil(totalDuration / 60),
           })
           .eq('id', input.existing_lesson_id);
@@ -3611,13 +3789,21 @@ Deno.serve(async (req) => {
         
         // 4. Computar diff e marcar como completed
         console.log(`[V7-vv] AUDIT: Computing anchor diff...`);
-        const diffSummary = await computeAnchorDiffStrong(oldContent, lessonData);
+        const diffSummary = await computeAnchorDiffStrong(oldContent, finalLessonData);
+        
+        // ✅ C02: Adicionar multi-match report ao diff_summary
+        const enrichedDiffSummary = {
+          ...diffSummary,
+          c02Mode: preserveStructure,
+          c02Stats: preserveStructure ? c02Stats : null,
+          c02MultiMatchReport: preserveStructure ? c02MultiMatchReport.slice(0, 10) : null // Top 10
+        };
         
         await supabase
           .from('lesson_migrations_audit')
           .update({
-            new_content: lessonData,
-            diff_summary: diffSummary,
+            new_content: finalLessonData,
+            diff_summary: enrichedDiffSummary,
             migration_status: 'completed',
             completed_at: new Date().toISOString()
           })
@@ -3626,6 +3812,9 @@ Deno.serve(async (req) => {
         
         console.log(`[V7-vv] AUDIT: ✅ Migration completed for run_id ${runId}`);
         console.log(`[V7-vv] AUDIT: C01 Valid: ${(diffSummary as any).c01Valid}, Reason: ${(diffSummary as any).c01Reason}`);
+        if (preserveStructure) {
+          console.log(`[V7-vv] AUDIT: C02 Stats: T1=${c02Stats.t1}, T2=${c02Stats.t2}, Total=${c02Stats.totalAnchors}`);
+        }
         lessonId = input.existing_lesson_id;
         
       } catch (error) {
