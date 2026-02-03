@@ -2531,7 +2531,11 @@ interface C03TimingStats {
   t3Negative: number;      // Fases com endTime < startTime (BEFORE)
   t3Zero: number;          // Fases com endTime = startTime (BEFORE)
   t3Micro: number;         // Fases interativas com duration < 5s (BEFORE)
-  t3Fixed: number;         // Total de fases corrigidas (AFTER)
+  t3NegativeAfter: number; // Após correção (deve ser 0)
+  t3ZeroAfter: number;     // Após correção (deve ser 0)
+  t3MicroAfter: number;    // Após correção (deve ser 0)
+  t3Fixed: number;         // Total de fases com correção REAL aplicada
+  audioDuration: number;   // Duração total do áudio para contexto
   phaseTimingChanges: Array<{
     phaseId: string;
     phaseType: string;
@@ -2541,7 +2545,8 @@ interface C03TimingStats {
     newStartTime: number;
     newEndTime: number;
     newDuration: number;
-    fixApplied: 'NEGATIVE_FIX' | 'ZERO_FIX' | 'MICRO_FIX' | 'OVERLAP_FIX' | 'NONE';
+    fixApplied: 'NEGATIVE_FIX' | 'ZERO_FIX' | 'MICRO_FIX' | 'OVERLAP_FIX' | 'LAST_PHASE_FIX' | 'NONE';
+    reason: string;
   }>;
 }
 
@@ -2572,7 +2577,11 @@ function recalculatePhaseTimings(
     t3Negative: 0,
     t3Zero: 0,
     t3Micro: 0,
+    t3NegativeAfter: 0,
+    t3ZeroAfter: 0,
+    t3MicroAfter: 0,
     t3Fixed: 0,
+    audioDuration: totalAudioDuration,
     phaseTimingChanges: []
   };
   
@@ -2616,6 +2625,7 @@ function recalculatePhaseTimings(
     let newStartTime = oldStartTime;
     let newEndTime = oldEndTime;
     let fixApplied: C03TimingStats['phaseTimingChanges'][0]['fixApplied'] = 'NONE';
+    let fixReason = '';
     
     // ✅ C03 FIX: Se startTime > totalAudioDuration, precisamos ajustar
     // Isso acontece quando a fase foi calculada incorretamente
@@ -2625,6 +2635,7 @@ function recalculatePhaseTimings(
       newStartTime = Math.max(lastValidEndTime + 0.05, totalAudioDuration - minDuration);
       newEndTime = totalAudioDuration;
       fixApplied = 'NEGATIVE_FIX';
+      fixReason = `startTime (${oldStartTime.toFixed(2)}s) > audioDuration (${totalAudioDuration.toFixed(2)}s)`;
       console.log(`[C03] FIX BEYOND_AUDIO: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s > audioEnd ${totalAudioDuration.toFixed(2)}s`);
       console.log(`[C03] FIX BEYOND_AUDIO: Adjusted to ${newStartTime.toFixed(2)}s - ${newEndTime.toFixed(2)}s`);
     }
@@ -2633,6 +2644,7 @@ function recalculatePhaseTimings(
     if (newStartTime < lastValidEndTime && fixApplied === 'NONE') {
       newStartTime = lastValidEndTime + 0.05; // 50ms gap
       fixApplied = 'OVERLAP_FIX';
+      fixReason = `overlap com fase anterior (lastEnd=${lastValidEndTime.toFixed(2)}s)`;
       console.log(`[C03] FIX OVERLAP: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
     }
     
@@ -2648,12 +2660,14 @@ function recalculatePhaseTimings(
       const minDuration = isInteractive ? 5.0 : 1.0;
       newEndTime = Math.min(newStartTime + minDuration, maxEndTime);
       fixApplied = 'NEGATIVE_FIX';
+      fixReason = `endTime (${oldEndTime.toFixed(2)}s) < startTime (${newStartTime.toFixed(2)}s)`;
       console.log(`[C03] FIX NEGATIVE: "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s`);
     } else if (currentDuration === 0) {
       // ZERO: endTime = startTime
       const minDuration = isInteractive ? 5.0 : 1.0;
       newEndTime = Math.min(newStartTime + minDuration, maxEndTime);
       fixApplied = 'ZERO_FIX';
+      fixReason = `duration=0 (startTime=endTime=${oldStartTime.toFixed(2)}s)`;
       console.log(`[C03] FIX ZERO: "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s`);
     }
     
@@ -2662,15 +2676,19 @@ function recalculatePhaseTimings(
     if (isInteractive && currentDuration < 5.0 && fixApplied === 'NONE') {
       newEndTime = Math.min(newStartTime + 5.0, maxEndTime);
       fixApplied = 'MICRO_FIX';
+      fixReason = `interactive duration (${currentDuration.toFixed(2)}s) < 5.0s`;
       console.log(`[C03] FIX MICRO: Interactive "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s`);
     }
     
     // R4: Última fase termina no fim do áudio
-    if (isLastPhase) {
+    if (isLastPhase && Math.abs(newEndTime - totalAudioDuration) > 0.01) {
+      const oldEndBeforeLastFix = newEndTime;
       newEndTime = totalAudioDuration;
-      if (Math.abs(oldEndTime - totalAudioDuration) > 0.01 && fixApplied === 'NONE') {
-        console.log(`[C03] LAST PHASE: "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${totalAudioDuration.toFixed(2)}s`);
+      if (fixApplied === 'NONE') {
+        fixApplied = 'LAST_PHASE_FIX';
+        fixReason = `última fase: endTime (${oldEndBeforeLastFix.toFixed(2)}s) → audioDuration (${totalAudioDuration.toFixed(2)}s)`;
       }
+      console.log(`[C03] LAST PHASE: "${phase.id}" endTime ${oldEndBeforeLastFix.toFixed(2)}s → ${totalAudioDuration.toFixed(2)}s`);
     }
     
     // Aplicar correções
@@ -2679,8 +2697,11 @@ function recalculatePhaseTimings(
     
     const newDuration = newEndTime - newStartTime;
     
-    // Registrar mudança se houve
-    if (fixApplied !== 'NONE' || Math.abs(oldStartTime - newStartTime) > 0.01 || Math.abs(oldEndTime - newEndTime) > 0.01) {
+    // ✅ C03.1: Só registrar mudança se houve fix REAL (não NONE com delta negligível)
+    const hasRealChange = fixApplied !== 'NONE';
+    const hasSignificantDelta = Math.abs(oldStartTime - newStartTime) > 0.01 || Math.abs(oldEndTime - newEndTime) > 0.01;
+    
+    if (hasRealChange) {
       c03Stats.t3Fixed++;
       c03Stats.phaseTimingChanges.push({
         phaseId: phase.id,
@@ -2691,7 +2712,22 @@ function recalculatePhaseTimings(
         newStartTime,
         newEndTime,
         newDuration,
-        fixApplied
+        fixApplied,
+        reason: fixReason
+      });
+    } else if (hasSignificantDelta) {
+      // Delta sem fix explícito - registrar mas não contar como t3Fixed
+      c03Stats.phaseTimingChanges.push({
+        phaseId: phase.id,
+        phaseType: phase.type,
+        oldStartTime,
+        oldEndTime,
+        oldDuration,
+        newStartTime,
+        newEndTime,
+        newDuration,
+        fixApplied: 'NONE',
+        reason: 'delta < threshold (não contabilizado em t3Fixed)'
       });
     }
     
@@ -2699,7 +2735,21 @@ function recalculatePhaseTimings(
     lastValidEndTime = newEndTime;
   }
   
-  console.log(`[C03] AFTER: T3_FIXED=${c03Stats.t3Fixed}`);
+  // ✅ C03.1: Calcular métricas AFTER
+  for (const phase of updatedPhases) {
+    const duration = (phase.endTime || 0) - (phase.startTime || 0);
+    const isInteractive = ['interaction', 'playground', 'quiz', 'secret-reveal'].includes(phase.type);
+    
+    if (duration < 0) {
+      c03Stats.t3NegativeAfter++;
+    } else if (duration === 0) {
+      c03Stats.t3ZeroAfter++;
+    } else if (isInteractive && duration < 5.0) {
+      c03Stats.t3MicroAfter++;
+    }
+  }
+  
+  console.log(`[C03] AFTER: T3_FIXED=${c03Stats.t3Fixed}, T3_NEGATIVE_AFTER=${c03Stats.t3NegativeAfter}, T3_ZERO_AFTER=${c03Stats.t3ZeroAfter}, T3_MICRO_AFTER=${c03Stats.t3MicroAfter}`);
   console.log('[C03] recalculatePhaseTimings: Complete');
   
   return {
@@ -3837,8 +3887,8 @@ Deno.serve(async (req) => {
         throw new Error('run_id must be a valid UUID');
       }
       
-      // Determinar migration_version baseado no modo
-      const migrationVersion = preserveStructure ? 'v2.2-c02-fix' : 'v2.1-c01-fix';
+      // ✅ C03.1: Determinar migration_version baseado no modo (c03 quando preserveStructure)
+      const migrationVersion = preserveStructure ? 'v2.3-c03-fix' : 'v2.1-c01-fix';
       
       let oldContent: any = null;
       let c02MultiMatchReport: RecalculatedPhase['multiMatchCases'] = [];
@@ -3962,12 +4012,16 @@ Deno.serve(async (req) => {
               lastRecalculatedAt: new Date().toISOString(),
               c02Applied: true,
               c02Stats,
-              c03Applied: true,
+              c03Applied: c03Stats.t3Fixed > 0,  // ✅ C03.1: Só true se houve fix real
               c03Stats: {
                 t3NegativeBefore: c03Stats.t3Negative,
                 t3ZeroBefore: c03Stats.t3Zero,
                 t3MicroBefore: c03Stats.t3Micro,
-                t3Fixed: c03Stats.t3Fixed
+                t3NegativeAfter: c03Stats.t3NegativeAfter,
+                t3ZeroAfter: c03Stats.t3ZeroAfter,
+                t3MicroAfter: c03Stats.t3MicroAfter,
+                t3Fixed: c03Stats.t3Fixed,
+                audioDuration: c03Stats.audioDuration
               }
             }
           };
@@ -3997,22 +4051,29 @@ Deno.serve(async (req) => {
         console.log(`[V7-vv] AUDIT: Computing anchor diff...`);
         const diffSummary = await computeAnchorDiffStrong(oldContent, finalLessonData);
         
-        // ✅ C02 + C03: Adicionar reports ao diff_summary
+        // ✅ C02 + C03.1: Adicionar reports ao diff_summary com métricas completas
         const enrichedDiffSummary = {
           ...diffSummary,
           c02Mode: preserveStructure,
           c02Stats: preserveStructure ? c02Stats : null,
           c02MultiMatchReport: preserveStructure ? c02MultiMatchReport.slice(0, 10) : null, // Top 10
-          // C03 metrics
+          // ✅ C03.1: Métricas completas com AFTER e reason
           c03Mode: preserveStructure,
-          c03Stats: preserveStructure && c03Stats ? {
-            t3NegativeBefore: c03Stats.t3Negative,
-            t3ZeroBefore: c03Stats.t3Zero,
-            t3MicroBefore: c03Stats.t3Micro,
+          c03: preserveStructure && c03Stats ? {
+            audioDuration: c03Stats.audioDuration,
+            before: {
+              t3Negative: c03Stats.t3Negative,
+              t3Zero: c03Stats.t3Zero,
+              t3Micro: c03Stats.t3Micro
+            },
+            after: {
+              t3Negative: c03Stats.t3NegativeAfter,
+              t3Zero: c03Stats.t3ZeroAfter,
+              t3Micro: c03Stats.t3MicroAfter
+            },
             t3Fixed: c03Stats.t3Fixed,
-            t3NegativeAfter: 0, // Sempre 0 após correção
-            t3ZeroAfter: 0,     // Sempre 0 após correção
-            phaseTimingChanges: c03Stats.phaseTimingChanges.slice(0, 10) // Top 10
+            fixApplied: c03Stats.t3Fixed > 0,
+            phaseTimingChanges: c03Stats.phaseTimingChanges.slice(0, 10) // Top 10 com reason
           } : null
         };
         
