@@ -1,190 +1,240 @@
 
-# Plano: Auditoria C01 Real com lesson_migrations_audit
 
-## Diagnóstico Honesto da Situação Atual
+# Plano v4.1: lesson_migrations_audit (Versão Definitiva)
 
-### O que Existe Hoje:
+## Ajustes v4 → v4.1
 
-1. **Tabela `lesson_migrations_audit`**: NÃO EXISTE
-   - Consulta retornou resultado vazio
-   - Não há infraestrutura para armazenar snapshots ANTES/DEPOIS
-
-2. **Modo Reprocess na Edge Function `v7-vv`**: EXISTE E FUNCIONA
-   - Linhas 2946-2988: Carrega `audio_url` e `word_timestamps` do banco via `existing_lesson_id`
-   - Linhas 3161-3180: Faz `UPDATE` no campo `content` (não INSERT)
-   - **PROBLEMA**: Não salva snapshot do `old_content` antes de sobrescrever
-
-3. **Aula Golden Standard (19f7e1df)**: EXISTE NO BANCO
-   - Título: "O Fim da Brincadeira com IA"
-   - Criada em: 2025-12-31
-   - 10 phases com word_timestamps
-
-### Por que C01 Não Fecha:
-
-O problema identificado pelo usuário é correto:
-- Para provar que um bug de timing foi corrigido, precisamos comparar o **MESMO registro** ANTES e DEPOIS
-- Atualmente, quando o reprocess roda, ele **sobrescreve** o `content` sem guardar o valor anterior
-- Sem snapshot, é impossível provar que "só mudou o keywordTime"
+| Ajuste | Problema v4 | Correção v4.1 |
+|--------|-------------|---------------|
+| 1. Hash determinístico | JSON.stringify sem ordenação = falso negativo se ordem mudar | Ordenar phases por `id`, anchors por chave estável ANTES de hashear |
+| 2. buildAnchorKey com índice | Colisão quando `id` ausente + anchors repetidos na phase | Incluir `idx:${i}` no fallback |
+| 3. Catch sem .select('id') | updateResult pode ser null mesmo com update executado | Remover `.select('id')` e usar contagem de erro apenas |
 
 ---
 
-## Plano de Implementação
+## Correção 1: Hash Determinístico
 
-### Fase 1: Criar Tabela `lesson_migrations_audit`
+```typescript
+async function computeStructureHash(phases: any[]): Promise<string> {
+  // ORDENAR antes de hashear para garantir determinismo
+  const sortedPhases = [...phases]
+    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
+    .map(p => ({
+      id: p.id,
+      type: p.type,
+      anchors: [...(p.anchorActions || [])]
+        .sort((a, b) => {
+          // Ordenar por id se existir, senão por type+keyword
+          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
+          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
+          return keyA.localeCompare(keyB);
+        })
+        .map((a: any) => ({
+          id: a.id,
+          type: a.type,
+          keyword: a.keyword,
+          targetId: a.targetId
+          // keywordTime EXCLUÍDO
+        }))
+    }));
+  
+  return computeSHA256(JSON.stringify(sortedPhases));
+}
+
+async function computeTimingHash(phases: any[]): Promise<string> {
+  // Mesma ordenação para consistência
+  const sortedPhases = [...phases]
+    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
+    .map(p => ({
+      id: p.id,
+      anchors: [...(p.anchorActions || [])]
+        .sort((a, b) => {
+          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
+          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
+          return keyA.localeCompare(keyB);
+        })
+        .map((a: any) => ({
+          id: a.id,
+          keywordTime: a.keywordTime
+        }))
+    }));
+  
+  return computeSHA256(JSON.stringify(sortedPhases));
+}
+```
+
+---
+
+## Correção 2: buildAnchorKey com Índice
+
+```typescript
+function buildAnchorKey(phaseId: string, anchor: any, anchorIndex: number): string {
+  // SEMPRE incluir phaseId
+  if (anchor.id) {
+    return `phase:${phaseId}|id:${anchor.id}`;
+  }
+  // Fallback: incluir índice para evitar colisão
+  if (anchor.targetId) {
+    return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|target:${anchor.targetId}|kw:${anchor.keyword}`;
+  }
+  return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|kw:${anchor.keyword}`;
+}
+
+// Uso nos mapas:
+for (const phase of oldPhases) {
+  const anchors = phase.anchorActions || [];
+  anchors.forEach((anchor: any, idx: number) => {
+    const key = buildAnchorKey(phase.id, anchor, idx);
+    oldAnchorsMap.set(key, { phase, anchor, index: idx });
+  });
+}
+```
+
+---
+
+## Correção 3: Catch sem .select('id')
+
+```typescript
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // UPDATE sem .select() - verificar apenas erro
+  const { error: updateError } = await supabase
+    .from('lesson_migrations_audit')
+    .update({
+      migration_status: 'failed',
+      error_message: errorMessage,
+      completed_at: new Date().toISOString()
+    })
+    .eq('lesson_id', input.existing_lesson_id)
+    .eq('run_id', runId);
+  
+  // Se UPDATE deu erro (não existe registro), fazer INSERT fallback
+  if (updateError) {
+    console.log(`[V7-vv] AUDIT: Update failed, inserting fallback record`);
+    
+    await supabase
+      .from('lesson_migrations_audit')
+      .upsert({
+        lesson_id: input.existing_lesson_id,
+        run_id: runId,
+        migration_version: 'v2.1-c01-fix',
+        migration_status: 'failed',
+        old_content: oldContent || {},
+        error_message: errorMessage,
+        triggered_by: 'v7-vv-reprocess-failed',
+        completed_at: new Date().toISOString()
+      }, { onConflict: 'lesson_id,run_id' });
+  }
+  
+  throw error;
+}
+```
+
+---
+
+## Schema SQL Final (v4.1)
+
+Sem mudanças em relação ao v4 - o schema está correto:
 
 ```sql
 CREATE TABLE public.lesson_migrations_audit (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   lesson_id UUID NOT NULL REFERENCES public.lessons(id) ON DELETE CASCADE,
+  run_id UUID NOT NULL,
   migration_version TEXT NOT NULL,
-  migration_status TEXT NOT NULL DEFAULT 'pending',
+  migration_status TEXT NOT NULL DEFAULT 'pending' 
+    CHECK (migration_status IN ('pending', 'in_progress', 'completed', 'failed')),
   old_content JSONB NOT NULL,
   new_content JSONB,
-  old_word_timestamps JSONB,
-  new_word_timestamps JSONB,
   diff_summary JSONB,
   triggered_by TEXT,
+  error_message TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  completed_at TIMESTAMPTZ
+  completed_at TIMESTAMPTZ,
+  
+  CONSTRAINT unique_lesson_run UNIQUE(lesson_id, run_id)
 );
 
 CREATE INDEX idx_migrations_lesson ON public.lesson_migrations_audit(lesson_id);
 CREATE INDEX idx_migrations_status ON public.lesson_migrations_audit(migration_status);
-```
+CREATE INDEX idx_migrations_version ON public.lesson_migrations_audit(migration_version);
+CREATE INDEX idx_migrations_run ON public.lesson_migrations_audit(run_id);
 
-**Campos:**
-- `old_content`: Snapshot COMPLETO do content antes do reprocess
-- `new_content`: Snapshot COMPLETO do content após o reprocess
-- `diff_summary`: Resumo das diferenças (quais campos mudaram)
-- `migration_status`: 'pending' → 'in_progress' → 'completed' | 'failed'
-- `migration_version`: Versão do pipeline (ex: "v2.1-c01-fix")
+ALTER TABLE public.lesson_migrations_audit ENABLE ROW LEVEL SECURITY;
 
----
+CREATE POLICY "service_role_full_access"
+ON public.lesson_migrations_audit
+FOR ALL
+USING (auth.role() = 'service_role')
+WITH CHECK (auth.role() = 'service_role');
 
-### Fase 2: Atualizar Edge Function `v7-vv` para Suportar Audit
-
-Modificar o handler do modo reprocess (linhas 3161-3180) para:
-
-1. **Antes do UPDATE**:
-   - Buscar o `content` atual da lição
-   - Inserir registro em `lesson_migrations_audit` com `old_content` e status='in_progress'
-
-2. **Após o UPDATE**:
-   - Atualizar o registro de audit com `new_content` e status='completed'
-   - Gerar `diff_summary` comparando os campos alterados
-
-```text
-Pseudocódigo:
-
-IF isReprocess:
-  // 1. Buscar estado atual
-  oldContent = SELECT content FROM lessons WHERE id = existing_lesson_id
-  
-  // 2. Criar registro de audit
-  auditId = INSERT INTO lesson_migrations_audit (
-    lesson_id, old_content, migration_version, migration_status
-  ) VALUES (existing_lesson_id, oldContent, 'v2.1-c01', 'in_progress')
-  
-  // 3. Executar UPDATE normal
-  UPDATE lessons SET content = newContent WHERE id = existing_lesson_id
-  
-  // 4. Completar audit
-  diffSummary = computeDiff(oldContent, newContent)
-  UPDATE lesson_migrations_audit SET 
-    new_content = newContent,
-    diff_summary = diffSummary,
-    migration_status = 'completed',
-    completed_at = NOW()
-  WHERE id = auditId
+CREATE POLICY "admins_read_audits"
+ON public.lesson_migrations_audit
+FOR SELECT
+USING (public.has_role(auth.uid(), 'admin'));
 ```
 
 ---
 
-### Fase 3: Executar Reprocess Real com Audit
+## Checklist Final v4.1
 
-1. **Capturar ANTES**:
-   - Extrair `content->'phases'` da aula 19f7e1df via SQL
-   - Salvar em `lesson_migrations_audit.old_content`
-
-2. **Executar Reprocess**:
-   - Chamar `v7-vv` com payload:
-```json
-{
-  "reprocess": true,
-  "existing_lesson_id": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
-  "title": "O Fim da Brincadeira com IA",
-  "scenes": [ ... cenas do JSON input ... ]
-}
-```
-
-3. **Capturar DEPOIS**:
-   - Extrair `new_content` do registro de audit
-
-4. **Gerar Relatório Forense**:
-   - Para cada phase que tem `anchorActions`:
-     - Comparar `old_content.phases[X].anchorActions[Y].keywordTime` vs `new_content`
-     - Verificar se APENAS `keywordTime` mudou
-     - Verificar se outras propriedades (keyword, type, phaseId) permanecem IGUAIS
+| Item | Status |
+|------|--------|
+| run_id obrigatório do request | ✅ |
+| Validação UUID | ✅ |
+| 23505 → completed (200) / in_progress (409) / failed (400) | ✅ |
+| RLS com USING + WITH CHECK | ✅ |
+| catch marca failed + fallback upsert | ✅ |
+| buildAnchorKey inclui phaseId + idx sempre | ✅ |
+| SHA-256 com ordenação determinística | ✅ |
+| structureHashMatch calculado e salvo | ✅ |
+| inRange com EPS (0.30s) registrado | ✅ |
+| catch sem .select('id') | ✅ |
 
 ---
 
-### Fase 4: Formato do Relatório C01 Final
+## Sequência de Implementação
 
-```text
-=== C01 FORENSIC AUDIT REPORT ===
-Lesson ID: 19f7e1df-6fb8-435f-ad51-cc44ac67618d
-Migration Version: v2.1-c01
-Timestamp: 2026-02-03T19:XX:XXZ
-
-=== BASELINE (BEFORE) ===
-| Phase ID | Anchor Type | Keyword | keywordTime | Range |
-|----------|-------------|---------|-------------|-------|
-| cena-6-quiz | pause | representa você | 51.246 | [44.801, 51.546] |
-| cena-7-promessa | pause | você faz | 63.425 | [51.546, 63.725] |
-| cena-10-playground | pause | teste agora | 86.737 | [87.000, 87.037] |
-
-=== AFTER REPROCESS ===
-| Phase ID | Anchor Type | Keyword | keywordTime | Range | Status |
-|----------|-------------|---------|-------------|-------|--------|
-| cena-6-quiz | pause | representa você | 51.XXX | [44.801, 51.546] | ✅ SAME |
-| cena-7-promessa | pause | você faz | 63.XXX | [51.546, 63.725] | ✅ SAME |
-| cena-10-playground | pause | teste agora | 86.XXX | [87.000, 87.037] | ✅ SAME |
-
-=== DIFF ANALYSIS ===
-Properties Changed: keywordTime only ✅
-Properties Unchanged: keyword, type, phaseId, targetId ✅
-T1 Failures Before: X
-T1 Failures After: 0
-
-=== VERDICT ===
-C01 DONE: Only keywordTime changed, all other properties preserved.
-```
+1. **Migração SQL**: Criar tabela `lesson_migrations_audit` com schema v4.1
+2. **Edge Function v7-vv/index.ts**:
+   - Adicionar `computeSHA256()` com crypto.subtle
+   - Adicionar `computeStructureHash()` e `computeTimingHash()` com ordenação
+   - Adicionar `buildAnchorKey()` com índice
+   - Adicionar `computeAnchorDiffStrong()` async
+   - Modificar bloco `isReprocess` com validação run_id + 23505 handling + try/catch robusto
+3. **Deploy** edge function
+4. **Executar reprocess** com run_id gerado pelo client
+5. **Consultar audit** e gerar relatório C01 forense
 
 ---
 
 ## Seção Técnica
 
-### Arquivos a Modificar:
+### Arquivos a Modificar
 
-1. **Migração SQL**: Nova tabela `lesson_migrations_audit`
-2. **supabase/functions/v7-vv/index.ts**: 
-   - Adicionar lógica de snapshot antes do UPDATE (linhas ~3161-3180)
-   - Adicionar função `computeDiff()` para comparar old vs new
-3. **Opcional**: Script de debug `scripts/c01-audit.ts` para gerar relatório formatado
+| Arquivo | Modificações |
+|---------|--------------|
+| **Nova migração SQL** | Tabela `lesson_migrations_audit` com schema completo |
+| `supabase/functions/v7-vv/index.ts` | ~150 linhas: funções de hash, buildAnchorKey, computeAnchorDiffStrong, bloco isReprocess |
 
-### Riscos e Mitigações:
+### Funções a Adicionar (v7-vv/index.ts)
 
-| Risco | Mitigação |
-|-------|-----------|
-| Reprocess pode quebrar a aula | Tabela audit permite rollback via `old_content` |
-| Edge function timeout | Audit INSERT é síncrono; UPDATE do audit pode ser async |
-| Diff muito grande | Limitar `diff_summary` a campos críticos (anchorActions) |
+1. `computeSHA256(data: string): Promise<string>` - ~8 linhas
+2. `computeStructureHash(phases: any[]): Promise<string>` - ~25 linhas (com ordenação)
+3. `computeTimingHash(phases: any[]): Promise<string>` - ~20 linhas (com ordenação)
+4. `buildAnchorKey(phaseId: string, anchor: any, anchorIndex: number): string` - ~10 linhas
+5. `computeAnchorDiffStrong(oldContent: any, newContent: any): Promise<object>` - ~100 linhas
 
-### Sequência de Execução:
+### Payload do Reprocess
 
-1. Criar migração SQL para `lesson_migrations_audit`
-2. Modificar `v7-vv/index.ts` para gravar audit
-3. Deploy da edge function
-4. Executar reprocess da aula 19f7e1df
-5. Consultar `lesson_migrations_audit` e gerar relatório
+```json
+{
+  "reprocess": true,
+  "existing_lesson_id": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
+  "run_id": "uuid-gerado-pelo-client",
+  "title": "O Fim da Brincadeira com IA",
+  "scenes": [...]
+}
+```
 
