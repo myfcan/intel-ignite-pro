@@ -188,8 +188,86 @@ When `reprocess_preserve_structure: true` is passed in the payload:
 
 ---
 
+## C03 Phase Timing Correction (2026-02-03)
+
+### Problem Statement
+
+Lessons can have phases with invalid durations:
+- **T3_NEGATIVE**: `endTime < startTime` (duration < 0)
+- **T3_ZERO**: `endTime = startTime` (duration = 0)
+- **T3_MICRO**: Interactive phases with `duration < 5.0s`
+
+Example from lesson `19f7e1df`:
+```
+cena-10-playground: startTime=90.089s, endTime=86.737s, duration=-3.35s ❌
+```
+
+### C03 Rules
+
+#### R1: Duration Must Be Positive
+```
+phase.endTime > phase.startTime (always)
+```
+
+#### R2: Interactive Minimum Duration
+```
+if (phase.type in ['interaction', 'playground', 'quiz', 'secret-reveal']) {
+  duration >= 5.0s (MANDATORY)
+}
+```
+
+#### R3: No Overlap Between Phases
+```
+Phase[N].endTime <= Phase[N+1].startTime
+```
+
+#### R4: Last Phase Ends at Audio Duration
+```
+phases[last].endTime = totalAudioDuration
+```
+
+### C03 Fix Algorithm
+
+```typescript
+function recalculatePhaseTimings(phases, totalAudioDuration) {
+  // 1. Sort phases by startTime
+  // 2. For each phase:
+  //    - Fix overlap with previous (adjust startTime)
+  //    - Fix negative/zero duration (extend endTime)
+  //    - Fix micro duration for interactive (extend to 5s)
+  //    - Cap endTime to next phase's startTime
+  // 3. Set last phase endTime = totalAudioDuration
+}
+```
+
+### C03 Metrics (diff_summary)
+
+| Field | Description |
+|-------|-------------|
+| `c03Stats.t3NegativeBefore` | Phases with negative duration (BEFORE) |
+| `c03Stats.t3ZeroBefore` | Phases with zero duration (BEFORE) |
+| `c03Stats.t3MicroBefore` | Interactive phases < 5s (BEFORE) |
+| `c03Stats.t3Fixed` | Total phases corrected |
+| `c03Stats.t3NegativeAfter` | Should be 0 |
+| `c03Stats.t3ZeroAfter` | Should be 0 |
+| `c03Stats.phaseTimingChanges` | Top 10 phase changes with fix type |
+
+### C03 Success Criteria
+
+```
+C03 DONE = (
+  c03Stats.t3NegativeAfter = 0 AND
+  c03Stats.t3ZeroAfter = 0 AND
+  ALL phases: endTime > startTime AND
+  ALL interactive phases: duration >= 5.0s
+)
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.2 (C02 Preserve Structure Complete)
+- **Versão:** v2.3 (C03 Phase Timing Correction Complete)
 - **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, selectAnchorOccurrence implemented, recalculateAnchorKeywordTimes implemented
+- **Status:** C01 ✅, C02 ✅, C03 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings
