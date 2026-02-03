@@ -451,7 +451,12 @@ export default function AdminV7vv() {
                       <p className="font-medium">Auto-fixes disponíveis:</p>
                       <ul className="list-disc list-inside">
                         {dryRunResult.autoFixes.map((fix, i) => (
-                          <li key={i}>{fix}</li>
+                          <li key={i}>
+                            {typeof fix === 'object' 
+                              ? JSON.stringify(fix) 
+                              : String(fix)
+                            }
+                          </li>
                         ))}
                       </ul>
                     </div>
