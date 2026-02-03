@@ -172,6 +172,59 @@ export type Database = {
           },
         ]
       }
+      lesson_migrations_audit: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          diff_summary: Json | null
+          error_message: string | null
+          id: string
+          lesson_id: string
+          migration_status: string
+          migration_version: string
+          new_content: Json | null
+          old_content: Json
+          run_id: string
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          diff_summary?: Json | null
+          error_message?: string | null
+          id?: string
+          lesson_id: string
+          migration_status?: string
+          migration_version: string
+          new_content?: Json | null
+          old_content: Json
+          run_id: string
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          diff_summary?: Json | null
+          error_message?: string | null
+          id?: string
+          lesson_id?: string
+          migration_status?: string
+          migration_version?: string
+          new_content?: Json | null
+          old_content?: Json
+          run_id?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_migrations_audit_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           audio_url: string | null
