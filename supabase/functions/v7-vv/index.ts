@@ -883,6 +883,11 @@ interface ScriptInput {
   gamification?: Record<string, unknown>;
   // ✅ DRY-RUN MODE: Validação real sem gerar áudio
   dry_run?: boolean;
+  // ✅ C01: REPROCESS MODE - Usar áudio existente
+  reprocess?: boolean;
+  existing_audio_url?: string;
+  existing_word_timestamps?: WordTimestamp[];
+  existing_lesson_id?: string;
 }
 
 interface ScriptScene {
@@ -2925,10 +2930,11 @@ Deno.serve(async (req) => {
     autoGeneratePauseAt(input.scenes);
 
     // =========================================================================
-    // PASSO 2: GERAR ÁUDIO PRINCIPAL
+    // PASSO 2: GERAR OU REUSAR ÁUDIO PRINCIPAL
     // =========================================================================
     const voiceId = input.voice_id || 'Xb7hH8MSUJpSbSDYk0k2'; // Usa voice_id do input!
-    const shouldGenerateAudio = input.generate_audio !== false;
+    const shouldGenerateAudio = input.generate_audio !== false && !input.reprocess;
+    const isReprocess = input.reprocess === true;
 
     let mainAudio: AudioSegment = {
       id: 'main',
@@ -2937,7 +2943,50 @@ Deno.serve(async (req) => {
       wordTimestamps: [],
     };
 
-    if (shouldGenerateAudio) {
+    // ✅ C01: REPROCESS MODE - Buscar áudio e timestamps do banco automaticamente
+    if (isReprocess && input.existing_lesson_id) {
+      console.log(`[V7-vv] 🔄 REPROCESS MODE: Buscando dados da lição ${input.existing_lesson_id}`);
+      
+      // Buscar dados existentes do banco
+      const { data: existingLesson, error: fetchError } = await supabase
+        .from('lessons')
+        .select('audio_url, word_timestamps')
+        .eq('id', input.existing_lesson_id)
+        .single();
+      
+      if (fetchError || !existingLesson) {
+        throw new Error(`Falha ao buscar lição existente: ${fetchError?.message || 'Lição não encontrada'}`);
+      }
+      
+      if (!existingLesson.audio_url || !existingLesson.word_timestamps) {
+        throw new Error(`Lição ${input.existing_lesson_id} não possui audio_url ou word_timestamps`);
+      }
+      
+      const wordTimestampsFromDB = existingLesson.word_timestamps as WordTimestamp[];
+      const lastTs = wordTimestampsFromDB[wordTimestampsFromDB.length - 1];
+      
+      mainAudio = {
+        id: 'main',
+        url: existingLesson.audio_url,
+        duration: lastTs?.end || 0,
+        wordTimestamps: wordTimestampsFromDB,
+      };
+      
+      console.log(`[V7-vv]    Audio URL: ${mainAudio.url.substring(0, 60)}...`);
+      console.log(`[V7-vv]    Word timestamps: ${mainAudio.wordTimestamps.length} palavras`);
+      console.log(`[V7-vv] ✅ Dados existentes carregados: ${mainAudio.duration.toFixed(1)}s`);
+    } else if (isReprocess && input.existing_audio_url && input.existing_word_timestamps) {
+      // Fallback: usar dados passados no input (mantém compatibilidade)
+      console.log('[V7-vv] 🔄 REPROCESS MODE: Usando áudio e timestamps do input');
+      const lastTs = input.existing_word_timestamps[input.existing_word_timestamps.length - 1];
+      mainAudio = {
+        id: 'main',
+        url: input.existing_audio_url,
+        duration: lastTs?.end || 0,
+        wordTimestamps: input.existing_word_timestamps,
+      };
+      console.log(`[V7-vv] ✅ Áudio existente carregado: ${mainAudio.duration.toFixed(1)}s, ${mainAudio.wordTimestamps.length} palavras`);
+    } else if (shouldGenerateAudio) {
       console.log('[V7-vv] Step 2: Generating main audio...');
 
       // Concatenar todas as narrações
@@ -3103,37 +3152,62 @@ Deno.serve(async (req) => {
     );
 
     // =========================================================================
-    // PASSO 6: SALVAR NO BANCO
+    // PASSO 6: SALVAR NO BANCO (INSERT ou UPDATE para reprocess)
     // =========================================================================
     console.log('[V7-vv] Step 6: Saving to database...');
 
-    const { data: lesson, error: lessonError } = await supabase
-      .from('lessons')
-      .insert({
-        title: input.title,
-        description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
-        trail_id: (input as any).trail_id || null,
-        order_index: (input as any).order_index || 0,
-        model: 'v7',
-        lesson_type: 'v7-cinematic',
-        content: lessonData,
-        audio_url: mainAudio.url || null,
-        word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
-        estimated_time: Math.ceil(totalDuration / 60),
-        difficulty_level: input.difficulty,
-        is_active: false,
-        status: 'rascunho',
-      })
-      .select('id')
-      .single();
+    let lessonId: string;
+    
+    // ✅ C01: REPROCESS MODE - UPDATE na lição existente
+    if (isReprocess && input.existing_lesson_id) {
+      console.log(`[V7-vv] 🔄 REPROCESS: Atualizando lição existente ${input.existing_lesson_id}`);
+      
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({
+          content: lessonData,
+          // Manter audio_url e word_timestamps originais (não sobrescrever)
+          estimated_time: Math.ceil(totalDuration / 60),
+        })
+        .eq('id', input.existing_lesson_id);
 
-    if (lessonError) {
-      console.error('[V7-vv] Database error:', lessonError);
-      throw new Error(`Failed to save lesson: ${lessonError.message}`);
+      if (updateError) {
+        console.error('[V7-vv] Database update error:', updateError);
+        throw new Error(`Failed to update lesson: ${updateError.message}`);
+      }
+
+      lessonId = input.existing_lesson_id;
+      console.log(`[V7-vv] ✅ Lesson UPDATED: ${lessonId}`);
+    } else {
+      // INSERT normal (nova lição)
+      const { data: lesson, error: lessonError } = await supabase
+        .from('lessons')
+        .insert({
+          title: input.title,
+          description: input.subtitle || `Aula V7 Cinematográfica: ${input.title}`,
+          trail_id: (input as any).trail_id || null,
+          order_index: (input as any).order_index || 0,
+          model: 'v7',
+          lesson_type: 'v7-cinematic',
+          content: lessonData,
+          audio_url: mainAudio.url || null,
+          word_timestamps: mainAudio.wordTimestamps.length > 0 ? mainAudio.wordTimestamps : null,
+          estimated_time: Math.ceil(totalDuration / 60),
+          difficulty_level: input.difficulty,
+          is_active: false,
+          status: 'rascunho',
+        })
+        .select('id')
+        .single();
+
+      if (lessonError) {
+        console.error('[V7-vv] Database error:', lessonError);
+        throw new Error(`Failed to save lesson: ${lessonError.message}`);
+      }
+
+      lessonId = lesson.id;
+      console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
     }
-
-    const lessonId = lesson.id;
-    console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
     
     // Atualizar lessonId no debug report
     debugReport.lessonId = lessonId;
