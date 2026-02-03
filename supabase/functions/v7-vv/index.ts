@@ -4069,141 +4069,163 @@ Deno.serve(async (req) => {
 
     // =========================================================================
     // PASSO 3: GERAR ÁUDIOS DE FEEDBACK DO QUIZ (AUTOMÁTICO)
+    // ✅ C02: Skip when preserve_structure (no scenes input)
     // =========================================================================
-    console.log('[V7-vv] Step 3: Generating feedback audios (automatic)...');
-
-    // ✅ V7-vv v1.0.0: feedbackAudios como OBJECT + AUTO-GERAÇÃO
-    // Se feedback.narration não existe, gera narração baseada em title/subtitle
     const feedbackAudios: FeedbackAudiosObject = {};
+    
+    if (!preserveStructureMode) {
+      console.log('[V7-vv] Step 3: Generating feedback audios (automatic)...');
 
-    for (const scene of input.scenes) {
-      if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
-        for (const option of scene.interaction.options) {
-          // ✅ AUTO-GERAÇÃO: Se não tem narration, gerar a partir de title/subtitle
-          let feedbackNarration = option.feedback?.narration;
-          
-          if (!feedbackNarration && option.feedback?.title) {
-            // Gerar narração automaticamente
-            feedbackNarration = option.feedback.subtitle 
-              ? `${option.feedback.title}. ${option.feedback.subtitle}`
-              : option.feedback.title;
+      // ✅ V7-vv v1.0.0: feedbackAudios como OBJECT + AUTO-GERAÇÃO
+      // Se feedback.narration não existe, gera narração baseada em title/subtitle
+      for (const scene of input.scenes) {
+        if (scene.interaction?.type === 'quiz' && scene.interaction.options) {
+          for (const option of scene.interaction.options) {
+            // ✅ AUTO-GERAÇÃO: Se não tem narration, gerar a partir de title/subtitle
+            let feedbackNarration = option.feedback?.narration;
             
-            console.log(`[V7-vv] ℹ️ Auto-generated narration for ${option.id}: "${feedbackNarration.substring(0, 50)}..."`);
-          }
-
-          if (feedbackNarration) {
-            console.log(`[V7-vv] Generating feedback audio for option ${option.id}`);
-
-            const feedbackResult = await generateAudio(
-              feedbackNarration,
-              voiceId,
-              supabase,
-              `v7-feedback-${option.id}`
-            );
-
-            if (feedbackResult.success) {
-              // ✅ FASE 4 FIX: Determinar trigger baseado em isCorrect
-              const trigger = option.isCorrect ? 'quiz-correct-answer' : 'quiz-incorrect-answer';
-              const feedbackKey = `feedback-${option.id}`;
-
-              // ✅ FASE 4 FIX: Armazenar como objeto indexado por key
-              feedbackAudios[feedbackKey] = {
-                id: feedbackKey,
-                url: feedbackResult.url || '',
-                duration: feedbackResult.duration || 0,
-                wordTimestamps: feedbackResult.wordTimestamps || [],
-                trigger,
-              };
-              console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s (${trigger})`);
-            } else {
-              console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}: ${feedbackResult.error}`);
+            if (!feedbackNarration && option.feedback?.title) {
+              // Gerar narração automaticamente
+              feedbackNarration = option.feedback.subtitle 
+                ? `${option.feedback.title}. ${option.feedback.subtitle}`
+                : option.feedback.title;
+              
+              console.log(`[V7-vv] ℹ️ Auto-generated narration for ${option.id}: "${feedbackNarration.substring(0, 50)}..."`);
             }
-          } else {
-            console.warn(`[V7-vv] ⚠️ Option ${option.id} has no feedback text to generate audio`);
+
+            if (feedbackNarration) {
+              console.log(`[V7-vv] Generating feedback audio for option ${option.id}`);
+
+              const feedbackResult = await generateAudio(
+                feedbackNarration,
+                voiceId,
+                supabase,
+                `v7-feedback-${option.id}`
+              );
+
+              if (feedbackResult.success) {
+                // ✅ FASE 4 FIX: Determinar trigger baseado em isCorrect
+                const trigger = option.isCorrect ? 'quiz-correct-answer' : 'quiz-incorrect-answer';
+                const feedbackKey = `feedback-${option.id}`;
+
+                // ✅ FASE 4 FIX: Armazenar como objeto indexado por key
+                feedbackAudios[feedbackKey] = {
+                  id: feedbackKey,
+                  url: feedbackResult.url || '',
+                  duration: feedbackResult.duration || 0,
+                  wordTimestamps: feedbackResult.wordTimestamps || [],
+                  trigger,
+                };
+                console.log(`[V7-vv] ✅ Feedback audio for ${option.id}: ${feedbackResult.duration?.toFixed(1)}s (${trigger})`);
+              } else {
+                console.warn(`[V7-vv] ⚠️ Failed to generate feedback audio for ${option.id}: ${feedbackResult.error}`);
+              }
+            } else {
+              console.warn(`[V7-vv] ⚠️ Option ${option.id} has no feedback text to generate audio`);
+            }
           }
         }
       }
-    }
 
-    console.log(`[V7-vv] Generated ${Object.keys(feedbackAudios).length} feedback audios`);
+      console.log(`[V7-vv] Generated ${Object.keys(feedbackAudios).length} feedback audios`);
+    } else {
+      console.log('[V7-vv] Step 3: SKIPPED (preserve_structure mode - no new feedback audios)');
+    }
 
     // =========================================================================
     // PASSO 4: GERAR FASES
+    // ✅ C02: Skip when preserve_structure (uses existing phases from DB)
     // =========================================================================
-    console.log('[V7-vv] Step 4: Generating phases...');
+    let phases: Phase[] = [];
+    
+    if (!preserveStructureMode) {
+      console.log('[V7-vv] Step 4: Generating phases...');
+      phases = generatePhases(input.scenes, mainAudio.wordTimestamps, mainAudio.duration);
 
-    const phases = generatePhases(input.scenes, mainAudio.wordTimestamps, mainAudio.duration);
-
-    // =========================================================================
-    // PASSO 4.5: RECALCULAR TIMINGS COM BASE EM KEYWORDS (FASE 1 FIX)
-    // =========================================================================
-    if (mainAudio.wordTimestamps.length > 0) {
-      console.log('[V7-vv] Step 4.5: Recalculating word-based timings...');
-      calculateWordBasedTimings(phases, mainAudio.wordTimestamps, input.scenes);
+      // =========================================================================
+      // PASSO 4.5: RECALCULAR TIMINGS COM BASE EM KEYWORDS (FASE 1 FIX)
+      // =========================================================================
+      if (mainAudio.wordTimestamps.length > 0) {
+        console.log('[V7-vv] Step 4.5: Recalculating word-based timings...');
+        calculateWordBasedTimings(phases, mainAudio.wordTimestamps, input.scenes);
+      }
+    } else {
+      console.log('[V7-vv] Step 4: SKIPPED (preserve_structure mode - uses existing phases)');
     }
 
     // =========================================================================
     // PASSO 5: CONSTRUIR OUTPUT
+    // ✅ C02: Skip when preserve_structure (lessonData not needed - uses DB content)
     // =========================================================================
-    console.log('[V7-vv] Step 5: Building output...');
-
+    // totalDuration precisa ser calculado aqui para uso posterior
     const totalDuration = phases.length > 0 ? phases[phases.length - 1].endTime : mainAudio.duration;
+    let lessonData: LessonData | null = null;
+    let debugReport: V7PipelineDebugReport | null = null;
+    
+    if (!preserveStructureMode) {
+      console.log('[V7-vv] Step 5: Building output...');
 
-    // ✅ FASE 2 FIX: Calcular flags para metadata
-    const hasInteractivePhases = phases.some(p => ['interaction', 'quiz'].includes(p.type));
-    const hasPlayground = phases.some(p => p.type === 'playground');
-    const hasPostLessonExercises = !!(input.postLessonExercises && input.postLessonExercises.length > 0);
+      const totalDuration = phases.length > 0 ? phases[phases.length - 1].endTime : mainAudio.duration;
 
-    const lessonData: LessonData = {
-      // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
-      schema: 'v7-vv',                           // Bug 7: era "model"
-      version: '1.0.0',                          // Bug 8: formato correto
-      title: input.title,                        // Bug 9: title no root
-      subtitle: input.subtitle || '',            // Bug 9: subtitle no root
-      difficulty: input.difficulty,
-      category: input.category,
-      tags: input.tags,
-      learningObjectives: input.learningObjectives,
-      estimatedDuration: Math.ceil(totalDuration),
-      metadata: {
-        version: 'v7-vv',                        // Bug 10: metadata.version
-        phaseCount: phases.length,
-        totalDuration,
-        hasInteractivePhases,                    // Bug 11: flag
-        hasPlayground,                           // Bug 11: flag
-        hasPostLessonExercises,                  // Bug 11: flag
-      },
-      phases,
-      audio: {
+      // ✅ FASE 2 FIX: Calcular flags para metadata
+      const hasInteractivePhases = phases.some(p => ['interaction', 'quiz'].includes(p.type));
+      const hasPlayground = phases.some(p => p.type === 'playground');
+      const hasPostLessonExercises = !!(input.postLessonExercises && input.postLessonExercises.length > 0);
+
+      lessonData = {
+        // ✅ FASE 2 FIX: Estrutura compatível com OUTPUT funcional
+        schema: 'v7-vv',                           // Bug 7: era "model"
+        version: '1.0.0',                          // Bug 8: formato correto
+        title: input.title,                        // Bug 9: title no root
+        subtitle: input.subtitle || '',            // Bug 9: subtitle no root
+        difficulty: input.difficulty,
+        category: input.category,
+        tags: input.tags,
+        learningObjectives: input.learningObjectives,
+        estimatedDuration: Math.ceil(totalDuration),
+        metadata: {
+          version: 'v7-vv',                        // Bug 10: metadata.version
+          phaseCount: phases.length,
+          totalDuration,
+          hasInteractivePhases,                    // Bug 11: flag
+          hasPlayground,                           // Bug 11: flag
+          hasPostLessonExercises,                  // Bug 11: flag
+        },
+        phases,
+        audio: {
+          mainAudio,
+          // ✅ FASE 4 FIX: feedbackAudios como objeto (Frontend acessa por key)
+          feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
+        },
+        // ✅ FASE 1 FIX: Passar campos direto do INPUT para OUTPUT
+        postLessonExercises: input.postLessonExercises,
+        postLessonFlow: input.postLessonFlow,
+        gamification: input.gamification,
+      };
+
+      // =========================================================================
+      // PASSO 5.5: GERAR DEBUG REPORT AUTOMÁTICO
+      // =========================================================================
+      console.log('[V7-vv] Step 5.5: Generating debug report...');
+      
+      const fullNarrationForDebug = input.scenes
+        .map(s => s.narration.trim())
+        .filter(n => n.length > 0)
+        .join('\n\n');
+      
+      debugReport = generatePipelineDebug(
+        'pending', // ID será preenchido após salvar
+        input.title,
+        input.scenes,
         mainAudio,
-        // ✅ FASE 4 FIX: feedbackAudios como objeto (Frontend acessa por key)
-        feedbackAudios: Object.keys(feedbackAudios).length > 0 ? feedbackAudios : undefined,
-      },
-      // ✅ FASE 1 FIX: Passar campos direto do INPUT para OUTPUT
-      postLessonExercises: input.postLessonExercises,
-      postLessonFlow: input.postLessonFlow,
-      gamification: input.gamification,
-    };
-
-    // =========================================================================
-    // PASSO 5.5: GERAR DEBUG REPORT AUTOMÁTICO
-    // =========================================================================
-    console.log('[V7-vv] Step 5.5: Generating debug report...');
-    
-    const fullNarrationForDebug = input.scenes
-      .map(s => s.narration.trim())
-      .filter(n => n.length > 0)
-      .join('\n\n');
-    
-    const debugReport = generatePipelineDebug(
-      'pending', // ID será preenchido após salvar
-      input.title,
-      input.scenes,
-      mainAudio,
-      phases,
-      fullNarrationForDebug,
-      feedbackAudios // ✅ FASE 4: Incluir para validação
-    );
+        phases,
+        fullNarrationForDebug,
+        feedbackAudios // ✅ FASE 4: Incluir para validação
+      );
+    } else {
+      console.log('[V7-vv] Step 5: SKIPPED (preserve_structure mode - uses DB content)');
+      console.log('[V7-vv] Step 5.5: SKIPPED (preserve_structure mode - no debug report)');
+    }
 
     // =========================================================================
     // PASSO 6: SALVAR NO BANCO (INSERT ou UPDATE para reprocess)
@@ -4559,21 +4581,25 @@ Deno.serve(async (req) => {
       console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
     }
     
-    // Atualizar lessonId no debug report
-    debugReport.lessonId = lessonId;
+    // Atualizar lessonId no debug report (se existir)
+    if (debugReport) {
+      debugReport.lessonId = lessonId;
+    }
 
     // =========================================================================
     // PASSO 6.5: DEBUG REPORT (RETORNADO NA RESPOSTA - SEM PERSISTÊNCIA)
     // =========================================================================
     // ✅ Debug Report é retornado diretamente na resposta
     // A tabela v7_debug_reports foi removida - análise on-demand via Diagnostic Engine
-    console.log('[V7-vv] 📊 Debug Report Summary:', {
-      lesson_id: lessonId,
-      lesson_title: input.title,
-      health_score: debugReport.summary.healthScore,
-      severity: debugReport.summary.severity,
-      total_issues: debugReport.allIssues.length,
-    });
+    if (debugReport) {
+      console.log('[V7-vv] 📊 Debug Report Summary:', {
+        lesson_id: lessonId,
+        lesson_title: input.title || 'preserve_structure_mode',
+        health_score: debugReport.summary.healthScore,
+        severity: debugReport.summary.severity,
+        total_issues: debugReport.allIssues.length,
+      });
+    }
 
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
@@ -4589,14 +4615,18 @@ Deno.serve(async (req) => {
         feedbackAudioCount: Object.keys(feedbackAudios).length,
         hasAudio: !!mainAudio.url,
       },
-      // ✅ DEBUG REPORT AUTOMÁTICO
+      // ✅ DEBUG REPORT AUTOMÁTICO (null no modo preserve_structure)
       debug: debugReport,
     };
 
     console.log('================================================');
     console.log('[V7-vv] ✅ Pipeline completed successfully');
     console.log('[V7-vv] Stats:', JSON.stringify(response.stats));
-    console.log(`[V7-vv] Debug: ${debugReport.allIssues.length} issues, health score: ${debugReport.summary.healthScore}`);
+    if (debugReport) {
+      console.log(`[V7-vv] Debug: ${debugReport.allIssues.length} issues, health score: ${debugReport.summary.healthScore}`);
+    } else {
+      console.log('[V7-vv] Debug: SKIPPED (preserve_structure mode)');
+    }
     console.log('================================================');
 
     return new Response(JSON.stringify(response), {
