@@ -265,9 +265,68 @@ C03 DONE = (
 
 ---
 
+## C03.1 Audit Hardening (2026-02-03)
+
+### Changes Applied
+
+| Item | Before | After |
+|------|--------|-------|
+| `migration_version` | `v2.2-c02-fix` | `v2.3-c03-fix` |
+| `t3MicroAfter` | Hardcoded 0 | Calculado dinamicamente |
+| `c03Applied` (metadata) | Sempre `true` | `t3Fixed > 0` |
+| `diff_summary.c03` | Campo `c03Stats` flat | Estrutura hierárquica com `before/after/reason` |
+
+### New diff_summary.c03 Structure
+
+```json
+{
+  "c03": {
+    "audioDuration": 131.854,
+    "before": {
+      "t3Negative": 1,
+      "t3Zero": 0,
+      "t3Micro": 0
+    },
+    "after": {
+      "t3Negative": 0,
+      "t3Zero": 0,
+      "t3Micro": 0
+    },
+    "t3Fixed": 1,
+    "fixApplied": true,
+    "phaseTimingChanges": [
+      {
+        "phaseId": "cena-10-playground",
+        "phaseType": "playground",
+        "oldStartTime": 90.089,
+        "oldEndTime": 86.737,
+        "oldDuration": -3.352,
+        "newStartTime": 90.089,
+        "newEndTime": 95.089,
+        "newDuration": 5.0,
+        "fixApplied": "NEGATIVE_FIX",
+        "reason": "endTime (86.74s) < startTime (90.09s)"
+      }
+    ]
+  }
+}
+```
+
+### Fix Types with Reasons
+
+| fixApplied | Reason Pattern |
+|------------|----------------|
+| `NEGATIVE_FIX` | `endTime (X.XXs) < startTime (Y.YYs)` |
+| `ZERO_FIX` | `duration=0 (startTime=endTime=X.XXs)` |
+| `MICRO_FIX` | `interactive duration (X.XXs) < 5.0s` |
+| `OVERLAP_FIX` | `overlap com fase anterior (lastEnd=X.XXs)` |
+| `LAST_PHASE_FIX` | `última fase: endTime (X.XXs) → audioDuration (Y.YYs)` |
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.3 (C03 Phase Timing Correction Complete)
+- **Versão:** v2.4 (C03.1 Audit Hardening)
 - **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, C03 ✅
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅
 - **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings
