@@ -421,6 +421,12 @@ export const V7PhasePlayer = ({
         console.log(`[V7PhasePlayer] ▶️ ANCHOR RESUME`);
       }
     },
+    // ✅ V7-v60 PATCH D2: Process 'show' actions for microVisuals
+    onShow: (targetId: string, payload?: any) => {
+      console.log(`[V7PhasePlayer] 👁️ ANCHOR SHOW: targetId="${targetId}"`, payload);
+      // visibleElements state is already updated by useAnchorText internally
+      // This callback is for logging and any additional side effects
+    },
   });
 
   // ✅ V7-v30 FIX: Lock interactive phases IMMEDIATELY ao entrar
@@ -1546,6 +1552,7 @@ export const V7PhasePlayer = ({
           });
           
           // Letter reveal visual (e.g., PERFEITO, MÉTODO, any vertical word)
+          // ✅ V7-v60: Pass anchorActions for audio-synced reveal
           return (
             <V7PhasePERFEITOSynced
               wordTimestamps={wordTimestamps}
@@ -1555,6 +1562,8 @@ export const V7PhasePlayer = ({
               lettersData={lettersFromDB}
               word={revelationVisualContent?.word || 'PERFEITO'}
               finalStamp={revelationVisualContent?.finalStamp}
+              // ✅ V7-v60: Passar anchorActions para sincronização com áudio
+              anchorActions={currentPhase.anchorActions || []}
               onComplete={() => {
                 console.log('[V7PhasePlayer] Letter-reveal animation complete - advancing');
                 const fromIndex = lockedPhaseIndex ?? currentPhaseIndex;
@@ -1762,6 +1771,7 @@ export const V7PhasePlayer = ({
 
       {/* V7-vv-v4: MicroVisual Overlay - renders word-triggered micro-visuals with sounds */}
       {/* Hide during dramatic/revelation phases as they have their own prominent visuals */}
+      {/* ✅ V7-v60: Pass anchorTriggeredIds for anchor-based visibility */}
       {currentPhase?.microVisuals && currentPhase.microVisuals.length > 0 && 
        currentPhase?.type !== 'dramatic' && 
        currentPhase?.type !== 'revelation' && (
@@ -1770,6 +1780,7 @@ export const V7PhasePlayer = ({
           currentTime={hasAudio ? audio.currentTime : internalTime}
           isPlaying={effectiveIsPlaying}
           visualType={(currentPhase as any).visual?.type}
+          anchorTriggeredIds={visibleElements}
         />
       )}
 
