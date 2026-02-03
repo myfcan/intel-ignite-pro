@@ -1,9 +1,9 @@
 // V7PhasePERFEITOSynced - Synchronized PERFEITO reveal with narration
-// ✅ V7-v52: FIX - Reveal letras PROGRESSIVAMENTE usando timer interno
-// A fase monta DEPOIS das palavras terem sido faladas, então usamos timer próprio
+// ✅ V7-v60: FIX - Reveal letras SINCRONIZADAS com anchorActions do áudio
+// Usa timestamps do banco ao invés de timer fixo de 700ms
 // P-E-R-F-E-I-T-O stacked vertically with meanings appearing progressively
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useV7SoundEffects } from '../useV7SoundEffects';
 
 interface WordTimestamp {
@@ -19,6 +19,15 @@ interface LetterData {
   subtitle: string;
 }
 
+// ✅ V7-v60: Interface para anchorActions de sincronização
+interface LetterAnchorAction {
+  id: string;
+  keyword: string;
+  type: string;
+  keywordTime?: number;
+  targetId?: string;
+}
+
 interface V7PhasePERFEITOSyncedProps {
   wordTimestamps: WordTimestamp[];
   currentTime: number;
@@ -29,6 +38,8 @@ interface V7PhasePERFEITOSyncedProps {
   lettersData?: LetterData[];
   word?: string;
   finalStamp?: string;
+  // ✅ V7-v60: AnchorActions para sincronização com áudio
+  anchorActions?: LetterAnchorAction[];
 }
 
 // PERFEITO letter meanings (FALLBACK se não vier do banco)
@@ -43,9 +54,9 @@ const DEFAULT_PERFEITO_MEANINGS = [
   { letter: 'O', meaning: 'Otimização', subtitle: 'constante' },
 ];
 
-// ✅ V7-v52: Intervalo entre cada letra (em ms) - ritmo cinematográfico
-const LETTER_REVEAL_INTERVAL = 700; // 700ms entre cada letra = ~5.6s para todas as 8 letras
-const INITIAL_DELAY = 300; // Delay inicial antes de começar a revelar
+// ✅ V7-v60: Fallback interval if no anchorActions (700ms between letters)
+const FALLBACK_LETTER_INTERVAL = 700;
+const INITIAL_DELAY = 300;
 
 export const V7PhasePERFEITOSynced = ({
   wordTimestamps,
@@ -53,10 +64,10 @@ export const V7PhasePERFEITOSynced = ({
   isPlaying,
   onComplete,
   exitAnchor = 'teste',
-  // ✅ V7-v51: Dados dinâmicos do banco
   lettersData,
   word = 'PERFEITO',
   finalStamp,
+  anchorActions = [],
 }: V7PhasePERFEITOSyncedProps) => {
   // ✅ V7-v51: Usar dados do banco com fallback para dados hardcoded
   const PERFEITO_MEANINGS = lettersData?.length 
@@ -73,11 +84,35 @@ export const V7PhasePERFEITOSynced = ({
   const playedSoundsRef = useRef<Set<number>>(new Set());
   const mountTimeRef = useRef<number>(Date.now());
   const revealIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevTimeRef = useRef<number>(0);
   
   // Sound effects
   const { playSound } = useV7SoundEffects();
 
-  // ✅ V7-v52: Log de inicialização
+  // ✅ V7-v60: Extract letter trigger times from anchorActions
+  const letterTriggerTimes = useMemo(() => {
+    if (!anchorActions || anchorActions.length === 0) {
+      console.log('[V7PhasePERFEITOSynced] ⚠️ No anchorActions - using fallback timer');
+      return null;
+    }
+    
+    // Find 'show' actions for letters (e.g., c9-mv-p, c9-mv-e1, etc.)
+    const letterActions = anchorActions.filter(a => 
+      a.type === 'show' && a.keywordTime !== undefined && a.keywordTime > 0
+    ).sort((a, b) => (a.keywordTime || 0) - (b.keywordTime || 0));
+    
+    if (letterActions.length === 0) {
+      console.log('[V7PhasePERFEITOSynced] ⚠️ No show actions with keywordTime - using fallback timer');
+      return null;
+    }
+    
+    console.log('[V7PhasePERFEITOSynced] ✅ Using anchor-synced reveal:', 
+      letterActions.map(a => `${a.keyword}@${a.keywordTime?.toFixed(2)}s`));
+    
+    return letterActions.map(a => a.keywordTime as number);
+  }, [anchorActions]);
+
+  // ✅ V7-v60: Log de inicialização
   useEffect(() => {
     console.log('[V7PhasePERFEITOSynced] 📊 Mounted:', {
       word,
@@ -86,19 +121,54 @@ export const V7PhasePERFEITOSynced = ({
       finalStamp,
       currentTime: currentTime.toFixed(1),
       totalLetters: PERFEITO_MEANINGS.length,
+      anchorActionsCount: anchorActions?.length || 0,
+      usingSyncedReveal: !!letterTriggerTimes,
     });
   }, []);
 
-  // ✅ V7-v52: Mostrar conteúdo imediatamente e iniciar revelação progressiva
+  // ✅ V7-v60: Mostrar conteúdo imediatamente
   useEffect(() => {
     if (showContent) return;
     
-    // Mostrar layout imediatamente quando a fase monta
-    console.log(`[V7PhasePERFEITOSynced] 🎬 Phase mounted - starting progressive reveal`);
+    console.log(`[V7PhasePERFEITOSynced] 🎬 Phase mounted - starting reveal`);
     setShowContent(true);
     playSound('reveal');
+  }, [showContent, playSound]);
+
+  // ✅ V7-v60: AUDIO-SYNCED REVEAL - Uses crossing detection on anchorActions
+  useEffect(() => {
+    if (!letterTriggerTimes || letterTriggerTimes.length === 0) return;
     
-    // ✅ V7-v52: Iniciar timer para revelar letras progressivamente
+    const prevTime = prevTimeRef.current;
+    
+    // Check each letter's trigger time for crossing
+    letterTriggerTimes.forEach((triggerTime, index) => {
+      // Crossing detection: prevTime < trigger && currentTime >= trigger
+      const crossed = prevTime < triggerTime && currentTime >= triggerTime;
+      
+      if (crossed && index >= visibleCount) {
+        console.log(`[V7PhasePERFEITOSynced] 🎯 CROSSED letter ${index + 1} @ ${triggerTime.toFixed(2)}s`);
+        setVisibleCount(index + 1);
+        
+        // Play sound for this letter
+        if (!playedSoundsRef.current.has(index)) {
+          playedSoundsRef.current.add(index);
+          playSound('letter-reveal', { pitch: index });
+          console.log(`[V7PhasePERFEITOSynced] 🔊 Letter ${index + 1}/${PERFEITO_MEANINGS.length}: "${PERFEITO_MEANINGS[index]?.letter}"`);
+        }
+      }
+    });
+    
+    prevTimeRef.current = currentTime;
+  }, [currentTime, letterTriggerTimes, visibleCount, playSound, PERFEITO_MEANINGS]);
+
+  // ✅ V7-v60: FALLBACK TIMER - Only used when no anchorActions available
+  useEffect(() => {
+    if (letterTriggerTimes) return; // Skip if using audio-synced reveal
+    if (!showContent) return;
+    
+    console.log(`[V7PhasePERFEITOSynced] ⏱️ Using FALLBACK timer (${FALLBACK_LETTER_INTERVAL}ms)`);
+    
     const startReveal = () => {
       let letterIndex = 0;
       
@@ -106,7 +176,6 @@ export const V7PhasePERFEITOSynced = ({
         if (letterIndex < PERFEITO_MEANINGS.length) {
           setVisibleCount(letterIndex + 1);
           
-          // Tocar som para cada letra
           if (!playedSoundsRef.current.has(letterIndex)) {
             playedSoundsRef.current.add(letterIndex);
             playSound('letter-reveal', { pitch: letterIndex });
@@ -115,17 +184,15 @@ export const V7PhasePERFEITOSynced = ({
           
           letterIndex++;
         } else {
-          // Parar intervalo quando todas as letras foram reveladas
           if (revealIntervalRef.current) {
             clearInterval(revealIntervalRef.current);
             revealIntervalRef.current = null;
           }
           console.log(`[V7PhasePERFEITOSynced] ✅ All ${PERFEITO_MEANINGS.length} letters revealed!`);
         }
-      }, LETTER_REVEAL_INTERVAL);
+      }, FALLBACK_LETTER_INTERVAL);
     };
     
-    // Pequeno delay antes de começar (efeito dramático)
     const initialTimer = setTimeout(startReveal, INITIAL_DELAY);
     
     return () => {
@@ -134,14 +201,13 @@ export const V7PhasePERFEITOSynced = ({
         clearInterval(revealIntervalRef.current);
       }
     };
-  }, [showContent, playSound, PERFEITO_MEANINGS.length]);
+  }, [showContent, letterTriggerTimes, playSound, PERFEITO_MEANINGS.length]);
 
-  // ✅ V7-v52: Auto-complete quando todas as letras forem reveladas + delay
+  // ✅ V7-v60: Auto-complete quando todas as letras forem reveladas + delay
   useEffect(() => {
     if (completedRef.current) return;
     if (visibleCount < PERFEITO_MEANINGS.length) return;
     
-    // Aguardar um pouco após todas as letras serem reveladas
     const completeTimer = setTimeout(() => {
       if (!completedRef.current) {
         completedRef.current = true;

@@ -28,6 +28,9 @@ interface V7MicroVisualOverlayProps {
   currentTime: number;
   isPlaying: boolean;
   visualType?: string; // Type of main visual for smart positioning
+  // ✅ V7-v60: Optional set of IDs triggered by anchor system
+  // When provided, these IDs are visible regardless of triggerTime
+  anchorTriggeredIds?: Set<string>;
 }
 
 // Position mapping for micro-visuals - V7-v33: Posições que NÃO sobrepõem conteúdo principal
@@ -195,18 +198,27 @@ export const V7MicroVisualOverlay: React.FC<V7MicroVisualOverlayProps> = ({
   currentTime,
   isPlaying,
   visualType,
+  anchorTriggeredIds,
 }) => {
   const { playSound } = useV7SoundEffects();
   const activeMvRef = useRef<Set<string>>(new Set());
 
-  // Determine which micro-visuals should be visible based on current time
+  // ✅ V7-v60: Determine visibility using BOTH time-based AND anchor-based triggers
+  // Priority: anchorTriggeredIds (if provided) OR time-based calculation
   const visibleMicroVisuals = useMemo(() => {
     return microVisuals.filter(mv => {
+      // ✅ V7-v60: If anchor system has triggered this ID, show it
+      if (anchorTriggeredIds && anchorTriggeredIds.has(mv.id)) {
+        console.log(`[MicroVisual] 👁️ "${mv.id}" visible via anchor trigger`);
+        return true;
+      }
+      
+      // Fallback: time-based visibility
       const isAfterTrigger = currentTime >= mv.triggerTime;
       const isBeforeEnd = currentTime < mv.triggerTime + mv.duration;
       return isAfterTrigger && isBeforeEnd;
     });
-  }, [microVisuals, currentTime]);
+  }, [microVisuals, currentTime, anchorTriggeredIds]);
 
   // ✅ Track activation and play sounds
   useEffect(() => {

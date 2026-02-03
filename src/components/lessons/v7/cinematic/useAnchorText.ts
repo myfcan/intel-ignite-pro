@@ -118,6 +118,9 @@ export function useAnchorText({
   
   const [visibleElements, setVisibleElements] = useState<Set<string>>(new Set());
   const [highlightedElements, setHighlightedElements] = useState<Set<string>>(new Set());
+  
+  // ✅ V7-v60 CROSSING DETECTION: Track previous time for crossing detection
+  const prevTimeRef = useRef<number>(0);
 
   // Normaliza palavra para comparação
   const normalizeWord = useCallback((word: string): string => {
@@ -194,18 +197,28 @@ export function useAnchorText({
     return null;
   }, [wordTimestamps, normalizeWord]);
 
-  // Verifica se o tempo atual está próximo de uma palavra
-  // ✅ V7-v41 FIX: Janela de 400ms - equilibra detecção confiável + seek-back no Player
-  // O Player faz seek-back se passar do ponto, então podemos usar janela maior aqui
-  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 400): boolean => {
+  // ✅ V7-v60 CROSSING DETECTION: Detects when time crosses a trigger point
+  // This REPLACES window-based detection for 100% reliability
+  // Logic: prevTime < triggerPoint && currentTime >= triggerPoint
+  const hasCrossedTrigger = useCallback((triggerPoint: number, prevTime: number, currTime: number): boolean => {
+    const crossed = prevTime < triggerPoint && currTime >= triggerPoint;
+    
+    if (crossed) {
+      console.log(`[AnchorText] ✅ CROSSED: prevTime ${prevTime.toFixed(3)}s < trigger ${triggerPoint.toFixed(3)}s <= currTime ${currTime.toFixed(3)}s`);
+    }
+    
+    return crossed;
+  }, []);
+  
+  // ✅ LEGACY: Keep isTimeNearWord as fallback for cases without keywordTime
+  const isTimeNearWord = useCallback((wordTs: WordTimestamp, time: number, windowMs: number = 500): boolean => {
     const windowSec = windowMs / 1000;
-    // ✅ CRÍTICO: Tempo atual deve ser >= end da palavra (frase completa falada)
     const isAfterWordEnd = time >= wordTs.end;
     const isWithinWindow = time <= wordTs.end + windowSec;
     const result = isAfterWordEnd && isWithinWindow;
     
     if (result) {
-      console.log(`[AnchorText] ✅ isTimeNearWord: time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (window ${windowMs}ms)`);
+      console.log(`[AnchorText] ✅ isTimeNearWord (legacy): time ${time.toFixed(2)}s MATCH @ word end ${wordTs.end.toFixed(2)}s (window ${windowMs}ms)`);
     }
     
     return result;
@@ -354,27 +367,23 @@ export function useAnchorText({
       // Para ações de resume, só monitora se estiver pausado pelo anchor
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
-      // ✅ V7-v43: Se keywordTime está disponível, usar detecção PREVENTIVA por tempo
-      // PROBLEMA: "faz." termina em 63.425s e "Eles" começa em 63.634s (gap de 209ms)
-      // SOLUÇÃO: Pausar 100ms ANTES do keywordTime para garantir que não vaze
+      // ✅ V7-v60 CROSSING DETECTION: Se keywordTime está disponível, usar detecção por cruzamento
+      // Isso GARANTE que o trigger dispare EXATAMENTE UMA VEZ, sem misses nem duplicações
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const preemptiveMs = action.type === 'pause' ? 100 : 0; // ✅ Pausa preventiva apenas para pause actions
+        const preemptiveMs = action.type === 'pause' ? 100 : 0;
         const preemptiveSec = preemptiveMs / 1000;
-        const windowMs = 400; // Janela de detecção após o ponto
-        const windowSec = windowMs / 1000;
-        
-        // ✅ V7-v43: Para pause actions, detectar 100ms ANTES do keywordTime
-        // Isso garante que o áudio para ANTES da próxima frase começar
         const triggerPoint = action.keywordTime - preemptiveSec;
-        const isNear = currentTime >= triggerPoint && currentTime <= action.keywordTime + windowSec;
+        
+        // ✅ V7-v60: CROSSING DETECTION - prevTime < trigger && currentTime >= trigger
+        const prevTime = prevTimeRef.current;
+        const crossed = hasCrossedTrigger(triggerPoint, prevTime, currentTime);
 
-        if (isNear) {
-          console.log(`[AnchorText] 🎯 V7-v43 PREVENTIVE MATCH! "${action.keyword}" @ ${triggerPoint.toFixed(3)}s (current: ${timeStr}s, keywordTime: ${action.keywordTime.toFixed(3)}s)`);
-          // Create synthetic wordTs - usar o ponto de pausa exato para seek-back
+        if (crossed) {
+          console.log(`[AnchorText] 🎯 V7-v60 CROSSING MATCH! "${action.keyword}" crossed @ ${triggerPoint.toFixed(3)}s (prev: ${prevTime.toFixed(3)}s, current: ${timeStr}s)`);
           const syntheticWordTs: WordTimestamp = {
             word: action.keyword,
             start: action.keywordTime - 0.5,
-            end: action.keywordTime - preemptiveSec, // ✅ O seek-back vai para 100ms ANTES do end
+            end: action.keywordTime - preemptiveSec,
           };
           executeAction(action, syntheticWordTs);
         }
@@ -388,16 +397,19 @@ export function useAnchorText({
         continue;
       }
 
-      // Verifica se o tempo atual está próximo
-      const isNear = isTimeNearWord(wordTs, currentTime);
-      console.log(`[AnchorText] 📍 Action "${action.keyword}" | wordTs: ${wordTs.start.toFixed(1)}s-${wordTs.end.toFixed(1)}s | currentTime: ${timeStr}s | isNear: ${isNear}`);
-
-      if (isNear) {
-        console.log(`[AnchorText] 🎯🎯🎯 MATCH! Keyword "${action.keyword}" near time ${timeStr}s (word at ${wordTs.start.toFixed(1)}s)`);
+      // ✅ V7-v60: CROSSING DETECTION para keywords sem keywordTime pré-calculado
+      const prevTime = prevTimeRef.current;
+      const crossed = hasCrossedTrigger(wordTs.end, prevTime, currentTime);
+      
+      if (crossed) {
+        console.log(`[AnchorText] 🎯🎯🎯 CROSSED! Keyword "${action.keyword}" @ ${wordTs.end.toFixed(3)}s (prev: ${prevTime.toFixed(3)}s, current: ${timeStr}s)`);
         executeAction(action, wordTs);
       }
     }
-  }, [enabled, actions, wordTimestamps, currentTime, isPlaying, phaseId, findKeywordTimestamp, isTimeNearWord, executeAction]);
+    
+    // ✅ V7-v60: Atualizar prevTime APÓS processar todas as ações
+    prevTimeRef.current = currentTime;
+  }, [enabled, actions, wordTimestamps, currentTime, isPlaying, phaseId, findKeywordTimestamp, hasCrossedTrigger, executeAction]);
 
   // Reset quando a fase muda
   useEffect(() => {
@@ -409,6 +421,8 @@ export function useAnchorText({
     setIsPausedByAnchorState(false);
     setVisibleElements(new Set());
     setHighlightedElements(new Set());
+    // ✅ V7-v60: Reset prevTime para evitar false positives na nova fase
+    prevTimeRef.current = 0;
   }, [phaseId]);
 
   // Funções manuais de controle
