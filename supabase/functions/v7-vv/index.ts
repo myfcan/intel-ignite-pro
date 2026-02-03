@@ -2523,6 +2523,279 @@ function recalculateAnchorKeywordTimes(
 }
 
 // ============================================================================
+// C04: NORMALIZE PHASE TIMELINE (Global Hardening)
+// Garante monotonicidade, ausência de overlap e clamp em audioDuration
+// ============================================================================
+
+interface C04TimelineStats {
+  t4OverlapBefore: number;           // count startTime < prevEndTime - EPS
+  t4OverlapAfter: number;
+  t4NonMonotonicEndBefore: number;   // count endTime < prevEndTime - EPS
+  t4NonMonotonicEndAfter: number;
+  t4OutsideAudioBefore: number;      // start<0-EPS OR end>audioDuration+EPS
+  t4OutsideAudioAfter: number;
+  t4GapBefore: number;               // startTime > prevEndTime + GAP_EPS
+  t4GapAfter: number;
+  fixApplied: boolean;               // true só se algo mudou
+  audioDuration: number;
+  phaseTimelineChanges: Array<{
+    phaseId: string;
+    phaseType: string;
+    oldStartTime: number;
+    oldEndTime: number;
+    newStartTime: number;
+    newEndTime: number;
+    fixApplied: 'OVERLAP_FIX' | 'DURATION_FIX' | 'CLAMP_START_FIX' | 'CLAMP_END_FIX' | 'MICRO_AUDIO_LIMIT' | 'NONE';
+    reason: string;
+  }>;
+}
+
+const C04_EPS = 0.30;        // 300ms tolerance
+const C04_GAP_EPS = 1.0;     // 1s gap tolerance for gap detection
+const C04_MIN_DURATION_INTERACTIVE = 5.0;  // quiz/playground/pause
+const C04_MIN_DURATION_NON_INTERACTIVE = 0.5;  // narrative/dramatic etc
+
+/**
+ * C04: Normalize Phase Timeline (Global Hardening)
+ * 
+ * Estratégia obrigatória:
+ * - Manter ordem original das phases
+ * - startTime = max(startTime, prevEndTime) [eliminates overlap]
+ * - endTime = max(endTime, startTime + minDuration) [ensures positive duration]
+ * - clamp em [0, audioDuration] e registrar reasons
+ * - prevEndTime = endTime [monotonic chain]
+ * 
+ * Invariantes:
+ * - Somente startTime/endTime podem mudar
+ * - IDs/anchors/structure intactos
+ */
+function normalizePhaseTimeline(
+  phases: any[],
+  audioDuration: number
+): {
+  normalizedPhases: any[];
+  c04Stats: C04TimelineStats;
+} {
+  console.log('[C04] normalizePhaseTimeline: Starting...');
+  console.log(`[C04] Total phases: ${phases.length}, Audio duration: ${audioDuration.toFixed(2)}s`);
+  
+  const c04Stats: C04TimelineStats = {
+    t4OverlapBefore: 0,
+    t4OverlapAfter: 0,
+    t4NonMonotonicEndBefore: 0,
+    t4NonMonotonicEndAfter: 0,
+    t4OutsideAudioBefore: 0,
+    t4OutsideAudioAfter: 0,
+    t4GapBefore: 0,
+    t4GapAfter: 0,
+    fixApplied: false,
+    audioDuration,
+    phaseTimelineChanges: []
+  };
+  
+  // =====================================================================
+  // PASSO 1: DIAGNÓSTICO BEFORE (sem modificar)
+  // =====================================================================
+  let prevEndBefore = 0;
+  for (const phase of phases) {
+    const start = phase.startTime ?? 0;
+    const end = phase.endTime ?? 0;
+    
+    // T4 Overlap: startTime < prevEndTime - EPS
+    if (start < prevEndBefore - C04_EPS) {
+      c04Stats.t4OverlapBefore++;
+    }
+    
+    // T4 Non-monotonic end: endTime < prevEndTime - EPS
+    if (end < prevEndBefore - C04_EPS) {
+      c04Stats.t4NonMonotonicEndBefore++;
+    }
+    
+    // T4 Outside audio: start < 0-EPS OR end > audioDuration+EPS
+    if (start < 0 - C04_EPS || end > audioDuration + C04_EPS) {
+      c04Stats.t4OutsideAudioBefore++;
+    }
+    
+    // T4 Gap: startTime > prevEndTime + GAP_EPS
+    if (start > prevEndBefore + C04_GAP_EPS) {
+      c04Stats.t4GapBefore++;
+    }
+    
+    prevEndBefore = end;
+  }
+  
+  console.log(`[C04] BEFORE: Overlap=${c04Stats.t4OverlapBefore}, NonMonotonic=${c04Stats.t4NonMonotonicEndBefore}, OutsideAudio=${c04Stats.t4OutsideAudioBefore}, Gap=${c04Stats.t4GapBefore}`);
+  
+  // =====================================================================
+  // PASSO 2: NORMALIZAÇÃO (deep clone, manter ordem original)
+  // =====================================================================
+  const normalizedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
+  
+  let prevEndTime = 0;
+  let anyChange = false;
+  
+  for (let i = 0; i < normalizedPhases.length; i++) {
+    const phase = normalizedPhases[i];
+    const isInteractive = ['interaction', 'playground', 'quiz', 'secret-reveal', 'pause'].includes(phase.type);
+    const minDuration = isInteractive ? C04_MIN_DURATION_INTERACTIVE : C04_MIN_DURATION_NON_INTERACTIVE;
+    
+    const oldStartTime = phase.startTime ?? 0;
+    const oldEndTime = phase.endTime ?? 0;
+    
+    let newStartTime = oldStartTime;
+    let newEndTime = oldEndTime;
+    let fixApplied: C04TimelineStats['phaseTimelineChanges'][0]['fixApplied'] = 'NONE';
+    let fixReason = '';
+    
+    // =====================================================================
+    // REGRA 1: startTime = max(startTime, prevEndTime) [elimina overlap]
+    // =====================================================================
+    if (newStartTime < prevEndTime) {
+      newStartTime = prevEndTime;
+      if (fixApplied === 'NONE') {
+        fixApplied = 'OVERLAP_FIX';
+        fixReason = `startTime (${oldStartTime.toFixed(2)}s) < prevEndTime (${prevEndTime.toFixed(2)}s)`;
+      }
+      console.log(`[C04] FIX OVERLAP: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+    }
+    
+    // =====================================================================
+    // REGRA 2: Clamp startTime em [0, audioDuration]
+    // =====================================================================
+    if (newStartTime < 0) {
+      newStartTime = 0;
+      if (fixApplied === 'NONE') {
+        fixApplied = 'CLAMP_START_FIX';
+        fixReason = `startTime (${oldStartTime.toFixed(2)}s) < 0`;
+      }
+      console.log(`[C04] FIX CLAMP_START: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → 0`);
+    }
+    if (newStartTime > audioDuration) {
+      // Se startTime > audioDuration, colocar no final com duração mínima
+      newStartTime = Math.max(0, audioDuration - minDuration);
+      if (fixApplied === 'NONE') {
+        fixApplied = 'CLAMP_START_FIX';
+        fixReason = `startTime (${oldStartTime.toFixed(2)}s) > audioDuration (${audioDuration.toFixed(2)}s)`;
+      }
+      console.log(`[C04] FIX CLAMP_START_BEYOND: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+    }
+    
+    // =====================================================================
+    // REGRA 3: endTime = max(endTime, startTime + minDuration)
+    // =====================================================================
+    const currentDuration = newEndTime - newStartTime;
+    if (currentDuration < minDuration) {
+      const idealEndTime = newStartTime + minDuration;
+      
+      // Verificar se cabe no áudio
+      if (idealEndTime <= audioDuration) {
+        newEndTime = idealEndTime;
+        if (fixApplied === 'NONE') {
+          fixApplied = 'DURATION_FIX';
+          fixReason = `duration (${currentDuration.toFixed(2)}s) < minDuration (${minDuration}s)`;
+        }
+      } else {
+        // Não cabe a duração ideal, usar o que resta até o fim do áudio
+        newEndTime = audioDuration;
+        const actualDuration = newEndTime - newStartTime;
+        if (actualDuration < minDuration && isInteractive) {
+          // Documentar que ficou MICRO por limite do áudio
+          if (fixApplied === 'NONE') {
+            fixApplied = 'MICRO_AUDIO_LIMIT';
+            fixReason = `interactive duration (${actualDuration.toFixed(2)}s) < ${minDuration}s devido a AUDIO_LIMIT`;
+          }
+        } else if (fixApplied === 'NONE') {
+          fixApplied = 'DURATION_FIX';
+          fixReason = `duration extended to audioDuration (${audioDuration.toFixed(2)}s)`;
+        }
+      }
+      console.log(`[C04] FIX DURATION: "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s`);
+    }
+    
+    // =====================================================================
+    // REGRA 4: Clamp endTime em audioDuration
+    // =====================================================================
+    if (newEndTime > audioDuration) {
+      newEndTime = audioDuration;
+      if (fixApplied === 'NONE') {
+        fixApplied = 'CLAMP_END_FIX';
+        fixReason = `endTime (${oldEndTime.toFixed(2)}s) > audioDuration (${audioDuration.toFixed(2)}s)`;
+      }
+      console.log(`[C04] FIX CLAMP_END: "${phase.id}" endTime ${oldEndTime.toFixed(2)}s → ${audioDuration.toFixed(2)}s`);
+    }
+    
+    // =====================================================================
+    // REGRA 5: Garantir endTime > startTime (safety net)
+    // =====================================================================
+    if (newEndTime <= newStartTime) {
+      newEndTime = Math.min(newStartTime + minDuration, audioDuration);
+      if (fixApplied === 'NONE') {
+        fixApplied = 'DURATION_FIX';
+        fixReason = `endTime (${newEndTime.toFixed(2)}s) <= startTime (${newStartTime.toFixed(2)}s)`;
+      }
+      console.log(`[C04] FIX SAFETY_NET: "${phase.id}" endTime forced to ${newEndTime.toFixed(2)}s`);
+    }
+    
+    // Aplicar mudanças
+    phase.startTime = newStartTime;
+    phase.endTime = newEndTime;
+    
+    // Registrar mudança se houve fix
+    const hasChanged = Math.abs(oldStartTime - newStartTime) > 0.001 || Math.abs(oldEndTime - newEndTime) > 0.001;
+    if (hasChanged) {
+      anyChange = true;
+      c04Stats.phaseTimelineChanges.push({
+        phaseId: phase.id,
+        phaseType: phase.type,
+        oldStartTime,
+        oldEndTime,
+        newStartTime,
+        newEndTime,
+        fixApplied,
+        reason: fixReason
+      });
+    }
+    
+    // Atualizar prevEndTime para próxima iteração
+    prevEndTime = newEndTime;
+  }
+  
+  c04Stats.fixApplied = anyChange;
+  
+  // =====================================================================
+  // PASSO 3: DIAGNÓSTICO AFTER
+  // =====================================================================
+  let prevEndAfter = 0;
+  for (const phase of normalizedPhases) {
+    const start = phase.startTime ?? 0;
+    const end = phase.endTime ?? 0;
+    
+    if (start < prevEndAfter - C04_EPS) {
+      c04Stats.t4OverlapAfter++;
+    }
+    if (end < prevEndAfter - C04_EPS) {
+      c04Stats.t4NonMonotonicEndAfter++;
+    }
+    if (start < 0 - C04_EPS || end > audioDuration + C04_EPS) {
+      c04Stats.t4OutsideAudioAfter++;
+    }
+    if (start > prevEndAfter + C04_GAP_EPS) {
+      c04Stats.t4GapAfter++;
+    }
+    
+    prevEndAfter = end;
+  }
+  
+  console.log(`[C04] AFTER: Overlap=${c04Stats.t4OverlapAfter}, NonMonotonic=${c04Stats.t4NonMonotonicEndAfter}, OutsideAudio=${c04Stats.t4OutsideAudioAfter}, Gap=${c04Stats.t4GapAfter}`);
+  console.log(`[C04] fixApplied=${c04Stats.fixApplied}, phaseChanges=${c04Stats.phaseTimelineChanges.length}`);
+  
+  return {
+    normalizedPhases,
+    c04Stats
+  };
+}
+
+// ============================================================================
 // C03: PHASE TIMING CORRECTION
 // Corrige fases com duração negativa/zero durante reprocess
 // ============================================================================
@@ -3887,12 +4160,13 @@ Deno.serve(async (req) => {
         throw new Error('run_id must be a valid UUID');
       }
       
-      // ✅ C03.1: Determinar migration_version baseado no modo (c03 quando preserveStructure)
-      const migrationVersion = preserveStructure ? 'v2.3-c03-fix' : 'v2.1-c01-fix';
+      // ✅ C04: Determinar migration_version baseado no modo (c04 quando preserveStructure)
+      const migrationVersion = preserveStructure ? 'v2.4-c04-fix' : 'v2.1-c01-fix';
       
       let oldContent: any = null;
       let c02MultiMatchReport: RecalculatedPhase['multiMatchCases'] = [];
       let c02Stats = { t1: 0, t2: 0, totalAnchors: 0 };
+      let c04Stats: C04TimelineStats | null = null;
       
       try {
         // 1. Buscar content atual para snapshot
@@ -3971,27 +4245,36 @@ Deno.serve(async (req) => {
           }
         }
         
-        // ✅ C02 + C03: PRESERVE_STRUCTURE MODE
-        // C02: Recalcular keywordTime
+        // ✅ C02 + C03 + C04: PRESERVE_STRUCTURE MODE
+        // C04: Timeline global hardening (monotonicidade, overlap, clamp)
         // C03: Corrigir durações negativas/zero
+        // C02: Recalcular keywordTime
         let finalLessonData: any;
         let c03Stats: C03TimingStats | null = null;
         
         if (preserveStructure && oldContent?.phases) {
-          console.log(`[V7-vv] C02+C03: Using PRESERVE_STRUCTURE mode`);
+          console.log(`[V7-vv] C02+C03+C04: Using PRESERVE_STRUCTURE mode`);
           
-          // ✅ C03: PRIMEIRO corrigir timings de fases
+          // ✅ C04: PRIMEIRO normalizar timeline global (monotonicidade, overlap, clamp)
+          console.log(`[V7-vv] C04: Normalizing global phase timeline...`);
+          const c04Result = normalizePhaseTimeline(
+            oldContent.phases,
+            mainAudio.duration
+          );
+          c04Stats = c04Result.c04Stats;
+          
+          // ✅ C03: DEPOIS corrigir durações individuais (negativo/zero/micro)
           console.log(`[V7-vv] C03: Correcting phase timings...`);
           const c03Result = recalculatePhaseTimings(
-            oldContent.phases,
+            c04Result.normalizedPhases,  // Usar fases já normalizadas pelo C04
             mainAudio.duration
           );
           c03Stats = c03Result.c03Stats;
           
-          // ✅ C02: DEPOIS recalcular keywordTime usando fases com timing corrigido
+          // ✅ C02: POR FIM recalcular keywordTime usando fases com timing corrigido
           console.log(`[V7-vv] C02: Recalculating anchor keywordTime...`);
           const recalcResult = recalculateAnchorKeywordTimes(
-            c03Result.updatedPhases, // Usar fases com timing já corrigido
+            c03Result.updatedPhases, // Usar fases com timing já corrigido por C04+C03
             mainAudio.wordTimestamps
           );
           
@@ -4002,7 +4285,7 @@ Deno.serve(async (req) => {
             totalAnchors: recalcResult.totalAnchorsRecalculated
           };
           
-          // Preservar estrutura completa com correções C02 + C03
+          // Preservar estrutura completa com correções C02 + C03 + C04
           finalLessonData = {
             ...oldContent,
             phases: recalcResult.updatedPhases,
@@ -4022,12 +4305,26 @@ Deno.serve(async (req) => {
                 t3MicroAfter: c03Stats.t3MicroAfter,
                 t3Fixed: c03Stats.t3Fixed,
                 audioDuration: c03Stats.audioDuration
+              },
+              c04Applied: c04Stats.fixApplied,
+              c04Stats: {
+                t4OverlapBefore: c04Stats.t4OverlapBefore,
+                t4OverlapAfter: c04Stats.t4OverlapAfter,
+                t4NonMonotonicEndBefore: c04Stats.t4NonMonotonicEndBefore,
+                t4NonMonotonicEndAfter: c04Stats.t4NonMonotonicEndAfter,
+                t4OutsideAudioBefore: c04Stats.t4OutsideAudioBefore,
+                t4OutsideAudioAfter: c04Stats.t4OutsideAudioAfter,
+                t4GapBefore: c04Stats.t4GapBefore,
+                t4GapAfter: c04Stats.t4GapAfter,
+                fixApplied: c04Stats.fixApplied,
+                audioDuration: c04Stats.audioDuration
               }
             }
           };
           
-          console.log(`[V7-vv] C02: Recalculated ${c02Stats.totalAnchors} anchors. T1=${c02Stats.t1}, T2=${c02Stats.t2}`);
+          console.log(`[V7-vv] C04: Timeline normalized. fixApplied=${c04Stats.fixApplied}, Changes=${c04Stats.phaseTimelineChanges.length}`);
           console.log(`[V7-vv] C03: Fixed ${c03Stats.t3Fixed} phases. Negative=${c03Stats.t3Negative}, Zero=${c03Stats.t3Zero}, Micro=${c03Stats.t3Micro}`);
+          console.log(`[V7-vv] C02: Recalculated ${c02Stats.totalAnchors} anchors. T1=${c02Stats.t1}, T2=${c02Stats.t2}`);
         } else {
           // Modo original: usar lessonData gerado a partir de scenes
           finalLessonData = lessonData;
@@ -4051,7 +4348,7 @@ Deno.serve(async (req) => {
         console.log(`[V7-vv] AUDIT: Computing anchor diff...`);
         const diffSummary = await computeAnchorDiffStrong(oldContent, finalLessonData);
         
-        // ✅ C02 + C03.1: Adicionar reports ao diff_summary com métricas completas
+        // ✅ C02 + C03.1 + C04: Adicionar reports ao diff_summary com métricas completas
         const enrichedDiffSummary = {
           ...diffSummary,
           c02Mode: preserveStructure,
@@ -4074,6 +4371,25 @@ Deno.serve(async (req) => {
             t3Fixed: c03Stats.t3Fixed,
             fixApplied: c03Stats.t3Fixed > 0,
             phaseTimingChanges: c03Stats.phaseTimingChanges.slice(0, 10) // Top 10 com reason
+          } : null,
+          // ✅ C04: Timeline global hardening metrics
+          c04Mode: preserveStructure,
+          c04: preserveStructure && c04Stats ? {
+            audioDuration: c04Stats.audioDuration,
+            before: {
+              t4Overlap: c04Stats.t4OverlapBefore,
+              t4NonMonotonicEnd: c04Stats.t4NonMonotonicEndBefore,
+              t4OutsideAudio: c04Stats.t4OutsideAudioBefore,
+              t4Gap: c04Stats.t4GapBefore
+            },
+            after: {
+              t4Overlap: c04Stats.t4OverlapAfter,
+              t4NonMonotonicEnd: c04Stats.t4NonMonotonicEndAfter,
+              t4OutsideAudio: c04Stats.t4OutsideAudioAfter,
+              t4Gap: c04Stats.t4GapAfter
+            },
+            fixApplied: c04Stats.fixApplied,
+            phaseTimelineChanges: c04Stats.phaseTimelineChanges.slice(0, 10) // Top 10 com reason
           } : null
         };
         
