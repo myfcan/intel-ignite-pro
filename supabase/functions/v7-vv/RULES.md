@@ -110,8 +110,44 @@ if (keywordTime < (startTime - EPS) || keywordTime > endTime) {
 
 ---
 
+## C02 Audit Implementation (2026-02-03)
+
+### New Function: `selectAnchorOccurrence()`
+
+```typescript
+type AnchorStrategy = 'FIRST_IN_RANGE' | 'LAST_IN_RANGE' | 'CLOSEST_TO_TARGET';
+
+function selectAnchorOccurrence(
+  keyword: string,
+  wordTimestamps: WordTimestamp[],
+  afterTime: number,
+  beforeTime: number,
+  strategy: AnchorStrategy = 'FIRST_IN_RANGE',
+  targetTime?: number
+): AnchorSelectionResult {
+  // Returns: selectedTime, matchedCount, selectedIndex, selectedWord, strategyUsed, allMatches
+}
+```
+
+### C02 Changes Applied
+
+| Change | Before | After |
+|--------|--------|-------|
+| pauseAt selection | `findKeywordTime` (FIRST) | `selectAnchorOccurrence(LAST_IN_RANGE)` |
+| Fallback 80% | Used when keyword not found | **REMOVED** - returns NULL |
+| Multi-match logging | None | `matchedCount`, `strategyUsed` in logs |
+| Strategy in audit | Not tracked | `strategyUsed` in `diff_summary` |
+
+### Multi-match Case Verified
+
+| Keyword | Phase | Occurrences | Strategy | Selected |
+|---------|-------|-------------|----------|----------|
+| brinquedo | cena-1-impacto | 2 (6.722s, 12.121s) | FIRST | 7.709s |
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.1 (C01 Audit Complete)
+- **Versão:** v2.2 (C02 Audit Complete)
 - **Data:** 2026-02-03
-- **Status:** T1 = 0, T2 = 0, OK = 100%
+- **Status:** C01 ✅, C02 ✅, selectAnchorOccurrence implemented

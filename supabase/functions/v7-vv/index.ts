@@ -2236,14 +2236,179 @@ function normalizeWord(word: string): string {
 // Similar ao V7 step4-calculate-anchors.ts
 // ============================================================================
 
+// ============================================================================
+// ✅ C02 FIX: UNIFIED ANCHOR SELECTION - Deterministic with Strategies
+// ============================================================================
+
+type AnchorStrategy = 'FIRST_IN_RANGE' | 'LAST_IN_RANGE' | 'CLOSEST_TO_TARGET';
+
+interface AnchorSelectionResult {
+  selectedTime: number | null;
+  matchedCount: number;
+  selectedIndex: number;
+  selectedWord: string | null;
+  strategyUsed: AnchorStrategy;
+  allMatches: Array<{ word: string; start: number; end: number; idx: number }>;
+}
+
+const ANCHOR_EPS_GLOBAL = 0.30; // 300ms tolerance - R1 RULES.md
+
 /**
- * Encontra o timestamp de uma palavra-chave DENTRO de um range específico.
- * Retorna o START da keyword (quando ela começa a ser falada).
- *
- * @param keyword - Palavra ou frase a buscar
+ * ✅ C02: Unified anchor selection function
+ * STRATEGIES:
+ * - FIRST_IN_RANGE: For microVisuals/show (trigger at first mention)
+ * - LAST_IN_RANGE: For pauseAt/endTime (pause after last mention)
+ * - CLOSEST_TO_TARGET: For specific time targeting (optional)
+ * 
+ * RULES (from RULES.md):
+ * - R1: Range filter with EPS tolerance
+ * - R2: Anchor missing → return null, NO fallbacks
+ * - R3: Strategy per context
+ * - R4: Post-validation
+ */
+function selectAnchorOccurrence(
+  keyword: string,
+  wordTimestamps: WordTimestamp[],
+  afterTime: number,
+  beforeTime: number,
+  strategy: AnchorStrategy = 'FIRST_IN_RANGE',
+  targetTime?: number
+): AnchorSelectionResult {
+  const keywordParts = keyword.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+  
+  const emptyResult: AnchorSelectionResult = {
+    selectedTime: null,
+    matchedCount: 0,
+    selectedIndex: -1,
+    selectedWord: null,
+    strategyUsed: strategy,
+    allMatches: []
+  };
+
+  if (keywordParts.length === 0) return emptyResult;
+
+  // ✅ R1: Range filter with EPS tolerance
+  const relevantTimestamps = wordTimestamps.filter(
+    wt => wt.start >= (afterTime - ANCHOR_EPS_GLOBAL) && wt.start <= beforeTime
+  );
+
+  if (relevantTimestamps.length === 0) {
+    console.warn(`[selectAnchorOccurrence] ⚠️ No timestamps in range [${(afterTime - ANCHOR_EPS_GLOBAL).toFixed(2)}s, ${beforeTime.toFixed(2)}s]`);
+    return emptyResult;
+  }
+
+  // Collect ALL matches
+  const allMatches: AnchorSelectionResult['allMatches'] = [];
+  const target = keywordParts[0];
+
+  // Multi-word matching
+  if (keywordParts.length > 1) {
+    for (let i = 0; i < relevantTimestamps.length - keywordParts.length + 1; i++) {
+      const windowWords = relevantTimestamps
+        .slice(i, i + keywordParts.length)
+        .map(wt => normalizeWord(wt.word));
+
+      const windowJoined = windowWords.join(' ');
+      const keywordJoined = keywordParts.join(' ');
+
+      if (windowJoined.includes(keywordJoined) || keywordJoined.includes(windowJoined)) {
+        const lastWordInSequence = relevantTimestamps[i + keywordParts.length - 1];
+        allMatches.push({
+          word: keyword,
+          start: relevantTimestamps[i].start,
+          end: lastWordInSequence.end,
+          idx: i
+        });
+      }
+    }
+  } else {
+    // Single word matching
+    relevantTimestamps.forEach((ts, idx) => {
+      const normalizedWord = normalizeWord(ts.word);
+      if (normalizedWord === target || normalizedWord.includes(target) || target.includes(normalizedWord)) {
+        allMatches.push({
+          word: ts.word,
+          start: ts.start,
+          end: ts.end,
+          idx
+        });
+      }
+    });
+  }
+
+  if (allMatches.length === 0) {
+    // ✅ R2: Anchor missing → NULL, no fallback
+    console.warn(`[ANCHOR-MISSING] ${JSON.stringify({
+      keyword,
+      range: [afterTime, beforeTime],
+      occurrencesInRange: 0,
+      strategy,
+      verdict: 'NULL_ASSIGNED'
+    })}`);
+    return emptyResult;
+  }
+
+  // ✅ R3: Apply strategy
+  let selectedMatch = allMatches[0];
+  let selectedIndex = 0;
+
+  switch (strategy) {
+    case 'FIRST_IN_RANGE':
+      selectedMatch = allMatches[0];
+      selectedIndex = 0;
+      break;
+
+    case 'LAST_IN_RANGE':
+      selectedMatch = allMatches[allMatches.length - 1];
+      selectedIndex = allMatches.length - 1;
+      break;
+
+    case 'CLOSEST_TO_TARGET':
+      if (targetTime !== undefined) {
+        let closestDist = Infinity;
+        allMatches.forEach((m, idx) => {
+          const dist = Math.abs(m.end - targetTime);
+          if (dist < closestDist) {
+            closestDist = dist;
+            selectedMatch = m;
+            selectedIndex = idx;
+          }
+        });
+      }
+      break;
+  }
+
+  // ✅ R4: Post-validation - ensure selected time is in range
+  const selectedTime = selectedMatch.end; // Use END time for trigger precision
+  if (selectedTime < (afterTime - ANCHOR_EPS_GLOBAL) || selectedTime > beforeTime + ANCHOR_EPS_GLOBAL) {
+    console.error(`[ANCHOR-OUT-OF-RANGE] ${JSON.stringify({
+      keyword,
+      selectedTime,
+      range: [afterTime, beforeTime],
+      strategy,
+      verdict: 'DISCARDED'
+    })}`);
+    return emptyResult;
+  }
+
+  console.log(`[selectAnchorOccurrence] ✓ "${keyword}" strategy=${strategy} → ${selectedTime.toFixed(2)}s (${allMatches.length} matches, selected #${selectedIndex + 1})`);
+
+  return {
+    selectedTime,
+    matchedCount: allMatches.length,
+    selectedIndex,
+    selectedWord: selectedMatch.word,
+    strategyUsed: strategy,
+    allMatches
+  };
+}
+
+/**
+ * ✅ Backward-compatible wrapper (FIRST_IN_RANGE for microVisuals)
+ * @param keyword - Palavra-chave a buscar
  * @param wordTimestamps - Array de timestamps
  * @param afterTime - Tempo mínimo (início do range)
- * @param beforeTime - Tempo máximo (fim do range) - NOVO!
+ * @param beforeTime - Tempo máximo (fim do range)
  * @returns start time da keyword ou null
  */
 function findKeywordTime(
@@ -2252,56 +2417,11 @@ function findKeywordTime(
   afterTime: number = 0,
   beforeTime: number = Infinity
 ): number | null {
-  const keywordParts = keyword.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
-
-  if (keywordParts.length === 0) return null;
-
-  // ✅ FASE 6 ANCHOR FIX: Filtrar timestamps pelo range (como V7 reference)
-  const relevantTimestamps = wordTimestamps.filter(
-    wt => wt.start >= afterTime && wt.start <= beforeTime
-  );
-
-  if (relevantTimestamps.length === 0) {
-    console.warn(`[findKeywordTime] ⚠️ No timestamps in range ${afterTime.toFixed(2)}s - ${beforeTime.toFixed(2)}s`);
-    return null;
+  const result = selectAnchorOccurrence(keyword, wordTimestamps, afterTime, beforeTime, 'FIRST_IN_RANGE');
+  // Return START time for backward compatibility with microVisuals
+  if (result.selectedTime !== null && result.allMatches.length > 0) {
+    return result.allMatches[result.selectedIndex].start;
   }
-
-  // Multi-word: busca sequência
-  if (keywordParts.length > 1) {
-    for (let i = 0; i < relevantTimestamps.length - keywordParts.length + 1; i++) {
-      const windowWords = relevantTimestamps
-        .slice(i, i + keywordParts.length)
-        .map(wt => normalizeWord(wt.word));
-
-      // Match exato ou parcial
-      const windowJoined = windowWords.join(' ');
-      const keywordJoined = keywordParts.join(' ');
-
-      if (windowJoined.includes(keywordJoined) || keywordJoined.includes(windowJoined)) {
-        // ✅ Retorna START da primeira palavra (como V7 reference)
-        const foundTime = relevantTimestamps[i].start;
-        console.log(`[findKeywordTime] ✓ Found multi-word "${keyword}" @ ${foundTime.toFixed(2)}s (START)`);
-        return foundTime;
-      }
-    }
-
-    console.warn(`[findKeywordTime] ⚠️ Multi-word "${keyword}" NOT found in range`);
-    return null;
-  }
-
-  // Single word: busca exata ou parcial
-  const target = keywordParts[0];
-  for (const ts of relevantTimestamps) {
-    const normalizedWord = normalizeWord(ts.word);
-
-    if (normalizedWord === target || normalizedWord.includes(target)) {
-      // ✅ Retorna START da palavra (como V7 reference)
-      console.log(`[findKeywordTime] ✓ Found "${keyword}" @ ${ts.start.toFixed(2)}s (START)`);
-      return ts.start;
-    }
-  }
-
-  console.warn(`[findKeywordTime] ⚠️ "${keyword}" NOT found in range ${afterTime.toFixed(2)}s - ${beforeTime.toFixed(2)}s`);
   return null;
 }
 
@@ -2424,26 +2544,21 @@ function generatePhases(
       if (!isInteractiveScene) {
         console.warn(`[Phase] ⚠️ ${scene.id}: pauseAt IGNORADO - cena tipo "${scene.type}" não é interativa`);
       } else {
-        // ✅ FASE 6 ANCHOR FIX: Buscar DENTRO do range da cena (startTime → endTime)
-        const pauseTime = findKeywordTime(scene.anchorText.pauseAt, wordTimestamps, startTime, endTime);
-        if (pauseTime !== null) {
+        // ✅ C02 FIX: Usar selectAnchorOccurrence com LAST_IN_RANGE para pauseAt
+        const pauseResult = selectAnchorOccurrence(scene.anchorText.pauseAt, wordTimestamps, startTime, endTime, 'LAST_IN_RANGE');
+        
+        if (pauseResult.selectedTime !== null) {
           anchorActions.push({
             id: `pause-${scene.id}`,
             keyword: scene.anchorText.pauseAt,
-            keywordTime: pauseTime,
+            keywordTime: pauseResult.selectedTime,
             type: 'pause',
           });
-          console.log(`[Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" @ ${pauseTime.toFixed(2)}s (dentro do range ${startTime.toFixed(2)}s-${endTime.toFixed(2)}s)`);
+          console.log(`[Phase] ✓ pauseAt "${scene.anchorText.pauseAt}" @ ${pauseResult.selectedTime.toFixed(2)}s (strategy=LAST, ${pauseResult.matchedCount} matches)`);
         } else {
-          // Fallback: pausar a 80% da fase
-          const fallbackTime = startTime + (endTime - startTime) * 0.8;
-          anchorActions.push({
-            id: `pause-${scene.id}`,
-            keyword: scene.anchorText.pauseAt,
-            keywordTime: fallbackTime,
-            type: 'pause',
-          });
-          console.warn(`[Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" não encontrado - fallback @ ${fallbackTime.toFixed(2)}s (80%)`);
+          // ✅ R2: Anchor missing → NULL, NO fallback (80% REMOVED!)
+          console.warn(`[Phase] ⚠️ pauseAt "${scene.anchorText.pauseAt}" NOT FOUND - NO ANCHOR CREATED (R2 compliance)`);
+          // NÃO criar anchor com tempo inventado - viola R5 de RULES.md
         }
       }
     }
