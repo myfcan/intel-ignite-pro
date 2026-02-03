@@ -505,6 +505,235 @@ function calculateSummary(allIssues: V7DebugIssue[]): V7PipelineDebugReport['sum
 }
 
 // ============================================================================
+// AUDIT FUNCTIONS - lesson_migrations_audit (v4.1)
+// ============================================================================
+
+const ANCHOR_EPS = 0.30; // Tolerância de 300ms para validação inRange
+
+async function computeSHA256(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeStructureHash(phases: any[]): Promise<string> {
+  // Ordenar antes de hashear para garantir determinismo
+  const sortedPhases = [...phases]
+    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
+    .map(p => ({
+      id: p.id,
+      type: p.type,
+      anchors: [...(p.anchorActions || [])]
+        .sort((a, b) => {
+          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
+          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
+          return keyA.localeCompare(keyB);
+        })
+        .map((a: any) => ({
+          id: a.id,
+          type: a.type,
+          keyword: a.keyword,
+          targetId: a.targetId
+          // keywordTime EXCLUÍDO propositalmente
+        }))
+    }));
+  
+  return computeSHA256(JSON.stringify(sortedPhases));
+}
+
+async function computeTimingHash(phases: any[]): Promise<string> {
+  const sortedPhases = [...phases]
+    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
+    .map(p => ({
+      id: p.id,
+      anchors: [...(p.anchorActions || [])]
+        .sort((a, b) => {
+          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
+          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
+          return keyA.localeCompare(keyB);
+        })
+        .map((a: any) => ({
+          id: a.id,
+          keywordTime: a.keywordTime
+        }))
+    }));
+  
+  return computeSHA256(JSON.stringify(sortedPhases));
+}
+
+function buildAnchorKey(phaseId: string, anchor: any, anchorIndex: number): string {
+  // SEMPRE incluir phaseId para evitar colisões
+  if (anchor.id) {
+    return `phase:${phaseId}|id:${anchor.id}`;
+  }
+  // Fallback: incluir índice para evitar colisão em anchors repetidos
+  if (anchor.targetId) {
+    return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|target:${anchor.targetId}|kw:${anchor.keyword}`;
+  }
+  return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|kw:${anchor.keyword}`;
+}
+
+async function computeAnchorDiffStrong(oldContent: any, newContent: any): Promise<object> {
+  const oldPhases = oldContent?.phases || [];
+  const newPhases = newContent?.phases || [];
+  
+  // Calcular hashes
+  const structureHashOld = await computeStructureHash(oldPhases);
+  const structureHashNew = await computeStructureHash(newPhases);
+  const timingHashOld = await computeTimingHash(oldPhases);
+  const timingHashNew = await computeTimingHash(newPhases);
+  
+  const structureHashMatch = structureHashOld === structureHashNew;
+  const timingHashMatch = timingHashOld === timingHashNew;
+  
+  const results: any = {
+    hashes: {
+      structureHashOld,
+      structureHashNew,
+      structureHashMatch,
+      timingHashOld,
+      timingHashNew,
+      timingHashMatch,
+      algorithm: 'SHA-256'
+    },
+    validationConfig: {
+      anchorEps: ANCHOR_EPS,
+      epsUnit: 'seconds'
+    },
+    anchorsComparedTotal: 0,
+    anchorsOnlyInOld: 0,
+    anchorsOnlyInNew: 0,
+    anchorsUnchanged: 0,
+    anchorsChangedKeywordTimeOnly: 0,
+    anchorsChangedKeyword: 0,
+    anchorsChangedType: 0,
+    anchorsChangedOther: 0,
+    keywordTimeChanges: [] as any[],
+    invalidChanges: [] as any[],
+    c01Valid: false,
+    c01Reason: ''
+  };
+  
+  // Construir mapas com chave corrigida (inclui phaseId + idx)
+  const oldAnchorsMap = new Map<string, { phase: any, anchor: any, index: number }>();
+  for (const phase of oldPhases) {
+    const anchors = phase.anchorActions || [];
+    anchors.forEach((anchor: any, idx: number) => {
+      const key = buildAnchorKey(phase.id, anchor, idx);
+      oldAnchorsMap.set(key, { phase, anchor, index: idx });
+    });
+  }
+  
+  const newAnchorsMap = new Map<string, { phase: any, anchor: any, index: number }>();
+  for (const phase of newPhases) {
+    const anchors = phase.anchorActions || [];
+    anchors.forEach((anchor: any, idx: number) => {
+      const key = buildAnchorKey(phase.id, anchor, idx);
+      newAnchorsMap.set(key, { phase, anchor, index: idx });
+    });
+  }
+  
+  // Anchors só no OLD
+  for (const [key, { phase, anchor }] of oldAnchorsMap) {
+    if (!newAnchorsMap.has(key)) {
+      results.anchorsOnlyInOld++;
+      results.invalidChanges.push({
+        type: 'ANCHOR_REMOVED',
+        phaseId: phase.id,
+        anchorId: anchor.id,
+        keyword: anchor.keyword
+      });
+    }
+  }
+  
+  // Comparar pareados + anchors só no NEW
+  for (const [key, { phase: newPhase, anchor: newAnchor }] of newAnchorsMap) {
+    const oldEntry = oldAnchorsMap.get(key);
+    
+    if (!oldEntry) {
+      results.anchorsOnlyInNew++;
+      results.invalidChanges.push({
+        type: 'ANCHOR_ADDED',
+        phaseId: newPhase.id,
+        anchorId: newAnchor.id,
+        keyword: newAnchor.keyword
+      });
+      continue;
+    }
+    
+    results.anchorsComparedTotal++;
+    const oldAnchor = oldEntry.anchor;
+    
+    const changes = {
+      keywordChanged: oldAnchor.keyword !== newAnchor.keyword,
+      typeChanged: oldAnchor.type !== newAnchor.type,
+      targetIdChanged: oldAnchor.targetId !== newAnchor.targetId,
+      keywordTimeChanged: oldAnchor.keywordTime !== newAnchor.keywordTime
+    };
+    
+    if (!changes.keywordChanged && !changes.typeChanged && 
+        !changes.targetIdChanged && !changes.keywordTimeChanged) {
+      results.anchorsUnchanged++;
+    } else if (changes.keywordTimeChanged && !changes.keywordChanged && 
+               !changes.typeChanged && !changes.targetIdChanged) {
+      results.anchorsChangedKeywordTimeOnly++;
+      
+      // Validação inRange com EPS
+      const t = newAnchor.keywordTime;
+      const start = newPhase.startTime;
+      const end = newPhase.endTime;
+      const isInRange = (t >= start - ANCHOR_EPS) && (t <= end + ANCHOR_EPS);
+      
+      results.keywordTimeChanges.push({
+        phaseId: newPhase.id,
+        anchorId: newAnchor.id,
+        keyword: newAnchor.keyword,
+        type: newAnchor.type,
+        oldKeywordTime: oldAnchor.keywordTime,
+        newKeywordTime: newAnchor.keywordTime,
+        delta: newAnchor.keywordTime - oldAnchor.keywordTime,
+        phaseRange: [start, end],
+        isInRange,
+        epsUsed: ANCHOR_EPS
+      });
+    } else {
+      if (changes.keywordChanged) results.anchorsChangedKeyword++;
+      if (changes.typeChanged) results.anchorsChangedType++;
+      if (!changes.keywordChanged && !changes.typeChanged) results.anchorsChangedOther++;
+      
+      results.invalidChanges.push({
+        type: 'INVALID_CHANGE',
+        phaseId: newPhase.id,
+        anchorId: newAnchor.id,
+        changes
+      });
+    }
+  }
+  
+  // Veredicto C01 com hash como prova primária
+  if (!structureHashMatch) {
+    results.c01Valid = false;
+    results.c01Reason = 'Structure hash mismatch - non-timing properties changed';
+  } else if (results.anchorsOnlyInOld > 0 || results.anchorsOnlyInNew > 0) {
+    results.c01Valid = false;
+    results.c01Reason = `Anchors added/removed: ${results.anchorsOnlyInNew} new, ${results.anchorsOnlyInOld} removed`;
+  } else if (results.anchorsChangedKeywordTimeOnly === 0 && results.anchorsUnchanged > 0) {
+    results.c01Valid = true;
+    results.c01Reason = 'No changes needed - all anchors already correct (structureHashMatch=true)';
+  } else if (results.anchorsChangedKeywordTimeOnly > 0 && structureHashMatch) {
+    results.c01Valid = true;
+    results.c01Reason = `Only keywordTime changed in ${results.anchorsChangedKeywordTimeOnly} anchors (structureHashMatch=true)`;
+  } else {
+    results.c01Valid = false;
+    results.c01Reason = 'No anchors compared or unknown state';
+  }
+  
+  return results;
+}
+
+// ============================================================================
 // FASE 4: VALIDAÇÃO DE FEEDBACK AUDIOS
 // ============================================================================
 
@@ -3158,26 +3387,170 @@ Deno.serve(async (req) => {
 
     let lessonId: string;
     
-    // ✅ C01: REPROCESS MODE - UPDATE na lição existente
+    // ✅ C01: REPROCESS MODE - UPDATE na lição existente COM AUDITORIA v4.1
     if (isReprocess && input.existing_lesson_id) {
       console.log(`[V7-vv] 🔄 REPROCESS: Atualizando lição existente ${input.existing_lesson_id}`);
       
-      const { error: updateError } = await supabase
-        .from('lessons')
-        .update({
-          content: lessonData,
-          // Manter audio_url e word_timestamps originais (não sobrescrever)
-          estimated_time: Math.ceil(totalDuration / 60),
-        })
-        .eq('id', input.existing_lesson_id);
-
-      if (updateError) {
-        console.error('[V7-vv] Database update error:', updateError);
-        throw new Error(`Failed to update lesson: ${updateError.message}`);
+      // Validar run_id obrigatório (idempotency key)
+      const runId = (input as any).run_id;
+      if (!runId) {
+        throw new Error('run_id is required for reprocess (idempotency key)');
       }
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(runId)) {
+        throw new Error('run_id must be a valid UUID');
+      }
+      
+      let oldContent: any = null;
+      
+      try {
+        // 1. Buscar content atual para snapshot
+        console.log(`[V7-vv] AUDIT: Fetching current lesson content...`);
+        const { data: currentLesson, error: fetchError } = await supabase
+          .from('lessons')
+          .select('content')
+          .eq('id', input.existing_lesson_id)
+          .single();
+        
+        if (fetchError || !currentLesson) {
+          throw new Error(`Failed to fetch current lesson: ${fetchError?.message || 'Not found'}`);
+        }
+        
+        oldContent = currentLesson.content;
+        
+        // 2. Inserir audit com status in_progress
+        console.log(`[V7-vv] AUDIT: Creating audit record with run_id ${runId}...`);
+        const { error: auditInsertError } = await supabase
+          .from('lesson_migrations_audit')
+          .insert({
+            lesson_id: input.existing_lesson_id,
+            run_id: runId,
+            migration_version: 'v2.1-c01-fix',
+            migration_status: 'in_progress',
+            old_content: oldContent,
+            triggered_by: 'v7-vv-reprocess'
+          });
+        
+        // Tratamento do erro 23505 (duplicate key - idempotência)
+        if (auditInsertError) {
+          if (auditInsertError.code === '23505') {
+            console.log(`[V7-vv] AUDIT: Duplicate run_id ${runId}, checking existing status...`);
+            
+            const { data: existingAudit } = await supabase
+              .from('lesson_migrations_audit')
+              .select('migration_status')
+              .eq('lesson_id', input.existing_lesson_id)
+              .eq('run_id', runId)
+              .single();
+            
+            if (existingAudit?.migration_status === 'completed') {
+              console.log(`[V7-vv] AUDIT: Already completed for run_id ${runId}`);
+              return new Response(JSON.stringify({
+                success: true,
+                lessonId: input.existing_lesson_id,
+                message: 'Reprocess already completed (idempotent)',
+                auditStatus: 'already_completed',
+                runId
+              }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            }
+            
+            if (existingAudit?.migration_status === 'in_progress') {
+              console.log(`[V7-vv] AUDIT: Already in progress for run_id ${runId}`);
+              return new Response(JSON.stringify({
+                success: false,
+                error: 'Another reprocess is already in progress for this run_id',
+                auditStatus: 'already_in_progress',
+                runId,
+                recommendation: 'Wait for completion or use a new run_id'
+              }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            }
+            
+            if (existingAudit?.migration_status === 'failed') {
+              console.log(`[V7-vv] AUDIT: Previous run failed for run_id ${runId}`);
+              return new Response(JSON.stringify({
+                success: false,
+                error: 'Previous reprocess with this run_id failed. Use a new run_id for retry.',
+                auditStatus: 'previous_failed',
+                runId,
+                recommendation: 'Generate a new run_id for retry'
+              }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            }
+          } else {
+            throw new Error(`Audit insert failed: ${auditInsertError.message}`);
+          }
+        }
+        
+        // 3. Executar UPDATE na lição
+        console.log(`[V7-vv] AUDIT: Updating lesson content...`);
+        const { error: updateError } = await supabase
+          .from('lessons')
+          .update({
+            content: lessonData,
+            estimated_time: Math.ceil(totalDuration / 60),
+          })
+          .eq('id', input.existing_lesson_id);
 
-      lessonId = input.existing_lesson_id;
-      console.log(`[V7-vv] ✅ Lesson UPDATED: ${lessonId}`);
+        if (updateError) {
+          throw new Error(`Lesson update failed: ${updateError.message}`);
+        }
+        
+        // 4. Computar diff e marcar como completed
+        console.log(`[V7-vv] AUDIT: Computing anchor diff...`);
+        const diffSummary = await computeAnchorDiffStrong(oldContent, lessonData);
+        
+        await supabase
+          .from('lesson_migrations_audit')
+          .update({
+            new_content: lessonData,
+            diff_summary: diffSummary,
+            migration_status: 'completed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('lesson_id', input.existing_lesson_id)
+          .eq('run_id', runId);
+        
+        console.log(`[V7-vv] AUDIT: ✅ Migration completed for run_id ${runId}`);
+        console.log(`[V7-vv] AUDIT: C01 Valid: ${(diffSummary as any).c01Valid}, Reason: ${(diffSummary as any).c01Reason}`);
+        lessonId = input.existing_lesson_id;
+        
+      } catch (error) {
+        // Marcar audit como failed com fallback INSERT
+        console.error(`[V7-vv] AUDIT: Migration failed:`, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // UPDATE sem .select() - verificar apenas erro
+        const { error: updateError } = await supabase
+          .from('lesson_migrations_audit')
+          .update({
+            migration_status: 'failed',
+            error_message: errorMessage,
+            completed_at: new Date().toISOString()
+          })
+          .eq('lesson_id', input.existing_lesson_id)
+          .eq('run_id', runId);
+        
+        // Se UPDATE deu erro (registro não existe), fazer INSERT fallback
+        if (updateError) {
+          console.log(`[V7-vv] AUDIT: Update failed, inserting fallback record`);
+          
+          await supabase
+            .from('lesson_migrations_audit')
+            .upsert({
+              lesson_id: input.existing_lesson_id,
+              run_id: runId,
+              migration_version: 'v2.1-c01-fix',
+              migration_status: 'failed',
+              old_content: oldContent || {},
+              error_message: errorMessage,
+              triggered_by: 'v7-vv-reprocess-failed',
+              completed_at: new Date().toISOString()
+            }, { onConflict: 'lesson_id,run_id' });
+        }
+        
+        throw error;
+      }
+      
+      console.log(`[V7-vv] ✅ Lesson UPDATED with audit: ${lessonId}`);
     } else {
       // INSERT normal (nova lição)
       const { data: lesson, error: lessonError } = await supabase
