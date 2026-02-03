@@ -105,9 +105,21 @@ interface PipelineResult {
   };
 }
 
+interface DryRunIssue {
+  // New format from v7-vv edge function
+  scene?: string;
+  field?: string;
+  message?: string;
+  severity?: string;
+  // Legacy format
+  type?: string;
+  action?: string;
+  value?: any;
+}
+
 interface DryRunResult {
   validationScore: number;
-  issues: Array<{ type: string; message: string; severity: string }>;
+  issues: DryRunIssue[];
   canProcess: boolean;
   autoFixes?: string[];
   simulatedDuration?: number;
@@ -413,14 +425,21 @@ export default function AdminV7vv() {
                   {dryRunResult.issues.length > 0 && (
                     <div className="space-y-1 mt-2">
                       <p className="text-sm font-medium text-amber-400">Problemas ({dryRunResult.issues.length}):</p>
-                      {dryRunResult.issues.slice(0, 5).map((issue, i) => (
-                        <div key={i} className="text-xs bg-gray-800 rounded p-2">
-                          <span className={issue.severity === 'error' ? 'text-red-400' : 'text-amber-400'}>
-                            [{issue.severity}]
-                          </span>{' '}
-                          <span className="text-gray-300">{issue.message}</span>
-                        </div>
-                      ))}
+                      {dryRunResult.issues.slice(0, 5).map((issue, i) => {
+                        // Handle both old and new issue formats
+                        const severity = issue.severity || 'warning';
+                        const message = issue.message || `${issue.field || issue.action || 'unknown'}: ${typeof issue.value === 'object' ? JSON.stringify(issue.value) : issue.value || ''}`;
+                        const sceneInfo = issue.scene ? `[${issue.scene}] ` : '';
+                        
+                        return (
+                          <div key={i} className="text-xs bg-gray-800 rounded p-2">
+                            <span className={severity === 'error' ? 'text-red-400' : 'text-amber-400'}>
+                              [{severity}]
+                            </span>{' '}
+                            <span className="text-gray-300">{sceneInfo}{message}</span>
+                          </div>
+                        );
+                      })}
                       {dryRunResult.issues.length > 5 && (
                         <p className="text-xs text-gray-500">...e mais {dryRunResult.issues.length - 5} problemas</p>
                       )}
