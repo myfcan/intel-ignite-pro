@@ -375,11 +375,31 @@ if (endTime <= startTime) endTime = startTime + minDuration (capped at audioDura
 
 | fixApplied | Reason Pattern |
 |------------|----------------|
-| `OVERLAP_FIX` | `startTime (X.XXs) < prevEndTime (Y.YYs)` |
+| `OVERLAP_FIX` | `startTime (X.XXs) < prevEndTime (Y.YYs)` - overlap existed in INPUT |
+| `OVERLAP_FIX_CASCADED` | `startTime (X.XXs) < prevEndTime (Y.YYs) [cascaded from previous fix]` - created by earlier fix |
 | `CLAMP_START_FIX` | `startTime (X.XXs) < 0` or `startTime > audioDuration` |
 | `CLAMP_END_FIX` | `endTime (X.XXs) > audioDuration (Y.YYs)` |
 | `DURATION_FIX` | `duration (X.XXs) < minDuration (Y.Ys)` |
 | `MICRO_AUDIO_LIMIT` | `interactive duration < 5s devido a AUDIO_LIMIT` |
+
+### C04.1 Report Hardening (2026-02-03)
+
+#### New Fields in diff_summary.c04
+
+| Field | Description |
+|-------|-------------|
+| `metricsBefore` | Snapshot of T4 metrics BEFORE normalization |
+| `metricsAfter` | Snapshot of T4 metrics AFTER normalization |
+| `fixesAppliedCount` | Total number of phases that received fixes |
+| `overlapCreatedByDurationFixCount` | Count of `OVERLAP_FIX_CASCADED` (overlaps created by earlier fixes) |
+
+#### Cascaded Overlap Detection
+
+When a DURATION_FIX or other fix on Phase[N] extends its endTime beyond Phase[N+1].startTime, the subsequent OVERLAP_FIX on Phase[N+1] is labeled as `OVERLAP_FIX_CASCADED` instead of `OVERLAP_FIX`.
+
+This distinction allows forensic analysis to determine:
+- **OVERLAP_FIX**: Bug existed in the original JSON input
+- **OVERLAP_FIX_CASCADED**: Side-effect of fixing a duration issue on a previous phase
 
 ### C04 Metrics (diff_summary.c04)
 
@@ -387,20 +407,43 @@ if (endTime <= startTime) endTime = startTime + minDuration (capped at audioDura
 {
   "c04": {
     "audioDuration": 131.854,
-    "before": {
+    "metricsBefore": {
       "t4Overlap": 0,
       "t4NonMonotonicEnd": 0,
       "t4OutsideAudio": 0,
       "t4Gap": 0
     },
-    "after": {
+    "metricsAfter": {
       "t4Overlap": 0,
       "t4NonMonotonicEnd": 0,
       "t4OutsideAudio": 0,
       "t4Gap": 0
     },
-    "fixApplied": false,
-    "phaseTimelineChanges": []
+    "fixesAppliedCount": 2,
+    "overlapCreatedByDurationFixCount": 1,
+    "fixApplied": true,
+    "phaseTimelineChanges": [
+      {
+        "phaseId": "cena-6-quiz",
+        "phaseType": "quiz",
+        "oldStartTime": 46.56,
+        "oldEndTime": 50.76,
+        "newStartTime": 46.56,
+        "newEndTime": 51.56,
+        "fixApplied": "DURATION_FIX",
+        "reason": "duration (4.20s) < minDuration (5.0s)"
+      },
+      {
+        "phaseId": "cena-7-promessa",
+        "phaseType": "dramatic",
+        "oldStartTime": 51.00,
+        "oldEndTime": 64.433,
+        "newStartTime": 51.56,
+        "newEndTime": 64.433,
+        "fixApplied": "OVERLAP_FIX_CASCADED",
+        "reason": "startTime (51.00s) < prevEndTime (51.56s) [cascaded from previous fix]"
+      }
+    ]
   }
 }
 ```
@@ -409,9 +452,9 @@ if (endTime <= startTime) endTime = startTime + minDuration (capped at audioDura
 
 ```
 C04 DONE = (
-  c04.after.t4Overlap = 0 AND
-  c04.after.t4NonMonotonicEnd = 0 AND
-  c04.after.t4OutsideAudio = 0 AND
+  c04.metricsAfter.t4Overlap = 0 AND
+  c04.metricsAfter.t4NonMonotonicEnd = 0 AND
+  c04.metricsAfter.t4OutsideAudio = 0 AND
   structureHashMatch = true AND
   anchorsOnlyInOld = 0 AND
   anchorsOnlyInNew = 0
@@ -429,7 +472,7 @@ C04 DONE = (
 
 ## Versão e Data
 
-- **Versão:** v2.5 (C04 Timeline Global Hardening)
+- **Versão:** v2.6 (C04.1 Report Hardening)
 - **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅
 - **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline

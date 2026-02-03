@@ -2527,16 +2527,21 @@ function recalculateAnchorKeywordTimes(
 // Garante monotonicidade, ausência de overlap e clamp em audioDuration
 // ============================================================================
 
+// ✅ C04.1: Métricas estruturadas before/after
+interface C04MetricsSnapshot {
+  t4Overlap: number;
+  t4NonMonotonicEnd: number;
+  t4OutsideAudio: number;
+  t4Gap: number;
+}
+
 interface C04TimelineStats {
-  t4OverlapBefore: number;           // count startTime < prevEndTime - EPS
-  t4OverlapAfter: number;
-  t4NonMonotonicEndBefore: number;   // count endTime < prevEndTime - EPS
-  t4NonMonotonicEndAfter: number;
-  t4OutsideAudioBefore: number;      // start<0-EPS OR end>audioDuration+EPS
-  t4OutsideAudioAfter: number;
-  t4GapBefore: number;               // startTime > prevEndTime + GAP_EPS
-  t4GapAfter: number;
-  fixApplied: boolean;               // true só se algo mudou
+  // ✅ C04.1: Estrutura hierárquica before/after
+  metricsBefore: C04MetricsSnapshot;
+  metricsAfter: C04MetricsSnapshot;
+  fixesAppliedCount: number;               // Total de fases com fix aplicado
+  overlapCreatedByDurationFixCount: number; // Overlaps criados por DURATION_FIX/fix anterior
+  fixApplied: boolean;                     // true só se algo mudou
   audioDuration: number;
   phaseTimelineChanges: Array<{
     phaseId: string;
@@ -2545,9 +2550,18 @@ interface C04TimelineStats {
     oldEndTime: number;
     newStartTime: number;
     newEndTime: number;
-    fixApplied: 'OVERLAP_FIX' | 'DURATION_FIX' | 'CLAMP_START_FIX' | 'CLAMP_END_FIX' | 'MICRO_AUDIO_LIMIT' | 'NONE';
+    fixApplied: 'OVERLAP_FIX' | 'OVERLAP_FIX_CASCADED' | 'DURATION_FIX' | 'CLAMP_START_FIX' | 'CLAMP_END_FIX' | 'MICRO_AUDIO_LIMIT' | 'NONE';
     reason: string;
   }>;
+  // ✅ C04.1: Compatibilidade com formato antigo (deprecated, usar metricsBefore/After)
+  t4OverlapBefore: number;
+  t4OverlapAfter: number;
+  t4NonMonotonicEndBefore: number;
+  t4NonMonotonicEndAfter: number;
+  t4OutsideAudioBefore: number;
+  t4OutsideAudioAfter: number;
+  t4GapBefore: number;
+  t4GapAfter: number;
 }
 
 const C04_EPS = 0.30;        // 300ms tolerance
@@ -2557,6 +2571,10 @@ const C04_MIN_DURATION_NON_INTERACTIVE = 0.5;  // narrative/dramatic etc
 
 /**
  * C04: Normalize Phase Timeline (Global Hardening)
+ * 
+ * ✅ C04.1: Tracking aprimorado de overlaps
+ * - OVERLAP_FIX: overlap existia no input original
+ * - OVERLAP_FIX_CASCADED: overlap criado por DURATION_FIX/CLAMP de fase anterior
  * 
  * Estratégia obrigatória:
  * - Manter ordem original das phases
@@ -2579,7 +2597,30 @@ function normalizePhaseTimeline(
   console.log('[C04] normalizePhaseTimeline: Starting...');
   console.log(`[C04] Total phases: ${phases.length}, Audio duration: ${audioDuration.toFixed(2)}s`);
   
+  // ✅ C04.1: Inicializar estrutura hierárquica
+  const metricsBefore: C04MetricsSnapshot = {
+    t4Overlap: 0,
+    t4NonMonotonicEnd: 0,
+    t4OutsideAudio: 0,
+    t4Gap: 0
+  };
+  
+  const metricsAfter: C04MetricsSnapshot = {
+    t4Overlap: 0,
+    t4NonMonotonicEnd: 0,
+    t4OutsideAudio: 0,
+    t4Gap: 0
+  };
+  
   const c04Stats: C04TimelineStats = {
+    metricsBefore,
+    metricsAfter,
+    fixesAppliedCount: 0,
+    overlapCreatedByDurationFixCount: 0,
+    fixApplied: false,
+    audioDuration,
+    phaseTimelineChanges: [],
+    // Compatibilidade (deprecated)
     t4OverlapBefore: 0,
     t4OverlapAfter: 0,
     t4NonMonotonicEndBefore: 0,
@@ -2587,51 +2628,59 @@ function normalizePhaseTimeline(
     t4OutsideAudioBefore: 0,
     t4OutsideAudioAfter: 0,
     t4GapBefore: 0,
-    t4GapAfter: 0,
-    fixApplied: false,
-    audioDuration,
-    phaseTimelineChanges: []
+    t4GapAfter: 0
   };
   
   // =====================================================================
-  // PASSO 1: DIAGNÓSTICO BEFORE (sem modificar)
+  // PASSO 1: DIAGNÓSTICO BEFORE (sem modificar) + Mapa de overlaps originais
+  // ✅ C04.1: Capturar quais fases têm overlap no INPUT para distinguir de cascaded
   // =====================================================================
+  const originalOverlapPhases = new Set<number>(); // Índices de fases com overlap no input
+  
   let prevEndBefore = 0;
-  for (const phase of phases) {
+  for (let i = 0; i < phases.length; i++) {
+    const phase = phases[i];
     const start = phase.startTime ?? 0;
     const end = phase.endTime ?? 0;
     
     // T4 Overlap: startTime < prevEndTime - EPS
     if (start < prevEndBefore - C04_EPS) {
+      metricsBefore.t4Overlap++;
       c04Stats.t4OverlapBefore++;
+      originalOverlapPhases.add(i); // ✅ C04.1: Marcar que tinha overlap no input
     }
     
     // T4 Non-monotonic end: endTime < prevEndTime - EPS
     if (end < prevEndBefore - C04_EPS) {
+      metricsBefore.t4NonMonotonicEnd++;
       c04Stats.t4NonMonotonicEndBefore++;
     }
     
     // T4 Outside audio: start < 0-EPS OR end > audioDuration+EPS
     if (start < 0 - C04_EPS || end > audioDuration + C04_EPS) {
+      metricsBefore.t4OutsideAudio++;
       c04Stats.t4OutsideAudioBefore++;
     }
     
     // T4 Gap: startTime > prevEndTime + GAP_EPS
     if (start > prevEndBefore + C04_GAP_EPS) {
+      metricsBefore.t4Gap++;
       c04Stats.t4GapBefore++;
     }
     
     prevEndBefore = end;
   }
   
-  console.log(`[C04] BEFORE: Overlap=${c04Stats.t4OverlapBefore}, NonMonotonic=${c04Stats.t4NonMonotonicEndBefore}, OutsideAudio=${c04Stats.t4OutsideAudioBefore}, Gap=${c04Stats.t4GapBefore}`);
+  console.log(`[C04] BEFORE: Overlap=${metricsBefore.t4Overlap}, NonMonotonic=${metricsBefore.t4NonMonotonicEnd}, OutsideAudio=${metricsBefore.t4OutsideAudio}, Gap=${metricsBefore.t4Gap}`);
   
   // =====================================================================
   // PASSO 2: NORMALIZAÇÃO (deep clone, manter ordem original)
+  // ✅ C04.1: Tracking de prevEndTime "esperado" vs "real" para detectar cascaded overlaps
   // =====================================================================
   const normalizedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
   
-  let prevEndTime = 0;
+  let prevEndTime = 0;           // prevEndTime APÓS aplicar fix (chain real)
+  let prevOriginalEndTime = 0;   // prevEndTime do INPUT (para detectar cascaded)
   let anyChange = false;
   
   for (let i = 0; i < normalizedPhases.length; i++) {
@@ -2649,14 +2698,30 @@ function normalizePhaseTimeline(
     
     // =====================================================================
     // REGRA 1: startTime = max(startTime, prevEndTime) [elimina overlap]
+    // ✅ C04.1: Distinguir OVERLAP_FIX (original) vs OVERLAP_FIX_CASCADED
     // =====================================================================
     if (newStartTime < prevEndTime) {
       newStartTime = prevEndTime;
+      
+      // ✅ C04.1: Verificar se o overlap existia no input original
+      const hadOverlapInInput = originalOverlapPhases.has(i);
+      
+      // ✅ C04.1: Se não tinha overlap no input, mas tem agora, é cascaded
+      // (causado por DURATION_FIX ou outro fix na fase anterior)
+      const isCascadedOverlap = !hadOverlapInInput && oldStartTime >= prevOriginalEndTime - C04_EPS;
+      
       if (fixApplied === 'NONE') {
-        fixApplied = 'OVERLAP_FIX';
-        fixReason = `startTime (${oldStartTime.toFixed(2)}s) < prevEndTime (${prevEndTime.toFixed(2)}s)`;
+        if (isCascadedOverlap) {
+          fixApplied = 'OVERLAP_FIX_CASCADED';
+          fixReason = `startTime (${oldStartTime.toFixed(2)}s) < prevEndTime (${prevEndTime.toFixed(2)}s) [cascaded from previous fix]`;
+          c04Stats.overlapCreatedByDurationFixCount++;
+          console.log(`[C04] FIX OVERLAP_CASCADED: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s (caused by previous fix)`);
+        } else {
+          fixApplied = 'OVERLAP_FIX';
+          fixReason = `startTime (${oldStartTime.toFixed(2)}s) < prevEndTime (${prevEndTime.toFixed(2)}s)`;
+          console.log(`[C04] FIX OVERLAP: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+        }
       }
-      console.log(`[C04] FIX OVERLAP: "${phase.id}" startTime ${oldStartTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
     }
     
     // =====================================================================
@@ -2740,10 +2805,11 @@ function normalizePhaseTimeline(
     phase.startTime = newStartTime;
     phase.endTime = newEndTime;
     
-    // Registrar mudança se houve fix
+    // ✅ C04.1: Registrar mudança se houve fix + contar fixesAppliedCount
     const hasChanged = Math.abs(oldStartTime - newStartTime) > 0.001 || Math.abs(oldEndTime - newEndTime) > 0.001;
     if (hasChanged) {
       anyChange = true;
+      c04Stats.fixesAppliedCount++;
       c04Stats.phaseTimelineChanges.push({
         phaseId: phase.id,
         phaseType: phase.type,
@@ -2757,13 +2823,15 @@ function normalizePhaseTimeline(
     }
     
     // Atualizar prevEndTime para próxima iteração
-    prevEndTime = newEndTime;
+    prevOriginalEndTime = oldEndTime;  // ✅ C04.1: Track original chain
+    prevEndTime = newEndTime;          // Track fixed chain
   }
   
   c04Stats.fixApplied = anyChange;
   
   // =====================================================================
   // PASSO 3: DIAGNÓSTICO AFTER
+  // ✅ C04.1: Atualizar tanto metricsBefore/After quanto deprecated fields
   // =====================================================================
   let prevEndAfter = 0;
   for (const phase of normalizedPhases) {
@@ -2771,23 +2839,27 @@ function normalizePhaseTimeline(
     const end = phase.endTime ?? 0;
     
     if (start < prevEndAfter - C04_EPS) {
+      metricsAfter.t4Overlap++;
       c04Stats.t4OverlapAfter++;
     }
     if (end < prevEndAfter - C04_EPS) {
+      metricsAfter.t4NonMonotonicEnd++;
       c04Stats.t4NonMonotonicEndAfter++;
     }
     if (start < 0 - C04_EPS || end > audioDuration + C04_EPS) {
+      metricsAfter.t4OutsideAudio++;
       c04Stats.t4OutsideAudioAfter++;
     }
     if (start > prevEndAfter + C04_GAP_EPS) {
+      metricsAfter.t4Gap++;
       c04Stats.t4GapAfter++;
     }
     
     prevEndAfter = end;
   }
   
-  console.log(`[C04] AFTER: Overlap=${c04Stats.t4OverlapAfter}, NonMonotonic=${c04Stats.t4NonMonotonicEndAfter}, OutsideAudio=${c04Stats.t4OutsideAudioAfter}, Gap=${c04Stats.t4GapAfter}`);
-  console.log(`[C04] fixApplied=${c04Stats.fixApplied}, phaseChanges=${c04Stats.phaseTimelineChanges.length}`);
+  console.log(`[C04] AFTER: Overlap=${metricsAfter.t4Overlap}, NonMonotonic=${metricsAfter.t4NonMonotonicEnd}, OutsideAudio=${metricsAfter.t4OutsideAudio}, Gap=${metricsAfter.t4Gap}`);
+  console.log(`[C04] fixApplied=${c04Stats.fixApplied}, fixesAppliedCount=${c04Stats.fixesAppliedCount}, overlapCreatedByDurationFixCount=${c04Stats.overlapCreatedByDurationFixCount}`);
   
   return {
     normalizedPhases,
@@ -4372,10 +4444,18 @@ Deno.serve(async (req) => {
             fixApplied: c03Stats.t3Fixed > 0,
             phaseTimingChanges: c03Stats.phaseTimingChanges.slice(0, 10) // Top 10 com reason
           } : null,
-          // ✅ C04: Timeline global hardening metrics
+          // ✅ C04.1: Timeline global hardening metrics with enhanced structure
           c04Mode: preserveStructure,
           c04: preserveStructure && c04Stats ? {
             audioDuration: c04Stats.audioDuration,
+            // ✅ C04.1: Estrutura hierárquica metricsBefore/After
+            metricsBefore: c04Stats.metricsBefore,
+            metricsAfter: c04Stats.metricsAfter,
+            // ✅ C04.1: Métricas aprimoradas
+            fixesAppliedCount: c04Stats.fixesAppliedCount,
+            overlapCreatedByDurationFixCount: c04Stats.overlapCreatedByDurationFixCount,
+            fixApplied: c04Stats.fixApplied,
+            // ✅ C04.1: Compatibilidade (deprecated fields)
             before: {
               t4Overlap: c04Stats.t4OverlapBefore,
               t4NonMonotonicEnd: c04Stats.t4NonMonotonicEndBefore,
@@ -4388,7 +4468,6 @@ Deno.serve(async (req) => {
               t4OutsideAudio: c04Stats.t4OutsideAudioAfter,
               t4Gap: c04Stats.t4GapAfter
             },
-            fixApplied: c04Stats.fixApplied,
             phaseTimelineChanges: c04Stats.phaseTimelineChanges.slice(0, 10) // Top 10 com reason
           } : null
         };
