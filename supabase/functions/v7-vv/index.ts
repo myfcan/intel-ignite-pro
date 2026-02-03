@@ -2539,7 +2539,16 @@ function calculateWordBasedTimings(
       .trim();
 
   // ✅ FASE 6: Encontrar ÚLTIMA ocorrência de uma palavra após um tempo
-  const findLastKeywordTime = (keyword: string, afterTime: number = 0, beforeTime: number = totalAudioDuration): number | null => {
+  // ⚠️ PATCH 1+2: beforeTime OBRIGATÓRIO (sem default global) + EPS tolerance
+  const ANCHOR_EPS = 0.30; // 300ms tolerance for edge cases
+  
+  const findLastKeywordTime = (keyword: string, afterTime: number, beforeTime: number): number | null => {
+    // PATCH 1: Validação obrigatória de beforeTime
+    if (beforeTime === undefined || beforeTime === null || beforeTime === totalAudioDuration) {
+      console.error(`[V7-vv:CRITICAL] findLastKeywordTime called without proper beforeTime! keyword="${keyword}", afterTime=${afterTime}, beforeTime=${beforeTime}`);
+      // NÃO fazer fallback global - retornar null
+    }
+    
     const keywordParts = keyword.split(/\s+/).map(normalize).filter(w => w.length > 0);
     if (keywordParts.length === 0) return null;
 
@@ -2549,7 +2558,8 @@ function calculateWordBasedTimings(
       let lastFound: number | null = null;
 
       for (let i = 0; i < wordTimestamps.length; i++) {
-        if (wordTimestamps[i].start < afterTime) continue;
+        // PATCH 2: Aplicar EPS tolerance no afterTime
+        if (wordTimestamps[i].start < (afterTime - ANCHOR_EPS)) continue;
         if (wordTimestamps[i].start > beforeTime) break;
 
         const firstWordNorm = normalize(wordTimestamps[i].word);
@@ -2584,17 +2594,21 @@ function calculateWordBasedTimings(
       }
 
       if (lastFound !== null) {
-        console.log(`[V7-vv:WordBased] ✓ Found multi-word "${keyword}" (last) at ${lastFound.toFixed(2)}s`);
+        console.log(`[V7-vv:WordBased] ✓ Found multi-word "${keyword}" (last) at ${lastFound.toFixed(2)}s [range: ${afterTime.toFixed(2)}s-${beforeTime.toFixed(2)}s]`);
+      } else {
+        console.warn(`[V7-vv:WordBased] ⚠️ Multi-word "${keyword}" NOT found in range [${afterTime.toFixed(2)}s-${beforeTime.toFixed(2)}s]`);
       }
       return lastFound;
     }
 
-    // Single word: busca última ocorrência
+    // Single word: busca última ocorrência NO RANGE
     const target = keywordParts[0];
     let lastFound: number | null = null;
+    let matchCount = 0;
 
     for (const ts of wordTimestamps) {
-      if (ts.start < afterTime) continue;
+      // PATCH 2: Aplicar EPS tolerance no afterTime
+      if (ts.start < (afterTime - ANCHOR_EPS)) continue;
       if (ts.start > beforeTime) break;
 
       const normalizedWord = normalize(ts.word);
@@ -2603,13 +2617,14 @@ function calculateWordBasedTimings(
           normalizedWord.includes(target) ||
           target.includes(normalizedWord)) {
         lastFound = ts.end;
+        matchCount++;
       }
     }
 
     if (lastFound !== null) {
-      console.log(`[V7-vv:WordBased] ✓ Found keyword "${keyword}" (last) at ${lastFound.toFixed(2)}s`);
+      console.log(`[V7-vv:WordBased] ✓ Found keyword "${keyword}" (last of ${matchCount}) at ${lastFound.toFixed(2)}s [range: ${afterTime.toFixed(2)}s-${beforeTime.toFixed(2)}s]`);
     } else {
-      console.warn(`[V7-vv:WordBased] ⚠️ Keyword "${keyword}" NOT found between ${afterTime.toFixed(2)}s and ${beforeTime.toFixed(2)}s`);
+      console.warn(`[V7-vv:WordBased] ⚠️ Keyword "${keyword}" NOT found in range [${afterTime.toFixed(2)}s-${beforeTime.toFixed(2)}s] (0 matches)`);
     }
 
     return lastFound;
@@ -2636,18 +2651,19 @@ function calculateWordBasedTimings(
   };
 
   // ✅ FASE 6: Encontrar o FIM REAL de uma narração
-  const findNarrationEndTime = (narration: string, afterTime: number): number | null => {
+  // ⚠️ PATCH 1: Agora recebe beforeTime obrigatório para evitar busca global
+  const findNarrationEndTime = (narration: string, afterTime: number, beforeTime: number): number | null => {
     const words = narration.split(/\s+/).map(normalize).filter(w => w.length > 0);
     if (words.length === 0) return null;
 
     // Tentar encontrar a última palavra da narração
     const lastWord = words[words.length - 1];
-    let endTime = findLastKeywordTime(lastWord, afterTime);
+    let endTime = findLastKeywordTime(lastWord, afterTime, beforeTime);
 
     // Se não encontrou, tentar penúltima palavra
     if (endTime === null && words.length > 1) {
       const penultimateWord = words[words.length - 2];
-      const found = findLastKeywordTime(penultimateWord, afterTime);
+      const found = findLastKeywordTime(penultimateWord, afterTime, beforeTime);
       if (found !== null) {
         endTime = found + 0.5; // Adicionar margem para palavra final
       }
@@ -2656,7 +2672,7 @@ function calculateWordBasedTimings(
     // Se ainda não encontrou, tentar antepenúltima
     if (endTime === null && words.length > 2) {
       const antepenultimateWord = words[words.length - 3];
-      const found = findLastKeywordTime(antepenultimateWord, afterTime);
+      const found = findLastKeywordTime(antepenultimateWord, afterTime, beforeTime);
       if (found !== null) {
         endTime = found + 1.0; // Adicionar margem para palavras finais
       }
@@ -2679,8 +2695,14 @@ function calculateWordBasedTimings(
     const originalStartTime = phase.startTime;
     console.log(`[V7-vv:WordBased] Original startTime: ${originalStartTime.toFixed(2)}s`);
 
+    // ⚠️ PATCH 1 FIX: Calcular maxEndTime ANTES de usar nas buscas
+    const nextPhase = index < phases.length - 1 ? phases[index + 1] : null;
+    const maxEndTime = nextPhase ? nextPhase.startTime : totalAudioDuration;
+    console.log(`[V7-vv:WordBased] maxEndTime (limit): ${maxEndTime.toFixed(2)}s`);
+
     // ✅ FASE 6: Encontrar o FIM REAL da narração dessa fase
-    const narrationEndTime = findNarrationEndTime(narration, originalStartTime);
+    // ⚠️ PATCH 1: Passar maxEndTime como limite de busca
+    const narrationEndTime = findNarrationEndTime(narration, originalStartTime, maxEndTime);
     if (narrationEndTime !== null) {
       console.log(`[V7-vv:WordBased] Narration ends at: ${narrationEndTime.toFixed(2)}s`);
     }
@@ -2690,21 +2712,40 @@ function calculateWordBasedTimings(
 
     if (isInteractive && inputScene?.anchorText?.pauseAt) {
       const pauseKeyword = inputScene.anchorText.pauseAt;
-      // Buscar pauseAt DENTRO do range dessa fase
-      pauseKeywordTime = findLastKeywordTime(pauseKeyword, originalStartTime);
+      // ⚠️ PATCH 1 FIX: Buscar pauseAt DENTRO do range dessa fase (com maxEndTime)
+      pauseKeywordTime = findLastKeywordTime(pauseKeyword, originalStartTime, maxEndTime);
 
       if (pauseKeywordTime !== null) {
-        console.log(`[V7-vv:WordBased] ✓ pauseAt "${pauseKeyword}" at ${pauseKeywordTime.toFixed(2)}s`);
+        // ⚠️ PATCH 3: Validação pós-cálculo - garantir que está no range
+        if (pauseKeywordTime < (originalStartTime - ANCHOR_EPS) || pauseKeywordTime > maxEndTime) {
+          console.error(`[ANCHOR-OUT-OF-RANGE] ${JSON.stringify({
+            phaseId: phase.id,
+            keyword: pauseKeyword,
+            keywordTime: pauseKeywordTime,
+            range: [originalStartTime, maxEndTime],
+            verdict: 'DISCARDED'
+          })}`);
+          pauseKeywordTime = null;
+        } else {
+          console.log(`[V7-vv:WordBased] ✓ pauseAt "${pauseKeyword}" at ${pauseKeywordTime.toFixed(2)}s [VALID]`);
 
-        // Atualizar anchorActions com tempo preciso
-        if (phase.anchorActions) {
-          const pauseAction = phase.anchorActions.find(a => a.type === 'pause');
-          if (pauseAction) {
-            pauseAction.keywordTime = pauseKeywordTime;
+          // Atualizar anchorActions com tempo preciso
+          if (phase.anchorActions) {
+            const pauseAction = phase.anchorActions.find(a => a.type === 'pause');
+            if (pauseAction) {
+              pauseAction.keywordTime = pauseKeywordTime;
+            }
           }
         }
       } else {
-        console.warn(`[V7-vv:WordBased] ⚠️ pauseAt "${pauseKeyword}" NOT FOUND!`);
+        // ⚠️ PATCH 3: Log estruturado para ANCHOR-MISSING
+        console.warn(`[ANCHOR-MISSING] ${JSON.stringify({
+          phaseId: phase.id,
+          keyword: pauseKeyword,
+          range: [originalStartTime, maxEndTime],
+          occurrencesInRange: 0,
+          verdict: 'NULL_ASSIGNED'
+        })}`);
       }
     }
 
@@ -2714,9 +2755,7 @@ function calculateWordBasedTimings(
 
     let calculatedEndTime = phase.endTime;
 
-    // ✅ FASE 6: Usar a próxima fase como limite máximo
-    const nextPhase = index < phases.length - 1 ? phases[index + 1] : null;
-    const maxEndTime = nextPhase ? nextPhase.startTime : totalAudioDuration;
+    // ✅ FASE 6: maxEndTime já foi calculado acima (linha ~2699-2700)
 
     if (narrationEndTime !== null) {
       // O endTime base é quando a narração termina + pequena margem
