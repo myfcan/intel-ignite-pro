@@ -1181,18 +1181,19 @@ function validateInput(input: ScriptInput): ValidationError[] {
         }
 
         // PASSO 4: validação profunda por tipo
-        if (content) {
-          // text-reveal: title OU mainText obrigatório
-          if (vType === 'text-reveal') {
-            if (!content.title && !content.mainText) {
-              errors.push({
-                scene: sceneId,
-                field: 'visual.content',
-                message: 'visual.type "text-reveal" requer "title" OU "mainText" em content',
-                severity: 'error'
-              });
-            }
+        // text-reveal: SEMPRE requer title OU mainText (mesmo que content não exista)
+        if (vType === 'text-reveal') {
+          if (!content || (!content.title && !content.mainText)) {
+            errors.push({
+              scene: sceneId,
+              field: 'visual.content',
+              message: 'visual.type "text-reveal" requer "title" OU "mainText" em content',
+              severity: 'error'
+            });
           }
+        }
+
+        if (content) {
 
           // split-screen: estrutura completa
           if (vType === 'split-screen') {
@@ -1641,18 +1642,19 @@ function executeDryRun(input: ScriptInput): DryRunResult {
         }
 
         // PASSO 4: validação profunda por tipo
-        if (content) {
-          // text-reveal: title OU mainText obrigatório
-          if (vType === 'text-reveal') {
-            if (!content.title && !content.mainText) {
-              issues.push({
-                severity: 'error',
-                scene: sceneId,
-                field: 'visual.content',
-                message: '"text-reveal" requer "title" OU "mainText"',
-              });
-            }
+        // text-reveal: SEMPRE requer title OU mainText (mesmo que content não exista)
+        if (vType === 'text-reveal') {
+          if (!content || (!content.title && !content.mainText)) {
+            issues.push({
+              severity: 'error',
+              scene: sceneId,
+              field: 'visual.content',
+              message: '"text-reveal" requer "title" OU "mainText"',
+            });
           }
+        }
+
+        if (content) {
 
           // split-screen: estrutura completa
           if (vType === 'split-screen') {
