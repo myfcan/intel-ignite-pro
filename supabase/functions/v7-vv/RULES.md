@@ -1,4 +1,4 @@
-# V7-vv Pipeline Rules (Contrato Congelado v2.0)
+# V7-vv Pipeline Rules (Contrato Congelado v2.1)
 
 ## R1: Range Filter (EPS Tolerance)
 
@@ -80,8 +80,38 @@ if (keywordTime < (startTime - EPS) || keywordTime > endTime) {
 
 ---
 
+## C01 Audit Results (2026-02-03)
+
+### Lesson Audited: b4fc066f-19e3-49b9-8707-e572c12ac577
+
+| Metric | Value |
+|--------|-------|
+| Total Anchors | 20 |
+| OK (in-range) | 20 |
+| T1 Failures | 0 |
+| T2 NULL | 0 |
+| OK Rate | 100.00% |
+| T1 Fail Rate | 0.00% |
+
+### Critical Phases Verified
+
+| Phase | Keyword | keywordTime | Range | Status |
+|-------|---------|-------------|-------|--------|
+| cena-6-quiz | representa você | 52.488s | [46.56, 52.988] | ✅ OK |
+| cena-7-promessa | resultado | 62.606s | [54.497, 64.433] | ✅ OK |
+| cena-9-perfeito | Formato | 76.545s | [71.633, 118.129] | ✅ OK |
+| cena-10-playground | teste agora | 131.854s | [123.182, 131.854] | ✅ OK |
+
+### Comparison with Golden Standard (19f7e1df)
+
+| Phase | TARGET (b4fc066f) | GOLDEN (19f7e1df) | Note |
+|-------|-------------------|-------------------|------|
+| cena-7-promessa | `resultado` @ 62.606s | `você faz` @ 63.425s | TARGET uses corrected keyword |
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.0 (Contrato Congelado)
+- **Versão:** v2.1 (C01 Audit Complete)
 - **Data:** 2026-02-03
-- **Commit:** Pós-patches 1, 2, 3
+- **Status:** T1 = 0, T2 = 0, OK = 100%
