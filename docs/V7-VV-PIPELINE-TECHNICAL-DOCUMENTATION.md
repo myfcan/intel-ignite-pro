@@ -843,8 +843,630 @@ Se `fail_on_audio_error: false`:
 
 ---
 
-## 15. REFERÊNCIAS
+## 15. DIAGRAMAS DE SEQUÊNCIA
+
+### 15.1 Fluxo Completo do Pipeline (Produção)
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin UI
+    participant Edge as Edge Function v7-vv
+    participant Val as Validation Layer
+    participant EL as ElevenLabs API
+    participant Storage as Supabase Storage
+    participant Gen as Phase Generator
+    participant DB as Supabase Database
+    participant Debug as Debug Generator
+
+    Admin->>Edge: POST /v7-vv { V7ScriptInput }
+    Edge->>Val: validateInput(input)
+    
+    alt Validation Failed
+        Val-->>Edge: { errors: ValidationError[] }
+        Edge-->>Admin: 400 { success: false, validationErrors }
+    end
+    
+    Val-->>Edge: { valid: true }
+    Edge->>Val: autoGeneratePauseAt(scenes)
+    Val-->>Edge: scenes with pauseAt
+    
+    Edge->>EL: Generate main audio (all narrations)
+    EL-->>Edge: { audio_base64, alignment }
+    Edge->>Storage: Upload audio.mp3
+    Storage-->>Edge: audioUrl
+    
+    loop For each Quiz feedback
+        Edge->>EL: Generate feedback audio
+        EL-->>Edge: { audio_base64, alignment }
+        Edge->>Storage: Upload feedback.mp3
+        Storage-->>Edge: feedbackUrl
+    end
+    
+    Edge->>Gen: generatePhases(scenes, wordTimestamps)
+    
+    loop For each Scene
+        Gen->>Gen: findNarrationRange()
+        Gen->>Gen: findKeywordTime(pauseAt)
+        Gen->>Gen: processAnchorActions()
+        Gen->>Gen: processMicroVisuals()
+        Gen->>Gen: mapSceneType→PhaseType()
+        Gen->>Gen: convertMicroVisualTypes()
+    end
+    
+    Gen-->>Edge: phases[]
+    Edge->>Gen: calculateWordBasedTimings()
+    Gen-->>Edge: refined phases[]
+    
+    Edge->>Debug: generatePipelineDebug()
+    Debug->>Debug: analyzeAudio()
+    Debug->>Debug: analyzeTimeline()
+    Debug->>Debug: analyzeFeedbackAudios()
+    Debug->>Debug: analyzeUnfoundAnchors()
+    Debug->>Debug: calculateHealthScore()
+    Debug-->>Edge: V7PipelineDebugReport
+    
+    Edge->>Edge: buildLessonData()
+    Edge->>DB: INSERT INTO lessons
+    DB-->>Edge: lessonId
+    
+    Edge-->>Admin: 200 { success: true, lessonId, stats, debug }
+```
+
+### 15.2 Fluxo Dry-Run (Validação)
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin UI
+    participant Edge as Edge Function v7-vv
+    participant DryRun as DryRun Executor
+    participant Val as Validation Layer
+
+    Admin->>Edge: POST /v7-vv { V7ScriptInput, dry_run: true }
+    
+    Edge->>DryRun: executeDryRun(input)
+    
+    DryRun->>Val: validateStructure()
+    Val-->>DryRun: structureErrors[]
+    
+    DryRun->>Val: validateSceneTypes()
+    Val-->>DryRun: sceneTypeErrors[]
+    
+    DryRun->>Val: validateVisualTypes()
+    Val-->>DryRun: visualErrors[]
+    
+    DryRun->>Val: validateMicroVisuals()
+    Val-->>DryRun: mvErrors[]
+    
+    DryRun->>Val: validateInteractions()
+    Val-->>DryRun: interactionErrors[]
+    
+    DryRun->>DryRun: simulateTiming(~150 wpm)
+    DryRun->>DryRun: detectAutoFixes()
+    DryRun->>DryRun: calculateValidationScore()
+    
+    DryRun-->>Edge: DryRunResult
+    
+    Edge-->>Admin: 200 { success: true, dryRun: DryRunResult }
+```
+
+### 15.3 Comunicação Pipeline → Renderer
+
+```mermaid
+sequenceDiagram
+    participant DB as Supabase Database
+    participant Hook as useLessonData Hook
+    participant Player as V7LessonPlayer
+    participant Phase as V7PhasePlayer
+    participant Anchor as useAnchorText Hook
+    participant Overlay as V7MicroVisualOverlay
+    participant Audio as AudioController
+
+    Player->>DB: SELECT * FROM lessons WHERE id = ?
+    DB-->>Player: { content, word_timestamps, audio_url }
+    
+    Player->>Hook: parseLessonContent(content)
+    Hook-->>Player: phases[], metadata, audio
+    
+    Player->>Audio: loadAudio(audio_url)
+    Audio-->>Player: ready
+    
+    loop For each Phase
+        Player->>Phase: render(phase, currentTime)
+        Phase->>Anchor: useAnchorText(anchorActions, currentTime)
+        
+        Anchor->>Anchor: crossingDetection(prevTime, currentTime)
+        
+        alt Anchor Crossed (pause)
+            Anchor-->>Phase: isPaused = true
+            Phase->>Audio: pause()
+        end
+        
+        alt Anchor Crossed (show)
+            Anchor-->>Phase: onShow(targetId)
+            Phase->>Overlay: addToTriggeredIds(targetId)
+        end
+        
+        Phase->>Overlay: render(microVisuals, anchorTriggeredIds)
+        Overlay-->>Player: MicroVisual components
+    end
+```
+
+---
+
+## 16. EXEMPLOS DE JSON
+
+### 16.1 JSON de Entrada VÁLIDO (Completo)
+
+```json
+{
+  "title": "Dominando o ChatGPT: O Framework PERFEITO",
+  "subtitle": "Aprenda a criar prompts profissionais",
+  "difficulty": "beginner",
+  "category": "Prompt Engineering",
+  "tags": ["ChatGPT", "Prompts", "IA"],
+  "learningObjectives": [
+    "Entender a diferença entre prompts amadores e profissionais",
+    "Aplicar o framework PERFEITO na prática"
+  ],
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "generate_audio": true,
+  "fail_on_audio_error": true,
+  
+  "scenes": [
+    {
+      "id": "cena-1-abertura",
+      "title": "O Poder dos Prompts",
+      "type": "dramatic",
+      "narration": "Você sabia que noventa e dois por cento das pessoas usam o ChatGPT de forma completamente errada?",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "number": "92%",
+          "subtitle": "usam errado",
+          "hookQuestion": "Você faz parte dessa estatística?",
+          "mood": "dramatic",
+          "countUp": true
+        },
+        "effects": {
+          "mood": "dramatic",
+          "particles": "spark"
+        }
+      }
+    },
+    {
+      "id": "cena-2-comparacao",
+      "title": "Amador vs Profissional",
+      "type": "comparison",
+      "narration": "Veja a diferença brutal entre um prompt amador e um prompt profissional.",
+      "visual": {
+        "type": "split-screen",
+        "content": {
+          "left": {
+            "label": "❌ Amador",
+            "items": ["Vago", "Sem contexto", "Genérico"]
+          },
+          "right": {
+            "label": "✅ Profissional",
+            "items": ["Específico", "Contextualizado", "Personalizado"]
+          }
+        },
+        "microVisuals": [
+          {
+            "id": "mv-brutal",
+            "type": "text",
+            "anchorText": "brutal",
+            "content": {
+              "text": "💥",
+              "position": "center"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-3-quiz",
+      "title": "Hora do Quiz",
+      "type": "interaction",
+      "narration": "Agora me responda: qual desses prompts você usaria?",
+      "anchorText": {
+        "pauseAt": "usaria"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "Qual prompt é mais eficaz?",
+          "subtitle": "Escolha a melhor opção"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "options": [
+          {
+            "id": "opt-1",
+            "text": "Me dá ideias de negócio",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Quase!",
+              "subtitle": "Esse prompt é muito vago",
+              "narration": "Esse prompt não tem contexto suficiente.",
+              "mood": "neutral"
+            }
+          },
+          {
+            "id": "opt-2",
+            "text": "Atue como consultor de negócios...",
+            "isCorrect": true,
+            "feedback": {
+              "title": "Perfeito!",
+              "subtitle": "Você entendeu o conceito",
+              "narration": "Exatamente! Esse prompt tem contexto e direção.",
+              "mood": "success"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-4-playground",
+      "title": "Sua Vez",
+      "type": "playground",
+      "narration": "Agora é sua vez de praticar. Escreva seu próprio prompt.",
+      "anchorText": {
+        "pauseAt": "praticar"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "Crie seu Prompt",
+          "subtitle": "Aplique o que aprendeu"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "amateurPrompt": "Me dá dicas de marketing",
+        "professionalPrompt": "Atue como especialista em marketing digital com 10 anos de experiência. Sugira 5 estratégias de baixo custo para uma loja de roupas femininas que quer aumentar vendas no Instagram.",
+        "systemPrompt": "Você é um avaliador de prompts. Analise o prompt do usuário e dê feedback construtivo.",
+        "contextualHint": {
+          "text": "Lembre-se: seja específico sobre o contexto e o resultado desejado.",
+          "loopAudioId": "hint-playground"
+        }
+      }
+    },
+    {
+      "id": "cena-5-resultado",
+      "title": "Parabéns!",
+      "type": "gamification",
+      "narration": "Parabéns! Você concluiu a aula com sucesso.",
+      "visual": {
+        "type": "result",
+        "content": {
+          "title": "Aula Concluída!",
+          "emoji": "🎉",
+          "message": "Você está no caminho certo!",
+          "metrics": {
+            "xp": 150,
+            "coins": 25
+          }
+        }
+      }
+    }
+  ],
+  
+  "postLessonExercises": [
+    {
+      "type": "multiple_choice",
+      "question": "O que torna um prompt profissional?",
+      "options": ["Ser curto", "Ter contexto específico", "Usar emojis"],
+      "correct": 1
+    }
+  ]
+}
+```
+
+### 16.2 JSON de Entrada INVÁLIDO (Com Erros Comentados)
+
+```json
+{
+  "title": "Aula com Erros",
+  "difficulty": "beginner",
+  "category": "Teste",
+  "tags": [],
+  "learningObjectives": [],
+  
+  "scenes": [
+    {
+      "id": "cena-1",
+      "title": "Cena com CTA como tipo",
+      "type": "cta",  // ❌ ERRO: scene.type='cta' é PROIBIDO. Use type='narrative' com visual.type='cta'
+      "narration": "Clique no botão abaixo.",
+      "visual": {
+        "type": "cta",
+        "content": {
+          "buttonText": "Continuar"
+        }
+      }
+    },
+    {
+      "id": "cena-2",
+      "title": "MicroVisual com tipo inválido",
+      "type": "narrative",
+      "narration": "Veja este ícone especial.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Título"
+        },
+        "microVisuals": [
+          {
+            "id": "mv-1",
+            "type": "icon",  // ❌ ERRO: tipo 'icon' não é suportado. Use 'image' ou 'badge'
+            "anchorText": "especial",
+            "content": {
+              "icon": "star"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-3",
+      "title": "Quiz sem opção correta",
+      "type": "interaction",
+      "narration": "Escolha uma opção.",
+      // ❌ ERRO: Cena interativa sem anchorText.pauseAt definido
+      // (será auto-gerado, mas gera WARNING)
+      "visual": {
+        "type": "quiz",
+        "content": {}
+      },
+      "interaction": {
+        "type": "quiz",
+        "options": [
+          {
+            "id": "opt-a",
+            "text": "Opção A",
+            "isCorrect": false,  // ❌ WARNING: Nenhuma opção com isCorrect: true
+            "feedback": {
+              "title": "Errado",
+              "subtitle": "Tente novamente",
+              "mood": "error"
+            }
+          },
+          {
+            "id": "opt-b",
+            "text": "Opção B",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Errado",
+              "subtitle": "Não é essa",
+              "mood": "error"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-4",
+      "title": "Visual sem campos obrigatórios",
+      "type": "dramatic",
+      "narration": "Um número importante.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          // ❌ ERRO: Campo 'number' é obrigatório para number-reveal
+          "subtitle": "Sem o número principal"
+        }
+      }
+    },
+    {
+      "id": "cena-5",
+      "title": "Playground incompleto",
+      "type": "playground",
+      "narration": "Pratique agora.",
+      "anchorText": {
+        "pauseAt": "agora"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {}
+      },
+      "interaction": {
+        "type": "playground"
+        // ❌ ERRO: Campos obrigatórios faltando:
+        // - amateurPrompt
+        // - professionalPrompt
+      }
+    },
+    {
+      "id": "cena-6",
+      "title": "Letter-reveal vazio",
+      "type": "revelation",
+      "narration": "O acrônimo perfeito.",
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "letters": []  // ❌ ERRO: Array 'letters' não pode ser vazio
+        }
+      }
+    },
+    {
+      "id": "cena-2",  // ❌ ERRO: ID duplicado (já existe cena-2)
+      "title": "ID Duplicado",
+      "type": "narrative",
+      "narration": "Esta cena tem ID duplicado.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "Duplicado"
+        }
+      }
+    }
+  ]
+}
+```
+
+### 16.3 Exemplo de Resposta Dry-Run
+
+```json
+{
+  "success": true,
+  "dryRun": {
+    "canProcess": false,
+    "validationScore": 35,
+    "issues": [
+      {
+        "severity": "error",
+        "scene": "cena-1",
+        "field": "type",
+        "message": "scene.type 'cta' é proibido. Use scene.type='narrative' com visual.type='cta'",
+        "suggestion": "Altere type para 'narrative'"
+      },
+      {
+        "severity": "error",
+        "scene": "cena-2",
+        "field": "visual.microVisuals[0].type",
+        "message": "Tipo 'icon' não é suportado",
+        "suggestion": "Use 'image' (imageUrl/emoji) ou 'badge' (text/icon)"
+      },
+      {
+        "severity": "warning",
+        "scene": "cena-3",
+        "field": "interaction.options",
+        "message": "Nenhuma opção com isCorrect: true",
+        "suggestion": "Defina ao menos uma opção correta"
+      },
+      {
+        "severity": "error",
+        "scene": "cena-4",
+        "field": "visual.content.number",
+        "message": "Campo obrigatório 'number' faltando para number-reveal"
+      },
+      {
+        "severity": "error",
+        "scene": "cena-5",
+        "field": "interaction.amateurPrompt",
+        "message": "Campo obrigatório 'amateurPrompt' faltando para playground"
+      },
+      {
+        "severity": "error",
+        "scene": "cena-6",
+        "field": "visual.content.letters",
+        "message": "Array 'letters' não pode ser vazio para letter-reveal"
+      },
+      {
+        "severity": "error",
+        "scene": "global",
+        "field": "id",
+        "message": "ID duplicado: 'cena-2' aparece 2 vezes"
+      }
+    ],
+    "autoFixes": [
+      {
+        "scene": "cena-3",
+        "action": "auto-generate",
+        "field": "anchorText.pauseAt",
+        "value": "opção"
+      }
+    ],
+    "sceneAnalysis": [
+      {
+        "id": "cena-1",
+        "type": "cta",
+        "wordCount": 4,
+        "estimatedDuration": 1.6,
+        "hasInteraction": false,
+        "hasMicroVisuals": false,
+        "microVisualCount": 0,
+        "hasPauseAt": false,
+        "pauseAtGenerated": false
+      }
+    ],
+    "summary": {
+      "totalScenes": 7,
+      "totalWords": 42,
+      "estimatedDuration": 16.8,
+      "interactiveScenes": 2,
+      "microVisualCount": 1,
+      "errorCount": 6,
+      "warningCount": 1,
+      "infoCount": 0
+    },
+    "recommendation": "❌ JSON possui 6 erros críticos. Corrija antes de processar."
+  }
+}
+```
+
+### 16.4 Exemplo de Resposta de Sucesso (Produção)
+
+```json
+{
+  "success": true,
+  "lessonId": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
+  "stats": {
+    "phases": 5,
+    "totalDuration": 87.5,
+    "audioUrl": "https://pspvppymcdjbwsudxzdx.supabase.co/storage/v1/object/public/lesson-audios/...",
+    "wordCount": 218,
+    "interactivePhases": 2,
+    "microVisualCount": 3,
+    "feedbackAudiosGenerated": 4
+  },
+  "debug": {
+    "lessonId": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
+    "lessonTitle": "Dominando o ChatGPT: O Framework PERFEITO",
+    "generatedAt": "2026-02-03T10:30:00.000Z",
+    "schemaVersion": "1.0.0",
+    "source": "pipeline",
+    "audio": {
+      "audioUrl": "https://...",
+      "actualDuration": 87.5,
+      "expectedDuration": 87.2,
+      "wordCount": 218,
+      "isTruncated": false,
+      "leakedTags": [],
+      "issues": []
+    },
+    "timeline": {
+      "totalPhases": 5,
+      "totalEvents": 18,
+      "interactivePhases": ["cena-3-quiz", "cena-4-playground"],
+      "phaseDetails": [
+        {
+          "id": "cena-1-abertura",
+          "type": "dramatic",
+          "startTime": 0,
+          "endTime": 8.5,
+          "duration": 8.5,
+          "hasOverlap": false
+        }
+      ],
+      "issues": []
+    },
+    "summary": {
+      "severity": "info",
+      "totalIssues": 0,
+      "issuesBySeverity": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0
+      },
+      "healthScore": 100,
+      "primaryRecommendation": "Aula gerada sem problemas detectados."
+    },
+    "allIssues": []
+  }
+}
+```
+
+---
+
+## 17. REFERÊNCIAS
 
 - `docs/V7-JSON-TEMPLATE-LETTER-REVEAL.md` - Template para letter-reveal
 - `src/types/V7Contract.ts` - Contrato unificado
 - `src/components/lessons/v7/cinematic/` - Componentes do Renderer
+- `supabase/functions/v7-vv/index.ts` - Edge Function principal (~3150 linhas)
+- `src/lib/v7Diagnostic/` - Engine de diagnóstico pós-persistência
