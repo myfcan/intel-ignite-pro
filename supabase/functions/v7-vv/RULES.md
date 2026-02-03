@@ -324,9 +324,112 @@ C03 DONE = (
 
 ---
 
+## C04 Timeline Global Hardening (2026-02-03)
+
+### Problem Statement
+
+Lessons can have phases with timeline inconsistencies that break playback:
+- **T4_OVERLAP**: `phase.startTime < prevPhase.endTime - EPS`
+- **T4_NON_MONOTONIC_END**: `phase.endTime < prevPhase.endTime - EPS`
+- **T4_OUTSIDE_AUDIO**: `startTime < 0 - EPS` OR `endTime > audioDuration + EPS`
+- **T4_GAP**: `phase.startTime > prevPhase.endTime + GAP_EPS` (informational)
+
+### C04 Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `C04_EPS` | `0.30s` (300ms) | Tolerance for overlap/timing detection |
+| `C04_GAP_EPS` | `1.0s` | Tolerance for gap detection (informational) |
+| `C04_MIN_DURATION_INTERACTIVE` | `5.0s` | Minimum for quiz/playground/pause |
+| `C04_MIN_DURATION_NON_INTERACTIVE` | `0.5s` | Minimum for narrative/dramatic etc |
+
+### C04 Rules
+
+#### R1: Eliminate Overlap
+```
+newStartTime = max(phase.startTime, prevEndTime)
+```
+
+#### R2: Clamp Start in [0, audioDuration]
+```
+if (startTime < 0) startTime = 0
+if (startTime > audioDuration) startTime = audioDuration - minDuration
+```
+
+#### R3: Ensure Positive Duration
+```
+newEndTime = max(endTime, startTime + minDuration)
+```
+
+#### R4: Clamp End to audioDuration
+```
+if (endTime > audioDuration) endTime = audioDuration
+```
+
+#### R5: Safety Net
+```
+if (endTime <= startTime) endTime = startTime + minDuration (capped at audioDuration)
+```
+
+### C04 Fix Types with Reasons
+
+| fixApplied | Reason Pattern |
+|------------|----------------|
+| `OVERLAP_FIX` | `startTime (X.XXs) < prevEndTime (Y.YYs)` |
+| `CLAMP_START_FIX` | `startTime (X.XXs) < 0` or `startTime > audioDuration` |
+| `CLAMP_END_FIX` | `endTime (X.XXs) > audioDuration (Y.YYs)` |
+| `DURATION_FIX` | `duration (X.XXs) < minDuration (Y.Ys)` |
+| `MICRO_AUDIO_LIMIT` | `interactive duration < 5s devido a AUDIO_LIMIT` |
+
+### C04 Metrics (diff_summary.c04)
+
+```json
+{
+  "c04": {
+    "audioDuration": 131.854,
+    "before": {
+      "t4Overlap": 0,
+      "t4NonMonotonicEnd": 0,
+      "t4OutsideAudio": 0,
+      "t4Gap": 0
+    },
+    "after": {
+      "t4Overlap": 0,
+      "t4NonMonotonicEnd": 0,
+      "t4OutsideAudio": 0,
+      "t4Gap": 0
+    },
+    "fixApplied": false,
+    "phaseTimelineChanges": []
+  }
+}
+```
+
+### C04 Success Criteria
+
+```
+C04 DONE = (
+  c04.after.t4Overlap = 0 AND
+  c04.after.t4NonMonotonicEnd = 0 AND
+  c04.after.t4OutsideAudio = 0 AND
+  structureHashMatch = true AND
+  anchorsOnlyInOld = 0 AND
+  anchorsOnlyInNew = 0
+)
+```
+
+### C04 Invariants
+
+- **structureHashMatch**: `true` (only startTime/endTime can change)
+- **anchorsOnlyInOld**: `0` (no anchors removed)
+- **anchorsOnlyInNew**: `0` (no anchors added)
+- IDs, anchor types, keywords, targetIds remain unchanged
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.4 (C03.1 Audit Hardening)
+- **Versão:** v2.5 (C04 Timeline Global Hardening)
 - **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline
