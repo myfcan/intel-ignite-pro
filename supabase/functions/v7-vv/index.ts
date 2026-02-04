@@ -3406,6 +3406,131 @@ function c06NormalizeTriggerContract(
 }
 
 // ============================================================================
+// C07: ENSURE PAUSE FOR INTERACTIVE PHASES
+// Garante que toda fase interativa tenha ao menos 1 anchorAction type='pause'
+// para que o renderer possa habilitar cliques (isPausedByAnchor)
+// ============================================================================
+
+interface C07Stats {
+  interactivePhases: number;
+  phasesWithPause: number;
+  phasesWithoutPause: number;
+  pausesInserted: number;
+  details: Array<{
+    phaseId: string;
+    phaseType: string;
+    hadPause: boolean;
+    pauseInserted: boolean;
+    insertedPauseKeywordTime: number | null;
+  }>;
+}
+
+/**
+ * C07: Ensure every interactive phase has at least one pause action
+ * 
+ * REGRAS:
+ * 1. Fases com interaction (quiz/cta) ou type='interaction'|'playground' SÃO interativas
+ * 2. Se não existe anchorAction type='pause' na fase, inserir um no startTime + ε
+ * 3. ID do pause inserido é determinístico: `pause-{phaseId}-c07-auto`
+ * 4. Keyword é "auto" para diferenciar de pauses manuais
+ * 
+ * @param phases - Array de fases do content
+ * @returns Fases com pauses garantidos + estatísticas
+ */
+function c07EnsurePauseForInteractivePhases(
+  phases: any[]
+): {
+  updatedPhases: any[];
+  c07Stats: C07Stats;
+} {
+  console.log('[C07] c07EnsurePauseForInteractivePhases: Starting...');
+  console.log(`[C07] Processing ${phases.length} phases`);
+  
+  const c07Stats: C07Stats = {
+    interactivePhases: 0,
+    phasesWithPause: 0,
+    phasesWithoutPause: 0,
+    pausesInserted: 0,
+    details: []
+  };
+  
+  // Tipos de fase que são interativas por natureza
+  const INTERACTIVE_PHASE_TYPES = ['interaction', 'playground', 'quiz'];
+  
+  // Deep clone para não mutar o original
+  const updatedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
+  
+  for (const phase of updatedPhases) {
+    // Determinar se a fase é interativa
+    const isInteractiveByType = INTERACTIVE_PHASE_TYPES.includes(phase.type);
+    const hasInteractionContent = phase.interaction !== undefined && phase.interaction !== null;
+    const isInteractive = isInteractiveByType || hasInteractionContent;
+    
+    if (!isInteractive) {
+      continue; // Pular fases não interativas
+    }
+    
+    c07Stats.interactivePhases++;
+    
+    // Garantir que anchorActions existe
+    if (!phase.anchorActions) {
+      phase.anchorActions = [];
+    }
+    
+    // Verificar se já existe um pause action
+    const hasPauseAction = phase.anchorActions.some(
+      (aa: any) => aa.type === 'pause'
+    );
+    
+    const detail: C07Stats['details'][0] = {
+      phaseId: phase.id,
+      phaseType: phase.type,
+      hadPause: hasPauseAction,
+      pauseInserted: false,
+      insertedPauseKeywordTime: null
+    };
+    
+    if (hasPauseAction) {
+      c07Stats.phasesWithPause++;
+      console.log(`[C07] Phase "${phase.id}" (${phase.type}): Already has pause action ✓`);
+    } else {
+      c07Stats.phasesWithoutPause++;
+      
+      // Inserir pause action automático
+      // Usar startTime + 0.05s para garantir que o pause dispare logo após entrar na fase
+      const pauseKeywordTime = (phase.startTime ?? 0) + 0.05;
+      
+      const autoPauseAction = {
+        id: `pause-${phase.id}-c07-auto`,
+        keyword: 'auto',
+        keywordTime: pauseKeywordTime,
+        type: 'pause',
+        phaseId: phase.id,
+        c07Generated: true // Flag para identificar pauses gerados automaticamente
+      };
+      
+      phase.anchorActions.push(autoPauseAction);
+      c07Stats.pausesInserted++;
+      
+      detail.pauseInserted = true;
+      detail.insertedPauseKeywordTime = pauseKeywordTime;
+      
+      console.log(`[C07] Phase "${phase.id}" (${phase.type}): Inserted auto-pause @ ${pauseKeywordTime.toFixed(3)}s`);
+    }
+    
+    c07Stats.details.push(detail);
+  }
+  
+  console.log(`[C07] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}`);
+  console.log('[C07] c07EnsurePauseForInteractivePhases: Complete');
+  
+  return {
+    updatedPhases,
+    c07Stats
+  };
+}
+
+// ============================================================================
 // C03: PHASE TIMING CORRECTION
 // Corrige fases com duração negativa/zero durante reprocess
 // ============================================================================
@@ -5047,23 +5172,35 @@ Deno.serve(async (req) => {
         }
         
         // =====================================================================
-        // 3. C06.1 FINAL GUARD: Normalização ABSOLUTA antes de persistir
-        // Esta é a última linha de defesa para garantir triggerTime = 0
+        // 3. C06.1 + C07 FINAL GUARD: Normalização ABSOLUTA antes de persistir
+        // Esta é a última linha de defesa para garantir:
+        // - triggerTime = 0 (C06)
+        // - Toda fase interativa tem pause action (C07)
         // =====================================================================
-        console.log(`[V7-vv] C06.1: FINAL GUARD - Applying C06 normalization before persist...`);
+        console.log(`[V7-vv] C06.1 + C07: FINAL GUARD - Applying normalization before persist...`);
         
-        // Aplicar C06 nas phases do finalLessonData
+        let c07Stats: C07Stats | null = null;
+        
+        // Aplicar C06 + C07 nas phases do finalLessonData
         if (finalLessonData && finalLessonData.phases && Array.isArray(finalLessonData.phases)) {
+          // C06: Remove triggerTime, ensure show actions
           const c06FinalResult = c06NormalizeTriggerContract(finalLessonData.phases);
-          finalLessonData.phases = c06FinalResult.normalizedPhases;
           
-          // Garantir metadata com triggerContract
+          // C07: Ensure pause actions for interactive phases
+          const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases);
+          finalLessonData.phases = c07Result.updatedPhases;
+          c07Stats = c07Result.c07Stats;
+          
+          // Garantir metadata com triggerContract e c07Applied
           if (!finalLessonData.metadata) {
             finalLessonData.metadata = {};
           }
           finalLessonData.metadata.triggerContract = 'anchorActions';
+          finalLessonData.metadata.c07Applied = c07Stats.pausesInserted > 0;
+          finalLessonData.metadata.c07Stats = c07Stats;
           
           console.log(`[V7-vv] C06.1: FINAL GUARD applied - removed ${c06FinalResult.c06Stats.removedTriggerTimeCount} triggerTime`);
+          console.log(`[V7-vv] C07: FINAL GUARD applied - inserted ${c07Stats.pausesInserted} auto-pause actions`);
           
           // Atualizar stats para o diff_summary
           if (!c06Stats) {
@@ -5214,21 +5351,28 @@ Deno.serve(async (req) => {
       // INSERT normal (nova lição)
       
       // =====================================================================
-      // C06.1 FINAL GUARD para INSERT: Normalização ABSOLUTA antes de persistir
+      // C06.1 + C07 FINAL GUARD para INSERT: Normalização ABSOLUTA antes de persistir
       // =====================================================================
-      console.log(`[V7-vv] C06.1: FINAL GUARD (INSERT) - Applying C06 normalization before persist...`);
+      console.log(`[V7-vv] C06.1 + C07: FINAL GUARD (INSERT) - Applying normalization before persist...`);
       
       if (lessonData && lessonData.phases && Array.isArray(lessonData.phases)) {
+        // C06: Remove triggerTime, ensure show actions
         const c06FinalResult = c06NormalizeTriggerContract(lessonData.phases);
-        lessonData.phases = c06FinalResult.normalizedPhases;
         
-        // Garantir metadata com triggerContract
+        // C07: Ensure pause actions for interactive phases
+        const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases);
+        lessonData.phases = c07Result.updatedPhases;
+        
+        // Garantir metadata com triggerContract e c07Applied
         if (!lessonData.metadata) {
           lessonData.metadata = {} as any;
         }
-        lessonData.metadata.triggerContract = 'anchorActions';
+        (lessonData.metadata as any).triggerContract = 'anchorActions';
+        (lessonData.metadata as any).c07Applied = c07Result.c07Stats.pausesInserted > 0;
+        (lessonData.metadata as any).c07Stats = c07Result.c07Stats;
         
         console.log(`[V7-vv] C06.1: FINAL GUARD (INSERT) applied - removed ${c06FinalResult.c06Stats.removedTriggerTimeCount} triggerTime`);
+        console.log(`[V7-vv] C07: FINAL GUARD (INSERT) applied - inserted ${c07Result.c07Stats.pausesInserted} auto-pause actions`);
       }
       
       const { data: lesson, error: lessonError } = await supabase

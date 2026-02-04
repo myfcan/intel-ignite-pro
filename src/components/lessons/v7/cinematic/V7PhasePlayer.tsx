@@ -372,6 +372,28 @@ export const V7PhasePlayer = ({
     return [];
   }, [currentPhase]);
 
+  // ✅ C07: Verificar se a fase interativa tem pause action
+  const hasPauseActionForInteractivePhase = useMemo(() => {
+    if (!currentPhase) return true; // Não bloquear se não há fase
+    
+    const interactivePhaseTypes = ['interaction', 'playground', 'quiz', 'cta'];
+    const isInteractive = interactivePhaseTypes.includes(currentPhase.type) || 
+                          currentPhase.interaction !== undefined;
+    
+    if (!isInteractive) return true; // Não é interativa, não precisa de pause
+    
+    // Verificar se existe pause action
+    const hasPause = anchorActions.some(a => a.type === 'pause');
+    
+    console.log(`[C07] Phase "${currentPhase.id}" (${currentPhase.type}): interactive=${isInteractive}, hasPause=${hasPause}`);
+    
+    return hasPause;
+  }, [currentPhase, anchorActions]);
+
+  // ✅ C07: Flag para indicar que auto-pause foi aplicado (fallback para phases sem pause action)
+  const [c07AutoPaused, setC07AutoPaused] = useState(false);
+  const c07AutoPauseAppliedRef = useRef(false);
+
   // Verificações simples
   const hasWordTimestamps = wordTimestamps.length > 0;
   const hasAnchorActions = anchorActions.length > 0;
@@ -469,6 +491,49 @@ export const V7PhasePlayer = ({
       console.log(`[V7PhasePlayer] 🛡️ Phase "${currentPhase?.id}" is BLOCKING - audio.onEnded will NOT end lesson`);
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
+
+  // ✅ C07: Auto-pause guard for interactive phases without pause action
+  // This ensures quiz/playground are clickable even when pipeline didn't generate pause action
+  useEffect(() => {
+    if (!currentPhase) return;
+    
+    const interactivePhaseTypes = ['interaction', 'playground', 'quiz', 'cta'];
+    const isInteractive = interactivePhaseTypes.includes(currentPhase.type) || 
+                          currentPhase.interaction !== undefined;
+    
+    if (!isInteractive) {
+      // Reset C07 state when leaving interactive phase
+      setC07AutoPaused(false);
+      c07AutoPauseAppliedRef.current = false;
+      return;
+    }
+    
+    // If we already have a pause action or already applied auto-pause, skip
+    if (hasPauseActionForInteractivePhase || c07AutoPauseAppliedRef.current) {
+      return;
+    }
+    
+    // C07 Guard: Apply auto-pause after a short delay to let audio start
+    // This mimics what the pipeline's C07 pause action would do
+    const C07_GUARD_DELAY_MS = 300;
+    
+    const timeoutId = setTimeout(() => {
+      if (!c07AutoPauseAppliedRef.current) {
+        console.log(`[C07] 🛑 AUTO-PAUSE applied for phase "${currentPhase.id}" (no pause action in JSON)`);
+        
+        // Pause audio if playing
+        if (audio.isPlaying) {
+          audio.pause();
+          console.log(`[C07] 🔇 Audio paused by C07 guard`);
+        }
+        
+        setC07AutoPaused(true);
+        c07AutoPauseAppliedRef.current = true;
+      }
+    }, C07_GUARD_DELAY_MS);
+    
+    return () => clearTimeout(timeoutId);
+  }, [currentPhase?.id, currentPhase?.type, currentPhase?.interaction, hasPauseActionForInteractivePhase, audio]);
 
   // ✅ V7-v6: Reset lock when interaction completes - now handled by machine unlockPhase action
 
@@ -1339,7 +1404,7 @@ export const V7PhasePlayer = ({
             phaseProgress={phaseProgress}
             onComplete={handleQuizComplete}
             audioControl={audio}
-            isPausedByAnchor={isPausedByAnchor}
+            isPausedByAnchor={isPausedByAnchor || c07AutoPaused}
             onResultShow={(isShowing) => setIsQuizResultShowing(isShowing)}
             timeoutConfig={quizTimeoutConfig}
           />
