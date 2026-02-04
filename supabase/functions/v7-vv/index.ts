@@ -1125,50 +1125,72 @@ function canonicalStringify(obj: any): string {
  * C05: Marca execução como completed com hash do output
  * C05.1: Persiste output_data REAL com content, lesson_id e meta
  * C05.2: Usa serialização JSON canônica para hash verificável via PostgreSQL
+ * 
+ * CRITICAL: Hash é calculado a partir do content APÓS todas as normalizações (C06.1)
+ * usando o algoritmo: SHA-256(canonicalStringify(content))
+ * 
+ * Para verificar no PostgreSQL:
+ * encode(digest(convert_to(canonical_jsonb_string(output_data->'content'),'utf8'),'sha256'),'hex')
  */
 async function c05CompleteExecution(
   supabase: any,
   runId: string,
   lessonId: string,
   outputContent: any,
-  meta?: { phasesCount?: number; anchorsCount?: number; audioDuration?: number }
+  meta?: { 
+    phasesCount?: number; 
+    anchorsCount?: number; 
+    audioDuration?: number;
+    triggerContract?: string;
+    hashAlgorithm?: string;
+    hashComputedAfterGuards?: boolean;
+  }
 ): Promise<void> {
   console.log(`[C05] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // C05.1: Build full output_data object
+  // C05.2 + C06.1: Hash é calculado a partir do content CANONICAL ANTES de construir outputData
+  // Isso garante que o hash seja verificável via SQL usando canonical_jsonb_string()
+  const contentForHash = canonicalStringify(outputContent);
+  const outputHash = await computeSHA256(contentForHash);
+  
+  console.log(`[C05.2] Hash computed from canonical content (length=${contentForHash.length})`);
+  
+  // C05.1: Build full output_data object com meta enriquecido
   const outputData = {
     content: outputContent,
     lesson_id: lessonId,
-    meta: meta ?? {
-      phasesCount: outputContent?.phases?.length ?? 0,
-      anchorsCount: outputContent?.phases?.reduce((acc: number, p: any) => 
+    meta: {
+      phasesCount: meta?.phasesCount ?? outputContent?.phases?.length ?? 0,
+      anchorsCount: meta?.anchorsCount ?? outputContent?.phases?.reduce((acc: number, p: any) => 
         acc + (p.anchorActions?.length ?? 0), 0) ?? 0,
-      audioDuration: outputContent?.audio?.mainAudio?.duration ?? 
-                     outputContent?.metadata?.totalDuration ?? 0
+      audioDuration: meta?.audioDuration ?? outputContent?.audio?.mainAudio?.duration ?? 
+                     outputContent?.metadata?.totalDuration ?? 0,
+      // C06.1: Metadados de contrato
+      triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
+      // C05.2: Metadados de hash
+      hashAlgorithm: 'canonical_jsonb_string+sha256',
+      hashComputedAfterGuards: true
     }
   };
-  
-  // C05.2: Compute SHA-256 from CANONICAL JSON of output_data.content
-  // Canonical = keys sorted alphabetically, ensuring PostgreSQL ::text produces same result
-  const contentForHash = canonicalStringify(outputData.content);
-  const outputHash = await computeSHA256(contentForHash);
   
   await supabase
     .from('pipeline_executions')
     .update({
       lesson_id: lessonId,
       output_data: outputData, // C05.1: Full output object
-      output_content_hash: outputHash, // C05.1: Hash derived from output_data.content
+      output_content_hash: outputHash, // C05.2: Hash derived from canonicalStringify(content)
       status: 'completed',
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('run_id', runId);
   
-  console.log(`[C05.1] ✅ Execution completed.`);
-  console.log(`[C05.1]   output_data.content.phases: ${outputData.meta.phasesCount}`);
-  console.log(`[C05.1]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
-  console.log(`[C05.1]   output_content_hash: ${outputHash.substring(0, 16)}...`);
+  console.log(`[C05.2] ✅ Execution completed.`);
+  console.log(`[C05.2]   output_data.content.phases: ${outputData.meta.phasesCount}`);
+  console.log(`[C05.2]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
+  console.log(`[C05.2]   output_data.meta.triggerContract: ${outputData.meta.triggerContract}`);
+  console.log(`[C05.2]   output_data.meta.hashAlgorithm: ${outputData.meta.hashAlgorithm}`);
+  console.log(`[C05.2]   output_content_hash: ${outputHash.substring(0, 16)}...`);
 }
 
 /**
@@ -4790,6 +4812,9 @@ Deno.serve(async (req) => {
     console.log('[V7-vv] Step 6: Saving to database...');
 
     let lessonId: string;
+    // C05.2: Variável para rastrear o content FINAL que foi persistido
+    // Isso garante que o hash seja calculado do EXATO objeto salvo no banco
+    let persistedContent: any = null;
     
     // ✅ C02: REPROCESS MODE - UPDATE na lição existente COM AUDITORIA v4.1
     // Suporta dois modos:
@@ -5037,6 +5062,9 @@ Deno.serve(async (req) => {
           throw new Error(`Lesson update failed: ${updateError.message}`);
         }
         
+        // C05.2: Salvar referência do content persistido para hash
+        persistedContent = finalLessonData;
+        
         // 4. Computar diff e marcar como completed
         console.log(`[V7-vv] AUDIT: Computing anchor diff...`);
         const diffSummary = await computeAnchorDiffStrong(oldContent, finalLessonData);
@@ -5093,7 +5121,10 @@ Deno.serve(async (req) => {
           } : null,
           // ✅ C06: Single Trigger Contract metrics
           c06Mode: preserveStructure,
-          c06: preserveStructure && c06Diff ? c06Diff : null
+          c06: preserveStructure && c06Diff ? c06Diff : null,
+          // ✅ C05.2: Hash algorithm metadata
+          hashAlgorithm: 'canonical_jsonb_string+sha256',
+          hashComputedAfterGuards: true
         };
         
         await supabase
@@ -5199,6 +5230,8 @@ Deno.serve(async (req) => {
       }
 
       lessonId = lesson.id;
+      // C05.2: Salvar referência do content persistido para hash
+      persistedContent = lessonData;
       console.log(`[V7-vv] ✅ Lesson saved with ID: ${lessonId}`);
     }
     
@@ -5223,13 +5256,38 @@ Deno.serve(async (req) => {
     }
 
     // =========================================================================
-    // C05: COMPLETE EXECUTION WITH OUTPUT HASH
+    // C05 + C06.1: COMPLETE EXECUTION WITH OUTPUT HASH
     // =========================================================================
-    const outputContentForHash = preserveStructureMode 
-      ? (await supabase.from('lessons').select('content').eq('id', lessonId).single()).data?.content
-      : lessonData;
+    // CRITICAL: Usar persistedContent - o objeto que FOI EFETIVAMENTE persistido no banco
+    // após passar por TODAS as normalizações (C06.1 FINAL GUARD).
+    // NÃO usar finalLessonData/lessonData diretamente pois estão fora do escopo.
+    const outputContentForHash = persistedContent;
     
-    await c05CompleteExecution(supabase, runId, lessonId, outputContentForHash);
+    // Validar que outputContentForHash existe e tem o contrato correto
+    if (!outputContentForHash) {
+      console.error(`[C05.2] ERROR: outputContentForHash is null/undefined`);
+      throw new Error('C05.2: Cannot compute hash - outputContent is null');
+    }
+    
+    // Log de verificação antes do hash
+    const triggerTimeCheck = outputContentForHash.phases?.reduce((count: number, p: any) => {
+      const mvCount = (p.microVisuals || []).filter((mv: any) => mv.triggerTime !== undefined).length;
+      return count + mvCount;
+    }, 0) ?? 0;
+    
+    console.log(`[C05.2] Pre-hash validation: triggerTime count = ${triggerTimeCheck}`);
+    console.log(`[C05.2] Pre-hash validation: metadata.triggerContract = ${outputContentForHash.metadata?.triggerContract}`);
+    
+    if (triggerTimeCheck > 0) {
+      console.warn(`[C05.2] WARNING: ${triggerTimeCheck} triggerTime fields still present before hash!`);
+    }
+    
+    // Computar hash do objeto normalizado
+    await c05CompleteExecution(supabase, runId, lessonId, outputContentForHash, {
+      triggerContract: outputContentForHash.metadata?.triggerContract ?? 'anchorActions',
+      hashAlgorithm: 'canonical_jsonb_string+sha256',
+      hashComputedAfterGuards: true
+    });
 
     // =========================================================================
     // RESPOSTA COM DEBUG REPORT
