@@ -172,8 +172,26 @@ export default function V7PhaseCTA({
     }, 300);
   }, [isProcessing, selected]);
 
+  // ✅ C07.2: Log se CTA estiver bloqueado por overlay ou pointer-events
+  useEffect(() => {
+    if (isProcessing || selected !== null) return;
+    
+    // Check for any blocking conditions
+    const ctaContainer = document.querySelector('[data-cta-container]');
+    if (ctaContainer) {
+      const style = window.getComputedStyle(ctaContainer);
+      if (style.pointerEvents === 'none') {
+        console.error('[CTA_BLOCKED] pointer-events: none on container');
+      }
+    }
+  }, [isProcessing, selected]);
+
   return (
-    <div className="w-full h-full flex items-center justify-center px-4 sm:px-8 pt-4 pb-28">
+    <div 
+      data-cta-container
+      className="w-full h-full flex items-center justify-center px-4 sm:px-8 pt-4 pb-28"
+      style={{ pointerEvents: 'auto', zIndex: 50 }}
+    >
       {/* pb-28 = espaço para CTA + player controls */}
       <div className="max-w-2xl w-full text-center space-y-8 sm:space-y-12">
         {/* Title */}

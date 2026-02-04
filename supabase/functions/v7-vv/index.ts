@@ -3491,15 +3491,20 @@ interface C07Stats {
  * @returns Fases com pauses garantidos + estatísticas
  */
 /**
- * C07.1 - Pause Early Contract
- * ==============================
- * Garante que fases interativas tenham pauseAction NO COMEÇO da fase.
+ * C07.2 - Pause Timing por Tipo de Fase
+ * ======================================
+ * Garante que fases interativas tenham pauseAction NO MOMENTO CORRETO:
  * 
- * Regra C07.1:
- * - pauseTime = min(phase.startTime + 0.3, phase.endTime - 0.2)
- * - Se pauseTime <= startTime: pauseTime = startTime + 0.15
- * - Se pauseTime >= endTime: NÃO inserir (erro de fase muito curta)
- * - Se já existe pause mas está "tarde": CORRIGIR para early
+ * - QUIZ/PLAYGROUND/INTERACTION: Pause PERTO DO FIM para não cortar narração
+ *   pauseTime = min(endTime - 0.20, endTime - 0.20)
+ *   Nunca pausar antes de startTime + 1.0 (permite frase inicial completa)
+ * 
+ * - CTA: Pausação opcional - botão deve ser clicável SEMPRE
+ *   (CTA não depende de pause para funcionar)
+ * 
+ * Correção se pause existente estiver:
+ * - Antes de startTime + 1.0 (corta frase) → corrigir
+ * - Depois de endTime - 0.05 (tarde demais) → corrigir
  */
 function c07EnsurePauseForInteractivePhases(
   phases: any[]
@@ -3507,8 +3512,8 @@ function c07EnsurePauseForInteractivePhases(
   updatedPhases: any[];
   c07Stats: C07Stats;
 } {
-  console.log('[C07.1] c07EnsurePauseForInteractivePhases: Starting (Pause Early Contract)...');
-  console.log(`[C07.1] Processing ${phases.length} phases`);
+  console.log('[C07.2] c07EnsurePauseForInteractivePhases: Starting (Pause Near End Contract)...');
+  console.log(`[C07.2] Processing ${phases.length} phases`);
   
   const c07Stats: C07Stats = {
     interactivePhases: 0,
@@ -3518,12 +3523,14 @@ function c07EnsurePauseForInteractivePhases(
     details: []
   };
   
-  // Extended stats for C07.1
+  // Extended stats for C07.2
   let pausesCorrected = 0;
   let phasesTooShort = 0;
+  let ctaPhases = 0;
   
-  // Tipos de fase que são interativas por natureza
+  // Tipos de fase que são interativas por natureza (exceto CTA que é tratado separadamente)
   const INTERACTIVE_PHASE_TYPES = ['interaction', 'playground', 'quiz'];
+  const CTA_PHASE_TYPES = ['cta'];
   
   // Deep clone para não mutar o original
   const updatedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
@@ -3531,8 +3538,16 @@ function c07EnsurePauseForInteractivePhases(
   for (const phase of updatedPhases) {
     // Determinar se a fase é interativa
     const isInteractiveByType = INTERACTIVE_PHASE_TYPES.includes(phase.type);
+    const isCTAByType = CTA_PHASE_TYPES.includes(phase.type);
     const hasInteractionContent = phase.interaction !== undefined && phase.interaction !== null;
     const isInteractive = isInteractiveByType || hasInteractionContent;
+    
+    // CTA: não precisa de pause obrigatório (botão sempre clicável)
+    if (isCTAByType) {
+      ctaPhases++;
+      console.log(`[C07.2] Phase "${phase.id}" is CTA - pause optional (button always clickable)`);
+      continue;
+    }
     
     if (!isInteractive) {
       continue; // Pular fases não interativas
@@ -3549,21 +3564,30 @@ function c07EnsurePauseForInteractivePhases(
     const endTime = phase.endTime ?? startTime + 1;
     const phaseDuration = endTime - startTime;
     
-    // C07.1 Pause Early Calculation
-    // pauseTime = min(startTime + 0.3, endTime - 0.2)
-    let targetPauseTime = Math.min(startTime + 0.3, endTime - 0.2);
+    // ============================================
+    // C07.2 Pause Near End Calculation
+    // ============================================
+    // Objetivo: permitir que a narração toque COMPLETA antes de pausar
+    // pauseTime = endTime - 0.20 (0.2s antes do fim da fase)
+    // Mínimo: startTime + 1.0 (garante pelo menos 1s de áudio)
+    let targetPauseTime = endTime - 0.20;
     
-    // Safety: Se pauseTime <= startTime, usar startTime + 0.15
-    if (targetPauseTime <= startTime) {
-      targetPauseTime = startTime + 0.15;
+    // Safety: Se pauseTime <= startTime + 1.0, fase é muito curta
+    // Usar metade da fase como compromisso
+    if (targetPauseTime <= startTime + 1.0) {
+      targetPauseTime = startTime + (phaseDuration / 2);
+      console.log(`[C07.2] Phase "${phase.id}" is short (${phaseDuration.toFixed(2)}s) - using midpoint ${targetPauseTime.toFixed(3)}s`);
     }
     
     // Safety: Se pauseTime >= endTime, fase é muito curta - não inserir
     if (targetPauseTime >= endTime) {
-      console.error(`[C07.1] ERROR: Phase "${phase.id}" is too short for pause! duration=${phaseDuration.toFixed(3)}s (start=${startTime}, end=${endTime})`);
+      console.error(`[C07.2] ERROR: Phase "${phase.id}" is too short for pause! duration=${phaseDuration.toFixed(3)}s (start=${startTime}, end=${endTime})`);
       phasesTooShort++;
       continue;
     }
+    
+    // Safety: Garantir que pauseTime está dentro dos limites
+    targetPauseTime = Math.max(startTime + 0.15, Math.min(targetPauseTime, endTime - 0.05));
     
     // Encontrar pause existente
     const existingPauseIndex = phase.anchorActions.findIndex(
@@ -3581,16 +3605,22 @@ function c07EnsurePauseForInteractivePhases(
     
     if (existingPause) {
       const existingPauseTime = existingPause.keywordTime ?? existingPause.timestamp ?? 0;
-      const isEarly = existingPauseTime <= startTime + 0.5;
-      const isTooCloseToEnd = existingPauseTime >= endTime - 0.15;
       
-      if (isEarly && !isTooCloseToEnd) {
+      // C07.2: Verificar se pause está em posição aceitável
+      // - Não pode ser antes de startTime + 1.0 (corta frase inicial)
+      // - Não pode ser depois de endTime - 0.05 (tarde demais)
+      const isTooEarly = existingPauseTime < startTime + 1.0;
+      const isTooLate = existingPauseTime > endTime - 0.05;
+      const isAcceptable = !isTooEarly && !isTooLate;
+      
+      if (isAcceptable) {
         // Pause existente está OK - manter
         c07Stats.phasesWithPause++;
-        console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is EARLY ✓`);
+        console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ACCEPTABLE ✓ (within ${startTime + 1.0}s - ${endTime - 0.05}s)`);
       } else {
-        // Pause existente está TARDE - CORRIGIR
-        console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is TOO LATE! Correcting to ${targetPauseTime.toFixed(3)}s`);
+        // Pause existente está FORA do range aceitável - CORRIGIR
+        const reason = isTooEarly ? 'TOO_EARLY (cuts audio)' : 'TOO_LATE (after phase end)';
+        console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ${reason}! Correcting to ${targetPauseTime.toFixed(3)}s`);
         
         // Atualizar o pause existente
         phase.anchorActions[existingPauseIndex] = {
@@ -3598,8 +3628,9 @@ function c07EnsurePauseForInteractivePhases(
           keywordTime: targetPauseTime,
           timestamp: targetPauseTime,
           c07Corrected: true,
+          c07Version: '2.0',
           c07OriginalTime: existingPauseTime,
-          keyword: 'early' // Keyword genérica já que estamos forçando early
+          keyword: 'pause-near-end' // Keyword indicando que é pause perto do fim
         };
         
         pausesCorrected++;
@@ -3608,17 +3639,18 @@ function c07EnsurePauseForInteractivePhases(
         detail.insertedPauseKeywordTime = targetPauseTime;
       }
     } else {
-      // Não existe pause - inserir novo
+      // Não existe pause - inserir novo PERTO DO FIM
       c07Stats.phasesWithoutPause++;
       
       const autoPauseAction = {
         id: `pause-${phase.id}-c07-auto`,
-        keyword: 'early',
+        keyword: 'pause-near-end',
         keywordTime: targetPauseTime,
         timestamp: targetPauseTime,
         type: 'pause',
         phaseId: phase.id,
-        c07Generated: true
+        c07Generated: true,
+        c07Version: '2.0'
       };
       
       phase.anchorActions.push(autoPauseAction);
@@ -3627,14 +3659,14 @@ function c07EnsurePauseForInteractivePhases(
       detail.pauseInserted = true;
       detail.insertedPauseKeywordTime = targetPauseTime;
       
-      console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Inserted auto-pause @ ${targetPauseTime.toFixed(3)}s (start=${startTime.toFixed(3)}, end=${endTime.toFixed(3)})`);
+      console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Inserted auto-pause @ ${targetPauseTime.toFixed(3)}s (near end, start=${startTime.toFixed(3)}, end=${endTime.toFixed(3)})`);
     }
     
     c07Stats.details.push(detail);
   }
   
-  console.log(`[C07.1] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}, corrected=${pausesCorrected}, tooShort=${phasesTooShort}`);
-  console.log('[C07.1] c07EnsurePauseForInteractivePhases: Complete');
+  console.log(`[C07.2] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}, corrected=${pausesCorrected}, tooShort=${phasesTooShort}, cta=${ctaPhases}`);
+  console.log('[C07.2] c07EnsurePauseForInteractivePhases: Complete');
   
   return {
     updatedPhases,
