@@ -1,240 +1,450 @@
 
+# Plano de Correção: V7LessonPlayer para Contrato C06/C06.1
 
-# Plano v4.1: lesson_migrations_audit (Versão Definitiva)
-
-## Ajustes v4 → v4.1
-
-| Ajuste | Problema v4 | Correção v4.1 |
-|--------|-------------|---------------|
-| 1. Hash determinístico | JSON.stringify sem ordenação = falso negativo se ordem mudar | Ordenar phases por `id`, anchors por chave estável ANTES de hashear |
-| 2. buildAnchorKey com índice | Colisão quando `id` ausente + anchors repetidos na phase | Incluir `idx:${i}` no fallback |
-| 3. Catch sem .select('id') | updateResult pode ser null mesmo com update executado | Remover `.select('id')` e usar contagem de erro apenas |
+**Objetivo:** Atualizar o Renderer V7LessonPlayer.tsx para usar exclusivamente `anchorActions[type='show'].keywordTime` como fonte de verdade para micro-visuals, removendo dependência de `microVisual.triggerTime` (removido pelo Pipeline C06).
 
 ---
 
-## Correção 1: Hash Determinístico
+## Diagnóstico do Estado Atual
 
+### Código Quebrado (V7LessonPlayer.tsx:169-182)
 ```typescript
-async function computeStructureHash(phases: any[]): Promise<string> {
-  // ORDENAR antes de hashear para garantir determinismo
-  const sortedPhases = [...phases]
-    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
-    .map(p => ({
-      id: p.id,
-      type: p.type,
-      anchors: [...(p.anchorActions || [])]
-        .sort((a, b) => {
-          // Ordenar por id se existir, senão por type+keyword
-          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
-          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
-          return keyA.localeCompare(keyB);
-        })
-        .map((a: any) => ({
-          id: a.id,
-          type: a.type,
-          keyword: a.keyword,
-          targetId: a.targetId
-          // keywordTime EXCLUÍDO
-        }))
-    }));
-  
-  return computeSHA256(JSON.stringify(sortedPhases));
-}
+// ❌ PROBLEMA: triggerTime pode ser undefined após C06
+const active = currentPhase.microVisuals.filter(mv => {
+  const isAfterTrigger = currentTime >= mv.triggerTime;  // ❌ undefined
+  const isBeforeEnd = currentTime < mv.triggerTime + mv.duration;
+  return isAfterTrigger && isBeforeEnd;
+});
+```
 
-async function computeTimingHash(phases: any[]): Promise<string> {
-  // Mesma ordenação para consistência
-  const sortedPhases = [...phases]
-    .sort((a, b) => (a.id || '').localeCompare(b.id || ''))
-    .map(p => ({
-      id: p.id,
-      anchors: [...(p.anchorActions || [])]
-        .sort((a, b) => {
-          const keyA = a.id || `${a.type}|${a.keyword}|${a.targetId || ''}`;
-          const keyB = b.id || `${b.type}|${b.keyword}|${b.targetId || ''}`;
-          return keyA.localeCompare(keyB);
-        })
-        .map((a: any) => ({
-          id: a.id,
-          keywordTime: a.keywordTime
-        }))
-    }));
-  
-  return computeSHA256(JSON.stringify(sortedPhases));
+### Contrato C06 do Pipeline
+- `metadata.triggerContract = 'anchorActions'`
+- `microVisual.triggerTime` é **removido** do JSON final
+- `anchorActions[type='show'].targetId` aponta para `microVisual.id`
+- `anchorActions[type='show'].keywordTime` contém o timestamp
+
+### Run IDs de Teste
+- `d7c18708-43f0-4488-98fd-bbe71f37140a` (show_actions=19, trigger_time=0)
+- `e78c5da4-a9ba-4c62-9a45-db1b960fca0b` (verificação adicional)
+
+---
+
+## Fase 1: Contrato + Instrumentação Mínima
+
+### Objetivo
+Preparar o código para C06 sem quebrar compatibilidade com aulas legadas.
+
+### Tarefas
+
+#### 1.1 V7Contract.ts (Linha 173)
+Tornar `triggerTime` opcional:
+```typescript
+export interface V7MicroVisual {
+  id: string;
+  type: V7MicroVisualType;
+  anchorText: string;
+  triggerTime?: number;  // ← MUDAR para opcional (C06)
+  duration: number;
+  content: { ... };
 }
 ```
 
----
-
-## Correção 2: buildAnchorKey com Índice
-
+#### 1.2 V7LessonPlayer.tsx - Adicionar Refs
+Inserir após as refs existentes (linha ~56):
 ```typescript
-function buildAnchorKey(phaseId: string, anchor: any, anchorIndex: number): string {
-  // SEMPRE incluir phaseId
-  if (anchor.id) {
-    return `phase:${phaseId}|id:${anchor.id}`;
-  }
-  // Fallback: incluir índice para evitar colisão
-  if (anchor.targetId) {
-    return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|target:${anchor.targetId}|kw:${anchor.keyword}`;
-  }
-  return `phase:${phaseId}|idx:${anchorIndex}|type:${anchor.type}|kw:${anchor.keyword}`;
-}
+// C06 Compatibility: Refs para crossing detection (não usar state para evitar loops)
+const prevTimeRef = useRef<number>(0);
+const triggeredIdsRef = useRef<Set<string>>(new Set());
+const prevPhaseIndexRef = useRef<number>(-1);
+```
 
-// Uso nos mapas:
-for (const phase of oldPhases) {
-  const anchors = phase.anchorActions || [];
-  anchors.forEach((anchor: any, idx: number) => {
-    const key = buildAnchorKey(phase.id, anchor, idx);
-    oldAnchorsMap.set(key, { phase, anchor, index: idx });
-  });
+#### 1.3 V7LessonPlayer.tsx - Logs de Debug
+Adicionar logs no efeito de phase change (linha ~136):
+```typescript
+if (i !== currentPhaseIndex) {
+  console.log(`[V7Player] Phase change: ${currentPhaseIndex} → ${i} (${phase.id})`);
+  // C06: Log de instrumentação
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[V7Player] phase change reset', { from: currentPhaseIndex, to: i });
+  }
+  setCurrentPhaseIndex(i);
 }
 ```
 
+Adicionar log throttled no time tracking (linha ~106):
+```typescript
+if (mainAudioRef.current) {
+  const newTime = mainAudioRef.current.currentTime;
+  setCurrentTime(newTime);
+  // C06: Log throttled (apenas a cada 1s em dev)
+  if (process.env.NODE_ENV === 'development' && Math.floor(newTime) !== Math.floor(currentTime)) {
+    console.log(`[V7Player] currentTime: ${newTime.toFixed(2)}s`);
+  }
+}
+```
+
+### Checklist Fase 1
+- [ ] TypeScript compila sem erros
+- [ ] Player roda com aulas antigas (com triggerTime) sem regressão
+- [ ] Logs aparecem no console: "phase change reset" + "currentTime"
+
+### Risco Conhecido
+- Nenhum (apenas preparação, sem mudança de comportamento)
+
 ---
 
-## Correção 3: Catch sem .select('id')
+## Fase 2: Engine de "show" por anchorActions (Crossing Detection)
 
+### Objetivo
+Substituir dependência de `mv.triggerTime` por `anchorActions[type='show']`.
+
+### Tarefas
+
+#### 2.1 Criar Helper: showTimeByTargetId
+Adicionar após a linha do `currentPhase` memo (linha ~59):
 ```typescript
-} catch (error) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
+// C06: Mapa de targetId → keywordTime (fonte de verdade)
+const showTimeByTargetId = useMemo(() => {
+  const map = new Map<string, number>();
+  if (!currentPhase?.anchorActions) return map;
   
-  // UPDATE sem .select() - verificar apenas erro
-  const { error: updateError } = await supabase
-    .from('lesson_migrations_audit')
-    .update({
-      migration_status: 'failed',
-      error_message: errorMessage,
-      completed_at: new Date().toISOString()
-    })
-    .eq('lesson_id', input.existing_lesson_id)
-    .eq('run_id', runId);
-  
-  // Se UPDATE deu erro (não existe registro), fazer INSERT fallback
-  if (updateError) {
-    console.log(`[V7-vv] AUDIT: Update failed, inserting fallback record`);
+  for (const aa of currentPhase.anchorActions) {
+    if (aa.type === 'show' && aa.targetId && typeof aa.keywordTime === 'number') {
+      map.set(aa.targetId, aa.keywordTime);
+    }
+  }
+  return map;
+}, [currentPhase?.anchorActions]);
+```
+
+#### 2.2 Implementar Crossing Detection
+Substituir o efeito de MICRO-VISUALS (linhas 168-182) por:
+```typescript
+// =========================================================================
+// MICRO-VISUALS (C06 Compliant - Crossing Detection)
+// =========================================================================
+useEffect(() => {
+  if (!currentPhase) return;
+  if (status !== 'playing') {
+    prevTimeRef.current = currentTime;
+    return;
+  }
+
+  const prevTime = prevTimeRef.current;
+
+  // C06: SEEK BACKWARDS - Reset triggers e recomputar
+  if (currentTime < prevTime) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[V7Player] seek backwards recompute', { prevTime, currentTime });
+    }
+    triggeredIdsRef.current = new Set();
     
-    await supabase
-      .from('lesson_migrations_audit')
-      .upsert({
-        lesson_id: input.existing_lesson_id,
-        run_id: runId,
-        migration_version: 'v2.1-c01-fix',
-        migration_status: 'failed',
-        old_content: oldContent || {},
-        error_message: errorMessage,
-        triggered_by: 'v7-vv-reprocess-failed',
-        completed_at: new Date().toISOString()
-      }, { onConflict: 'lesson_id,run_id' });
+    // Reprocessar todos os shows <= currentTime
+    for (const [targetId, t] of showTimeByTargetId.entries()) {
+      if (t <= currentTime) {
+        triggeredIdsRef.current.add(targetId);
+      }
+    }
+    prevTimeRef.current = currentTime;
+    return;
   }
-  
-  throw error;
-}
+
+  // C06: PLAY FORWARD - Crossing detection
+  for (const [targetId, t] of showTimeByTargetId.entries()) {
+    const crossed = prevTime < t && currentTime >= t;
+    if (crossed && !triggeredIdsRef.current.has(targetId)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[V7Player] show crossed', { 
+          phaseId: currentPhase.id, 
+          targetId, 
+          t: t.toFixed(2), 
+          prevTime: prevTime.toFixed(2), 
+          currentTime: currentTime.toFixed(2) 
+        });
+      }
+      triggeredIdsRef.current.add(targetId);
+    }
+  }
+
+  prevTimeRef.current = currentTime;
+}, [currentTime, status, currentPhase, showTimeByTargetId]);
 ```
 
----
-
-## Schema SQL Final (v4.1)
-
-Sem mudanças em relação ao v4 - o schema está correto:
-
-```sql
-CREATE TABLE public.lesson_migrations_audit (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  lesson_id UUID NOT NULL REFERENCES public.lessons(id) ON DELETE CASCADE,
-  run_id UUID NOT NULL,
-  migration_version TEXT NOT NULL,
-  migration_status TEXT NOT NULL DEFAULT 'pending' 
-    CHECK (migration_status IN ('pending', 'in_progress', 'completed', 'failed')),
-  old_content JSONB NOT NULL,
-  new_content JSONB,
-  diff_summary JSONB,
-  triggered_by TEXT,
-  error_message TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  completed_at TIMESTAMPTZ,
-  
-  CONSTRAINT unique_lesson_run UNIQUE(lesson_id, run_id)
-);
-
-CREATE INDEX idx_migrations_lesson ON public.lesson_migrations_audit(lesson_id);
-CREATE INDEX idx_migrations_status ON public.lesson_migrations_audit(migration_status);
-CREATE INDEX idx_migrations_version ON public.lesson_migrations_audit(migration_version);
-CREATE INDEX idx_migrations_run ON public.lesson_migrations_audit(run_id);
-
-ALTER TABLE public.lesson_migrations_audit ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "service_role_full_access"
-ON public.lesson_migrations_audit
-FOR ALL
-USING (auth.role() = 'service_role')
-WITH CHECK (auth.role() = 'service_role');
-
-CREATE POLICY "admins_read_audits"
-ON public.lesson_migrations_audit
-FOR SELECT
-USING (public.has_role(auth.uid(), 'admin'));
+#### 2.3 Adicionar Reset no Phase Change
+Adicionar efeito para reset ao trocar de fase:
+```typescript
+// C06: Reset ao trocar de fase (evitar "fantasmas")
+useEffect(() => {
+  if (currentPhaseIndex !== prevPhaseIndexRef.current) {
+    triggeredIdsRef.current = new Set();
+    prevTimeRef.current = currentTime;
+    prevPhaseIndexRef.current = currentPhaseIndex;
+    setActiveMicroVisuals([]);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[V7Player] phase reset', { phaseIndex: currentPhaseIndex });
+    }
+  }
+}, [currentPhaseIndex, currentTime]);
 ```
 
----
+### Checklist Fase 2
+- [ ] Com run_id d7c..., logs mostram "show crossed" para targetIds
+- [ ] Seek para trás + play novamente: shows acontecem de novo
+- [ ] Sem loop de re-render (verificar console)
 
-## Checklist Final v4.1
-
-| Item | Status |
-|------|--------|
-| run_id obrigatório do request | ✅ |
-| Validação UUID | ✅ |
-| 23505 → completed (200) / in_progress (409) / failed (400) | ✅ |
-| RLS com USING + WITH CHECK | ✅ |
-| catch marca failed + fallback upsert | ✅ |
-| buildAnchorKey inclui phaseId + idx sempre | ✅ |
-| SHA-256 com ordenação determinística | ✅ |
-| structureHashMatch calculado e salvo | ✅ |
-| inRange com EPS (0.30s) registrado | ✅ |
-| catch sem .select('id') | ✅ |
+### Risco Conhecido
+- MicroVisuals ainda não aparecem visualmente (será tratado na Fase 3)
 
 ---
 
-## Sequência de Implementação
+## Fase 3: Render de MicroVisuals (Timed vs Sticky)
 
-1. **Migração SQL**: Criar tabela `lesson_migrations_audit` com schema v4.1
-2. **Edge Function v7-vv/index.ts**:
-   - Adicionar `computeSHA256()` com crypto.subtle
-   - Adicionar `computeStructureHash()` e `computeTimingHash()` com ordenação
-   - Adicionar `buildAnchorKey()` com índice
-   - Adicionar `computeAnchorDiffStrong()` async
-   - Modificar bloco `isReprocess` com validação run_id + 23505 handling + try/catch robusto
-3. **Deploy** edge function
-4. **Executar reprocess** com run_id gerado pelo client
-5. **Consultar audit** e gerar relatório C01 forense
+### Objetivo
+MicroVisuals aparecem de fato e letter-reveal mantém efeito consistente (sticky).
+
+### Tarefas
+
+#### 3.1 Definir Tipos Sticky
+Adicionar helper no início do componente:
+```typescript
+// C06: Tipos que permanecem até o fim da fase (sticky)
+const isStickyType = (type: string) =>
+  type === 'letter-reveal' || 
+  type === 'card-reveal' || 
+  type === 'text-highlight' || 
+  type === 'highlight';
+```
+
+#### 3.2 Calcular activeMicroVisuals (C06-Compliant)
+Adicionar novo efeito após o crossing detection:
+```typescript
+// =========================================================================
+// COMPUTE ACTIVE MICRO-VISUALS (C06 Compliant)
+// =========================================================================
+useEffect(() => {
+  if (!currentPhase?.microVisuals?.length) {
+    setActiveMicroVisuals([]);
+    return;
+  }
+
+  // Helper: obter tempo do show (C06: anchorActions | fallback: triggerTime legado)
+  const getShowTime = (mv: V7MicroVisual): number | null => {
+    // C06: Fonte primária = anchorActions
+    const anchorTime = showTimeByTargetId.get(mv.id);
+    if (typeof anchorTime === 'number') return anchorTime;
+    
+    // Fallback para lessons antigas (compatibilidade)
+    if (typeof mv.triggerTime === 'number') return mv.triggerTime;
+    
+    return null;
+  };
+
+  const active = currentPhase.microVisuals.filter(mv => {
+    // C06: Só mostra se o trigger foi disparado
+    if (!triggeredIdsRef.current.has(mv.id)) return false;
+    
+    const showTime = getShowTime(mv);
+    if (showTime === null) return false;
+    
+    // Sticky types: ficam até o fim da fase
+    if (isStickyType(mv.type)) {
+      return currentTime >= showTime;
+    }
+    
+    // Timed types: respeitam duration
+    const endTime = showTime + (typeof mv.duration === 'number' ? mv.duration : 0);
+    return currentTime >= showTime && currentTime < endTime;
+  });
+
+  setActiveMicroVisuals(active);
+}, [currentTime, currentPhase, showTimeByTargetId]);
+```
+
+#### 3.3 Verificar Reset Completo
+Garantir que o reset de fase (Fase 2.3) está funcionando:
+```typescript
+// No efeito de phase reset (já adicionado na Fase 2)
+triggeredIdsRef.current = new Set();
+prevTimeRef.current = currentTime;
+setActiveMicroVisuals([]);  // ← CRÍTICO: Limpar visuais ativos
+```
+
+### Checklist Fase 3
+- [ ] image-flash/text-pop/number-count aparecem no tempo correto
+- [ ] letter-reveal (PERFEITO) aparece e permanece (sticky)
+- [ ] Sem microVisual "fantasma" ao trocar de fase
+- [ ] Seek backwards funciona corretamente
+
+### Risco Conhecido
+- letter-reveal no V7MicroVisualOverlay.tsx pode precisar de ajustes visuais (fora do escopo desta correção)
 
 ---
 
-## Seção Técnica
+## Fase 4: Base do C07 - "Pause Contract"
 
-### Arquivos a Modificar
+### Objetivo
+Garantir que fases interativas pausam corretamente usando crossing detection.
+
+### Tarefas
+
+#### 4.1 Implementar Crossing Detection para Pause
+Substituir o efeito ANCHOR ACTIONS (PAUSE) (linhas 148-164) por:
+```typescript
+// =========================================================================
+// ANCHOR ACTIONS - PAUSE (C07 Base: Crossing Detection)
+// =========================================================================
+const pauseTriggeredRef = useRef<Set<string>>(new Set());
+
+useEffect(() => {
+  if (status !== 'playing' || !currentPhase?.anchorActions) return;
+
+  const prevTime = prevTimeRef.current;
+
+  for (const action of currentPhase.anchorActions) {
+    if (action.type === 'pause' && action.id) {
+      // C07: Crossing detection (idempotente)
+      const crossed = prevTime < action.keywordTime && currentTime >= action.keywordTime;
+      
+      if (crossed && !pauseTriggeredRef.current.has(action.id)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[V7Player] pause crossed', { 
+            phaseId: currentPhase.id,
+            actionId: action.id,
+            keyword: action.keyword, 
+            keywordTime: action.keywordTime?.toFixed(2),
+            currentTime: currentTime.toFixed(2)
+          });
+          console.log('[V7Player] entering waiting-interaction...');
+        }
+        
+        pauseTriggeredRef.current.add(action.id);
+        mainAudioRef.current?.pause();
+        setStatus('waiting-interaction');
+        break;
+      }
+    }
+  }
+}, [currentTime, status, currentPhase]);
+```
+
+#### 4.2 Reset pauseTriggeredRef ao Trocar de Fase
+Atualizar o efeito de reset de fase:
+```typescript
+useEffect(() => {
+  if (currentPhaseIndex !== prevPhaseIndexRef.current) {
+    triggeredIdsRef.current = new Set();
+    pauseTriggeredRef.current = new Set();  // ← ADICIONAR
+    prevTimeRef.current = currentTime;
+    prevPhaseIndexRef.current = currentPhaseIndex;
+    setActiveMicroVisuals([]);
+    
+    // ...logs
+  }
+}, [currentPhaseIndex, currentTime]);
+```
+
+#### 4.3 Fallback para Fases Interativas sem Pause Action
+Adicionar lógica de fallback (TODO comentado para futuro):
+```typescript
+// TODO (C07): Fallback para fases interaction/playground sem pause action
+// Se phase.type === 'interaction' || 'playground' e não há pause actions:
+// Pausar automaticamente no startTime + 0.1s
+```
+
+### Checklist Fase 4
+- [ ] Quiz não "passa reto": player entra em waiting-interaction
+- [ ] Playground: usuário tem tempo de clicar
+- [ ] Seek backwards: pauses são rearmados
+- [ ] Logs aparecem: "pause crossed" + "entering waiting-interaction"
+
+### Risco Conhecido
+- Fases sem `anchorAction[type='pause']` ainda podem "passar reto" (C07 completo tratará isso)
+
+---
+
+## Resumo de Arquivos Modificados
 
 | Arquivo | Modificações |
 |---------|--------------|
-| **Nova migração SQL** | Tabela `lesson_migrations_audit` com schema completo |
-| `supabase/functions/v7-vv/index.ts` | ~150 linhas: funções de hash, buildAnchorKey, computeAnchorDiffStrong, bloco isReprocess |
+| `src/types/V7Contract.ts` | `triggerTime?: number` (opcional) |
+| `src/components/lessons/v7/V7LessonPlayer.tsx` | Crossing detection, sticky rules, reset, logs |
 
-### Funções a Adicionar (v7-vv/index.ts)
+## Critério DONE Final
 
-1. `computeSHA256(data: string): Promise<string>` - ~8 linhas
-2. `computeStructureHash(phases: any[]): Promise<string>` - ~25 linhas (com ordenação)
-3. `computeTimingHash(phases: any[]): Promise<string>` - ~20 linhas (com ordenação)
-4. `buildAnchorKey(phaseId: string, anchor: any, anchorIndex: number): string` - ~10 linhas
-5. `computeAnchorDiffStrong(oldContent: any, newContent: any): Promise<object>` - ~100 linhas
-
-### Payload do Reprocess
-
-```json
-{
-  "reprocess": true,
-  "existing_lesson_id": "19f7e1df-6fb8-435f-ad51-cc44ac67618d",
-  "run_id": "uuid-gerado-pelo-client",
-  "title": "O Fim da Brincadeira com IA",
-  "scenes": [...]
-}
+```
+DONE = (
+  Run d7c...: microVisuals aparecem (sem triggerTime) AND
+  Run d7c...: PERFEITO funciona (sticky) AND
+  Run d7c...: quiz/playground não passam reto AND
+  Run e78c...: interações continuam ok AND
+  Seek backwards funciona AND
+  Nenhum erro TS/build AND
+  Logs de crossing detection aparecem em dev
+)
 ```
 
+---
+
+## Seção Técnica: Diagrama de Fluxo
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                    V7LessonPlayer - C06 Flow                         │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  currentTime (100ms interval)                                        │
+│        │                                                             │
+│        ▼                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐     │
+│  │ Crossing Detection Engine                                    │     │
+│  │                                                              │     │
+│  │  if (currentTime < prevTime) {                               │     │
+│  │    // SEEK BACKWARDS                                         │     │
+│  │    triggeredIdsRef.current = new Set();                      │     │
+│  │    for each show <= currentTime: add to set                  │     │
+│  │  } else {                                                    │     │
+│  │    // PLAY FORWARD                                           │     │
+│  │    for each show where prevTime < t <= currentTime:          │     │
+│  │      triggeredIdsRef.current.add(targetId);                  │     │
+│  │  }                                                           │     │
+│  └─────────────────────────────────────────────────────────────┘     │
+│        │                                                             │
+│        ▼                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐     │
+│  │ Compute Active MicroVisuals                                  │     │
+│  │                                                              │     │
+│  │  filter(mv => {                                              │     │
+│  │    if (!triggeredIdsRef.has(mv.id)) return false;            │     │
+│  │    if (isStickyType(mv.type)) return currentTime >= t;       │     │
+│  │    return currentTime >= t && currentTime < t + duration;    │     │
+│  │  })                                                          │     │
+│  └─────────────────────────────────────────────────────────────┘     │
+│        │                                                             │
+│        ▼                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐     │
+│  │ V7MicroVisualOverlay                                         │     │
+│  │   - Renderiza activeMicroVisuals                             │     │
+│  │   - AnimatePresence gerencia enter/exit                      │     │
+│  └─────────────────────────────────────────────────────────────┘     │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                    Phase Change Reset Flow                           │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  currentPhaseIndex changes                                           │
+│        │                                                             │
+│        ▼                                                             │
+│  if (currentPhaseIndex !== prevPhaseIndexRef.current) {              │
+│    triggeredIdsRef.current = new Set();      // limpa shows          │
+│    pauseTriggeredRef.current = new Set();    // rearma pauses        │
+│    setActiveMicroVisuals([]);                // limpa visuals        │
+│    prevPhaseIndexRef.current = currentPhaseIndex;                    │
+│  }                                                                   │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
