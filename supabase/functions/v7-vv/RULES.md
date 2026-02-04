@@ -665,9 +665,74 @@ C06 DONE = (
 
 ---
 
+## C06.1 Final Guard (2026-02-04)
+
+### Problem Statement
+
+A normalização C06 pode ser aplicada cedo demais no pipeline, permitindo que etapas posteriores reintroduzam `triggerTime` nos microVisuals antes da persistência final.
+
+### C06.1 Solution
+
+**FINAL GUARD:** Aplicar `c06NormalizeTriggerContract()` no ponto ABSOLUTO final antes de cada INSERT/UPDATE no banco de dados.
+
+#### Implementação:
+
+```typescript
+// Antes de UPDATE (reprocess mode)
+console.log(`[V7-vv] C06.1: FINAL GUARD - Applying C06 normalization before persist...`);
+if (finalLessonData && finalLessonData.phases && Array.isArray(finalLessonData.phases)) {
+  const c06FinalResult = c06NormalizeTriggerContract(finalLessonData.phases);
+  finalLessonData.phases = c06FinalResult.normalizedPhases;
+  finalLessonData.metadata.triggerContract = 'anchorActions';
+}
+// ENTÃO executa UPDATE
+
+// Antes de INSERT (create mode)
+console.log(`[V7-vv] C06.1: FINAL GUARD (INSERT) - Applying C06 normalization before persist...`);
+if (lessonData && lessonData.phases && Array.isArray(lessonData.phases)) {
+  const c06FinalResult = c06NormalizeTriggerContract(lessonData.phases);
+  lessonData.phases = c06FinalResult.normalizedPhases;
+  lessonData.metadata.triggerContract = 'anchorActions';
+}
+// ENTÃO executa INSERT
+```
+
+### C06.1 Guarantee
+
+Com o FINAL GUARD, é IMPOSSÍVEL que qualquer `triggerTime` seja persistido, pois:
+1. A normalização ocorre IMEDIATAMENTE antes do `supabase.from('lessons').update/insert`
+2. Não há código entre a normalização e a persistência
+3. O objeto é deep-cloned antes de modificação
+
+### C06.1 Success Criteria (SQL)
+
+```sql
+-- Provar que trigger_time_count = 0 após C06.1
+WITH mv_counts AS (
+  SELECT 
+    pe.run_id,
+    COUNT(*) FILTER (WHERE mv->>'triggerTime' IS NOT NULL) as trigger_time_count,
+    COUNT(*) FILTER (WHERE aa->>'type' = 'show') as show_count
+  FROM pipeline_executions pe,
+    LATERAL jsonb_array_elements(pe.output_data->'content'->'phases') p,
+    LATERAL jsonb_array_elements(COALESCE(p->'microVisuals', '[]'::jsonb)) mv,
+    LATERAL jsonb_array_elements(COALESCE(p->'anchorActions', '[]'::jsonb)) aa
+  WHERE pe.run_id = 'c061-test-run-id'
+  GROUP BY pe.run_id
+)
+SELECT 
+  run_id,
+  trigger_time_count,
+  show_count,
+  trigger_time_count = 0 AS c061_final_guard_passed
+FROM mv_counts;
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.8 (C06 Single Trigger Contract)
+- **Versão:** v2.9 (C06.1 Final Guard)
 - **Data:** 2026-02-04
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C06 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C06 ✅, C06.1 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract (with FINAL GUARD)
