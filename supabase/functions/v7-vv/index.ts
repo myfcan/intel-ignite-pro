@@ -994,6 +994,7 @@ interface C05ExecutionRecord {
   input_data: any;
   normalized_input?: any;
   dry_run_result?: any;
+  output_data?: any;  // C05.1: Full output data with content, lesson_id, meta
   output_content_hash?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   error_message?: string;
@@ -1008,6 +1009,9 @@ async function c05InsertExecution(
 ): Promise<{ success: boolean; error?: string }> {
   console.log(`[C05] Inserting execution record: run_id=${record.run_id}, mode=${record.mode}`);
   
+  // C05.1: normalized_input defaults to input_data if not explicitly normalized
+  const normalizedInput = record.normalized_input ?? record.input_data;
+  
   const { error } = await supabase
     .from('pipeline_executions')
     .insert({
@@ -1020,6 +1024,7 @@ async function c05InsertExecution(
       lesson_title: record.lesson_title,
       model: 'v7-vv',
       input_data: record.input_data,
+      normalized_input: normalizedInput, // C05.1: Never NULL when status=completed
       status: 'in_progress',
       started_at: new Date().toISOString(),
     });
@@ -1050,7 +1055,7 @@ async function c05InsertExecution(
     return { success: false, error: error.message };
   }
   
-  console.log(`[C05] ✅ Execution record created`);
+  console.log(`[C05] ✅ Execution record created with normalized_input`);
   return { success: true };
 }
 
@@ -1096,34 +1101,55 @@ async function c05CompleteDryRun(
 
 /**
  * C05: Marca execução como completed com hash do output
+ * C05.1: Persiste output_data REAL com content, lesson_id e meta
  */
 async function c05CompleteExecution(
   supabase: any,
   runId: string,
   lessonId: string,
-  outputContent: any
+  outputContent: any,
+  meta?: { phasesCount?: number; anchorsCount?: number; audioDuration?: number }
 ): Promise<void> {
   console.log(`[C05] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // Compute SHA-256 of output content
-  const outputHash = await computeSHA256(JSON.stringify(outputContent));
+  // C05.1: Build full output_data object
+  const outputData = {
+    content: outputContent,
+    lesson_id: lessonId,
+    meta: meta ?? {
+      phasesCount: outputContent?.phases?.length ?? 0,
+      anchorsCount: outputContent?.phases?.reduce((acc: number, p: any) => 
+        acc + (p.anchorActions?.length ?? 0), 0) ?? 0,
+      audioDuration: outputContent?.audio?.mainAudio?.duration ?? 
+                     outputContent?.metadata?.totalDuration ?? 0
+    }
+  };
+  
+  // C05.1: Compute SHA-256 from output_data.content (canonical JSON stringify)
+  const contentForHash = JSON.stringify(outputData.content);
+  const outputHash = await computeSHA256(contentForHash);
   
   await supabase
     .from('pipeline_executions')
     .update({
       lesson_id: lessonId,
-      output_content_hash: outputHash,
+      output_data: outputData, // C05.1: Full output object
+      output_content_hash: outputHash, // C05.1: Hash derived from output_data.content
       status: 'completed',
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('run_id', runId);
   
-  console.log(`[C05] ✅ Execution completed. output_content_hash=${outputHash.substring(0, 16)}...`);
+  console.log(`[C05.1] ✅ Execution completed.`);
+  console.log(`[C05.1]   output_data.content.phases: ${outputData.meta.phasesCount}`);
+  console.log(`[C05.1]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
+  console.log(`[C05.1]   output_content_hash: ${outputHash.substring(0, 16)}...`);
 }
 
 /**
  * C05: Marca execução como failed
+ * C05.1: Garante normalized_input não NULL no fallback insert
  */
 async function c05FailExecution(
   supabase: any,
@@ -1159,6 +1185,7 @@ async function c05FailExecution(
         lesson_title: inputData.title || 'unknown',
         model: 'v7-vv',
         input_data: inputData,
+        normalized_input: inputData, // C05.1: Never NULL
         status: 'failed',
         error_message: errorMessage,
         completed_at: new Date().toISOString(),
