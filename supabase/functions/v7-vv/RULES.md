@@ -750,6 +750,7 @@ Ordena recursivamente todas as chaves de objetos alfabeticamente antes de serial
 - Arrays: preserva ordem dos elementos
 - Objetos: ordena chaves alfabeticamente
 - Primitivos: JSON.stringify padrão
+- **CRITICAL (C05.3):** Exclui chaves com valor `null` ou `undefined` - PostgreSQL JSONB não armazena essas chaves
 
 ### Garantias
 
@@ -777,9 +778,92 @@ WHERE pe.run_id = 'YOUR_RUN_ID';
 
 ---
 
+## C05.3: Hash Canonical Final (2026-02-04)
+
+### Problem Statement
+
+Hash calculado antes de construir `output_data` pode divergir do hash verificado via SQL porque:
+1. O objeto `outputContent` pode ser modificado após hash ser calculado
+2. Referências JavaScript podem causar mutação indesejada
+3. O hash deve corresponder a `output_data->'content'` (não ao objeto original)
+
+### C05.3 Solution
+
+**INVARIANT:** Hash DEVE ser calculado a partir de `output_data.content` APÓS construir o objeto `output_data` completo.
+
+#### Implementação Corrigida:
+
+```typescript
+async function c05CompleteExecution(supabase, runId, lessonId, outputContent, meta) {
+  // C05.3 STEP 1: Construir output_data PRIMEIRO (antes do hash)
+  const outputData = {
+    content: outputContent,
+    lesson_id: lessonId,
+    meta: { ... }
+  };
+  
+  // C05.3 STEP 2: Calcular hash a partir de output_data.content (NÃO outputContent)
+  const contentForHash = canonicalStringify(outputData.content);
+  const outputHash = await computeSHA256(contentForHash);
+  
+  // C05.3 STEP 3: Persistir output_data + hash
+  await supabase.from('pipeline_executions').update({
+    output_data: outputData,
+    output_content_hash: outputHash,
+    status: 'completed'
+  }).eq('run_id', runId);
+}
+```
+
+### C05.3 Garantias
+
+1. **Objeto Imutável:** Hash calculado do `output_data.content` (referência final)
+2. **Paridade Total:** `canonicalStringify(output_data.content)` === `canonical_jsonb_string(output_data->'content')`
+3. **Debugging:** Log inclui `canonical content start` para verificação visual
+4. **Hash Completo:** Log inclui hash completo (64 chars) para comparação
+
+### C05.3 Success Criteria (SQL)
+
+```sql
+-- Query completa de validação C05.3
+SELECT 
+  run_id,
+  -- C06.1: Contract proof
+  (
+    SELECT COUNT(*)
+    FROM jsonb_array_elements(output_data->'content'->'phases') AS phase,
+         jsonb_array_elements(phase->'microVisuals') AS mv
+    WHERE mv ? 'triggerTime'
+  ) AS trigger_time_count,
+  -- Metadata proof
+  output_data->'content'->'metadata'->>'triggerContract' AS trigger_contract,
+  output_data->'meta'->>'hashAlgorithm' AS hash_algorithm,
+  output_data->'meta'->>'hashComputedAfterGuards' AS hash_computed_after_guards,
+  -- C05.3: Hash match proof
+  output_content_hash AS stored_hash,
+  encode(extensions.digest(convert_to(public.canonical_jsonb_string(output_data->'content'),'utf8'),'sha256'),'hex') AS computed_hash,
+  (output_content_hash = encode(extensions.digest(convert_to(public.canonical_jsonb_string(output_data->'content'),'utf8'),'sha256'),'hex')) AS hash_match
+FROM pipeline_executions
+WHERE run_id = 'YOUR_RUN_ID';
+```
+
+### C05.3 Done Criteria
+
+```
+C05.3 DONE = (
+  trigger_time_count = 0 AND
+  trigger_contract = 'anchorActions' AND
+  hash_algorithm = 'canonical_jsonb_string+sha256' AND
+  hash_computed_after_guards = 'true' AND
+  hash_match = true
+)
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.10 (C05.2 Hash Integrity + C06.1 Final Guard)
+- **Versão:** v2.11 (C05.3 Hash Canonical Final)
 - **Data:** 2026-02-04
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C05.2 ✅, C06 ✅, C06.1 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract (with FINAL GUARD), canonicalStringify, computeSHA256
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C05.2 ✅, C05.3 ✅, C06 ✅, C06.1 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution (C05.3), c05FailExecution, c06NormalizeTriggerContract (with FINAL GUARD), canonicalStringify, computeSHA256
