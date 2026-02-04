@@ -566,9 +566,108 @@ C05 DONE = (
 
 ---
 
+## C06 Single Trigger Contract (2026-02-04)
+
+### Problem Statement
+
+Lições podem ter dois mecanismos de timing conflitantes:
+- `microVisuals[].triggerTime` (legado)
+- `anchorActions[].keywordTime` (canônico)
+
+Isso causa ambiguidade: qual fonte o Renderer deve usar?
+
+### C06 Solution
+
+**Contrato Único:** `anchorActions + keywordTime` é a fonte canônica.
+
+#### Normalização antes de persistir:
+1. Para cada `microVisual` com `triggerTime`:
+   - Se não existe `anchorAction type='show'` para esse microVisual, criar
+   - Remover campo `triggerTime` do objeto final
+
+2. Todo microVisual DEVE ter um anchorAction correspondente com:
+```typescript
+anchorAction = {
+  id: `show-${microVisual.id}`,
+  type: 'show',
+  keywordTime: triggerTime,  // valor migrado
+  targetId: microVisual.id,
+  phaseId: phase.id
+}
+```
+
+### C06 Metrics (diff_summary.c06)
+
+```json
+{
+  "c06": {
+    "triggerContractBefore": {
+      "hasTriggerTime": true,
+      "hasShowActions": true,
+      "triggerTimeCount": 15,
+      "showActionCount": 5
+    },
+    "triggerContractAfter": {
+      "hasTriggerTime": false,
+      "hasShowActions": true,
+      "triggerTimeCount": 0,
+      "showActionCount": 15
+    },
+    "removedTriggerTimeCount": 15,
+    "showActionsCreated": 10
+  }
+}
+```
+
+### C06 Success Criteria (SQL)
+
+```sql
+-- Query 1: Prova do contrato (triggerTime = false)
+SELECT 
+  run_id,
+  (output_data->'content'->'phases'->0->'microVisuals'->0->>'triggerTime') IS NULL AS first_mv_no_triggertime,
+  (SELECT COUNT(*) FROM jsonb_array_elements(output_data->'content'->'phases') p,
+          jsonb_array_elements(p->'microVisuals') mv 
+   WHERE mv->>'triggerTime' IS NOT NULL) = 0 AS has_triggertime_false,
+  (SELECT COUNT(*) FROM jsonb_array_elements(output_data->'content'->'phases') p,
+          jsonb_array_elements(p->'anchorActions') aa 
+   WHERE aa->>'type' = 'show') > 0 AS has_show_actions
+FROM pipeline_executions
+WHERE run_id = 'c06-test-run-id';
+
+-- Query 2: Prova meta.triggerContract
+SELECT 
+  run_id,
+  output_data->'content'->'metadata'->>'triggerContract' = 'anchorActions' AS meta_trigger_contract_valid
+FROM pipeline_executions
+WHERE run_id = 'c06-test-run-id';
+
+-- Query 3: Prova hash_match (C05.2)
+SELECT 
+  run_id,
+  output_content_hash AS stored_hash,
+  encode(extensions.digest(canonical_jsonb_string(output_data->'content')::bytea, 'sha256'), 'hex') AS computed_hash,
+  output_content_hash = encode(extensions.digest(canonical_jsonb_string(output_data->'content')::bytea, 'sha256'), 'hex') AS hash_match
+FROM pipeline_executions
+WHERE run_id = 'c06-test-run-id';
+```
+
+### C06 Success Criteria
+
+```
+C06 DONE = (
+  has_triggertime_false = true AND
+  has_show_actions = true AND
+  meta.triggerContract = 'anchorActions' AND
+  hash_match = true (C05.2)
+)
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.7 (C05 Input→Output Traceability)
+- **Versão:** v2.8 (C06 Single Trigger Contract)
 - **Data:** 2026-02-04
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C06 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract
