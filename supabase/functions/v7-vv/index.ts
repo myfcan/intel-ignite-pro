@@ -3490,14 +3490,25 @@ interface C07Stats {
  * @param phases - Array de fases do content
  * @returns Fases com pauses garantidos + estatísticas
  */
+/**
+ * C07.1 - Pause Early Contract
+ * ==============================
+ * Garante que fases interativas tenham pauseAction NO COMEÇO da fase.
+ * 
+ * Regra C07.1:
+ * - pauseTime = min(phase.startTime + 0.3, phase.endTime - 0.2)
+ * - Se pauseTime <= startTime: pauseTime = startTime + 0.15
+ * - Se pauseTime >= endTime: NÃO inserir (erro de fase muito curta)
+ * - Se já existe pause mas está "tarde": CORRIGIR para early
+ */
 function c07EnsurePauseForInteractivePhases(
   phases: any[]
 ): {
   updatedPhases: any[];
   c07Stats: C07Stats;
 } {
-  console.log('[C07] c07EnsurePauseForInteractivePhases: Starting...');
-  console.log(`[C07] Processing ${phases.length} phases`);
+  console.log('[C07.1] c07EnsurePauseForInteractivePhases: Starting (Pause Early Contract)...');
+  console.log(`[C07.1] Processing ${phases.length} phases`);
   
   const c07Stats: C07Stats = {
     interactivePhases: 0,
@@ -3506,6 +3517,10 @@ function c07EnsurePauseForInteractivePhases(
     pausesInserted: 0,
     details: []
   };
+  
+  // Extended stats for C07.1
+  let pausesCorrected = 0;
+  let phasesTooShort = 0;
   
   // Tipos de fase que são interativas por natureza
   const INTERACTIVE_PHASE_TYPES = ['interaction', 'playground', 'quiz'];
@@ -3530,52 +3545,96 @@ function c07EnsurePauseForInteractivePhases(
       phase.anchorActions = [];
     }
     
-    // Verificar se já existe um pause action
-    const hasPauseAction = phase.anchorActions.some(
+    const startTime = phase.startTime ?? 0;
+    const endTime = phase.endTime ?? startTime + 1;
+    const phaseDuration = endTime - startTime;
+    
+    // C07.1 Pause Early Calculation
+    // pauseTime = min(startTime + 0.3, endTime - 0.2)
+    let targetPauseTime = Math.min(startTime + 0.3, endTime - 0.2);
+    
+    // Safety: Se pauseTime <= startTime, usar startTime + 0.15
+    if (targetPauseTime <= startTime) {
+      targetPauseTime = startTime + 0.15;
+    }
+    
+    // Safety: Se pauseTime >= endTime, fase é muito curta - não inserir
+    if (targetPauseTime >= endTime) {
+      console.error(`[C07.1] ERROR: Phase "${phase.id}" is too short for pause! duration=${phaseDuration.toFixed(3)}s (start=${startTime}, end=${endTime})`);
+      phasesTooShort++;
+      continue;
+    }
+    
+    // Encontrar pause existente
+    const existingPauseIndex = phase.anchorActions.findIndex(
       (aa: any) => aa.type === 'pause'
     );
+    const existingPause = existingPauseIndex >= 0 ? phase.anchorActions[existingPauseIndex] : null;
     
     const detail: C07Stats['details'][0] = {
       phaseId: phase.id,
       phaseType: phase.type,
-      hadPause: hasPauseAction,
+      hadPause: existingPause !== null,
       pauseInserted: false,
       insertedPauseKeywordTime: null
     };
     
-    if (hasPauseAction) {
-      c07Stats.phasesWithPause++;
-      console.log(`[C07] Phase "${phase.id}" (${phase.type}): Already has pause action ✓`);
-    } else {
-      c07Stats.phasesWithoutPause++;
+    if (existingPause) {
+      const existingPauseTime = existingPause.keywordTime ?? existingPause.timestamp ?? 0;
+      const isEarly = existingPauseTime <= startTime + 0.5;
+      const isTooCloseToEnd = existingPauseTime >= endTime - 0.15;
       
-      // Inserir pause action automático
-      // Usar startTime + 0.05s para garantir que o pause dispare logo após entrar na fase
-      const pauseKeywordTime = (phase.startTime ?? 0) + 0.05;
+      if (isEarly && !isTooCloseToEnd) {
+        // Pause existente está OK - manter
+        c07Stats.phasesWithPause++;
+        console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is EARLY ✓`);
+      } else {
+        // Pause existente está TARDE - CORRIGIR
+        console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is TOO LATE! Correcting to ${targetPauseTime.toFixed(3)}s`);
+        
+        // Atualizar o pause existente
+        phase.anchorActions[existingPauseIndex] = {
+          ...existingPause,
+          keywordTime: targetPauseTime,
+          timestamp: targetPauseTime,
+          c07Corrected: true,
+          c07OriginalTime: existingPauseTime,
+          keyword: 'early' // Keyword genérica já que estamos forçando early
+        };
+        
+        pausesCorrected++;
+        c07Stats.phasesWithPause++;
+        detail.pauseInserted = true;
+        detail.insertedPauseKeywordTime = targetPauseTime;
+      }
+    } else {
+      // Não existe pause - inserir novo
+      c07Stats.phasesWithoutPause++;
       
       const autoPauseAction = {
         id: `pause-${phase.id}-c07-auto`,
-        keyword: 'auto',
-        keywordTime: pauseKeywordTime,
+        keyword: 'early',
+        keywordTime: targetPauseTime,
+        timestamp: targetPauseTime,
         type: 'pause',
         phaseId: phase.id,
-        c07Generated: true // Flag para identificar pauses gerados automaticamente
+        c07Generated: true
       };
       
       phase.anchorActions.push(autoPauseAction);
       c07Stats.pausesInserted++;
       
       detail.pauseInserted = true;
-      detail.insertedPauseKeywordTime = pauseKeywordTime;
+      detail.insertedPauseKeywordTime = targetPauseTime;
       
-      console.log(`[C07] Phase "${phase.id}" (${phase.type}): Inserted auto-pause @ ${pauseKeywordTime.toFixed(3)}s`);
+      console.log(`[C07.1] Phase "${phase.id}" (${phase.type}): Inserted auto-pause @ ${targetPauseTime.toFixed(3)}s (start=${startTime.toFixed(3)}, end=${endTime.toFixed(3)})`);
     }
     
     c07Stats.details.push(detail);
   }
   
-  console.log(`[C07] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}`);
-  console.log('[C07] c07EnsurePauseForInteractivePhases: Complete');
+  console.log(`[C07.1] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}, corrected=${pausesCorrected}, tooShort=${phasesTooShort}`);
+  console.log('[C07.1] c07EnsurePauseForInteractivePhases: Complete');
   
   return {
     updatedPhases,
