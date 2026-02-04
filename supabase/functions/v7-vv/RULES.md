@@ -730,9 +730,56 @@ FROM mv_counts;
 
 ---
 
+## C05.2: Hash Integrity (Canonical Algorithm)
+
+O hash é calculado APÓS todas as normalizações (C06.1 FINAL GUARD) usando algoritmo verificável via SQL.
+
+### Algoritmo
+
+```
+JavaScript (Edge Function):
+  hash = SHA-256(canonicalStringify(content))
+
+PostgreSQL (Verificação):
+  hash = encode(digest(convert_to(canonical_jsonb_string(content),'utf8'),'sha256'),'hex')
+```
+
+### canonicalStringify
+
+Ordena recursivamente todas as chaves de objetos alfabeticamente antes de serializar:
+- Arrays: preserva ordem dos elementos
+- Objetos: ordena chaves alfabeticamente
+- Primitivos: JSON.stringify padrão
+
+### Garantias
+
+1. Hash é calculado a partir do objeto `persistedContent` - o EXATO objeto salvo no banco
+2. A função `canonicalStringify` (JS) produz output idêntico à função `canonical_jsonb_string` (SQL)
+3. `output_data.meta` inclui:
+   - `hashAlgorithm: 'canonical_jsonb_string+sha256'`
+   - `hashComputedAfterGuards: true`
+   - `triggerContract: 'anchorActions'`
+
+### C05.2 Success Criteria (SQL)
+
+```sql
+-- Provar hash_match = true
+SELECT 
+  pe.run_id,
+  pe.output_content_hash as stored_hash,
+  encode(digest(convert_to(canonical_jsonb_string(pe.output_data->'content'),'utf8'),'sha256'),'hex') as computed_hash,
+  pe.output_content_hash = encode(digest(convert_to(canonical_jsonb_string(pe.output_data->'content'),'utf8'),'sha256'),'hex') AS hash_match,
+  pe.output_data->'meta'->>'hashAlgorithm' as hash_algorithm,
+  pe.output_data->'meta'->>'hashComputedAfterGuards' as computed_after_guards
+FROM pipeline_executions pe
+WHERE pe.run_id = 'YOUR_RUN_ID';
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.9 (C06.1 Final Guard)
+- **Versão:** v2.10 (C05.2 Hash Integrity + C06.1 Final Guard)
 - **Data:** 2026-02-04
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C06 ✅, C06.1 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract (with FINAL GUARD)
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅, C05.2 ✅, C06 ✅, C06.1 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution, c06NormalizeTriggerContract (with FINAL GUARD), canonicalStringify, computeSHA256
