@@ -4994,7 +4994,36 @@ Deno.serve(async (req) => {
           finalLessonData = lessonData;
         }
         
-        // 3. Executar UPDATE na lição
+        // =====================================================================
+        // 3. C06.1 FINAL GUARD: Normalização ABSOLUTA antes de persistir
+        // Esta é a última linha de defesa para garantir triggerTime = 0
+        // =====================================================================
+        console.log(`[V7-vv] C06.1: FINAL GUARD - Applying C06 normalization before persist...`);
+        
+        // Aplicar C06 nas phases do finalLessonData
+        if (finalLessonData && finalLessonData.phases && Array.isArray(finalLessonData.phases)) {
+          const c06FinalResult = c06NormalizeTriggerContract(finalLessonData.phases);
+          finalLessonData.phases = c06FinalResult.normalizedPhases;
+          
+          // Garantir metadata com triggerContract
+          if (!finalLessonData.metadata) {
+            finalLessonData.metadata = {};
+          }
+          finalLessonData.metadata.triggerContract = 'anchorActions';
+          
+          console.log(`[V7-vv] C06.1: FINAL GUARD applied - removed ${c06FinalResult.c06Stats.removedTriggerTimeCount} triggerTime`);
+          
+          // Atualizar stats para o diff_summary
+          if (!c06Stats) {
+            c06Stats = c06FinalResult.c06Stats;
+            c06Diff = c06FinalResult.c06Diff;
+          } else {
+            // Merge stats se já existirem
+            c06Stats.removedTriggerTimeCount += c06FinalResult.c06Stats.removedTriggerTimeCount;
+          }
+        }
+        
+        // 3.1. Executar UPDATE na lição
         console.log(`[V7-vv] AUDIT: Updating lesson content...`);
         const { error: updateError } = await supabase
           .from('lessons')
@@ -5125,6 +5154,25 @@ Deno.serve(async (req) => {
       console.log(`[V7-vv] ✅ Lesson UPDATED with audit: ${lessonId}`);
     } else {
       // INSERT normal (nova lição)
+      
+      // =====================================================================
+      // C06.1 FINAL GUARD para INSERT: Normalização ABSOLUTA antes de persistir
+      // =====================================================================
+      console.log(`[V7-vv] C06.1: FINAL GUARD (INSERT) - Applying C06 normalization before persist...`);
+      
+      if (lessonData && lessonData.phases && Array.isArray(lessonData.phases)) {
+        const c06FinalResult = c06NormalizeTriggerContract(lessonData.phases);
+        lessonData.phases = c06FinalResult.normalizedPhases;
+        
+        // Garantir metadata com triggerContract
+        if (!lessonData.metadata) {
+          lessonData.metadata = {} as any;
+        }
+        lessonData.metadata.triggerContract = 'anchorActions';
+        
+        console.log(`[V7-vv] C06.1: FINAL GUARD (INSERT) applied - removed ${c06FinalResult.c06Stats.removedTriggerTimeCount} triggerTime`);
+      }
+      
       const { data: lesson, error: lessonError } = await supabase
         .from('lessons')
         .insert({
