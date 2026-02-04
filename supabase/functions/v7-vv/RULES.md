@@ -470,9 +470,105 @@ C04 DONE = (
 
 ---
 
+## C05 Input→Output Traceability (2026-02-04)
+
+### Problem Statement
+
+Pipeline executions need full traceability for forensic debugging:
+- What INPUT was received?
+- What NORMALIZATION was applied?
+- What OUTPUT was produced?
+- How to prove mathematical consistency between input and output?
+
+### C05 Solution
+
+Every pipeline execution (create, reprocess, dry_run) is recorded in `pipeline_executions` with:
+
+| Field | Description |
+|-------|-------------|
+| `run_id` | UUID for idempotency (from client or auto-generated) |
+| `pipeline_version` | Current pipeline version (e.g., `v7-vv-1.0.0-c05`) |
+| `commit_hash` | Build identifier for reproducibility |
+| `mode` | `create`, `reprocess`, or `dry_run` |
+| `input_data` | Original JSON payload received |
+| `normalized_input` | Input after validation/normalization |
+| `dry_run_result` | Errors/warnings from dry-run (when mode=dry_run) |
+| `output_content_hash` | SHA-256 of final `lessons.content` |
+| `status` | `pending`, `in_progress`, `completed`, `failed` |
+
+### C05 Execution Flow
+
+1. **Before validateInput:** INSERT with `status=in_progress` and `input_data`
+2. **After normalization:** UPDATE `normalized_input`
+3. **For dry-run:** UPDATE `dry_run_result` + `status=completed`
+4. **After lesson persist:** Compute SHA-256, UPDATE `output_content_hash` + `status=completed`
+5. **On error:** UPDATE `status=failed` + `error_message` (with upsert fallback)
+
+### C05 Idempotency
+
+| Scenario | HTTP Status | Response |
+|----------|-------------|----------|
+| `run_id` already completed | 200 | Success (idempotent) |
+| `run_id` in progress | 409 | Conflict (wait or use new run_id) |
+| `run_id` previously failed | 400 | Bad Request (use new run_id) |
+
+### C05 Verification Queries
+
+#### Query 1: Compare input vs output for a lesson
+```sql
+SELECT 
+  run_id,
+  pipeline_version,
+  mode,
+  input_data->'title' AS input_title,
+  output_content_hash,
+  status,
+  completed_at
+FROM pipeline_executions
+WHERE lesson_id = 'lesson-uuid'
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+#### Query 2: Find failed executions with details
+```sql
+SELECT 
+  run_id,
+  lesson_title,
+  mode,
+  error_message,
+  dry_run_result->'summary' AS dry_run_summary,
+  created_at
+FROM pipeline_executions
+WHERE status = 'failed'
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+### C05 Success Criteria
+
+```
+C05 DONE = (
+  FOR create/reprocess: 
+    EXISTS row in pipeline_executions with
+      status = 'completed' AND
+      run_id = client_run_id AND
+      input_data IS NOT NULL AND
+      pipeline_version IS NOT NULL AND
+      output_content_hash = SHA256(lessons.content)
+  
+  FOR dry_run with invalid input:
+    EXISTS row with
+      status = 'completed' AND
+      dry_run_result.canProcess = false
+)
+```
+
+---
+
 ## Versão e Data
 
-- **Versão:** v2.6 (C04.1 Report Hardening)
-- **Data:** 2026-02-03
-- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅
-- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline
+- **Versão:** v2.7 (C05 Input→Output Traceability)
+- **Data:** 2026-02-04
+- **Status:** C01 ✅, C02 ✅, C03 ✅, C03.1 ✅, C04 ✅, C04.1 ✅, C05 ✅
+- **Functions:** selectAnchorOccurrence, recalculateAnchorKeywordTimes, recalculatePhaseTimings, normalizePhaseTimeline, c05InsertExecution, c05CompleteExecution, c05FailExecution

@@ -387,19 +387,26 @@ export type Database = {
       }
       pipeline_executions: {
         Row: {
+          commit_hash: string | null
           completed_at: string | null
           created_at: string | null
           created_by: string | null
           current_step: number | null
+          dry_run_result: Json | null
           error_message: string | null
           id: string
           input_data: Json
           lesson_id: string | null
           lesson_title: string
           logs: Json | null
+          mode: string | null
           model: string
+          normalized_input: Json | null
           order_index: number | null
+          output_content_hash: string | null
           output_data: Json | null
+          pipeline_version: string | null
+          run_id: string | null
           started_at: string | null
           status: string
           step_progress: Json | null
@@ -409,19 +416,26 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          commit_hash?: string | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
           current_step?: number | null
+          dry_run_result?: Json | null
           error_message?: string | null
           id?: string
           input_data: Json
           lesson_id?: string | null
           lesson_title: string
           logs?: Json | null
+          mode?: string | null
           model: string
+          normalized_input?: Json | null
           order_index?: number | null
+          output_content_hash?: string | null
           output_data?: Json | null
+          pipeline_version?: string | null
+          run_id?: string | null
           started_at?: string | null
           status?: string
           step_progress?: Json | null
@@ -431,19 +445,26 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          commit_hash?: string | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
           current_step?: number | null
+          dry_run_result?: Json | null
           error_message?: string | null
           id?: string
           input_data?: Json
           lesson_id?: string | null
           lesson_title?: string
           logs?: Json | null
+          mode?: string | null
           model?: string
+          normalized_input?: Json | null
           order_index?: number | null
+          output_content_hash?: string | null
           output_data?: Json | null
+          pipeline_version?: string | null
+          run_id?: string | null
           started_at?: string | null
           status?: string
           step_progress?: Json | null
