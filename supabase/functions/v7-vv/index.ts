@@ -1116,24 +1116,62 @@ async function c05CompleteDryRun(
  *   PostgreSQL stores: {"a": 1, "c": 3}  (b removed)
  *   This function outputs: {"a":1,"c":3}  (matches PostgreSQL)
  */
+/**
+ * C05.3: Serialização canônica para hash - DEVE espelhar PostgreSQL canonical_jsonb_string()
+ * 
+ * REGRAS CRÍTICAS PARA PARIDADE JSONB:
+ * 1. Ordenar chaves alfabeticamente em TODOS os níveis (recursivo)
+ * 2. Não incluir chaves com valores null/undefined (JSONB não armazena)
+ * 3. Números: usar toString() para evitar diferenças de precisão (1.0 vs 1)
+ * 4. Strings: usar JSON.stringify para escape correto de caracteres especiais
+ * 5. Booleanos: true/false literais
+ * 
+ * NOTA: JSONB no PostgreSQL normaliza números (1.0 → 1), então fazemos o mesmo
+ */
 function canonicalStringify(obj: any): string {
+  // Null ou undefined → 'null' (JSONB retorna 'null' para SQL NULL ou json null)
   if (obj === null || obj === undefined) return 'null';
-  if (typeof obj !== 'object') return JSON.stringify(obj);
-  if (Array.isArray(obj)) {
-    return '[' + obj.map(item => canonicalStringify(item)).join(',') + ']';
+  
+  // Booleanos → 'true' ou 'false' (igual ao PostgreSQL)
+  if (typeof obj === 'boolean') return obj ? 'true' : 'false';
+  
+  // Números → Converter para string da mesma forma que PostgreSQL JSONB
+  // JSONB normaliza números: 1.0 vira 1, mas 1.5 continua 1.5
+  // JSON.stringify faz o mesmo em JavaScript
+  if (typeof obj === 'number') {
+    // Verificar se é NaN ou Infinity (não são válidos em JSON)
+    if (!Number.isFinite(obj)) return 'null';
+    // Usar a representação padrão do JavaScript (igual ao PostgreSQL JSONB)
+    return JSON.stringify(obj);
   }
-  // C05.3: Sort keys alphabetically AND filter out null/undefined values
-  // This matches PostgreSQL JSONB behavior which doesn't store null-valued keys
+  
+  // Strings → JSON.stringify para escape correto de aspas, barras, etc.
+  if (typeof obj === 'string') return JSON.stringify(obj);
+  
+  // Arrays → Recursivamente serializar cada elemento
+  if (Array.isArray(obj)) {
+    const parts = obj.map(item => canonicalStringify(item));
+    return '[' + parts.join(',') + ']';
+  }
+  
+  // Objetos → Ordenar chaves alfabeticamente e filtrar nulls
+  // C05.3: CRÍTICO - ordenar TODAS as chaves, filtrar null/undefined
   const sortedKeys = Object.keys(obj).sort();
   const pairs: string[] = [];
+  
   for (const key of sortedKeys) {
     const value = obj[key];
-    // Skip null and undefined values - PostgreSQL JSONB doesn't store these
+    
+    // JSONB não armazena chaves com valor null ou undefined
+    // Isso é CRÍTICO para paridade - se incluirmos, o hash vai divergir
     if (value === null || value === undefined) {
       continue;
     }
+    
+    // Chave é sempre string, usar JSON.stringify para escape
     pairs.push(JSON.stringify(key) + ':' + canonicalStringify(value));
   }
+  
   return '{' + pairs.join(',') + '}';
 }
 
