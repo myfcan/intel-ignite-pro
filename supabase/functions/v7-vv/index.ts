@@ -19,6 +19,11 @@
  * - Added pipeline_executions traceability (input→output)
  * - run_id idempotency for all execution modes
  * - SHA-256 output_content_hash for verification
+ *
+ * C06 CHANGELOG:
+ * - Single Trigger Contract: anchorActions + keywordTime is canonical
+ * - triggerTime removed from microVisuals before persist
+ * - show actions created for all microVisuals with keywordTime
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
@@ -26,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.0.0-c05';
-const COMMIT_HASH = 'c05-traceability-2024';
+const PIPELINE_VERSION = 'v7-vv-1.0.0-c06';
+const COMMIT_HASH = 'c06-single-trigger-contract-2024';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -1314,6 +1319,7 @@ interface LessonData {
     hasInteractivePhases: boolean;   // Bug 11: flags
     hasPlayground: boolean;          // Bug 11: flags
     hasPostLessonExercises: boolean; // Bug 11: flags
+    triggerContract?: 'anchorActions'; // C06: Single Trigger Contract
   };
   phases: Phase[];
   audio: {
@@ -3126,6 +3132,231 @@ function normalizePhaseTimeline(
 }
 
 // ============================================================================
+// C06: SINGLE TRIGGER CONTRACT
+// Normaliza output para usar APENAS anchorActions + keywordTime (canônico)
+// Remove triggerTime de microVisuals, garante show actions para todos
+// ============================================================================
+
+interface C06NormalizationStats {
+  triggerContract: 'anchorActions';
+  removedTriggerTimeCount: number;
+  showActionsCreated: number;
+  showActionsExisting: number;
+  microVisualsProcessed: number;
+  phasesProcessed: number;
+}
+
+interface C06BeforeAfter {
+  hasTriggerTime: boolean;
+  hasShowActions: boolean;
+  triggerTimeCount: number;
+  showActionCount: number;
+}
+
+interface C06DiffSummary {
+  triggerContractBefore: C06BeforeAfter;
+  triggerContractAfter: C06BeforeAfter;
+  removedTriggerTimeCount: number;
+  showActionsCreated: number;
+}
+
+/**
+ * C06: Single Trigger Contract Normalization
+ * 
+ * REGRAS:
+ * 1. anchorActions + keywordTime é a fonte canônica de timing
+ * 2. triggerTime em microVisuals NÃO DEVE ser persistido
+ * 3. Cada microVisual DEVE ter um anchorAction type='show' correspondente
+ * 
+ * PROCESSO:
+ * 1. Analisar estado BEFORE (contagem de triggerTime e showActions)
+ * 2. Para cada microVisual com triggerTime:
+ *    - Se não existe anchorAction type='show' para esse microVisual, criar
+ *    - Remover campo triggerTime do microVisual
+ * 3. Analisar estado AFTER (deve ter hasTriggerTime=false, hasShowActions=true)
+ * 
+ * @param phases - Array de fases do content
+ * @returns Fases normalizadas + estatísticas
+ */
+function c06NormalizeTriggerContract(
+  phases: any[]
+): {
+  normalizedPhases: any[];
+  c06Stats: C06NormalizationStats;
+  c06Diff: C06DiffSummary;
+} {
+  console.log('[C06] c06NormalizeTriggerContract: Starting...');
+  console.log(`[C06] Processing ${phases.length} phases`);
+  
+  // =====================================================================
+  // PASSO 1: Análise BEFORE
+  // =====================================================================
+  let beforeTriggerTimeCount = 0;
+  let beforeShowActionCount = 0;
+  
+  for (const phase of phases) {
+    // Contar microVisuals com triggerTime
+    if (phase.microVisuals && Array.isArray(phase.microVisuals)) {
+      for (const mv of phase.microVisuals) {
+        if (mv.triggerTime !== undefined && mv.triggerTime !== null) {
+          beforeTriggerTimeCount++;
+        }
+      }
+    }
+    
+    // Contar anchorActions type='show'
+    if (phase.anchorActions && Array.isArray(phase.anchorActions)) {
+      for (const aa of phase.anchorActions) {
+        if (aa.type === 'show') {
+          beforeShowActionCount++;
+        }
+      }
+    }
+  }
+  
+  const triggerContractBefore: C06BeforeAfter = {
+    hasTriggerTime: beforeTriggerTimeCount > 0,
+    hasShowActions: beforeShowActionCount > 0,
+    triggerTimeCount: beforeTriggerTimeCount,
+    showActionCount: beforeShowActionCount
+  };
+  
+  console.log(`[C06] BEFORE: triggerTimeCount=${beforeTriggerTimeCount}, showActionCount=${beforeShowActionCount}`);
+  
+  // =====================================================================
+  // PASSO 2: Normalização (deep clone)
+  // =====================================================================
+  const normalizedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
+  
+  let removedTriggerTimeCount = 0;
+  let showActionsCreated = 0;
+  let showActionsExisting = 0;
+  let microVisualsProcessed = 0;
+  let phasesProcessed = 0;
+  
+  for (const phase of normalizedPhases) {
+    if (!phase.microVisuals || !Array.isArray(phase.microVisuals) || phase.microVisuals.length === 0) {
+      continue;
+    }
+    
+    phasesProcessed++;
+    
+    // Garantir que anchorActions existe
+    if (!phase.anchorActions) {
+      phase.anchorActions = [];
+    }
+    
+    // Criar Set de targetIds existentes para evitar duplicatas
+    const existingShowTargets = new Set<string>();
+    for (const aa of phase.anchorActions) {
+      if (aa.type === 'show' && aa.targetId) {
+        existingShowTargets.add(aa.targetId);
+        showActionsExisting++;
+      }
+    }
+    
+    // Processar cada microVisual
+    for (const mv of phase.microVisuals) {
+      microVisualsProcessed++;
+      
+      const mvId = mv.id || `mv-${phase.id}-unknown`;
+      const mvTriggerTime = mv.triggerTime;
+      const mvAnchorText = mv.anchorText || '';
+      
+      // 2.1: Se não existe show action para este microVisual, criar
+      if (!existingShowTargets.has(mvId)) {
+        // Usar keywordTime do triggerTime existente ou null
+        const keywordTime = mvTriggerTime ?? null;
+        
+        const newShowAction = {
+          id: `show-${mvId}`,
+          keyword: mvAnchorText,
+          keywordTime: keywordTime,
+          type: 'show',
+          targetId: mvId,
+          phaseId: phase.id
+        };
+        
+        phase.anchorActions.push(newShowAction);
+        showActionsCreated++;
+        
+        console.log(`[C06] Created show action for "${mvId}" @ ${keywordTime?.toFixed(2) || 'null'}s`);
+      }
+      
+      // 2.2: Remover triggerTime do microVisual
+      if (mv.triggerTime !== undefined) {
+        delete mv.triggerTime;
+        removedTriggerTimeCount++;
+        console.log(`[C06] Removed triggerTime from microVisual "${mvId}"`);
+      }
+    }
+  }
+  
+  // =====================================================================
+  // PASSO 3: Análise AFTER
+  // =====================================================================
+  let afterTriggerTimeCount = 0;
+  let afterShowActionCount = 0;
+  
+  for (const phase of normalizedPhases) {
+    if (phase.microVisuals && Array.isArray(phase.microVisuals)) {
+      for (const mv of phase.microVisuals) {
+        if (mv.triggerTime !== undefined && mv.triggerTime !== null) {
+          afterTriggerTimeCount++;
+        }
+      }
+    }
+    
+    if (phase.anchorActions && Array.isArray(phase.anchorActions)) {
+      for (const aa of phase.anchorActions) {
+        if (aa.type === 'show') {
+          afterShowActionCount++;
+        }
+      }
+    }
+  }
+  
+  const triggerContractAfter: C06BeforeAfter = {
+    hasTriggerTime: afterTriggerTimeCount > 0,
+    hasShowActions: afterShowActionCount > 0,
+    triggerTimeCount: afterTriggerTimeCount,
+    showActionCount: afterShowActionCount
+  };
+  
+  console.log(`[C06] AFTER: triggerTimeCount=${afterTriggerTimeCount}, showActionCount=${afterShowActionCount}`);
+  
+  // Validar resultado esperado
+  if (afterTriggerTimeCount > 0) {
+    console.error(`[C06] ⚠️ VALIDATION FAILED: Still has ${afterTriggerTimeCount} triggerTime fields!`);
+  }
+  
+  const c06Stats: C06NormalizationStats = {
+    triggerContract: 'anchorActions',
+    removedTriggerTimeCount,
+    showActionsCreated,
+    showActionsExisting,
+    microVisualsProcessed,
+    phasesProcessed
+  };
+  
+  const c06Diff: C06DiffSummary = {
+    triggerContractBefore,
+    triggerContractAfter,
+    removedTriggerTimeCount,
+    showActionsCreated
+  };
+  
+  console.log(`[C06] STATS: removed=${removedTriggerTimeCount} triggerTime, created=${showActionsCreated} showActions, existing=${showActionsExisting}`);
+  console.log('[C06] c06NormalizeTriggerContract: Complete');
+  
+  return {
+    normalizedPhases,
+    c06Stats,
+    c06Diff
+  };
+}
+
+// ============================================================================
 // C03: PHASE TIMING CORRECTION
 // Corrige fases com duração negativa/zero durante reprocess
 // ============================================================================
@@ -4465,6 +4696,14 @@ Deno.serve(async (req) => {
         console.log('[V7-vv] Step 4.5: Recalculating word-based timings...');
         calculateWordBasedTimings(phases, mainAudio.wordTimestamps, input.scenes);
       }
+      
+      // =========================================================================
+      // PASSO 4.6: C06 SINGLE TRIGGER CONTRACT - Normalizar antes de build
+      // =========================================================================
+      console.log('[V7-vv] Step 4.6: Applying C06 Single Trigger Contract...');
+      const c06Result = c06NormalizeTriggerContract(phases);
+      phases = c06Result.normalizedPhases;
+      console.log(`[V7-vv] C06: Removed ${c06Result.c06Stats.removedTriggerTimeCount} triggerTime, created ${c06Result.c06Stats.showActionsCreated} show actions`);
     } else {
       console.log('[V7-vv] Step 4: SKIPPED (preserve_structure mode - uses existing phases)');
     }
@@ -4506,6 +4745,8 @@ Deno.serve(async (req) => {
           hasInteractivePhases,                    // Bug 11: flag
           hasPlayground,                           // Bug 11: flag
           hasPostLessonExercises,                  // Bug 11: flag
+          // ✅ C06: Trigger contract metadata
+          triggerContract: 'anchorActions',
         },
         phases,
         audio: {
@@ -4577,6 +4818,8 @@ Deno.serve(async (req) => {
       let c02MultiMatchReport: RecalculatedPhase['multiMatchCases'] = [];
       let c02Stats = { t1: 0, t2: 0, totalAnchors: 0 };
       let c04Stats: C04TimelineStats | null = null;
+      let c06Stats: C06NormalizationStats | null = null;
+      let c06Diff: C06DiffSummary | null = null;
       
       try {
         // 1. Buscar content atual para snapshot
@@ -4695,14 +4938,22 @@ Deno.serve(async (req) => {
             totalAnchors: recalcResult.totalAnchorsRecalculated
           };
           
-          // Preservar estrutura completa com correções C02 + C03 + C04
+          // ✅ C06: Aplicar Single Trigger Contract
+          console.log(`[V7-vv] C06: Applying Single Trigger Contract...`);
+          const c06Result = c06NormalizeTriggerContract(recalcResult.updatedPhases);
+          c06Stats = c06Result.c06Stats;
+          c06Diff = c06Result.c06Diff;
+          console.log(`[V7-vv] C06: Removed ${c06Stats.removedTriggerTimeCount} triggerTime, created ${c06Stats.showActionsCreated} show actions`);
+          
+          // Preservar estrutura completa com correções C02 + C03 + C04 + C06
           finalLessonData = {
             ...oldContent,
-            phases: recalcResult.updatedPhases,
+            phases: c06Result.normalizedPhases, // ← Usar phases normalizadas por C06
             // Atualizar metadata
             metadata: {
               ...oldContent.metadata,
               lastRecalculatedAt: new Date().toISOString(),
+              triggerContract: 'anchorActions', // ✅ C06: Marca contrato
               c02Applied: true,
               c02Stats,
               c03Applied: c03Stats.t3Fixed > 0,  // ✅ C03.1: Só true se houve fix real
@@ -4728,7 +4979,10 @@ Deno.serve(async (req) => {
                 t4GapAfter: c04Stats.t4GapAfter,
                 fixApplied: c04Stats.fixApplied,
                 audioDuration: c04Stats.audioDuration
-              }
+              },
+              // ✅ C06: Stats no metadata
+              c06Applied: c06Stats.removedTriggerTimeCount > 0 || c06Stats.showActionsCreated > 0,
+              c06Stats: c06Stats
             }
           };
           
@@ -4807,7 +5061,10 @@ Deno.serve(async (req) => {
               t4Gap: c04Stats.t4GapAfter
             },
             phaseTimelineChanges: c04Stats.phaseTimelineChanges.slice(0, 10) // Top 10 com reason
-          } : null
+          } : null,
+          // ✅ C06: Single Trigger Contract metrics
+          c06Mode: preserveStructure,
+          c06: preserveStructure && c06Diff ? c06Diff : null
         };
         
         await supabase
