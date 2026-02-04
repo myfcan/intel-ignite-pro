@@ -1208,7 +1208,7 @@ async function c05CompleteExecution(
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // C05.3 STEP 1: Construir output_data PRIMEIRO (antes do hash)
+  // C05.3 STEP 1: Construir output_data
   const outputData = {
     content: outputContent,
     lesson_id: lessonId,
@@ -1218,44 +1218,85 @@ async function c05CompleteExecution(
         acc + (p.anchorActions?.length ?? 0), 0) ?? 0,
       audioDuration: meta?.audioDuration ?? outputContent?.audio?.mainAudio?.duration ?? 
                      outputContent?.metadata?.totalDuration ?? 0,
-      // C06.1: Metadados de contrato
       triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
-      // C05.3: Metadados de hash
       hashAlgorithm: 'canonical_jsonb_string+sha256',
-      hashComputedAfterGuards: true
+      hashComputedAfterGuards: true,
+      hashComputedViaRoundTrip: true // C05.3 FIX: Flag para indicar método de cálculo
     }
   };
   
-  // C05.3 STEP 2: Calcular hash a partir de output_data.content (NÃO outputContent)
-  // Isso garante que o hash seja calculado do EXATO objeto que será persistido
-  const contentForHash = canonicalStringify(outputData.content);
-  const outputHash = await computeSHA256(contentForHash);
+  // C05.3 STEP 2: Persistir output_data PRIMEIRO (sem hash)
+  // O JSONB do PostgreSQL pode aplicar transformações (ex: ordenação, normalização de números)
+  console.log(`[C05.3] Persisting output_data without hash first...`);
   
-  console.log(`[C05.3] Hash computed from output_data.content (canonical length=${contentForHash.length})`);
-  console.log(`[C05.3] Hash prefix: ${outputHash.substring(0, 32)}...`);
-  
-  // C05.3 DEBUG: Log first 100 chars of canonical content for debugging
-  console.log(`[C05.3] Canonical content start: ${contentForHash.substring(0, 100)}...`);
-  
-  // C05.3 STEP 3: Persistir output_data + hash
-  await supabase
+  const { error: persistError } = await supabase
     .from('pipeline_executions')
     .update({
       lesson_id: lessonId,
-      output_data: outputData, // C05.1: Full output object
-      output_content_hash: outputHash, // C05.3: Hash derived from output_data.content
+      output_data: outputData,
       status: 'completed',
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('run_id', runId);
   
-  console.log(`[C05.3] ✅ Execution completed.`);
-  console.log(`[C05.3]   output_data.content.phases: ${outputData.meta.phasesCount}`);
-  console.log(`[C05.3]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
-  console.log(`[C05.3]   output_data.meta.triggerContract: ${outputData.meta.triggerContract}`);
-  console.log(`[C05.3]   output_data.meta.hashAlgorithm: ${outputData.meta.hashAlgorithm}`);
-  console.log(`[C05.3]   output_content_hash: ${outputHash}`);
+  if (persistError) {
+    console.error(`[C05.3] ERROR persisting output_data:`, persistError.message);
+    throw new Error(`C05.3: Failed to persist output_data: ${persistError.message}`);
+  }
+  
+  // C05.3 STEP 3: ROUND-TRIP - Buscar o content do banco para calcular hash
+  // Isso garante que o hash seja calculado sobre EXATAMENTE o que o PostgreSQL armazenou
+  console.log(`[C05.3] Fetching persisted content for hash calculation (round-trip)...`);
+  
+  const { data: persistedRow, error: fetchError } = await supabase
+    .from('pipeline_executions')
+    .select('output_data')
+    .eq('run_id', runId)
+    .single();
+  
+  if (fetchError || !persistedRow) {
+    console.error(`[C05.3] ERROR fetching persisted content:`, fetchError?.message);
+    // Fallback: usar hash do objeto original (pode divergir)
+    console.warn(`[C05.3] FALLBACK: Using hash from original object (may not match SQL verification)`);
+    const fallbackHash = await computeSHA256(canonicalStringify(outputData.content));
+    await supabase
+      .from('pipeline_executions')
+      .update({ output_content_hash: fallbackHash })
+      .eq('run_id', runId);
+    return;
+  }
+  
+  // C05.3 STEP 4: Calcular hash do content EXATO que está no banco
+  const persistedContent = persistedRow.output_data?.content;
+  if (!persistedContent) {
+    console.error(`[C05.3] ERROR: persisted output_data.content is null`);
+    throw new Error('C05.3: Persisted content is null');
+  }
+  
+  const canonicalContent = canonicalStringify(persistedContent);
+  const outputHash = await computeSHA256(canonicalContent);
+  
+  console.log(`[C05.3] Hash computed from PERSISTED content (round-trip)`);
+  console.log(`[C05.3] Canonical length: ${canonicalContent.length}`);
+  console.log(`[C05.3] Hash: ${outputHash}`);
+  
+  // C05.3 STEP 5: Atualizar com o hash calculado
+  const { error: hashError } = await supabase
+    .from('pipeline_executions')
+    .update({ output_content_hash: outputHash })
+    .eq('run_id', runId);
+  
+  if (hashError) {
+    console.error(`[C05.3] ERROR updating hash:`, hashError.message);
+    throw new Error(`C05.3: Failed to update hash: ${hashError.message}`);
+  }
+  
+  console.log(`[C05.3] ✅ Execution completed with round-trip hash.`);
+  console.log(`[C05.3]   phases: ${outputData.meta.phasesCount}`);
+  console.log(`[C05.3]   anchors: ${outputData.meta.anchorsCount}`);
+  console.log(`[C05.3]   triggerContract: ${outputData.meta.triggerContract}`);
+  console.log(`[C05.3]   hash: ${outputHash}`);
 }
 
 /**
