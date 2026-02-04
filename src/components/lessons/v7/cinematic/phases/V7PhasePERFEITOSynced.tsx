@@ -85,9 +85,23 @@ export const V7PhasePERFEITOSynced = ({
   const mountTimeRef = useRef<number>(Date.now());
   const revealIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevTimeRef = useRef<number>(0);
+  const lastPhaseIdRef = useRef<string | null>(null);
   
   // Sound effects
   const { playSound } = useV7SoundEffects();
+
+  // ✅ C07.2: RESET STATE quando fase muda (garante estado determinístico)
+  useEffect(() => {
+    const phaseId = `${word}-${lettersData?.length || 0}`;
+    if (lastPhaseIdRef.current !== phaseId) {
+      console.log(`[REVEAL_STATE] Phase changed: resetting state for "${phaseId}"`);
+      setVisibleCount(0);
+      playedSoundsRef.current.clear();
+      completedRef.current = false;
+      prevTimeRef.current = currentTime;
+      lastPhaseIdRef.current = phaseId;
+    }
+  }, [word, lettersData, currentTime]);
 
   // ✅ V7-v60: Extract letter trigger times from anchorActions
   const letterTriggerTimes = useMemo(() => {
@@ -135,11 +149,28 @@ export const V7PhasePERFEITOSynced = ({
     playSound('reveal');
   }, [showContent, playSound]);
 
-  // ✅ V7-v60: AUDIO-SYNCED REVEAL - Uses crossing detection on anchorActions
+  // ✅ C07.2: AUDIO-SYNCED REVEAL - Uses crossing detection on anchorActions
+  // ROBUSTEZ: Recomputa corretamente ao pausar/seek-back
   useEffect(() => {
     if (!letterTriggerTimes || letterTriggerTimes.length === 0) return;
     
     const prevTime = prevTimeRef.current;
+    
+    // ✅ C07.2: SEEK-BACK DETECTION - Se currentTime < prevTime, recomputar estado
+    if (currentTime < prevTime - 0.5) {
+      // Usuário fez seek-back - recomputar quais letras devem estar visíveis
+      const newVisibleCount = letterTriggerTimes.filter(t => currentTime >= t).length;
+      console.log(`[REVEAL_RECOMPUTE] Seek-back detected: ${prevTime.toFixed(2)}s → ${currentTime.toFixed(2)}s, visible letters: ${newVisibleCount}`);
+      setVisibleCount(newVisibleCount);
+      prevTimeRef.current = currentTime;
+      return;
+    }
+    
+    // ✅ C07.2: PAUSE DETECTION - Se não está tocando, não avançar
+    if (!isPlaying) {
+      prevTimeRef.current = currentTime;
+      return;
+    }
     
     // Check each letter's trigger time for crossing
     letterTriggerTimes.forEach((triggerTime, index) => {
@@ -160,7 +191,7 @@ export const V7PhasePERFEITOSynced = ({
     });
     
     prevTimeRef.current = currentTime;
-  }, [currentTime, letterTriggerTimes, visibleCount, playSound, PERFEITO_MEANINGS]);
+  }, [currentTime, isPlaying, letterTriggerTimes, visibleCount, playSound, PERFEITO_MEANINGS]);
 
   // ✅ V7-v60: FALLBACK TIMER - Only used when no anchorActions available
   useEffect(() => {

@@ -492,14 +492,24 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
-  // ✅ C07.1 LEGACY FALLBACK: For interactive phases without pause action in JSON
+  // ✅ C07.2 LEGACY FALLBACK: For interactive phases without pause action in JSON
   // NÃO é "auto-pause 300ms" - é fallback para JSON legado que não tem pause
   // CONDIÇÃO: (interaction && pause_actions_count==0)
   // AÇÃO: Habilitar opções IMEDIATAMENTE e logar [LEGACY_FALLBACK_USED]
+  // NOTA: CTA não precisa de fallback - botão é sempre clicável
   useEffect(() => {
     if (!currentPhase) return;
     
-    const interactivePhaseTypes = ['interaction', 'playground', 'quiz', 'cta'];
+    // Detectar CTA pela presença de scenes com ctaOptions (CTA é sempre clicável)
+    const hasCTAContent = currentPhase.scenes?.some((s: any) => 
+      s.content?.ctaOptions || s.content?.isCTA
+    );
+    if (hasCTAContent) {
+      console.log(`[C07.2] Phase "${currentPhase.id}" has CTA content - button always clickable, no pause needed`);
+      return;
+    }
+    
+    const interactivePhaseTypes = ['interaction', 'playground', 'quiz'];
     const isInteractive = interactivePhaseTypes.includes(currentPhase.type) || 
                           currentPhase.interaction !== undefined;
     
@@ -512,7 +522,7 @@ export const V7PhasePlayer = ({
     
     // If we already have a pause action from pipeline, skip - anchor system will handle it
     if (hasPauseActionForInteractivePhase) {
-      console.log(`[C07.1] Phase "${currentPhase.id}" has pause action in JSON - anchor system will handle`);
+      console.log(`[C07.2] Phase "${currentPhase.id}" has pause action in JSON - anchor system will handle`);
       return;
     }
     
@@ -522,9 +532,9 @@ export const V7PhasePlayer = ({
     }
     
     // LEGACY FALLBACK: JSON não tem pauseAction - habilitar opções imediatamente
-    // Este é o ÚNICO fallback permitido - para JSON legado sem C07.1 aplicado no pipeline
+    // Este é o ÚNICO fallback permitido - para JSON legado sem C07 aplicado no pipeline
     console.warn(`[LEGACY_FALLBACK_USED] Phase "${currentPhase.id}" (${currentPhase.type}) missing pause_action in JSON contract`);
-    console.warn(`[LEGACY_FALLBACK_USED] Enabling interaction immediately - this indicates pipeline did NOT apply C07.1`);
+    console.warn(`[LEGACY_FALLBACK_USED] Enabling interaction immediately - this indicates pipeline did NOT apply C07`);
     
     // Pausar áudio se estiver tocando (para permitir interação)
     if (audio.isPlaying) {
