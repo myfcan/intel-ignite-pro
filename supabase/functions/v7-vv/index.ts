@@ -1221,13 +1221,12 @@ async function c05CompleteExecution(
       triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
       hashAlgorithm: 'canonical_jsonb_string+sha256',
       hashComputedAfterGuards: true,
-      hashComputedViaRoundTrip: true // C05.3 FIX: Flag para indicar método de cálculo
+      hashComputedViaSqlRpc: true // C05.3 FIX: Flag para indicar método de cálculo via SQL
     }
   };
   
-  // C05.3 STEP 2: Persistir output_data PRIMEIRO (sem hash)
-  // O JSONB do PostgreSQL pode aplicar transformações (ex: ordenação, normalização de números)
-  console.log(`[C05.3] Persisting output_data without hash first...`);
+  // C05.3 STEP 2: Persistir output_data (sem hash ainda)
+  console.log(`[C05.3] Persisting output_data...`);
   
   const { error: persistError } = await supabase
     .from('pipeline_executions')
@@ -1245,54 +1244,29 @@ async function c05CompleteExecution(
     throw new Error(`C05.3: Failed to persist output_data: ${persistError.message}`);
   }
   
-  // C05.3 STEP 3: ROUND-TRIP - Buscar o content do banco para calcular hash
-  // Isso garante que o hash seja calculado sobre EXATAMENTE o que o PostgreSQL armazenou
-  console.log(`[C05.3] Fetching persisted content for hash calculation (round-trip)...`);
+  // C05.3 STEP 3: Calcular hash via RPC no PostgreSQL
+  // Isso garante paridade ABSOLUTA porque o hash é calculado no mesmo ambiente que a verificação
+  console.log(`[C05.3] Computing hash via SQL RPC (c05_compute_content_hash)...`);
   
-  const { data: persistedRow, error: fetchError } = await supabase
-    .from('pipeline_executions')
-    .select('output_data')
-    .eq('run_id', runId)
-    .single();
+  const { data: hashResult, error: rpcError } = await supabase
+    .rpc('c05_compute_content_hash', { p_run_id: runId });
   
-  if (fetchError || !persistedRow) {
-    console.error(`[C05.3] ERROR fetching persisted content:`, fetchError?.message);
-    // Fallback: usar hash do objeto original (pode divergir)
-    console.warn(`[C05.3] FALLBACK: Using hash from original object (may not match SQL verification)`);
-    const fallbackHash = await computeSHA256(canonicalStringify(outputData.content));
+  if (rpcError) {
+    console.error(`[C05.3] ERROR computing hash via RPC:`, rpcError.message);
+    // Fallback: calcular no JavaScript (pode divergir, mas melhor que nada)
+    console.warn(`[C05.3] FALLBACK: Computing hash in JavaScript...`);
+    const fallbackHash = await computeSHA256(canonicalStringify(outputContent));
     await supabase
       .from('pipeline_executions')
       .update({ output_content_hash: fallbackHash })
       .eq('run_id', runId);
+    console.log(`[C05.3] FALLBACK hash: ${fallbackHash}`);
     return;
   }
   
-  // C05.3 STEP 4: Calcular hash do content EXATO que está no banco
-  const persistedContent = persistedRow.output_data?.content;
-  if (!persistedContent) {
-    console.error(`[C05.3] ERROR: persisted output_data.content is null`);
-    throw new Error('C05.3: Persisted content is null');
-  }
+  const outputHash = hashResult as string;
   
-  const canonicalContent = canonicalStringify(persistedContent);
-  const outputHash = await computeSHA256(canonicalContent);
-  
-  console.log(`[C05.3] Hash computed from PERSISTED content (round-trip)`);
-  console.log(`[C05.3] Canonical length: ${canonicalContent.length}`);
-  console.log(`[C05.3] Hash: ${outputHash}`);
-  
-  // C05.3 STEP 5: Atualizar com o hash calculado
-  const { error: hashError } = await supabase
-    .from('pipeline_executions')
-    .update({ output_content_hash: outputHash })
-    .eq('run_id', runId);
-  
-  if (hashError) {
-    console.error(`[C05.3] ERROR updating hash:`, hashError.message);
-    throw new Error(`C05.3: Failed to update hash: ${hashError.message}`);
-  }
-  
-  console.log(`[C05.3] ✅ Execution completed with round-trip hash.`);
+  console.log(`[C05.3] ✅ Execution completed with SQL-computed hash.`);
   console.log(`[C05.3]   phases: ${outputData.meta.phasesCount}`);
   console.log(`[C05.3]   anchors: ${outputData.meta.anchorsCount}`);
   console.log(`[C05.3]   triggerContract: ${outputData.meta.triggerContract}`);
