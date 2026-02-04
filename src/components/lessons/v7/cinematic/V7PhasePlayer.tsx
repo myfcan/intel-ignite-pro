@@ -492,9 +492,10 @@ export const V7PhasePlayer = ({
     }
   }, [currentPhase?.type, currentPhase?.id, currentPhase?.title, currentPhase?.scenes, currentPhaseIndex, lockedPhaseIndex, isNavigatingBack]);
 
-  // ✅ C07: Auto-pause guard for interactive phases without pause action
-  // CONDIÇÃO: (interaction && pause_actions_count==0 && optionsEnabled==false && isPlaying==true)
-  // AÇÃO: Pausar IMEDIATAMENTE ao entrar na fase (debounce de 50ms apenas para montagem)
+  // ✅ C07.1 LEGACY FALLBACK: For interactive phases without pause action in JSON
+  // NÃO é "auto-pause 300ms" - é fallback para JSON legado que não tem pause
+  // CONDIÇÃO: (interaction && pause_actions_count==0)
+  // AÇÃO: Habilitar opções IMEDIATAMENTE e logar [LEGACY_FALLBACK_USED]
   useEffect(() => {
     if (!currentPhase) return;
     
@@ -511,40 +512,28 @@ export const V7PhasePlayer = ({
     
     // If we already have a pause action from pipeline, skip - anchor system will handle it
     if (hasPauseActionForInteractivePhase) {
-      console.log(`[C07] Phase "${currentPhase.id}" has pause action - anchor system will handle`);
+      console.log(`[C07.1] Phase "${currentPhase.id}" has pause action in JSON - anchor system will handle`);
       return;
     }
     
-    // If already applied auto-pause, skip
+    // If already applied legacy fallback, skip
     if (c07AutoPauseAppliedRef.current) {
       return;
     }
     
-    // C07 Guard: Condition check - only apply if audio is playing
-    // Debounce de 50ms apenas para evitar race condition de montagem
-    const C07_MOUNT_DEBOUNCE_MS = 50;
+    // LEGACY FALLBACK: JSON não tem pauseAction - habilitar opções imediatamente
+    // Este é o ÚNICO fallback permitido - para JSON legado sem C07.1 aplicado no pipeline
+    console.warn(`[LEGACY_FALLBACK_USED] Phase "${currentPhase.id}" (${currentPhase.type}) missing pause_action in JSON contract`);
+    console.warn(`[LEGACY_FALLBACK_USED] Enabling interaction immediately - this indicates pipeline did NOT apply C07.1`);
     
-    const timeoutId = setTimeout(() => {
-      // CONDIÇÃO COMPLETA: interactive && pause_actions==0 && !alreadyApplied && isPlaying
-      if (!c07AutoPauseAppliedRef.current && !hasPauseActionForInteractivePhase && audio.isPlaying) {
-        console.log(`[C07] 🛑 AUTO-PAUSE IMEDIATO para phase "${currentPhase.id}" (pause_actions=0, isPlaying=true)`);
-        console.log(`[C07] debounce: ${C07_MOUNT_DEBOUNCE_MS}ms (apenas montagem, não delay de regra)`);
-        
-        // Pausar áudio imediatamente
-        audio.pause();
-        console.log(`[C07] 🔇 Audio pausado por C07 guard`);
-        
-        setC07AutoPaused(true);
-        c07AutoPauseAppliedRef.current = true;
-      } else if (!c07AutoPauseAppliedRef.current && !hasPauseActionForInteractivePhase && !audio.isPlaying) {
-        // Áudio já está pausado - apenas setar flag para habilitar quiz
-        console.log(`[C07] ✅ Audio já pausado - habilitando interação para phase "${currentPhase.id}"`);
-        setC07AutoPaused(true);
-        c07AutoPauseAppliedRef.current = true;
-      }
-    }, C07_MOUNT_DEBOUNCE_MS);
+    // Pausar áudio se estiver tocando (para permitir interação)
+    if (audio.isPlaying) {
+      audio.pause();
+      console.log(`[LEGACY_FALLBACK_USED] Audio paused for legacy interactive phase`);
+    }
     
-    return () => clearTimeout(timeoutId);
+    setC07AutoPaused(true);
+    c07AutoPauseAppliedRef.current = true;
   }, [currentPhase?.id, currentPhase?.type, currentPhase?.interaction, hasPauseActionForInteractivePhase, audio.isPlaying]);
 
   // ✅ V7-v6: Reset lock when interaction completes - now handled by machine unlockPhase action
