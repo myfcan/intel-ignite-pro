@@ -170,7 +170,7 @@ export interface V7MicroVisual {
   id: string;
   type: V7MicroVisualType;
   anchorText: string;
-  triggerTime: number;
+  triggerTime?: number;  // C06: Optional - source of truth is anchorActions[type='show'].keywordTime
   duration: number;
   content: {
     // For image-flash

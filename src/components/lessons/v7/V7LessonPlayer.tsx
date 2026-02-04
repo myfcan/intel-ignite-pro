@@ -55,6 +55,12 @@ export default function V7LessonPlayer({
   const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
   const timeUpdateIntervalRef = useRef<number | null>(null);
 
+  // C06 Compatibility: Refs for crossing detection (avoid state to prevent loops)
+  const prevTimeRef = useRef<number>(0);
+  const triggeredIdsRef = useRef<Set<string>>(new Set());
+  const pauseTriggeredRef = useRef<Set<string>>(new Set());
+  const prevPhaseIndexRef = useRef<number>(-1);
+
   // Derived state
   const currentPhase = useMemo(() => lessonData.phases[currentPhaseIndex], [lessonData.phases, currentPhaseIndex]);
   const progress = useMemo(() => (currentTime / lessonData.metadata.totalDuration) * 100, [currentTime, lessonData.metadata.totalDuration]);
@@ -104,7 +110,12 @@ export default function V7LessonPlayer({
     if (status === 'playing' && mainAudioRef.current) {
       timeUpdateIntervalRef.current = window.setInterval(() => {
         if (mainAudioRef.current) {
-          setCurrentTime(mainAudioRef.current.currentTime);
+          const newTime = mainAudioRef.current.currentTime;
+          setCurrentTime(newTime);
+          // C06: Throttled log (every 1s in dev)
+          if (process.env.NODE_ENV === 'development' && Math.floor(newTime) !== Math.floor(currentTime)) {
+            console.log(`[V7Player] currentTime: ${newTime.toFixed(2)}s`);
+          }
         }
       }, 100);
     } else {
@@ -119,7 +130,7 @@ export default function V7LessonPlayer({
         clearInterval(timeUpdateIntervalRef.current);
       }
     };
-  }, [status]);
+  }, [status, currentTime]);
 
   // =========================================================================
   // PHASE MANAGEMENT
@@ -133,6 +144,10 @@ export default function V7LessonPlayer({
       if (currentTime >= phase.startTime && currentTime < phase.endTime) {
         if (i !== currentPhaseIndex) {
           console.log(`[V7Player] Phase change: ${currentPhaseIndex} → ${i} (${phase.id})`);
+          // C06: Log for instrumentation
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[V7Player] phase change reset', { from: currentPhaseIndex, to: i });
+          }
           setCurrentPhaseIndex(i);
         }
         break;
@@ -144,17 +159,162 @@ export default function V7LessonPlayer({
   }, [currentTime, status, lessonData.phases, currentPhaseIndex, progress, onProgress]);
 
   // =========================================================================
-  // ANCHOR ACTIONS (PAUSE)
+  // C06: PHASE CHANGE RESET (prevent "ghost" micro-visuals)
+  // =========================================================================
+  useEffect(() => {
+    if (currentPhaseIndex !== prevPhaseIndexRef.current) {
+      triggeredIdsRef.current = new Set();
+      pauseTriggeredRef.current = new Set();
+      prevTimeRef.current = currentTime;
+      prevPhaseIndexRef.current = currentPhaseIndex;
+      setActiveMicroVisuals([]);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[V7Player] phase reset triggered', { phaseIndex: currentPhaseIndex });
+      }
+    }
+  }, [currentPhaseIndex, currentTime]);
+
+  // =========================================================================
+  // C06: showTimeByTargetId - Map anchorActions[show].targetId → keywordTime
+  // =========================================================================
+  const showTimeByTargetId = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!currentPhase?.anchorActions) return map;
+    
+    for (const aa of currentPhase.anchorActions) {
+      if (aa.type === 'show' && aa.targetId && typeof aa.keywordTime === 'number') {
+        map.set(aa.targetId, aa.keywordTime);
+      }
+    }
+    return map;
+  }, [currentPhase?.anchorActions]);
+
+  // =========================================================================
+  // C06: Sticky type helper (persist until phase ends)
+  // =========================================================================
+  const isStickyType = (type: string) =>
+    type === 'letter-reveal' || 
+    type === 'card-reveal' || 
+    type === 'text-highlight' || 
+    type === 'highlight';
+
+  // =========================================================================
+  // C06: CROSSING DETECTION for show actions
+  // =========================================================================
+  useEffect(() => {
+    if (!currentPhase) return;
+    if (status !== 'playing') {
+      prevTimeRef.current = currentTime;
+      return;
+    }
+
+    const prevTime = prevTimeRef.current;
+
+    // C06: SEEK BACKWARDS - Reset triggers and recompute
+    if (currentTime < prevTime) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[V7Player] seek backwards recompute', { prevTime: prevTime.toFixed(2), currentTime: currentTime.toFixed(2) });
+      }
+      triggeredIdsRef.current = new Set();
+      
+      // Reprocess all shows <= currentTime
+      for (const [targetId, t] of showTimeByTargetId.entries()) {
+        if (t <= currentTime) {
+          triggeredIdsRef.current.add(targetId);
+        }
+      }
+      prevTimeRef.current = currentTime;
+      return;
+    }
+
+    // C06: PLAY FORWARD - Crossing detection
+    for (const [targetId, t] of showTimeByTargetId.entries()) {
+      const crossed = prevTime < t && currentTime >= t;
+      if (crossed && !triggeredIdsRef.current.has(targetId)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[V7Player] show crossed', { 
+            phaseId: currentPhase.id, 
+            targetId, 
+            t: t.toFixed(2), 
+            prevTime: prevTime.toFixed(2), 
+            currentTime: currentTime.toFixed(2) 
+          });
+        }
+        triggeredIdsRef.current.add(targetId);
+      }
+    }
+
+    prevTimeRef.current = currentTime;
+  }, [currentTime, status, currentPhase, showTimeByTargetId]);
+
+  // =========================================================================
+  // C06: COMPUTE ACTIVE MICRO-VISUALS (C06 Compliant)
+  // =========================================================================
+  useEffect(() => {
+    if (!currentPhase?.microVisuals?.length) {
+      setActiveMicroVisuals([]);
+      return;
+    }
+
+    // Helper: get show time (C06: anchorActions | fallback: legacy triggerTime)
+    const getShowTime = (mv: V7MicroVisual): number | null => {
+      // C06: Primary source = anchorActions
+      const anchorTime = showTimeByTargetId.get(mv.id);
+      if (typeof anchorTime === 'number') return anchorTime;
+      
+      // Fallback for legacy lessons (compatibility)
+      if (typeof mv.triggerTime === 'number') return mv.triggerTime;
+      
+      return null;
+    };
+
+    const active = currentPhase.microVisuals.filter(mv => {
+      // C06: Only show if trigger was fired
+      if (!triggeredIdsRef.current.has(mv.id)) return false;
+      
+      const showTime = getShowTime(mv);
+      if (showTime === null) return false;
+      
+      // Sticky types: persist until phase ends
+      if (isStickyType(mv.type)) {
+        return currentTime >= showTime;
+      }
+      
+      // Timed types: respect duration
+      const endTime = showTime + (typeof mv.duration === 'number' ? mv.duration : 0);
+      return currentTime >= showTime && currentTime < endTime;
+    });
+
+    setActiveMicroVisuals(active);
+  }, [currentTime, currentPhase, showTimeByTargetId, isStickyType]);
+
+  // =========================================================================
+  // C07 Base: ANCHOR ACTIONS - PAUSE (Crossing Detection)
   // =========================================================================
   useEffect(() => {
     if (status !== 'playing' || !currentPhase?.anchorActions) return;
 
+    const prevTime = prevTimeRef.current;
+
     for (const action of currentPhase.anchorActions) {
-      if (action.type === 'pause') {
-        // Check if we've reached the pause point
-        const tolerance = 0.15; // 150ms tolerance
-        if (Math.abs(currentTime - action.keywordTime) < tolerance) {
-          console.log(`[V7Player] Pause triggered: "${action.keyword}" @ ${action.keywordTime.toFixed(2)}s`);
+      if (action.type === 'pause' && action.id && typeof action.keywordTime === 'number') {
+        // C07: Crossing detection (idempotent)
+        const crossed = prevTime < action.keywordTime && currentTime >= action.keywordTime;
+        
+        if (crossed && !pauseTriggeredRef.current.has(action.id)) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[V7Player] pause crossed', { 
+              phaseId: currentPhase.id,
+              actionId: action.id,
+              keyword: action.keyword, 
+              keywordTime: action.keywordTime?.toFixed(2),
+              currentTime: currentTime.toFixed(2)
+            });
+            console.log('[V7Player] entering waiting-interaction...');
+          }
+          
+          pauseTriggeredRef.current.add(action.id);
           mainAudioRef.current?.pause();
           setStatus('waiting-interaction');
           break;
@@ -163,23 +323,9 @@ export default function V7LessonPlayer({
     }
   }, [currentTime, status, currentPhase]);
 
-  // =========================================================================
-  // MICRO-VISUALS
-  // =========================================================================
-  useEffect(() => {
-    if (!currentPhase?.microVisuals) {
-      setActiveMicroVisuals([]);
-      return;
-    }
-
-    const active = currentPhase.microVisuals.filter(mv => {
-      const isAfterTrigger = currentTime >= mv.triggerTime;
-      const isBeforeEnd = currentTime < mv.triggerTime + mv.duration;
-      return isAfterTrigger && isBeforeEnd;
-    });
-
-    setActiveMicroVisuals(active);
-  }, [currentTime, currentPhase]);
+  // TODO (C07): Fallback for interaction/playground phases without pause action
+  // If phase.type === 'interaction' || 'playground' and no pause actions:
+  // Auto-pause at startTime + 0.1s until user interaction
 
   // =========================================================================
   // INTERACTION HANDLERS
