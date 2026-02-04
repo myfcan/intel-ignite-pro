@@ -1342,6 +1342,7 @@ export type Database = {
       }
     }
     Functions: {
+      c05_compute_content_hash: { Args: { p_run_id: string }; Returns: string }
       canonical_jsonb_string: { Args: { input_jsonb: Json }; Returns: string }
       create_lesson_draft:
         | {
