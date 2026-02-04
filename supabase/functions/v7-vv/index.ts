@@ -1105,8 +1105,16 @@ async function c05CompleteDryRun(
 }
 
 /**
- * C05.2: Canonical JSON stringify - keys sorted alphabetically for deterministic hashing
+ * C05.3: Canonical JSON stringify - keys sorted alphabetically for deterministic hashing
  * This ensures hash computed in Edge Function matches hash computed in PostgreSQL
+ * 
+ * CRITICAL: PostgreSQL JSONB removes keys with NULL values when storing.
+ * Therefore, we MUST exclude keys with null/undefined values to match PostgreSQL behavior.
+ * 
+ * Example:
+ *   JS input:  {"a": 1, "b": null, "c": 3}
+ *   PostgreSQL stores: {"a": 1, "c": 3}  (b removed)
+ *   This function outputs: {"a":1,"c":3}  (matches PostgreSQL)
  */
 function canonicalStringify(obj: any): string {
   if (obj === null || obj === undefined) return 'null';
@@ -1114,23 +1122,37 @@ function canonicalStringify(obj: any): string {
   if (Array.isArray(obj)) {
     return '[' + obj.map(item => canonicalStringify(item)).join(',') + ']';
   }
+  // C05.3: Sort keys alphabetically AND filter out null/undefined values
+  // This matches PostgreSQL JSONB behavior which doesn't store null-valued keys
   const sortedKeys = Object.keys(obj).sort();
-  const pairs = sortedKeys.map(key => 
-    JSON.stringify(key) + ':' + canonicalStringify(obj[key])
-  );
+  const pairs: string[] = [];
+  for (const key of sortedKeys) {
+    const value = obj[key];
+    // Skip null and undefined values - PostgreSQL JSONB doesn't store these
+    if (value === null || value === undefined) {
+      continue;
+    }
+    pairs.push(JSON.stringify(key) + ':' + canonicalStringify(value));
+  }
   return '{' + pairs.join(',') + '}';
 }
 
 /**
- * C05: Marca execução como completed com hash do output
- * C05.1: Persiste output_data REAL com content, lesson_id e meta
- * C05.2: Usa serialização JSON canônica para hash verificável via PostgreSQL
+ * C05.3: Marca execução como completed com hash do output
  * 
- * CRITICAL: Hash é calculado a partir do content APÓS todas as normalizações (C06.1)
- * usando o algoritmo: SHA-256(canonicalStringify(content))
+ * CRITICAL INVARIANT: Hash é calculado a partir de output_data.content APÓS
+ * construir o output_data completo. Isso garante paridade absoluta com:
+ *   PostgreSQL: digest(convert_to(canonical_jsonb_string(output_data->'content'),'utf8'),'sha256')
  * 
- * Para verificar no PostgreSQL:
- * encode(digest(convert_to(canonical_jsonb_string(output_data->'content'),'utf8'),'sha256'),'hex')
+ * ALGORITMO:
+ * 1. Construir output_data = { content, lesson_id, meta } 
+ * 2. Calcular hash = SHA-256(canonicalStringify(output_data.content))
+ * 3. Persistir output_data + hash
+ * 
+ * A função canonicalStringify replica exatamente canonical_jsonb_string() do PostgreSQL:
+ * - Ordena chaves alfabeticamente em TODOS os níveis
+ * - Não adiciona espaços entre elementos
+ * - Serializa arrays e valores primitivos de forma idêntica ao JSON.stringify
  */
 async function c05CompleteExecution(
   supabase: any,
@@ -1146,16 +1168,9 @@ async function c05CompleteExecution(
     hashComputedAfterGuards?: boolean;
   }
 ): Promise<void> {
-  console.log(`[C05] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
+  console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // C05.2 + C06.1: Hash é calculado a partir do content CANONICAL ANTES de construir outputData
-  // Isso garante que o hash seja verificável via SQL usando canonical_jsonb_string()
-  const contentForHash = canonicalStringify(outputContent);
-  const outputHash = await computeSHA256(contentForHash);
-  
-  console.log(`[C05.2] Hash computed from canonical content (length=${contentForHash.length})`);
-  
-  // C05.1: Build full output_data object com meta enriquecido
+  // C05.3 STEP 1: Construir output_data PRIMEIRO (antes do hash)
   const outputData = {
     content: outputContent,
     lesson_id: lessonId,
@@ -1167,30 +1182,42 @@ async function c05CompleteExecution(
                      outputContent?.metadata?.totalDuration ?? 0,
       // C06.1: Metadados de contrato
       triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
-      // C05.2: Metadados de hash
+      // C05.3: Metadados de hash
       hashAlgorithm: 'canonical_jsonb_string+sha256',
       hashComputedAfterGuards: true
     }
   };
   
+  // C05.3 STEP 2: Calcular hash a partir de output_data.content (NÃO outputContent)
+  // Isso garante que o hash seja calculado do EXATO objeto que será persistido
+  const contentForHash = canonicalStringify(outputData.content);
+  const outputHash = await computeSHA256(contentForHash);
+  
+  console.log(`[C05.3] Hash computed from output_data.content (canonical length=${contentForHash.length})`);
+  console.log(`[C05.3] Hash prefix: ${outputHash.substring(0, 32)}...`);
+  
+  // C05.3 DEBUG: Log first 100 chars of canonical content for debugging
+  console.log(`[C05.3] Canonical content start: ${contentForHash.substring(0, 100)}...`);
+  
+  // C05.3 STEP 3: Persistir output_data + hash
   await supabase
     .from('pipeline_executions')
     .update({
       lesson_id: lessonId,
       output_data: outputData, // C05.1: Full output object
-      output_content_hash: outputHash, // C05.2: Hash derived from canonicalStringify(content)
+      output_content_hash: outputHash, // C05.3: Hash derived from output_data.content
       status: 'completed',
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('run_id', runId);
   
-  console.log(`[C05.2] ✅ Execution completed.`);
-  console.log(`[C05.2]   output_data.content.phases: ${outputData.meta.phasesCount}`);
-  console.log(`[C05.2]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
-  console.log(`[C05.2]   output_data.meta.triggerContract: ${outputData.meta.triggerContract}`);
-  console.log(`[C05.2]   output_data.meta.hashAlgorithm: ${outputData.meta.hashAlgorithm}`);
-  console.log(`[C05.2]   output_content_hash: ${outputHash.substring(0, 16)}...`);
+  console.log(`[C05.3] ✅ Execution completed.`);
+  console.log(`[C05.3]   output_data.content.phases: ${outputData.meta.phasesCount}`);
+  console.log(`[C05.3]   output_data.meta.anchorsCount: ${outputData.meta.anchorsCount}`);
+  console.log(`[C05.3]   output_data.meta.triggerContract: ${outputData.meta.triggerContract}`);
+  console.log(`[C05.3]   output_data.meta.hashAlgorithm: ${outputData.meta.hashAlgorithm}`);
+  console.log(`[C05.3]   output_content_hash: ${outputHash}`);
 }
 
 /**
