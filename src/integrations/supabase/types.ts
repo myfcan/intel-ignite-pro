@@ -1342,6 +1342,7 @@ export type Database = {
       }
     }
     Functions: {
+      canonical_jsonb_string: { Args: { input_jsonb: Json }; Returns: string }
       create_lesson_draft:
         | {
             Args: {
