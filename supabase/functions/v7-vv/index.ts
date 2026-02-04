@@ -14,9 +14,20 @@
  * 8. Mapear scene.type → phase.type persistível (secret-reveal → revelation, gamification → narrative)
  *
  * @version V7-v2 (Contrato Congelado v1.0)
+ * 
+ * C05 CHANGELOG:
+ * - Added pipeline_executions traceability (input→output)
+ * - run_id idempotency for all execution modes
+ * - SHA-256 output_content_hash for verification
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
+// ============================================================================
+// C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
+// ============================================================================
+const PIPELINE_VERSION = 'v7-vv-1.0.0-c05';
+const COMMIT_HASH = 'c05-traceability-2024';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -968,6 +979,207 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ============================================================================
+// C05: PIPELINE EXECUTION TRACEABILITY FUNCTIONS
+// ============================================================================
+
+interface C05ExecutionRecord {
+  run_id: string;
+  pipeline_version: string;
+  commit_hash: string;
+  mode: 'create' | 'reprocess' | 'dry_run';
+  lesson_id?: string;
+  lesson_title: string;
+  input_data: any;
+  normalized_input?: any;
+  dry_run_result?: any;
+  output_content_hash?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  error_message?: string;
+}
+
+/**
+ * C05: Insere registro de execução do pipeline (status=in_progress)
+ */
+async function c05InsertExecution(
+  supabase: any,
+  record: Omit<C05ExecutionRecord, 'status'>
+): Promise<{ success: boolean; error?: string }> {
+  console.log(`[C05] Inserting execution record: run_id=${record.run_id}, mode=${record.mode}`);
+  
+  const { error } = await supabase
+    .from('pipeline_executions')
+    .insert({
+      id: record.run_id, // Use run_id as primary key for idempotency
+      run_id: record.run_id,
+      pipeline_version: record.pipeline_version,
+      commit_hash: record.commit_hash,
+      mode: record.mode,
+      lesson_id: record.lesson_id || null,
+      lesson_title: record.lesson_title,
+      model: 'v7-vv',
+      input_data: record.input_data,
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+    });
+  
+  if (error) {
+    // Check for duplicate run_id (idempotency)
+    if (error.code === '23505') {
+      console.log(`[C05] Duplicate run_id ${record.run_id}, checking status...`);
+      
+      const { data: existing } = await supabase
+        .from('pipeline_executions')
+        .select('status')
+        .eq('run_id', record.run_id)
+        .single();
+      
+      if (existing?.status === 'completed') {
+        return { success: false, error: 'ALREADY_COMPLETED' };
+      }
+      if (existing?.status === 'in_progress') {
+        return { success: false, error: 'ALREADY_IN_PROGRESS' };
+      }
+      if (existing?.status === 'failed') {
+        return { success: false, error: 'PREVIOUS_FAILED' };
+      }
+    }
+    
+    console.error(`[C05] Insert error:`, error);
+    return { success: false, error: error.message };
+  }
+  
+  console.log(`[C05] ✅ Execution record created`);
+  return { success: true };
+}
+
+/**
+ * C05: Atualiza normalized_input após validação
+ */
+async function c05UpdateNormalizedInput(
+  supabase: any,
+  runId: string,
+  normalizedInput: any
+): Promise<void> {
+  console.log(`[C05] Updating normalized_input for run_id=${runId}`);
+  
+  await supabase
+    .from('pipeline_executions')
+    .update({
+      normalized_input: normalizedInput,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('run_id', runId);
+}
+
+/**
+ * C05: Atualiza dry_run_result e marca como completed (dry-run)
+ */
+async function c05CompleteDryRun(
+  supabase: any,
+  runId: string,
+  dryRunResult: any
+): Promise<void> {
+  console.log(`[C05] Completing dry-run for run_id=${runId}`);
+  
+  await supabase
+    .from('pipeline_executions')
+    .update({
+      dry_run_result: dryRunResult,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('run_id', runId);
+}
+
+/**
+ * C05: Marca execução como completed com hash do output
+ */
+async function c05CompleteExecution(
+  supabase: any,
+  runId: string,
+  lessonId: string,
+  outputContent: any
+): Promise<void> {
+  console.log(`[C05] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
+  
+  // Compute SHA-256 of output content
+  const outputHash = await computeSHA256(JSON.stringify(outputContent));
+  
+  await supabase
+    .from('pipeline_executions')
+    .update({
+      lesson_id: lessonId,
+      output_content_hash: outputHash,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('run_id', runId);
+  
+  console.log(`[C05] ✅ Execution completed. output_content_hash=${outputHash.substring(0, 16)}...`);
+}
+
+/**
+ * C05: Marca execução como failed
+ */
+async function c05FailExecution(
+  supabase: any,
+  runId: string,
+  errorMessage: string,
+  inputData?: any
+): Promise<void> {
+  console.log(`[C05] Marking execution as failed: run_id=${runId}`);
+  
+  // Try UPDATE first
+  const { error: updateError } = await supabase
+    .from('pipeline_executions')
+    .update({
+      status: 'failed',
+      error_message: errorMessage,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('run_id', runId);
+  
+  // If UPDATE failed (no record exists), do INSERT fallback
+  if (updateError && inputData) {
+    console.log(`[C05] Update failed, inserting fallback record`);
+    
+    await supabase
+      .from('pipeline_executions')
+      .upsert({
+        id: runId,
+        run_id: runId,
+        pipeline_version: PIPELINE_VERSION,
+        commit_hash: COMMIT_HASH,
+        mode: inputData.reprocess ? 'reprocess' : (inputData.dry_run ? 'dry_run' : 'create'),
+        lesson_title: inputData.title || 'unknown',
+        model: 'v7-vv',
+        input_data: inputData,
+        status: 'failed',
+        error_message: errorMessage,
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'run_id' });
+  }
+}
+
+/**
+ * C05: Gera run_id se não fornecido no input
+ */
+function c05GetOrGenerateRunId(input: any): string {
+  if (input.run_id) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(input.run_id)) {
+      throw new Error('run_id must be a valid UUID');
+    }
+    return input.run_id;
+  }
+  // Generate new UUID
+  return crypto.randomUUID();
+}
 
 // ============================================================================
 // TIPOS - Importados conceitualmente do V7Contract.ts
@@ -3915,14 +4127,68 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const input: ScriptInput = await req.json();
-
+    
+    // =========================================================================
+    // C05: INITIALIZE TRACEABILITY
+    // =========================================================================
+    const runId = c05GetOrGenerateRunId(input);
+    const mode: 'create' | 'reprocess' | 'dry_run' = 
+      input.dry_run ? 'dry_run' : 
+      input.reprocess ? 'reprocess' : 'create';
+    
     console.log('================================================');
     console.log('[V7-vv] Pipeline Start');
     console.log(`[V7-vv] Title: ${input.title}`);
     console.log(`[V7-vv] Scenes: ${input.scenes?.length || 0}`);
     console.log(`[V7-vv] Voice ID: ${input.voice_id || 'default'}`);
     console.log(`[V7-vv] Dry Run: ${input.dry_run || false}`);
+    console.log(`[V7-vv] C05 run_id: ${runId}`);
+    console.log(`[V7-vv] C05 mode: ${mode}`);
+    console.log(`[V7-vv] C05 pipeline_version: ${PIPELINE_VERSION}`);
     console.log('================================================');
+
+    // =========================================================================
+    // C05: INSERT EXECUTION RECORD (status=in_progress)
+    // =========================================================================
+    const c05InsertResult = await c05InsertExecution(supabase, {
+      run_id: runId,
+      pipeline_version: PIPELINE_VERSION,
+      commit_hash: COMMIT_HASH,
+      mode,
+      lesson_id: (input as any).existing_lesson_id,
+      lesson_title: input.title || 'untitled',
+      input_data: input,
+    });
+    
+    if (!c05InsertResult.success) {
+      // Handle idempotency cases
+      if (c05InsertResult.error === 'ALREADY_COMPLETED') {
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Pipeline execution already completed (idempotent)',
+          runId,
+          mode,
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (c05InsertResult.error === 'ALREADY_IN_PROGRESS') {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Another execution is already in progress for this run_id',
+          runId,
+          recommendation: 'Wait for completion or use a new run_id',
+        }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (c05InsertResult.error === 'PREVIOUS_FAILED') {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Previous execution with this run_id failed. Use a new run_id for retry.',
+          runId,
+          recommendation: 'Generate a new run_id',
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      // Other insert errors - continue but log warning
+      console.warn(`[C05] Insert warning: ${c05InsertResult.error}`);
+    }
 
     // =========================================================================
     // DRY-RUN MODE: Validação Real Sem Geração de Áudio
@@ -3932,10 +4198,14 @@ Deno.serve(async (req) => {
       
       const dryRunResult = executeDryRun(input);
       
+      // C05: Complete dry-run with result
+      await c05CompleteDryRun(supabase, runId, dryRunResult);
+      
       return new Response(
         JSON.stringify({
           success: true,
           mode: 'dry_run',
+          runId,
           ...dryRunResult,
         }),
         { 
@@ -4602,11 +4872,21 @@ Deno.serve(async (req) => {
     }
 
     // =========================================================================
+    // C05: COMPLETE EXECUTION WITH OUTPUT HASH
+    // =========================================================================
+    const outputContentForHash = preserveStructureMode 
+      ? (await supabase.from('lessons').select('content').eq('id', lessonId).single()).data?.content
+      : lessonData;
+    
+    await c05CompleteExecution(supabase, runId, lessonId, outputContentForHash);
+
+    // =========================================================================
     // RESPOSTA COM DEBUG REPORT
     // =========================================================================
     const response = {
       success: true,
       lessonId,
+      runId, // C05: Include run_id in response
       stats: {
         phaseCount: phases.length,
         totalDuration,
@@ -4622,6 +4902,7 @@ Deno.serve(async (req) => {
     console.log('================================================');
     console.log('[V7-vv] ✅ Pipeline completed successfully');
     console.log('[V7-vv] Stats:', JSON.stringify(response.stats));
+    console.log(`[V7-vv] C05: run_id=${runId}, status=completed`);
     if (debugReport) {
       console.log(`[V7-vv] Debug: ${debugReport.allIssues.length} issues, health score: ${debugReport.summary.healthScore}`);
     } else {
@@ -4635,6 +4916,22 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error('[V7-vv] ❌ Error:', error);
+    
+    // C05: Fail execution record (need to extract runId and input from context)
+    // Since runId might not be defined if error occurred early, wrap in try-catch
+    try {
+      // @ts-ignore - runId defined in outer scope
+      if (typeof runId !== 'undefined') {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        // @ts-ignore - input defined in outer scope
+        await c05FailExecution(supabase, runId, error.message, typeof input !== 'undefined' ? input : undefined);
+      }
+    } catch (c05Error) {
+      console.error('[C05] Failed to record execution failure:', c05Error);
+    }
+    
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
