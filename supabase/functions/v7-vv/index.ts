@@ -1100,8 +1100,26 @@ async function c05CompleteDryRun(
 }
 
 /**
+ * C05.2: Canonical JSON stringify - keys sorted alphabetically for deterministic hashing
+ * This ensures hash computed in Edge Function matches hash computed in PostgreSQL
+ */
+function canonicalStringify(obj: any): string {
+  if (obj === null || obj === undefined) return 'null';
+  if (typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) {
+    return '[' + obj.map(item => canonicalStringify(item)).join(',') + ']';
+  }
+  const sortedKeys = Object.keys(obj).sort();
+  const pairs = sortedKeys.map(key => 
+    JSON.stringify(key) + ':' + canonicalStringify(obj[key])
+  );
+  return '{' + pairs.join(',') + '}';
+}
+
+/**
  * C05: Marca execução como completed com hash do output
  * C05.1: Persiste output_data REAL com content, lesson_id e meta
+ * C05.2: Usa serialização JSON canônica para hash verificável via PostgreSQL
  */
 async function c05CompleteExecution(
   supabase: any,
@@ -1125,8 +1143,9 @@ async function c05CompleteExecution(
     }
   };
   
-  // C05.1: Compute SHA-256 from output_data.content (canonical JSON stringify)
-  const contentForHash = JSON.stringify(outputData.content);
+  // C05.2: Compute SHA-256 from CANONICAL JSON of output_data.content
+  // Canonical = keys sorted alphabetically, ensuring PostgreSQL ::text produces same result
+  const contentForHash = canonicalStringify(outputData.content);
   const outputHash = await computeSHA256(contentForHash);
   
   await supabase
