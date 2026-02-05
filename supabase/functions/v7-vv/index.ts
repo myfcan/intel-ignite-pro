@@ -3040,10 +3040,61 @@ function normalizePhaseTimeline(
   console.log(`[C04] BEFORE: Overlap=${metricsBefore.t4Overlap}, NonMonotonic=${metricsBefore.t4NonMonotonicEnd}, OutsideAudio=${metricsBefore.t4OutsideAudio}, Gap=${metricsBefore.t4Gap}`);
   
   // =====================================================================
+  // PASSO 1.5: RESERVAR ESPAÇO PARA FASES INTERATIVAS NO FINAL DO ÁUDIO
+  // =========================================================================
+  // Problema: Fases interativas (quiz, playground) no final são "espremidas"
+  // contra o audioDuration, ficando com duração < 5s e cortando narração.
+  // 
+  // Solução: Detectar fases interativas perto do fim e "roubar" tempo das
+  // fases anteriores ANTES da normalização normal.
+  // =========================================================================
+  const clonedForPrepass: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
+  
+  for (let i = clonedForPrepass.length - 1; i >= 0; i--) {
+    const phase = clonedForPrepass[i];
+    const isInteractive = ['interaction', 'playground', 'quiz', 'secret-reveal'].includes(phase.type);
+    
+    if (!isInteractive) continue;
+    
+    const startTime = phase.startTime ?? 0;
+    const endTime = Math.min(phase.endTime ?? audioDuration, audioDuration);
+    const currentDuration = endTime - startTime;
+    
+    // Se a fase interativa tem duração < 5s e está perto do fim do áudio
+    if (currentDuration < C04_MIN_DURATION_INTERACTIVE) {
+      const neededSpace = C04_MIN_DURATION_INTERACTIVE - currentDuration;
+      const idealStartTime = audioDuration - C04_MIN_DURATION_INTERACTIVE;
+      
+      // Se o startTime ideal é ANTES do startTime atual, precisamos "roubar" espaço
+      if (idealStartTime < startTime && i > 0) {
+        console.log(`[C04] PREPASS: Phase "${phase.id}" needs ${neededSpace.toFixed(2)}s more space (current duration: ${currentDuration.toFixed(2)}s)`);
+        
+        // Ajustar a fase interativa para começar mais cedo
+        const newStartTime = Math.max(0, idealStartTime);
+        const adjustment = startTime - newStartTime;
+        
+        if (adjustment > 0) {
+          console.log(`[C04] PREPASS: Moving "${phase.id}" startTime ${startTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s (stealing ${adjustment.toFixed(2)}s)`);
+          phase.startTime = newStartTime;
+          phase.endTime = audioDuration;
+          
+          // Ajustar a fase anterior para terminar antes
+          const prevPhase = clonedForPrepass[i - 1];
+          if (prevPhase && prevPhase.endTime > newStartTime) {
+            const oldPrevEnd = prevPhase.endTime;
+            prevPhase.endTime = newStartTime;
+            console.log(`[C04] PREPASS: Adjusting "${prevPhase.id}" endTime ${oldPrevEnd.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+          }
+        }
+      }
+    }
+  }
+  
+  // =====================================================================
   // PASSO 2: NORMALIZAÇÃO (deep clone, manter ordem original)
   // ✅ C04.1: Tracking de prevEndTime "esperado" vs "real" para detectar cascaded overlaps
   // =====================================================================
-  const normalizedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
+  const normalizedPhases: any[] = clonedForPrepass; // Usar resultado do prepass
   
   let prevEndTime = 0;           // prevEndTime APÓS aplicar fix (chain real)
   let prevOriginalEndTime = 0;   // prevEndTime do INPUT (para detectar cascaded)
@@ -3606,37 +3657,81 @@ function c07EnsurePauseForInteractivePhases(
     if (existingPause) {
       const existingPauseTime = existingPause.keywordTime ?? existingPause.timestamp ?? 0;
       
-      // C07.2: Verificar se pause está em posição aceitável
-      // - Não pode ser antes de startTime + 1.0 (corta frase inicial)
-      // - Não pode ser depois de endTime - 0.05 (tarde demais)
-      const isTooEarly = existingPauseTime < startTime + 1.0;
-      const isTooLate = existingPauseTime > endTime - 0.05;
-      const isAcceptable = !isTooEarly && !isTooLate;
+      // =========================================================================
+      // ✅ C07.2 PRIORITY RULE: Respeitar c07OriginalTime se existir
+      // Se o pause já foi validado anteriormente e tem c07OriginalTime, NÃO recalcular
+      // Isso evita "keyword drift" onde uma palavra comum é matchada incorretamente
+      // =========================================================================
+      const hasValidatedOriginal = existingPause.c07OriginalTime !== undefined && existingPause.c07OriginalTime !== null;
       
-      if (isAcceptable) {
-        // Pause existente está OK - manter
-        c07Stats.phasesWithPause++;
-        console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ACCEPTABLE ✓ (within ${startTime + 1.0}s - ${endTime - 0.05}s)`);
+      if (hasValidatedOriginal) {
+        // ✅ REGRA MESTRE: c07OriginalTime já existe - NÃO recalcular
+        // Apenas validar se está dentro do range da fase atual
+        const originalTime = existingPause.c07OriginalTime;
+        const isInRange = originalTime >= startTime && originalTime <= endTime;
+        
+        if (isInRange) {
+          // Usar o tempo original validado
+          c07Stats.phasesWithPause++;
+          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Using c07OriginalTime @ ${originalTime.toFixed(3)}s (PRIORITY RULE - no recalculation)`);
+          // Manter o pause como está, não alterar
+        } else {
+          // c07OriginalTime está fora do range - fase foi movida, usar targetPauseTime
+          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): c07OriginalTime @ ${originalTime.toFixed(3)}s is OUT OF RANGE [${startTime.toFixed(3)}s-${endTime.toFixed(3)}s], using targetPauseTime @ ${targetPauseTime.toFixed(3)}s`);
+          
+          phase.anchorActions[existingPauseIndex] = {
+            ...existingPause,
+            keywordTime: targetPauseTime,
+            timestamp: targetPauseTime,
+            c07Corrected: true,
+            c07Version: '2.1',
+            c07OriginalTime: existingPause.c07OriginalTime, // Preservar original
+            c07Reason: 'ORIGINAL_OUT_OF_RANGE'
+          };
+          
+          pausesCorrected++;
+          c07Stats.phasesWithPause++;
+          detail.pauseInserted = true;
+          detail.insertedPauseKeywordTime = targetPauseTime;
+        }
       } else {
-        // Pause existente está FORA do range aceitável - CORRIGIR
-        const reason = isTooEarly ? 'TOO_EARLY (cuts audio)' : 'TOO_LATE (after phase end)';
-        console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ${reason}! Correcting to ${targetPauseTime.toFixed(3)}s`);
+        // =========================================================================
+        // Pause existe mas NÃO tem c07OriginalTime - validar normalmente
+        // =========================================================================
+        const isTooEarly = existingPauseTime < startTime + 1.0;
+        const isTooLate = existingPauseTime > endTime - 0.05;
+        const isAcceptable = !isTooEarly && !isTooLate;
         
-        // Atualizar o pause existente
-        phase.anchorActions[existingPauseIndex] = {
-          ...existingPause,
-          keywordTime: targetPauseTime,
-          timestamp: targetPauseTime,
-          c07Corrected: true,
-          c07Version: '2.0',
-          c07OriginalTime: existingPauseTime,
-          keyword: 'pause-near-end' // Keyword indicando que é pause perto do fim
-        };
-        
-        pausesCorrected++;
-        c07Stats.phasesWithPause++;
-        detail.pauseInserted = true;
-        detail.insertedPauseKeywordTime = targetPauseTime;
+        if (isAcceptable) {
+          // Pause existente está OK - manter e registrar como c07OriginalTime
+          c07Stats.phasesWithPause++;
+          phase.anchorActions[existingPauseIndex] = {
+            ...existingPause,
+            c07OriginalTime: existingPauseTime, // Registrar para futuras execuções
+            c07Version: '2.1',
+            c07Validated: true
+          };
+          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ACCEPTABLE ✓ (registered as c07OriginalTime)`);
+        } else {
+          // Pause existente está FORA do range aceitável - CORRIGIR
+          const reason = isTooEarly ? 'TOO_EARLY (cuts audio)' : 'TOO_LATE (after phase end)';
+          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Existing pause @ ${existingPauseTime.toFixed(3)}s is ${reason}! Correcting to ${targetPauseTime.toFixed(3)}s`);
+          
+          phase.anchorActions[existingPauseIndex] = {
+            ...existingPause,
+            keywordTime: targetPauseTime,
+            timestamp: targetPauseTime,
+            c07Corrected: true,
+            c07Version: '2.1',
+            c07OriginalTime: existingPauseTime,
+            c07Reason: reason
+          };
+          
+          pausesCorrected++;
+          c07Stats.phasesWithPause++;
+          detail.pauseInserted = true;
+          detail.insertedPauseKeywordTime = targetPauseTime;
+        }
       }
     } else {
       // Não existe pause - inserir novo PERTO DO FIM
@@ -3650,7 +3745,8 @@ function c07EnsurePauseForInteractivePhases(
         type: 'pause',
         phaseId: phase.id,
         c07Generated: true,
-        c07Version: '2.0'
+        c07Version: '2.1',
+        c07OriginalTime: targetPauseTime // Registrar como original para futuras execuções
       };
       
       phase.anchorActions.push(autoPauseAction);
@@ -4103,10 +4199,45 @@ function generatePhases(
     };
 
     const microVisuals: MicroVisual[] = [];
+    
+    // =========================================================================
+    // ✅ PHASE DRIFT FIX: Detectar se microVisuals têm anchors ANTES da fase
+    // Se letter-reveal/card-reveal tem anchorText que aparece ANTES do startTime,
+    // precisamos expandir o startTime para incluir essa narração
+    // =========================================================================
+    let expandedStartTime = startTime;
+    
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      // ✅ V7-vv: Buscar anchorText DENTRO do range da cena
-      // IMPORTANTE: A narração do acrônimo DEVE estar na mesma cena que os microVisuals
-      // Ver: docs/V7-JSON-TEMPLATE-LETTER-REVEAL.md
+      // Buscar anchor em TODO o áudio (não apenas no range da fase)
+      const globalTriggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0);
+      
+      if (globalTriggerTime !== null && globalTriggerTime < startTime) {
+        // O anchorText existe ANTES do startTime desta fase
+        // Isso indica "phase drift" - a narração do visual está na fase anterior
+        const isVisualWithNarration = ['letter-reveal', 'card-reveal', 'text-reveal'].includes(mv.type);
+        
+        if (isVisualWithNarration) {
+          console.log(`[PHASE_DRIFT_FIX] MicroVisual "${mv.id}" anchorText "${mv.anchorText}" found at ${globalTriggerTime.toFixed(2)}s, BEFORE phase startTime ${startTime.toFixed(2)}s`);
+          
+          // Expandir o startTime para incluir o anchor (com margem de 0.5s antes)
+          const proposedStartTime = Math.max(0, globalTriggerTime - 0.5);
+          if (proposedStartTime < expandedStartTime) {
+            console.log(`[PHASE_DRIFT_FIX] Expanding "${scene.id}" startTime ${expandedStartTime.toFixed(2)}s → ${proposedStartTime.toFixed(2)}s to include anchor`);
+            expandedStartTime = proposedStartTime;
+          }
+        }
+      }
+    });
+    
+    // Aplicar expansão se necessário
+    if (expandedStartTime < startTime) {
+      console.log(`[Phase] ✅ PHASE_DRIFT_FIX: "${scene.id}" startTime ${startTime.toFixed(2)}s → ${expandedStartTime.toFixed(2)}s (to include microVisual anchors)`);
+      startTime = expandedStartTime;
+    }
+    
+    // Agora processar microVisuals normalmente com o startTime potencialmente expandido
+    scene.visual?.microVisuals?.forEach((mv, idx) => {
+      // ✅ V7-vv: Buscar anchorText DENTRO do range da cena (agora expandido)
       const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
       
       // ✅ CONTRATO CONGELADO v1.0: Converter moderno → legado ANTES de salvar
