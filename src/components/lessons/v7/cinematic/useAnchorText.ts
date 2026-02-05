@@ -120,7 +120,11 @@ export function useAnchorText({
   const [highlightedElements, setHighlightedElements] = useState<Set<string>>(new Set());
   
   // ✅ V7-v60 CROSSING DETECTION: Track previous time for crossing detection
-  const prevTimeRef = useRef<number>(0);
+  const prevTimeRef = useRef<number>(-1);
+  
+  // ✅ FIRST-LOAD FIX: Track if we've done initial recompute after audio is ready
+  const hasInitializedRef = useRef<boolean>(false);
+  const lastVisibleCountRef = useRef<number>(0);
 
   // Normaliza palavra para comparação
   const normalizeWord = useCallback((word: string): string => {
@@ -298,6 +302,16 @@ export function useAnchorText({
     }
   }, [phaseId, currentTime, onPause, onResume, onShow, onHide, onHighlight, onTrigger, onAnchorEvent]);
 
+  // ✅ FIRST-LOAD FIX: Log when visibleElements changes
+  useEffect(() => {
+    const size = visibleElements.size;
+    const lastId = Array.from(visibleElements).pop() || 'none';
+    if (size !== lastVisibleCountRef.current) {
+      console.log(`[ANCHOR_VISIBLE] visibleElements changed: size=${size} lastId="${lastId}"`);
+      lastVisibleCountRef.current = size;
+    }
+  }, [visibleElements]);
+
   // ✅ DEBUG: Log every time currentTime changes
   const lastLoggedTimeRef = useRef(-1);
   useEffect(() => {
@@ -314,7 +328,13 @@ export function useAnchorText({
   // Monitora ações
   useEffect(() => {
     // ✅ DEBUG: Log on every check
-    const timeStr = currentTime.toFixed(1);
+    const timeStr = currentTime.toFixed(3);
+    const prevTime = prevTimeRef.current;
+    
+    // ✅ DETERMINISTIC LOG: Init state (only on significant time changes)
+    if (Math.floor(currentTime) !== Math.floor(prevTime) || prevTime < 0) {
+      console.log(`[ANCHOR_INIT] phaseId="${phaseId}" prevTime=${prevTime.toFixed(3)} currTime=${timeStr} hasTimestamps=${wordTimestamps.length > 0} count=${wordTimestamps.length} actions=${actions.length} enabled=${enabled}`);
+    }
     
     if (!enabled) {
       if (Math.floor(currentTime) % 5 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
@@ -340,9 +360,85 @@ export function useAnchorText({
       return;
     }
 
+    // ✅ FIRST-LOAD FIX: On first tick with data ready, do FULL RECOMPUTE of all actions <= currentTime
+    // This fixes the "second time works" bug where actions are missed on first load
+    if (!hasInitializedRef.current && (wordTimestamps.length > 0 || allActionsHaveKeywordTime)) {
+      hasInitializedRef.current = true;
+      console.log(`[ANCHOR_FIRST_LOAD] 🚀 First tick with data ready at ${timeStr}s - doing FULL RECOMPUTE`);
+      
+      // Recompute: execute all actions whose trigger point is <= currentTime
+      for (const action of actions) {
+        const actionKey = `${phaseId}-${action.id}`;
+        if (action.once !== false && stateRef.current.executedActions.has(actionKey)) {
+          continue;
+        }
+        
+        // Get trigger point
+        let triggerPoint: number | null = null;
+        if (action.keywordTime !== undefined && action.keywordTime > 0) {
+          const preemptiveMs = action.type === 'pause' ? 100 : 0;
+          triggerPoint = action.keywordTime - (preemptiveMs / 1000);
+        } else {
+          const wordTs = findKeywordTimestamp(action.keyword);
+          if (wordTs) {
+            triggerPoint = wordTs.end;
+          }
+        }
+        
+        // If trigger point is in the past, execute it now
+        if (triggerPoint !== null && triggerPoint <= currentTime) {
+          console.log(`[ANCHOR_FIRST_LOAD] 🎯 Executing missed action "${action.keyword}" (trigger: ${triggerPoint.toFixed(3)}s <= current: ${timeStr}s)`);
+          const syntheticWordTs: WordTimestamp = {
+            word: action.keyword,
+            start: triggerPoint - 0.5,
+            end: triggerPoint,
+          };
+          executeAction(action, syntheticWordTs);
+        }
+      }
+      
+      // Set prevTime to current so future crossings work correctly
+      prevTimeRef.current = currentTime;
+      return; // Don't do normal crossing detection on first tick
+    }
+    
+    // ✅ SEEK DETECTION: If time jumped backwards significantly, do full recompute
+    const isSeekBack = prevTime > 0 && currentTime < prevTime - 0.5;
+    if (isSeekBack) {
+      console.log(`[ANCHOR_SEEK] ⏪ Seek-back detected: ${prevTime.toFixed(3)}s → ${timeStr}s - resetting executed actions`);
+      stateRef.current.executedActions.clear();
+      
+      // Recompute all actions <= currentTime
+      for (const action of actions) {
+        let triggerPoint: number | null = null;
+        if (action.keywordTime !== undefined && action.keywordTime > 0) {
+          const preemptiveMs = action.type === 'pause' ? 100 : 0;
+          triggerPoint = action.keywordTime - (preemptiveMs / 1000);
+        } else {
+          const wordTs = findKeywordTimestamp(action.keyword);
+          if (wordTs) {
+            triggerPoint = wordTs.end;
+          }
+        }
+        
+        if (triggerPoint !== null && triggerPoint <= currentTime) {
+          console.log(`[ANCHOR_SEEK] 🎯 Re-executing action "${action.keyword}" after seek`);
+          const syntheticWordTs: WordTimestamp = {
+            word: action.keyword,
+            start: triggerPoint - 0.5,
+            end: triggerPoint,
+          };
+          executeAction(action, syntheticWordTs);
+        }
+      }
+      
+      prevTimeRef.current = currentTime;
+      return;
+    }
+
     // ✅ DEBUG: Log current monitoring state every 2 seconds
     if (Math.floor(currentTime) % 2 === 0 && currentTime - Math.floor(currentTime) < 0.1) {
-      console.log(`[AnchorText] 🔄 Monitoring at ${timeStr}s | Phase: ${phaseId} | Actions: ${actions.map(a => `${a.keyword}(${a.type})`).join(', ')} | Playing: ${isPlaying}`);
+      console.log(`[AnchorText] 🔄 Monitoring at ${timeStr}s | Phase: ${phaseId} | prevTime: ${prevTime.toFixed(3)}s | Actions: ${actions.map(a => `${a.keyword}(${a.type})`).join(', ')} | Playing: ${isPlaying}`);
     }
 
     for (const action of actions) {
@@ -375,7 +471,6 @@ export function useAnchorText({
         const triggerPoint = action.keywordTime - preemptiveSec;
         
         // ✅ V7-v60: CROSSING DETECTION - prevTime < trigger && currentTime >= trigger
-        const prevTime = prevTimeRef.current;
         const crossed = hasCrossedTrigger(triggerPoint, prevTime, currentTime);
 
         if (crossed) {
@@ -398,7 +493,6 @@ export function useAnchorText({
       }
 
       // ✅ V7-v60: CROSSING DETECTION para keywords sem keywordTime pré-calculado
-      const prevTime = prevTimeRef.current;
       const crossed = hasCrossedTrigger(wordTs.end, prevTime, currentTime);
       
       if (crossed) {
@@ -413,7 +507,7 @@ export function useAnchorText({
 
   // Reset quando a fase muda
   useEffect(() => {
-    console.log(`[AnchorText] 🔄 Phase changed to ${phaseId} - RESETTING ALL STATE`);
+    console.log(`[ANCHOR_PHASE_CHANGE] 🔄 Phase changed to "${phaseId}" - RESETTING ALL STATE`);
     stateRef.current.executedActions.clear();
     stateRef.current.pausedByAnchor = false;
     // ✅ V7-v11 FIX: CRITICAL - Reset React state too, not just ref!
@@ -421,8 +515,11 @@ export function useAnchorText({
     setIsPausedByAnchorState(false);
     setVisibleElements(new Set());
     setHighlightedElements(new Set());
-    // ✅ V7-v60: Reset prevTime para evitar false positives na nova fase
-    prevTimeRef.current = 0;
+    // ✅ V7-v60: Reset prevTime to -1 to force recompute on new phase
+    prevTimeRef.current = -1;
+    // ✅ FIRST-LOAD FIX: Reset initialization flag for new phase
+    hasInitializedRef.current = false;
+    lastVisibleCountRef.current = 0;
   }, [phaseId]);
 
   // Funções manuais de controle

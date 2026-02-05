@@ -141,6 +141,9 @@ export default function V7PhaseCTA({
       console.log('[V7PhaseCTA] Click ignored - already processing');
       return;
     }
+    
+    // ✅ DETERMINISTIC LOG: CTA onClick
+    console.log(`[CTA_CLICK] variant="${variant}" isProcessing=${isProcessing} selected=${selected}`);
 
     // Lock immediately
     hasCalledChoice.current = true;
