@@ -131,17 +131,22 @@ export const V7PhasePlayer = ({
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  // ✅ DEBUG LOGS SOLICITADOS
-  console.log('[V7PhasePlayer DEBUG] ==========================================');
-  console.log('[V7PhasePlayer DEBUG] Script recebido:', {
+  // ✅ DETERMINISTIC LOGS: Mount/unmount tracking
+  useEffect(() => {
+    console.log(`[PLAYER_MOUNT] V7PhasePlayer mounted - scriptId="${script?.id}" phasesCount=${script?.phases?.length}`);
+    return () => {
+      console.log(`[PLAYER_UNMOUNT] V7PhasePlayer unmounted - scriptId="${script?.id}"`);
+    };
+  }, [script?.id, script?.phases?.length]);
+
+  // ✅ DEBUG LOGS
+  console.log('[V7PhasePlayer] Script recebido:', {
     id: script?.id,
     title: script?.title,
     phasesCount: script?.phases?.length,
     firstPhaseType: script?.phases?.[0]?.type,
     firstPhaseScenesCount: script?.phases?.[0]?.scenes?.length,
   });
-  console.log('[V7PhasePlayer DEBUG] Primeira phase completa:', JSON.stringify(script?.phases?.[0], null, 2));
-  console.log('[V7PhasePlayer DEBUG] ==========================================');
 
   // Sound effects
   const { playSound, unlockAudio } = useV7SoundEffects();

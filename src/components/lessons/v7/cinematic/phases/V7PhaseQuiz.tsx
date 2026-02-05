@@ -71,6 +71,11 @@ export const V7PhaseQuiz = ({
   
   // ✅ Sound effects hook
   const { playSound } = useV7SoundEffects(0.6, true);
+  
+  // ✅ DETERMINISTIC LOG: Track optionsEnabled changes
+  useEffect(() => {
+    console.log(`[QUIZ_OPTIONS] optionsEnabled changed to ${optionsEnabled} | isPausedByAnchor=${isPausedByAnchor} | audioPausedByQuiz=${audioPausedByQuiz}`);
+  }, [optionsEnabled, isPausedByAnchor, audioPausedByQuiz]);
 
   // ✅ V7-v2.2: Hook de TTS contextual com ElevenLabs
   const {
