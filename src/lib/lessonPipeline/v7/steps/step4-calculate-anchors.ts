@@ -3,6 +3,11 @@
  * 
  * Calcula os anchor actions baseados nos word timestamps e anchorText das cenas.
  * Esta é a etapa crítica para sincronização perfeita entre áudio e visual.
+ * 
+ * CHANGELOG:
+ * - v2.1: Adicionado PHASE_DRIFT_FIX para detectar microVisuals com anchors antes da fase
+ * - v2.1: Adicionado PREPASS para reservar espaço para fases interativas no final
+ * - v2.1: Adicionado C07.2 PRIORITY RULE que respeita c07OriginalTime
  */
 
 import { V7SceneInput, requiresAnchorPause } from '@/types/V7ScriptInput';
@@ -20,6 +25,10 @@ interface Step4Context extends V7PipelineContext {
   scenes: V7SceneInput[];
 }
 
+// Constantes para normalização e validação
+const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal', 'cta', 'gamification', 'quiz'];
+const MIN_INTERACTIVE_DURATION = 5.0; // 5 segundos mínimo para fases interativas
+
 export async function v7Step4CalculateAnchors(
   context: Step4Context
 ): Promise<V7Step4Output> {
@@ -27,7 +36,7 @@ export async function v7Step4CalculateAnchors(
   const { wordTimestamps, totalDuration } = audio;
   const startTime = Date.now();
   
-  await logger.info(4, 'Calculate Anchors', '⚓ Iniciando cálculo de anchors...');
+  await logger.info(4, 'Calculate Anchors', '⚓ Iniciando cálculo de anchors (v2.1)...');
   await logger.info(4, 'Calculate Anchors', `   ${wordTimestamps.length} word timestamps`);
   await logger.info(4, 'Calculate Anchors', `   ${scenes.length} cenas`);
 
