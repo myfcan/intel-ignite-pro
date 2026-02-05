@@ -3075,7 +3075,8 @@ function applyPhaseDriftFixReprocess(
  */
 function normalizePhaseTimeline(
   phases: any[],
-  audioDuration: number
+  audioDuration: number,
+  wordTimestamps: WordTimestamp[] = []  // C07.3: Required for PREPASS alignment
 ): {
   normalizedPhases: any[];
   c04Stats: C04TimelineStats;
@@ -3165,48 +3166,157 @@ function normalizePhaseTimeline(
   // Problema: Fases interativas (quiz, playground) no final são "espremidas"
   // contra o audioDuration, ficando com duração < 5s e cortando narração.
   // 
-  // Solução: Detectar fases interativas perto do fim e "roubar" tempo das
-  // fases anteriores ANTES da normalização normal.
+  // Solução C07.3: PREPASS ALIGNMENT
+  // 1. Detectar a PRIMEIRA PALAVRA DA NARRAÇÃO da fase interativa
+  // 2. Alinhar startTime com essa palavra (não antes de firstWordTime - 0.2s)
+  // 3. Garantir duration >= 5s ajustando startTime para trás ou "roubando" da anterior
   // =========================================================================
   const clonedForPrepass: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
   
-  for (let i = clonedForPrepass.length - 1; i >= 0; i--) {
-    const phase = clonedForPrepass[i];
-    const isInteractive = ['interaction', 'playground', 'quiz', 'secret-reveal'].includes(phase.type);
+  // C07.3: Para cada fase interativa, encontrar a primeira palavra da narração
+  const findFirstWordOfPhase = (phase: any, phaseIndex: number): number | null => {
+    // Estratégia 1: Buscar palavras-chave típicas de fases interativas
+    const phaseKeywords: Record<string, string[]> = {
+      'playground': ['Faça', 'Agora', 'Pratique', 'Tente', 'Digite', 'Experimente', 'Aplique'],
+      'quiz': ['Qual', 'Responda', 'Escolha', 'Marque', 'Selecione'],
+      'interaction': ['Qual', 'Responda', 'Escolha', 'Marque', 'Selecione', 'Agora'],
+      'secret-reveal': ['Segredo', 'Revelação', 'Descubra', 'Agora'],
+      'cta': ['Parabéns', 'Continue', 'Próxima', 'Avance', 'Clique'],
+    };
     
-    if (!isInteractive) continue;
+    const typeKeywords = phaseKeywords[phase.type] || ['Agora'];
     
-    const startTime = phase.startTime ?? 0;
-    const endTime = Math.min(phase.endTime ?? audioDuration, audioDuration);
-    const currentDuration = endTime - startTime;
+    // Janela de busca: startTime atual até endTime (ou +10s se não definido)
+    const searchStart = phase.startTime ?? 0;
+    const searchEnd = phase.endTime ?? (searchStart + 15);
     
-    // Se a fase interativa tem duração < 5s e está perto do fim do áudio
-    if (currentDuration < C04_MIN_DURATION_INTERACTIVE) {
-      const neededSpace = C04_MIN_DURATION_INTERACTIVE - currentDuration;
-      const idealStartTime = audioDuration - C04_MIN_DURATION_INTERACTIVE;
+    // Helper: Normalizar palavra (remover pontuação)
+    const normalize = (w: string) => w.toLowerCase().replace(/[.,!?:;'"]/g, '').trim();
+    
+    // Buscar cada keyword na janela da fase
+    for (const keyword of typeKeywords) {
+      const normalizedKeyword = normalize(keyword);
       
-      // Se o startTime ideal é ANTES do startTime atual, precisamos "roubar" espaço
-      if (idealStartTime < startTime && i > 0) {
-        console.log(`[C04] PREPASS: Phase "${phase.id}" needs ${neededSpace.toFixed(2)}s more space (current duration: ${currentDuration.toFixed(2)}s)`);
+      // C07.3 FIX: Keyword deve ter pelo menos 3 caracteres para evitar matches falsos
+      if (normalizedKeyword.length < 3) continue;
+      
+      for (const wt of wordTimestamps) {
+        const normalizedWord = normalize(wt.word);
         
-        // Ajustar a fase interativa para começar mais cedo
-        const newStartTime = Math.max(0, idealStartTime);
-        const adjustment = startTime - newStartTime;
+        // C07.3 FIX: Match preciso - a palavra deve começar com o keyword ou ser igual
+        // Evitar que "a" faça match com "Faça"
+        const isExactMatch = normalizedWord === normalizedKeyword;
+        const isStartMatch = normalizedWord.startsWith(normalizedKeyword) && normalizedKeyword.length >= 4;
+        const isContainedMatch = normalizedWord.includes(normalizedKeyword) && normalizedKeyword.length >= 4;
         
-        if (adjustment > 0) {
-          console.log(`[C04] PREPASS: Moving "${phase.id}" startTime ${startTime.toFixed(2)}s → ${newStartTime.toFixed(2)}s (stealing ${adjustment.toFixed(2)}s)`);
-          phase.startTime = newStartTime;
-          phase.endTime = audioDuration;
-          
-          // Ajustar a fase anterior para terminar antes
-          const prevPhase = clonedForPrepass[i - 1];
-          if (prevPhase && prevPhase.endTime > newStartTime) {
-            const oldPrevEnd = prevPhase.endTime;
-            prevPhase.endTime = newStartTime;
-            console.log(`[C04] PREPASS: Adjusting "${prevPhase.id}" endTime ${oldPrevEnd.toFixed(2)}s → ${newStartTime.toFixed(2)}s`);
+        if (isExactMatch || isStartMatch || isContainedMatch) {
+          // Verificar se está na janela da fase ou ligeiramente antes (até -5s)
+          if (wt.start >= searchStart - 5 && wt.start <= searchEnd) {
+            console.log(`[C07.3] Phase "${phase.id}": Found keyword "${keyword}" via word "${wt.word}" @ ${wt.start.toFixed(2)}s (exact=${isExactMatch})`);
+            return wt.start;
           }
         }
       }
+    }
+    
+    // Fallback: usar o startTime original se não encontrou palavra
+    console.log(`[C07.3] Phase "${phase.id}": No keyword found in [${searchStart.toFixed(2)}s, ${searchEnd.toFixed(2)}s], using original startTime`);
+    return null;
+  };
+  
+  for (let i = clonedForPrepass.length - 1; i >= 0; i--) {
+    const phase = clonedForPrepass[i];
+    const isInteractive = ['interaction', 'playground', 'quiz', 'secret-reveal', 'cta'].includes(phase.type);
+    
+    if (!isInteractive) continue;
+    
+    const originalStartTime = phase.startTime ?? 0;
+    const endTime = Math.min(phase.endTime ?? audioDuration, audioDuration);
+    const currentDuration = endTime - originalStartTime;
+    
+    // C07.3: Encontrar a primeira palavra da fase
+    const firstWordTime = findFirstWordOfPhase(phase, i);
+    
+    // C07.3 REGRA: startTime DEVE ser alinhado com firstWordTime
+    // Permitir no máximo 0.2s ANTES da primeira palavra
+    const MAX_LEAD_TIME = 0.2;
+    let alignedStartTime = originalStartTime;
+    
+    if (firstWordTime !== null) {
+      // startTime não pode ser mais de 0.2s antes da primeira palavra
+      const earliestAllowed = Math.max(0, firstWordTime - MAX_LEAD_TIME);
+      
+      if (originalStartTime < earliestAllowed) {
+        // startTime está MUITO antes da fala - ajustar para frente
+        alignedStartTime = earliestAllowed;
+        console.log(`[C07.3] Phase "${phase.id}": startTime ${originalStartTime.toFixed(2)}s is too early (firstWord @ ${firstWordTime.toFixed(2)}s), aligning to ${alignedStartTime.toFixed(2)}s`);
+      } else if (originalStartTime > firstWordTime + MAX_LEAD_TIME) {
+        // startTime está DEPOIS da primeira palavra - ajustar para trás
+        alignedStartTime = earliestAllowed;
+        console.log(`[C07.3] Phase "${phase.id}": startTime ${originalStartTime.toFixed(2)}s is after firstWord @ ${firstWordTime.toFixed(2)}s, aligning to ${alignedStartTime.toFixed(2)}s`);
+      }
+    }
+    
+    // Recalcular duração com startTime alinhado
+    const alignedDuration = endTime - alignedStartTime;
+    
+    // C07.3 v2: A regra fundamental é que startTime DEVE ser alinhado com firstWord
+    // Se não há espaço para 5s, "roubamos" da fase anterior, MAS o startTime
+    // final NUNCA pode ser mais que 0.2s antes da primeira palavra
+    
+    // Se a fase interativa tem duração < 5s após alinhamento
+    if (alignedDuration < C04_MIN_DURATION_INTERACTIVE) {
+      const neededSpace = C04_MIN_DURATION_INTERACTIVE - alignedDuration;
+      
+      console.log(`[C07.3] Phase "${phase.id}": needs ${neededSpace.toFixed(2)}s more (aligned duration: ${alignedDuration.toFixed(2)}s)`);
+      
+      // C07.3 v2: "Roubar" tempo da fase anterior para que ela termine ANTES de firstWord
+      // Isso NÃO muda o startTime desta fase, apenas encurta a anterior
+      if (i > 0 && firstWordTime !== null) {
+        const prevPhase = clonedForPrepass[i - 1];
+        
+        if (prevPhase && prevPhase.endTime) {
+          // A fase anterior deve terminar no máximo em (firstWord - 0.2s)
+          const maxPrevEndTime = firstWordTime - MAX_LEAD_TIME;
+          
+          if (prevPhase.endTime > maxPrevEndTime) {
+            const oldPrevEnd = prevPhase.endTime;
+            prevPhase.endTime = Math.max(prevPhase.startTime + 2.0, maxPrevEndTime); // Manter mínimo 2s
+            console.log(`[C07.3] Phase "${phase.id}": Adjusting prev "${prevPhase.id}" endTime ${oldPrevEnd.toFixed(2)}s → ${prevPhase.endTime.toFixed(2)}s (firstWord @ ${firstWordTime.toFixed(2)}s)`);
+          }
+        }
+      }
+      
+      // C07.3 v2: O startTime FINAL é SEMPRE o alinhado com firstWord, não o "roubado"
+      phase.startTime = alignedStartTime;
+      phase.endTime = endTime;
+      
+      // Metadados para debug
+      phase.prepassApplied = true;
+      phase.prepassFirstWordTime = firstWordTime;
+      phase.prepassOriginalStartTime = originalStartTime;
+      phase.prepassAlignedStartTime = alignedStartTime;
+      phase.prepassFinalStartTime = alignedStartTime;
+      phase.prepassDelta = firstWordTime !== null ? (alignedStartTime - firstWordTime).toFixed(3) : 'N/A';
+      
+      const finalDuration = endTime - alignedStartTime;
+      console.log(`[C07.3] ✅ Phase "${phase.id}": FINAL startTime=${alignedStartTime.toFixed(2)}s, endTime=${endTime.toFixed(2)}s, duration=${finalDuration.toFixed(2)}s, firstWord=${firstWordTime?.toFixed(2) ?? 'N/A'}s, delta=${phase.prepassDelta}s`);
+      
+      // C07.3 v2: Se ainda não temos 5s, é uma limitação do áudio, não vamos forçar
+      if (finalDuration < C04_MIN_DURATION_INTERACTIVE) {
+        console.log(`[C07.3] ⚠️ Phase "${phase.id}": duration ${finalDuration.toFixed(2)}s < 5.0s - audio limitation, cannot expand further`);
+      }
+    } else if (alignedStartTime !== originalStartTime) {
+      // Duração suficiente, mas precisou alinhar
+      phase.startTime = alignedStartTime;
+      phase.prepassApplied = true;
+      phase.prepassFirstWordTime = firstWordTime;
+      phase.prepassOriginalStartTime = originalStartTime;
+      phase.prepassAlignedStartTime = alignedStartTime;
+      phase.prepassFinalStartTime = alignedStartTime;
+      phase.prepassDelta = firstWordTime !== null ? (alignedStartTime - firstWordTime).toFixed(3) : 'N/A';
+      
+      console.log(`[C07.3] ✅ Phase "${phase.id}": Aligned startTime=${alignedStartTime.toFixed(2)}s (was ${originalStartTime.toFixed(2)}s), firstWord=${firstWordTime?.toFixed(2) ?? 'N/A'}s, delta=${phase.prepassDelta}s`);
     }
   }
   
@@ -5525,10 +5635,12 @@ Deno.serve(async (req) => {
           );
           
           // ✅ C04: PRIMEIRO normalizar timeline global (monotonicidade, overlap, clamp)
+          // ✅ C07.3: Agora passa wordTimestamps para PREPASS alignment
           console.log(`[V7-vv] C04: Normalizing global phase timeline...`);
           const c04Result = normalizePhaseTimeline(
             driftCorrectedPhases, // ← Usar phases com DRIFT FIX aplicado
-            mainAudio.duration
+            mainAudio.duration,
+            mainAudio.wordTimestamps // ✅ C07.3: Para alinhamento com primeira palavra
           );
           c04Stats = c04Result.c04Stats;
           
