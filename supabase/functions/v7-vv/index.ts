@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.0.0-c06';
-const COMMIT_HASH = 'c06-single-trigger-contract-2024';
+const PIPELINE_VERSION = 'v7-vv-1.0.0-c08';
+const COMMIT_HASH = 'c08-phase-drift-monotonicity-fix-2024';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -2979,6 +2979,9 @@ function applyPhaseDriftFixReprocess(
   const DRIFT_SEARCH_WINDOW = 30.0; // segundos
   const DRIFT_THRESHOLD = 0.5; // mínimo drift para corrigir
   
+  // =========================================================================
+  // PASS 1: Detectar drifts e calcular novos startTimes
+  // =========================================================================
   const correctedPhases = phases.map((phase, idx) => {
     const corrected = JSON.parse(JSON.stringify(phase)); // Deep clone
     const currentStartTime = corrected.startTime ?? 0;
@@ -3049,8 +3052,39 @@ function applyPhaseDriftFixReprocess(
     return corrected;
   });
   
+  // =========================================================================
+  // PASS 2: Ajustar endTime das fases anteriores para manter monotonicidade
+  // CRÍTICO: Se expandimos startTime de fase N para T, então fase N-1.endTime 
+  // deve ser <= T para que C04 não reverta nossa correção
+  // =========================================================================
+  console.log('[PHASE_DRIFT_FIX] PASS 2: Adjusting previous phase endTimes for monotonicity...');
+  
+  for (let i = 1; i < correctedPhases.length; i++) {
+    const currentPhase = correctedPhases[i];
+    const prevPhase = correctedPhases[i - 1];
+    
+    // Se esta fase teve drift fix E o endTime da fase anterior é maior que nosso novo startTime
+    if (currentPhase.phaseDriftFixed && prevPhase.endTime > currentPhase.startTime) {
+      const oldEndTime = prevPhase.endTime;
+      const newEndTime = currentPhase.startTime;
+      
+      console.log(`[PHASE_DRIFT_FIX] ⚠️ Phase "${prevPhase.id}": endTime ${oldEndTime.toFixed(2)}s → ${newEndTime.toFixed(2)}s (to accommodate drift fix of "${currentPhase.id}")`);
+      
+      prevPhase.endTime = newEndTime;
+      prevPhase.phaseDriftEndTimeAdjusted = true;
+      prevPhase.phaseDriftOldEndTime = oldEndTime;
+      
+      // SEGURANÇA: Garantir que a fase anterior ainda tem duração positiva
+      const prevDuration = prevPhase.endTime - prevPhase.startTime;
+      if (prevDuration < 0.5) {
+        console.warn(`[PHASE_DRIFT_FIX] ⚠️ WARN: Phase "${prevPhase.id}" duration after adjustment is only ${prevDuration.toFixed(2)}s`);
+      }
+    }
+  }
+  
   const fixedCount = correctedPhases.filter(p => p.phaseDriftFixed).length;
-  console.log(`[PHASE_DRIFT_FIX] Complete. Fixed ${fixedCount} phases.`);
+  const endTimeAdjustedCount = correctedPhases.filter(p => p.phaseDriftEndTimeAdjusted).length;
+  console.log(`[PHASE_DRIFT_FIX] Complete. Fixed ${fixedCount} phases, adjusted ${endTimeAdjustedCount} previous endTimes.`);
   
   return correctedPhases;
 }
