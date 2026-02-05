@@ -26,3 +26,6 @@ export { useV7ActPreloader } from "./useV7ActPreloader";
 
 // V7 Post-Lesson Flow (V7-vv)
 export { V7PostLessonFlow } from "./V7PostLessonFlow";
+
+// V7 Debug HUD
+export { V7DebugHUD } from "./V7DebugHUD";
