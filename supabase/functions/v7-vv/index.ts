@@ -2829,6 +2829,30 @@ function recalculateAnchorKeywordTimes(
         continue;
       }
       
+      // =========================================================================
+      // ✅ C07.2 PRIORITY RULE GUARD: Pauses com c07OriginalTime NÃO são recalculados
+      // Isso evita "keyword drift" onde uma palavra comum é matchada incorretamente
+      // O c07OriginalTime já foi validado e deve ser respeitado
+      // =========================================================================
+      if (anchor.type === 'pause' && anchor.c07OriginalTime !== undefined && anchor.c07OriginalTime !== null) {
+        const originalTime = anchor.c07OriginalTime;
+        const isInRange = originalTime >= phaseStartTime && originalTime <= phaseEndTime;
+        
+        if (isInRange) {
+          // ✅ PRIORIDADE ABSOLUTA: Usar c07OriginalTime, NÃO recalcular por keyword
+          console.log(`[C02] Phase "${phase.id}" pause: SKIPPED recalculation - c07OriginalTime @ ${originalTime.toFixed(3)}s (C07.2 PRIORITY RULE)`);
+          
+          // Aplicar o tempo original como keywordTime
+          anchor.keywordTime = originalTime;
+          anchor.timestamp = originalTime;
+          anchor.c07PriorityApplied = true;
+          totalAnchorsRecalculated++;
+          continue; // Não recalcular por keyword
+        } else {
+          console.log(`[C02] Phase "${phase.id}" pause: c07OriginalTime @ ${originalTime.toFixed(3)}s is OUT OF RANGE [${phaseStartTime.toFixed(3)}s-${phaseEndTime.toFixed(3)}s], will recalculate`);
+        }
+      }
+      
       // ✅ C02: Apply correct strategy based on anchor type (R3)
       // pauseAt and endTime derivation → LAST_IN_RANGE
       // microVisuals (show) → FIRST_IN_RANGE
@@ -2934,6 +2958,102 @@ const C04_EPS = 0.30;        // 300ms tolerance
 const C04_GAP_EPS = 1.0;     // 1s gap tolerance for gap detection
 const C04_MIN_DURATION_INTERACTIVE = 5.0;  // quiz/playground/pause
 const C04_MIN_DURATION_NON_INTERACTIVE = 0.5;  // narrative/dramatic etc
+
+/**
+ * PHASE_DRIFT_FIX (REPROCESS MODE)
+ * 
+ * Corrige boundaries de fases quando a narração principal (visual.content.word, título)
+ * aparece ANTES do startTime atual da fase.
+ * 
+ * Exemplo: Fase "PERFEITO" com startTime=76s, mas narração "PERFEITO" está em 60s
+ * → Expandir startTime para 59.5s (0.5s antes do anchor)
+ */
+function applyPhaseDriftFixReprocess(
+  phases: any[],
+  wordTimestamps: WordTimestamp[]
+): any[] {
+  console.log('[PHASE_DRIFT_FIX] Checking phases for narration drift...');
+  
+  // JANELA DE BUSCA: Procurar apenas nos 30 segundos ANTES do startTime atual
+  // Isso evita matches falsos muito distantes da fase
+  const DRIFT_SEARCH_WINDOW = 30.0; // segundos
+  const DRIFT_THRESHOLD = 0.5; // mínimo drift para corrigir
+  
+  const correctedPhases = phases.map((phase, idx) => {
+    const corrected = JSON.parse(JSON.stringify(phase)); // Deep clone
+    const currentStartTime = corrected.startTime ?? 0;
+    let expandedStartTime = currentStartTime;
+    let driftReason = '';
+    
+    // Definir janela de busca: [currentStartTime - WINDOW, currentStartTime]
+    const searchStart = Math.max(0, currentStartTime - DRIFT_SEARCH_WINDOW);
+    const searchEnd = currentStartTime; // Buscar apenas ANTES do startTime
+    
+    // CASO 1: visual.content.word (ex: "PERFEITO" para letter-reveal)
+    const visualWord = corrected.visual?.content?.word;
+    if (visualWord && typeof visualWord === 'string' && visualWord.length > 4) {
+      // Usar LAST_IN_RANGE para pegar a ocorrência mais próxima do startTime
+      const wordTriggerResult = selectAnchorOccurrence(
+        visualWord,
+        wordTimestamps,
+        searchStart,
+        searchEnd,
+        'LAST_IN_RANGE' // Pegar a última ocorrência ANTES do startTime
+      );
+      
+      if (wordTriggerResult.selectedTime !== null) {
+        console.log(`[PHASE_DRIFT_FIX] Phase "${phase.id}": visual.word "${visualWord}" found @ ${wordTriggerResult.selectedTime.toFixed(2)}s (window: ${searchStart.toFixed(2)}s-${searchEnd.toFixed(2)}s)`);
+        
+        const proposedStartTime = Math.max(0, wordTriggerResult.selectedTime - DRIFT_THRESHOLD);
+        if (proposedStartTime < expandedStartTime) {
+          expandedStartTime = proposedStartTime;
+          driftReason = `visual.content.word "${visualWord}" @ ${wordTriggerResult.selectedTime.toFixed(2)}s`;
+        }
+      }
+    }
+    
+    // CASO 2: microVisuals com anchors ANTES da fase (foco em letter-reveal/card-reveal)
+    // NÃO verificar títulos - muito propenso a falsos positivos
+    if (corrected.microVisuals && Array.isArray(corrected.microVisuals)) {
+      for (const mv of corrected.microVisuals) {
+        const isVisualWithNarration = ['letter-reveal', 'card-reveal', 'text-reveal'].includes(mv.type);
+        if (!isVisualWithNarration || !mv.anchorText || mv.anchorText.length < 4) continue;
+        
+        const mvResult = selectAnchorOccurrence(
+          mv.anchorText,
+          wordTimestamps,
+          searchStart,
+          searchEnd,
+          'LAST_IN_RANGE'
+        );
+        
+        if (mvResult.selectedTime !== null) {
+          const proposedStartTime = Math.max(0, mvResult.selectedTime - DRIFT_THRESHOLD);
+          if (proposedStartTime < expandedStartTime) {
+            expandedStartTime = proposedStartTime;
+            driftReason = `microVisual "${mv.anchorText}" @ ${mvResult.selectedTime.toFixed(2)}s`;
+          }
+        }
+      }
+    }
+    
+    // Aplicar correção se houve drift significativo (> 0.5s)
+    if (currentStartTime - expandedStartTime > DRIFT_THRESHOLD) {
+      console.log(`[PHASE_DRIFT_FIX] ✅ Phase "${phase.id}": startTime ${currentStartTime.toFixed(2)}s → ${expandedStartTime.toFixed(2)}s (reason: ${driftReason})`);
+      corrected.startTime = expandedStartTime;
+      corrected.phaseDriftFixed = true;
+      corrected.phaseDriftReason = driftReason;
+      corrected.phaseDriftOldStartTime = currentStartTime;
+    }
+    
+    return corrected;
+  });
+  
+  const fixedCount = correctedPhases.filter(p => p.phaseDriftFixed).length;
+  console.log(`[PHASE_DRIFT_FIX] Complete. Fixed ${fixedCount} phases.`);
+  
+  return correctedPhases;
+}
 
 /**
  * C04: Normalize Phase Timeline (Global Hardening)
@@ -4201,37 +4321,70 @@ function generatePhases(
     const microVisuals: MicroVisual[] = [];
     
     // =========================================================================
-    // ✅ PHASE DRIFT FIX: Detectar se microVisuals têm anchors ANTES da fase
-    // Se letter-reveal/card-reveal tem anchorText que aparece ANTES do startTime,
-    // precisamos expandir o startTime para incluir essa narração
+    // ✅ PHASE DRIFT FIX v2: Detectar se narração principal está ANTES da fase
+    // 
+    // CASO 1: microVisuals com anchors antes do startTime
+    // CASO 2: visual.content.word (ex: "PERFEITO") aparece antes do startTime
+    // CASO 3: título da fase contém palavra-chave que aparece antes
     // =========================================================================
     let expandedStartTime = startTime;
+    let driftReason = '';
     
+    // CASO 1: microVisuals com anchors antes
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      // Buscar anchor em TODO o áudio (não apenas no range da fase)
       const globalTriggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0);
       
       if (globalTriggerTime !== null && globalTriggerTime < startTime) {
-        // O anchorText existe ANTES do startTime desta fase
-        // Isso indica "phase drift" - a narração do visual está na fase anterior
         const isVisualWithNarration = ['letter-reveal', 'card-reveal', 'text-reveal'].includes(mv.type);
         
         if (isVisualWithNarration) {
           console.log(`[PHASE_DRIFT_FIX] MicroVisual "${mv.id}" anchorText "${mv.anchorText}" found at ${globalTriggerTime.toFixed(2)}s, BEFORE phase startTime ${startTime.toFixed(2)}s`);
           
-          // Expandir o startTime para incluir o anchor (com margem de 0.5s antes)
           const proposedStartTime = Math.max(0, globalTriggerTime - 0.5);
           if (proposedStartTime < expandedStartTime) {
-            console.log(`[PHASE_DRIFT_FIX] Expanding "${scene.id}" startTime ${expandedStartTime.toFixed(2)}s → ${proposedStartTime.toFixed(2)}s to include anchor`);
             expandedStartTime = proposedStartTime;
+            driftReason = `microVisual "${mv.anchorText}" @ ${globalTriggerTime.toFixed(2)}s`;
           }
         }
       }
     });
     
+    // CASO 2: visual.content.word (PERFEITO, etc.) - buscar palavra principal do visual
+    const visualWord = scene.visual?.content?.word;
+    if (visualWord && typeof visualWord === 'string') {
+      const wordTriggerTime = findKeywordTime(visualWord, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0);
+      
+      if (wordTriggerTime !== null && wordTriggerTime < startTime) {
+        console.log(`[PHASE_DRIFT_FIX] Visual word "${visualWord}" found at ${wordTriggerTime.toFixed(2)}s, BEFORE phase startTime ${startTime.toFixed(2)}s`);
+        
+        const proposedStartTime = Math.max(0, wordTriggerTime - 0.5);
+        if (proposedStartTime < expandedStartTime) {
+          expandedStartTime = proposedStartTime;
+          driftReason = `visual.content.word "${visualWord}" @ ${wordTriggerTime.toFixed(2)}s`;
+        }
+      }
+    }
+    
+    // CASO 3: Título da fase contém palavra-chave que aparece antes
+    // Extrair palavras significativas do título (ignorar artigos e preposições)
+    const titleWords = (scene.title || '').split(/\s+/).filter(w => w.length > 4);
+    for (const titleWord of titleWords) {
+      const titleWordTime = findKeywordTime(titleWord, wordTimestamps, 0, wordTimestamps[wordTimestamps.length - 1]?.end || 0);
+      
+      if (titleWordTime !== null && titleWordTime < startTime) {
+        console.log(`[PHASE_DRIFT_FIX] Title word "${titleWord}" found at ${titleWordTime.toFixed(2)}s, BEFORE phase startTime ${startTime.toFixed(2)}s`);
+        
+        const proposedStartTime = Math.max(0, titleWordTime - 0.5);
+        if (proposedStartTime < expandedStartTime) {
+          expandedStartTime = proposedStartTime;
+          driftReason = `title word "${titleWord}" @ ${titleWordTime.toFixed(2)}s`;
+        }
+      }
+    }
+    
     // Aplicar expansão se necessário
     if (expandedStartTime < startTime) {
-      console.log(`[Phase] ✅ PHASE_DRIFT_FIX: "${scene.id}" startTime ${startTime.toFixed(2)}s → ${expandedStartTime.toFixed(2)}s (to include microVisual anchors)`);
+      console.log(`[Phase] ✅ PHASE_DRIFT_FIX: "${scene.id}" startTime ${startTime.toFixed(2)}s → ${expandedStartTime.toFixed(2)}s (reason: ${driftReason})`);
       startTime = expandedStartTime;
     }
     
@@ -5360,10 +5513,21 @@ Deno.serve(async (req) => {
         if (preserveStructure && oldContent?.phases) {
           console.log(`[V7-vv] C02+C03+C04: Using PRESERVE_STRUCTURE mode`);
           
+          // =========================================================================
+          // ✅ PHASE_DRIFT_FIX (REPROCESS): Corrigir boundaries baseado em word timestamps
+          // Isso DEVE rodar ANTES do C04 para que os boundaries sejam corrigidos
+          // antes da normalização de timeline
+          // =========================================================================
+          console.log(`[V7-vv] PHASE_DRIFT_FIX: Checking for narration drift...`);
+          const driftCorrectedPhases = applyPhaseDriftFixReprocess(
+            oldContent.phases,
+            mainAudio.wordTimestamps
+          );
+          
           // ✅ C04: PRIMEIRO normalizar timeline global (monotonicidade, overlap, clamp)
           console.log(`[V7-vv] C04: Normalizing global phase timeline...`);
           const c04Result = normalizePhaseTimeline(
-            oldContent.phases,
+            driftCorrectedPhases, // ← Usar phases com DRIFT FIX aplicado
             mainAudio.duration
           );
           c04Stats = c04Result.c04Stats;
