@@ -13,6 +13,7 @@ import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
+import { V7DebugHUD } from './V7DebugHUD';
 import { useV7PlayerAdapter } from '../state/useV7PlayerAdapter';
 
 import V7PhaseLoading from './phases/V7PhaseLoading';
@@ -130,6 +131,10 @@ export const V7PhasePlayer = ({
   const [showControls, setShowControls] = useState(true);
   const [isPlayingWithoutAudio, setIsPlayingWithoutAudio] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  
+  // ✅ V7 DEBUG HUD: Track quiz state for debugging
+  const [debugQuizEnabled, setDebugQuizEnabled] = useState(false);
+  const [debugQuizReason, setDebugQuizReason] = useState('initial');
 
   // ✅ DETERMINISTIC LOGS: Mount/unmount tracking
   useEffect(() => {
@@ -418,7 +423,11 @@ export const V7PhasePlayer = ({
     isElementVisible,
     isElementHighlighted,
     visibleElements,
-    highlightedElements
+    highlightedElements,
+    // ✅ V7 DEBUG HUD: Extract debug state
+    lastCrossedAction,
+    prevTime: anchorPrevTime,
+    resetActions,
   } = useAnchorText({
     wordTimestamps,
     currentTime: audio.currentTime,
@@ -551,7 +560,25 @@ export const V7PhasePlayer = ({
     c07AutoPauseAppliedRef.current = true;
   }, [currentPhase?.id, currentPhase?.type, currentPhase?.interaction, hasPauseActionForInteractivePhase, audio.isPlaying]);
 
-  // ✅ V7-v6: Reset lock when interaction completes - now handled by machine unlockPhase action
+  // ✅ V7 DEBUG HUD: Sync quiz enabled state for debugging
+  useEffect(() => {
+    const interactivePhaseTypes = ['interaction', 'playground', 'quiz'];
+    const isInteractive = currentPhase && interactivePhaseTypes.includes(currentPhase.type);
+    
+    if (isInteractive) {
+      // Quiz options are enabled when paused by anchor OR by C07 auto-pause
+      const enabled = isPausedByAnchor || c07AutoPaused;
+      const reason = isPausedByAnchor ? 'paused_by_anchor' : 
+                     c07AutoPaused ? 'c07_auto_pause' : 
+                     'waiting_for_anchor';
+      
+      setDebugQuizEnabled(enabled);
+      setDebugQuizReason(reason);
+    } else {
+      setDebugQuizEnabled(false);
+      setDebugQuizReason('not_interactive_phase');
+    }
+  }, [currentPhase?.type, isPausedByAnchor, c07AutoPaused]);
 
   // ✅ V7-v18: Trigger particle burst on specific phase transitions
   useEffect(() => {
@@ -1970,6 +1997,37 @@ export const V7PhasePlayer = ({
       {isLoading && (
         <V7PhaseLoading onComplete={handleLoadingComplete} duration={3000} />
       )}
+
+      {/* ✅ V7 Debug HUD - Fixed top right, always visible in debug mode */}
+      <V7DebugHUD
+        hasAudio={hasAudio}
+        wordTimestampsCount={wordTimestamps.length}
+        currentTime={hasAudio ? audio.currentTime : internalTime}
+        prevTime={anchorPrevTime}
+        lastCrossedAction={lastCrossedAction ? {
+          type: lastCrossedAction.type,
+          phaseId: currentPhase?.id || 'unknown',
+          targetId: lastCrossedAction.targetId,
+          keywordTime: lastCrossedAction.keywordTime,
+          keyword: lastCrossedAction.keyword,
+          id: lastCrossedAction.id,
+        } : null}
+        visibleElementsSize={visibleElements.size}
+        quizOptionsEnabled={debugQuizEnabled}
+        quizOptionsReason={debugQuizReason}
+        currentPhase={currentPhase}
+        onResetState={() => {
+          console.log('[V7DebugHUD] 🔄 Reset State triggered');
+          resetActions();
+          setDebugQuizEnabled(false);
+          setDebugQuizReason('reset_by_hud');
+        }}
+        onSimulateSeekBack={() => {
+          console.log('[V7DebugHUD] ⏪ Simulate Seek Back -2s triggered');
+          const targetTime = Math.max(0, audio.currentTime - 2);
+          audio.seekTo(targetTime);
+        }}
+      />
 
       {/* Debug Panel */}
       <V7DebugPanel

@@ -122,6 +122,9 @@ export function useAnchorText({
   // ✅ V7-v60 CROSSING DETECTION: Track previous time for crossing detection
   const prevTimeRef = useRef<number>(-1);
   
+  // ✅ V7 DEBUG HUD: Track last crossed action for debugging
+  const [lastCrossedAction, setLastCrossedAction] = useState<AnchorAction | null>(null);
+  
   // ✅ FIRST-LOAD FIX: Track if we've done initial recompute after audio is ready
   const hasInitializedRef = useRef<boolean>(false);
   const lastVisibleCountRef = useRef<number>(0);
@@ -243,6 +246,12 @@ export function useAnchorText({
       // Marca como executada
       stateRef.current.executedActions.add(actionKey);
       stateRef.current.lastEventTime = currentTime;
+      
+      // ✅ V7 DEBUG HUD: Track last crossed action
+      setLastCrossedAction({
+        ...action,
+        keywordTime: wordTs.end,
+      });
 
       // Emite evento genérico
       const event: AnchorEvent = { action, timestamp: currentTime, wordTimestamp: wordTs };
@@ -549,6 +558,10 @@ export function useAnchorText({
     isPausedByAnchor: isPausedByAnchorState, // ✅ V7-v5: Usar state que causa re-render
     visibleElements,
     highlightedElements,
+    
+    // ✅ V7 DEBUG HUD: Expose debug state
+    lastCrossedAction,
+    prevTime: prevTimeRef.current,
     
     // Helpers
     isElementVisible,
