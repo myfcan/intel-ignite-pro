@@ -4534,8 +4534,32 @@ function generatePhases(
     
     // Agora processar microVisuals normalmente com o startTime potencialmente expandido
     scene.visual?.microVisuals?.forEach((mv, idx) => {
-      // ✅ V7-vv: Buscar anchorText DENTRO do range da cena (agora expandido)
-      const triggerTime = findKeywordTime(mv.anchorText, wordTimestamps, startTime, endTime);
+      // =====================================================================
+      // ✅ C08 FIX v2: Buscar anchorText GLOBALMENTE primeiro, depois validar range
+      // PROBLEMA: Se o PHASE_DRIFT_FIX expandiu startTime, a keyword pode estar
+      // no range expandido mas a busca antiga falhava por usar range original.
+      // 
+      // SOLUÇÃO: Buscar globalmente, aceitar se estiver no range [expandedStartTime, endTime]
+      // =====================================================================
+      
+      // Primeiro: busca GLOBAL para encontrar onde a palavra realmente está
+      const audioEnd = wordTimestamps[wordTimestamps.length - 1]?.end || endTime;
+      const globalTriggerTime = findKeywordTime(mv.anchorText, wordTimestamps, 0, audioEnd);
+      
+      // Segundo: validar se está no range expandido da fase
+      let triggerTime: number | null = null;
+      if (globalTriggerTime !== null) {
+        // Aceitar se estiver dentro do range expandido OU até 0.5s antes (margem de segurança)
+        const acceptableStart = Math.max(0, startTime - 0.5);
+        if (globalTriggerTime >= acceptableStart && globalTriggerTime <= endTime) {
+          triggerTime = globalTriggerTime;
+          console.log(`[C08] ✅ "${mv.anchorText}" found at ${globalTriggerTime.toFixed(2)}s - within expanded range [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s]`);
+        } else {
+          console.log(`[C08] ⚠️ "${mv.anchorText}" found at ${globalTriggerTime.toFixed(2)}s - OUTSIDE range [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s]`);
+        }
+      } else {
+        console.log(`[C08] ⚠️ "${mv.anchorText}" NOT FOUND in audio`);
+      }
       
       // ✅ CONTRATO CONGELADO v1.0: Converter moderno → legado ANTES de salvar
       const canonicalType = MODERN_TO_LEGACY_MAP[mv.type] || mv.type;
@@ -4556,7 +4580,7 @@ function generatePhases(
         content: mv.content,
       });
       
-      console.log(`[MicroVisual] ${mv.id || `mv-${scene.id}-${idx}`}: ${mv.type} → ${canonicalType} @ ${safeTriggerTime.toFixed(2)}s (${safeDuration}s)`);
+      console.log(`[MicroVisual] ${mv.id || `mv-${scene.id}-${idx}`}: ${mv.type} → ${canonicalType} @ ${safeTriggerTime.toFixed(2)}s (${safeDuration}s) [triggerTime=${triggerTime !== null ? 'FOUND' : 'FALLBACK'}]`);
 
       if (triggerTime !== null) {
         anchorActions.push({
