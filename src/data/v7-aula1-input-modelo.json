@@ -313,7 +313,7 @@
       "id": "cena-8-transicao",
       "title": "Transição para Revelação",
       "type": "dramatic",
-      "narration": "O método que eles usam se chama PERFEITO.",
+      "narration": "O método que eles usam tem um nome.",
       "visual": {
         "type": "text-reveal",
         "content": {
@@ -331,7 +331,10 @@
       "id": "cena-9-perfeito",
       "title": "Revelação do Método PERFEITO",
       "type": "revelation",
-      "narration": "Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante. PERFEITO.",
+      "narration": "Esse é o método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante. Com esse método, seus prompts serão absolutamente imbatíveis.",
+      "anchorText": {
+        "pauseAt": "imbatíveis"
+      },
       "visual": {
         "type": "letter-reveal",
         "content": {

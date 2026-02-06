@@ -1,0 +1,197 @@
+{
+  "$schema": "V7-vv Pipeline Input Schema",
+  "$comment": "Modelo demonstrativo seguindo 100% o contrato C01-C08",
+  "title": "Dominando Prompts com PERFEITO",
+  "subtitle": "O método dos 8 pilares para prompts profissionais",
+  "difficulty": "beginner",
+  "category": "Fundamentos de IA",
+  "tags": ["IA", "prompts", "método PERFEITO", "C08"],
+  "learningObjectives": [
+    "Entender a diferença entre prompts amadores e profissionais",
+    "Conhecer o método PERFEITO",
+    "Aplicar os 8 pilares na prática"
+  ],
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "generate_audio": true,
+  "fail_on_audio_error": false,
+  "scenes": [
+    {
+      "id": "cena-1-intro",
+      "title": "Introdução Impactante",
+      "type": "dramatic",
+      "narration": "Noventa por cento das pessoas que usam IA recebem respostas genéricas e inúteis. Você é uma delas?",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "hookQuestion": "VOCÊ SABIA?",
+          "number": "90%",
+          "subtitle": "recebem respostas genéricas",
+          "mood": "danger"
+        },
+        "effects": {
+          "mood": "danger",
+          "glow": true,
+          "vignette": true
+        },
+        "microVisuals": [
+          {
+            "id": "mv-genericas",
+            "type": "text-highlight",
+            "anchorText": "genéricas",
+            "content": {
+              "highlight": "respostas genéricas",
+              "animation": "pulse"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-2-comparacao",
+      "title": "Comparação Lado a Lado",
+      "type": "comparison",
+      "narration": "Enquanto um escreve 'me ajuda a escrever um email', o outro estrutura o pedido com contexto, objetivo e formato esperado.",
+      "visual": {
+        "type": "split-screen",
+        "content": {
+          "left": {
+            "label": "AMADOR",
+            "emoji": "😕",
+            "mood": "danger",
+            "items": ["Prompt curto", "Sem contexto", "Resultado genérico"]
+          },
+          "right": {
+            "label": "PROFISSIONAL",
+            "emoji": "🎯",
+            "mood": "success",
+            "items": ["Prompt estruturado", "Contexto claro", "Resultado aplicável"]
+          }
+        },
+        "effects": {
+          "convergence": true
+        },
+        "microVisuals": [
+          {
+            "id": "mv-email",
+            "type": "text-pop",
+            "anchorText": "email",
+            "content": {"text": "me ajuda a escrever um email", "emoji": "📧"}
+          },
+          {
+            "id": "mv-estrutura",
+            "type": "highlight",
+            "anchorText": "estrutura",
+            "content": {"side": "right", "pulse": true}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-3-perfeito",
+      "title": "Revelação do Método PERFEITO",
+      "type": "revelation",
+      "narration": "Esse é o método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante. Com esse método, seus prompts serão absolutamente imbatíveis.",
+      "anchorText": {
+        "pauseAt": "imbatíveis"
+      },
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "letters": [
+            {"letter": "P", "meaning": "Persona", "subtitle": "específica"},
+            {"letter": "E", "meaning": "Estrutura", "subtitle": "clara"},
+            {"letter": "R", "meaning": "Resultado", "subtitle": "esperado"},
+            {"letter": "F", "meaning": "Formato", "subtitle": "definido"},
+            {"letter": "E", "meaning": "Exemplos", "subtitle": "práticos"},
+            {"letter": "I", "meaning": "Iteração", "subtitle": "contínua"},
+            {"letter": "T", "meaning": "Tom", "subtitle": "adequado"},
+            {"letter": "O", "meaning": "Otimização", "subtitle": "constante"}
+          ],
+          "finalStamp": "MÉTODO PERFEITO"
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true,
+          "particles": "sparks"
+        },
+        "microVisuals": [
+          {"id": "mv-p", "type": "letter-reveal", "anchorText": "Persona", "content": {"index": 0}},
+          {"id": "mv-e1", "type": "letter-reveal", "anchorText": "Estrutura", "content": {"index": 1}},
+          {"id": "mv-r", "type": "letter-reveal", "anchorText": "Resultado", "content": {"index": 2}},
+          {"id": "mv-f", "type": "letter-reveal", "anchorText": "Formato", "content": {"index": 3}},
+          {"id": "mv-e2", "type": "letter-reveal", "anchorText": "Exemplos", "content": {"index": 4}},
+          {"id": "mv-i", "type": "letter-reveal", "anchorText": "Iteração", "content": {"index": 5}},
+          {"id": "mv-t", "type": "letter-reveal", "anchorText": "Tom", "content": {"index": 6}},
+          {"id": "mv-o", "type": "letter-reveal", "anchorText": "Otimização", "content": {"index": 7}}
+        ]
+      }
+    },
+    {
+      "id": "cena-4-quiz",
+      "title": "Quiz - O que P representa?",
+      "type": "interaction",
+      "narration": "Vamos testar seu conhecimento. O que a letra P representa no método PERFEITO?",
+      "anchorText": {
+        "pauseAt": "representa"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "O que a letra P representa no método PERFEITO?",
+          "mood": "neutral"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "O que a letra P representa no método PERFEITO?",
+        "options": [
+          {
+            "id": "opt-persona",
+            "text": "Persona específica",
+            "isCorrect": true,
+            "feedback": {
+              "title": "Correto!",
+              "subtitle": "A Persona define quem a IA deve ser.",
+              "mood": "success",
+              "narration": "Isso mesmo! A Persona específica é o primeiro pilar. Ela define o papel que a IA deve assumir para responder."
+            }
+          },
+          {
+            "id": "opt-pratica",
+            "text": "Prática constante",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Quase!",
+              "subtitle": "Mas não é essa letra.",
+              "mood": "warning",
+              "narration": "Quase! Prática é importante, mas P representa Persona específica. Volte e reveja o método."
+            }
+          },
+          {
+            "id": "opt-pergunta",
+            "text": "Pergunta clara",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Não é isso.",
+              "subtitle": "Reveja o método PERFEITO.",
+              "mood": "warning",
+              "narration": "Não é bem assim. P representa Persona específica. É o papel que a IA assume para te ajudar."
+            }
+          }
+        ],
+        "timeout": {
+          "soft": 5,
+          "medium": 12,
+          "hard": 25,
+          "hints": [
+            "Pense no primeiro pilar...",
+            "É sobre quem a IA deve ser.",
+            "Começa com P de..."
+          ],
+          "autoSelect": "opt-persona"
+        }
+      }
+    }
+  ]
+}
