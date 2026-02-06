@@ -1,0 +1,415 @@
+{
+  "$schema": "V7-vv Pipeline Input Schema",
+  "$comment": "JSON CORRIGIDO - Narração PERFEITO consolidada na cena-9 conforme contrato C08",
+  "title": "O Fim da Brincadeira com IA - PERFEITO CORRIGIDO",
+  "subtitle": "98% brinca. 2% lucra R$ 30K/mês.",
+  "difficulty": "beginner",
+  "category": "fundamentos",
+  "tags": ["IA", "produtividade", "método PERFEITO", "prompts", "C08-FIXED"],
+  "learningObjectives": [
+    "Entender a diferença entre usar IA como brinquedo vs ferramenta",
+    "Conhecer o método PERFEITO para prompts profissionais",
+    "Aplicar técnicas dos 2% que lucram com IA"
+  ],
+  "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+  "generate_audio": true,
+  "fail_on_audio_error": false,
+  "scenes": [
+    {
+      "id": "cena-1-impacto",
+      "title": "98% - O Impacto",
+      "type": "dramatic",
+      "narration": "Noventa e oito por cento das pessoas que usam Inteligência Artificial hoje tratam ela como brinquedo. Isso mesmo. Noventa e oito por cento usam para passar o tempo.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "number": "98%",
+          "subtitle": "tratam a Inteligência Artificial como brinquedo",
+          "mood": "danger",
+          "effect": "zoom-in",
+          "hookQuestion": "VOCÊ SABIA?"
+        },
+        "effects": {
+          "mood": "danger",
+          "glow": true,
+          "grain": true,
+          "vignette": true
+        },
+        "microVisuals": [
+          {
+            "id": "mv-multidao",
+            "type": "image-flash",
+            "anchorText": "brinquedo",
+            "content": {
+              "description": "Multidão rindo em slow motion",
+              "animation": "fade"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-2-brincadeira",
+      "title": "Brincadeira vs Resultado",
+      "type": "narrative",
+      "narration": "Conta uma piada sobre banana. Escreve como pirata. Faz um poema sobre meu gato. É isso que a maioria pede.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "title": "98%",
+          "mood": "warning",
+          "items": [
+            {"icon": "laugh", "text": "Conta uma piada sobre banana"},
+            {"icon": "skull", "text": "Escreve como pirata"},
+            {"icon": "cat", "text": "Faz um poema sobre meu gato"}
+          ]
+        },
+        "effects": {
+          "mood": "warning",
+          "particles": "confetti-light"
+        },
+        "microVisuals": [
+          {
+            "id": "mv-banana",
+            "type": "text-pop",
+            "anchorText": "banana",
+            "content": {"text": "piada sobre banana", "emoji": "🍌"}
+          },
+          {
+            "id": "mv-pirata",
+            "type": "text-pop",
+            "anchorText": "pirata",
+            "content": {"text": "como pirata", "emoji": "🏴‍☠️"}
+          },
+          {
+            "id": "mv-gato",
+            "type": "text-pop",
+            "anchorText": "gato",
+            "content": {"text": "sobre meu gato", "emoji": "🐱"}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-3-virada",
+      "title": "Os 2% e o Dinheiro",
+      "type": "dramatic",
+      "narration": "Enquanto isso, os outros dois por cento estão faturando trinta mil reais por mês. Usando a mesma ferramenta.",
+      "visual": {
+        "type": "number-reveal",
+        "content": {
+          "countUp": true,
+          "mood": "success",
+          "number": "2%",
+          "secondaryNumber": "+ R$ 30.000/mês",
+          "showSecondaryAsMain": true,
+          "subtitle": "estão faturando"
+        },
+        "effects": {
+          "glow": true,
+          "mood": "success",
+          "particles": "sparks"
+        },
+        "microVisuals": [
+          {
+            "id": "mv-dinheiro",
+            "type": "number-count",
+            "anchorText": "trinta mil",
+            "content": {"from": 0, "to": 30000, "prefix": "R$ "}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-4-comparacao",
+      "title": "Comparação 98% vs 2%",
+      "type": "comparison",
+      "narration": "Enquanto um brinca, o outro usa como ferramenta de trabalho. Um recebe respostas genéricas. O outro recebe respostas aplicáveis.",
+      "visual": {
+        "type": "split-screen",
+        "content": {
+          "left": {
+            "label": "98% — BRINCANDO",
+            "emoji": "😂",
+            "mood": "danger",
+            "items": ["sem contexto", "prompt curto", "resposta genérica"]
+          },
+          "right": {
+            "label": "2% — LUCRANDO",
+            "emoji": "💰",
+            "mood": "success",
+            "items": ["estrutura", "contexto", "objetivo", "resultado"]
+          }
+        },
+        "effects": {
+          "convergence": true
+        },
+        "microVisuals": [
+          {
+            "id": "mv-brinca",
+            "type": "highlight",
+            "anchorText": "brinca",
+            "content": {"side": "left", "pulse": true}
+          },
+          {
+            "id": "mv-ferramenta",
+            "type": "highlight",
+            "anchorText": "ferramenta",
+            "content": {"side": "right", "pulse": true}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-5-espelho",
+      "title": "Espelho - A Reflexão",
+      "type": "dramatic",
+      "narration": "Seja honesto. Você é noventa e oito ou dois por cento?",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "mainText": "SEJA HONESTO.",
+          "subtitle": "Você é 98%... ou 2%?",
+          "effect": "pulse",
+          "mood": "dramatic"
+        },
+        "effects": {
+          "mood": "dramatic",
+          "slowZoom": true,
+          "vignette": true
+        },
+        "microVisuals": [
+          {
+            "id": "mv-honesto",
+            "type": "text-highlight",
+            "anchorText": "honesto",
+            "content": {"highlight": "SEJA HONESTO", "animation": "glow"}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cena-6-quiz",
+      "title": "Quiz - Como Você Usa a IA?",
+      "type": "interaction",
+      "narration": "Como você usa a Inteligência Artificial hoje? Escolha a opção que mais representa você.",
+      "anchorText": {
+        "pauseAt": "representa você"
+      },
+      "visual": {
+        "type": "quiz",
+        "content": {
+          "question": "Como você usa a I.A. hoje?",
+          "mood": "neutral"
+        }
+      },
+      "interaction": {
+        "type": "quiz",
+        "question": "Como você usa a I.A. hoje?",
+        "options": [
+          {
+            "id": "opt-98-simples",
+            "text": "Perguntas simples e diretas, sem contexto.",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Você está nos 98%.",
+              "subtitle": "Sem problema. Agora você vai virar a chave.",
+              "mood": "warning",
+              "narration": "Sem problemas. Você está no ponto exato em que a maioria está. E agora eu vou te mostrar como sair disso."
+            }
+          },
+          {
+            "id": "opt-2-contexto",
+            "text": "Com contexto, persona e objetivo claro.",
+            "isCorrect": true,
+            "feedback": {
+              "title": "Você está nos 2%.",
+              "subtitle": "Excelente. Agora você vai formalizar o método.",
+              "mood": "success",
+              "narration": "Excelente. Você já está pensando como profissional. Agora eu vou te mostrar o método que deixa isso consistente."
+            }
+          },
+          {
+            "id": "opt-98-copia",
+            "text": "Copio prompts da internet e adapto por cima.",
+            "isCorrect": false,
+            "feedback": {
+              "title": "Você está nos 98%.",
+              "subtitle": "Sem problema. Agora você vai virar a chave.",
+              "mood": "warning",
+              "narration": "Sem problemas. Você está no ponto exato em que a maioria está. E agora eu vou te mostrar como sair disso."
+            }
+          }
+        ],
+        "timeout": {
+          "soft": 5,
+          "medium": 12,
+          "hard": 25,
+          "hints": [
+            "Você tem que tomar a decisão.",
+            "Escolhe aí.",
+            "Responda com honestidade."
+          ],
+          "autoSelect": "opt-98-simples"
+        }
+      }
+    },
+    {
+      "id": "cena-7-promessa",
+      "title": "Promessa do Segredo dos 2%",
+      "type": "interaction",
+      "narration": "Vou te mostrar o segredo dos dois por cento. Para projetos. Renda extra. E para se tornar dez vezes mais claro no que você faz.",
+      "anchorText": {
+        "pauseAt": "você faz"
+      },
+      "visual": {
+        "type": "cards-reveal",
+        "content": {
+          "title": "Vou te mostrar o segredo dos 2%",
+          "subtitle": "Para projetos. Renda extra. E para se tornar 10x mais claro.",
+          "cards": [
+            {"id": "card-projetos", "icon": "clipboard", "text": "PROJETOS"},
+            {"id": "card-renda", "icon": "dollar", "text": "RENDA EXTRA"},
+            {"id": "card-clareza", "icon": "brain", "text": "10X MAIS CLAREZA"}
+          ],
+          "cta": {
+            "text": "QUERO DESCOBRIR AGORA",
+            "action": "next-phase"
+          }
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true,
+          "particles": "sparks"
+        },
+        "microVisuals": [
+          {
+            "id": "mv-projetos",
+            "type": "card-reveal",
+            "anchorText": "projetos",
+            "content": {"cardId": "card-projetos", "animation": "slide-up"}
+          },
+          {
+            "id": "mv-renda",
+            "type": "card-reveal",
+            "anchorText": "Renda extra",
+            "content": {"cardId": "card-renda", "animation": "slide-up"}
+          },
+          {
+            "id": "mv-dez-vezes",
+            "type": "card-reveal",
+            "anchorText": "dez vezes",
+            "content": {"cardId": "card-clareza", "animation": "slide-up"}
+          }
+        ]
+      },
+      "interaction": {
+        "type": "cta-button",
+        "buttonText": "QUERO DESCOBRIR AGORA",
+        "action": "next-phase"
+      }
+    },
+    {
+      "id": "cena-8-transicao",
+      "title": "Transição para Revelação",
+      "type": "dramatic",
+      "narration": "O método que eles usam tem um nome. E agora você vai conhecer.",
+      "visual": {
+        "type": "text-reveal",
+        "content": {
+          "mainText": "O MÉTODO",
+          "highlightWord": "SECRETO",
+          "effect": "flash-reveal"
+        },
+        "effects": {
+          "flash": true,
+          "particles": "burst"
+        }
+      }
+    },
+    {
+      "id": "cena-9-perfeito",
+      "title": "Revelação do Método PERFEITO",
+      "type": "revelation",
+      "narration": "Esse é o método PERFEITO. Persona específica. Estrutura clara. Resultado esperado. Formato definido. Exemplos práticos. Iteração contínua. Tom adequado. Otimização constante. Com esse método, seus prompts serão absolutamente imbatíveis.",
+      "visual": {
+        "type": "letter-reveal",
+        "content": {
+          "word": "PERFEITO",
+          "letters": [
+            {"letter": "P", "meaning": "Persona", "subtitle": "específica"},
+            {"letter": "E", "meaning": "Estrutura", "subtitle": "clara"},
+            {"letter": "R", "meaning": "Resultado", "subtitle": "esperado"},
+            {"letter": "F", "meaning": "Formato", "subtitle": "definido"},
+            {"letter": "E", "meaning": "Exemplos", "subtitle": "práticos"},
+            {"letter": "I", "meaning": "Iteração", "subtitle": "contínua"},
+            {"letter": "T", "meaning": "Tom", "subtitle": "adequado"},
+            {"letter": "O", "meaning": "Otimização", "subtitle": "constante"}
+          ],
+          "finalStamp": "MÉTODO PERFEITO"
+        },
+        "effects": {
+          "mood": "success",
+          "glow": true,
+          "particles": "sparks"
+        },
+        "microVisuals": [
+          {"id": "mv-p", "type": "letter-reveal", "anchorText": "Persona", "content": {"index": 0}},
+          {"id": "mv-e1", "type": "letter-reveal", "anchorText": "Estrutura", "content": {"index": 1}},
+          {"id": "mv-r", "type": "letter-reveal", "anchorText": "Resultado", "content": {"index": 2}},
+          {"id": "mv-f", "type": "letter-reveal", "anchorText": "Formato", "content": {"index": 3}},
+          {"id": "mv-e2", "type": "letter-reveal", "anchorText": "Exemplos", "content": {"index": 4}},
+          {"id": "mv-i", "type": "letter-reveal", "anchorText": "Iteração", "content": {"index": 5}},
+          {"id": "mv-t", "type": "letter-reveal", "anchorText": "Tom", "content": {"index": 6}},
+          {"id": "mv-o", "type": "letter-reveal", "anchorText": "Otimização", "content": {"index": 7}}
+        ]
+      }
+    },
+    {
+      "id": "cena-10-playground",
+      "title": "Playground - A Diferença na Prática",
+      "type": "playground",
+      "narration": "Agora veja a diferença na prática. Compare um prompt amador com um prompt profissional. Faça o teste agora.",
+      "anchorText": {
+        "pauseAt": "teste agora"
+      },
+      "visual": {
+        "type": "playground",
+        "content": {
+          "title": "A DIFERENÇA NA PRÁTICA",
+          "subtitle": "Prompt amador vs prompt profissional",
+          "instruction": "Faça o teste agora"
+        }
+      },
+      "interaction": {
+        "type": "playground",
+        "amateurPrompt": "Me dá ideias de negócio",
+        "amateurScore": 10,
+        "professionalPrompt": "Atue como um consultor de negócios com 20 anos de experiência em startups brasileiras. Preciso de 5 ideias de negócio para um profissional de 45 anos que trabalha com contabilidade e quer usar IA para criar uma renda extra de R$5.000/mês. Liste cada ideia com: nome do negócio, investimento inicial, tempo para primeiro faturamento, e potencial de escala.",
+        "professionalScore": 95,
+        "comparison": {
+          "amateur": {
+            "label": "PROMPT AMADOR",
+            "mood": "danger",
+            "response": "Aqui estão algumas ideias: loja virtual, dropshipping, afiliados, freelancer, consultoria."
+          },
+          "professional": {
+            "label": "PROMPT PROFISSIONAL (PERFEITO)",
+            "mood": "success",
+            "response": "Baseado no seu perfil de contador com expertise em números e processos, aqui estão 5 ideias específicas para gerar R$5.000/mês com IA."
+          }
+        },
+        "userChallenge": {
+          "instruction": "Agora é sua vez! Reescreva este prompt amador usando o método PERFEITO:",
+          "challengePrompt": "Me ajuda a escrever um email",
+          "hints": [
+            "Defina a PERSONA: Quem você quer que a IA seja?",
+            "Especifique o RESULTADO: O que você espera receber?",
+            "Determine o FORMATO: Como quer a resposta estruturada?",
+            "Dê EXEMPLOS: Mostre o tom ou estilo desejado"
+          ]
+        }
+      }
+    }
+  ]
+}
