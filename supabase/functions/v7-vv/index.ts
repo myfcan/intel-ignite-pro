@@ -2689,15 +2689,49 @@ function selectAnchorOccurrence(
     }
   } else {
     // Single word matching
+    // =====================================================================
+    // ✅ C08 FIX v3: Matching mais estrito para evitar false-positives
+    // PROBLEMA: "target.includes(normalizedWord)" aceitava matches como:
+    //   - "Otimização" inclui "o" → match em qualquer "o" no áudio
+    //   - Isso causava triggers em 0.57s ao invés de 77.94s
+    //
+    // SOLUÇÃO: 
+    //   1. Match exato: normalizedWord === target
+    //   2. Match por prefixo: normalizedWord.startsWith(target) com min 3 chars
+    //   3. Match por sufixo: normalizedWord.endsWith(target) com min 3 chars
+    //   4. Match inclusivo: apenas se target tiver 4+ chars para evitar "o", "e", etc.
+    // =====================================================================
+    const target = keywordParts[0]; // já normalizado acima
+    const minInclusionLength = 4; // "Tom" = 3 chars, então usamos 4 para ser seguro
+    
     relevantTimestamps.forEach((ts, idx) => {
       const normalizedWord = normalizeWord(ts.word);
-      if (normalizedWord === target || normalizedWord.includes(target) || target.includes(normalizedWord)) {
-        allMatches.push({
-          word: ts.word,
-          start: ts.start,
-          end: ts.end,
-          idx
-        });
+      
+      // Match exato - sempre aceito
+      if (normalizedWord === target) {
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        return;
+      }
+      
+      // Match por prefixo (ex: "Persona" começa com "persona")
+      if (target.length >= 3 && normalizedWord.startsWith(target)) {
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        return;
+      }
+      
+      // Match por sufixo (ex: "Otimização" termina com "ação")
+      if (target.length >= 4 && normalizedWord.endsWith(target)) {
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        return;
+      }
+      
+      // Match inclusivo APENAS se:
+      // 1. Target for longo o suficiente (≥4 chars)
+      // 2. A palavra do áudio CONTÉM o target (ex: "Otimização" contém "otimi")
+      // REMOVIDO: target.includes(normalizedWord) - causava "persona" match com "e"
+      if (target.length >= minInclusionLength && normalizedWord.includes(target)) {
+        allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
+        return;
       }
     });
   }
