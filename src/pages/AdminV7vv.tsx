@@ -36,53 +36,54 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// ✅ Importar o JSON modelo CORRETO (com scenes, não phases)
+// ✅ Importar os JSONs modelo (com scenes, não phases)
 import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
+import V7AulaTesteC08 from '@/data/v7-aula-teste-c08.json';
 
-// Roteiro de exemplo SIMPLES (para testes rápidos)
+// Roteiro de exemplo SIMPLES (para testes rápidos) - Contrato C08
 const EXAMPLE_SCRIPT = `{
-  "title": "Minha Primeira Aula V7-vv",
-  "subtitle": "Aprenda a usar IA de verdade",
+  "title": "Exemplo Simples V7-vv (C08)",
+  "subtitle": "Demonstração do contrato C01-C08",
   "difficulty": "beginner",
   "category": "Fundamentos de IA",
-  "tags": ["IA", "prompts"],
-  "learningObjectives": ["Entender prompts eficazes"],
+  "tags": ["exemplo", "teste", "C08"],
+  "learningObjectives": ["Testar o pipeline V7-vv"],
   "generate_audio": true,
   "scenes": [
     {
-      "id": "cena-1",
-      "title": "Abertura",
+      "id": "cena-1-intro",
+      "title": "Introdução",
       "type": "dramatic",
-      "narration": "Bem-vindo à sua jornada de aprendizado com inteligência artificial.",
+      "narration": "Bem-vindo à demonstração do Pipeline V7-vv com contrato C08.",
       "visual": {
-        "type": "letterbox",
+        "type": "number-reveal",
         "content": {
-          "hookQuestion": "Pronto para transformar sua forma de trabalhar?",
-          "mainText": "Bem-vindo"
+          "hookQuestion": "VOCÊ ESTÁ PRONTO?",
+          "number": "100%",
+          "subtitle": "funcional com C08",
+          "mood": "success"
         }
       }
     },
     {
-      "id": "cena-2",
-      "title": "Pergunta",
+      "id": "cena-2-quiz",
+      "title": "Quiz",
       "type": "interaction",
-      "narration": "Agora me diga, você já usou IA antes? Escolha sua resposta.",
+      "narration": "Você entendeu como funciona? Escolha sua resposta.",
       "anchorText": {
-        "pauseAt": "Escolha sua resposta"
+        "pauseAt": "resposta"
       },
       "visual": {
         "type": "quiz",
         "content": {
-          "title": "Sua experiência"
+          "question": "O pipeline V7-vv funciona?"
         }
       },
       "interaction": {
         "type": "quiz",
-        "question": "Você já usou IA antes?",
         "options": [
-          { "id": "a", "text": "Sim, uso diariamente", "isCorrect": true },
-          { "id": "b", "text": "Já experimentei algumas vezes", "isCorrect": true },
-          { "id": "c", "text": "Nunca usei", "isCorrect": true }
+          { "id": "a", "text": "Sim, funciona perfeitamente", "isCorrect": true },
+          { "id": "b", "text": "Ainda tenho dúvidas", "isCorrect": true }
         ]
       }
     }
@@ -229,6 +230,14 @@ export default function AdminV7vv() {
     setJsonError(null);
     setDryRunResult(null);
     toast.success('JSON modelo COMPLETO da Aula 1 carregado! (10 cenas)');
+  };
+
+  // ✅ Carregar JSON modelo C08 (contrato C01-C08 com drift fix)
+  const loadNewTestModel = () => {
+    setScriptJson(JSON.stringify(V7AulaTesteC08, null, 2));
+    setJsonError(null);
+    setDryRunResult(null);
+    toast.success('JSON modelo C08 carregado! (Contrato C01-C08 - 4 cenas)');
   };
 
   // Preview da aula
@@ -392,6 +401,14 @@ export default function AdminV7vv() {
                 >
                   <Copy className="w-4 h-4 mr-2" />
                   Carregar Aula 1 Completa
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={loadNewTestModel}
+                  className="min-w-[140px] bg-cyan-600 hover:bg-cyan-700"
+                >
+                  <FileJson className="w-4 h-4 mr-2" />
+                  Carregar JSON Novo Aula Teste
                 </Button>
                 <Button
                   variant="outline"
