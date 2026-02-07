@@ -3840,29 +3840,29 @@ interface C07Stats {
  * @returns Fases com pauses garantidos + estatísticas
  */
 /**
- * C07.2 - Pause Timing por Tipo de Fase
- * ======================================
- * Garante que fases interativas tenham pauseAction NO MOMENTO CORRETO:
+ * C07.2 + C09 - Pause at Last Word
+ * =================================
+ * Garante que fases interativas tenham pauseAction NO FIM DA ÚLTIMA PALAVRA:
  * 
- * - QUIZ/PLAYGROUND/INTERACTION: Pause PERTO DO FIM para não cortar narração
- *   pauseTime = min(endTime - 0.20, endTime - 0.20)
- *   Nunca pausar antes de startTime + 1.0 (permite frase inicial completa)
+ * - QUIZ/PLAYGROUND/INTERACTION: Pause NO FIM da última palavra da fase
+ *   pauseTime = min(lastWordEnd + 0.15, phase.endTime)
+ *   Isso GARANTE que toda a narração toque COMPLETA antes de pausar
  * 
  * - CTA: Pausação opcional - botão deve ser clicável SEMPRE
  *   (CTA não depende de pause para funcionar)
  * 
- * Correção se pause existente estiver:
- * - Antes de startTime + 1.0 (corta frase) → corrigir
- * - Depois de endTime - 0.05 (tarde demais) → corrigir
+ * C09 OVERRIDE: Se c07OriginalTime existir MAS for ANTES de lastWordEnd,
+ * sobrescrever com pauseTime calculado e registrar c07Reason="C09_LAST_WORD_OVERRIDE"
  */
 function c07EnsurePauseForInteractivePhases(
-  phases: any[]
+  phases: any[],
+  wordTimestamps: WordTimestamp[] = []
 ): {
   updatedPhases: any[];
   c07Stats: C07Stats;
 } {
-  console.log('[C07.2] c07EnsurePauseForInteractivePhases: Starting (Pause Near End Contract)...');
-  console.log(`[C07.2] Processing ${phases.length} phases`);
+  console.log('[C07.2+C09] c07EnsurePauseForInteractivePhases: Starting (Pause at Last Word)...');
+  console.log(`[C07.2+C09] Processing ${phases.length} phases, ${wordTimestamps.length} wordTimestamps`);
   
   const c07Stats: C07Stats = {
     interactivePhases: 0,
@@ -3872,14 +3872,18 @@ function c07EnsurePauseForInteractivePhases(
     details: []
   };
   
-  // Extended stats for C07.2
+  // Extended stats for C07.2+C09
   let pausesCorrected = 0;
   let phasesTooShort = 0;
   let ctaPhases = 0;
+  let c09Overrides = 0;
   
   // Tipos de fase que são interativas por natureza (exceto CTA que é tratado separadamente)
   const INTERACTIVE_PHASE_TYPES = ['interaction', 'playground', 'quiz'];
   const CTA_PHASE_TYPES = ['cta'];
+  
+  // C09: Padding após última palavra (0.15s para buffer)
+  const C09_PAD = 0.15;
   
   // Deep clone para não mutar o original
   const updatedPhases: any[] = phases.map(p => JSON.parse(JSON.stringify(p)));
@@ -3894,7 +3898,7 @@ function c07EnsurePauseForInteractivePhases(
     // CTA: não precisa de pause obrigatório (botão sempre clicável)
     if (isCTAByType) {
       ctaPhases++;
-      console.log(`[C07.2] Phase "${phase.id}" is CTA - pause optional (button always clickable)`);
+      console.log(`[C07.2+C09] Phase "${phase.id}" is CTA - pause optional (button always clickable)`);
       continue;
     }
     
@@ -3914,29 +3918,32 @@ function c07EnsurePauseForInteractivePhases(
     const phaseDuration = endTime - startTime;
     
     // ============================================
-    // C07.2 Pause Near End Calculation
+    // C09: Encontrar última palavra REAL da fase
     // ============================================
-    // Objetivo: permitir que a narração toque COMPLETA antes de pausar
-    // pauseTime = endTime - 0.20 (0.2s antes do fim da fase)
-    // Mínimo: startTime + 1.0 (garante pelo menos 1s de áudio)
-    let targetPauseTime = endTime - 0.20;
+    const wordsInPhase = wordTimestamps.filter(
+      wt => wt.start >= startTime && wt.end <= endTime
+    ).sort((a, b) => b.end - a.end);
     
-    // Safety: Se pauseTime <= startTime + 1.0, fase é muito curta
-    // Usar metade da fase como compromisso
-    if (targetPauseTime <= startTime + 1.0) {
-      targetPauseTime = startTime + (phaseDuration / 2);
-      console.log(`[C07.2] Phase "${phase.id}" is short (${phaseDuration.toFixed(2)}s) - using midpoint ${targetPauseTime.toFixed(3)}s`);
+    const lastWordInPhase = wordsInPhase[0];
+    const lastWordEnd = lastWordInPhase?.end ?? endTime;
+    
+    // C09: pauseTime = min(lastWordEnd + PAD, endTime)
+    let targetPauseTime = Math.min(lastWordEnd + C09_PAD, endTime);
+    
+    // Safety: Se pauseTime >= endTime, usar endTime - 0.05 (margem mínima)
+    if (targetPauseTime >= endTime) {
+      targetPauseTime = endTime - 0.05;
     }
     
-    // Safety: Se pauseTime >= endTime, fase é muito curta - não inserir
-    if (targetPauseTime >= endTime) {
-      console.error(`[C07.2] ERROR: Phase "${phase.id}" is too short for pause! duration=${phaseDuration.toFixed(3)}s (start=${startTime}, end=${endTime})`);
+    // Safety: Se pauseTime <= startTime, fase é muito curta - não inserir
+    if (targetPauseTime <= startTime) {
+      console.error(`[C07.2+C09] ERROR: Phase "${phase.id}" is too short for pause! duration=${phaseDuration.toFixed(3)}s`);
       phasesTooShort++;
       continue;
     }
     
-    // Safety: Garantir que pauseTime está dentro dos limites
-    targetPauseTime = Math.max(startTime + 0.15, Math.min(targetPauseTime, endTime - 0.05));
+    console.log(`[C07.2+C09] Phase "${phase.id}": lastWord="${lastWordInPhase?.word || 'N/A'}" @ ${lastWordEnd.toFixed(3)}s, pauseTime=${targetPauseTime.toFixed(3)}s (range: ${startTime.toFixed(3)}-${endTime.toFixed(3)})`);
+    
     
     // Encontrar pause existente
     const existingPauseIndex = phase.anchorActions.findIndex(
@@ -3956,34 +3963,52 @@ function c07EnsurePauseForInteractivePhases(
       const existingPauseTime = existingPause.keywordTime ?? existingPause.timestamp ?? 0;
       
       // =========================================================================
-      // ✅ C07.2 PRIORITY RULE: Respeitar c07OriginalTime se existir
-      // Se o pause já foi validado anteriormente e tem c07OriginalTime, NÃO recalcular
-      // Isso evita "keyword drift" onde uma palavra comum é matchada incorretamente
+      // ✅ C09 OVERRIDE: Se c07OriginalTime existir MAS for ANTES de lastWordEnd,
+      // sobrescrever para evitar corte de narração
       // =========================================================================
       const hasValidatedOriginal = existingPause.c07OriginalTime !== undefined && existingPause.c07OriginalTime !== null;
       
       if (hasValidatedOriginal) {
-        // ✅ REGRA MESTRE: c07OriginalTime já existe - NÃO recalcular
-        // Apenas validar se está dentro do range da fase atual
         const originalTime = existingPause.c07OriginalTime;
         const isInRange = originalTime >= startTime && originalTime <= endTime;
+        const cutsNarration = originalTime < lastWordEnd; // ← C09: Corta antes da última palavra?
         
-        if (isInRange) {
-          // Usar o tempo original validado
+        if (isInRange && !cutsNarration) {
+          // c07OriginalTime está OK - usar
           c07Stats.phasesWithPause++;
-          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): Using c07OriginalTime @ ${originalTime.toFixed(3)}s (PRIORITY RULE - no recalculation)`);
-          // Manter o pause como está, não alterar
-        } else {
-          // c07OriginalTime está fora do range - fase foi movida, usar targetPauseTime
-          console.log(`[C07.2] Phase "${phase.id}" (${phase.type}): c07OriginalTime @ ${originalTime.toFixed(3)}s is OUT OF RANGE [${startTime.toFixed(3)}s-${endTime.toFixed(3)}s], using targetPauseTime @ ${targetPauseTime.toFixed(3)}s`);
+          console.log(`[C07.2+C09] Phase "${phase.id}": Using c07OriginalTime @ ${originalTime.toFixed(3)}s (PRIORITY RULE, no cut)`);
+        } else if (cutsNarration) {
+          // ✅ C09 OVERRIDE: c07OriginalTime cortaria a narração - sobrescrever!
+          console.log(`[C07.2+C09] Phase "${phase.id}": c07OriginalTime @ ${originalTime.toFixed(3)}s CUTS narration (lastWordEnd=${lastWordEnd.toFixed(3)}s)! Overriding to ${targetPauseTime.toFixed(3)}s`);
           
           phase.anchorActions[existingPauseIndex] = {
             ...existingPause,
             keywordTime: targetPauseTime,
             timestamp: targetPauseTime,
             c07Corrected: true,
-            c07Version: '2.1',
-            c07OriginalTime: existingPause.c07OriginalTime, // Preservar original
+            c07Version: '2.1+C09',
+            c07OriginalTime: originalTime, // Preservar original para debug
+            c07Reason: 'C09_LAST_WORD_OVERRIDE',
+            c09LastWordEnd: lastWordEnd,
+            c09LastWord: lastWordInPhase?.word || null
+          };
+          
+          pausesCorrected++;
+          c09Overrides++;
+          c07Stats.phasesWithPause++;
+          detail.pauseInserted = true;
+          detail.insertedPauseKeywordTime = targetPauseTime;
+        } else {
+          // c07OriginalTime está fora do range - fase foi movida, usar targetPauseTime
+          console.log(`[C07.2+C09] Phase "${phase.id}": c07OriginalTime @ ${originalTime.toFixed(3)}s is OUT OF RANGE, using targetPauseTime @ ${targetPauseTime.toFixed(3)}s`);
+          
+          phase.anchorActions[existingPauseIndex] = {
+            ...existingPause,
+            keywordTime: targetPauseTime,
+            timestamp: targetPauseTime,
+            c07Corrected: true,
+            c07Version: '2.1+C09',
+            c07OriginalTime: originalTime,
             c07Reason: 'ORIGINAL_OUT_OF_RANGE'
           };
           
@@ -4059,8 +4084,8 @@ function c07EnsurePauseForInteractivePhases(
     c07Stats.details.push(detail);
   }
   
-  console.log(`[C07.2] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}, corrected=${pausesCorrected}, tooShort=${phasesTooShort}, cta=${ctaPhases}`);
-  console.log('[C07.2] c07EnsurePauseForInteractivePhases: Complete');
+  console.log(`[C07.2+C09] STATS: interactive=${c07Stats.interactivePhases}, withPause=${c07Stats.phasesWithPause}, inserted=${c07Stats.pausesInserted}, corrected=${pausesCorrected}, c09Overrides=${c09Overrides}, tooShort=${phasesTooShort}, cta=${ctaPhases}`);
+  console.log('[C07.2+C09] c07EnsurePauseForInteractivePhases: Complete');
   
   return {
     updatedPhases,
@@ -5829,8 +5854,8 @@ Deno.serve(async (req) => {
           // C06: Remove triggerTime, ensure show actions
           const c06FinalResult = c06NormalizeTriggerContract(finalLessonData.phases);
           
-          // C07: Ensure pause actions for interactive phases
-          const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases);
+          // C07+C09: Ensure pause actions for interactive phases (with wordTimestamps for last word detection)
+          const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases, mainAudio.wordTimestamps);
           finalLessonData.phases = c07Result.updatedPhases;
           c07Stats = c07Result.c07Stats;
           
@@ -6002,8 +6027,8 @@ Deno.serve(async (req) => {
         // C06: Remove triggerTime, ensure show actions
         const c06FinalResult = c06NormalizeTriggerContract(lessonData.phases);
         
-        // C07: Ensure pause actions for interactive phases
-        const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases);
+        // C07+C09: Ensure pause actions for interactive phases (with wordTimestamps for last word detection)
+        const c07Result = c07EnsurePauseForInteractivePhases(c06FinalResult.normalizedPhases, mainAudio.wordTimestamps);
         lessonData.phases = c07Result.updatedPhases;
         
         // Garantir metadata com triggerContract e c07Applied
