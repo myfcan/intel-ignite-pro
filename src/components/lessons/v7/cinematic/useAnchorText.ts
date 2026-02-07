@@ -383,9 +383,12 @@ export function useAnchorText({
         }
         
         // Get trigger point
+        // ✅ C09 FIX: Reduzido preemptiveMs de 100ms para 20ms
+        // O pause agora é calculado no FIM da última palavra, então não precisa antecipar tanto
         let triggerPoint: number | null = null;
         if (action.keywordTime !== undefined && action.keywordTime > 0) {
-          const preemptiveMs = action.type === 'pause' ? 100 : 0;
+          const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
+          triggerPoint = action.keywordTime - (preemptiveMs / 1000);
           triggerPoint = action.keywordTime - (preemptiveMs / 1000);
         } else {
           const wordTs = findKeywordTimestamp(action.keyword);
@@ -421,7 +424,7 @@ export function useAnchorText({
       for (const action of actions) {
         let triggerPoint: number | null = null;
         if (action.keywordTime !== undefined && action.keywordTime > 0) {
-          const preemptiveMs = action.type === 'pause' ? 100 : 0;
+          const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
           triggerPoint = action.keywordTime - (preemptiveMs / 1000);
         } else {
           const wordTs = findKeywordTimestamp(action.keyword);
@@ -473,9 +476,9 @@ export function useAnchorText({
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
       // ✅ V7-v60 CROSSING DETECTION: Se keywordTime está disponível, usar detecção por cruzamento
-      // Isso GARANTE que o trigger dispare EXATAMENTE UMA VEZ, sem misses nem duplicações
+      // ✅ C09 FIX: preemptiveMs reduzido de 100ms para 20ms
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const preemptiveMs = action.type === 'pause' ? 100 : 0;
+        const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
         const preemptiveSec = preemptiveMs / 1000;
         const triggerPoint = action.keywordTime - preemptiveSec;
         
