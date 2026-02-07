@@ -383,12 +383,12 @@ export function useAnchorText({
         }
         
         // Get trigger point
-        // ✅ C09 FIX: Reduzido preemptiveMs de 100ms para 20ms
-        // O pause agora é calculado no FIM da última palavra, então não precisa antecipar tanto
+        // ✅ C10 FIX: preemptiveMs = 0 para pause (100% determinístico)
+        // O pause agora é calculado no FIM da última palavra pelo C10 HARD PAUSE ANCHOR
+        // Não há necessidade de antecipar - o keywordTime já é o END time da palavra
         let triggerPoint: number | null = null;
         if (action.keywordTime !== undefined && action.keywordTime > 0) {
-          const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
-          triggerPoint = action.keywordTime - (preemptiveMs / 1000);
+          const preemptiveMs = 0; // ← C10: ZERO antecipação para TODOS os tipos
           triggerPoint = action.keywordTime - (preemptiveMs / 1000);
         } else {
           const wordTs = findKeywordTimestamp(action.keyword);
@@ -424,7 +424,7 @@ export function useAnchorText({
       for (const action of actions) {
         let triggerPoint: number | null = null;
         if (action.keywordTime !== undefined && action.keywordTime > 0) {
-          const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
+          const preemptiveMs = 0; // ← C10: ZERO antecipação
           triggerPoint = action.keywordTime - (preemptiveMs / 1000);
         } else {
           const wordTs = findKeywordTimestamp(action.keyword);
@@ -476,9 +476,9 @@ export function useAnchorText({
       if (action.type === 'resume' && !stateRef.current.pausedByAnchor) continue;
 
       // ✅ V7-v60 CROSSING DETECTION: Se keywordTime está disponível, usar detecção por cruzamento
-      // ✅ C09 FIX: preemptiveMs reduzido de 100ms para 20ms
+      // ✅ C10 FIX: preemptiveMs = 0 (100% determinístico, sem antecipação)
       if (action.keywordTime !== undefined && action.keywordTime > 0) {
-        const preemptiveMs = action.type === 'pause' ? 20 : 0; // ← C09: 100 → 20
+        const preemptiveMs = 0; // ← C10: ZERO antecipação
         const preemptiveSec = preemptiveMs / 1000;
         const triggerPoint = action.keywordTime - preemptiveSec;
         
