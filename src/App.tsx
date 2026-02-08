@@ -76,6 +76,7 @@ const V7Documentation = lazy(() => import("./pages/V7Documentation"));
 const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
 const AdminDebugs = lazy(() => import("./pages/AdminDebugs"));
 const AdminModelos = lazy(() => import("./pages/AdminModelos"));
+const C10Report = lazy(() => import("./pages/admin/C10Report"));
 
 const queryClient = new QueryClient();
 
@@ -201,6 +202,7 @@ const App = () => (
                 <Route path="/admin/3d-demos" element={<ProtectedRoute><Admin3DDemos /></ProtectedRoute>} />
                 <Route path="/admin/debugs" element={<ProtectedRoute><AdminDebugs /></ProtectedRoute>} />
                 <Route path="/admin/modelos" element={<ProtectedRoute><AdminModelos /></ProtectedRoute>} />
+                <Route path="/admin/c10-report" element={<ProtectedRoute><C10Report /></ProtectedRoute>} />
                 {/* NEW FEATURES ROUTES */}
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/guides/:guideId" element={<GuideDetail />} />
