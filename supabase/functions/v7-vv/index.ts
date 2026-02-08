@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.0-c10b';
-const COMMIT_HASH = 'c10b-editorial-validation-2026-02-08';
+const PIPELINE_VERSION = 'v7-vv-1.1.1-c10b-boundaryfix';
+const COMMIT_HASH = 'c10b-boundaryfix-2026-02-08-mandatory-guard';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -4990,8 +4990,99 @@ function generatePhases(
 }
 
 // ============================================================================
-// V7-vv FIX: WORD-BASED TIMING CALCULATION - FASE 6 FINAL
+// BOUNDARY_FIX_GUARD - Invariantes invioláveis de timeline (C10B-BOUNDARYFIX)
 // ============================================================================
+// 
+// Invariantes:
+// 1. Para cada fase: endTime >= startTime + MIN_DURATION
+// 2. Para cada par de fases: phases[i].endTime <= phases[i+1].startTime (monotonicidade)
+// 3. Todas as durações > 0
+//
+// Se violar, aplica correção automática e loga o ajuste.
+// Se ainda violar após correção, retorna lista de falhas para FAIL do run.
+// ============================================================================
+
+interface BoundaryFixResult {
+  fixedPhases: Phase[];
+  boundaryFixesApplied: number;
+  failedBoundaries: string[];
+}
+
+function applyBoundaryFixGuard(
+  phases: Phase[],
+  totalDuration: number
+): BoundaryFixResult {
+  const MIN_PHASE_DURATION = 0.05; // 50ms mínimo absoluto
+  const MIN_INTERACTIVE_DURATION = 5.0; // 5s para fases interativas
+  
+  let boundaryFixesApplied = 0;
+  const failedBoundaries: string[] = [];
+  const fixedPhases = phases.map(phase => ({ ...phase }));
+
+  console.log('[BOUNDARY_FIX_GUARD] ========================================');
+  console.log(`[BOUNDARY_FIX_GUARD] Validando ${fixedPhases.length} fases...`);
+
+  // PASS 1: Garantir duração mínima para cada fase
+  for (let i = 0; i < fixedPhases.length; i++) {
+    const phase = fixedPhases[i];
+    const isInteractive = INTERACTIVE_SCENE_TYPES.includes(phase.type as any);
+    const minDuration = isInteractive ? MIN_INTERACTIVE_DURATION : MIN_PHASE_DURATION;
+    
+    // Invariante 1: endTime >= startTime + minDuration
+    const currentDuration = phase.endTime - phase.startTime;
+    
+    if (currentDuration < minDuration) {
+      const oldEndTime = phase.endTime;
+      phase.endTime = phase.startTime + minDuration;
+      
+      // Clamp ao totalDuration
+      if (phase.endTime > totalDuration) {
+        phase.endTime = totalDuration;
+      }
+      
+      boundaryFixesApplied++;
+      console.log(`[BOUNDARY_FIX_GUARD] 🔧 FIX: ${phase.id} endTime ${oldEndTime.toFixed(3)}s → ${phase.endTime.toFixed(3)}s (duration was ${currentDuration.toFixed(3)}s)`);
+    }
+  }
+
+  // PASS 2: Garantir monotonicidade (endTime <= next.startTime)
+  for (let i = 0; i < fixedPhases.length - 1; i++) {
+    const current = fixedPhases[i];
+    const next = fixedPhases[i + 1];
+    
+    // Invariante 2: phases[i].endTime <= phases[i+1].startTime
+    if (current.endTime > next.startTime) {
+      const oldNextStart = next.startTime;
+      
+      // Estratégia: ajustar next.startTime para current.endTime (shift forward)
+      next.startTime = current.endTime;
+      
+      boundaryFixesApplied++;
+      console.log(`[BOUNDARY_FIX_GUARD] 🔧 MONOTONICITY_FIX: ${next.id} startTime ${oldNextStart.toFixed(3)}s → ${next.startTime.toFixed(3)}s (was overlapping ${current.id})`);
+    }
+  }
+
+  // PASS 3: Validação final - nenhuma duração pode ser <= 0
+  for (const phase of fixedPhases) {
+    const duration = phase.endTime - phase.startTime;
+    if (duration <= 0) {
+      failedBoundaries.push(`${phase.id}: duration=${duration.toFixed(3)}s (CRITICAL)`);
+      console.error(`[BOUNDARY_FIX_GUARD] ❌ CRITICAL: ${phase.id} has invalid duration ${duration.toFixed(3)}s`);
+    }
+  }
+
+  // Log resultado
+  if (failedBoundaries.length === 0) {
+    console.log(`[BOUNDARY_FIX_GUARD] ✅ Todas as fases passaram nas invariantes`);
+  } else {
+    console.error(`[BOUNDARY_FIX_GUARD] ❌ ${failedBoundaries.length} fases falharam nas invariantes`);
+  }
+  console.log('[BOUNDARY_FIX_GUARD] ========================================');
+
+  return { fixedPhases, boundaryFixesApplied, failedBoundaries };
+}
+
+
 
 /**
  * ✅ FASE 6 FINAL: Calculate phase timings based on KEYWORDS in wordTimestamps
@@ -5659,6 +5750,25 @@ Deno.serve(async (req) => {
       const c06Result = c06NormalizeTriggerContract(phases);
       phases = c06Result.normalizedPhases;
       console.log(`[V7-vv] C06: Removed ${c06Result.c06Stats.removedTriggerTimeCount} triggerTime, created ${c06Result.c06Stats.showActionsCreated} show actions`);
+
+      // =========================================================================
+      // PASSO 4.7: BOUNDARY_FIX_GUARD - Invariantes invioláveis de timeline
+      // =========================================================================
+      console.log('[V7-vv] Step 4.7: Applying BOUNDARY_FIX_GUARD...');
+      const boundaryResult = applyBoundaryFixGuard(phases, mainAudio.duration);
+      phases = boundaryResult.fixedPhases;
+      
+      if (boundaryResult.failedBoundaries.length > 0) {
+        const errorMsg = `BOUNDARY_FIX_GUARD FALHOU: ${boundaryResult.failedBoundaries.join(', ')}`;
+        console.error(`[V7-vv] ❌ ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+      
+      if (boundaryResult.boundaryFixesApplied > 0) {
+        console.log(`[V7-vv] ⚠️ BOUNDARY_FIX: ${boundaryResult.boundaryFixesApplied} correções aplicadas`);
+      } else {
+        console.log('[V7-vv] ✅ BOUNDARY_FIX: Boundaries válidos, sem correções');
+      }
     } else {
       console.log('[V7-vv] Step 4: SKIPPED (preserve_structure mode - uses existing phases)');
     }
