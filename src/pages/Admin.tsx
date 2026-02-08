@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Play,
   FlaskConical,
-  FolderOpen
+  FolderOpen,
+  ClipboardCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -202,7 +203,7 @@ export default function Admin() {
         {/* ========== ACESSO RÁPIDO ========== */}
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-muted-foreground">Acesso Rápido</h2>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-5">
             <Button
               variant="outline"
               className="h-auto py-3 flex-col gap-1"
@@ -210,6 +211,14 @@ export default function Admin() {
             >
               <Bug className="w-5 h-5 text-orange-500" />
               <span className="text-xs">Debug Engine</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1 border-cyan-500/50 hover:bg-cyan-500/10"
+              onClick={() => navigate('/admin/c10-report')}
+            >
+              <ClipboardCheck className="w-5 h-5 text-cyan-500" />
+              <span className="text-xs">Relatório C10</span>
             </Button>
             <Button
               variant="outline"
