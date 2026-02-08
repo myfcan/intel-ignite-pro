@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.0.0-c10';
-const COMMIT_HASH = 'c10-hard-pause-anchor-deterministic-2024';
+const PIPELINE_VERSION = 'v7-vv-1.1.0-c10b';
+const COMMIT_HASH = 'c10b-editorial-validation-2026-02-08';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -3849,7 +3849,7 @@ interface C07Stats {
  *   Isso GARANTE que toda a narração toque COMPLETA antes de pausar
  * 
  * ============================================================================
- * C10 HARD PAUSE ANCHOR CONTRACT (2026-02-07)
+ * C10 HARD PAUSE ANCHOR CONTRACT (2026-02-07) + C10B EDITORIAL VALIDATION
  * ============================================================================
  * 
  * REGRA MESTRE: Pausas em fases interativas são 100% DETERMINÍSTICAS.
@@ -3860,8 +3860,15 @@ interface C07Stats {
  * D) Se não encontrar → throw PAUSE_ANCHOR_NOT_FOUND (run FALHA)
  * E) ZERO heurísticas (removido: endTime-0.20, pause-near-end, clamps)
  * 
+ * C10B EDITORIAL VALIDATION (v1.1):
+ * F) pauseAt DEVE estar nos últimos 1.5s da narração da fase
+ * G) Se pauseTime < (lastWordEnd - 1.5s) → FAIL com PAUSE_ANCHOR_NOT_AT_END
+ * H) Isso garante que o usuário não perde narração importante
+ * 
  * CTA: Exceção - botão deve ser clicável SEMPRE (pause opcional)
  */
+const C10B_MAX_NARRATION_AFTER_PAUSE = 1.5; // Max 1.5s of narration after pause
+
 function c07EnsurePauseForInteractivePhases(
   phases: any[],
   wordTimestamps: WordTimestamp[] = [],
@@ -3870,7 +3877,7 @@ function c07EnsurePauseForInteractivePhases(
   updatedPhases: any[];
   c07Stats: C07Stats;
 } {
-  console.log('[C10] c07EnsurePauseForInteractivePhases: Starting (HARD PAUSE ANCHOR CONTRACT)...');
+  console.log('[C10] c07EnsurePauseForInteractivePhases: Starting (HARD PAUSE ANCHOR CONTRACT v1.1 + C10B)...');
   console.log(`[C10] Processing ${phases.length} phases, ${wordTimestamps.length} wordTimestamps, ${inputScenes.length} inputScenes`);
   
   const c07Stats: C07Stats = {
@@ -3883,6 +3890,7 @@ function c07EnsurePauseForInteractivePhases(
   
   // Extended stats for C10
   let c10HardPauses = 0;
+  let c10bViolations = 0;
   let ctaPhases = 0;
   
   // Tipos de fase que são interativas (exceto CTA que é tratado separadamente)
@@ -3958,11 +3966,73 @@ function c07EnsurePauseForInteractivePhases(
       const isInRange = pauseTime >= startTime && pauseTime <= endTime;
       
       if (isInRange) {
-        // ✅ C10: Pause existente está OK - apenas marcar como C10 validated
+        // ============================================================================
+        // C10B EDITORIAL VALIDATION: pauseAt DEVE estar nos últimos 1.5s da narração
+        // ============================================================================
+        // IMPORTANTE: Usar a narração ORIGINAL da cena para calcular lastWordEnd
+        // Isso evita o problema de boundary onde endTime inclui palavras da próxima cena
+        const sceneNarration = inputScene?.narration || '';
+        const sceneNarrationWords = sceneNarration.split(/\s+/).filter((w: string) => w.length > 0);
+        const wordCountFromNarration = sceneNarrationWords.length;
+        
+        // Encontrar as palavras desta cena nos wordTimestamps usando busca sequencial
+        // Começar de startTime e pegar apenas as N palavras da narração original
+        let wordsForThisScene: WordTimestamp[] = [];
+        let foundStartIndex = -1;
+        
+        // Encontrar a primeira palavra da cena (mais próxima de startTime)
+        for (let i = 0; i < wordTimestamps.length; i++) {
+          if (wordTimestamps[i].start >= startTime - 0.5) {
+            foundStartIndex = i;
+            break;
+          }
+        }
+        
+        if (foundStartIndex >= 0 && wordCountFromNarration > 0) {
+          // Pegar exatamente N palavras a partir do índice encontrado
+          wordsForThisScene = wordTimestamps.slice(foundStartIndex, foundStartIndex + wordCountFromNarration);
+        }
+        
+        const lastWordEnd = wordsForThisScene.length > 0 
+          ? Math.max(...wordsForThisScene.map(wt => wt.end)) 
+          : endTime;
+        const narrationAfterPause = lastWordEnd - pauseTime;
+        
+        console.log(`[C10B] Phase "${phase.id}": sceneWords=${wordCountFromNarration}, wordsFound=${wordsForThisScene.length}, pauseTime=${pauseTime.toFixed(3)}s, lastWordEnd=${lastWordEnd.toFixed(3)}s, delta=${narrationAfterPause.toFixed(3)}s`);
+        
+        // Se há mais de 1.5s de narração APÓS o pauseAt, é erro editorial
+        if (narrationAfterPause > C10B_MAX_NARRATION_AFTER_PAUSE) {
+          c10bViolations++;
+          console.error(`[C10B][ERROR] Phase "${phase.id}": existing pause is NOT at end of narration!`);
+          console.error(`[C10B][ERROR]   pauseTime=${pauseTime.toFixed(3)}s, lastWordEnd=${lastWordEnd.toFixed(3)}s, delta=${narrationAfterPause.toFixed(3)}s > ${C10B_MAX_NARRATION_AFTER_PAUSE}s`);
+          
+          // Encontrar as palavras que serão cortadas
+          const wordsCut = wordsForThisScene.filter(wt => wt.start > pauseTime).map(wt => wt.word);
+          
+          throw new Error(JSON.stringify({
+            error_code: 'PAUSE_ANCHOR_NOT_AT_END',
+            error_details: {
+              phase_id: phase.id,
+              pauseAt: existingPause.keyword,
+              pauseTime,
+              lastWordEnd,
+              narrationAfterPause,
+              maxAllowed: C10B_MAX_NARRATION_AFTER_PAUSE,
+              wordCountExpected: wordCountFromNarration,
+              wordCountFound: wordsForThisScene.length,
+              wordsCut: wordsCut.slice(0, 10),
+              fix: `Move pauseAt to a word near ${lastWordEnd.toFixed(2)}s or split narration into separate scenes`
+            }
+          }));
+        }
+        
+        // ✅ C10: Pause existente está OK - marcar como C10 validated
         phase.anchorActions[existingPauseIndex] = {
           ...existingPause,
           c10Validated: true,
-          c10Version: '1.0',
+          c10Version: '1.1',
+          c10bValidated: true,
+          c10bNarrationAfterPause: narrationAfterPause,
           c07Reason: 'C10_HARD_PAUSE_ANCHOR'
         };
         
@@ -3970,7 +4040,7 @@ function c07EnsurePauseForInteractivePhases(
         c10HardPauses++;
         detail.insertedPauseKeywordTime = pauseTime;
         
-        console.log(`[C10] Phase "${phase.id}": Validated existing pause @ ${pauseTime.toFixed(3)}s (keyword="${existingPause.keyword}")`);
+        console.log(`[C10] Phase "${phase.id}": Validated existing pause @ ${pauseTime.toFixed(3)}s (keyword="${existingPause.keyword}") [C10B OK: ${narrationAfterPause.toFixed(3)}s after]`);
       } else {
         // Pause existente está fora do range - recalcular
         console.warn(`[C10] Phase "${phase.id}": Existing pause @ ${pauseTime.toFixed(3)}s is OUT OF RANGE [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
@@ -4019,15 +4089,75 @@ function c07EnsurePauseForInteractivePhases(
       const result = selectAnchorOccurrence(pauseAtKeyword, wordTimestamps, startTime, endTime, 'LAST_IN_RANGE');
       
       if (result.selectedTime !== null) {
+        const pauseTime = result.selectedTime;
+        
+        // ============================================================================
+        // C10B EDITORIAL VALIDATION: pauseAt DEVE estar nos últimos 1.5s da narração
+        // ============================================================================
+        // IMPORTANTE: Usar a narração ORIGINAL da cena para calcular lastWordEnd
+        const sceneNarration = inputScene?.narration || '';
+        const sceneNarrationWords = sceneNarration.split(/\s+/).filter((w: string) => w.length > 0);
+        const wordCountFromNarration = sceneNarrationWords.length;
+        
+        // Encontrar as palavras desta cena nos wordTimestamps usando busca sequencial
+        let wordsForThisScene: WordTimestamp[] = [];
+        let foundStartIndex = -1;
+        
+        for (let i = 0; i < wordTimestamps.length; i++) {
+          if (wordTimestamps[i].start >= startTime - 0.5) {
+            foundStartIndex = i;
+            break;
+          }
+        }
+        
+        if (foundStartIndex >= 0 && wordCountFromNarration > 0) {
+          wordsForThisScene = wordTimestamps.slice(foundStartIndex, foundStartIndex + wordCountFromNarration);
+        }
+        
+        const lastWordEnd = wordsForThisScene.length > 0 
+          ? Math.max(...wordsForThisScene.map(wt => wt.end)) 
+          : endTime;
+        const narrationAfterPause = lastWordEnd - pauseTime;
+        
+        console.log(`[C10B] Phase "${phase.id}": sceneWords=${wordCountFromNarration}, wordsFound=${wordsForThisScene.length}, pauseTime=${pauseTime.toFixed(3)}s, lastWordEnd=${lastWordEnd.toFixed(3)}s, delta=${narrationAfterPause.toFixed(3)}s`);
+        
+        // Se há mais de 1.5s de narração APÓS o pauseAt, é erro editorial
+        if (narrationAfterPause > C10B_MAX_NARRATION_AFTER_PAUSE) {
+          c10bViolations++;
+          console.error(`[C10B][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" is NOT at end of narration!`);
+          console.error(`[C10B][ERROR]   pauseTime=${pauseTime.toFixed(3)}s, lastWordEnd=${lastWordEnd.toFixed(3)}s, delta=${narrationAfterPause.toFixed(3)}s > ${C10B_MAX_NARRATION_AFTER_PAUSE}s`);
+          
+          // Encontrar as palavras que serão cortadas para ajudar o autor a corrigir
+          const wordsCut = wordsForThisScene.filter(wt => wt.start > pauseTime).map(wt => wt.word);
+          
+          throw new Error(JSON.stringify({
+            error_code: 'PAUSE_ANCHOR_NOT_AT_END',
+            error_details: {
+              phase_id: phase.id,
+              pauseAt: pauseAtKeyword,
+              pauseTime,
+              lastWordEnd,
+              narrationAfterPause,
+              maxAllowed: C10B_MAX_NARRATION_AFTER_PAUSE,
+              wordCountExpected: wordCountFromNarration,
+              wordCountFound: wordsForThisScene.length,
+              wordsCut: wordsCut.slice(0, 10),
+              fix: `Move pauseAt to a word near ${lastWordEnd.toFixed(2)}s or split narration into separate scenes`
+            }
+          }));
+        }
+        
         const newPauseAction = {
           id: `pause-${phase.id}-c10`,
           keyword: pauseAtKeyword,
-          keywordTime: result.selectedTime,
-          timestamp: result.selectedTime,
+          keywordTime: pauseTime,
+          timestamp: pauseTime,
           type: 'pause',
           phaseId: phase.id,
           c10Generated: true,
-          c10Version: '1.0',
+          c10Version: '1.1',
+          c10bValidated: true,
+          c10bNarrationAfterPause: narrationAfterPause,
           c07Reason: 'C10_HARD_PAUSE_ANCHOR'
         };
         
@@ -4036,9 +4166,9 @@ function c07EnsurePauseForInteractivePhases(
         c07Stats.phasesWithPause++;
         c10HardPauses++;
         detail.pauseInserted = true;
-        detail.insertedPauseKeywordTime = result.selectedTime;
+        detail.insertedPauseKeywordTime = pauseTime;
         
-        console.log(`[C10] Phase "${phase.id}": Created pause @ ${result.selectedTime.toFixed(3)}s (keyword="${pauseAtKeyword}")`);
+        console.log(`[C10] Phase "${phase.id}": Created pause @ ${pauseTime.toFixed(3)}s (keyword="${pauseAtKeyword}") [C10B OK: ${narrationAfterPause.toFixed(3)}s after]`);
       } else {
         // ✅ C10 RULE D: Keyword não encontrada → FAIL
         console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" NOT FOUND in range [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
@@ -4080,8 +4210,8 @@ function c07EnsurePauseForInteractivePhases(
     c07Stats.details.push(detail);
   }
   
-  console.log(`[C10] STATS: interactive=${c07Stats.interactivePhases}, hardPauses=${c10HardPauses}, inserted=${c07Stats.pausesInserted}, cta=${ctaPhases}`);
-  console.log('[C10] c07EnsurePauseForInteractivePhases: Complete');
+  console.log(`[C10] STATS: interactive=${c07Stats.interactivePhases}, hardPauses=${c10HardPauses}, c10bViolations=${c10bViolations}, inserted=${c07Stats.pausesInserted}, cta=${ctaPhases}`);
+  console.log('[C10] c07EnsurePauseForInteractivePhases: Complete (v1.1 + C10B)');
   
   return {
     updatedPhases,
