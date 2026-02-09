@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.validate-exercise]
 verify_jwt = false
+
+[functions.audit-contracts]
+verify_jwt = false

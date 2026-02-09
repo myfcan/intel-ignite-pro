@@ -1211,9 +1211,9 @@ async function c05CompleteExecution(
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // CONTRACT VERSION — Schema versioning (anti-breaking)
+  // CONTRACT VERSION — from registry (single source of truth)
   const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-1.0';
-  const ACTIVE_CONTRACTS = ['C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+  const ACTIVE_CONTRACTS = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
   
   // C05.3 STEP 1: Construir output_data
   const outputData = {
@@ -1232,11 +1232,59 @@ async function c05CompleteExecution(
       // ✅ SCHEMA VERSIONING: Contract version + active contracts list
       contractVersion: CONTRACT_VERSION,
       contracts: ACTIVE_CONTRACTS,
+      // ✅ DEPRECATION REGISTRY
+      deprecatedContracts: [
+        { id: 'C07', deprecated_by: 'C10', rationale: 'Deterministic pauseAt replaces heuristic c07OriginalTime' },
+        { id: 'C09', deprecated_by: 'C10', rationale: 'Explicit pauseAt keyword replaces implicit last-word detection' },
+      ],
+      knownGaps: [
+        { id: 'C03', rationale: 'scenes[] empty, Renderer uses visual fallback. Deferred to future version.' },
+      ],
       // ✅ ISOLAMENTO: Force test tracking (only if provided)
       ...(meta?.forceTestBatchId ? { forceTestBatchId: meta.forceTestBatchId } : {}),
       ...(meta?.forceTestRunTag ? { forceTestRunTag: meta.forceTestRunTag } : {}),
     }
   };
+  
+  // =========================================================================
+  // ENFORCEMENT HARD: Validate contract meta BEFORE persist
+  // =========================================================================
+  const enforcementMeta = outputData.meta;
+  if (!enforcementMeta.contractVersion || enforcementMeta.contractVersion !== CONTRACT_VERSION) {
+    throw new Error(JSON.stringify({
+      error_code: 'CONTRACT_META_MISSING',
+      error_message: `contractVersion missing or mismatch: expected=${CONTRACT_VERSION}, got=${enforcementMeta.contractVersion}`,
+      error_details: { expected: CONTRACT_VERSION, actual: enforcementMeta.contractVersion },
+    }));
+  }
+  if (enforcementMeta.triggerContract !== 'anchorActions') {
+    throw new Error(JSON.stringify({
+      error_code: 'TRIGGER_CONTRACT_MISMATCH',
+      error_message: `triggerContract must be 'anchorActions', got '${enforcementMeta.triggerContract}'`,
+      error_details: { expected: 'anchorActions', actual: enforcementMeta.triggerContract },
+    }));
+  }
+  // Enforce boundary invariants on phases
+  const phases = outputContent?.phases || [];
+  for (let i = 0; i < phases.length; i++) {
+    const p = phases[i];
+    const dur = p.endTime - p.startTime;
+    if (dur <= 0) {
+      throw new Error(JSON.stringify({
+        error_code: 'BOUNDARY_FIX_GUARD_FAILED',
+        error_message: `Phase ${p.id} has non-positive duration: ${dur.toFixed(3)}s`,
+        error_details: { phaseId: p.id, startTime: p.startTime, endTime: p.endTime, duration: dur },
+      }));
+    }
+    if (i < phases.length - 1 && p.endTime > phases[i + 1].startTime) {
+      throw new Error(JSON.stringify({
+        error_code: 'BOUNDARY_FIX_GUARD_FAILED',
+        error_message: `Phase ${p.id} overlaps ${phases[i + 1].id}`,
+        error_details: { phaseId: p.id, endTime: p.endTime, nextPhaseId: phases[i + 1].id, nextStartTime: phases[i + 1].startTime },
+      }));
+    }
+  }
+  console.log(`[ENFORCEMENT] ✅ All contract meta and boundary invariants validated`);
   
   // C05.3 STEP 2: Persistir output_data (sem hash ainda)
   console.log(`[C05.3] Persisting output_data...`);
@@ -6709,6 +6757,8 @@ Deno.serve(async (req) => {
       'PAUSE_ANCHOR_NOT_FOUND', 
       'PAUSE_ANCHOR_NOT_AT_END',
       'BOUNDARY_FIX_GUARD_FAILED',
+      'CONTRACT_META_MISSING',
+      'TRIGGER_CONTRACT_MISMATCH',
     ].includes(errorCode);
     
     const httpStatus = isGuardrailError ? 400 : 500;
