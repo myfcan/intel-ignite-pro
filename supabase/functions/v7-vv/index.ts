@@ -6707,11 +6707,35 @@ Deno.serve(async (req) => {
       try {
         console.log(`[EXECUTION_STATE_CONTRACT] Marking run ${runId} as FAILED with code ${errorCode}`);
         
+        // =========================================================================
+        // IMMUTABILITY POLICY: Failed runs MUST persist contract metadata
+        // in output_data.meta for batch-level forensic traceability.
+        // =========================================================================
+        const CONTRACT_VERSION_FAIL = 'c10b-boundaryfix-execstate-1.0';
+        const ACTIVE_CONTRACTS_FAIL = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+        
+        // Extract forceTestMeta from input if available
+        const forceTestMeta = (input as any)?.forceTestMeta;
+        
+        const failedOutputData = {
+          lesson_id: (input as any)?.existing_lesson_id || null,
+          meta: {
+            contractVersion: CONTRACT_VERSION_FAIL,
+            contracts: ACTIVE_CONTRACTS_FAIL,
+            triggerContract: 'anchorActions',
+            failedAt: new Date().toISOString(),
+            errorCode: errorCode,
+            ...(forceTestMeta?.batchId ? { forceTestBatchId: forceTestMeta.batchId } : {}),
+            ...(forceTestMeta?.runTag ? { forceTestRunTag: forceTestMeta.runTag } : {}),
+          },
+        };
+        
         await supabase
           .from('pipeline_executions')
           .update({
             status: 'failed',
             error_message: fullErrorMessage,
+            output_data: failedOutputData,
             completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
