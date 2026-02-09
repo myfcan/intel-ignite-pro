@@ -367,7 +367,7 @@ async function executeReprocess(
         ...inputData,  // ← Espalhar inputData (title, scenes, etc.)
         existing_lesson_id: lessonId,
         reprocess: true,
-        generate_audio: true,
+        generate_audio: false,  // ← SEM TTS: usa word_timestamps existentes do banco
         run_id: runId,
       }),
     });
@@ -484,7 +484,7 @@ Deno.serve(async (req) => {
       lesson_id, 
       runs = 'ALL', 
       dry_run = false,
-      sequential_delay_ms = 3000 
+      sequential_delay_ms = 500 
     } = body;
     
     if (!lesson_id) {
@@ -625,7 +625,7 @@ Deno.serve(async (req) => {
         results.push(result);
       } else {
         // Aguardar um pouco para o pipeline processar
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Coletar métricas
         const metrics = await collectRunMetrics(supabase, runId);
