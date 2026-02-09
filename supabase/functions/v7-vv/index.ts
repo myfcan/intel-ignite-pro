@@ -1211,6 +1211,10 @@ async function c05CompleteExecution(
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
+  // CONTRACT VERSION — Schema versioning (anti-breaking)
+  const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-1.0';
+  const ACTIVE_CONTRACTS = ['C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+  
   // C05.3 STEP 1: Construir output_data
   const outputData = {
     content: outputContent,
@@ -1224,7 +1228,10 @@ async function c05CompleteExecution(
       triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
       hashAlgorithm: 'canonical_jsonb_string+sha256',
       hashComputedAfterGuards: true,
-      hashComputedViaSqlRpc: true, // C05.3 FIX: Flag para indicar método de cálculo via SQL
+      hashComputedViaSqlRpc: true,
+      // ✅ SCHEMA VERSIONING: Contract version + active contracts list
+      contractVersion: CONTRACT_VERSION,
+      contracts: ACTIVE_CONTRACTS,
       // ✅ ISOLAMENTO: Force test tracking (only if provided)
       ...(meta?.forceTestBatchId ? { forceTestBatchId: meta.forceTestBatchId } : {}),
       ...(meta?.forceTestRunTag ? { forceTestRunTag: meta.forceTestRunTag } : {}),
