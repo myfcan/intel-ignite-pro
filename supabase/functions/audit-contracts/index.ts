@@ -55,18 +55,27 @@ Deno.serve(async (req) => {
     const pipelineVersion = body.pipeline_version || 'v7-vv-1.1.4%';
     const limit = body.limit || 50;
     const batchId = body.batch_id || null;
+    const singleRunId = body.run_id || null; // Per-run gate mode
 
     const checks: AuditCheck[] = [];
 
     // ========================================================================
+    // HELPER: Build filtered query (supports per-run or per-version filtering)
+    // ========================================================================
+    function buildQuery(select: string) {
+      let q = supabase.from('pipeline_executions').select(select);
+      if (singleRunId) {
+        q = q.eq('run_id', singleRunId);
+      } else {
+        q = q.like('pipeline_version', pipelineVersion);
+      }
+      return q;
+    }
+
+    // ========================================================================
     // CHECK 1: C01 — No duplicate run_ids
     // ========================================================================
-    // Use direct query instead
-    const { data: dupeCheck, error: dupeErr } = await supabase
-      .from('pipeline_executions')
-      .select('run_id')
-      .like('pipeline_version', pipelineVersion)
-      .limit(1000);
+    const { data: dupeCheck, error: dupeErr } = await buildQuery('run_id').limit(1000);
     
     const runIds = (dupeCheck || []).map((r: any) => r.run_id);
     const uniqueRunIds = new Set(runIds);
@@ -83,11 +92,13 @@ Deno.serve(async (req) => {
     // ========================================================================
     // CHECK 2: EXEC_STATE — No stuck runs (in_progress)
     // ========================================================================
-    const { data: stuckRuns } = await supabase
-      .from('pipeline_executions')
-      .select('run_id, pipeline_version')
-      .eq('status', 'in_progress')
-      .like('pipeline_version', pipelineVersion);
+    let stuckQuery = supabase.from('pipeline_executions').select('run_id, pipeline_version').eq('status', 'in_progress');
+    if (singleRunId) {
+      stuckQuery = stuckQuery.eq('run_id', singleRunId);
+    } else {
+      stuckQuery = stuckQuery.like('pipeline_version', pipelineVersion);
+    }
+    const { data: stuckRuns } = await stuckQuery;
     
     const stuckCount = (stuckRuns || []).length;
     checks.push({
@@ -102,11 +113,8 @@ Deno.serve(async (req) => {
     // ========================================================================
     // CHECK 3: EXEC_STATE — Failed runs have canonical JSON error_message
     // ========================================================================
-    const { data: failedRuns } = await supabase
-      .from('pipeline_executions')
-      .select('run_id, error_message, completed_at')
+    const { data: failedRuns } = await buildQuery('run_id, error_message, completed_at')
       .eq('status', 'failed')
-      .like('pipeline_version', pipelineVersion)
       .limit(limit);
 
     let unstructuredCount = 0;
@@ -152,11 +160,8 @@ Deno.serve(async (req) => {
     // ========================================================================
     // CHECK 4: C05 — Completed runs have pipeline_version and output_content_hash
     // ========================================================================
-    const { data: completedRuns } = await supabase
-      .from('pipeline_executions')
-      .select('run_id, pipeline_version, output_content_hash, output_data')
+    const { data: completedRuns } = await buildQuery('run_id, pipeline_version, output_content_hash, output_data')
       .eq('status', 'completed')
-      .like('pipeline_version', pipelineVersion)
       .limit(limit);
 
     let missingHash = 0;

@@ -6613,17 +6613,16 @@ Deno.serve(async (req) => {
     });
 
     // =========================================================================
-    // AUDIT GATE — Mandatory production contract validation
-    // Calls audit-contracts edge function. If gate returns non-200 (422),
-    // pipeline logs WARNING but does NOT fail the run (run is already persisted).
-    // This provides observability without breaking existing completed runs.
-    // For HARD BLOCK on deploy/release, use force-test-c10b + audit gate.
+    // AUDIT GATE — HARD BLOCK production contract validation (v1.1.4+)
+    // Calls audit-contracts edge function AFTER persist.
+    // If gate returns non-200: pipeline REVERTS status to 'failed' and throws.
+    // This guarantees NO completed run can violate immutable contracts.
     // =========================================================================
     try {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
       
-      console.log(`[AUDIT_GATE] Running post-execution audit for run ${runId}...`);
+      console.log(`[AUDIT_GATE] Running HARD post-execution audit for run ${runId}...`);
       const auditResponse = await fetch(`${SUPABASE_URL}/functions/v1/audit-contracts`, {
         method: 'POST',
         headers: {
@@ -6632,19 +6631,84 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           pipeline_version: PIPELINE_VERSION,
+          run_id: runId,
           limit: 10,
         }),
       });
       
       const auditScorecard = await auditResponse.json();
       if (auditResponse.status !== 200) {
-        console.error(`[AUDIT_GATE] ❌ GATE FAILED (HTTP ${auditResponse.status}): required_failed=${auditScorecard.required_failed}`);
-        console.error(`[AUDIT_GATE] Failed checks: ${JSON.stringify(auditScorecard.checks?.filter((c: any) => !c.pass))}`);
+        // HARD FAIL: Revert the completed run to failed
+        console.error(`[AUDIT_GATE] ❌ HARD FAIL (HTTP ${auditResponse.status}): required_failed=${auditScorecard.required_failed}`);
+        
+        const auditErrorMsg = JSON.stringify({
+          error_code: 'AUDIT_GATE_FAILED',
+          error_message: `Audit gate rejected run: ${auditScorecard.required_failed} required checks failed`,
+          error_details: {
+            http_status: auditResponse.status,
+            required_failed: auditScorecard.required_failed,
+            scorecard: auditScorecard,
+          },
+        });
+        
+        // Revert status to failed
+        await supabase
+          .from('pipeline_executions')
+          .update({
+            status: 'failed',
+            error_message: auditErrorMsg,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('run_id', runId);
+        
+        console.error(`[AUDIT_GATE] Run ${runId} reverted to FAILED`);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'AUDIT_GATE_FAILED',
+            error_code: 'AUDIT_GATE_FAILED',
+            error_details: {
+              http_status: auditResponse.status,
+              required_failed: auditScorecard.required_failed,
+              scorecard: auditScorecard,
+            },
+            runId,
+          }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       } else {
         console.log(`[AUDIT_GATE] ✅ GATE PASSED: ${auditScorecard.passed}/${auditScorecard.total_checks} checks`);
       }
     } catch (auditErr: any) {
-      console.warn(`[AUDIT_GATE] ⚠️ Could not reach audit-contracts: ${auditErr.message}`);
+      // If audit-contracts is unreachable, FAIL SAFE (block, don't pass silently)
+      console.error(`[AUDIT_GATE] ❌ UNREACHABLE: ${auditErr.message} — failing safe`);
+      
+      const unreachableErrorMsg = JSON.stringify({
+        error_code: 'AUDIT_GATE_FAILED',
+        error_message: `Audit gate unreachable: ${auditErr.message}`,
+        error_details: { reason: 'unreachable', message: auditErr.message },
+      });
+      
+      await supabase
+        .from('pipeline_executions')
+        .update({
+          status: 'failed',
+          error_message: unreachableErrorMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('run_id', runId);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'AUDIT_GATE_FAILED',
+          error_code: 'AUDIT_GATE_FAILED',
+          error_details: { reason: 'unreachable', message: auditErr.message },
+          runId,
+        }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // =========================================================================
