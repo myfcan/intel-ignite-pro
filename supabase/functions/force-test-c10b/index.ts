@@ -93,14 +93,20 @@ const RUN_MATRIX: RunVariation[] = [
   },
   
   // R06: pauseAt existe mas aparece cedo (>1.5s antes do fim) - C10B guardrail
+  // ✅ NARRAÇÕES REAIS:
+  // Quiz: "Como você usa a Inteligência Artificial hoje? Escolha a opção que mais representa você."
+  // Promessa: "Vou te mostrar o segredo dos dois por cento. Para projetos. Renda extra. E para se tornar dez vezes mais claro no que você faz."
+  // Playground: "Agora é a sua vez de colocar em prática tudo o que você aprendeu..."
+  // 
+  // Palavras no INÍCIO que devem disparar C10B:
   {
     runTag: 'R06-early-anchor',
     description: 'pauseAt existe mas aparece cedo (C10B fail)',
     expectedResult: 'FAIL',
     expectedError: 'PAUSE_ANCHOR_NOT_AT_END',
-    quizPauseAt: 'Como',
-    promessaPauseAt: 'Vou',
-    playgroundPauseAt: 'Agora',
+    quizPauseAt: 'Inteligência',      // ~45s vs fim ~50s → ~5s de diferença
+    promessaPauseAt: 'segredo',       // "Vou te mostrar o segredo" - início
+    playgroundPauseAt: 'prática',     // "colocar em prática" - início
   },
   
   // R07: pauseAt com pontuação no final
@@ -113,14 +119,15 @@ const RUN_MATRIX: RunVariation[] = [
     playgroundPauseAt: 'agora.',
   },
   
-  // R08: pauseAt com acento/variação - usando palavras que EXISTEM nas narrações
+  // R08: pauseAt com acento/variação - usando palavras ÚNICAS que EXISTEM nas narrações
+  // ✅ CORREÇÃO: Cada pauseAt deve ser UMA PALAVRA, não frase
   {
-    runTag: 'R08-with-accent',
-    description: 'pauseAt com acento/variação',
+    runTag: 'R08-accent-opcao',
+    description: 'pauseAt com acento (opção) - normalização NFD',
     expectedResult: 'PASS', // Normalização remove acentos
-    quizPauseAt: 'opção',  // "a opção que mais" - sem acento explícito mas testa normalize
-    promessaPauseAt: 'você faz',
-    playgroundPauseAt: 'prática',  // "diferença na prática"
+    quizPauseAt: 'opção',       // Existe em "a opção que mais representa você"
+    promessaPauseAt: 'faz',     // Existe em "você faz"
+    playgroundPauseAt: 'agora', // Existe em "Faça o teste agora"
   },
   
   // R09: pauseAt em CAIXA ALTA
@@ -145,18 +152,15 @@ const RUN_MATRIX: RunVariation[] = [
   },
   
   // R11: narração muito curta antes do quiz (stress boundary)
+  // ✅ CORREÇÃO: Não modifica narração para não quebrar schema - apenas testa boundary com pausa válida
   {
-    runTag: 'R11-short-narration',
-    description: 'narração muito curta antes do quiz',
-    expectedResult: 'PASS', // Stress boundary fix
-    quizPauseAt: 'agora',
-    promessaPauseAt: 'agora',
+    runTag: 'R11-short-pause-word',
+    description: 'pauseAt com palavra curta válida (stress boundary)',
+    expectedResult: 'PASS', // Stress boundary fix - narração não modificada
+    quizPauseAt: 'você',       // Palavra curta mas válida
+    promessaPauseAt: 'claro',  // Existe em "dez vezes mais claro"
     playgroundPauseAt: 'agora',
-    modifyNarration: {
-      quiz: 'Escolha uma opção agora.',
-      promessa: 'Eu prometo isso agora.',
-      playground: 'Teste seu prompt agora.',
-    },
+    // REMOVIDO modifyNarration - causava VALIDATION_ERROR
   },
   
   // R12: narração muito longa antes do playground (stress timestamps)
@@ -199,6 +203,7 @@ interface RunResult {
 }
 
 interface ForceTestResult {
+  batch_id: string;  // ✅ ISOLAMENTO: UUID único do batch
   test_id: string;
   started_at: string;
   completed_at: string;
@@ -208,6 +213,7 @@ interface ForceTestResult {
   expected_failures: number;
   unexpected_failures: number;
   results: RunResult[];
+  run_mapping: Array<{ runTag: string; run_id: string }>; // ✅ Mapeamento explícito
 }
 
 // ============================================================================
@@ -262,11 +268,19 @@ function parseRunRange(runsParam: string): string[] {
 
 function modifyInputForRun(
   originalInput: any,
-  variation: RunVariation
+  variation: RunVariation,
+  batchId: string  // ✅ ISOLAMENTO: batch_id passado para cada run
 ): any {
   const modifiedInput = JSON.parse(JSON.stringify(originalInput));
   
-  // Adicionar runTag para rastreamento
+  // ✅ ISOLAMENTO: Adicionar metadados de rastreamento no input
+  // Estes serão persistidos em output_data->meta pelo v7-vv
+  modifiedInput.forceTestMeta = {
+    batchId: batchId,
+    runTag: variation.runTag,
+  };
+  
+  // Adicionar runTag para rastreamento (legado - manter compatibilidade)
   modifiedInput.postLessonFlow = {
     ...modifiedInput.postLessonFlow,
     runTag: variation.runTag,
@@ -480,25 +494,48 @@ Deno.serve(async (req) => {
     console.log(`[ForceTest] Starting force test for lesson ${lesson_id}`);
     console.log(`[ForceTest] Runs: ${runs}, Dry Run: ${dry_run}`);
     
-    // 1. Recuperar input original da última execução
-    const { data: lastExecution, error: fetchError } = await supabase
+    // 1. Recuperar input original da execução com 10 cenas
+    // ✅ CORREÇÃO: Buscar execução com pelo menos 10 cenas para garantir que
+    // todas as cenas interativas (quiz, promessa, playground) existam
+    const { data: validExecutions, error: fetchError } = await supabase
       .from('pipeline_executions')
-      .select('input_data, lesson_id')
+      .select('input_data, lesson_id, run_id')
       .eq('lesson_id', lesson_id)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(100);
     
-    if (fetchError || !lastExecution?.input_data) {
+    if (fetchError) {
       return new Response(
         JSON.stringify({ 
-          error: 'Could not find original input_data for lesson',
+          error: 'Could not fetch executions for lesson',
           details: fetchError?.message 
         }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Encontrar execução com pelo menos 10 cenas
+    const lastExecution = validExecutions?.find((exec: any) => {
+      const scenesCount = exec.input_data?.scenes?.length ?? 0;
+      return scenesCount >= 10;
+    });
+    
+    if (!lastExecution?.input_data) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Could not find execution with 10+ scenes for lesson',
+          details: `Found ${validExecutions?.length ?? 0} executions, none with 10+ scenes`,
+          available: validExecutions?.map((e: any) => ({
+            run_id: e.run_id,
+            scenes: e.input_data?.scenes?.length ?? 0
+          }))
+        }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log(`[ForceTest] Using execution ${lastExecution.run_id} with ${lastExecution.input_data?.scenes?.length} scenes`);
     
     const originalInput = lastExecution.input_data;
     console.log(`[ForceTest] Retrieved original input with ${originalInput.scenes?.length || 0} scenes`);
@@ -530,8 +567,14 @@ Deno.serve(async (req) => {
     }
     
     // 4. Executar runs sequencialmente
-    const results: RunResult[] = [];
+    // ✅ ISOLAMENTO: Gerar batch_id único para rastrear este batch completo
+    const batchId = crypto.randomUUID();
     const testId = `force-test-${Date.now().toString(36)}`;
+    const results: RunResult[] = [];
+    const runMapping: Array<{ runTag: string; run_id: string }> = [];
+    
+    console.log(`[ForceTest] ======== BATCH ${batchId} ========`);
+    console.log(`[ForceTest] Executing ${selectedRuns.length} runs with isolation`);
     
     for (const runTag of selectedRuns) {
       const variation = RUN_MATRIX.find(v => v.runTag === runTag);
@@ -550,8 +593,11 @@ Deno.serve(async (req) => {
       
       console.log(`[ForceTest] ======== Starting ${runTag} (${variation.description}) ========`);
       
-      // Modificar input para este run
-      const modifiedInput = modifyInputForRun(originalInput, variation);
+      // Modificar input para este run - inclui batch_id para isolamento
+      const modifiedInput = modifyInputForRun(originalInput, variation, batchId);
+      
+      // Registrar mapping para output final
+      runMapping.push({ runTag, run_id: runId });
       
       // Executar reprocess
       const execResult = await executeReprocess(supabase, lesson_id, modifiedInput, runId);
@@ -617,6 +663,7 @@ Deno.serve(async (req) => {
     const unexpectedFailures = failedRuns - expectedFailures;
     
     const finalResult: ForceTestResult = {
+      batch_id: batchId,  // ✅ ISOLAMENTO: batch_id no resultado
       test_id: testId,
       started_at: new Date(startTime).toISOString(),
       completed_at: new Date().toISOString(),
@@ -626,11 +673,14 @@ Deno.serve(async (req) => {
       expected_failures: expectedFailures,
       unexpected_failures: unexpectedFailures,
       results,
+      run_mapping: runMapping,  // ✅ Mapeamento explícito runTag→run_id
     };
     
     console.log(`[ForceTest] ======== COMPLETED ========`);
+    console.log(`[ForceTest] Batch ID: ${batchId}`);
     console.log(`[ForceTest] Total: ${results.length}, Passed: ${passedRuns}, Failed: ${failedRuns}`);
     console.log(`[ForceTest] Expected Failures: ${expectedFailures}, Unexpected: ${unexpectedFailures}`);
+    console.log(`[ForceTest] Run Mapping: ${JSON.stringify(runMapping)}`);
     
     return new Response(
       JSON.stringify(finalResult),

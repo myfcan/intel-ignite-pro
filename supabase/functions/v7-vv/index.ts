@@ -1204,6 +1204,9 @@ async function c05CompleteExecution(
     triggerContract?: string;
     hashAlgorithm?: string;
     hashComputedAfterGuards?: boolean;
+    // ✅ ISOLAMENTO: Force test tracking
+    forceTestBatchId?: string;
+    forceTestRunTag?: string;
   }
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
@@ -1221,7 +1224,10 @@ async function c05CompleteExecution(
       triggerContract: meta?.triggerContract ?? outputContent?.metadata?.triggerContract ?? 'anchorActions',
       hashAlgorithm: 'canonical_jsonb_string+sha256',
       hashComputedAfterGuards: true,
-      hashComputedViaSqlRpc: true // C05.3 FIX: Flag para indicar método de cálculo via SQL
+      hashComputedViaSqlRpc: true, // C05.3 FIX: Flag para indicar método de cálculo via SQL
+      // ✅ ISOLAMENTO: Force test tracking (only if provided)
+      ...(meta?.forceTestBatchId ? { forceTestBatchId: meta.forceTestBatchId } : {}),
+      ...(meta?.forceTestRunTag ? { forceTestRunTag: meta.forceTestRunTag } : {}),
     }
   };
   
@@ -6557,10 +6563,14 @@ Deno.serve(async (req) => {
     }
     
     // Computar hash do objeto normalizado
+    // ✅ ISOLAMENTO: Incluir forceTestMeta se presente no input
+    const forceTestMeta = (input as any)?.forceTestMeta;
     await c05CompleteExecution(supabase, runId, lessonId, outputContentForHash, {
       triggerContract: outputContentForHash.metadata?.triggerContract ?? 'anchorActions',
       hashAlgorithm: 'canonical_jsonb_string+sha256',
-      hashComputedAfterGuards: true
+      hashComputedAfterGuards: true,
+      forceTestBatchId: forceTestMeta?.batchId,
+      forceTestRunTag: forceTestMeta?.runTag,
     });
 
     // =========================================================================
