@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.2-exec-state-contract';
-const COMMIT_HASH = 'exec-state-contract-2026-02-09-guaranteed-fail';
+const PIPELINE_VERSION = 'v7-vv-1.1.3-canonical-json-error';
+const COMMIT_HASH = 'canonical-json-error-format-2026-02-09';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -5596,9 +5596,13 @@ Deno.serve(async (req) => {
       if (validationErrors.length > 0) {
         console.error('[V7-vv] ❌ Validation failed:', validationErrors);
         
-        // Formatar mensagem de erro clara
+        // CANONICAL JSON FORMAT (v7-vv-1.1.3)
         const errorMessages = validationErrors.map(e => `[${e.scene}] ${e.field}: ${e.message}`);
-        const fullErrorMessage = `[VALIDATION_ERROR] JSON inválido: ${errorMessages.join('; ')}`;
+        const fullErrorMessage = JSON.stringify({
+          error_code: 'VALIDATION_ERROR',
+          error_message: `JSON inválido: ${errorMessages.join('; ')}`,
+          error_details: validationErrors,
+        });
         
         // =========================================================================
         // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
@@ -6496,10 +6500,13 @@ Deno.serve(async (req) => {
       // Not a JSON error, use original message
     }
     
-    // Build full error message for DB
-    const fullErrorMessage = errorDetails 
-      ? `[${errorCode}] ${errorMessage} | Details: ${JSON.stringify(errorDetails)}`
-      : `[${errorCode}] ${errorMessage}`;
+    // Build full error message for DB - CANONICAL JSON FORMAT (v7-vv-1.1.3)
+    // Format: {"error_code":"...","error_message":"...","error_details":{...}|null}
+    const fullErrorMessage = JSON.stringify({
+      error_code: errorCode,
+      error_message: errorMessage,
+      error_details: errorDetails ?? null,
+    });
     
     // =========================================================================
     // EXECUTION STATE CONTRACT: ALWAYS update status to 'failed'
