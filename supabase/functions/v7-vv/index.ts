@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.3-canonical-json-error';
-const COMMIT_HASH = 'canonical-json-error-format-2026-02-09';
+const PIPELINE_VERSION = 'v7-vv-1.1.4-forcetest-fix';
+const COMMIT_HASH = 'forcetest-fix-r06-r08-r11-2026-02-09';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -2588,12 +2588,24 @@ function processWordTimestamps(
 // BUSCA DE PALAVRAS NOS TIMESTAMPS
 // ============================================================================
 
+/**
+ * ✅ R08 FIX: Normalização robusta de palavras para matching
+ * 
+ * Problemas resolvidos:
+ * - Acentos: "opção" → "opcao"
+ * - Pontuação: "opção," → "opcao"
+ * - Case: "Opção" → "opcao"
+ * - Caracteres especiais: "opção…" → "opcao"
+ */
 function normalizeWord(word: string): string {
+  if (!word || typeof word !== 'string') return '';
+  
   return word
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[.,!?;:'"()[\]{}…\-]+/g, '')
+    .toLowerCase()                              // Case insensitive
+    .normalize('NFD')                           // Decompose accents
+    .replace(/[\u0300-\u036f]/g, '')           // Remove diacritics
+    .replace(/[.,!?;:'"()[\]{}…\-–—]+/g, '')  // Remove punctuation (including en/em dashes)
+    .replace(/\s+/g, ' ')                       // Collapse whitespace
     .trim();
 }
 
@@ -2701,37 +2713,74 @@ function selectAnchorOccurrence(
     //   3. Match por sufixo: normalizedWord.endsWith(target) com min 3 chars
     //   4. Match inclusivo: apenas se target tiver 4+ chars para evitar "o", "e", etc.
     // =====================================================================
-    const target = keywordParts[0]; // já normalizado acima
-    const minInclusionLength = 4; // "Tom" = 3 chars, então usamos 4 para ser seguro
+    // ✅ R08 FIX: Melhor matching para palavras com acentos e curtas
+    // REGRAS:
+    //   1. Match exato (após normalização) - SEMPRE aceito, qualquer tamanho
+    //   2. Match por prefixo - target >= 3 chars
+    //   3. Match por sufixo - target >= 3 chars
+    //   4. Match inclusivo - target >= 4 chars (evita "o", "e", "a")
+    // =====================================================================
+    const target = keywordParts[0]; // já normalizado
+    const minInclusionLength = 4;
+    
+    // Log para debug
+    console.log(`[selectAnchorOccurrence] Searching for target="${target}" (original="${keyword}") in ${relevantTimestamps.length} words, range [${afterTime.toFixed(2)}s, ${beforeTime.toFixed(2)}s]`);
     
     relevantTimestamps.forEach((ts, idx) => {
       const normalizedWord = normalizeWord(ts.word);
       
-      // Match exato - sempre aceito
+      // Match exato - SEMPRE aceito, mesmo para palavras curtas
       if (normalizedWord === target) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
         return;
       }
       
       // Match por prefixo (ex: "Persona" começa com "persona")
+      // Reduzido para 3 chars para capturar "opção" → "opc"
       if (target.length >= 3 && normalizedWord.startsWith(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
         return;
       }
       
       // Match por sufixo (ex: "Otimização" termina com "ação")
-      if (target.length >= 4 && normalizedWord.endsWith(target)) {
+      // Reduzido para 3 chars
+      if (target.length >= 3 && normalizedWord.endsWith(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
         return;
       }
       
       // Match inclusivo APENAS se:
       // 1. Target for longo o suficiente (≥4 chars)
-      // 2. A palavra do áudio CONTÉM o target (ex: "Otimização" contém "otimi")
-      // REMOVIDO: target.includes(normalizedWord) - causava "persona" match com "e"
+      // 2. A palavra do áudio CONTÉM o target
+      // REMOVIDO: target.includes(normalizedWord) - causava falsos positivos
       if (target.length >= minInclusionLength && normalizedWord.includes(target)) {
         allMatches.push({ word: ts.word, start: ts.start, end: ts.end, idx });
         return;
+      }
+      
+      // ✅ R08 EXTRA: Se target tem 3+ chars e a palavra é "quase igual" (fuzzy)
+      // Isso captura casos onde a normalização pode ter falhado parcialmente
+      if (target.length >= 3 && normalizedWord.length >= 3) {
+        // Verificar se diferem em apenas 1 caractere (typo tolerance)
+        const maxDiff = 1;
+        let diff = Math.abs(target.length - normalizedWord.length);
+        if (diff <= maxDiff) {
+          const shorter = target.length <= normalizedWord.length ? target : normalizedWord;
+          const longer = target.length > normalizedWord.length ? target : normalizedWord;
+          let mismatches = 0;
+          let j = 0;
+          for (let i = 0; i < longer.length && mismatches <= maxDiff; i++) {
+            if (j < shorter.length && longer[i] === shorter[j]) {
+              j++;
+            } else {
+              mismatches++;
+            }
+          }
+          if (mismatches <= maxDiff && j >= shorter.length - 1) {
+            // Não adicionar automaticamente - apenas log para diagnóstico
+            // console.log(`[selectAnchorOccurrence] Fuzzy match candidate: "${normalizedWord}" ~= "${target}"`);
+          }
+        }
       }
     });
   }
@@ -4066,15 +4115,40 @@ function c07EnsurePauseForInteractivePhases(
             
             console.log(`[C10] Phase "${phase.id}": Recalculated pause @ ${result.selectedTime.toFixed(3)}s (keyword="${pauseAtKeyword}")`);
           } else {
-            // ✅ C10 RULE D: Keyword não encontrada → FAIL
-            console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" NOT FOUND in range [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
+            // ============================================================================
+            // ✅ R06 FIX: Verificar se a palavra existe globalmente antes de falhar
+            // ============================================================================
+            const globalResult = selectAnchorOccurrence(pauseAtKeyword, wordTimestamps, 0, Infinity, 'LAST_IN_RANGE');
+            
+            if (globalResult.selectedTime !== null) {
+              // A palavra existe no áudio mas fora do range da fase
+              console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" exists @ ${globalResult.selectedTime.toFixed(3)}s but is OUTSIDE phase range [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
+              
+              throw new Error(JSON.stringify({
+                error_code: 'PAUSE_ANCHOR_NOT_AT_END',
+                error_details: {
+                  phase_id: phase.id,
+                  pauseAt: pauseAtKeyword,
+                  pauseTime: globalResult.selectedTime,
+                  globalMatch: true,
+                  foundInPhaseRange: false,
+                  phaseRange: [startTime, endTime],
+                  fix: `The pauseAt word "${pauseAtKeyword}" exists at ${globalResult.selectedTime.toFixed(2)}s but is outside the phase range.`
+                }
+              }));
+            }
+            
+            // Keyword realmente não existe
+            console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" NOT FOUND anywhere in audio`);
             throw new Error(JSON.stringify({
               error_code: 'PAUSE_ANCHOR_NOT_FOUND',
               error_details: {
                 phase_id: phase.id,
                 pauseAt: pauseAtKeyword,
                 startTime,
-                endTime
+                endTime,
+                globalSearch: true,
+                message: `The word "${pauseAtKeyword}" does not exist anywhere in the audio wordTimestamps`
               }
             }));
           }
@@ -4170,15 +4244,68 @@ function c07EnsurePauseForInteractivePhases(
         
         console.log(`[C10] Phase "${phase.id}": Created pause @ ${pauseTime.toFixed(3)}s (keyword="${pauseAtKeyword}") [C10B OK: ${narrationAfterPause.toFixed(3)}s after]`);
       } else {
-        // ✅ C10 RULE D: Keyword não encontrada → FAIL
-        console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" NOT FOUND in range [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
+        // ============================================================================
+        // ✅ R06 FIX: Antes de falhar como NOT_FOUND, verificar se a palavra existe
+        // GLOBALMENTE no áudio. Se existir, é um problema de timing (NOT_AT_END),
+        // não de matching (NOT_FOUND).
+        // ============================================================================
+        const globalResult = selectAnchorOccurrence(pauseAtKeyword, wordTimestamps, 0, Infinity, 'LAST_IN_RANGE');
+        
+        if (globalResult.selectedTime !== null) {
+          // A palavra EXISTE no áudio, mas está fora do range da fase
+          // Isso significa que é um problema de timing/editorial, não de matching
+          console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" exists @ ${globalResult.selectedTime.toFixed(3)}s but is OUTSIDE phase range [${startTime.toFixed(3)}, ${endTime.toFixed(3)}]`);
+          
+          // Calcular lastWordEnd para contexto
+          const sceneNarration = inputScene?.narration || '';
+          const sceneNarrationWords = sceneNarration.split(/\s+/).filter((w: string) => w.length > 0);
+          const wordCountFromNarration = sceneNarrationWords.length;
+          
+          let wordsForThisScene: WordTimestamp[] = [];
+          let foundStartIndex = -1;
+          for (let i = 0; i < wordTimestamps.length; i++) {
+            if (wordTimestamps[i].start >= startTime - 0.5) {
+              foundStartIndex = i;
+              break;
+            }
+          }
+          if (foundStartIndex >= 0 && wordCountFromNarration > 0) {
+            wordsForThisScene = wordTimestamps.slice(foundStartIndex, foundStartIndex + wordCountFromNarration);
+          }
+          
+          const lastWordEnd = wordsForThisScene.length > 0 
+            ? Math.max(...wordsForThisScene.map(wt => wt.end)) 
+            : endTime;
+          const narrationAfterPause = lastWordEnd - globalResult.selectedTime;
+          
+          throw new Error(JSON.stringify({
+            error_code: 'PAUSE_ANCHOR_NOT_AT_END',
+            error_details: {
+              phase_id: phase.id,
+              pauseAt: pauseAtKeyword,
+              pauseTime: globalResult.selectedTime,
+              globalMatch: true,
+              foundInPhaseRange: false,
+              phaseRange: [startTime, endTime],
+              lastWordEnd,
+              narrationAfterPause,
+              maxAllowed: C10B_MAX_NARRATION_AFTER_PAUSE,
+              fix: `The pauseAt word "${pauseAtKeyword}" exists at ${globalResult.selectedTime.toFixed(2)}s but is outside the phase range. Move it to a word within [${startTime.toFixed(2)}s, ${endTime.toFixed(2)}s] or adjust phase boundaries.`
+            }
+          }));
+        }
+        
+        // ✅ C10 RULE D: Keyword realmente não existe no áudio → FAIL
+        console.error(`[C10][ERROR] Phase "${phase.id}": pauseAt="${pauseAtKeyword}" NOT FOUND anywhere in audio`);
         throw new Error(JSON.stringify({
           error_code: 'PAUSE_ANCHOR_NOT_FOUND',
           error_details: {
             phase_id: phase.id,
             pauseAt: pauseAtKeyword,
             startTime,
-            endTime
+            endTime,
+            globalSearch: true,
+            message: `The word "${pauseAtKeyword}" does not exist anywhere in the audio wordTimestamps`
           }
         }));
       }
