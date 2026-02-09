@@ -665,8 +665,46 @@ Deno.serve(async (req) => {
     
     const unexpectedFailures = failedRuns - expectedFailures;
     
+    // =========================================================================
+    // 6. AUDIT GATE — Mandatory post-batch contract validation
+    // Calls audit-contracts to validate all required contracts.
+    // If gate FAILS (HTTP != 200), the batch result includes gate_failed=true.
+    // =========================================================================
+    let auditResult: any = null;
+    let gatePassed = false;
+    
+    try {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+      const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+      
+      console.log(`[ForceTest] Running audit-contracts gate for batch ${batchId}...`);
+      
+      const auditResponse = await fetch(`${SUPABASE_URL}/functions/v1/audit-contracts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          pipeline_version: 'v7-vv-1.1.4%',
+          batch_id: batchId,
+          limit: 50,
+        }),
+      });
+      
+      auditResult = await auditResponse.json();
+      gatePassed = auditResponse.status === 200;
+      
+      console.log(`[ForceTest] Audit gate: ${gatePassed ? '✅ PASS' : '❌ FAIL'} (HTTP ${auditResponse.status})`);
+      console.log(`[ForceTest] Audit: ${auditResult.passed}/${auditResult.total_checks} checks passed, required_failed=${auditResult.required_failed}`);
+    } catch (auditError: any) {
+      console.error(`[ForceTest] Audit gate error:`, auditError.message);
+      auditResult = { error: auditError.message };
+      gatePassed = false;
+    }
+    
     const finalResult: ForceTestResult = {
-      batch_id: batchId,  // ✅ ISOLAMENTO: batch_id no resultado
+      batch_id: batchId,
       test_id: testId,
       started_at: new Date(startTime).toISOString(),
       completed_at: new Date().toISOString(),
@@ -676,13 +714,20 @@ Deno.serve(async (req) => {
       expected_failures: expectedFailures,
       unexpected_failures: unexpectedFailures,
       results,
-      run_mapping: runMapping,  // ✅ Mapeamento explícito runTag→run_id
-    };
+      run_mapping: runMapping,
+      // ✅ AUDIT GATE integrated
+      audit_gate: {
+        executed: true,
+        passed: gatePassed,
+        scorecard: auditResult,
+      },
+    } as any;
     
     console.log(`[ForceTest] ======== COMPLETED ========`);
     console.log(`[ForceTest] Batch ID: ${batchId}`);
     console.log(`[ForceTest] Total: ${results.length}, Passed: ${passedRuns}, Failed: ${failedRuns}`);
     console.log(`[ForceTest] Expected Failures: ${expectedFailures}, Unexpected: ${unexpectedFailures}`);
+    console.log(`[ForceTest] Audit Gate: ${gatePassed ? 'PASS' : 'FAIL'}`);
     console.log(`[ForceTest] Run Mapping: ${JSON.stringify(runMapping)}`);
     
     return new Response(

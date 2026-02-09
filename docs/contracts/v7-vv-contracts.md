@@ -423,6 +423,66 @@ Every pipeline execution persists:
 
 ---
 
+## F — Immutability Policy (MANDATORY)
+
+### Core Rule
+
+> **Any modification to invariants, thresholds, error codes, or JSON paths defined in this document
+> REQUIRES a contractVersion bump BEFORE deployment.**
+
+### Enforcement Mechanism
+
+1. **Code-level**: `c05CompleteExecution()` in `v7-vv/index.ts` validates `contractVersion`, `triggerContract`, and boundary invariants BEFORE persisting `output_data`. Mismatch → run FAILS with `CONTRACT_META_MISSING` or `TRIGGER_CONTRACT_MISMATCH`.
+
+2. **Audit Gate**: The `audit-contracts` edge function runs forensic SQL queries against `pipeline_executions` and returns HTTP 422 if any REQUIRED contract fails. This gate MUST be invoked:
+   - After every Force Test batch (automatically by `force-test-c10b`)
+   - Before promoting any pipeline version to production
+   - On-demand via `POST /audit-contracts`
+
+3. **Failed Run Traceability**: Failed runs MUST persist `contractVersion`, `contracts[]`, `forceTestBatchId`, and `forceTestRunTag` in `output_data.meta` alongside the canonical JSON `error_message`. This enables batch-level forensic queries across both completed and failed runs.
+
+### What Constitutes a Breaking Change
+
+| Action | Requires Version Bump? | Bump Type |
+|--------|----------------------|-----------|
+| Change C10B threshold (1.5s → X) | ✅ YES | MINOR |
+| Add new error_code | ❌ NO | PATCH |
+| Remove error_code | ✅ YES | MAJOR |
+| Change anchorActions schema | ✅ YES | MAJOR |
+| Change wordTimestamps JSON path | ✅ YES | MAJOR |
+| Change error_message canonical format | ✅ YES | MAJOR |
+| Add optional field to meta | ❌ NO | PATCH |
+| Change `INTERACTIVE_SCENE_TYPES` | ✅ YES | MINOR |
+
+### Invariants Protected by This Policy
+
+| ID | Invariant | Guard |
+|----|-----------|-------|
+| C10 | `pauseTime = wordTimestamps[match].end` | `PAUSE_ANCHOR_REQUIRED`, `PAUSE_ANCHOR_NOT_FOUND` |
+| C10B | `narrationAfterPause <= 1.5s` | `PAUSE_ANCHOR_NOT_AT_END` |
+| BOUNDARY_FIX | `duration > 0` ∧ `end[i] <= start[i+1]` | `BOUNDARY_FIX_GUARD_FAILED` |
+| EXEC_STATE | `error_message` is canonical JSON | Inline validation |
+| C06 | `triggerContract == 'anchorActions'` | `TRIGGER_CONTRACT_MISMATCH` |
+| META | `contractVersion == CONTRACT_VERSION` | `CONTRACT_META_MISSING` |
+
+### Audit Gate Protocol
+
+```
+Force Test → 12 runs → audit-contracts(batch_id) → HTTP 200 = PASS / HTTP 422 = BLOCKED
+```
+
+The audit gate checks:
+- C01: No duplicate run_ids
+- EXEC_STATE: 0 stuck runs, canonical JSON errors, completed_at present
+- C05: output_content_hash present
+- C06: triggerContract == anchorActions
+- BOUNDARY_FIX: All phases duration > 0, monotonic
+- C10: All interactive phases have pause anchorAction
+- C10B: All pauses within 1.5s of narration end
+- CONTRACT_META: contractVersion correct
+
+---
+
 ## Appendix: File Locations
 
 | Component | File Path |
