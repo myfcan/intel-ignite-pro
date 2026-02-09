@@ -1211,9 +1211,13 @@ async function c05CompleteExecution(
 ): Promise<void> {
   console.log(`[C05.3] Completing execution for run_id=${runId}, lesson_id=${lessonId}`);
   
-  // CONTRACT VERSION — from registry (single source of truth)
-  const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-1.0';
-  const ACTIVE_CONTRACTS = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+  // =========================================================================
+  // IMPORT FROM CONTRACTS.TS — Single Source of Truth (no duplication)
+  // =========================================================================
+  const { CONTRACT_VERSION: CV, ACTIVE_CONTRACTS_LIST: AC } = await import('./contracts.ts');
+  const { enforceContractMeta, enforceBoundaryInvariants } = await import('./contracts.ts');
+  const CONTRACT_VERSION = CV;
+  const ACTIVE_CONTRACTS = AC;
   
   // C05.3 STEP 1: Construir output_data
   const outputData = {
@@ -1229,10 +1233,8 @@ async function c05CompleteExecution(
       hashAlgorithm: 'canonical_jsonb_string+sha256',
       hashComputedAfterGuards: true,
       hashComputedViaSqlRpc: true,
-      // ✅ SCHEMA VERSIONING: Contract version + active contracts list
       contractVersion: CONTRACT_VERSION,
       contracts: ACTIVE_CONTRACTS,
-      // ✅ DEPRECATION REGISTRY
       deprecatedContracts: [
         { id: 'C07', deprecated_by: 'C10', rationale: 'Deterministic pauseAt replaces heuristic c07OriginalTime' },
         { id: 'C09', deprecated_by: 'C10', rationale: 'Explicit pauseAt keyword replaces implicit last-word detection' },
@@ -1240,51 +1242,33 @@ async function c05CompleteExecution(
       knownGaps: [
         { id: 'C03', rationale: 'scenes[] empty, Renderer uses visual fallback. Deferred to future version.' },
       ],
-      // ✅ ISOLAMENTO: Force test tracking (only if provided)
       ...(meta?.forceTestBatchId ? { forceTestBatchId: meta.forceTestBatchId } : {}),
       ...(meta?.forceTestRunTag ? { forceTestRunTag: meta.forceTestRunTag } : {}),
     }
   };
   
   // =========================================================================
-  // ENFORCEMENT HARD: Validate contract meta BEFORE persist
+  // ENFORCEMENT HARD: Use imported functions from contracts.ts (SSoT)
   // =========================================================================
-  const enforcementMeta = outputData.meta;
-  if (!enforcementMeta.contractVersion || enforcementMeta.contractVersion !== CONTRACT_VERSION) {
+  const metaCheck = enforceContractMeta(outputData.meta);
+  if (!metaCheck.pass) {
     throw new Error(JSON.stringify({
-      error_code: 'CONTRACT_META_MISSING',
-      error_message: `contractVersion missing or mismatch: expected=${CONTRACT_VERSION}, got=${enforcementMeta.contractVersion}`,
-      error_details: { expected: CONTRACT_VERSION, actual: enforcementMeta.contractVersion },
+      error_code: metaCheck.error_code,
+      error_message: metaCheck.violations.join('; '),
+      error_details: { violations: metaCheck.violations },
     }));
   }
-  if (enforcementMeta.triggerContract !== 'anchorActions') {
-    throw new Error(JSON.stringify({
-      error_code: 'TRIGGER_CONTRACT_MISMATCH',
-      error_message: `triggerContract must be 'anchorActions', got '${enforcementMeta.triggerContract}'`,
-      error_details: { expected: 'anchorActions', actual: enforcementMeta.triggerContract },
-    }));
-  }
-  // Enforce boundary invariants on phases
+  
   const phases = outputContent?.phases || [];
-  for (let i = 0; i < phases.length; i++) {
-    const p = phases[i];
-    const dur = p.endTime - p.startTime;
-    if (dur <= 0) {
-      throw new Error(JSON.stringify({
-        error_code: 'BOUNDARY_FIX_GUARD_FAILED',
-        error_message: `Phase ${p.id} has non-positive duration: ${dur.toFixed(3)}s`,
-        error_details: { phaseId: p.id, startTime: p.startTime, endTime: p.endTime, duration: dur },
-      }));
-    }
-    if (i < phases.length - 1 && p.endTime > phases[i + 1].startTime) {
-      throw new Error(JSON.stringify({
-        error_code: 'BOUNDARY_FIX_GUARD_FAILED',
-        error_message: `Phase ${p.id} overlaps ${phases[i + 1].id}`,
-        error_details: { phaseId: p.id, endTime: p.endTime, nextPhaseId: phases[i + 1].id, nextStartTime: phases[i + 1].startTime },
-      }));
-    }
+  const boundaryCheck = enforceBoundaryInvariants(phases);
+  if (!boundaryCheck.pass) {
+    throw new Error(JSON.stringify({
+      error_code: boundaryCheck.error_code,
+      error_message: boundaryCheck.violations.join('; '),
+      error_details: { violations: boundaryCheck.violations },
+    }));
   }
-  console.log(`[ENFORCEMENT] ✅ All contract meta and boundary invariants validated`);
+  console.log(`[ENFORCEMENT] ✅ All contract meta and boundary invariants validated (via contracts.ts SSoT)`);
   
   // C05.3 STEP 2: Persistir output_data (sem hash ainda)
   console.log(`[C05.3] Persisting output_data...`);
@@ -6629,6 +6613,41 @@ Deno.serve(async (req) => {
     });
 
     // =========================================================================
+    // AUDIT GATE — Mandatory production contract validation
+    // Calls audit-contracts edge function. If gate returns non-200 (422),
+    // pipeline logs WARNING but does NOT fail the run (run is already persisted).
+    // This provides observability without breaking existing completed runs.
+    // For HARD BLOCK on deploy/release, use force-test-c10b + audit gate.
+    // =========================================================================
+    try {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+      const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+      
+      console.log(`[AUDIT_GATE] Running post-execution audit for run ${runId}...`);
+      const auditResponse = await fetch(`${SUPABASE_URL}/functions/v1/audit-contracts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          pipeline_version: PIPELINE_VERSION,
+          limit: 10,
+        }),
+      });
+      
+      const auditScorecard = await auditResponse.json();
+      if (auditResponse.status !== 200) {
+        console.error(`[AUDIT_GATE] ❌ GATE FAILED (HTTP ${auditResponse.status}): required_failed=${auditScorecard.required_failed}`);
+        console.error(`[AUDIT_GATE] Failed checks: ${JSON.stringify(auditScorecard.checks?.filter((c: any) => !c.pass))}`);
+      } else {
+        console.log(`[AUDIT_GATE] ✅ GATE PASSED: ${auditScorecard.passed}/${auditScorecard.total_checks} checks`);
+      }
+    } catch (auditErr: any) {
+      console.warn(`[AUDIT_GATE] ⚠️ Could not reach audit-contracts: ${auditErr.message}`);
+    }
+
+    // =========================================================================
     // RESPOSTA COM DEBUG REPORT
     // =========================================================================
     const response = {
@@ -6711,8 +6730,14 @@ Deno.serve(async (req) => {
         // IMMUTABILITY POLICY: Failed runs MUST persist contract metadata
         // in output_data.meta for batch-level forensic traceability.
         // =========================================================================
-        const CONTRACT_VERSION_FAIL = 'c10b-boundaryfix-execstate-1.0';
-        const ACTIVE_CONTRACTS_FAIL = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+        // Import from contracts.ts SSoT (dynamic import safe in catch)
+        let CONTRACT_VERSION_FAIL = 'c10b-boundaryfix-execstate-1.0';
+        let ACTIVE_CONTRACTS_FAIL = ['C01', 'C02', 'C04', 'C05', 'C06', 'C08', 'C10', 'C10B', 'BOUNDARY_FIX_GUARD', 'EXEC_STATE_CANONICAL_JSON'];
+        try {
+          const contractsMod = await import('./contracts.ts');
+          CONTRACT_VERSION_FAIL = contractsMod.CONTRACT_VERSION;
+          ACTIVE_CONTRACTS_FAIL = contractsMod.ACTIVE_CONTRACTS_LIST;
+        } catch { /* fallback to hardcoded if import fails in error path */ }
         
         // Extract forceTestMeta from input if available
         const forceTestMeta = (input as any)?.forceTestMeta;
