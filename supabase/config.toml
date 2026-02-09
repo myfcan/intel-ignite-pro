@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.elevenlabs-tts-contextual]
 verify_jwt = false
 
+[functions.force-test-c10b]
+verify_jwt = false
+
 [functions.generate-audio-elevenlabs]
 verify_jwt = false
 
