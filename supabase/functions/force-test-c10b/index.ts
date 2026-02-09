@@ -119,15 +119,18 @@ const RUN_MATRIX: RunVariation[] = [
     playgroundPauseAt: 'agora.',
   },
   
-  // R08: pauseAt com acento/variação - usando palavras ÚNICAS que EXISTEM nas narrações
-  // ✅ CORREÇÃO: Cada pauseAt deve ser UMA PALAVRA, não frase
+  // R08: pauseAt com acento/variação - testa normalização NFD
+  // ✅ CORREÇÃO v2: pauseAt deve estar nos ÚLTIMOS 1.5s da narração (C10B safe)
+  // Quiz: "...a opção que mais representa você." → "você" (ê, última palavra)
+  // Promessa: "...dez vezes mais claro no que você faz." → "faz" (última palavra)
+  // Playground: "...Faça o teste agora." → "agora" (última palavra)
   {
-    runTag: 'R08-accent-opcao',
-    description: 'pauseAt com acento (opção) - normalização NFD',
-    expectedResult: 'PASS', // Normalização remove acentos
-    quizPauseAt: 'opção',       // Existe em "a opção que mais representa você"
-    promessaPauseAt: 'faz',     // Existe em "você faz"
-    playgroundPauseAt: 'agora', // Existe em "Faça o teste agora"
+    runTag: 'R08-accent-voce',
+    description: 'pauseAt com acento (você/ê) no fim - normalização NFD',
+    expectedResult: 'PASS', // Normalização NFD remove ê→e
+    quizPauseAt: 'você',        // ê accent, ÚLTIMA palavra da narração quiz
+    promessaPauseAt: 'faz',     // última palavra da narração promessa
+    playgroundPauseAt: 'agora', // última palavra da narração playground
   },
   
   // R09: pauseAt em CAIXA ALTA
