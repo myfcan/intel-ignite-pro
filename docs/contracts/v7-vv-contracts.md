@@ -395,6 +395,8 @@ Every pipeline execution persists:
 | `BOUNDARY_FIX_GUARD_FAILED` | 500 | Boundary | Phase duration ≤ 0 after guard correction |
 | `VALIDATION_ERROR` | 400 | Input | Input JSON validation failed |
 | `UNSTRUCTURED_ERROR` | 500 | System | Unexpected error (legacy or unhandled) |
+| `CONTRACT_META_MISSING` | 500 | Enforcement | `contractVersion` or `contracts` array missing from `output_data.meta` |
+| `TRIGGER_CONTRACT_MISMATCH` | 500 | Enforcement | `triggerContract != anchorActions` |
 
 ### Reserved Error Codes (Future)
 
@@ -406,12 +408,30 @@ Every pipeline execution persists:
 
 ---
 
+## D — Deprecation Registry
+
+| Contract | Status | Deprecated By | Rationale |
+|----------|--------|---------------|-----------|
+| `C07` (Pause Priority Rule) | **DEPRECATED** | `C10` | C10 Hard Pause Anchor provides 100% deterministic pauses, eliminating all heuristics from C07. `c07OriginalTime` is no longer used. |
+| `C09` (Pause at Last Word) | **DEPRECATED** | `C10` | C10 uses explicit `pauseAt` keyword instead of implicit last-word detection. Eliminates ambiguity. |
+
+## E — Known Gaps
+
+| Contract | Status | Description | Rationale |
+|----------|--------|-------------|-----------|
+| `C03` (Scenes Array) | **KNOWN_GAP** | `output_data.content.scenes[]` is currently empty. Renderer uses legacy `visual` object fallback. | Populating `scenes[]` is deferred to a future version. Will require MINOR version bump when implemented. No runtime impact currently. |
+
+---
+
 ## Appendix: File Locations
 
 | Component | File Path |
 |-----------|-----------|
+| **Contract Registry (Source of Truth)** | `supabase/functions/v7-vv/contracts.ts` |
+| **Audit Gate Function** | `supabase/functions/audit-contracts/index.ts` |
 | Pipeline Entry Point | `supabase/functions/v7-vv/index.ts` |
 | Force Test Orchestrator | `supabase/functions/force-test-c10b/index.ts` |
+| Contract Validation Tests | `supabase/functions/force-test-c10b/contract-validation.test.ts` |
 | Frontend Types (Input) | `src/types/V7ScriptInput.ts` |
 | Frontend Pipeline Types | `src/lib/lessonPipeline/v7/types.ts` |
 | Frontend Step5 (Build Content) | `src/lib/lessonPipeline/v7/steps/step5-build-content.ts` |
