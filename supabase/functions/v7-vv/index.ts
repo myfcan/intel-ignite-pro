@@ -31,8 +31,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 // ============================================================================
 // C05: PIPELINE VERSION & TRACEABILITY CONSTANTS
 // ============================================================================
-const PIPELINE_VERSION = 'v7-vv-1.1.1-c10b-boundaryfix';
-const COMMIT_HASH = 'c10b-boundaryfix-2026-02-08-mandatory-guard';
+const PIPELINE_VERSION = 'v7-vv-1.1.2-exec-state-contract';
+const COMMIT_HASH = 'exec-state-contract-2026-02-09-guaranteed-fail';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================================
@@ -5439,22 +5439,66 @@ function calculateWordBasedTimings(
 // HANDLER PRINCIPAL
 // ============================================================================
 
+// ============================================================================
+// EXECUTION STATE CONTRACT ERROR TYPES
+// ============================================================================
+interface GuardrailError extends Error {
+  code: string;
+  details?: Record<string, unknown>;
+}
+
+function isGuardrailError(error: unknown): error is { code: string; details?: Record<string, unknown> } {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    try {
+      const parsed = JSON.parse((error as Error).message);
+      return typeof parsed === 'object' && 'error_code' in parsed;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+function parseGuardrailError(error: Error): { code: string; message: string; details?: Record<string, unknown> } {
+  try {
+    const parsed = JSON.parse(error.message);
+    return {
+      code: parsed.error_code || 'UNKNOWN_ERROR',
+      message: parsed.error_message || error.message,
+      details: parsed.error_details || undefined,
+    };
+  } catch {
+    return {
+      code: 'UNSTRUCTURED_ERROR',
+      message: error.message,
+    };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // =========================================================================
+  // EXECUTION STATE CONTRACT: Variables defined OUTSIDE try for catch access
+  // =========================================================================
+  let supabase: ReturnType<typeof createClient> | null = null;
+  let runId: string | null = null;
+  let input: ScriptInput | null = null;
+  let executionInserted = false;
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const input: ScriptInput = await req.json();
+    input = await req.json();
     
     // =========================================================================
     // C05: INITIALIZE TRACEABILITY
     // =========================================================================
-    const runId = c05GetOrGenerateRunId(input);
+    runId = c05GetOrGenerateRunId(input);
     const mode: 'create' | 'reprocess' | 'dry_run' = 
       input.dry_run ? 'dry_run' : 
       input.reprocess ? 'reprocess' : 'create';
@@ -5482,6 +5526,9 @@ Deno.serve(async (req) => {
       lesson_title: input.title || 'untitled',
       input_data: input,
     });
+    
+    // Mark that we have an execution record to update on failure
+    executionInserted = true;
     
     if (!c05InsertResult.success) {
       // Handle idempotency cases
@@ -5551,13 +5598,32 @@ Deno.serve(async (req) => {
         
         // Formatar mensagem de erro clara
         const errorMessages = validationErrors.map(e => `[${e.scene}] ${e.field}: ${e.message}`);
+        const fullErrorMessage = `[VALIDATION_ERROR] JSON inválido: ${errorMessages.join('; ')}`;
+        
+        // =========================================================================
+        // EXECUTION STATE CONTRACT: Mark as failed BEFORE returning
+        // =========================================================================
+        if (supabase && runId && executionInserted) {
+          await supabase
+            .from('pipeline_executions')
+            .update({
+              status: 'failed',
+              error_message: fullErrorMessage,
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('run_id', runId);
+          console.log(`[EXECUTION_STATE_CONTRACT] ✅ Validation failure recorded for run ${runId}`);
+        }
         
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'JSON inválido - Validação falhou', 
+            error: 'JSON inválido - Validação falhou',
+            error_code: 'VALIDATION_ERROR',
             validationErrors,
             errorMessages,
+            runId,
             helpUrl: 'https://docs.ailiv.app/v7-json-template-definitivo'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -6401,26 +6467,110 @@ Deno.serve(async (req) => {
     });
 
   } catch (error: any) {
+    // =========================================================================
+    // EXECUTION STATE CONTRACT: GUARANTEED FAILURE RECORDING
+    // =========================================================================
+    // This catch block MUST:
+    // 1. Parse guardrail errors (C10/C10B) to extract error_code
+    // 2. ALWAYS update pipeline_executions to status='failed' with completed_at
+    // 3. Return appropriate HTTP status based on error type
+    // =========================================================================
+    
     console.error('[V7-vv] ❌ Error:', error);
     
-    // C05: Fail execution record (need to extract runId and input from context)
-    // Since runId might not be defined if error occurred early, wrap in try-catch
+    // Parse error to extract code if it's a guardrail error
+    let errorCode = 'UNSTRUCTURED_ERROR';
+    let errorMessage = error.message || 'Unknown error';
+    let errorDetails: Record<string, unknown> | undefined = undefined;
+    
+    // Check if this is a structured guardrail error (JSON in message)
     try {
-      // @ts-ignore - runId defined in outer scope
-      if (typeof runId !== 'undefined') {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        // @ts-ignore - input defined in outer scope
-        await c05FailExecution(supabase, runId, error.message, typeof input !== 'undefined' ? input : undefined);
+      const parsed = JSON.parse(error.message);
+      if (parsed.error_code) {
+        errorCode = parsed.error_code;
+        errorMessage = parsed.error_message || errorMessage;
+        errorDetails = parsed.error_details;
+        console.log(`[V7-vv] Parsed guardrail error: code=${errorCode}`);
       }
-    } catch (c05Error) {
-      console.error('[C05] Failed to record execution failure:', c05Error);
+    } catch {
+      // Not a JSON error, use original message
     }
     
+    // Build full error message for DB
+    const fullErrorMessage = errorDetails 
+      ? `[${errorCode}] ${errorMessage} | Details: ${JSON.stringify(errorDetails)}`
+      : `[${errorCode}] ${errorMessage}`;
+    
+    // =========================================================================
+    // EXECUTION STATE CONTRACT: ALWAYS update status to 'failed'
+    // =========================================================================
+    if (supabase && runId) {
+      try {
+        console.log(`[EXECUTION_STATE_CONTRACT] Marking run ${runId} as FAILED with code ${errorCode}`);
+        
+        await supabase
+          .from('pipeline_executions')
+          .update({
+            status: 'failed',
+            error_message: fullErrorMessage,
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('run_id', runId);
+        
+        console.log(`[EXECUTION_STATE_CONTRACT] ✅ Run ${runId} marked as failed`);
+      } catch (updateError) {
+        console.error('[EXECUTION_STATE_CONTRACT] ❌ Failed to update status:', updateError);
+        
+        // Last resort: try insert if update failed (no record exists)
+        if (input) {
+          try {
+            await supabase
+              .from('pipeline_executions')
+              .upsert({
+                id: runId,
+                run_id: runId,
+                pipeline_version: PIPELINE_VERSION,
+                commit_hash: COMMIT_HASH,
+                mode: input.reprocess ? 'reprocess' : (input.dry_run ? 'dry_run' : 'create'),
+                lesson_title: input.title || 'unknown',
+                model: 'v7-vv',
+                input_data: input,
+                normalized_input: input,
+                status: 'failed',
+                error_message: fullErrorMessage,
+                completed_at: new Date().toISOString(),
+              }, { onConflict: 'run_id' });
+            
+            console.log(`[EXECUTION_STATE_CONTRACT] ✅ Fallback upsert succeeded`);
+          } catch (upsertError) {
+            console.error('[EXECUTION_STATE_CONTRACT] ❌ Fallback upsert also failed:', upsertError);
+          }
+        }
+      }
+    } else {
+      console.warn('[EXECUTION_STATE_CONTRACT] Cannot update status: supabase or runId not available');
+    }
+    
+    // Determine HTTP status based on error type
+    const isGuardrailError = [
+      'PAUSE_ANCHOR_REQUIRED',
+      'PAUSE_ANCHOR_NOT_FOUND', 
+      'PAUSE_ANCHOR_NOT_AT_END',
+      'BOUNDARY_FIX_GUARD_FAILED',
+    ].includes(errorCode);
+    
+    const httpStatus = isGuardrailError ? 400 : 500;
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: false, 
+        error: errorMessage,
+        error_code: errorCode,
+        error_details: errorDetails,
+        runId,
+      }),
+      { status: httpStatus, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
