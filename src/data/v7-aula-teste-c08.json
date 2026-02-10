@@ -1,11 +1,13 @@
 {
   "$schema": "V7-vv Pipeline Input Schema",
-  "$comment": "Modelo demonstrativo seguindo 100% o contrato C01-C08",
+  "$comment": "Modelo demonstrativo C01-C10 compliant. Todos os anchorText.pauseAt existem literalmente na narração.",
+  "$contractVersion": "c10b-boundaryfix-execstate-1.0",
+  "$contracts": ["C01", "C02", "C04", "C05", "C06", "C08", "C10", "C10B", "BOUNDARY_FIX_GUARD", "EXEC_STATE_CANONICAL_JSON"],
   "title": "Dominando Prompts com PERFEITO",
   "subtitle": "O método dos 8 pilares para prompts profissionais",
   "difficulty": "beginner",
   "category": "Fundamentos de IA",
-  "tags": ["IA", "prompts", "método PERFEITO", "C08"],
+  "tags": ["IA", "prompts", "método PERFEITO", "C10"],
   "learningObjectives": [
     "Entender a diferença entre prompts amadores e profissionais",
     "Conhecer o método PERFEITO",
@@ -133,7 +135,7 @@
       "type": "interaction",
       "narration": "Vamos testar seu conhecimento. O que a letra P representa no método PERFEITO?",
       "anchorText": {
-        "pauseAt": "representa"
+        "pauseAt": "PERFEITO"
       },
       "visual": {
         "type": "quiz",
