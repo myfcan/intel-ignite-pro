@@ -6679,6 +6679,46 @@ Deno.serve(async (req) => {
         );
       } else {
         console.log(`[AUDIT_GATE] ✅ GATE PASSED: ${auditScorecard.passed}/${auditScorecard.total_checks} checks`);
+        
+        // Persist auditGate stamp in output_data.meta for forensic traceability
+        const scorecardJson = JSON.stringify(auditScorecard);
+        const scorecardHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scorecardJson));
+        const scorecardHash = Array.from(new Uint8Array(scorecardHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        await supabase
+          .from('pipeline_executions')
+          .update({
+            output_data: supabase.rpc ? undefined : undefined, // fallback below
+            updated_at: new Date().toISOString(),
+          })
+          .eq('run_id', runId);
+        
+        // Update output_data.meta.auditGate via raw SQL-safe approach
+        const { data: currentRun } = await supabase
+          .from('pipeline_executions')
+          .select('output_data')
+          .eq('run_id', runId)
+          .single();
+        
+        if (currentRun?.output_data) {
+          const updatedOutput = {
+            ...currentRun.output_data,
+            meta: {
+              ...currentRun.output_data.meta,
+              auditGate: {
+                checked: true,
+                httpStatus: auditResponse.status,
+                scorecardHash,
+              },
+            },
+          };
+          await supabase
+            .from('pipeline_executions')
+            .update({ output_data: updatedOutput, updated_at: new Date().toISOString() })
+            .eq('run_id', runId);
+          
+          console.log(`[AUDIT_GATE] ✅ auditGate stamp persisted: hash=${scorecardHash.slice(0, 16)}...`);
+        }
       }
     } catch (auditErr: any) {
       // If audit-contracts is unreachable, FAIL SAFE (block, don't pass silently)
