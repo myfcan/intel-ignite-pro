@@ -36,31 +36,31 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// ✅ Importar os JSONs modelo (com scenes, não phases)
+// ✅ Importar os JSONs modelo C01-C10 compliant (com scenes, anchorText.pauseAt determinístico)
 import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
 import V7AulaTesteC08 from '@/data/v7-aula-teste-c08.json';
 
-// Roteiro de exemplo SIMPLES (para testes rápidos) - Contrato C08
+// Roteiro de exemplo SIMPLES (para testes rápidos) - Contrato C01-C10
 const EXAMPLE_SCRIPT = `{
-  "title": "Exemplo Simples V7-vv (C08)",
-  "subtitle": "Demonstração do contrato C01-C08",
+  "title": "Exemplo Simples V7-vv (C01-C10)",
+  "subtitle": "Demonstração do contrato C01-C10 completo",
   "difficulty": "beginner",
   "category": "Fundamentos de IA",
-  "tags": ["exemplo", "teste", "C08"],
-  "learningObjectives": ["Testar o pipeline V7-vv"],
+  "tags": ["exemplo", "teste", "C10"],
+  "learningObjectives": ["Testar o pipeline V7-vv com contratos C01-C10"],
   "generate_audio": true,
   "scenes": [
     {
       "id": "cena-1-intro",
       "title": "Introdução",
       "type": "dramatic",
-      "narration": "Bem-vindo à demonstração do Pipeline V7-vv com contrato C08.",
+      "narration": "Bem-vindo à demonstração do Pipeline V7-vv com todos os contratos validados.",
       "visual": {
         "type": "number-reveal",
         "content": {
           "hookQuestion": "VOCÊ ESTÁ PRONTO?",
           "number": "100%",
-          "subtitle": "funcional com C08",
+          "subtitle": "contratos C01-C10 validados",
           "mood": "success"
         }
       }
@@ -69,27 +69,26 @@ const EXAMPLE_SCRIPT = `{
       "id": "cena-2-quiz",
       "title": "Quiz",
       "type": "interaction",
-      "narration": "Você entendeu como funciona? Escolha sua resposta.",
+      "narration": "Você entendeu como funciona o sistema de contratos? Escolha sua resposta agora.",
       "anchorText": {
-        "pauseAt": "resposta"
+        "pauseAt": "agora"
       },
       "visual": {
         "type": "quiz",
         "content": {
-          "question": "O pipeline V7-vv funciona?"
+          "question": "O pipeline V7-vv com C10 funciona?"
         }
       },
       "interaction": {
         "type": "quiz",
         "options": [
-          { "id": "a", "text": "Sim, funciona perfeitamente", "isCorrect": true },
-          { "id": "b", "text": "Ainda tenho dúvidas", "isCorrect": true }
+          { "id": "a", "text": "Sim, funciona com pausa determinística", "isCorrect": true },
+          { "id": "b", "text": "Ainda tenho dúvidas", "isCorrect": false }
         ]
       }
     }
   ]
 }`;
-
 interface PipelineResult {
   success: boolean;
   lessonId?: string;
@@ -224,20 +223,20 @@ export default function AdminV7vv() {
     toast.info('Exemplo simples carregado');
   };
 
-  // ✅ Carregar JSON modelo COMPLETO da Aula 1 (formato correto com scenes)
+  // ✅ Carregar JSON modelo COMPLETO da Aula 1 (C01-C10 compliant - 10 cenas)
   const loadFullModel = () => {
     setScriptJson(JSON.stringify(V7Aula1InputModelo, null, 2));
     setJsonError(null);
     setDryRunResult(null);
-    toast.success('JSON modelo COMPLETO da Aula 1 carregado! (10 cenas)');
+    toast.success('JSON Aula 1 Completa carregado! (C01-C10 - 10 cenas)');
   };
 
-  // ✅ Carregar JSON modelo C08 (contrato C01-C08 com drift fix)
+  // ✅ Carregar JSON modelo C01-C10 (contrato completo com pausa determinística)
   const loadNewTestModel = () => {
     setScriptJson(JSON.stringify(V7AulaTesteC08, null, 2));
     setJsonError(null);
     setDryRunResult(null);
-    toast.success('JSON modelo C08 carregado! (Contrato C01-C08 - 4 cenas)');
+    toast.success('JSON modelo C01-C10 carregado! (Contrato completo - 4 cenas)');
   };
 
   // Preview da aula
