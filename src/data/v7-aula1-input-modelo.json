@@ -1,6 +1,8 @@
 {
   "$schema": "V7-vv Pipeline Input Schema",
-  "$comment": "JSON INPUT para Pipeline V7-vv - Baseado na aula funcional 19f7e1df",
+  "$comment": "JSON INPUT C01-C10 compliant — Todas as correções aplicadas. Cada anchorText.pauseAt existe literalmente na narração da cena. Nenhuma heurística.",
+  "$contractVersion": "c10b-boundaryfix-execstate-1.0",
+  "$contracts": ["C01", "C02", "C04", "C05", "C06", "C08", "C10", "C10B", "BOUNDARY_FIX_GUARD", "EXEC_STATE_CANONICAL_JSON"],
   "title": "O Fim da Brincadeira com IA",
   "subtitle": "98% brinca. 2% lucra R$ 30K/mês.",
   "difficulty": "beginner",
@@ -194,7 +196,7 @@
       "type": "interaction",
       "narration": "Como você usa a Inteligência Artificial hoje? Escolha a opção que mais representa você.",
       "anchorText": {
-        "pauseAt": "representa você"
+        "pauseAt": "você"
       },
       "visual": {
         "type": "quiz",
@@ -258,9 +260,9 @@
       "id": "cena-7-promessa",
       "title": "Promessa do Segredo dos 2%",
       "type": "interaction",
-      "narration": "Vou te mostrar o segredo dos dois por cento. Para projetos. Renda extra. E para se tornar dez vezes mais claro no que você faz.",
+      "narration": "Vou te mostrar o segredo dos dois por cento. Para projetos. Renda extra. E para se tornar dez vezes mais claro no que você faz. Clique para descobrir agora.",
       "anchorText": {
-        "pauseAt": "resultado"
+        "pauseAt": "agora"
       },
       "visual": {
         "type": "cards-reveal",
@@ -374,7 +376,7 @@
       "type": "playground",
       "narration": "Agora veja a diferença na prática. Compare um prompt amador com um prompt profissional. Faça o teste agora.",
       "anchorText": {
-        "pauseAt": "teste agora"
+        "pauseAt": "agora"
       },
       "visual": {
         "type": "playground",
