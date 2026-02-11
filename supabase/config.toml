@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.audit-contracts]
 verify_jwt = false
+
+[functions.v7-reprocess]
+verify_jwt = false
