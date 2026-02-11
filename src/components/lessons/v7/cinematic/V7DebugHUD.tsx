@@ -38,6 +38,7 @@ interface V7DebugHUDProps {
   // Callbacks for buttons
   onResetState: () => void;
   onSimulateSeekBack: () => void;
+  onSeekForward?: () => void;
 }
 
 export const V7DebugHUD = ({
@@ -52,6 +53,7 @@ export const V7DebugHUD = ({
   currentPhase,
   onResetState,
   onSimulateSeekBack,
+  onSeekForward,
 }: V7DebugHUDProps) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [showPhaseJsonModal, setShowPhaseJsonModal] = useState(false);
@@ -214,6 +216,16 @@ export const V7DebugHUD = ({
                   <Rewind className="w-3.5 h-3.5" />
                   Seek -2s
                 </button>
+                
+                {onSeekForward && (
+                  <button
+                    onClick={onSeekForward}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-green-600/80 hover:bg-green-500 text-white py-1.5 px-2 rounded text-xs font-medium transition-colors"
+                    title="Seek forward +30s"
+                  >
+                    ⏩ +30s
+                  </button>
+                )}
                 
                 <button
                   onClick={() => setShowPhaseJsonModal(true)}
