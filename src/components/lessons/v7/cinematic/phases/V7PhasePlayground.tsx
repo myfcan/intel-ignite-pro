@@ -55,6 +55,15 @@ export const V7PhasePlayground = ({
   audioControlRef.current = audioControl;
   const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ✅ PATCH A1: Log explícito da transição shouldPauseAudio
+  const prevShouldPauseRef = useRef(shouldPauseAudio);
+  useEffect(() => {
+    if (prevShouldPauseRef.current !== shouldPauseAudio) {
+      console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prevShouldPauseRef.current} -> ${shouldPauseAudio}`);
+      prevShouldPauseRef.current = shouldPauseAudio;
+    }
+  }, [shouldPauseAudio]);
+
   // ✅ PATCH A1: Só pausar quando anchor system OU fallback legado sinalizar
   useEffect(() => {
     const ctrl = audioControlRef.current;

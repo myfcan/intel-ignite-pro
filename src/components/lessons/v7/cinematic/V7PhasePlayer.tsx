@@ -1590,7 +1590,14 @@ export const V7PhasePlayer = ({
           hints: currentPhase.timeout.hints
         } : undefined;
 
-        console.log('[V7PhasePlayer] 🎮 PLAYGROUND FINAL PROPS:');
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND ENTRY:', {
+          phaseId: currentPhase.id,
+          startTime: currentPhase.startTime,
+          endTime: currentPhase.endTime,
+          isPausedByAnchor,
+          c07AutoPaused,
+          shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
+        });
         console.log('  title:', pgTitle);
         console.log('  amateurPrompt:', pgAmateurPrompt);
         console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
