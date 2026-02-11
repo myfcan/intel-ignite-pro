@@ -405,13 +405,43 @@ export const V7PhasePlayer = ({
   const c07AutoPauseAppliedRef = useRef(false);
 
   // Verificações simples
-  // ✅ Correção 1: Filtrar wordTimestamps pela fase atual (evita caption bleed entre fases)
+  // ✅ PATCH A2: Caption anti-bleed via pause anchor real
   const phaseFilteredTimestamps = useMemo(() => {
     if (!currentPhase) return wordTimestamps;
     const start = currentPhase.startTime ?? 0;
-    const end = currentPhase.endTime ?? Infinity;
-    return wordTimestamps.filter(w => w.start >= start && w.end <= end);
-  }, [wordTimestamps, currentPhase?.startTime, currentPhase?.endTime]);
+    const endFallback = currentPhase.endTime ?? Infinity;
+
+    // Buscar pause action da fase para cutoff preciso
+    const pauseAction = (currentPhase as any).anchorActions?.find(
+      (a: any) => a.type === 'pause'
+    );
+    const pauseKeyword = pauseAction?.keyword;
+
+    let captionEnd = endFallback;
+
+    if (pauseKeyword) {
+      const norm = (s: string) =>
+        s.toLowerCase().normalize('NFD')
+         .replace(/[\u0300-\u036f]/g, '')
+         .replace(/[.,!?;:'"()\[\]{}]/g, '')
+         .trim();
+
+      const kw = norm(pauseKeyword);
+      const inRange = wordTimestamps.filter(
+        w => w.start >= start && w.end <= endFallback
+      );
+      const matched = [...inRange].reverse().find(w => norm(w.word) === kw);
+      if (matched) {
+        captionEnd = matched.end + 0.02;
+        console.log(`[CaptionFilter] Phase "${currentPhase.id}": cutoff by anchor "${pauseKeyword}" at ${matched.end.toFixed(3)}s`);
+      } else {
+        console.warn(`[CaptionFilter] Phase "${currentPhase.id}": keyword "${pauseKeyword}" not found in range, using endTime fallback`);
+      }
+    }
+
+    return wordTimestamps.filter(w => w.start >= start && w.end <= captionEnd);
+  }, [wordTimestamps, currentPhase?.startTime, currentPhase?.endTime,
+      currentPhase?.anchorActions]);
 
   const hasWordTimestamps = wordTimestamps.length > 0;
   const hasAnchorActions = anchorActions.length > 0;
@@ -1603,6 +1633,7 @@ export const V7PhasePlayer = ({
             timeoutConfig={playgroundTimeoutConfig}
             userChallenge={pgUserChallenge}
             lessonId={script.id}
+            shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
           />
         );
 

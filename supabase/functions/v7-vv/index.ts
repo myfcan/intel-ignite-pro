@@ -1712,7 +1712,7 @@ const SCENE_TO_PHASE_MAP: Record<string, string> = {
 // - Auto pauseAt
 // - Duração mínima de 5s
 // - audioBehavior: { onStart: 'pause', onComplete: 'resume' }
-const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground'] as const;
+const INTERACTIVE_SCENE_TYPES = ['interaction', 'playground', 'secret-reveal'] as const;
 
 function validateInput(input: ScriptInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -2009,12 +2009,82 @@ function validateInput(input: ScriptInput): ValidationError[] {
       }
     }
 
-    // 2.6 Log de cena interativa (NÃO mais erro se falta pauseAt - será gerado)
+    // 2.6 PREFLIGHT BLOQUEANTE para cenas interativas (PATCH C1)
     const isInteractive = INTERACTIVE_SCENE_TYPES.includes(scene.type as any);
-    if (isInteractive && !scene.anchorText?.pauseAt) {
-      console.log(`[V7-vv:Validate] ℹ️ Cena interativa "${sceneId}" sem pauseAt - será gerado automaticamente`);
+    if (isInteractive) {
+      // Regra 1: pauseAt OBRIGATÓRIO em cenas interativas
+      if (!scene.anchorText?.pauseAt) {
+        errors.push({
+          scene: sceneId,
+          field: 'anchorText.pauseAt',
+          message: `Cena interativa "${sceneId}" DEVE ter anchorText.pauseAt`,
+          severity: 'error'
+        });
+      } else {
+        const pauseAt = scene.anchorText.pauseAt.trim();
+        const narration = scene.narration?.trim() || '';
+
+        // Regra 2: pauseAt deve existir literalmente na narração
+        const normNarr = narration.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const normPause = pauseAt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (!normNarr.includes(normPause)) {
+          errors.push({
+            scene: sceneId,
+            field: 'anchorText.pauseAt',
+            message: `pauseAt "${pauseAt}" NAO existe na narracao de "${sceneId}"`,
+            severity: 'error'
+          });
+        }
+
+        // Regra 3: pauseAt deve ser EXATAMENTE 1 palavra
+        const pauseWords = pauseAt.split(/\s+/);
+        if (pauseWords.length > 1) {
+          errors.push({
+            scene: sceneId,
+            field: 'anchorText.pauseAt',
+            message: `pauseAt deve ser 1 palavra, recebeu ${pauseWords.length}: "${pauseAt}"`,
+            severity: 'error'
+          });
+        } else {
+          // Regra 4: pauseAt deve ser a ÚLTIMA PALAVRA da narração
+          const narrWords = narration
+            .replace(/[.,!?;:'"()\[\]{}…\-–—]/g, '')
+            .trim().split(/\s+/).filter(w => w.length > 0);
+          const lastWord = narrWords[narrWords.length - 1] || '';
+          const normLast = lastWord.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (normLast !== normPause) {
+            errors.push({
+              scene: sceneId,
+              field: 'anchorText.pauseAt',
+              message: `pauseAt "${pauseAt}" NAO e a ultima palavra da narracao (ultima: "${lastWord}")`,
+              severity: 'error'
+            });
+          }
+        }
+      }
     }
   });
+
+  // Regra 5: pauseAt NÃO pode ser ambíguo (repetido entre cenas interativas)
+  const pauseAtMap: Record<string, string[]> = {};
+  input.scenes.forEach((scene, idx) => {
+    if (!INTERACTIVE_SCENE_TYPES.includes(scene.type as any)) return;
+    const p = scene.anchorText?.pauseAt?.trim();
+    if (!p) return;
+    const normP = p.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    pauseAtMap[normP] = pauseAtMap[normP] || [];
+    pauseAtMap[normP].push(scene.id || `scene-${idx + 1}`);
+  });
+  for (const [kw, ids] of Object.entries(pauseAtMap)) {
+    if (ids.length > 1) {
+      errors.push({
+        scene: ids.join(', '),
+        field: 'anchorText.pauseAt',
+        message: `pauseAt "${kw}" repetido em ${ids.length} cenas interativas: ${ids.join(', ')}`,
+        severity: 'error'
+      });
+    }
+  }
 
   // =========================================================================
   // 3. LOG RESULTADO
@@ -5369,9 +5439,7 @@ function calculateWordBasedTimings(
 
       const normalizedWord = normalize(ts.word);
 
-      if (normalizedWord === target ||
-          normalizedWord.includes(target) ||
-          target.includes(normalizedWord)) {
+      if (normalizedWord === target) {
         lastFound = ts.end;
         matchCount++;
       }
@@ -5396,9 +5464,7 @@ function calculateWordBasedTimings(
 
       const normalizedWord = normalize(ts.word);
 
-      if (normalizedWord === target ||
-          normalizedWord.includes(target) ||
-          target.includes(normalizedWord)) {
+      if (normalizedWord === target) {
         return { start: ts.start, end: ts.end };
       }
     }
