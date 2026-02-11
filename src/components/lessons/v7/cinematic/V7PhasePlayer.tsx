@@ -1577,6 +1577,7 @@ export const V7PhasePlayer = ({
           phaseId: currentPhase.id,
           startTime: currentPhase.startTime,
           endTime: currentPhase.endTime,
+          currentTime: audio.currentTime,
           isPausedByAnchor,
           c07AutoPaused,
           shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
