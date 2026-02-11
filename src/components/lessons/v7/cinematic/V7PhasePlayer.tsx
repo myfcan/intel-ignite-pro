@@ -2067,6 +2067,11 @@ export const V7PhasePlayer = ({
           const targetTime = Math.max(0, audio.currentTime - 2);
           audio.seekTo(targetTime);
         }}
+        onSeekForward={() => {
+          console.log('[V7DebugHUD] ⏩ Seek Forward +30s triggered');
+          const targetTime = Math.min(audio.duration, audio.currentTime + 30);
+          audio.seekTo(targetTime);
+        }}
       />
 
       {/* Debug Panel */}
