@@ -405,6 +405,14 @@ export const V7PhasePlayer = ({
   const c07AutoPauseAppliedRef = useRef(false);
 
   // Verificações simples
+  // ✅ Correção 1: Filtrar wordTimestamps pela fase atual (evita caption bleed entre fases)
+  const phaseFilteredTimestamps = useMemo(() => {
+    if (!currentPhase) return wordTimestamps;
+    const start = currentPhase.startTime ?? 0;
+    const end = currentPhase.endTime ?? Infinity;
+    return wordTimestamps.filter(w => w.start >= start && w.end <= end);
+  }, [wordTimestamps, currentPhase?.startTime, currentPhase?.endTime]);
+
   const hasWordTimestamps = wordTimestamps.length > 0;
   const hasAnchorActions = anchorActions.length > 0;
   
@@ -523,6 +531,16 @@ export const V7PhasePlayer = ({
       return;
     }
     
+    // ✅ GUARD C07.2: Se a fase tem anchorText.pauseAt explícito, o sistema de anchors
+    // (useAnchorText) é responsável por pausar via crossing detection. O fallback NÃO deve interferir.
+    const hasExplicitPauseAt = !!(currentPhase as any).anchorText?.pauseAt ||
+                               currentPhase.scenes?.some((s: any) => s.anchorText?.pauseAt);
+
+    if (hasExplicitPauseAt) {
+      console.log(`[C07.2] Phase "${currentPhase.id}" has anchorText.pauseAt - anchor system handles pause, skipping fallback`);
+      return;
+    }
+
     const interactivePhaseTypes = ['interaction', 'playground', 'quiz'];
     const isInteractive = interactivePhaseTypes.includes(currentPhase.type) || 
                           currentPhase.interaction !== undefined;
@@ -1977,7 +1995,7 @@ export const V7PhasePlayer = ({
       {/* ✅ V7-v32: CTA-button interactions should SHOW captions (they have continuous narration) */}
       {wordTimestamps.length > 0 && (
         <V7SynchronizedCaptions
-          wordTimestamps={wordTimestamps}
+          wordTimestamps={phaseFilteredTimestamps}
           currentTime={audio.currentTime}
           isVisible={
             // ✅ V7-v17: Show captions when audio is playing OR when we have any audio time
