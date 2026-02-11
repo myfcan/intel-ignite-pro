@@ -273,6 +273,8 @@ export interface V7PhasePlaygroundProps extends V7PhaseWithCompletion {
     perStep: number;
     hints: string[];
   };
+  /** Sinaliza que o audio deve ser pausado (anchor system OU fallback legado) */
+  shouldPauseAudio?: boolean;
 }
 
 // ============================================================================

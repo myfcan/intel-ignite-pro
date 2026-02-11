@@ -38,7 +38,8 @@ export const V7PhasePlayground = ({
     ]
   },
   userChallenge,
-  lessonId
+  lessonId,
+  shouldPauseAudio = false
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
@@ -54,26 +55,27 @@ export const V7PhasePlayground = ({
   audioControlRef.current = audioControl;
   const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ V7-v2: PAUSE audio with FADE when playground appears
+  // ✅ PATCH A1: Só pausar quando anchor system OU fallback legado sinalizar
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (!ctrl) return;
+    // Não pausar até shouldPauseAudio ser true (anchor ou c07AutoPaused)
+    if (!shouldPauseAudio) return;
 
     const pauseAudio = async () => {
       if (ctrl.isPlaying) {
-        // Usar pauseWithFade se disponível
         if (ctrl.pauseWithFade) {
           await ctrl.pauseWithFade(300);
         } else {
           ctrl.pause();
         }
         setAudioPausedByPlayground(true);
-        console.log('[V7PhasePlayground] 🔇 Audio pausado com fade');
+        console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
       }
     };
 
     pauseAudio();
-  }, []);
+  }, [shouldPauseAudio]);
 
   // ✅ V7-v2: Hints por step
   useEffect(() => {
