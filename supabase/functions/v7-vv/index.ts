@@ -6077,6 +6077,54 @@ Deno.serve(async (req) => {
       } else {
         console.log('[V7-vv] ✅ BOUNDARY_FIX: Boundaries válidos, sem correções');
       }
+
+      // =========================================================================
+      // PASSO 4.8: ANCHOR_BOUNDARY_REVALIDATION - Filtrar anchors show fora do range
+      // =========================================================================
+      console.log('[V7-vv] Step 4.8: ANCHOR_BOUNDARY_REVALIDATION...');
+      const ANCHOR_REVALIDATION_EPS = 0.30; // mesma tolerancia do Step 4.5
+      let totalAnchorsRemoved = 0;
+      let totalAnchorsKept = 0;
+
+      for (const phase of phases) {
+        if (!phase.anchorActions || !Array.isArray(phase.anchorActions)) continue;
+
+        const validAnchors: any[] = [];
+        for (const anchor of phase.anchorActions) {
+          // Anchors que NAO sao show: manter sempre (pause, transition, etc.)
+          if (anchor.type !== 'show') {
+            validAnchors.push(anchor);
+            continue;
+          }
+          // Show anchors sem keywordTime: manter (serao resolvidos pelo renderer)
+          if (anchor.keywordTime == null) {
+            validAnchors.push(anchor);
+            continue;
+          }
+          // Validar: keywordTime deve estar dentro de [startTime - EPS, endTime]
+          const inRange =
+            anchor.keywordTime >= (phase.startTime - ANCHOR_REVALIDATION_EPS) &&
+            anchor.keywordTime <= phase.endTime;
+
+          if (inRange) {
+            validAnchors.push(anchor);
+            totalAnchorsKept++;
+          } else {
+            totalAnchorsRemoved++;
+            console.warn(
+              `[ANCHOR_BOUNDARY_REVALIDATION] REMOVED: "${anchor.id}" ` +
+              `keywordTime=${anchor.keywordTime.toFixed(3)}s ` +
+              `OUTSIDE phase "${phase.id}" [${phase.startTime.toFixed(3)}s, ${phase.endTime.toFixed(3)}s]`
+            );
+          }
+        }
+        phase.anchorActions = validAnchors;
+      }
+
+      console.log(
+        `[V7-vv] Step 4.8: ANCHOR_BOUNDARY_REVALIDATION complete. ` +
+        `Kept=${totalAnchorsKept}, Removed=${totalAnchorsRemoved}`
+      );
     } else {
       console.log('[V7-vv] Step 4: SKIPPED (preserve_structure mode - uses existing phases)');
     }
