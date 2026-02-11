@@ -10,6 +10,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { V7UserChallengeInput } from './V7UserChallengeInput';
 import { useV7SoundEffects } from '../useV7SoundEffects';
+import { pushV7DebugLog } from '../v7DebugLogger';
 import type { 
   V7PhasePlaygroundProps, 
   V7PlaygroundResult,
@@ -59,7 +60,13 @@ export const V7PhasePlayground = ({
   const prevShouldPauseRef = useRef(shouldPauseAudio);
   useEffect(() => {
     if (prevShouldPauseRef.current !== shouldPauseAudio) {
-      console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prevShouldPauseRef.current} -> ${shouldPauseAudio}`);
+      const prev = prevShouldPauseRef.current;
+      console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
+      pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
+        prev,
+        current: shouldPauseAudio,
+        currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+      });
       prevShouldPauseRef.current = shouldPauseAudio;
     }
   }, [shouldPauseAudio]);
@@ -80,6 +87,10 @@ export const V7PhasePlayground = ({
         }
         setAudioPausedByPlayground(true);
         console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
+        pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
+          shouldPauseAudio: true,
+          currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+        });
       }
     };
 

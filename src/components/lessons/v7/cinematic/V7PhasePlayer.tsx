@@ -11,6 +11,7 @@ import { V7ExitConfirmModal } from './V7ExitConfirmModal';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
+import { pushV7DebugLog } from './v7DebugLogger';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
 import { V7DebugHUD } from './V7DebugHUD';
@@ -1573,7 +1574,7 @@ export const V7PhasePlayer = ({
           hints: currentPhase.timeout.hints
         } : undefined;
 
-        console.log('[V7PhasePlayer] 🎮 PLAYGROUND ENTRY:', {
+        const _pgEntryPayload = {
           phaseId: currentPhase.id,
           startTime: currentPhase.startTime,
           endTime: currentPhase.endTime,
@@ -1581,7 +1582,9 @@ export const V7PhasePlayer = ({
           isPausedByAnchor,
           c07AutoPaused,
           shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
-        });
+        };
+        console.log('[V7PhasePlayer] 🎮 PLAYGROUND ENTRY:', _pgEntryPayload);
+        pushV7DebugLog('PLAYGROUND_ENTRY', _pgEntryPayload);
         console.log('  title:', pgTitle);
         console.log('  amateurPrompt:', pgAmateurPrompt);
         console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');

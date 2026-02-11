@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { pushV7DebugLog } from './v7DebugLogger';
 
 // ============= TYPES =============
 
@@ -261,8 +262,13 @@ export function useAnchorText({
       switch (action.type) {
         case 'pause':
           stateRef.current.pausedByAnchor = true;
-          setIsPausedByAnchorState(true); // ✅ V7-v5: Atualiza state para causar re-render
-          // ✅ V7-v42: Passa keywordTime exato (wordTs.end) para seek-back preciso no Player
+          setIsPausedByAnchorState(true);
+          pushV7DebugLog('ANCHOR_PAUSE_EXECUTED', {
+            phaseId,
+            actionId: action.id,
+            keywordTime: wordTs.end,
+            currentTime,
+          });
           onPause?.(wordTs.end);
           break;
           

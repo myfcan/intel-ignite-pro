@@ -4,9 +4,10 @@
  */
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bug, RotateCcw, Rewind, FileJson } from 'lucide-react';
+import { Bug, RotateCcw, Rewind, FileJson, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { exportV7DebugLogs, clearV7DebugLogs } from './v7DebugLogger';
 
 interface LastCrossedAction {
   type: string;
@@ -234,6 +235,32 @@ export const V7DebugHUD = ({
                 >
                   <FileJson className="w-3.5 h-3.5" />
                   JSON
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const json = exportV7DebugLogs();
+                    navigator.clipboard.writeText(json);
+                    console.log('[V7DebugHUD] Exported', (window.__v7debugLogs?.length ?? 0), 'log entries to clipboard');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-orange-600/80 hover:bg-orange-500 text-white py-1.5 px-2 rounded text-xs font-medium transition-colors"
+                  title="Export debug logs to clipboard (JSON)"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export
+                </button>
+              </div>
+              
+              {/* Clear Logs */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    clearV7DebugLogs();
+                    console.log('[V7DebugHUD] Logs cleared');
+                  }}
+                  className="text-white/40 hover:text-white/70 text-[10px] underline transition-colors"
+                >
+                  Clear logs ({typeof window !== 'undefined' ? (window.__v7debugLogs?.length ?? 0) : 0})
                 </button>
               </div>
             </div>
