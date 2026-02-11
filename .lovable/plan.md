@@ -1,153 +1,132 @@
 
 
-# Plano: Padronização do Execution State Contract - Formato JSON Canônico
+# Plano Refinado: Correcao 1 (Caption Bleed) + Correcao 2 (Pausa Prematura no Playground)
 
-## Diagnóstico
+## Contexto dos Erros (Dados Reais - Run 5622c999, Lesson 837cc44a)
 
-### Problema Identificado
-O formato atual de `error_message` é **híbrido/misto**, dificultando queries forenses:
+### Erro 1: Legenda vaza texto da proxima cena
+- cena-8-cta endTime = 86.104s, mas a palavra "O" de cena-9 comeca em 85.763s
+- O componente `V7SynchronizedCaptions` recebe os `wordTimestamps` GLOBAIS (toda a aula)
+- Resultado: a legenda mostra "...clique para descobrir O nome do metodo e CLARO"
 
-```
-[PAUSE_ANCHOR_NOT_FOUND] {"error_code":"PAUSE_ANCHOR_NOT_FOUND","error_details":{...}} | Details: {...}
-```
-
-### Causa Raiz (Linha 6499-6502 de `v7-vv/index.ts`)
-```typescript
-const fullErrorMessage = errorDetails 
-  ? `[${errorCode}] ${errorMessage} | Details: ${JSON.stringify(errorDetails)}`
-  : `[${errorCode}] ${errorMessage}`;
-```
-
-Isso concatena prefixos textuais (`[CODE]`) com JSON, resultando em string não-parseável diretamente.
+### Erro 2: Playground para em "vai" ao inves de "CLARO"
+- cena-11-playground e um `blockingPhase`
+- O `isPlayLocked` (L270-297) retorna `true` imediatamente ao entrar na fase
+- O legacy fallback C07.2 (L514-561) detecta a fase como interativa e, se nao encontra pause action no JSON processado, pausa o audio imediatamente
+- Resultado: audio para antes do anchor "CLARO" ser atingido
 
 ---
 
-## Solução Proposta
+## Correcao 1 (Segura e Cirurgica): Filtrar wordTimestamps por fase
 
-### Formato Canônico Oficial
+**Arquivo:** `V7PhasePlayer.tsx` (linha ~1980)
 
-```json
-{
-  "error_code": "PAUSE_ANCHOR_NOT_FOUND",
-  "error_message": "Anchor text not found in narration range",
-  "error_details": {
-    "phase_id": "cena-6-quiz",
-    "pauseAt": "inexistente123xyz",
-    "startTime": 43.936,
-    "endTime": 50.473
-  }
+**O que muda:** Adicionar um `useMemo` que filtra os `wordTimestamps` pelo range temporal da fase atual (`currentPhase.startTime` / `currentPhase.endTime`). Passar o array filtrado ao `V7SynchronizedCaptions`.
+
+**Impacto:** Zero risco. Apenas restringe quais palavras a legenda pode exibir. Nao altera audio, anchors, transitions, lock, ou qualquer outro sistema.
+
+```text
+// ANTES (L1980):
+wordTimestamps={wordTimestamps}
+
+// DEPOIS:
+wordTimestamps={phaseFilteredTimestamps}
+
+// Onde phaseFilteredTimestamps e um useMemo:
+const phaseFilteredTimestamps = useMemo(() => {
+  if (!currentPhase) return wordTimestamps;
+  const start = currentPhase.startTime ?? 0;
+  const end = currentPhase.endTime ?? Infinity;
+  return wordTimestamps.filter(w => w.start >= start && w.end <= end);
+}, [wordTimestamps, currentPhase?.startTime, currentPhase?.endTime]);
+```
+
+---
+
+## Correcao 2 (Detalhamento de Seguranca): Audio continua ate o anchor pausar
+
+### Diagnostico Preciso da Cadeia de Eventos
+
+Quando o player entra em `cena-11-playground`, esta cadeia executa:
+
+```text
+1. useEffect (L468-507): detecta playground como blockingPhase
+   -> isInBlockingPhaseRef.current = true  (CORRETO - impede onComplete)
+   -> machineAdapter.lockPhase()           (CORRETO - impede transicao)
+
+2. useEffect C07.2 Legacy Fallback (L514-561):
+   -> detecta playground como interativo
+   -> verifica hasPauseActionForInteractivePhase
+   -> SE false: pausa audio IMEDIATAMENTE (L554-556)  <-- AQUI ESTA O BUG
+```
+
+### O Que Realmente Acontece
+
+A variavel `hasPauseActionForInteractivePhase` verifica se existem `pause` actions no array de `anchorActions` da fase atual. Se o JSON foi processado corretamente pelo pipeline C10, a fase playground DEVE ter uma pause action para "CLARO". Portanto:
+
+**Hipotese A:** O pipeline gerou a pause action corretamente, mas o `hasPauseActionForInteractivePhase` nao a detecta (bug de deteccao).
+**Hipotese B:** O pipeline nao gerou a pause action para esta fase (bug de pipeline).
+
+### Correcao Segura (Funciona para Ambas as Hipoteses)
+
+**Arquivo:** `V7PhasePlayer.tsx`, useEffect C07.2 (L514-561)
+
+**Principio:** O legacy fallback C07.2 so deve pausar o audio se a fase NAO tiver `anchorText.pauseAt` no JSON de input. Se a fase tem `pauseAt`, o sistema de anchors (useAnchorText) e responsavel por pausar no momento correto. O fallback nao deve interferir.
+
+```text
+// ANTES (L526-528):
+const interactivePhaseTypes = ['interaction', 'playground', 'quiz'];
+const isInteractive = interactivePhaseTypes.includes(currentPhase.type) || 
+                      currentPhase.interaction !== undefined;
+
+// DEPOIS - Adicionar guard: se a fase tem anchorText.pauseAt, NAO usar fallback
+const hasExplicitPauseAt = !!(currentPhase as any).anchorText?.pauseAt ||
+                           currentPhase.scenes?.some((s: any) => s.anchorText?.pauseAt);
+
+if (hasExplicitPauseAt) {
+  console.log(`[C07.2] Phase "${currentPhase.id}" has anchorText.pauseAt - anchor system handles pause, skipping fallback`);
+  return;
 }
 ```
 
-**Regras:**
-- Campo `error_code`: string identificadora (ex: `PAUSE_ANCHOR_NOT_FOUND`)
-- Campo `error_message`: descrição legível
-- Campo `error_details`: objeto JSON com contexto técnico (pode ser `null` ou `{}`)
+### Analise de Risco Detalhada
+
+| Cenario | Comportamento ANTES | Comportamento DEPOIS | Seguro? |
+|---------|---------------------|----------------------|---------|
+| Playground COM pauseAt (ex: "CLARO") | Legacy fallback para audio imediatamente | Audio continua, anchor para em "CLARO" | SIM - comportamento desejado |
+| Playground SEM pauseAt (JSON legado) | Legacy fallback para audio imediatamente | Legacy fallback para audio imediatamente (sem mudanca) | SIM - fallback preservado |
+| Quiz COM pauseAt (ex: "agora") | Anchor para no momento certo | Anchor para no momento certo (sem mudanca) | SIM |
+| Quiz SEM pauseAt (JSON legado) | Legacy fallback para audio | Legacy fallback para audio (sem mudanca) | SIM |
+| CTA | Ja tem early-return na L521-523 | Sem mudanca | SIM |
+
+### O Que NAO Muda (Garantias)
+
+1. **`isInBlockingPhaseRef`** - Continua `true` para playground. O `audio.onEnded` continua bloqueado. A aula NAO termina prematuramente.
+2. **`machineAdapter.lockPhase()`** - Continua executando. A fase NAO avanca automaticamente.
+3. **`isPlayLocked`** - Continua `true` para playground. O usuario NAO pode dar play/pause manual durante a narracao (botao bloqueado).
+4. **Anchor system** - `useAnchorText` continua monitorando e vai pausar exatamente em "CLARO" via crossing detection.
+5. **Quiz enabled** - So ativa quando `isPausedByAnchor === true` (L568-571). Playground so mostra interacao apos o anchor pausar.
+
+### O Unico Efeito da Mudanca
+
+O audio continua tocando de "No playground voce vai ver a diferenca..." ate "...usando CLARO", e SO ENTAO o anchor crossing detection pausa o audio e habilita a interacao do playground.
 
 ---
 
-## Alterações Técnicas
+## Sequencia de Implementacao
 
-### 1. Modificar `v7-vv/index.ts` - Catch Block (Linhas 6499-6502)
+1. Adicionar `phaseFilteredTimestamps` useMemo (Correcao 1)
+2. Passar `phaseFilteredTimestamps` ao `V7SynchronizedCaptions`
+3. Adicionar guard `hasExplicitPauseAt` no useEffect C07.2 (Correcao 2)
+4. Log de auditoria para confirmar comportamento
 
-**De:**
-```typescript
-const fullErrorMessage = errorDetails 
-  ? `[${errorCode}] ${errorMessage} | Details: ${JSON.stringify(errorDetails)}`
-  : `[${errorCode}] ${errorMessage}`;
-```
+## Arquivo Unico Modificado
 
-**Para:**
-```typescript
-const fullErrorMessage = JSON.stringify({
-  error_code: errorCode,
-  error_message: errorMessage,
-  error_details: errorDetails ?? null,
-});
-```
+`src/components/lessons/v7/cinematic/V7PhasePlayer.tsx`
 
-### 2. Modificar Validation Errors (se existirem prefixos `[VALIDATION_ERROR]`)
+- ~5 linhas novas para o useMemo do filtro
+- ~1 linha alterada na prop do caption
+- ~6 linhas novas para o guard do C07.2
 
-Garantir que erros de validação também sigam o formato:
-```json
-{
-  "error_code": "VALIDATION_ERROR",
-  "error_message": "JSON inválido: ...",
-  "error_details": null
-}
-```
-
----
-
-## Queries Oficiais para Extração
-
-### Query 1: Extrair `error_code`
-```sql
-SELECT 
-  run_id,
-  status,
-  error_message::jsonb->>'error_code' AS error_code
-FROM pipeline_executions
-WHERE status = 'failed';
-```
-
-### Query 2: Extrair `error_details`
-```sql
-SELECT 
-  run_id,
-  status,
-  error_message::jsonb->'error_details' AS error_details
-FROM pipeline_executions
-WHERE status = 'failed';
-```
-
-### Query 3: Relatório Completo de Falhas
-```sql
-SELECT 
-  run_id,
-  status,
-  error_message::jsonb->>'error_code' AS error_code,
-  error_message::jsonb->>'error_message' AS error_message_text,
-  error_message::jsonb->'error_details' AS error_details,
-  completed_at
-FROM pipeline_executions
-WHERE status = 'failed'
-ORDER BY created_at DESC;
-```
-
----
-
-## Validação e Prova
-
-### Etapa 1: Aplicar Patch no Código
-Modificar linhas 6499-6502 para usar formato JSON canônico.
-
-### Etapa 2: Rodar FORCE TEST Novamente (R01-R12)
-Executar bateria completa para gerar novos registros com formato correto.
-
-### Etapa 3: Prova SQL em R05 (ou outro FAIL)
-```sql
-SELECT 
-  run_id,
-  status,
-  error_message::jsonb->>'error_code' AS error_code,
-  error_message::jsonb->>'error_message' AS error_msg,
-  error_message::jsonb->'error_details'->'phase_id' AS phase_id,
-  error_message::jsonb->'error_details'->'pauseAt' AS pauseAt
-FROM pipeline_executions
-WHERE run_id = '<R05_RUN_ID>';
-```
-
-Resultado esperado:
-| run_id | status | error_code | error_msg | phase_id | pauseAt |
-|--------|--------|------------|-----------|----------|---------|
-| f005... | failed | PAUSE_ANCHOR_NOT_FOUND | Anchor text not found... | "cena-6-quiz" | "inexistente123xyz" |
-
----
-
-## Entregáveis
-
-1. **Código modificado** com formato JSON canônico no catch/finally
-2. **2 queries oficiais** para extração de error_code e error_details
-3. **Prova SQL** executada em 1 run failed com resultado formatado
+Total: ~12 linhas de codigo. Nenhum arquivo novo. Nenhuma mudanca no pipeline.
 
