@@ -1,105 +1,72 @@
 
 
-# B1 FIX: Post-Validation de Anchors Show (Step 4.8)
+# A1 Closure: Persistent Debug Logger + Instrumented Events
 
-## Root Cause Confirmado
+## Context
 
-O bug ocorre porque a sequencia de execucao no pipeline e:
+A1 remains **OPEN**. The previous evidence was invalidated because `currentTime=118.793 > endTime=118.41`, proving the log was captured after the phase boundary -- not at true entry. Console buffer limitations also caused loss of critical transition logs.
 
-1. **Step 4** (`generatePhases`, linha 6044): Calcula `triggerTime` para microVisuals usando range global
-2. **Step 4.5** (`calculateWordBasedTimings`, linha 6051): Recalcula `startTime`/`endTime` das fases com base em word matching
-3. **Step 4.6** (`c06NormalizeTriggerContract`, linha 6058): Cria `anchorActions` tipo `show` usando o `triggerTime` antigo (pre-boundary)
-4. **Step 4.7** (`applyBoundaryFixGuard`, linha 6066): Ajusta boundaries finais
+## Problem
 
-Resultado: anchors `show` com `keywordTime` calculado no Step 4 nunca sao revalidados contra os boundaries finais do Step 4.7.
+Two deliverables are required:
+1. **Commit SHA/PR** for the `currentTime` addition and `Seek +30s` button (already in codebase via last diff)
+2. **Runtime evidence** with 4 coherent events -- impossible to capture reliably via console buffer
 
-Exemplo real do run `1d3a98b3`: `show-mv-c8-escuro` com `keywordTime: 73.661` mas fase comecando em `80.125`.
+## Solution: Persistent In-Memory Debug Logger
 
-## Correcao Proposta
+### New File: `src/components/lessons/v7/cinematic/v7DebugLogger.ts`
 
-Inserir **Step 4.8: ANCHOR_BOUNDARY_REVALIDATION** apos o Step 4.7 (apos linha 6079), antes do bloco `} else {` na linha 6080.
-
-### Codigo exato a inserir (entre linhas 6079 e 6080):
+A lightweight, debug-only logger that writes to `window.__v7debugLogs` instead of relying on console buffer.
 
 ```typescript
-// =========================================================================
-// PASSO 4.8: ANCHOR_BOUNDARY_REVALIDATION - Filtrar anchors show fora do range
-// =========================================================================
-console.log('[V7-vv] Step 4.8: ANCHOR_BOUNDARY_REVALIDATION...');
-const ANCHOR_REVALIDATION_EPS = 0.30; // mesma tolerancia do Step 4.5
-let totalAnchorsRemoved = 0;
-let totalAnchorsKept = 0;
-
-for (const phase of phases) {
-  if (!phase.anchorActions || !Array.isArray(phase.anchorActions)) continue;
-
-  const validAnchors = [];
-  for (const anchor of phase.anchorActions) {
-    // Anchors que NAO sao show: manter sempre (pause, transition, etc.)
-    if (anchor.type !== 'show') {
-      validAnchors.push(anchor);
-      continue;
-    }
-    // Show anchors sem keywordTime: manter (serao resolvidos pelo renderer)
-    if (anchor.keywordTime == null) {
-      validAnchors.push(anchor);
-      continue;
-    }
-    // Validar: keywordTime deve estar dentro de [startTime - EPS, endTime]
-    const inRange =
-      anchor.keywordTime >= (phase.startTime - ANCHOR_REVALIDATION_EPS) &&
-      anchor.keywordTime <= phase.endTime;
-
-    if (inRange) {
-      validAnchors.push(anchor);
-      totalAnchorsKept++;
-    } else {
-      totalAnchorsRemoved++;
-      console.warn(
-        `[ANCHOR_BOUNDARY_REVALIDATION] REMOVED: "${anchor.id}" ` +
-        `keywordTime=${anchor.keywordTime.toFixed(3)}s ` +
-        `OUTSIDE phase "${phase.id}" [${phase.startTime.toFixed(3)}s, ${phase.endTime.toFixed(3)}s]`
-      );
-    }
-  }
-  phase.anchorActions = validAnchors;
+// Structure
+interface V7DebugLogEntry {
+  t: number;           // Date.now()
+  tag: string;         // Event tag (e.g., PLAYGROUND_ENTRY)
+  currentTime: number; // audio.currentTime at moment of log
+  [key: string]: any;  // Additional payload
 }
 
-console.log(
-  `[V7-vv] Step 4.8: ANCHOR_BOUNDARY_REVALIDATION complete. ` +
-  `Kept=${totalAnchorsKept}, Removed=${totalAnchorsRemoved}`
-);
+// API
+pushV7DebugLog(tag: string, payload: object): void
+getV7DebugLogs(): V7DebugLogEntry[]
+exportV7DebugLogs(): string  // JSON.stringify for copy/paste
+clearV7DebugLogs(): void
 ```
 
-### Propriedades do patch
+Only active when `?debug=1` or in `/admin/v7/play` routes (same condition as Debug HUD).
 
-| Propriedade | Valor |
-|---|---|
-| Arquivo | `supabase/functions/v7-vv/index.ts` |
-| Insercao | Apos linha 6079, antes de `} else {` (linha 6080) |
-| Afeta pause anchors | NAO (apenas `type === 'show'`) |
-| Afeta C10B | NAO |
-| Afeta audit gate | NAO (roda apos persist) |
-| Afeta contract_version | NAO |
-| Determinisitco | SIM |
-| Idempotente | SIM |
+### Instrumentation Points (4 mandatory events)
 
-## Pos-deploy: Validacao obrigatoria
+| # | Tag | File | Location | Payload |
+|---|-----|------|----------|---------|
+| 1 | `PLAYGROUND_ENTRY` | `V7PhasePlayer.tsx` line ~1576 | Where `PLAYGROUND ENTRY` console.log exists | `phaseId, startTime, endTime, currentTime, shouldPauseAudio` |
+| 2 | `ANCHOR_PAUSE_EXECUTED` | `useAnchorText.ts` line ~244 | Inside `executeAction` when `action.type === 'pause'` | `phaseId, actionId, keywordTime (wordTs.end), currentTime` |
+| 3 | `SHOULD_PAUSE_TRANSITION` | `V7PhasePlayground.tsx` line ~60 | Inside the `useEffect` that tracks `shouldPauseAudio` changes | `prev, current (shouldPauseAudio values), currentTime (from audioControl)` |
+| 4 | `PLAYGROUND_PAUSED_AUDIO` | `V7PhasePlayground.tsx` line ~82 | Inside the `pauseAudio` function after `ctrl.pause()` | `shouldPauseAudio, currentTime (from audioControl)` |
 
-Apos deploy, executar `v7-reprocess` com o run original e entregar:
+### Export Button in Debug HUD
 
-1. Novo `run_id` completo
-2. Query SQL mostrando `anchorActions` de `cena-8-cta` com zero anchors `show` fora do range
-3. Log da edge function mostrando `[ANCHOR_BOUNDARY_REVALIDATION] REMOVED` para os anchors invalidos
+Add an "Export Logs" button to `V7DebugHUD.tsx` that calls `exportV7DebugLogs()` and copies the JSON to clipboard, so the full event trace can be pasted as evidence.
 
-## Pipeline de execucao no fluxo final
+## Files to Create/Modify
 
-```text
-Step 4   : generatePhases()          --> triggerTime calculado (range global)
-Step 4.5 : calculateWordBasedTimings --> startTime/endTime recalculados
-Step 4.6 : c06NormalizeTriggerContract --> show actions criados (keywordTime = triggerTime antigo)
-Step 4.7 : applyBoundaryFixGuard     --> boundaries finais ajustados
-Step 4.8 : ANCHOR_BOUNDARY_REVALIDATION --> show anchors fora do range REMOVIDOS  <-- NOVO
-Step 5   : Build output
-```
+1. **CREATE** `src/components/lessons/v7/cinematic/v7DebugLogger.ts` -- Persistent logger utility
+2. **EDIT** `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` (line ~1576) -- Add `pushV7DebugLog('PLAYGROUND_ENTRY', ...)` alongside existing console.log
+3. **EDIT** `src/components/lessons/v7/cinematic/useAnchorText.ts` (line ~244) -- Add `pushV7DebugLog('ANCHOR_PAUSE_EXECUTED', ...)` inside pause case
+4. **EDIT** `src/components/lessons/v7/cinematic/phases/V7PhasePlayground.tsx` (lines ~62, ~82) -- Add `pushV7DebugLog('SHOULD_PAUSE_TRANSITION', ...)` and `pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', ...)`
+5. **EDIT** `src/components/lessons/v7/cinematic/V7DebugHUD.tsx` -- Add "Export Logs" button that copies `window.__v7debugLogs` as JSON
+
+## Verification Protocol
+
+After implementation:
+1. Navigate to preview URL with `?debug=1`
+2. Use `Seek +30s` button to reach ~113s
+3. Let audio play through playground entry and pause anchor at ~118.410s
+4. Click "Export Logs" in Debug HUD
+5. Paste JSON -- it must contain 4 events with coherent, monotonically increasing `currentTime` values
+
+## Regarding Commit SHA
+
+Lovable does not expose git commit SHAs or PRs. The code changes are tracked by Lovable's version system. The diff from the last edit (shown in `<last-diff>`) is the auditable artifact for the `currentTime` addition and `Seek +30s` button. After this implementation, the new diff will serve as the auditable artifact for the persistent logger.
 
