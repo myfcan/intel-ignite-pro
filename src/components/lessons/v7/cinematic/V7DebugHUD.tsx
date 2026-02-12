@@ -238,10 +238,25 @@ export const V7DebugHUD = ({
                 </button>
                 
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const json = exportV7DebugLogs();
-                    navigator.clipboard.writeText(json);
-                    console.log('[V7DebugHUD] Exported', (window.__v7debugLogs?.length ?? 0), 'log entries to clipboard');
+                    const count = window.__v7debugLogs?.length ?? 0;
+                    try {
+                      await navigator.clipboard.writeText(json);
+                      console.log(`[V7DebugHUD] ✅ Exported ${count} log entries to clipboard`);
+                      alert(`✅ ${count} logs copiados para o clipboard!`);
+                    } catch (err) {
+                      // Fallback: download as file
+                      console.warn('[V7DebugHUD] Clipboard failed, downloading file instead', err);
+                      const blob = new Blob([json], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `v7-debug-logs-${Date.now()}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      alert(`✅ ${count} logs baixados como arquivo!`);
+                    }
                   }}
                   className="flex-1 flex items-center justify-center gap-1.5 bg-orange-600/80 hover:bg-orange-500 text-white py-1.5 px-2 rounded text-xs font-medium transition-colors"
                   title="Export debug logs to clipboard (JSON)"
