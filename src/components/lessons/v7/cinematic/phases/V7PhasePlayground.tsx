@@ -57,11 +57,12 @@ export const V7PhasePlayground = ({
   audioControlRef.current = audioControl;
   const hintTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ PATCH A1: Log explícito da transição shouldPauseAudio
-  const prevShouldPauseRef = useRef(shouldPauseAudio);
+  // ✅ PATCH A1-v2: Log explícito da transição shouldPauseAudio
+  // CRITICAL: inicializar com null para detectar até mount com shouldPauseAudio=true
+  const prevShouldPauseRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (prevShouldPauseRef.current !== shouldPauseAudio) {
-      const prev = prevShouldPauseRef.current;
+    const prev = prevShouldPauseRef.current;
+    if (prev !== shouldPauseAudio) {
       console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
       pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
         prev,
@@ -72,14 +73,14 @@ export const V7PhasePlayground = ({
     }
   }, [shouldPauseAudio]);
 
-  // ✅ PATCH A1: Só pausar quando anchor system OU fallback legado sinalizar
+  // ✅ PATCH A1-v2: Só pausar quando anchor system OU fallback legado sinalizar
   useEffect(() => {
     const ctrl = audioControlRef.current;
     if (!ctrl) return;
-    // Não pausar até shouldPauseAudio ser true (anchor ou c07AutoPaused)
     if (!shouldPauseAudio) return;
 
     const pauseAudio = async () => {
+      // Tentar pausar se ainda tocando
       if (ctrl.isPlaying) {
         if (ctrl.pauseWithFade) {
           await ctrl.pauseWithFade(300);
@@ -87,12 +88,14 @@ export const V7PhasePlayground = ({
           ctrl.pause();
         }
         setAudioPausedByPlayground(true);
-        console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
-        pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
-          shouldPauseAudio: true,
-          currentTime: getAudioCurrentTime(),
-        });
       }
+      // CRITICAL: Logar SEMPRE que shouldPauseAudio=true, mesmo que audio já esteja pausado pelo anchor
+      console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
+      pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
+        shouldPauseAudio: true,
+        audioWasPlaying: ctrl.isPlaying,
+        currentTime: getAudioCurrentTime(),
+      });
     };
 
     pauseAudio();
