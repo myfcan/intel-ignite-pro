@@ -1628,6 +1628,7 @@ export const V7PhasePlayer = ({
             userChallenge={pgUserChallenge}
             lessonId={script.id}
             shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
+            getAudioCurrentTime={() => audio.getCurrentTime()}
           />
         );
 

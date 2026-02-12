@@ -40,7 +40,8 @@ export const V7PhasePlayground = ({
   },
   userChallenge,
   lessonId,
-  shouldPauseAudio = false
+  shouldPauseAudio = false,
+  getAudioCurrentTime = () => -1
 }: V7PhasePlaygroundProps) => {
   const [currentStep, setCurrentStep] = useState<PlaygroundStep>(0);
   const [audioPausedByPlayground, setAudioPausedByPlayground] = useState(false);
@@ -65,7 +66,7 @@ export const V7PhasePlayground = ({
       pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
         prev,
         current: shouldPauseAudio,
-        currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+        currentTime: getAudioCurrentTime(),
       });
       prevShouldPauseRef.current = shouldPauseAudio;
     }
@@ -89,7 +90,7 @@ export const V7PhasePlayground = ({
         console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
         pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
           shouldPauseAudio: true,
-          currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+          currentTime: getAudioCurrentTime(),
         });
       }
     };
