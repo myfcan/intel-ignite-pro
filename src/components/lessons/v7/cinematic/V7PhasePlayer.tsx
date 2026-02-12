@@ -214,7 +214,9 @@ export const V7PhasePlayer = ({
   const [isQuizResultShowing, setIsQuizResultShowing] = useState(false);
   // ✅ V7-vv Definitive: Track feedback audio playback via machine
   const feedbackAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previousPhaseRef = useRef<string | null>(null);
+   const previousPhaseRef = useRef<string | null>(null);
+  // ✅ A1-v3: Guard to only log PLAYGROUND_ENTRY on state transitions
+  const playgroundLastLogRef = useRef<string | null>(null);
 
   // ✅ Level 4: XState machine integration via adapter
   // ALL state now comes from the machine - no more scattered useState!
@@ -580,6 +582,7 @@ export const V7PhasePlayer = ({
       // Reset C07 state when leaving interactive phase
       setC07AutoPaused(false);
       c07AutoPauseAppliedRef.current = false;
+      playgroundLastLogRef.current = null;
       return;
     }
     
@@ -1592,19 +1595,27 @@ export const V7PhasePlayer = ({
         } : undefined;
 
         const _pgCurrentTime = audio.getCurrentTime();
-        const _pgEntryPayload = {
-          phaseId: currentPhase.id,
-          startTime: currentPhase.startTime,
-          endTime: currentPhase.endTime,
-          currentTime: _pgCurrentTime,
-          inPhase: _pgCurrentTime >= (currentPhase.startTime ?? 0) &&
-                   _pgCurrentTime <= (currentPhase.endTime ?? Infinity),
-          isPausedByAnchor,
-          c07AutoPaused,
-          shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
-        };
-        console.log('[V7PhasePlayer] 🎮 PLAYGROUND ENTRY:', _pgEntryPayload);
-        pushV7DebugLog('PLAYGROUND_ENTRY', _pgEntryPayload);
+        const _pgShouldPause = Boolean(isPausedByAnchor || c07AutoPaused);
+        const _pgInPhase = _pgCurrentTime >= (currentPhase.startTime ?? 0) &&
+                   _pgCurrentTime <= (currentPhase.endTime ?? Infinity);
+        
+        // ✅ A1-v3 FIX: Only log PLAYGROUND_ENTRY on state transitions, not every render
+        const _pgStateKey = `${_pgShouldPause}|${_pgInPhase}|${isPausedByAnchor}`;
+        if (!playgroundLastLogRef.current || playgroundLastLogRef.current !== _pgStateKey) {
+          const _pgEntryPayload = {
+            phaseId: currentPhase.id,
+            startTime: currentPhase.startTime,
+            endTime: currentPhase.endTime,
+            currentTime: _pgCurrentTime,
+            inPhase: _pgInPhase,
+            isPausedByAnchor,
+            c07AutoPaused,
+            shouldPauseAudio: _pgShouldPause,
+          };
+          console.log('[V7PhasePlayer] 🎮 PLAYGROUND ENTRY:', _pgEntryPayload);
+          pushV7DebugLog('PLAYGROUND_ENTRY', _pgEntryPayload);
+          playgroundLastLogRef.current = _pgStateKey;
+        }
         console.log('  title:', pgTitle);
         console.log('  amateurPrompt:', pgAmateurPrompt);
         console.log('  professionalPrompt:', pgProfessionalPrompt.substring(0, 80) + '...');
