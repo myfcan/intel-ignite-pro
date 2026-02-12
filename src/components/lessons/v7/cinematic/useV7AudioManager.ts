@@ -590,6 +590,7 @@ export const useV7AudioManager = ({
     playSoundEffect,
 
     // Helpers
+    getCurrentTime: () => mainAudioRef.current?.currentTime ?? -1,
     formatTime,
     formattedCurrentTime: formatTime(currentTime),
     formattedDuration: formatTime(duration),

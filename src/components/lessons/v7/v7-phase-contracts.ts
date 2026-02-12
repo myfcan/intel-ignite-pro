@@ -275,6 +275,8 @@ export interface V7PhasePlaygroundProps extends V7PhaseWithCompletion {
   };
   /** Sinaliza que o audio deve ser pausado (anchor system OU fallback legado) */
   shouldPauseAudio?: boolean;
+  /** Getter para currentTime real do audio (evita stale state) */
+  getAudioCurrentTime?: () => number;
 }
 
 // ============================================================================
