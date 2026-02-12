@@ -203,7 +203,15 @@ export default function Admin() {
         {/* ========== ACESSO RÁPIDO ========== */}
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-muted-foreground">Acesso Rápido</h2>
-          <div className="grid gap-3 md:grid-cols-5">
+          <div className="grid gap-3 md:grid-cols-6">
+            <Button
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1 border-green-500/50 hover:bg-green-500/10"
+              onClick={() => navigate('/admin/v7/play/837cc44a-fb80-4949-8fff-dbb8ba66bd1a?debug=1')}
+            >
+              <Play className="w-5 h-5 text-green-500" />
+              <span className="text-xs">V7 Play</span>
+            </Button>
             <Button
               variant="outline"
               className="h-auto py-3 flex-col gap-1"
