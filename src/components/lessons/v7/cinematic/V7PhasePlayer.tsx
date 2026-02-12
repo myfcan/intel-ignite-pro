@@ -609,6 +609,23 @@ export const V7PhasePlayer = ({
     c07AutoPauseAppliedRef.current = true;
   }, [currentPhase?.id, currentPhase?.type, currentPhase?.interaction, hasPauseActionForInteractivePhase, audio.isPlaying]);
 
+  // A1-v3: Edge-triggered log quando isPausedByAnchor transiciona false->true
+  const prevPausedByAnchorRef = useRef<boolean>(false);
+  useEffect(() => {
+    const prev = prevPausedByAnchorRef.current;
+    const next = Boolean(isPausedByAnchor);
+    if (!prev && next) {
+      pushV7DebugLog('PLAYER_PAUSE_STATE_TRUE', {
+        phaseId: currentPhase?.id ?? null,
+        isPausedByAnchor: true,
+        c07AutoPaused: Boolean(c07AutoPaused),
+        shouldPauseAudio: true,
+        currentTime: audio.getCurrentTime(),
+      });
+    }
+    prevPausedByAnchorRef.current = next;
+  }, [isPausedByAnchor, c07AutoPaused, currentPhase?.id, audio]);
+
   // ✅ V7 DEBUG HUD: Sync quiz enabled state for debugging
   useEffect(() => {
     const interactivePhaseTypes = ['interaction', 'playground', 'quiz'];
@@ -1574,11 +1591,14 @@ export const V7PhasePlayer = ({
           hints: currentPhase.timeout.hints
         } : undefined;
 
+        const _pgCurrentTime = audio.getCurrentTime();
         const _pgEntryPayload = {
           phaseId: currentPhase.id,
           startTime: currentPhase.startTime,
           endTime: currentPhase.endTime,
-          currentTime: audio.currentTime,
+          currentTime: _pgCurrentTime,
+          inPhase: _pgCurrentTime >= (currentPhase.startTime ?? 0) &&
+                   _pgCurrentTime <= (currentPhase.endTime ?? Infinity),
           isPausedByAnchor,
           c07AutoPaused,
           shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),

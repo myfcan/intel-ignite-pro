@@ -59,19 +59,20 @@ export const V7PhasePlayground = ({
 
   // ✅ PATCH A1-v2: Log explícito da transição shouldPauseAudio
   // CRITICAL: inicializar com null para detectar até mount com shouldPauseAudio=true
-  const prevShouldPauseRef = useRef<boolean | null>(null);
+  const prevShouldPauseRef = useRef<boolean>(shouldPauseAudio);
   useEffect(() => {
-    const prev = prevShouldPauseRef.current;
-    if (prev !== shouldPauseAudio) {
+    if (prevShouldPauseRef.current !== shouldPauseAudio) {
+      const prev = prevShouldPauseRef.current;
       console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
       pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
         prev,
         current: shouldPauseAudio,
         currentTime: getAudioCurrentTime(),
+        audioIsPlaying: audioControlRef.current?.isPlaying ?? null,
       });
       prevShouldPauseRef.current = shouldPauseAudio;
     }
-  }, [shouldPauseAudio]);
+  }, [shouldPauseAudio, getAudioCurrentTime]);
 
   // ✅ PATCH A1-v2: Só pausar quando anchor system OU fallback legado sinalizar
   useEffect(() => {
@@ -80,8 +81,8 @@ export const V7PhasePlayground = ({
     if (!shouldPauseAudio) return;
 
     const pauseAudio = async () => {
-      // Tentar pausar se ainda tocando
-      if (ctrl.isPlaying) {
+      const wasPlaying = Boolean(ctrl.isPlaying);
+      if (wasPlaying) {
         if (ctrl.pauseWithFade) {
           await ctrl.pauseWithFade(300);
         } else {
@@ -89,13 +90,17 @@ export const V7PhasePlayground = ({
         }
         setAudioPausedByPlayground(true);
       }
-      // CRITICAL: Logar SEMPRE que shouldPauseAudio=true, mesmo que audio já esteja pausado pelo anchor
-      console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
-      pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
-        shouldPauseAudio: true,
-        audioWasPlaying: ctrl.isPlaying,
-        currentTime: getAudioCurrentTime(),
-      });
+      console.log(
+        `[V7PhasePlayground] Audio ${wasPlaying ? 'PAUSED by playground' : 'already paused by anchor'}`
+      );
+      pushV7DebugLog(
+        wasPlaying ? 'PLAYGROUND_PAUSED_AUDIO' : 'PLAYGROUND_AUDIO_ALREADY_PAUSED',
+        {
+          shouldPauseAudio: true,
+          audioWasPlaying: wasPlaying,
+          currentTime: getAudioCurrentTime(),
+        }
+      );
     };
 
     pauseAudio();
