@@ -70,6 +70,8 @@ export const useV7AudioManager = ({
   const contextualTimersRef = useRef<NodeJS.Timeout[]>([]);
   const savedVolumeRef = useRef<number>(0.8);
   const savedTimeRef = useRef<number>(0);
+  // ✅ RAF POLLING: requestAnimationFrame ID for high-precision time updates (~16ms vs ~250ms)
+  const rafIdRef = useRef<number | null>(null);
 
   // 🆕 Refs para efeitos sonoros (pré-carregados)
   const soundEffectsRef = useRef<Map<SoundEffectType, HTMLAudioElement>>(new Map());
@@ -168,9 +170,33 @@ export const useV7AudioManager = ({
 
     const audio = mainAudioRef.current;
 
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-      onTimeUpdateRef.current?.(audio.currentTime);
+    // ✅ RAF POLLING: High-precision time updates (~16ms) replacing browser timeupdate (~250ms)
+    // This eliminates audio bleed on tight phase boundaries (e.g. 209ms gap between words)
+    const startRafPolling = () => {
+      const tick = () => {
+        if (audio && !audio.paused) {
+          setCurrentTime(audio.currentTime);
+          onTimeUpdateRef.current?.(audio.currentTime);
+        }
+        rafIdRef.current = requestAnimationFrame(tick);
+      };
+      // Cancel any existing loop before starting
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      rafIdRef.current = requestAnimationFrame(tick);
+    };
+
+    const stopRafPolling = () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      // One final sync when pausing/ending
+      if (audio) {
+        setCurrentTime(audio.currentTime);
+        onTimeUpdateRef.current?.(audio.currentTime);
+      }
     };
 
     const handleLoadedMetadata = () => {
@@ -178,6 +204,7 @@ export const useV7AudioManager = ({
     };
 
     const handleEnded = () => {
+      stopRafPolling();
       setIsPlaying(false);
       onEndedRef.current?.();
     };
@@ -186,10 +213,21 @@ export const useV7AudioManager = ({
     const handlePlay = () => {
       console.log('[V7AudioManager] 🔊 HTML Audio Event: PLAY');
       setIsPlaying(true);
+      startRafPolling();
     };
     const handlePause = () => {
       console.log('[V7AudioManager] 🔇 HTML Audio Event: PAUSE');
       setIsPlaying(false);
+      stopRafPolling();
+    };
+
+    // ✅ RAF POLLING: Keep timeupdate as fallback safety net (won't cause issues, RAF is faster)
+    const handleTimeUpdate = () => {
+      // Only update if RAF is NOT running (safety net for edge cases)
+      if (rafIdRef.current === null) {
+        setCurrentTime(audio.currentTime);
+        onTimeUpdateRef.current?.(audio.currentTime);
+      }
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -199,6 +237,7 @@ export const useV7AudioManager = ({
     audio.addEventListener('pause', handlePause);
 
     return () => {
+      stopRafPolling();
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
@@ -519,6 +558,11 @@ export const useV7AudioManager = ({
   // Cleanup
   useEffect(() => {
     return () => {
+      // ✅ RAF POLLING: Cancel animation frame on unmount
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current);
       }
