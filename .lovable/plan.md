@@ -1,140 +1,193 @@
 
 
-# A1 Fix: `getAudioCurrentTime` getter para V7PhasePlayground
+# A1-v3 Patch Final — Codigo exato baseado no estado atual dos arquivos
 
-## Diagnostico (dados reais do codigo)
+## Estado atual confirmado (leitura real)
 
-**`useV7AudioManager.ts` linhas 57-59 e 171-173:**
+- `useV7AudioManager.ts` linha 593: `getCurrentTime: () => mainAudioRef.current?.currentTime ?? -1` -- OK, existe.
+- `v7-phase-contracts.ts` linha 279: `getAudioCurrentTime?: () => number` -- OK, existe.
+- `V7PhasePlayer.tsx` linha 1631: `getAudioCurrentTime={() => audio.getCurrentTime()}` -- OK, existe.
+- `V7PhasePlayground.tsx` linha 44: `getAudioCurrentTime = () => -1` -- OK, existe.
+
+## 3 alteracoes necessarias (2 arquivos)
+
+### Alteracao 1: `V7PhasePlayer.tsx` linhas 1577-1585 — PLAYGROUND_ENTRY com getter + inPhase
+
+Codigo ATUAL (linha 1581):
 ```typescript
-const [currentTime, setCurrentTime] = useState(0);
-// ...
-const handleTimeUpdate = () => {
-  setCurrentTime(audio.currentTime);
+currentTime: audio.currentTime,
+```
+
+Codigo NOVO (linhas 1577-1587):
+```typescript
+const _pgCurrentTime = audio.getCurrentTime();
+const _pgEntryPayload = {
+  phaseId: currentPhase.id,
+  startTime: currentPhase.startTime,
+  endTime: currentPhase.endTime,
+  currentTime: _pgCurrentTime,
+  inPhase: _pgCurrentTime >= (currentPhase.startTime ?? 0) &&
+           _pgCurrentTime <= (currentPhase.endTime ?? Infinity),
+  isPausedByAnchor,
+  c07AutoPaused,
+  shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
 };
 ```
 
-`currentTime` e React state atualizado pelo evento `timeupdate` do browser (~250ms de intervalo). Passar como prop numerica resultaria em valor potencialmente stale no instante exato dos eventos 3 e 4.
+Corrige objecao (A): `audio.currentTime` era React state (stale ~250ms). `audio.getCurrentTime()` le o ref instantaneo. `inPhase` prova que o audio esta dentro dos bounds da fase.
 
-**Solucao: getter function** que le `mainAudioRef.current.currentTime` no instante da chamada.
+### Alteracao 2: `V7PhasePlayer.tsx` apos linha 610 — novo useEffect edge-triggered
 
----
-
-## Alteracoes (3 arquivos)
-
-### 1. `src/components/lessons/v7/v7-phase-contracts.ts` (linha 277)
-
-Adicionar na interface `V7PhasePlaygroundProps`:
-
+Inserir APOS linha 610 (fim do bloco C07.2 legacy fallback):
 ```typescript
-// ANTES (linha 276-278):
-  shouldPauseAudio?: boolean;
-}
-
-// DEPOIS:
-  shouldPauseAudio?: boolean;
-  /** Getter para currentTime real do audio (evita stale state) */
-  getAudioCurrentTime?: () => number;
-}
+// A1-v3: Edge-triggered log quando isPausedByAnchor transiciona false->true
+const prevPausedByAnchorRef = useRef<boolean>(false);
+useEffect(() => {
+  const prev = prevPausedByAnchorRef.current;
+  const next = Boolean(isPausedByAnchor);
+  if (!prev && next) {
+    pushV7DebugLog('PLAYER_PAUSE_STATE_TRUE', {
+      phaseId: currentPhase?.id ?? null,
+      isPausedByAnchor: true,
+      c07AutoPaused: Boolean(c07AutoPaused),
+      shouldPauseAudio: true,
+      currentTime: audio.getCurrentTime(),
+    });
+  }
+  prevPausedByAnchorRef.current = next;
+}, [isPausedByAnchor, c07AutoPaused, currentPhase?.id, audio]);
 ```
 
-### 2. `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` (linha 1630)
+Corrige objecao (B): preenche o buraco causal entre ANCHOR_PAUSE_EXECUTED e SHOULD_PAUSE_TRANSITION. Deps array inclui todos os valores lidos dentro do callback conforme exigido pelo CTO.
 
-Adicionar prop getter no render do Playground:
+### Alteracao 3: `V7PhasePlayground.tsx` — 3 sub-alteracoes
 
+**3a. Linha 62: `prevShouldPauseRef` inicializado com prop**
+
+ATUAL:
 ```typescript
-// ANTES (linhas 1629-1631):
-            lessonId={script.id}
-            shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
-          />
-
-// DEPOIS:
-            lessonId={script.id}
-            shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
-            getAudioCurrentTime={() => audio.currentTime}
-          />
+const prevShouldPauseRef = useRef<boolean | null>(null);
+```
+NOVO:
+```typescript
+const prevShouldPauseRef = useRef<boolean>(shouldPauseAudio);
 ```
 
-**Nota:** `audio` aqui e o retorno de `useV7AudioManager` (linha 557: `currentTime`). Porem, para o getter ser instantaneo, precisamos verificar se `audio.currentTime` no scope do render nao e o state. Verificacao: o return do hook na linha 555-558 retorna `currentTime` (state). Entao `() => audio.currentTime` captura o state, nao o ref.
+Corrige objecao (D): `prev:null` nao aparece mais. O ref comeca com o valor real da prop no mount.
 
-**Correcao necessaria:** Expor um getter do ref real no hook. Alternativa mais simples: expor `getCurrentTime` no hook.
+**3b. Linhas 63-74: SHOULD_PAUSE_TRANSITION com `audioIsPlaying` + deps corretas**
 
-### 2b. `src/components/lessons/v7/cinematic/useV7AudioManager.ts`
-
-Adicionar getter que le direto do ref (nao do state):
-
+ATUAL:
 ```typescript
-// No return do hook (apos linha 558):
-getCurrentTime: () => mainAudioRef.current?.currentTime ?? -1,
+useEffect(() => {
+  const prev = prevShouldPauseRef.current;
+  if (prev !== shouldPauseAudio) {
+    console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
+    pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
+      prev,
+      current: shouldPauseAudio,
+      currentTime: getAudioCurrentTime(),
+    });
+    prevShouldPauseRef.current = shouldPauseAudio;
+  }
+}, [shouldPauseAudio]);
 ```
 
-Entao no Player:
-
+NOVO:
 ```typescript
-getAudioCurrentTime={() => audio.getCurrentTime()}
+useEffect(() => {
+  if (prevShouldPauseRef.current !== shouldPauseAudio) {
+    const prev = prevShouldPauseRef.current;
+    console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
+    pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
+      prev,
+      current: shouldPauseAudio,
+      currentTime: getAudioCurrentTime(),
+      audioIsPlaying: audioControlRef.current?.isPlaying ?? null,
+    });
+    prevShouldPauseRef.current = shouldPauseAudio;
+  }
+}, [shouldPauseAudio, getAudioCurrentTime]);
 ```
 
-### 3. `src/components/lessons/v7/cinematic/phases/V7PhasePlayground.tsx`
+Adiciona `audioIsPlaying` para contexto e `getAudioCurrentTime` nos deps.
 
-**3a.** Destructure (linha 43):
+**3c. Linhas 82-98: Pausa efetiva vs redundante (eventos separados)**
+
+ATUAL:
 ```typescript
-// ANTES:
-  shouldPauseAudio = false
-// DEPOIS:
-  shouldPauseAudio = false,
-  getAudioCurrentTime = () => -1
+const pauseAudio = async () => {
+  // Tentar pausar se ainda tocando
+  if (ctrl.isPlaying) {
+    if (ctrl.pauseWithFade) {
+      await ctrl.pauseWithFade(300);
+    } else {
+      ctrl.pause();
+    }
+    setAudioPausedByPlayground(true);
+  }
+  // CRITICAL: Logar SEMPRE que shouldPauseAudio=true, mesmo que audio já esteja pausado pelo anchor
+  console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
+  pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
+    shouldPauseAudio: true,
+    audioWasPlaying: ctrl.isPlaying,
+    currentTime: getAudioCurrentTime(),
+  });
+};
 ```
 
-**3b.** Evento SHOULD_PAUSE_TRANSITION (linhas 65-69):
+NOVO:
 ```typescript
-// ANTES:
-pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
-  prev,
-  current: shouldPauseAudio,
-  currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
-});
-
-// DEPOIS:
-pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
-  prev,
-  current: shouldPauseAudio,
-  currentTime: getAudioCurrentTime(),
-});
+const pauseAudio = async () => {
+  const wasPlaying = Boolean(ctrl.isPlaying);
+  if (wasPlaying) {
+    if (ctrl.pauseWithFade) {
+      await ctrl.pauseWithFade(300);
+    } else {
+      ctrl.pause();
+    }
+    setAudioPausedByPlayground(true);
+  }
+  console.log(
+    `[V7PhasePlayground] Audio ${wasPlaying ? 'PAUSED by playground' : 'already paused by anchor'}`
+  );
+  pushV7DebugLog(
+    wasPlaying ? 'PLAYGROUND_PAUSED_AUDIO' : 'PLAYGROUND_AUDIO_ALREADY_PAUSED',
+    {
+      shouldPauseAudio: true,
+      audioWasPlaying: wasPlaying,
+      currentTime: getAudioCurrentTime(),
+    }
+  );
+};
 ```
 
-**3c.** Evento PLAYGROUND_PAUSED_AUDIO (linhas 90-93):
-```typescript
-// ANTES:
-pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
-  shouldPauseAudio: true,
-  currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
-});
+Corrige objecao (C): captura `wasPlaying` ANTES da chamada `pause()`, e separa os eventos para distinguir pausa efetiva de redundante.
 
-// DEPOIS:
-pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
-  shouldPauseAudio: true,
-  currentTime: getAudioCurrentTime(),
-});
-```
+## Resumo de impacto
 
----
+| Arquivo | Linhas | Mudanca | Risco |
+|---------|--------|---------|-------|
+| V7PhasePlayer.tsx | 1577-1585 | `getCurrentTime()` + `inPhase` | Zero (log only) |
+| V7PhasePlayer.tsx | apos 610 | Novo `PLAYER_PAUSE_STATE_TRUE` edge-triggered | Zero (novo useEffect readonly) |
+| V7PhasePlayground.tsx | 62 | `useRef<boolean>(shouldPauseAudio)` | Zero |
+| V7PhasePlayground.tsx | 63-74 | `audioIsPlaying` + deps | Zero |
+| V7PhasePlayground.tsx | 82-98 | PAUSED vs ALREADY_PAUSED | Zero (mesma logica, nomes distintos) |
 
-## Resumo de arquivos
+## Criterio de aceite A1-v3
 
-| Arquivo | Acao |
-|---------|------|
-| `useV7AudioManager.ts` | Adicionar `getCurrentTime` getter do ref |
-| `v7-phase-contracts.ts` | Adicionar `getAudioCurrentTime?: () => number` |
-| `V7PhasePlayer.tsx` | Passar `getAudioCurrentTime={() => audio.getCurrentTime()}` |
-| `V7PhasePlayground.tsx` | Consumir getter nos 2 pushV7DebugLog |
+JSON exportado de `window.__v7debugLogs` deve conter:
 
-## Criterio de aceite A1
+1. **PLAYGROUND_ENTRY**: `inPhase: true`, `currentTime <= endTime + 0.05`
+2. **ANCHOR_PAUSE_EXECUTED** e **PLAYER_PAUSE_STATE_TRUE**: ambos com `currentTime` ~118.41 (+-0.15s), delta wallclock `t` <= 200ms
+3. **SHOULD_PAUSE_TRANSITION**: `currentTime` ~118.41 (+-0.15s), `audioIsPlaying` presente
+4. **PLAYGROUND_PAUSED_AUDIO** ou **PLAYGROUND_AUDIO_ALREADY_PAUSED**: `currentTime` ~118.41 (+-0.15s)
 
-Export JSON com 4 eventos onde `currentTime >= 0` e coerentes (delta < 0.2s entre ANCHOR e TRANSITION/PAUSED):
+Condicoes globais: nenhum `currentTime = -1`, `t` monotonicamente crescente.
 
-| Evento | currentTime esperado |
-|--------|---------------------|
-| PLAYGROUND_ENTRY | ~113.886, shouldPauseAudio=false |
-| ANCHOR_PAUSE_EXECUTED | ~118.410 |
-| SHOULD_PAUSE_TRANSITION | ~118.410 (era -1, corrigido) |
-| PLAYGROUND_PAUSED_AUDIO | ~118.410 (era -1, corrigido) |
+## Entregaveis pos-implementacao
+
+1. JSON bruto exportado do `window.__v7debugLogs` (sem recorte)
+2. Screenshot do Debug HUD no momento do pause
+3. Commit com apenas V7PhasePlayer.tsx e V7PhasePlayground.tsx
 
