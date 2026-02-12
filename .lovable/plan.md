@@ -1,72 +1,140 @@
 
 
-# A1 Closure: Persistent Debug Logger + Instrumented Events
+# A1 Fix: `getAudioCurrentTime` getter para V7PhasePlayground
 
-## Context
+## Diagnostico (dados reais do codigo)
 
-A1 remains **OPEN**. The previous evidence was invalidated because `currentTime=118.793 > endTime=118.41`, proving the log was captured after the phase boundary -- not at true entry. Console buffer limitations also caused loss of critical transition logs.
-
-## Problem
-
-Two deliverables are required:
-1. **Commit SHA/PR** for the `currentTime` addition and `Seek +30s` button (already in codebase via last diff)
-2. **Runtime evidence** with 4 coherent events -- impossible to capture reliably via console buffer
-
-## Solution: Persistent In-Memory Debug Logger
-
-### New File: `src/components/lessons/v7/cinematic/v7DebugLogger.ts`
-
-A lightweight, debug-only logger that writes to `window.__v7debugLogs` instead of relying on console buffer.
-
+**`useV7AudioManager.ts` linhas 57-59 e 171-173:**
 ```typescript
-// Structure
-interface V7DebugLogEntry {
-  t: number;           // Date.now()
-  tag: string;         // Event tag (e.g., PLAYGROUND_ENTRY)
-  currentTime: number; // audio.currentTime at moment of log
-  [key: string]: any;  // Additional payload
-}
-
-// API
-pushV7DebugLog(tag: string, payload: object): void
-getV7DebugLogs(): V7DebugLogEntry[]
-exportV7DebugLogs(): string  // JSON.stringify for copy/paste
-clearV7DebugLogs(): void
+const [currentTime, setCurrentTime] = useState(0);
+// ...
+const handleTimeUpdate = () => {
+  setCurrentTime(audio.currentTime);
+};
 ```
 
-Only active when `?debug=1` or in `/admin/v7/play` routes (same condition as Debug HUD).
+`currentTime` e React state atualizado pelo evento `timeupdate` do browser (~250ms de intervalo). Passar como prop numerica resultaria em valor potencialmente stale no instante exato dos eventos 3 e 4.
 
-### Instrumentation Points (4 mandatory events)
+**Solucao: getter function** que le `mainAudioRef.current.currentTime` no instante da chamada.
 
-| # | Tag | File | Location | Payload |
-|---|-----|------|----------|---------|
-| 1 | `PLAYGROUND_ENTRY` | `V7PhasePlayer.tsx` line ~1576 | Where `PLAYGROUND ENTRY` console.log exists | `phaseId, startTime, endTime, currentTime, shouldPauseAudio` |
-| 2 | `ANCHOR_PAUSE_EXECUTED` | `useAnchorText.ts` line ~244 | Inside `executeAction` when `action.type === 'pause'` | `phaseId, actionId, keywordTime (wordTs.end), currentTime` |
-| 3 | `SHOULD_PAUSE_TRANSITION` | `V7PhasePlayground.tsx` line ~60 | Inside the `useEffect` that tracks `shouldPauseAudio` changes | `prev, current (shouldPauseAudio values), currentTime (from audioControl)` |
-| 4 | `PLAYGROUND_PAUSED_AUDIO` | `V7PhasePlayground.tsx` line ~82 | Inside the `pauseAudio` function after `ctrl.pause()` | `shouldPauseAudio, currentTime (from audioControl)` |
+---
 
-### Export Button in Debug HUD
+## Alteracoes (3 arquivos)
 
-Add an "Export Logs" button to `V7DebugHUD.tsx` that calls `exportV7DebugLogs()` and copies the JSON to clipboard, so the full event trace can be pasted as evidence.
+### 1. `src/components/lessons/v7/v7-phase-contracts.ts` (linha 277)
 
-## Files to Create/Modify
+Adicionar na interface `V7PhasePlaygroundProps`:
 
-1. **CREATE** `src/components/lessons/v7/cinematic/v7DebugLogger.ts` -- Persistent logger utility
-2. **EDIT** `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` (line ~1576) -- Add `pushV7DebugLog('PLAYGROUND_ENTRY', ...)` alongside existing console.log
-3. **EDIT** `src/components/lessons/v7/cinematic/useAnchorText.ts` (line ~244) -- Add `pushV7DebugLog('ANCHOR_PAUSE_EXECUTED', ...)` inside pause case
-4. **EDIT** `src/components/lessons/v7/cinematic/phases/V7PhasePlayground.tsx` (lines ~62, ~82) -- Add `pushV7DebugLog('SHOULD_PAUSE_TRANSITION', ...)` and `pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', ...)`
-5. **EDIT** `src/components/lessons/v7/cinematic/V7DebugHUD.tsx` -- Add "Export Logs" button that copies `window.__v7debugLogs` as JSON
+```typescript
+// ANTES (linha 276-278):
+  shouldPauseAudio?: boolean;
+}
 
-## Verification Protocol
+// DEPOIS:
+  shouldPauseAudio?: boolean;
+  /** Getter para currentTime real do audio (evita stale state) */
+  getAudioCurrentTime?: () => number;
+}
+```
 
-After implementation:
-1. Navigate to preview URL with `?debug=1`
-2. Use `Seek +30s` button to reach ~113s
-3. Let audio play through playground entry and pause anchor at ~118.410s
-4. Click "Export Logs" in Debug HUD
-5. Paste JSON -- it must contain 4 events with coherent, monotonically increasing `currentTime` values
+### 2. `src/components/lessons/v7/cinematic/V7PhasePlayer.tsx` (linha 1630)
 
-## Regarding Commit SHA
+Adicionar prop getter no render do Playground:
 
-Lovable does not expose git commit SHAs or PRs. The code changes are tracked by Lovable's version system. The diff from the last edit (shown in `<last-diff>`) is the auditable artifact for the `currentTime` addition and `Seek +30s` button. After this implementation, the new diff will serve as the auditable artifact for the persistent logger.
+```typescript
+// ANTES (linhas 1629-1631):
+            lessonId={script.id}
+            shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
+          />
+
+// DEPOIS:
+            lessonId={script.id}
+            shouldPauseAudio={Boolean(isPausedByAnchor || c07AutoPaused)}
+            getAudioCurrentTime={() => audio.currentTime}
+          />
+```
+
+**Nota:** `audio` aqui e o retorno de `useV7AudioManager` (linha 557: `currentTime`). Porem, para o getter ser instantaneo, precisamos verificar se `audio.currentTime` no scope do render nao e o state. Verificacao: o return do hook na linha 555-558 retorna `currentTime` (state). Entao `() => audio.currentTime` captura o state, nao o ref.
+
+**Correcao necessaria:** Expor um getter do ref real no hook. Alternativa mais simples: expor `getCurrentTime` no hook.
+
+### 2b. `src/components/lessons/v7/cinematic/useV7AudioManager.ts`
+
+Adicionar getter que le direto do ref (nao do state):
+
+```typescript
+// No return do hook (apos linha 558):
+getCurrentTime: () => mainAudioRef.current?.currentTime ?? -1,
+```
+
+Entao no Player:
+
+```typescript
+getAudioCurrentTime={() => audio.getCurrentTime()}
+```
+
+### 3. `src/components/lessons/v7/cinematic/phases/V7PhasePlayground.tsx`
+
+**3a.** Destructure (linha 43):
+```typescript
+// ANTES:
+  shouldPauseAudio = false
+// DEPOIS:
+  shouldPauseAudio = false,
+  getAudioCurrentTime = () => -1
+```
+
+**3b.** Evento SHOULD_PAUSE_TRANSITION (linhas 65-69):
+```typescript
+// ANTES:
+pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
+  prev,
+  current: shouldPauseAudio,
+  currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+});
+
+// DEPOIS:
+pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
+  prev,
+  current: shouldPauseAudio,
+  currentTime: getAudioCurrentTime(),
+});
+```
+
+**3c.** Evento PLAYGROUND_PAUSED_AUDIO (linhas 90-93):
+```typescript
+// ANTES:
+pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
+  shouldPauseAudio: true,
+  currentTime: -1, // V7AudioControl doesn't expose currentTime; use wallclock via `t`
+});
+
+// DEPOIS:
+pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
+  shouldPauseAudio: true,
+  currentTime: getAudioCurrentTime(),
+});
+```
+
+---
+
+## Resumo de arquivos
+
+| Arquivo | Acao |
+|---------|------|
+| `useV7AudioManager.ts` | Adicionar `getCurrentTime` getter do ref |
+| `v7-phase-contracts.ts` | Adicionar `getAudioCurrentTime?: () => number` |
+| `V7PhasePlayer.tsx` | Passar `getAudioCurrentTime={() => audio.getCurrentTime()}` |
+| `V7PhasePlayground.tsx` | Consumir getter nos 2 pushV7DebugLog |
+
+## Criterio de aceite A1
+
+Export JSON com 4 eventos onde `currentTime >= 0` e coerentes (delta < 0.2s entre ANCHOR e TRANSITION/PAUSED):
+
+| Evento | currentTime esperado |
+|--------|---------------------|
+| PLAYGROUND_ENTRY | ~113.886, shouldPauseAudio=false |
+| ANCHOR_PAUSE_EXECUTED | ~118.410 |
+| SHOULD_PAUSE_TRANSITION | ~118.410 (era -1, corrigido) |
+| PLAYGROUND_PAUSED_AUDIO | ~118.410 (era -1, corrigido) |
 
