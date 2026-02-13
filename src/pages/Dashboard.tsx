@@ -493,7 +493,7 @@ const Dashboard = () => {
             {/* ===== SUAS TRILHAS ===== */}
             <div className="mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Suas Trilhas</h2>
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
