@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  /* Artifacts output */
+  outputDir: './test-results',
   
   /* Timeout máximo por teste */
   timeout: 120 * 1000,
