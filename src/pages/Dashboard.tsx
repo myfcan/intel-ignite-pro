@@ -1,12 +1,10 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
-import { TrailBand } from "@/components/TrailBand";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -14,7 +12,8 @@ import { motion } from "framer-motion";
 import { GamificationHeader } from "@/components/gamification/GamificationHeader";
 import { useUserGamification } from "@/hooks/useUserGamification";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
-import { DashboardBackground3D } from "@/components/backgrounds";
+import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
+import { PointsCard } from "@/components/dashboard/PointsCard";
 
 interface User {
   id: string;
@@ -263,11 +262,24 @@ const Dashboard = () => {
     'Renda Extra com IA': 'from-primary to-secondary',
   };
 
+  // Find active trail for CourseProgressCard
+  const activeTrail = trails.find((trail, index) => {
+    const tp = trailsProgressWithStatus.find(p => p.trailId === trail.id);
+    return tp && tp.status === 'active' && tp.progress < 100;
+  });
+  const activeTrailProgress = activeTrail
+    ? trailsProgressWithStatus.find(p => p.trailId === activeTrail.id)
+    : null;
+
+  const TRAIL_CATEGORY_MAP: Record<number, string> = {
+    1: 'Fundamentos',
+    2: 'Dia a Dia',
+    3: 'Negócios',
+    4: 'Renda Extra',
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFBFC] relative">
-      {/* 3D Background */}
-      <DashboardBackground3D />
-      
       <DashboardHeader user={user!} />
       
       {/* Gamification Header */}
@@ -282,7 +294,7 @@ const Dashboard = () => {
 
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 overflow-hidden">
         
-        {/* Admin Access Button - só visível para admin/supervisor */}
+        {/* Admin Access Button */}
         {canAccessAdmin && (
           <div className="flex justify-end mb-4 relative z-50">
             <button
@@ -294,179 +306,73 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Hero Section - PALETA PRINCIPAL COM DEGRADÊ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20, rotateX: 10 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.8, type: "spring" }}
-          whileHover={{ 
-            scale: 1.02, 
-            rotateX: -2,
-            rotateY: 2,
-            transition: { duration: 0.3 }
-          }}
-          className="relative rounded-xl sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 mb-4 sm:mb-6 md:mb-8 overflow-hidden mx-2 xs:mx-0"
+        {/* ===== PURPLE CONTAINER - Hero Zone ===== */}
+        <div
+          className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 mb-6 sm:mb-8"
           style={{
-            background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 50%, #9333ea 100%)',
-            border: '1px solid rgba(167, 139, 250, 0.4)',
-            boxShadow: `
-              0 25px 50px -12px rgba(131, 123, 255, 0.4),
-              0 0 60px rgba(147, 51, 234, 0.2),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2)
-            `,
-            transformStyle: 'preserve-3d',
-            perspective: '1000px'
+            background: 'linear-gradient(135deg, #6C63FF 0%, #9333EA 100%)',
+            boxShadow: '0 20px 50px -12px rgba(108, 99, 255, 0.35)',
           }}
         >
-          {/* Animated Floating Particles */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full bg-white/30"
-                style={{
-                  width: Math.random() * 6 + 2,
-                  height: Math.random() * 6 + 2,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  x: [0, Math.random() * 20 - 10, 0],
-                  opacity: [0.3, 0.8, 0.3],
-                  scale: [1, 1.5, 1],
-                }}
-                transition={{
-                  duration: 3 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                  ease: "easeInOut"
-                }}
+          {/* Top row: CourseProgress + Points */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 sm:gap-5 mb-4 sm:mb-5">
+            {activeTrail && activeTrailProgress ? (
+              <CourseProgressCard
+                trailName={activeTrail.title}
+                category={TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
+                progress={activeTrailProgress.progress}
+                completedLessons={activeTrailProgress.completedLessons}
+                totalLessons={activeTrailProgress.totalLessons}
+                onContinue={() => navigate(`/trail/${activeTrail.id}`)}
               />
-            ))}
-          </div>
-          
-          {/* Glowing Orbs for 3D depth */}
-          <motion.div 
-            className="absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
-              filter: 'blur(20px)'
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0.8, 0.5]
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          
-          <motion.div 
-            className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, rgba(196, 181, 253, 0.4) 0%, transparent 70%)',
-              filter: 'blur(15px)'
-            }}
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.4, 0.7, 0.4]
-            }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          />
-          
-          {/* Textura de Pontos - Enhanced */}
-          <div 
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1.5px, transparent 1.5px)',
-              backgroundSize: '20px 20px',
-              backgroundPosition: '0 0',
-              opacity: 0.8
-            }}
-          />
-          
-          <div className="relative z-10">
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-purple-200 text-[10px] xs:text-xs sm:text-sm uppercase tracking-wider mb-1 sm:mb-2 font-semibold"
-            >
-              BEM-VINDO DE VOLTA
-            </motion.p>
-            
-            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 flex-wrap">
-              <motion.h1 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white break-words"
-              >
-                Olá, {user?.name}
-              </motion.h1>
-              
-              <motion.span
-                className="text-xl xs:text-2xl sm:text-3xl md:text-4xl flex-shrink-0"
-                animate={{ 
-                  rotate: [0, 15, -15, 15, -15, 0],
-                }}
-                transition={{
-                  delay: 1,
-                  duration: 0.8,
-                  ease: "easeInOut"
-                }}
-                style={{ display: 'inline-block', transformOrigin: 'bottom center' }}
-              >
-                👋
-              </motion.span>
-            </div>
-            
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-purple-100 text-xs xs:text-sm sm:text-base md:text-lg leading-snug"
-            >
-              Comece sua jornada de aprendizado em Inteligência Artificial
-            </motion.p>
-          </div>
-        </motion.div>
+            ) : (
+              <CourseProgressCard
+                trailName="Nenhuma trilha ativa"
+                category="Comece agora"
+                progress={0}
+                completedLessons={0}
+                totalLessons={0}
+                onContinue={() => {}}
+              />
+            )}
 
-        {/* Stats Cards - DESIGN SOFISTICADO COM SPARKLES */}
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
-          <AnimatedStatCard
-            value={gamificationStats?.streakDays ?? 0}
-            label="Dias de sequência"
-            icon={Flame}
-            gradientFrom="#ec4899"
-            gradientTo="#e11d48"
-            delay={0.2}
-            isLoading={gamificationLoading || !gamificationStats}
-          />
-          <AnimatedStatCard
-            value={gamificationStats?.powerScore ?? 0}
-            label="Power Score"
-            icon={Trophy}
-            gradientFrom="#6366f1"
-            gradientTo="#9333ea"
-            delay={0.35}
-            isLoading={gamificationLoading || !gamificationStats}
-          />
-          <AnimatedStatCard
-            value={gamificationStats?.lessonsCompleted ?? 0}
-            label="Aulas completas"
-            icon={BookOpen}
-            gradientFrom="#10b981"
-            gradientTo="#0891b2"
-            delay={0.5}
-            isLoading={gamificationLoading || !gamificationStats}
-          />
+            <PointsCard
+              powerScore={gamificationStats?.powerScore ?? 0}
+              patentName={gamificationStats?.patentName ?? 'Iniciante'}
+              isLoading={gamificationLoading || !gamificationStats}
+            />
+          </div>
+
+          {/* Bottom row: 2 Stat Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <AnimatedStatCard
+              value={gamificationStats?.streakDays ?? 0}
+              label="Dias de sequência"
+              icon={Flame}
+              gradientFrom="#EC4899"
+              gradientTo="#F472B6"
+              delay={0.2}
+              isLoading={gamificationLoading || !gamificationStats}
+              variant="colored"
+            />
+            <AnimatedStatCard
+              value={gamificationStats?.lessonsCompleted ?? 0}
+              label="Aulas completas"
+              icon={BookOpen}
+              gradientFrom="#10B981"
+              gradientTo="#0891B2"
+              delay={0.3}
+              isLoading={gamificationLoading || !gamificationStats}
+              variant="white"
+            />
+          </div>
         </div>
 
-        {/* Trilhas Section */}
-        <div className="mb-4 sm:mb-6 md:mb-8 px-2 xs:px-0">
-          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Suas Trilhas</h2>
+        {/* ===== SUAS TRILHAS - Horizontal white cards ===== */}
+        <div className="mb-6 sm:mb-8 px-2 xs:px-0">
+          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-5">Suas Trilhas</h2>
           
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="flex flex-col gap-3">
             {trails.map((trail, index) => {
               const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
               const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
@@ -475,8 +381,6 @@ const Dashboard = () => {
               const previousTrail = trails[index - 1];
               const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
               const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
-              
-              const estimatedTime = trailProgress?.totalLessons ? trailProgress.totalLessons * 8 : 45;
 
               return (
                 <TrailCard
@@ -488,7 +392,6 @@ const Dashboard = () => {
                   totalLessons={trailProgress?.totalLessons || 0}
                   status={trailProgress?.status || 'locked'}
                   gradient={gradient}
-                  estimatedTime={estimatedTime}
                   isNext={isNext}
                 />
               );
