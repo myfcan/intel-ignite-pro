@@ -56,7 +56,7 @@ const TrailDetail = () => {
   }, []);
 
   // Hook de admin - agora com userId já inicializado
-  const { isAdmin, loading: adminLoading } = useIsAdmin(userId);
+  const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(userId);
 
   // Log do status de admin para debug
   useEffect(() => {

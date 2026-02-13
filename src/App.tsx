@@ -77,6 +77,7 @@ const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
 const AdminDebugs = lazy(() => import("./pages/AdminDebugs"));
 const AdminModelos = lazy(() => import("./pages/AdminModelos"));
 const C10Report = lazy(() => import("./pages/admin/C10Report"));
+const AdminUserManagement = lazy(() => import("./pages/AdminUserManagement"));
 
 const queryClient = new QueryClient();
 
@@ -156,6 +157,7 @@ const App = () => (
                 <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
                 <Route path="/v7/:lessonId" element={<V7CinematicPlayer />} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/users" element={<ProtectedRoute><AdminUserManagement /></ProtectedRoute>} />
                 <Route path="/admin/pipeline" element={<ProtectedRoute><AdminPipelineHub /></ProtectedRoute>} />
                 <Route path="/admin/pipeline/create-single" element={<ProtectedRoute><AdminPipelineCreateSingle /></ProtectedRoute>} />
                 <Route path="/admin/pipeline/create-batch" element={<ProtectedRoute><AdminPipelineCreateBatch /></ProtectedRoute>} />

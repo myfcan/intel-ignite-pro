@@ -52,7 +52,7 @@ const Dashboard = () => {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [trailsProgress, setTrailsProgress] = useState<TrailProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAdmin, loading: adminLoading } = useIsAdmin(user?.id);
+  const { isAdmin, canAccessAdmin, loading: adminLoading } = useIsAdmin(user?.id);
   const { stats: gamificationStats, isLoading: gamificationLoading, refresh: refreshGamification } = useUserGamification();
   
   // Estados para controle do scroll horizontal
@@ -656,7 +656,7 @@ const Dashboard = () => {
                    border: '1px solid rgba(139, 92, 246, 0.4)'
                  }}>
               <span className="text-xs sm:text-sm font-bold text-purple-300 whitespace-nowrap">
-                {isAdmin ? '👑 Acesso Admin' : '🔒 Premium'}
+                {canAccessAdmin ? '👑 Acesso Admin' : '🔒 Premium'}
               </span>
             </div>
             
@@ -668,7 +668,7 @@ const Dashboard = () => {
               </p>
               <button 
                 className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
-                  isAdmin ? 'hover:bg-purple-500/30' : 'cursor-not-allowed'
+                  canAccessAdmin ? 'hover:bg-purple-500/30' : 'cursor-not-allowed'
                 }`}
                 style={{
                   background: 'rgba(139, 92, 246, 0.2)',
@@ -676,7 +676,7 @@ const Dashboard = () => {
                   color: '#A78BFA'
                 }}
               >
-                {isAdmin ? 'Ver curso →' : 'Em breve →'}
+                {canAccessAdmin ? 'Ver curso →' : 'Em breve →'}
               </button>
             </div>
           </div>
