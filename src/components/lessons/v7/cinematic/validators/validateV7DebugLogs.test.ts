@@ -22,10 +22,10 @@ import type { V7DebugLogEntry } from '../v7DebugLogger';
 function makeValidPlaygroundLogs(phaseId: string = 'phase-5-playground', keywordTime: number = 48.123, baseT: number = 1707000000): V7DebugLogEntry[] {
   return [
     { t: baseT + 100, tag: 'PLAYGROUND_ENTRY', currentTime: 42.5, phaseId, inPhase: true, shouldPauseAudio: false },
-    { t: baseT + 200, tag: 'ANCHOR_PAUSE_EXECUTED', currentTime: 48.130, phaseId, actionId: 'pause-playground', keywordTime },
-    { t: baseT + 210, tag: 'PLAYER_PAUSE_STATE_TRUE', currentTime: 48.130, phaseId, isPausedByAnchor: true, shouldPauseAudio: true, c07AutoPaused: false },
-    { t: baseT + 220, tag: 'SHOULD_PAUSE_TRANSITION', currentTime: 48.130, phaseId, prev: false, current: true, audioIsPlaying: false },
-    { t: baseT + 225, tag: 'PLAYGROUND_PAUSED_AUDIO', currentTime: 48.130, phaseId, shouldPauseAudio: true, audioWasPlaying: false },
+    { t: baseT + 200, tag: 'ANCHOR_PAUSE_EXECUTED', currentTime: keywordTime + 0.007, phaseId, actionId: 'pause-playground', keywordTime },
+    { t: baseT + 210, tag: 'PLAYER_PAUSE_STATE_TRUE', currentTime: keywordTime + 0.007, phaseId, isPausedByAnchor: true, shouldPauseAudio: true, c07AutoPaused: false },
+    { t: baseT + 220, tag: 'SHOULD_PAUSE_TRANSITION', currentTime: keywordTime + 0.007, phaseId, prev: false, current: true, audioIsPlaying: false },
+    { t: baseT + 225, tag: 'PLAYGROUND_PAUSED_AUDIO', currentTime: keywordTime + 0.007, phaseId, shouldPauseAudio: true, audioWasPlaying: false },
   ];
 }
 
