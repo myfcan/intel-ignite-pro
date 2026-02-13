@@ -1,0 +1,75 @@
+name: C12 Image Lab Contract Gate
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/image-lab*/**'
+      - 'src/pages/AdminImageLab*'
+      - 'src/lib/imageLab*'
+      - 'tests/unit/imageLab*'
+      - 'tests/e2e/imageLab*'
+      - 'docs/contracts/C12*'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/image-lab*/**'
+      - 'src/lib/imageLab*'
+
+concurrency:
+  group: c12-image-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: "Unit: State Machine + Idempotency"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Image Lab unit tests
+        run: npx vitest run src/lib/__tests__/imageLab --reporter=verbose
+
+  e2e-security:
+    name: "E2E: Security (C12_AUTH_GATE + STORAGE_PRIVACY)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: unit-tests
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Security Tests
+        run: npx playwright test tests/e2e/imageLabSecurity.spec.ts --project=chromium --reporter=json --output=test-results/imageLab-e2e-report.json
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: imageLab-e2e-report
+          path: test-results/
+          retention-days: 30

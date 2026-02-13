@@ -55,7 +55,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    // === PARTE 2: Set job to processing ONCE at start (no more queued resets) ===
+    // === C12_CONCURRENCY_LOCK: Check job status before processing ===
+    const { data: currentJob, error: jobCheckError } = await supabase.from("image_jobs").select("status").eq("id", job_id).single();
+    if (jobCheckError || !currentJob) {
+      return new Response(JSON.stringify({ ok: false, error_code: "JOB_NOT_FOUND", error_message: `Job ${job_id} not found` }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (currentJob.status === "processing") {
+      return new Response(JSON.stringify({ ok: false, error_code: "LOCKED", error_message: "Job is already being processed (concurrency lock)" }), {
+        status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!["queued", "failed", "rejected"].includes(currentJob.status)) {
+      return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${currentJob.status}, cannot start batch` }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // === Set job to processing ONCE at start ===
     await supabase.from("image_jobs").update({
       status: "processing",
       updated_at: new Date().toISOString(),
