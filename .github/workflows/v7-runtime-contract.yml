@@ -25,18 +25,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Run validator unit tests
-        run: bunx vitest run src/components/lessons/v7/cinematic/validators/ --reporter=verbose
+        run: npx vitest run src/components/lessons/v7/cinematic/validators/ --reporter=verbose
 
       - name: Run all unit tests
-        run: bunx vitest run --reporter=verbose
+        run: npm run test:unit
 
   e2e-audit-replay:
     name: "E2E: Audit Replay (C11)"
@@ -51,19 +52,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Start dev server
         run: |
-          bun run dev &
+          npm run dev &
           sleep 10
 
       - name: Wait for server
@@ -75,7 +77,7 @@ jobs:
           done
 
       - name: Run E2E Audit Replay
-        run: bunx playwright test tests/e2e/v7-runtime-contract.spec.ts --project=chromium --reporter=list
+        run: npm run test:e2e:v7
 
       - name: Upload debug logs artifact
         if: always()
