@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Flame, Trophy, BarChart3 } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import { BarChart, Bar, XAxis, ResponsiveContainer } from 'recharts';
+import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
 
 interface DashboardSidebarProps {
   streakDays: number;
@@ -15,13 +16,6 @@ const learningHoursData = [
   { name: 'S4', hours: 62 },
 ];
 
-const leaderboard = [
-  { name: 'AlexR_21', streak: 15, score: 1520, position: 1 },
-  { name: 'LearnWithMira', streak: 12, score: 1340, position: 2 },
-  { name: 'CodeJunkie', streak: 10, score: 1120, position: 3 },
-];
-
-const POSITION_COLORS = ['#F59E0B', '#9CA3AF', '#CD7F32'];
 
 export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: DashboardSidebarProps) => {
   return (
@@ -98,47 +92,13 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
         </div>
       </motion.div>
 
-      {/* Mini Leaderboard */}
+      {/* Missões Diárias */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl p-5"
-        style={{
-          border: '1px solid rgba(0,0,0,0.06)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 text-sm">Leaderboard</h3>
-          <span className="text-xs text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
-        </div>
-        <div className="flex flex-col gap-3">
-          {leaderboard.map((user, i) => (
-            <div key={user.name} className="flex items-center gap-3">
-              {/* Position badge */}
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: POSITION_COLORS[i] }}
-              >
-                {user.position}
-              </div>
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <span className="font-semibold text-gray-900 text-xs block truncate">{user.name}</span>
-                <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-orange-400" />
-                  {user.streak} dias
-                </span>
-              </div>
-              {/* Score */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Trophy className="w-3 h-3 text-indigo-400" />
-                <span className="text-xs font-bold text-gray-700">{user.score.toLocaleString()}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <MissoesDiarias />
       </motion.div>
     </div>
   );
