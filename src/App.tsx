@@ -83,6 +83,7 @@ const AdminExerciseLibrary = lazy(() => import("./pages/AdminExerciseLibrary"));
 const AdminModelos = lazy(() => import("./pages/AdminModelos"));
 const C10Report = lazy(() => import("./pages/admin/C10Report"));
 const AdminUserManagement = lazy(() => import("./pages/AdminUserManagement"));
+const AdminImageLab = lazy(() => import("./pages/AdminImageLab"));
 
 const queryClient = new QueryClient();
 
@@ -213,6 +214,7 @@ const App = () => (
                 <Route path="/admin/exercise-library" element={<AdminRoute><AdminExerciseLibrary /></AdminRoute>} />
                 <Route path="/admin/modelos" element={<AdminRoute><AdminModelos /></AdminRoute>} />
                 <Route path="/admin/c10-report" element={<AdminRoute><C10Report /></AdminRoute>} />
+                <Route path="/admin/image-lab" element={<AdminRoute><AdminImageLab /></AdminRoute>} />
                 {/* NEW FEATURES ROUTES */}
                 <Route path="/guides" element={<Guides />} />
                 <Route path="/guides/:guideId" element={<GuideDetail />} />

@@ -172,6 +172,245 @@ export type Database = {
           },
         ]
       }
+      image_assets: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          hash: string | null
+          height: number
+          id: string
+          job_id: string
+          mime_type: string
+          public_url: string | null
+          sha256_bytes: string | null
+          status: string
+          storage_bucket: string
+          storage_path: string
+          variation_index: number
+          width: number
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          hash?: string | null
+          height: number
+          id?: string
+          job_id: string
+          mime_type?: string
+          public_url?: string | null
+          sha256_bytes?: string | null
+          status?: string
+          storage_bucket?: string
+          storage_path: string
+          variation_index?: number
+          width: number
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          hash?: string | null
+          height?: number
+          id?: string
+          job_id?: string
+          mime_type?: string
+          public_url?: string | null
+          sha256_bytes?: string | null
+          status?: string
+          storage_bucket?: string
+          storage_path?: string
+          variation_index?: number
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_assets_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "image_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_assets_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "image_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_attempts: {
+        Row: {
+          cost_estimate: number | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          job_id: string
+          latency_ms: number | null
+          model: string
+          prompt_final: string
+          provider: string
+          status: string
+        }
+        Insert: {
+          cost_estimate?: number | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          job_id: string
+          latency_ms?: number | null
+          model: string
+          prompt_final: string
+          provider: string
+          status?: string
+        }
+        Update: {
+          cost_estimate?: number | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          latency_ms?: number | null
+          model?: string
+          prompt_final?: string
+          provider?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_attempts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "image_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_jobs: {
+        Row: {
+          approved_asset_id: string | null
+          cache_hit: boolean
+          created_at: string
+          created_by: string | null
+          error_code: string | null
+          error_message: string | null
+          hash: string | null
+          id: string
+          latency_ms: number | null
+          metadata: Json
+          model: string
+          n: number
+          preset_id: string
+          preset_key: string | null
+          preset_version: string | null
+          prompt_base: string | null
+          prompt_final: string | null
+          prompt_scene: string
+          provider: string
+          size: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_asset_id?: string | null
+          cache_hit?: boolean
+          created_at?: string
+          created_by?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          hash?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model?: string
+          n?: number
+          preset_id: string
+          preset_key?: string | null
+          preset_version?: string | null
+          prompt_base?: string | null
+          prompt_final?: string | null
+          prompt_scene: string
+          provider?: string
+          size?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_asset_id?: string | null
+          cache_hit?: boolean
+          created_at?: string
+          created_by?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          hash?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json
+          model?: string
+          n?: number
+          preset_id?: string
+          preset_key?: string | null
+          preset_version?: string | null
+          prompt_base?: string | null
+          prompt_final?: string | null
+          prompt_scene?: string
+          provider?: string
+          size?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_image_jobs_approved_asset"
+            columns: ["approved_asset_id"]
+            isOneToOne: false
+            referencedRelation: "image_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_jobs_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "image_presets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_presets: {
+        Row: {
+          created_at: string
+          default_size: string
+          id: string
+          is_active: boolean
+          key: string
+          prompt_template: string
+          title: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          default_size?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          prompt_template: string
+          title: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          default_size?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          prompt_template?: string
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       lesson_migrations_audit: {
         Row: {
           completed_at: string | null
@@ -1342,6 +1581,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      image_lab_kpis_last_7d: {
+        Row: {
+          avg_attempts_per_approved: number | null
+          avg_latency_gemini: number | null
+          avg_latency_openai: number | null
+          fail_rate_gemini: number | null
+          fail_rate_openai: number | null
+          first_pass_accept_rate: number | null
+          total_attempts: number | null
+          total_jobs: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
