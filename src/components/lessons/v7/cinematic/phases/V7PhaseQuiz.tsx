@@ -405,10 +405,11 @@ export const V7PhaseQuiz = ({
       // já gerencia o feedbackAudio pré-gravado. Chamar speakFeedback
       // aqui causa sobreposição de áudio.
       if (isPositiveResult) {
-        // ✅ CORRETO: Confetti verde + som de acerto
-        playSound('quiz-correct');
+        // ✅ CORRETO: Combo-hit + confetti verde
+        playSound('combo-hit');
+        setTimeout(() => playSound('quiz-correct'), 150);
         fireConfetti();
-        console.log('[V7PhaseQuiz] ✅ Resultado positivo - confetti triggered');
+        console.log('[V7PhaseQuiz] ✅ Resultado positivo - combo-hit + confetti triggered');
       } else {
         // ✅ INCORRETO: Som de erro
         playErrorSound();
