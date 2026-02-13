@@ -18,7 +18,8 @@ import {
   Play,
   FlaskConical,
   FolderOpen,
-  ClipboardCheck
+  ClipboardCheck,
+  ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -269,6 +270,37 @@ export default function Admin() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* AI IMAGE LAB */}
+          <Card className="border-2 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/image-lab')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="w-6 h-6 text-amber-500" />
+                AI Image Lab
+              </CardTitle>
+              <CardDescription>
+                Geração de assets com IA · OpenAI + Gemini
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <p>🖼️ Geração com presets</p>
+                <p>⚡ Batch paralelo (multi-provider)</p>
+                <p>✅ Approve/Reject workflow</p>
+                <p>📊 KPIs de latência e falhas</p>
+              </div>
+              <Button
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/image-lab');
+                }}
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Abrir Image Lab
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* ========== ACESSO RÁPIDO ========== */}
@@ -314,6 +346,14 @@ export default function Admin() {
             >
               <Activity className="w-5 h-5 text-primary" />
               <span className="text-xs">Monitor Pipeline</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-3 flex-col gap-1 border-amber-500/50 hover:bg-amber-500/10"
+              onClick={() => navigate('/admin/image-lab')}
+            >
+              <ImageIcon className="w-5 h-5 text-amber-500" />
+              <span className="text-xs">Image Lab</span>
             </Button>
             <Button
               variant="outline"
