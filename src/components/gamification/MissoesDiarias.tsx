@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { MissionCompletionAnimation } from "./MissionCompletionAnimation";
 
-export function MissoesDiarias() {
+export function MissoesDiarias({ compact = false }: { compact?: boolean }) {
   const { 
     missions, 
     rewards, 
@@ -76,13 +76,13 @@ export function MissoesDiarias() {
         />
       )}
 
-      <div className="w-full max-w-7xl mx-auto px-2 xs:px-3 sm:px-4">
+      <div className={compact ? 'w-full' : 'w-full max-w-7xl mx-auto px-2 xs:px-3 sm:px-4'}>
         {loading ? (
-          <div className="flex items-center justify-center py-12 xs:py-16">
-            <div className="animate-spin rounded-full h-10 w-10 xs:h-12 xs:w-12 border-b-2 border-primary"></div>
+          <div className={compact ? 'flex items-center justify-center py-6' : 'flex items-center justify-center py-12 xs:py-16'}>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+          <div className={compact ? 'space-y-2' : 'space-y-2 xs:space-y-3 sm:space-y-4'}>
             {missions.map((mission, index) => {
               const template = mission.missions_daily_templates;
               const progressPercentage = Math.min(
@@ -91,8 +91,72 @@ export function MissoesDiarias() {
               );
               const isCompleted = mission.completed;
               const hasReward = rewards.some(r => r.mission_id === mission.id && !r.collected);
-              
               const gradient = missionGradients[index % missionGradients.length];
+
+              if (compact) {
+                return (
+                  <motion.div
+                    key={mission.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.08 }}
+                    className="rounded-xl border bg-white relative overflow-hidden"
+                    style={{ borderColor: 'rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                  >
+                    {/* Color bar top */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: gradient }} />
+                    
+                    <div className="p-3 flex items-center gap-2.5">
+                      {/* Small icon */}
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: isCompleted ? '#F3F4F6' : gradient }}
+                      >
+                        <div className={isCompleted ? 'text-gray-400' : 'text-white'}>
+                          {getMissionIcon(template.requirement_type)}
+                        </div>
+                      </div>
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-xs text-gray-900 truncate">{template.title}</h4>
+                        {!isCompleted && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1 rounded-full bg-gray-100 overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${progressPercentage}%`, background: gradient }} />
+                            </div>
+                            <span className="text-[9px] text-gray-400 flex-shrink-0">
+                              {mission.progress_value}/{template.requirement_value}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Reward badge */}
+                      <div className="flex-shrink-0">
+                        {hasReward ? (
+                          <button
+                            onClick={() => handleCollectReward(mission.id)}
+                            disabled={claimingMission === mission.id}
+                            className="px-2 py-1 rounded-md text-[10px] font-bold text-white"
+                            style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                          >
+                            <Gift className="w-3 h-3 inline" />
+                          </button>
+                        ) : (
+                          <span
+                            className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white flex items-center gap-0.5"
+                            style={{ background: isCompleted ? '#10B981' : gradient }}
+                          >
+                            <Sparkles className="w-2.5 h-2.5" />
+                            {template.reward_value}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              }
 
               return (
                 <motion.div
@@ -121,11 +185,9 @@ export function MissoesDiarias() {
                     e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.05)';
                   }}
                 >
-                  {/* Barra colorida no topo */}
                   <div className="absolute top-0 left-0 right-0 h-0.5 xs:h-1" style={{ background: gradient }}></div>
 
                   <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 p-3 xs:p-4 sm:p-6">
-                    {/* Icon */}
                     <div className="w-10 h-10 xs:w-11 xs:h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0" 
                          style={{ background: isCompleted ? '#F3F4F6' : gradient }}>
                       <div className={isCompleted ? 'text-pink-600' : 'text-white'}>
@@ -133,7 +195,6 @@ export function MissoesDiarias() {
                       </div>
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 xs:gap-2 mb-0.5 xs:mb-1 flex-wrap">
                         <h4 className="font-bold text-sm xs:text-base text-gray-900 truncate">{template.title}</h4>
@@ -147,7 +208,6 @@ export function MissoesDiarias() {
                       </div>
                       <p className="text-xs xs:text-sm text-gray-600 mb-2 xs:mb-3 leading-snug">{template.description}</p>
                       
-                      {/* Progress bar */}
                       {!isCompleted && (
                         <>
                           <div className="w-full bg-gray-200 rounded-full h-1.5 xs:h-2 mb-1.5 xs:mb-2">
@@ -161,7 +221,6 @@ export function MissoesDiarias() {
                       )}
                     </div>
 
-                    {/* Reward Button */}
                     <div className="flex-shrink-0">
                       {hasReward ? (
                         <button

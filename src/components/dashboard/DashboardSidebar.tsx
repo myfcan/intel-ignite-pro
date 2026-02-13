@@ -97,8 +97,11 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.4 }}
+        className="bg-white rounded-2xl p-4"
+        style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
       >
-        <MissoesDiarias />
+        <h3 className="font-bold text-gray-900 text-sm mb-3">Missões Diárias</h3>
+        <MissoesDiarias compact />
       </motion.div>
     </div>
   );
