@@ -1,4 +1,4 @@
-import { LucideIcon, Lock, BookOpen, Clock, Bookmark } from 'lucide-react';
+import { LucideIcon, Lock, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -20,12 +20,11 @@ interface TrailCardProps {
   isNext?: boolean;
 }
 
-// Color themes per trail
 const TRAIL_THEMES = [
-  { bg: 'linear-gradient(145deg, #3B5BDB 0%, #4C6EF5 100%)', label: 'Fundamentos', accent: '#5C7CFA' },
-  { bg: 'linear-gradient(145deg, #E8590C 0%, #F76707 100%)', label: 'Dia a Dia', accent: '#FF922B' },
-  { bg: 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 100%)', label: 'Negócios', accent: '#A78BFA' },
-  { bg: 'linear-gradient(145deg, #0B7285 0%, #1098AD 100%)', label: 'Renda Extra', accent: '#22B8CF' },
+  { accent: '#6366F1', label: 'Fundamentos' },
+  { accent: '#F97316', label: 'Dia a Dia' },
+  { accent: '#8B5CF6', label: 'Negócios' },
+  { accent: '#0EA5E9', label: 'Renda Extra' },
 ];
 
 const TrailCard = ({
@@ -50,122 +49,82 @@ const TrailCard = ({
     }
   };
 
-  const cardBg = isLocked
-    ? 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 100%)'
-    : theme.bg;
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={!isLocked ? { y: -4 } : undefined}
-      transition={{ duration: 0.4 }}
+      whileHover={!isLocked ? { y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' } : undefined}
+      transition={{ duration: 0.3 }}
       onClick={handleClick}
-      className={`group relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col transition-all duration-300 ${
-        isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+      className={`group bg-white rounded-2xl border transition-all duration-300 ${
+        isLocked ? 'cursor-not-allowed opacity-50 border-gray-100' : 'cursor-pointer border-gray-100 hover:border-gray-200'
       }`}
-      style={{
-        background: cardBg,
-        boxShadow: isLocked ? '0 2px 8px rgba(0,0,0,0.1)' : '0 4px 20px rgba(0,0,0,0.2)',
-      }}
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
     >
-      {/* Top section */}
-      <div className="p-3 sm:p-4 pb-0 flex items-start justify-between">
-        {/* Category badge */}
+      <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+        {/* Icon */}
         <div
-          className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-bold tracking-wide"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{
-            background: isLocked ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.25)',
-            color: isLocked ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)',
-          }}
-        >
-          {theme.label}
-        </div>
-
-        {/* Bookmark / Lock icon */}
-        <div
-          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center"
-          style={{
-            background: isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
+            background: isLocked ? '#F3F4F6' : `linear-gradient(135deg, ${theme.accent}, ${theme.accent}CC)`,
+            boxShadow: isLocked ? 'none' : `0 4px 12px ${theme.accent}30`,
           }}
         >
           {isLocked ? (
-            <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
+            <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           ) : (
-            <Bookmark className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/80" />
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{trail.title}</h3>
+            <span
+              className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold flex-shrink-0"
+              style={{
+                background: isLocked ? '#F3F4F6' : `${theme.accent}15`,
+                color: isLocked ? '#9CA3AF' : theme.accent,
+              }}
+            >
+              {theme.label}
+            </span>
+          </div>
+          {/* Progress bar */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1.5 sm:h-2 rounded-full bg-gray-100 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: isLocked ? '#E5E7EB' : theme.accent }}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+              />
+            </div>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-500 flex-shrink-0">
+              {completedLessons}/{totalLessons}
+            </span>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="flex-shrink-0">
+          {isLocked ? (
+            <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Bloqueado</span>
+          ) : (
+            <div
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all group-hover:scale-105"
+              style={{
+                background: theme.accent,
+                boxShadow: `0 2px 8px ${theme.accent}30`,
+              }}
+            >
+              <ChevronRight className="w-4 h-4 text-white" />
+            </div>
           )}
         </div>
       </div>
-
-      {/* Title */}
-      <div className="p-3 sm:p-4 pt-2 sm:pt-3 flex-grow">
-        <h3
-          className="font-bold text-sm sm:text-base lg:text-lg leading-tight break-words"
-          style={{ color: isLocked ? 'rgba(255,255,255,0.3)' : 'white' }}
-        >
-          {trail.title}
-        </h3>
-      </div>
-
-      {/* Progress section */}
-      <div className="p-3 sm:p-4 pt-0">
-        {/* Progress label + count */}
-        <div className="flex items-center justify-between mb-1.5">
-          <span
-            className="text-[10px] sm:text-xs font-medium"
-            style={{ color: isLocked ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)' }}
-          >
-            Progress
-          </span>
-          <span
-            className="text-[10px] sm:text-xs font-semibold"
-            style={{ color: isLocked ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)' }}
-          >
-            {completedLessons}/{totalLessons} aulas
-          </span>
-        </div>
-
-        {/* Progress bar */}
-        <div
-          className="h-1.5 sm:h-2 rounded-full overflow-hidden mb-3 sm:mb-4"
-          style={{ background: isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.2)' }}
-        >
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: isLocked ? 'rgba(255,255,255,0.1)' : 'white' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
-          />
-        </div>
-
-        {/* Bottom: CTA button */}
-        <div className="flex items-center justify-end">
-          <button
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all"
-            disabled={isLocked}
-            style={{
-              background: isLocked
-                ? 'rgba(255,255,255,0.05)'
-                : '#C8FF00',
-              color: isLocked ? 'rgba(255,255,255,0.2)' : '#1a1a1a',
-              boxShadow: isLocked ? 'none' : '0 2px 8px rgba(200, 255, 0, 0.25)',
-            }}
-          >
-            {isLocked ? 'Bloqueado' : isCompleted ? 'Revisar' : 'Continuar'}
-          </button>
-        </div>
-      </div>
-
-      {/* Hover glow */}
-      {!isLocked && (
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl sm:rounded-3xl"
-          style={{
-            boxShadow: `inset 0 0 40px rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.2)`,
-          }}
-        />
-      )}
     </motion.div>
   );
 };
