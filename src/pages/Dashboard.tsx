@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
@@ -249,11 +249,15 @@ const Dashboard = () => {
     );
   }
 
-  const TRAIL_ICONS = {
+  const TRAIL_ICONS: Record<string, any> = {
     '🎓': Brain,
     '📱': Zap,
     '💼': TrendingUp,
     '💰': Rocket,
+    'Brain': Brain,
+    'Zap': Zap,
+    'Rocket': Rocket,
+    'Target': TrendingUp,
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
