@@ -16,9 +16,9 @@ Deno.serve(async (req) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
   try {
-    // Auth check
+    // === PARTE 1: Auth hardened via getClaims() ===
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_MISSING" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -27,15 +27,18 @@ Deno.serve(async (req) => {
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub;
 
     const supabase = createClient(supabaseUrl, serviceKey);
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const userRoles = (roles || []).map((r: any) => r.role);
     if (!userRoles.includes("admin") && !userRoles.includes("supervisor")) {
       return new Response(JSON.stringify({ ok: false, error_code: "FORBIDDEN" }), {
@@ -52,47 +55,83 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Call image-lab-generate sequentially for each plan item
-    const generateUrl = `${supabaseUrl}/functions/v1/image-lab-generate`;
-    const allAssets: any[] = [];
-    const errors: any[] = [];
+    // === PARTE 2: Set job to processing ONCE at start (no more queued resets) ===
+    await supabase.from("image_jobs").update({
+      status: "processing",
+      updated_at: new Date().toISOString(),
+    }).eq("id", job_id);
 
+    // Build flat list of tasks from plan
+    const tasks: Array<{ provider: string; index: number }> = [];
     for (const item of plan) {
       const { provider = "openai", n = 1 } = item;
-
       for (let i = 0; i < n; i++) {
-        try {
-          const resp = await fetch(generateUrl, {
-            method: "POST",
-            headers: {
-              "Authorization": authHeader,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ job_id, provider, n: 1, size }),
-          });
-
-          const result = await resp.json();
-          if (result.ok && result.assets) {
-            allAssets.push(...result.assets);
-          } else {
-            errors.push({ provider, index: i, error: result.error_message || "Unknown error" });
-          }
-
-          // Reset job status to queued for next iteration (if not last)
-          if (i < n - 1 || plan.indexOf(item) < plan.length - 1) {
-            await supabase.from("image_jobs").update({ status: "queued" }).eq("id", job_id);
-          }
-        } catch (err: any) {
-          errors.push({ provider, index: i, error: err.message });
-          // Reset for next attempt
-          await supabase.from("image_jobs").update({ status: "queued" }).eq("id", job_id);
-        }
+        tasks.push({ provider, index: tasks.length });
       }
     }
 
-    // Final status
+    // === PARTE 2: Execute ALL tasks in parallel via Promise.allSettled ===
+    const generateUrl = `${supabaseUrl}/functions/v1/image-lab-generate`;
+    const startTime = Date.now();
+
+    const results = await Promise.allSettled(
+      tasks.map(async (task) => {
+        const resp = await fetch(generateUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": authHeader,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ job_id, provider: task.provider, n: 1, size }),
+        });
+        const result = await resp.json();
+        if (!result.ok) {
+          throw new Error(result.error_message || `${task.provider} failed`);
+        }
+        return { provider: task.provider, assets: result.assets || [] };
+      })
+    );
+
+    const totalLatencyMs = Date.now() - startTime;
+
+    // Aggregate results
+    const allAssets: any[] = [];
+    const errors: any[] = [];
+    const providerStats: Record<string, { success: number; fail: number }> = {};
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      const task = tasks[i];
+      if (!providerStats[task.provider]) {
+        providerStats[task.provider] = { success: 0, fail: 0 };
+      }
+
+      if (result.status === "fulfilled") {
+        allAssets.push(...result.value.assets);
+        providerStats[task.provider].success++;
+      } else {
+        errors.push({ provider: task.provider, index: task.index, error: result.reason?.message || "Unknown error" });
+        providerStats[task.provider].fail++;
+      }
+    }
+
+    // === PARTE 2: Final status — consistent state machine ===
     const finalStatus = allAssets.length > 0 ? "completed" : "failed";
-    await supabase.from("image_jobs").update({ status: finalStatus }).eq("id", job_id);
+    const batchMetadata = {
+      batch: true,
+      totalAttempts: tasks.length,
+      successCount: allAssets.length,
+      failCount: errors.length,
+      providers: providerStats,
+      totalLatencyMs,
+    };
+
+    await supabase.from("image_jobs").update({
+      status: finalStatus,
+      latency_ms: totalLatencyMs,
+      metadata: { ...(body.metadata || {}), ...batchMetadata },
+      error_message: errors.length > 0 ? errors.map(e => `${e.provider}: ${e.error}`).join("; ").substring(0, 500) : null,
+    }).eq("id", job_id);
 
     return new Response(JSON.stringify({
       ok: allAssets.length > 0,
@@ -101,6 +140,8 @@ Deno.serve(async (req) => {
       errors: errors.length > 0 ? errors : undefined,
       total_generated: allAssets.length,
       total_failed: errors.length,
+      latency_ms: totalLatencyMs,
+      provider_stats: providerStats,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

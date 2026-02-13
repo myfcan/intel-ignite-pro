@@ -240,6 +240,7 @@ export type Database = {
       }
       image_attempts: {
         Row: {
+          bytes_out: number | null
           cost_estimate: number | null
           created_at: string
           error_code: string | null
@@ -253,6 +254,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          bytes_out?: number | null
           cost_estimate?: number | null
           created_at?: string
           error_code?: string | null
@@ -266,6 +268,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          bytes_out?: number | null
           cost_estimate?: number | null
           created_at?: string
           error_code?: string | null

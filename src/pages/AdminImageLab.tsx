@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +41,7 @@ interface AssetRow {
   attempt_id: string;
   status: string;
   public_url: string | null;
+  storage_path: string;
   width: number;
   height: number;
   created_at: string;
@@ -52,6 +53,7 @@ interface AttemptRow {
   provider: string;
   model: string;
   latency_ms: number | null;
+  bytes_out: number | null;
   status: string;
 }
 
@@ -60,6 +62,45 @@ const SIZE_OPTIONS = [
   { label: "1:1 (Square)", value: "1024x1024" },
   { label: "9:16 (Portrait)", value: "1024x1536" },
 ];
+
+// === PARTE 3: Hook to get signed URLs on-demand ===
+const useSignedUrl = (storagePath: string | null) => {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!storagePath) return;
+    let cancelled = false;
+
+    const fetchUrl = async () => {
+      const { data, error } = await supabase.storage
+        .from("image-lab")
+        .createSignedUrl(storagePath, 3600);
+      if (!cancelled && !error && data?.signedUrl) {
+        setUrl(data.signedUrl);
+      }
+    };
+    fetchUrl();
+
+    return () => { cancelled = true; };
+  }, [storagePath]);
+
+  return url;
+};
+
+// Signed image component
+const SignedImage = ({ storagePath, alt }: { storagePath: string | null; alt: string }) => {
+  const url = useSignedUrl(storagePath);
+
+  if (!url) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+
+  return <img src={url} alt={alt} className="w-full h-full object-cover" />;
+};
 
 const AdminImageLab = () => {
   const navigate = useNavigate();
@@ -128,7 +169,6 @@ const AdminImageLab = () => {
 
     try {
       const preset = presets.find((p) => p.id === selectedPresetId);
-      // Create job
       const { data: job, error: jobError } = await supabase.from("image_jobs").insert({
         preset_id: selectedPresetId,
         preset_key: preset?.key,
@@ -189,7 +229,7 @@ const AdminImageLab = () => {
         const result = await resp.json();
         if (!result.ok && result.total_generated === 0) throw new Error(result.error_message || "Batch failed");
 
-        toast.success(`${result.total_generated} imagens geradas. ${result.total_failed || 0} falhas.`);
+        toast.success(`${result.total_generated} imagens geradas (${result.latency_ms}ms). ${result.total_failed || 0} falhas.`);
       }
 
       await loadAssetsForJob(job.id);
@@ -204,11 +244,8 @@ const AdminImageLab = () => {
   };
 
   const approveAsset = async (assetId: string, jobId: string) => {
-    // Approve this asset
     await (supabase.from("image_assets").update({ status: "approved" } as any).eq("id", assetId) as any);
-    // Reject others in same job
     await (supabase.from("image_assets").update({ status: "rejected" } as any).eq("job_id", jobId).neq("id", assetId).neq("status", "approved") as any);
-    // Update job
     await (supabase.from("image_jobs").update({ status: "approved", approved_asset_id: assetId } as any).eq("id", jobId) as any);
 
     toast.success("Asset aprovado ✓");
@@ -366,7 +403,7 @@ const AdminImageLab = () => {
         </Card>
       </div>
 
-      {/* Results Grid */}
+      {/* Results Grid — PARTE 3: Uses SignedImage component */}
       {currentAssets.length > 0 && (
         <Card>
           <CardHeader>
@@ -379,13 +416,7 @@ const AdminImageLab = () => {
                 return (
                   <div key={asset.id} className="border rounded-lg overflow-hidden bg-card">
                     <div className="aspect-square bg-muted relative">
-                      {asset.public_url ? (
-                        <img src={asset.public_url} alt="Generated" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <ImageIcon className="w-8 h-8" />
-                        </div>
-                      )}
+                      <SignedImage storagePath={asset.storage_path} alt="Generated" />
                     </div>
                     <div className="p-2 space-y-1">
                       <div className="flex items-center justify-between">
@@ -393,7 +424,10 @@ const AdminImageLab = () => {
                         <Badge className={`text-[10px] ${statusColor(asset.status)}`}>{asset.status}</Badge>
                       </div>
                       {attempt?.latency_ms && (
-                        <p className="text-xs text-muted-foreground">{attempt.latency_ms}ms</p>
+                        <p className="text-xs text-muted-foreground">
+                          {attempt.latency_ms}ms
+                          {attempt.bytes_out ? ` • ${Math.round(attempt.bytes_out / 1024)}KB` : ""}
+                        </p>
                       )}
                       {asset.status === "completed" && (
                         <div className="flex gap-1 pt-1">
