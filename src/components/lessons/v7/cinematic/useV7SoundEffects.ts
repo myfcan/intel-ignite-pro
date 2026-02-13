@@ -21,7 +21,10 @@ type SoundType =
   | "completion"
   | "letter-reveal"
   | "snap-success"
-  | "snap-error";
+  | "snap-error"
+  | "streak-bonus"    // Streak milestone (3x, 5x, 10x...)
+  | "level-up"        // Rank/patent level up
+  | "combo-hit";      // Combo multiplier hit
 
 interface SoundConfig {
   volume: number;
@@ -360,6 +363,48 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
         // Warm pad — fifth interval for depth
         playNote(ctx, 65, 2.5, "sine", v * 0.04);
         playNote(ctx, 98, 2.0, "sine", v * 0.025, 0.3);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // GAMIFICATION SPECIALS
+      // ────────────────────────────────────────────────────────
+      case "streak-bonus":
+        // 🔥 Streak fire — rising power chord + sizzle
+        playSweep(ctx, 300, 600, 0.15, "sawtooth", v * 0.15);
+        playArpeggio(ctx, [523, 659, 784, 1047, 1320], 0.08, 0.05, "sine", v * 0.3, 0.05);
+        playChord(ctx, [1047, 1320, 1568], 0.3, "triangle", v * 0.2, 0.3);
+        playNoise(ctx, 0.25, v * 0.1, 3000, 8000, "highpass", 0.15);
+        // Sub thump for impact
+        playNote(ctx, 80, 0.4, "sine", v * 0.25, 0.05);
+        break;
+
+      case "level-up":
+        // 🏅 Epic rank up — heroic fanfare with brass feel
+        // Brass-like opening (stacked fifths)
+        playChord(ctx, [262, 330, 392], 0.3, "sawtooth", v * 0.15);
+        playChord(ctx, [392, 494, 587], 0.3, "sawtooth", v * 0.15, 0.25);
+        // Triumphant peak — major chord octave up
+        playChord(ctx, [523, 659, 784, 1047], 0.5, "sine", v * 0.3, 0.5);
+        // Descending sparkle trail
+        playArpeggio(ctx, [2093, 1568, 1320, 1047], 0.1, 0.06, "triangle", v * 0.12, 0.75);
+        // Grand shimmer
+        playNoise(ctx, 0.5, v * 0.08, 4000, 10000, "highpass", 0.6);
+        // Deep foundation
+        playNote(ctx, 65, 1.2, "sine", v * 0.2, 0.5);
+        playNote(ctx, 131, 0.8, "sine", v * 0.12, 0.5);
+        break;
+
+      case "combo-hit":
+        // ⚡ Combo multiplier — punchy hit + electric zap
+        // Sharp attack
+        playNote(ctx, 600, 0.04, "square", v * 0.3);
+        playNote(ctx, 1200, 0.03, "square", v * 0.15, 0.01);
+        // Electric zap sweep
+        playSweep(ctx, 2000, 400, 0.12, "sawtooth", v * 0.12, 0.02);
+        // Quick ascending confirmation
+        playArpeggio(ctx, [800, 1000, 1400], 0.05, 0.03, "sine", v * 0.2, 0.04);
+        // Tiny noise burst
+        playNoise(ctx, 0.06, v * 0.1, 2000, 5000, "bandpass", 0.02);
         break;
     }
   }, [enabled, masterVolume, getAudioContext]);
