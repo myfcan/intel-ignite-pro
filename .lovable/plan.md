@@ -1,164 +1,120 @@
 
 
-# Plan: Fix V7 E2E Contract to Single Source of Truth
+# Flipcard Quiz Exercise — Layout Responsivo e Efeitos Premium
 
-## Problem Summary
+## Resumo
 
-Four technical issues in the current E2E/CI setup:
+Criar o componente `FlipCardQuizExercise` com layout responsivo (1 card no mobile, 3 no desktop), flip 3D via Framer Motion, efeitos visuais de "glow/brilho" ao revelar respostas, e sons gamificados integrados. Visual adulto e sofisticado (sem iconografia infantil).
 
-1. **Inline validator drift** -- `tests/e2e/v7-runtime-contract.spec.ts` lines 199-346 contain a full reimplementation of `validateV7DebugLogs`, duplicating the official validator at `src/components/lessons/v7/cinematic/validators/validateV7DebugLogs.ts`.
-2. **Dangerous audio fallback** -- Lines 124-143 set `audio.currentTime = 115` directly, masking HUD/seek/RAF bugs.
-3. **Toolchain mismatch** -- Workflow uses `bun`/`bunx` but the project is an `npm`-based Vite project (no `bun.lockb` exists).
-4. **Auth fragility** -- Login via UI selectors in CI is flaky; no `storageState` support.
+## O que muda
 
-## Files to Modify
+### 1. Novo tipo no schema de exercicios
+**Arquivo:** `src/types/exerciseSchemas.ts`
+- Adicionar `FlipCardQuizCard` e `FlipCardQuizExerciseData`
+- Adicionar ao union `ExerciseConfigTyped`
 
-| File | Action |
+### 2. Novo tipo no ExerciseConfig
+**Arquivo:** `src/types/guidedLesson.ts`  
+- Adicionar `'flipcard-quiz'` ao union de tipos na linha 110
+
+### 3. Novo componente FlipCardQuizExercise
+**Arquivo:** `src/components/lessons/FlipCardQuizExercise.tsx` (CRIAR)
+
+**Layout responsivo:**
+- Mobile (< 768px): 1 card por vez, swipe/botoes para navegar
+- Desktop (>= 768px): Ate 3 cards visiveis, card central em destaque
+
+**Visual adulto e sofisticado:**
+- Gradientes escuros com acentos em cyan/emerald/purple (paleta do AIliv)
+- Bordas sutis com `border-white/10`, sombras com `shadow-2xl`
+- Tipografia clean, sem emojis infantis nos cards
+- Icones Lucide minimalistas (Brain, Lightbulb, Zap) em vez de emojis cartoon
+
+**Flip 3D com Framer Motion:**
+- `rotateY(180deg)` com `perspective(1200px)`
+- `backface-visibility: hidden` para ambos os lados
+- Duracao de 0.6s com easing `easeInOut`
+
+**Efeito de brilho ao revelar resposta:**
+- Ao virar o card: pulse de glow com `box-shadow` animado (cyan/emerald)
+- Ao acertar: ring de luz expandindo (`scale 1 -> 1.5, opacity 1 -> 0`) + particulas via canvas-confetti localizado
+- Ao errar: shake sutil (`x: [-4, 4, -4, 0]`) com borda vermelha momentanea
+
+**Sons integrados (useV7SoundEffects):**
+- Flip: `click-confirm`
+- Selecionar opcao: `snap-success`
+- Acerto: `combo-hit` + `quiz-correct` (150ms delay)
+- Erro: `quiz-wrong`
+- Ultimo card correto: `streak-bonus` + confetti
+- Score perfeito: `level-up`
+
+### 4. Registro no ExercisesSection
+**Arquivo:** `src/components/lessons/ExercisesSection.tsx`
+- Import do `FlipCardQuizExercise`
+- Novo bloco condicional `currentExercise.type === 'flipcard-quiz'`
+
+## Detalhes Tecnicos
+
+### Schema do FlipCardQuizCard
+
+```typescript
+interface FlipCardQuizCard {
+  id: string;
+  front: {
+    icon?: string;       // Nome Lucide (Brain, Zap, Target...)
+    label: string;       // "Conceito 1", "Desafio 3"
+    color?: string;      // Acento: 'cyan' | 'emerald' | 'purple' | 'amber'
+  };
+  back: {
+    text: string;        // Pergunta ou conceito revelado
+    image?: string;      // URL opcional
+  };
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }>;
+  explanation?: string;
+}
+```
+
+### Responsividade
+
+```text
+MOBILE (< 768px)          DESKTOP (>= 768px)
++----------------+        +-------+  +--------+  +-------+
+|                |        | Card  |  | CARD   |  | Card  |
+|   CARD UNICO   |        |  prev |  | ATUAL  |  |  next |
+|   (100% width) |        | (dim) |  | (glow) |  | (dim) |
+|                |        +-------+  +--------+  +-------+
++----------------+
+  < prev  next >             navegacao por clique
+```
+
+- Mobile usa `useIsMobile()` hook existente
+- Cards laterais no desktop tem `opacity-50` e `scale-0.85`
+- Card central tem `scale-1.05` com sombra glow
+
+### Efeito Glow na Revelacao
+
+Quando o card vira e revela a resposta:
+1. `box-shadow` animado: `0 0 0px cyan` -> `0 0 30px cyan` -> `0 0 15px cyan`
+2. Borda muda de `border-white/10` para `border-cyan-400/50`
+3. Background pulse sutil no card
+4. Som `reveal` toca simultaneamente
+
+Quando usuario acerta:
+1. Ring de luz expansiva (div absoluto com scale animation)
+2. Confetti localizado (origin no card, nao fullscreen)
+3. Opcao correta pulsa com `bg-emerald-500/20` e borda `border-emerald-400`
+4. Texto "Correto!" com fade-in
+
+### Arquivos Modificados/Criados
+
+| Arquivo | Acao |
 |---|---|
-| `tests/e2e/v7-runtime-contract.spec.ts` | Rewrite: import official validator, remove inline copy, remove audio fallback, add storageState support |
-| `.github/workflows/v7-runtime-contract.yml` | Rewrite: replace bun with npm, use package.json scripts |
-| `package.json` | Add scripts: `test:unit`, `test:e2e:v7` |
-| `tests/e2e/fixtures/auth.ts` | Update: add storageState generation setup |
-
-No new files created. No new dependencies.
-
-## Technical Details
-
-### 1. E2E Spec -- Import Official Validator
-
-The official validator at `src/components/lessons/v7/cinematic/validators/validateV7DebugLogs.ts` imports only:
-
-```typescript
-import type { V7DebugLogEntry } from '../v7DebugLogger';
-```
-
-This is a **type-only** import. The `V7DebugLogEntry` interface has no runtime browser dependencies. The validator function itself uses zero browser APIs (`window`, `document`, `import.meta` are absent). Therefore Playwright (Node context) can import it directly.
-
-The spec will change from:
-
-```typescript
-// BEFORE (line 176): calls local reimplementation
-const validationResult = runC11Validation(logs);
-```
-
-To:
-
-```typescript
-// AFTER: imports the official validator
-import { validateV7DebugLogs } from '../../src/components/lessons/v7/cinematic/validators/validateV7DebugLogs';
-// ...
-const validationResult = validateV7DebugLogs(logs);
-```
-
-Lines 199-346 (the entire inline `runC11Validation` function + types) will be deleted.
-
-Result: **1 contract, 1 source of truth.**
-
-### 2. Remove Dangerous Audio Fallback
-
-Current code (lines 124-143):
-
-```typescript
-if (!anchorFired) {
-  await page.evaluate(() => {
-    const audio = document.querySelector('audio');
-    if (audio) {
-      audio.currentTime = 115;
-      audio.play();
-    }
-  });
-  // ...
-}
-```
-
-This will be replaced with a **fail-fast** assertion:
-
-```typescript
-if (!anchorFired) {
-  // Save diagnostic artifact before failing
-  const diagnosticLogs = await page.evaluate(() =>
-    JSON.stringify((window as any).__v7debugLogs ?? [], null, 2)
-  );
-  fs.writeFileSync(
-    path.join(ARTIFACTS_DIR, 'v7debuglogs-FAILED-no-anchor.json'),
-    diagnosticLogs
-  );
-  await page.screenshot({
-    path: path.join(ARTIFACTS_DIR, 'v7-FAILED-no-anchor.png')
-  });
-  throw new Error(
-    'ANCHOR_PAUSE_EXECUTED not detected after 4x Seek +30s. ' +
-    'HUD seek may be broken or crossing detection failed. ' +
-    'Check artifacts/v7debuglogs-FAILED-no-anchor.json'
-  );
-}
-```
-
-### 3. Standardize Toolchain to npm
-
-Current workflow uses `oven-sh/setup-bun` and `bunx`. The project has `package-lock.json` (npm), no `bun.lockb`.
-
-Changes in `.github/workflows/v7-runtime-contract.yml`:
-
-- Replace `oven-sh/setup-bun` with `actions/setup-node@v4` (Node 20)
-- Replace `bun install --frozen-lockfile` with `npm ci`
-- Replace `bunx vitest run` with `npm run test:unit`
-- Replace `bunx playwright test` with `npm run test:e2e:v7`
-- Replace `bun run dev` with `npm run dev`
-
-### 4. Authentication -- storageState with Fallback
-
-The spec will support two auth strategies:
-
-1. **storageState** (preferred): If `playwright/.auth/admin.json` exists, use it via Playwright's `storageState` option. No login UI interaction needed.
-2. **Login UI** (CI fallback): If no storageState file, authenticate via `/auth` form using `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars, with stable selectors (`input[type="email"]`, `input[type="password"]`, `button[type="submit"]`).
-
-Local storageState generation command:
-
-```bash
-# Generate auth state locally (one-time)
-ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=yourpass \
-  npx playwright test tests/e2e/fixtures/generate-auth.ts --project=chromium
-```
-
-A small setup script `tests/e2e/fixtures/generate-auth.ts` will be created to run the login flow once and save the state to `playwright/.auth/admin.json`.
-
-### 5. Package.json Scripts
-
-Add to `package.json`:
-
-```json
-{
-  "scripts": {
-    "test:unit": "vitest run --reporter=verbose",
-    "test:e2e:v7": "npx playwright test tests/e2e/v7-runtime-contract.spec.ts --project=chromium"
-  }
-}
-```
-
-### Acceptance Checklist
-
-After implementation, these conditions must hold:
-
-- [ ] `tests/e2e/v7-runtime-contract.spec.ts` contains zero validation logic -- it imports `validateV7DebugLogs` from the official path
-- [ ] No `audio.currentTime =` assignment exists in the spec
-- [ ] `.github/workflows/v7-runtime-contract.yml` contains zero references to `bun`, `bunx`, or `oven-sh`
-- [ ] `npm run test:unit` runs all Vitest tests
-- [ ] `npm run test:e2e:v7` runs the Playwright audit replay
-- [ ] E2E produces `artifacts/v7debuglogs.json` with `SESSION_INIT` as first event
-- [ ] `validateV7DebugLogs(logs).pass === true` is the single assertion gate
-- [ ] CI gate fails the PR if any step fails and uploads artifacts regardless
-
-### Local Execution
-
-```bash
-# Unit tests
-npm run test:unit
-
-# E2E (requires dev server running or uses webServer config)
-npm run test:e2e:v7
-
-# Generate auth state (one-time)
-ADMIN_EMAIL=x ADMIN_PASSWORD=y npx playwright test tests/e2e/fixtures/generate-auth.ts --project=chromium
-```
+| `src/types/exerciseSchemas.ts` | Adicionar schema FlipCardQuiz |
+| `src/types/guidedLesson.ts` | Adicionar 'flipcard-quiz' ao union (linha 110) |
+| `src/components/lessons/FlipCardQuizExercise.tsx` | CRIAR componente completo |
+| `src/components/lessons/ExercisesSection.tsx` | Adicionar import + case |
 
