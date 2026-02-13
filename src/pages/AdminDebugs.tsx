@@ -8,7 +8,8 @@ import {
   Box, 
   MessageSquare,
   Play,
-  FlaskConical
+  FlaskConical,
+  Timer as TimerIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -173,6 +174,34 @@ export default function AdminDebugs() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Timed Quiz Demo */}
+        <Card className="border-2 border-red-500/20 hover:border-red-500/40 transition-colors">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TimerIcon className="w-5 h-5 text-red-500" />
+              Timed Quiz Demo
+              <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">NOVO</span>
+            </CardTitle>
+            <CardDescription>
+              Teste do exercício timed-quiz com 3 perguntas — valida fix de stale closure
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                <p>⏱️ 3 perguntas · timer · score final</p>
+              </div>
+              <Button
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => navigate('/admin/debugs/timed-quiz')}
+              >
+                <TimerIcon className="w-4 h-4 mr-2" />
+                Testar Quiz
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Playground Sessions */}
         <Card className="border border-border/50">
