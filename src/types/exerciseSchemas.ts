@@ -207,6 +207,37 @@ export interface CompleteSentenceExerciseData {
 }
 
 // ============================================================
+// FLIPCARD-QUIZ EXERCISE
+// ============================================================
+export interface FlipCardQuizCard {
+  id: string;
+  front: {
+    icon?: string;       // Nome Lucide (Brain, Zap, Target...)
+    label: string;       // "Conceito 1", "Desafio 3"
+    color?: string;      // Acento: 'cyan' | 'emerald' | 'purple' | 'amber'
+  };
+  back: {
+    text: string;        // Pergunta ou conceito revelado
+    image?: string;      // URL opcional
+  };
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }>;
+  explanation?: string;
+}
+
+export interface FlipCardQuizExerciseData {
+  cards: FlipCardQuizCard[];
+  feedback?: {
+    perfect: string;
+    good: string;
+    needsReview: string;
+  };
+}
+
+// ============================================================
 // DISCRIMINATED UNION - GARANTIA DE TIPO CORRETO
 // ============================================================
 export type ExerciseConfigTyped = 
@@ -279,6 +310,15 @@ export type ExerciseConfigTyped =
       title: string;
       instruction: string;
       data: MultipleChoiceExerciseData;
+      passingScore?: number;
+      maxAttempts?: number;
+    }
+  | { 
+      id: string;
+      type: 'flipcard-quiz';
+      title: string;
+      instruction: string;
+      data: FlipCardQuizExerciseData;
       passingScore?: number;
       maxAttempts?: number;
     };
