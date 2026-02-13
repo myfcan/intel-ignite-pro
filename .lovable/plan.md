@@ -1,120 +1,267 @@
 
 
-# Flipcard Quiz Exercise — Layout Responsivo e Efeitos Premium
+# TimedQuizExercise — Plano Detalhado
 
 ## Resumo
 
-Criar o componente `FlipCardQuizExercise` com layout responsivo (1 card no mobile, 3 no desktop), flip 3D via Framer Motion, efeitos visuais de "glow/brilho" ao revelar respostas, e sons gamificados integrados. Visual adulto e sofisticado (sem iconografia infantil).
+Novo tipo de exercicio `timed-quiz` com cronometro regressivo por pergunta, bonus de XP por tempo restante, efeitos visuais de urgencia progressiva, e sons sintetizados de tick-tock que aceleram nos ultimos segundos. Visual sofisticado (persona 38+), integrado ao pipeline existente de exercicios.
 
-## O que muda
+---
 
-### 1. Novo tipo no schema de exercicios
-**Arquivo:** `src/types/exerciseSchemas.ts`
-- Adicionar `FlipCardQuizCard` e `FlipCardQuizExerciseData`
-- Adicionar ao union `ExerciseConfigTyped`
-
-### 2. Novo tipo no ExerciseConfig
-**Arquivo:** `src/types/guidedLesson.ts`  
-- Adicionar `'flipcard-quiz'` ao union de tipos na linha 110
-
-### 3. Novo componente FlipCardQuizExercise
-**Arquivo:** `src/components/lessons/FlipCardQuizExercise.tsx` (CRIAR)
-
-**Layout responsivo:**
-- Mobile (< 768px): 1 card por vez, swipe/botoes para navegar
-- Desktop (>= 768px): Ate 3 cards visiveis, card central em destaque
-
-**Visual adulto e sofisticado:**
-- Gradientes escuros com acentos em cyan/emerald/purple (paleta do AIliv)
-- Bordas sutis com `border-white/10`, sombras com `shadow-2xl`
-- Tipografia clean, sem emojis infantis nos cards
-- Icones Lucide minimalistas (Brain, Lightbulb, Zap) em vez de emojis cartoon
-
-**Flip 3D com Framer Motion:**
-- `rotateY(180deg)` com `perspective(1200px)`
-- `backface-visibility: hidden` para ambos os lados
-- Duracao de 0.6s com easing `easeInOut`
-
-**Efeito de brilho ao revelar resposta:**
-- Ao virar o card: pulse de glow com `box-shadow` animado (cyan/emerald)
-- Ao acertar: ring de luz expandindo (`scale 1 -> 1.5, opacity 1 -> 0`) + particulas via canvas-confetti localizado
-- Ao errar: shake sutil (`x: [-4, 4, -4, 0]`) com borda vermelha momentanea
-
-**Sons integrados (useV7SoundEffects):**
-- Flip: `click-confirm`
-- Selecionar opcao: `snap-success`
-- Acerto: `combo-hit` + `quiz-correct` (150ms delay)
-- Erro: `quiz-wrong`
-- Ultimo card correto: `streak-bonus` + confetti
-- Score perfeito: `level-up`
-
-### 4. Registro no ExercisesSection
-**Arquivo:** `src/components/lessons/ExercisesSection.tsx`
-- Import do `FlipCardQuizExercise`
-- Novo bloco condicional `currentExercise.type === 'flipcard-quiz'`
-
-## Detalhes Tecnicos
-
-### Schema do FlipCardQuizCard
+## Schema Completo
 
 ```typescript
-interface FlipCardQuizCard {
+// Em exerciseSchemas.ts
+
+export interface TimedQuizQuestion {
   id: string;
-  front: {
-    icon?: string;       // Nome Lucide (Brain, Zap, Target...)
-    label: string;       // "Conceito 1", "Desafio 3"
-    color?: string;      // Acento: 'cyan' | 'emerald' | 'purple' | 'amber'
-  };
-  back: {
-    text: string;        // Pergunta ou conceito revelado
-    image?: string;      // URL opcional
-  };
+  question: string;
   options: Array<{
     id: string;
     text: string;
     isCorrect: boolean;
   }>;
   explanation?: string;
+  timeOverride?: number; // Tempo customizado para esta pergunta (sobrescreve timePerQuestion)
+}
+
+export interface TimedQuizExerciseData {
+  timePerQuestion: number;       // Segundos por pergunta (default: 15)
+  bonusPerSecondLeft: number;    // XP bonus por segundo restante (default: 2)
+  timeoutPenalty: 'skip' | 'wrong'; // O que acontece no timeout
+  visualTheme: 'cyber' | 'minimal'; // Tema visual
+  questions: TimedQuizQuestion[];
+  feedback?: {
+    perfect: string;
+    good: string;
+    needsReview: string;
+    timeBonus: string;           // "Voce ganhou X pontos bonus por velocidade!"
+  };
 }
 ```
 
-### Responsividade
+---
+
+## Estados do Timer
 
 ```text
-MOBILE (< 768px)          DESKTOP (>= 768px)
-+----------------+        +-------+  +--------+  +-------+
-|                |        | Card  |  | CARD   |  | Card  |
-|   CARD UNICO   |        |  prev |  | ATUAL  |  |  next |
-|   (100% width) |        | (dim) |  | (glow) |  | (dim) |
-|                |        +-------+  +--------+  +-------+
-+----------------+
-  < prev  next >             navegacao por clique
+ESTADO           TEMPO RESTANTE    COMPORTAMENTO
+------------------------------------------------------------
+normal           > 5s              Timer branco, barra cyan, sem urgencia
+warning          3s - 5s           Timer amarelo, barra laranja, pulse sutil
+critical         1s - 3s           Timer vermelho, barra vermelha, shake leve,
+                                   tick-tock acelera (2x freq)
+timeout          0s                Flash vermelho, glitch visual,
+                                   som de buzzer, pergunta marcada
+answered         (qualquer)        Timer congela, mostra bonus se correto
 ```
 
-- Mobile usa `useIsMobile()` hook existente
-- Cards laterais no desktop tem `opacity-50` e `scale-0.85`
-- Card central tem `scale-1.05` com sombra glow
+### Maquina de estados simplificada
 
-### Efeito Glow na Revelacao
+```text
+                 +-----------+
+                 |  WAITING  |  (card aparece, timer nao iniciou)
+                 +-----+-----+
+                       |
+                       v
+                 +-----------+
+            +--->|  NORMAL   |  (> 5s restantes)
+            |    +-----+-----+
+            |          |
+            |          v tempo <= 5s
+            |    +-----------+
+            |    |  WARNING  |  (3s - 5s)
+            |    +-----+-----+
+            |          |
+            |          v tempo <= 3s
+            |    +-----------+
+            |    | CRITICAL  |  (1s - 3s, tick acelerado)
+            |    +-----+-----+
+            |          |
+            |    +-----+-----+
+            |    |  TIMEOUT  |  tempo = 0 → buzzer + skip/wrong
+            |    +-----------+
+            |          |
+    proxima |    +-----+-----+
+    pergunta+----|  ANSWERED  |  usuario clicou uma opcao
+                 +-----------+
+```
 
-Quando o card vira e revela a resposta:
-1. `box-shadow` animado: `0 0 0px cyan` -> `0 0 30px cyan` -> `0 0 15px cyan`
-2. Borda muda de `border-white/10` para `border-cyan-400/50`
-3. Background pulse sutil no card
-4. Som `reveal` toca simultaneamente
+---
 
-Quando usuario acerta:
-1. Ring de luz expansiva (div absoluto com scale animation)
-2. Confetti localizado (origin no card, nao fullscreen)
-3. Opcao correta pulsa com `bg-emerald-500/20` e borda `border-emerald-400`
-4. Texto "Correto!" com fade-in
+## Mecanica de Pontuacao
 
-### Arquivos Modificados/Criados
+| Evento | Calculo |
+|---|---|
+| Resposta correta | 100 pontos base |
+| Bonus por tempo | `secondsLeft * bonusPerSecondLeft` pontos extra |
+| Resposta incorreta | 0 pontos |
+| Timeout (skip) | 0 pontos, avanca para proxima |
+| Timeout (wrong) | 0 pontos, marca como errada |
+| Score final | `(totalPontos / maxPossivel) * 100` (percentual) |
+
+Exemplo com `timePerQuestion: 15`, `bonusPerSecondLeft: 2`:
+- Responde em 5s (10s restantes): 100 + 20 = 120 pontos
+- Responde em 12s (3s restantes): 100 + 6 = 106 pontos
+- Responde em 15s (timeout): 0 pontos
+
+---
+
+## Efeitos Visuais por Estado
+
+### Estado NORMAL (> 5s)
+
+- Barra de progresso circular ou linear com gradiente `cyan -> emerald`
+- Timer numerico grande no centro/topo (MM:SS ou apenas segundos)
+- Card de pergunta com borda `border-white/10`
+- Background neutro escuro (`from-slate-900 to-slate-950`)
+
+### Estado WARNING (3s - 5s)
+
+- Barra muda para gradiente `amber -> orange`
+- Timer muda cor para `text-amber-400`
+- Borda do card pulsa: `border-amber-400/30` -> `border-amber-400/60` (keyframe 1s)
+- Background sutil pulse (opacity oscila 0.02)
+
+### Estado CRITICAL (1s - 3s)
+
+- Barra muda para `red-500`
+- Timer muda para `text-red-400` com `animate-pulse`
+- Borda do card: shake leve (`x: [-2, 2, -2, 0]`, loop)
+- Vignette escura nas bordas da tela (radial gradient overlay)
+- Numeros do timer escalam brevemente (`scale 1.1`) a cada segundo
+
+### Estado TIMEOUT (0s)
+
+- Flash vermelho fullscreen (overlay `bg-red-500/20` por 300ms)
+- Card faz glitch visual: `translateX` random + `opacity flicker` por 400ms
+- Timer mostra "00" com `text-red-500`
+- Mensagem "Tempo esgotado!" com fade-in
+
+### Resposta CORRETA
+
+- Ring de luz expandindo (igual ao FlipCardQuiz)
+- Opcao correta pulsa `bg-emerald-500/20` + `border-emerald-400`
+- Badge "+Xs bonus" aparece ao lado do timer com `animate-bounce`
+- Confetti localizado
+
+### Resposta INCORRETA
+
+- Shake no card (`x: [-4, 4, -4, 0]`)
+- Opcao errada: `bg-red-500/20` + `border-red-400`
+- Opcao correta revelada com highlight emerald
+- Sem confetti
+
+---
+
+## Efeitos Sonoros por Estado
+
+| Estado / Evento | Som | Descricao |
+|---|---|---|
+| Timer iniciando | `click-confirm` | Pop de inicio |
+| Tick normal (cada segundo) | `progress-tick` | Tick sutil, 1x por segundo |
+| Warning (< 5s) | `progress-tick` com pitch +20% | Tick mais agudo |
+| Critical (< 3s) | `progress-tick` 2x/s, pitch +40% | Tick acelerado e mais agudo |
+| Timeout | Novo som `timer-buzzer` | Buzzer curto descendente |
+| Selecionar opcao | `snap-success` | Pop de selecao |
+| Resposta correta | `combo-hit` + `quiz-correct` (150ms) | Mesmo padrao do FlipCard |
+| Resposta incorreta | `quiz-wrong` | Descending minor 2nd |
+| Todas corretas | `streak-bonus` + confetti | Streak fire |
+| Score perfeito | `level-up` + confetti explosion | Fanfarra heroica |
+| Bonus de tempo alto (>10s) | `count-up` rapido (3x) | Coin counter |
+
+### Novo som a adicionar: `timer-buzzer`
+
+Sera adicionado ao `useV7SoundEffects.ts`:
+- Descending sweep (800Hz -> 200Hz) em 0.3s com sawtooth
+- Noise burst lowpass para "weight"
+- Sutil, nao agressivo (persona 38+)
+
+---
+
+## Layout Responsivo
+
+```text
+MOBILE                          DESKTOP
++----------------------+        +----------------------------------+
+|     [TIMER: 12s]     |        |          [TIMER: 12s]            |
+|   ████████░░░░ (80%) |        |     ██████████████░░░░ (80%)     |
+|                      |        |                                  |
+| +------------------+ |        |    +------------------------+    |
+| |   Pergunta aqui   | |        |    |    Pergunta aqui        |    |
+| |   com texto       | |        |    |    com texto mais       |    |
+| +------------------+ |        |    |    espaco                |    |
+|                      |        |    +------------------------+    |
+| [  Opcao A         ] |        |                                  |
+| [  Opcao B         ] |        |    [  Opcao A  ]  [  Opcao B  ]  |
+| [  Opcao C         ] |        |    [  Opcao C  ]  [  Opcao D  ]  |
+| [  Opcao D         ] |        |                                  |
+|                      |        |    Q 2/5     Bonus: +14 pts      |
+| Q 2/5  Bonus: +14   |        +----------------------------------+
++----------------------+
+```
+
+- Mobile: opcoes empilhadas verticalmente, timer no topo
+- Desktop: opcoes em grid 2x2, mais espaco, timer maior
+- Barra de progresso do timer: linear horizontal em ambos
+
+---
+
+## Arquivos a Criar/Modificar
 
 | Arquivo | Acao |
 |---|---|
-| `src/types/exerciseSchemas.ts` | Adicionar schema FlipCardQuiz |
-| `src/types/guidedLesson.ts` | Adicionar 'flipcard-quiz' ao union (linha 110) |
-| `src/components/lessons/FlipCardQuizExercise.tsx` | CRIAR componente completo |
-| `src/components/lessons/ExercisesSection.tsx` | Adicionar import + case |
+| `src/types/exerciseSchemas.ts` | Adicionar `TimedQuizQuestion`, `TimedQuizExerciseData`, union `ExerciseConfigTyped` |
+| `src/types/guidedLesson.ts` | Adicionar `'timed-quiz'` ao union de tipos |
+| `src/components/lessons/TimedQuizExercise.tsx` | CRIAR componente completo |
+| `src/components/lessons/ExercisesSection.tsx` | Adicionar import + case `timed-quiz` |
+| `src/components/lessons/v7/cinematic/useV7SoundEffects.ts` | Adicionar som `timer-buzzer` + `timer-tick` ao SoundType e switch |
+
+---
+
+## Exemplo de JSON para Pipeline
+
+```json
+{
+  "id": "timed-quiz-1",
+  "type": "timed-quiz",
+  "title": "Desafio Relampago: IA na Pratica",
+  "instruction": "Responda rapido! Cada segundo conta para seu bonus.",
+  "data": {
+    "timePerQuestion": 15,
+    "bonusPerSecondLeft": 2,
+    "timeoutPenalty": "skip",
+    "visualTheme": "cyber",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "Qual ferramenta de IA e mais indicada para gerar imagens a partir de texto?",
+        "options": [
+          { "id": "a", "text": "ChatGPT", "isCorrect": false },
+          { "id": "b", "text": "Midjourney", "isCorrect": true },
+          { "id": "c", "text": "Notion AI", "isCorrect": false },
+          { "id": "d", "text": "Grammarly", "isCorrect": false }
+        ],
+        "explanation": "Midjourney e especializado em geracao de imagens por prompt."
+      },
+      {
+        "id": "q2",
+        "question": "O que significa 'prompt engineering'?",
+        "options": [
+          { "id": "a", "text": "Programar uma IA do zero", "isCorrect": false },
+          { "id": "b", "text": "Criar instrucoes otimizadas para IAs generativas", "isCorrect": true },
+          { "id": "c", "text": "Treinar modelos de machine learning", "isCorrect": false }
+        ],
+        "explanation": "Prompt engineering e a arte de formular instrucoes que maximizam a qualidade do output da IA."
+      }
+    ],
+    "feedback": {
+      "perfect": "Incrivel! Respostas perfeitas e rapidas!",
+      "good": "Otimo desempenho! Continue praticando.",
+      "needsReview": "Revise os conceitos e tente novamente.",
+      "timeBonus": "Voce ganhou bonus de velocidade!"
+    }
+  }
+}
+```
 
