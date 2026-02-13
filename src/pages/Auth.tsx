@@ -84,19 +84,28 @@ const Auth = () => {
       }
 
       if (data.session) {
-        // Check if user has completed onboarding
+        // Check if user is suspended
         const { data: userData } = await supabase
           .from('users')
-          .select('onboarding_completed')
+          .select('onboarding_completed, is_active')
           .eq('id', data.session.user.id)
           .maybeSingle();
+
+        if (userData?.is_active === false) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Conta suspensa",
+            description: "Sua conta foi suspensa. Entre em contato com o suporte para mais informações.",
+            variant: "destructive",
+          });
+          return;
+        }
 
         toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta!",
         });
 
-        // Redirect to onboarding if not completed
         if (!userData?.onboarding_completed) {
           navigate('/onboarding');
         } else {
