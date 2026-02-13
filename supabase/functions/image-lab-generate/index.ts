@@ -206,25 +206,43 @@ Deno.serve(async (req) => {
       }
 
       const geminiData = await geminiResp.json();
+      console.log("[image-lab-generate] Gemini response structure:", JSON.stringify({
+        hasChoices: !!geminiData.choices,
+        choicesLength: geminiData.choices?.length,
+        contentType: typeof geminiData.choices?.[0]?.message?.content,
+        isArray: Array.isArray(geminiData.choices?.[0]?.message?.content),
+      }));
+
       const content = geminiData.choices?.[0]?.message?.content;
       let b64Data: string | null = null;
 
       if (Array.isArray(content)) {
-        const imgPart = content.find((p: any) => p.type === "image_url" || p.type === "image");
-        if (imgPart?.image_url?.url) {
-          const url = imgPart.image_url.url;
-          if (url.startsWith("data:")) {
-            b64Data = url.split(",")[1];
+        // Look for inline_data (Google's native format) or image_url
+        for (const part of content) {
+          if (part.type === "image_url" && part.image_url?.url) {
+            const url = part.image_url.url;
+            if (url.startsWith("data:")) {
+              b64Data = url.split(",")[1];
+              break;
+            }
+          } else if (part.inline_data?.data) {
+            b64Data = part.inline_data.data;
+            break;
+          } else if (part.type === "image" && part.data) {
+            b64Data = part.data;
+            break;
           }
-        } else if (imgPart?.data) {
-          b64Data = imgPart.data;
         }
       } else if (typeof content === "string") {
         const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
         if (match) b64Data = match[1];
       }
 
-      if (!b64Data) throw new Error("No image data in Gemini response");
+      if (!b64Data) {
+        // Log the actual content for debugging
+        console.error("[image-lab-generate] Gemini: no image found. Content:", JSON.stringify(content)?.substring(0, 500));
+        throw new Error("No image data in Gemini response");
+      }
 
       const binaryString = atob(b64Data);
       imageBytes = new Uint8Array(binaryString.length);
@@ -232,20 +250,27 @@ Deno.serve(async (req) => {
         imageBytes[i] = binaryString.charCodeAt(i);
       }
     } else {
-      // OpenAI
+      // OpenAI - gpt-image-1 does NOT support response_format parameter
+      // It returns URLs by default
+      const openaiBody: Record<string, unknown> = {
+        model: actualModel,
+        prompt: promptFinal,
+        n: 1,
+        size: sizeInfo.api,
+      };
+
+      // Only add response_format for dall-e models (not gpt-image-1)
+      if (!actualModel.startsWith("gpt-image")) {
+        openaiBody.response_format = "b64_json";
+      }
+
       const openaiResp = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${openaiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: actualModel,
-          prompt: promptFinal,
-          n: 1,
-          size: sizeInfo.api,
-          response_format: "b64_json",
-        }),
+        body: JSON.stringify(openaiBody),
       });
 
       if (!openaiResp.ok) {
@@ -254,13 +279,22 @@ Deno.serve(async (req) => {
       }
 
       const openaiData = await openaiResp.json();
-      const b64 = openaiData.data?.[0]?.b64_json;
-      if (!b64) throw new Error("No image data in OpenAI response");
+      const imageItem = openaiData.data?.[0];
 
-      const binaryString = atob(b64);
-      imageBytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        imageBytes[i] = binaryString.charCodeAt(i);
+      if (imageItem?.b64_json) {
+        // DALL-E style b64 response
+        const binaryString = atob(imageItem.b64_json);
+        imageBytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          imageBytes[i] = binaryString.charCodeAt(i);
+        }
+      } else if (imageItem?.url) {
+        // gpt-image-1 returns a URL - download it
+        const imgResp = await fetch(imageItem.url);
+        if (!imgResp.ok) throw new Error(`Failed to download image from OpenAI URL: ${imgResp.status}`);
+        imageBytes = new Uint8Array(await imgResp.arrayBuffer());
+      } else {
+        throw new Error("No image data in OpenAI response");
       }
     }
 
