@@ -80,3 +80,9 @@ verify_jwt = false
 
 [functions.v7-reprocess]
 verify_jwt = false
+
+[functions.image-lab-generate]
+verify_jwt = false
+
+[functions.image-lab-generate-batch]
+verify_jwt = false
