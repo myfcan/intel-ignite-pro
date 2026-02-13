@@ -10,6 +10,7 @@ import { Background3DProvider } from "@/contexts/Background3DContext";
 import { URLFixer } from "@/components/URLFixer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import { AdminOnlyRoute } from "./components/AdminOnlyRoute";
 import { DashboardSkeleton, TrailDetailSkeleton } from "@/components/skeletons";
 
 // Critical pages - loaded immediately
@@ -158,7 +159,7 @@ const App = () => (
                 <Route path="/lessons-interactive/:id" element={<LessonInteractive />} />
                 <Route path="/v7/:lessonId" element={<V7CinematicPlayer />} />
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                <Route path="/admin/users" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminOnlyRoute><AdminUserManagement /></AdminOnlyRoute>} />
                 <Route path="/admin/pipeline" element={<AdminRoute><AdminPipelineHub /></AdminRoute>} />
                 <Route path="/admin/pipeline/create-single" element={<AdminRoute><AdminPipelineCreateSingle /></AdminRoute>} />
                 <Route path="/admin/pipeline/create-batch" element={<AdminRoute><AdminPipelineCreateBatch /></AdminRoute>} />
