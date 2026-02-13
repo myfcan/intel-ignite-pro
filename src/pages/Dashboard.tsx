@@ -312,132 +312,192 @@ const Dashboard = () => {
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
-            {/* ===== PURPLE CONTAINER with floating icons ===== */}
+            {/* ===== PURPLE HERO BANNER - Only text + CTAs + floating icons ===== */}
             <div
-              className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 mb-6 sm:mb-8 relative overflow-hidden"
+              className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 mb-6 relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 50%, #9333EA 100%)',
-                boxShadow: '0 20px 50px -12px rgba(108, 99, 255, 0.35)',
+                background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 100%)',
+                boxShadow: '0 12px 40px -8px rgba(108, 99, 255, 0.3)',
+                minHeight: '180px',
               }}
             >
-              {/* Floating Icon Badges - ref 1 style */}
+              {/* Floating Icon Badges */}
               {[
-                { Icon: Code, bg: '#F97316', x: 'right-[12%]', y: 'top-[8%]', size: 'w-10 h-10 sm:w-12 sm:h-12', delay: 0 },
-                { Icon: Database, bg: '#0EA5E9', x: 'right-[5%]', y: 'top-[25%]', size: 'w-9 h-9 sm:w-10 sm:h-10', delay: 0.1 },
-                { Icon: PieChart, bg: '#8B5CF6', x: 'right-[18%]', y: 'top-[35%]', size: 'w-8 h-8 sm:w-9 sm:h-9', delay: 0.2 },
-                { Icon: Palette, bg: '#EC4899', x: 'right-[8%]', y: 'top-[55%]', size: 'w-10 h-10 sm:w-11 sm:h-11', delay: 0.3 },
-                { Icon: Layers, bg: '#10B981', x: 'right-[20%]', y: 'top-[70%]', size: 'w-8 h-8 sm:w-10 sm:h-10', delay: 0.15 },
-                { Icon: BarChart3, bg: '#6366F1', x: 'right-[3%]', y: 'top-[75%]', size: 'w-9 h-9', delay: 0.25 },
-              ].map(({ Icon: FloatIcon, bg, x, y, size, delay: d }, i) => (
+                { Icon: Code, bg: '#F97316', right: '8%', top: '10%', size: 48, delay: 0 },
+                { Icon: Database, bg: '#0EA5E9', right: '22%', top: '5%', size: 40, delay: 0.1 },
+                { Icon: PieChart, bg: '#8B5CF6', right: '15%', top: '40%', size: 36, delay: 0.2 },
+                { Icon: Palette, bg: '#EC4899', right: '5%', top: '50%', size: 44, delay: 0.3 },
+                { Icon: Layers, bg: '#10B981', right: '25%', top: '65%', size: 40, delay: 0.15 },
+                { Icon: BarChart3, bg: '#1E40AF', right: '12%', top: '75%', size: 36, delay: 0.25 },
+              ].map(({ Icon: FloatIcon, bg, right, top, size, delay: d }, i) => (
                 <motion.div
                   key={i}
-                  className={`absolute ${x} ${y} ${size} rounded-xl flex items-center justify-center shadow-lg hidden sm:flex`}
-                  style={{ background: bg }}
-                  initial={{ opacity: 0, scale: 0, rotate: -20 }}
+                  className="absolute rounded-2xl flex items-center justify-center shadow-lg hidden sm:flex"
+                  style={{ 
+                    background: bg, 
+                    right, 
+                    top, 
+                    width: size, 
+                    height: size,
+                  }}
+                  initial={{ opacity: 0, scale: 0, rotate: -15 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.3 + d, type: 'spring', stiffness: 200 }}
+                  transition={{ delay: 0.3 + d, type: 'spring', stiffness: 180, damping: 15 }}
                 >
-                  <FloatIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <FloatIcon className="text-white" style={{ width: size * 0.45, height: size * 0.45 }} />
                 </motion.div>
               ))}
 
-              {/* Hero text */}
-              <div className="relative z-10 mb-5 sm:mb-6">
+              {/* Hero content */}
+              <div className="relative z-10 max-w-md">
                 <motion.h2
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1.5"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2"
                 >
                   Pronto para aprender?
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-purple-200 text-xs sm:text-sm max-w-md"
+                  transition={{ delay: 0.15 }}
+                  className="text-purple-200 text-sm sm:text-base mb-5 leading-relaxed"
                 >
-                  Continue sua jornada. Você está a um passo dos seus objetivos.
+                  Continue sua jornada de aprendizado. Você está a um passo dos seus objetivos.
                 </motion.p>
-                <div className="flex gap-3 mt-3">
+                <div className="flex gap-3">
                   <button
                     onClick={() => activeTrail && navigate(`/trail/${activeTrail.id}`)}
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-md hover:shadow-lg transition-all"
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-indigo-700 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
                   >
                     Continuar Última Aula
                   </button>
                   <button
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-white/90 hover:text-white transition-all"
-                    style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/90 hover:text-white transition-all"
+                    style={{ background: 'rgba(255,255,255,0.12)' }}
                   >
                     Explorar Trilhas
                   </button>
                 </div>
               </div>
-
-              {/* Cards row: CourseProgress + Points */}
-              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 sm:gap-5 mb-4 sm:mb-5 relative z-10">
-                {activeTrail && activeTrailProgress ? (
-                  <CourseProgressCard
-                    trailName={activeTrail.title}
-                    category={TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
-                    progress={activeTrailProgress.progress}
-                    completedLessons={activeTrailProgress.completedLessons}
-                    totalLessons={activeTrailProgress.totalLessons}
-                    onContinue={() => navigate(`/trail/${activeTrail.id}`)}
-                  />
-                ) : (
-                  <CourseProgressCard
-                    trailName="Nenhuma trilha ativa"
-                    category="Comece agora"
-                    progress={0}
-                    completedLessons={0}
-                    totalLessons={0}
-                    onContinue={() => {}}
-                  />
-                )}
-
-                <PointsCard
-                  powerScore={gamificationStats?.powerScore ?? 0}
-                  patentName={gamificationStats?.patentName ?? 'Iniciante'}
-                  isLoading={gamificationLoading || !gamificationStats}
-                />
-              </div>
-
-              {/* Stat Cards row */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 relative z-10">
-                <AnimatedStatCard
-                  value={gamificationStats?.streakDays ?? 0}
-                  label="Dias de sequência"
-                  icon={Flame}
-                  gradientFrom="#EC4899"
-                  gradientTo="#F472B6"
-                  delay={0.2}
-                  isLoading={gamificationLoading || !gamificationStats}
-                  variant="colored"
-                />
-                <AnimatedStatCard
-                  value={gamificationStats?.lessonsCompleted ?? 0}
-                  label="Aulas completas"
-                  icon={BookOpen}
-                  gradientFrom="#10B981"
-                  gradientTo="#0891B2"
-                  delay={0.3}
-                  isLoading={gamificationLoading || !gamificationStats}
-                  variant="white"
-                />
-              </div>
             </div>
 
+            {/* ===== 4 STAT CARDS - White, outside hero ===== */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <AnimatedStatCard
+                value={gamificationStats?.lessonsCompleted ?? 0}
+                label="Aulas Concluídas"
+                icon={BookOpen}
+                gradientFrom="#6366F1"
+                gradientTo="#818CF8"
+                delay={0.1}
+                isLoading={gamificationLoading || !gamificationStats}
+                variant="white"
+              />
+              <AnimatedStatCard
+                value={gamificationStats?.powerScore ?? 0}
+                label="Power Score"
+                icon={Trophy}
+                gradientFrom="#EC4899"
+                gradientTo="#F472B6"
+                delay={0.15}
+                isLoading={gamificationLoading || !gamificationStats}
+                variant="white"
+              />
+              <AnimatedStatCard
+                value={gamificationStats?.coins ?? 0}
+                label="Créditos"
+                icon={Award}
+                gradientFrom="#10B981"
+                gradientTo="#34D399"
+                delay={0.2}
+                isLoading={gamificationLoading || !gamificationStats}
+                variant="white"
+              />
+              <AnimatedStatCard
+                value={gamificationStats?.streakDays ?? 0}
+                label="Streak (Dias)"
+                icon={Flame}
+                gradientFrom="#F97316"
+                gradientTo="#FB923C"
+                delay={0.25}
+                isLoading={gamificationLoading || !gamificationStats}
+                variant="white"
+              />
+            </div>
+
+            {/* ===== CONTINUE LEARNING ===== */}
+            {activeTrail && activeTrailProgress && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
+                  <span className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
+                </div>
+                <div
+                  className="bg-white rounded-2xl p-4 sm:p-5 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                  onClick={() => navigate(`/trail/${activeTrail.id}`)}
+                >
+                  {/* Colored icon area (acts as thumbnail) */}
+                  <div
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+                    }}
+                  >
+                    {(() => {
+                      const TrailIcon = TRAIL_ICONS[activeTrail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                      return <TrailIcon className="w-7 h-7 sm:w-9 sm:h-9 text-white" />;
+                    })()}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="inline-block px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold mb-1"
+                      style={{ background: '#6366F115', color: '#6366F1' }}
+                    >
+                      {TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
+                    </span>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{activeTrail.title}</h3>
+                    <p className="text-gray-400 text-xs sm:text-sm">
+                      Próximo módulo: Aula {activeTrailProgress.completedLessons + 1}
+                    </p>
+                    {/* Progress bar */}
+                    <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden max-w-xs">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: '#6366F1' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${activeTrailProgress.progress}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white flex-shrink-0 hover:-translate-y-0.5 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #6366F1, #7C3AED)',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                    }}
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* ===== SUAS TRILHAS ===== */}
-            <div className="mb-6 sm:mb-8">
-              <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-5">Suas Trilhas</h2>
-              
+            <div className="mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Suas Trilhas</h2>
               <div className="flex flex-col gap-3">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
                   const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-                  
                   const previousTrail = trails[index - 1];
                   const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
                   const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
@@ -458,9 +518,112 @@ const Dashboard = () => {
                 })}
               </div>
             </div>
+
+            {/* ===== FOR YOU - Feature Cards ===== */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Para Você</h2>
+                <span className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* AI Playground */}
+                <div
+                  onClick={() => navigate('/ai-playground')}
+                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                >
+                  <div
+                    className="h-32 sm:h-36 flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)' }}
+                  >
+                    <div className="flex flex-col gap-1.5 w-3/4 max-w-[200px]">
+                      <div className="self-start bg-indigo-100 rounded-lg rounded-bl-sm px-3 py-1.5">
+                        <span className="text-[10px] text-indigo-600">Crie um resumo...</span>
+                      </div>
+                      <div className="self-end bg-white rounded-lg rounded-br-sm px-3 py-1.5 shadow-sm">
+                        <span className="text-[10px] text-gray-500">Aqui está o resumo...</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold mb-1.5" style={{ background: '#6366F115', color: '#6366F1' }}>
+                      IA
+                    </span>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base">AI Playground</h3>
+                    <p className="text-gray-400 text-xs mt-0.5">Experimente IA em tempo real</p>
+                  </div>
+                </div>
+
+                {/* Curso Renda Extra */}
+                <div
+                  onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
+                  className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg' : 'cursor-not-allowed opacity-60'
+                  }`}
+                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                >
+                  <div
+                    className="h-32 sm:h-36 flex items-end justify-center pb-4"
+                    style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)' }}
+                  >
+                    <div className="flex items-end gap-1.5 h-16">
+                      {[30, 45, 35, 55, 70, 60, 80].map((h, i) => (
+                        <div
+                          key={i}
+                          className="w-4 rounded-t-md"
+                          style={{
+                            height: `${h}%`,
+                            background: `rgba(139, 92, 246, ${0.3 + i * 0.09})`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold mb-1.5" style={{ background: '#8B5CF615', color: '#8B5CF6' }}>
+                      {canAccessAdmin ? 'PREMIUM' : 'BLOQUEADO'}
+                    </span>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base">Curso Renda Extra</h3>
+                    <p className="text-gray-400 text-xs mt-0.5">R$ 10 mil a R$ 50 mil/mês com IA</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                onClick={() => navigate('/leaderboard')}
+                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg transition-all hover:-translate-y-0.5"
+                style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: 'linear-gradient(135deg, #EC4899, #F472B6)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)' }}>
+                  <Trophy className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Ranking Global</h3>
+                  <p className="text-gray-400 text-xs">Compare-se com outros aprendizes</p>
+                </div>
+              </div>
+              <div
+                onClick={() => navigate('/achievements')}
+                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg transition-all hover:-translate-y-0.5"
+                style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)' }}>
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Suas Conquistas</h3>
+                  <p className="text-gray-400 text-xs">Desbloqueie badges e recompensas</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* ===== SIDEBAR (desktop only, stacked on mobile) ===== */}
+          {/* ===== SIDEBAR ===== */}
           <div className="hidden lg:block">
             <DashboardSidebar
               streakDays={gamificationStats?.streakDays ?? 0}
@@ -470,7 +633,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Mobile sidebar content */}
+        {/* Mobile sidebar */}
         <div className="lg:hidden mb-6">
           <DashboardSidebar
             streakDays={gamificationStats?.streakDays ?? 0}
@@ -478,195 +641,10 @@ const Dashboard = () => {
             isLoading={gamificationLoading}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-2 xs:px-0">
-          {/* AI Playground */}
-          <div 
-            onClick={() => navigate('/ai-playground')}
-            className="cursor-pointer group relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-            style={{
-              background: 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 50%, #1E1B2E 100%)',
-              border: '1px solid rgba(99, 102, 241, 0.2)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* Decorative illustration area */}
-            <div className="relative h-36 sm:h-44 overflow-hidden flex items-center justify-center">
-              {/* Abstract chat UI mockup */}
-              <div className="absolute inset-0 opacity-10" style={{
-                backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%)',
-              }} />
-              <div className="relative flex flex-col gap-2 w-3/4 max-w-[260px]">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="self-start bg-indigo-500/20 border border-indigo-500/30 rounded-xl rounded-bl-sm px-3 py-2"
-                >
-                  <span className="text-[10px] sm:text-xs text-indigo-300">Crie um resumo do artigo...</span>
-                </motion.div>
-                <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="self-end bg-white/10 border border-white/10 rounded-xl rounded-br-sm px-3 py-2"
-                >
-                  <span className="text-[10px] sm:text-xs text-gray-400">Aqui está o resumo...</span>
-                </motion.div>
-              </div>
-            </div>
-            
-            {/* Card info */}
-            <div className="p-4 sm:p-5 pt-2 sm:pt-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                  background: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                }}>
-                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-white">AI Playground</h3>
-              </div>
-              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                Experimente modelos de IA em tempo real com resultados instantâneos
-              </p>
-            </div>
-            
-            {/* Hover glow */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl sm:rounded-3xl" style={{
-              boxShadow: 'inset 0 0 30px rgba(99, 102, 241, 0.1), 0 8px 30px rgba(99, 102, 241, 0.15)',
-            }} />
-          </div>
 
-          {/* Curso Renda Extra */}
-          <div 
-            onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
-            className={`relative group rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 ${
-              canAccessAdmin ? 'cursor-pointer hover:-translate-y-1' : 'cursor-not-allowed opacity-60'
-            }`}
-            style={{
-              background: 'linear-gradient(145deg, #1E1B2E 0%, #2A1F3D 50%, #1E1B2E 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* Decorative illustration area */}
-            <div className="relative h-36 sm:h-44 overflow-hidden flex items-center justify-center">
-              <div className="absolute inset-0 opacity-10" style={{
-                backgroundImage: 'radial-gradient(circle at 70% 40%, rgba(139, 92, 246, 0.4) 0%, transparent 50%)',
-              }} />
-              {/* Abstract money/growth mockup */}
-              <div className="relative flex items-end gap-2 h-20">
-                {[40, 55, 45, 65, 80, 70, 90].map((h, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ height: 0 }}
-                    animate={{ height: `${h}%` }}
-                    transition={{ delay: 0.2 + i * 0.1, duration: 0.5, type: 'spring' }}
-                    className="w-4 sm:w-5 rounded-t-md"
-                    style={{
-                      background: `linear-gradient(to top, rgba(139, 92, 246, ${0.3 + i * 0.08}), rgba(139, 92, 246, ${0.6 + i * 0.05}))`,
-                    }}
-                  />
-                ))}
-              </div>
-              
-              {/* Badge */}
-              <div className="absolute top-3 right-3 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                   style={{
-                     background: 'rgba(139, 92, 246, 0.15)',
-                     border: '1px solid rgba(139, 92, 246, 0.3)',
-                   }}>
-                <span className="text-[10px] sm:text-xs font-semibold text-purple-300">
-                  {canAccessAdmin ? '👑 Admin' : '🔒 Premium'}
-                </span>
-              </div>
-            </div>
-            
-            {/* Card info */}
-            <div className="p-4 sm:p-5 pt-2 sm:pt-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                  background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
-                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                }}>
-                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <h3 className="text-sm sm:text-base font-bold text-white">Curso Renda Extra</h3>
-              </div>
-              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                Estratégias para gerar de R$ 10 mil a R$ 50 mil/mês com IA
-              </p>
-            </div>
-            
-            {/* Hover glow */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl sm:rounded-3xl" style={{
-              boxShadow: 'inset 0 0 30px rgba(139, 92, 246, 0.1), 0 8px 30px rgba(139, 92, 246, 0.15)',
-            }} />
-          </div>
-        </div>
-
-        {/* Quick Actions - MODERN STYLE */}
-        <div className="mb-6 sm:mb-8 px-2 xs:px-0">
-          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 px-2 xs:px-1 sm:px-0">Ações Rápidas</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* Ranking */}
-            <div 
-              onClick={() => navigate('/leaderboard')}
-              className="cursor-pointer group relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-              style={{
-                background: 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 100%)',
-                border: '1px solid rgba(236, 72, 153, 0.15)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
-              }}
-            >
-              <div className="p-4 sm:p-5 flex items-center gap-4">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                  background: 'linear-gradient(135deg, #EC4899, #F472B6)',
-                  boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
-                }}>
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-white text-sm sm:text-base">Ranking Global</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm truncate">Compare-se com outros aprendizes</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
-                boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.08)',
-              }} />
-            </div>
-
-            {/* Conquistas */}
-            <div 
-              onClick={() => navigate('/achievements')}
-              className="cursor-pointer group relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-              style={{
-                background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)',
-                boxShadow: '0 4px 20px rgba(147, 51, 234, 0.25)',
-              }}
-            >
-              <div className="p-4 sm:p-5 flex items-center gap-4">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  backdropFilter: 'blur(8px)',
-                }}>
-                  <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-white text-sm sm:text-base">Suas Conquistas</h3>
-                  <p className="text-white/80 text-xs sm:text-sm truncate">Desbloqueie badges e recompensas</p>
-                </div>
-              </div>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
-                boxShadow: 'inset 0 0 20px rgba(255,255,255,0.1)',
-              }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Missões Diárias Section */}
+        {/* Missões Diárias */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-6 px-2 xs:px-1 sm:px-0">Missões Diárias</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Missões Diárias</h2>
           <MissoesDiarias />
         </div>
 
