@@ -162,18 +162,28 @@ const playSweep = (
 };
 
 // ============================================================================
+// SHARED AUDIO CONTEXT (persists across component mounts/unmounts)
+// ============================================================================
+
+let sharedAudioContext: AudioContext | null = null;
+let sharedAudioContextUsers = 0;
+
+function getSharedAudioContext(): AudioContext {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioContext;
+}
+
+// ============================================================================
 // HOOK
 // ============================================================================
 
 export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean = true) => {
-  const audioContextRef = useRef<AudioContext | null>(null);
   const isUnlockedRef = useRef(false);
 
   const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return audioContextRef.current;
+    return getSharedAudioContext();
   }, []);
 
   const unlockAudio = useCallback(async () => {
@@ -444,11 +454,19 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
     };
   }, [unlockAudio]);
 
-  // Cleanup
+  // Track shared context usage (don't close on unmount - sounds need to finish)
   useEffect(() => {
+    sharedAudioContextUsers++;
     return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      sharedAudioContextUsers--;
+      // Only close if no more users after a delay (let sounds finish)
+      if (sharedAudioContextUsers <= 0) {
+        setTimeout(() => {
+          if (sharedAudioContextUsers <= 0 && sharedAudioContext && sharedAudioContext.state !== 'closed') {
+            sharedAudioContext.close();
+            sharedAudioContext = null;
+          }
+        }, 5000); // 5s delay to let any playing sounds finish
       }
     };
   }, []);
