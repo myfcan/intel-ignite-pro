@@ -5,10 +5,140 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Check, X, RefreshCw, Image as ImageIcon, Zap } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, Loader2, Check, X, RefreshCw, Image as ImageIcon, Zap, CheckCircle2, XCircle, Circle, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
+// === Processing Monitor Types ===
+interface MonitorStep {
+  id: string;
+  label: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  detail?: string;
+}
+
+interface MonitorState {
+  visible: boolean;
+  steps: MonitorStep[];
+  error: string | null;
+  progress: number;
+  jobId: string | null;
+}
+
+const INITIAL_MONITOR: MonitorState = {
+  visible: false,
+  steps: [],
+  error: null,
+  progress: 0,
+  jobId: null,
+};
+
+const makeSteps = (mode: 'single' | 'batch'): MonitorStep[] => [
+  { id: 'create-job', label: 'Criando Job no banco', status: 'pending' },
+  { id: 'auth', label: 'Autenticando sessão', status: 'pending' },
+  { id: 'call-api', label: mode === 'single' ? 'Chamando image-lab-generate' : 'Chamando image-lab-generate-batch', status: 'pending' },
+  { id: 'wait-response', label: mode === 'single' ? 'Aguardando resposta OpenAI' : 'Aguardando respostas (OpenAI + Gemini)', status: 'pending' },
+  { id: 'load-results', label: 'Carregando resultados', status: 'pending' },
+];
+
+// === Processing Monitor Component ===
+const ProcessingMonitor = ({ monitor, onDismiss }: { monitor: MonitorState; onDismiss: () => void }) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (!monitor.visible) return null;
+
+  const isDone = monitor.steps.every(s => s.status === 'done' || s.status === 'error');
+  const hasError = !!monitor.error;
+
+  const stepIcon = (status: MonitorStep['status']) => {
+    switch (status) {
+      case 'done': return <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />;
+      case 'running': return <Loader2 className="w-4 h-4 text-cyan-500 animate-spin shrink-0" />;
+      case 'error': return <XCircle className="w-4 h-4 text-red-500 shrink-0" />;
+      default: return <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />;
+    }
+  };
+
+  return (
+    <Card className={cn(
+      "border-2 transition-colors",
+      hasError ? "border-red-500/40 bg-red-500/5" : isDone ? "border-green-500/30 bg-green-500/5" : "border-cyan-500/30 bg-cyan-500/5"
+    )}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-2">
+            {hasError ? (
+              <XCircle className="w-4 h-4 text-red-500" />
+            ) : isDone ? (
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+            ) : (
+              <Loader2 className="w-4 h-4 text-cyan-500 animate-spin" />
+            )}
+            Monitor de Processamento
+            {monitor.jobId && (
+              <span className="font-mono text-[10px] text-muted-foreground ml-2">{monitor.jobId.substring(0, 8)}...</span>
+            )}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Badge variant={hasError ? "destructive" : isDone ? "success" : "secondary"} className="text-[10px]">
+              {hasError ? 'Erro' : isDone ? 'Concluído' : `${monitor.progress}%`}
+            </Badge>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+            </Button>
+            {isDone && (
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDismiss}>
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <Progress 
+          value={monitor.progress} 
+          className={cn("h-1.5 mt-1", hasError && "[&>div]:bg-red-500", !hasError && isDone && "[&>div]:bg-green-500")}
+        />
+      </CardHeader>
+      {!collapsed && (
+        <CardContent className="pt-2 space-y-3">
+          {/* Steps */}
+          <div className="space-y-1.5">
+            {monitor.steps.map(step => (
+              <div key={step.id} className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors",
+                step.status === 'running' && "bg-cyan-500/10",
+                step.status === 'done' && "bg-green-500/5",
+                step.status === 'error' && "bg-red-500/10",
+              )}>
+                {stepIcon(step.status)}
+                <span className={cn(step.status === 'pending' && "text-muted-foreground/60")}>
+                  {step.label}
+                </span>
+                {step.detail && (
+                  <span className="ml-auto text-[10px] text-muted-foreground font-mono">{step.detail}</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Error Panel */}
+          {hasError && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-red-500">Erro no Processamento</p>
+                  <p className="text-[11px] mt-1 text-red-400 font-mono break-all">{monitor.error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+};
 interface Preset {
   id: string;
   key: string;
@@ -153,6 +283,20 @@ const AdminImageLab = () => {
     setCurrentAttempts(attemptsRes.data || []);
   };
 
+  // Monitor state
+  const [monitor, setMonitor] = useState<MonitorState>(INITIAL_MONITOR);
+
+  const updateStep = (stepId: string, status: MonitorStep['status'], detail?: string) => {
+    setMonitor(prev => ({
+      ...prev,
+      steps: prev.steps.map(s => s.id === stepId ? { ...s, status, detail } : s),
+    }));
+  };
+
+  const setMonitorProgress = (value: number) => {
+    setMonitor(prev => ({ ...prev, progress: value }));
+  };
+
   const createAndGenerate = async (mode: "single" | "batch") => {
     if (!promptScene.trim()) {
       toast.error("Descreva a cena (prompt_scene)");
@@ -163,11 +307,24 @@ const AdminImageLab = () => {
       return;
     }
 
+    // Initialize monitor
+    setMonitor({
+      visible: true,
+      steps: makeSteps(mode),
+      error: null,
+      progress: 0,
+      jobId: null,
+    });
+
     setGenerating(true);
     setCurrentAssets([]);
     setCurrentAttempts([]);
 
     try {
+      // Step 1: Create job
+      updateStep('create-job', 'running');
+      setMonitorProgress(10);
+      
       const preset = presets.find((p) => p.id === selectedPresetId);
       const { data: job, error: jobError } = await supabase.from("image_jobs").insert({
         preset_id: selectedPresetId,
@@ -182,10 +339,21 @@ const AdminImageLab = () => {
       if (jobError) throw jobError;
 
       setCurrentJobId(job.id);
-      toast.info("Job criado. Gerando imagem...");
+      setMonitor(prev => ({ ...prev, jobId: job.id }));
+      updateStep('create-job', 'done', job.id.substring(0, 8));
+      setMonitorProgress(25);
 
+      // Step 2: Auth
+      updateStep('auth', 'running');
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      if (!token) throw new Error("Sessão não encontrada. Faça login novamente.");
+      updateStep('auth', 'done');
+      setMonitorProgress(35);
+
+      // Step 3: Call API
+      updateStep('call-api', 'running');
+      setMonitorProgress(40);
 
       if (mode === "single") {
         const resp = await fetch(
@@ -199,8 +367,21 @@ const AdminImageLab = () => {
             body: JSON.stringify({ job_id: job.id, provider: "openai", n: 1, size }),
           }
         );
+        
+        updateStep('call-api', 'done');
+        setMonitorProgress(60);
+
+        // Step 4: Parse response
+        updateStep('wait-response', 'running');
         const result = await resp.json();
-        if (!result.ok) throw new Error(result.error_message || "Generation failed");
+        
+        if (!result.ok) {
+          updateStep('wait-response', 'error', result.error_code || 'FAILED');
+          throw new Error(result.error_message || "Generation failed");
+        }
+        
+        updateStep('wait-response', 'done', result.cache_hit ? 'cache hit' : `${result.job?.latency_ms}ms`);
+        setMonitorProgress(80);
 
         toast.success(
           result.cache_hit
@@ -226,17 +407,47 @@ const AdminImageLab = () => {
             }),
           }
         );
+        
+        updateStep('call-api', 'done');
+        setMonitorProgress(60);
+
+        updateStep('wait-response', 'running');
         const result = await resp.json();
-        if (!result.ok && result.total_generated === 0) throw new Error(result.error_message || "Batch failed");
+        
+        if (!result.ok && result.total_generated === 0) {
+          updateStep('wait-response', 'error', `${result.total_failed || 0} falhas`);
+          throw new Error(result.error_message || "Batch failed");
+        }
+        
+        const detail = `${result.total_generated} ok, ${result.total_failed || 0} falhas, ${result.latency_ms}ms`;
+        updateStep('wait-response', 'done', detail);
+        setMonitorProgress(80);
 
         toast.success(`${result.total_generated} imagens geradas (${result.latency_ms}ms). ${result.total_failed || 0} falhas.`);
       }
 
+      // Step 5: Load results
+      updateStep('load-results', 'running');
+      setMonitorProgress(90);
+      
       await loadAssetsForJob(job.id);
       await loadJobs();
       await loadKpis();
+      
+      updateStep('load-results', 'done');
+      setMonitorProgress(100);
+
     } catch (err: any) {
-      toast.error(err.message || "Erro ao gerar");
+      const errorMsg = err.message || "Erro desconhecido";
+      setMonitor(prev => ({ ...prev, error: errorMsg, progress: prev.progress }));
+      
+      // Mark any running step as error
+      setMonitor(prev => ({
+        ...prev,
+        steps: prev.steps.map(s => s.status === 'running' ? { ...s, status: 'error' as const } : s),
+      }));
+      
+      toast.error(errorMsg);
       console.error("[ImageLab]", err);
     } finally {
       setGenerating(false);
@@ -402,6 +613,9 @@ const AdminImageLab = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Processing Monitor */}
+      <ProcessingMonitor monitor={monitor} onDismiss={() => setMonitor(INITIAL_MONITOR)} />
 
       {/* Results Grid — PARTE 3: Uses SignedImage component */}
       {currentAssets.length > 0 && (
