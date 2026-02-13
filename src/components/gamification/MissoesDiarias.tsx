@@ -100,59 +100,73 @@ export function MissoesDiarias({ compact = false }: { compact?: boolean }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.08 }}
-                    className="rounded-xl border bg-white relative overflow-hidden"
-                    style={{ borderColor: 'rgba(0,0,0,0.06)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                    className="rounded-2xl border bg-white relative overflow-hidden"
+                    style={{
+                      borderColor: 'rgba(0,0,0,0.08)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
                   >
                     {/* Color bar top */}
-                    <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: gradient }} />
+                    <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: gradient }} />
                     
-                    <div className="p-3 flex items-center gap-2.5">
-                      {/* Small icon */}
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: isCompleted ? '#F3F4F6' : gradient }}
-                      >
-                        <div className={isCompleted ? 'text-gray-400' : 'text-white'}>
-                          {getMissionIcon(template.requirement_type)}
+                    <div className="p-4 pt-5">
+                      <div className="flex items-start gap-3">
+                        {/* Icon */}
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: isCompleted ? '#F3F4F6' : gradient,
+                            boxShadow: isCompleted ? 'none' : `0 3px 10px ${gradient.includes('#EC4899') ? 'rgba(236,72,153,0.3)' : gradient.includes('#8B5CF6') ? 'rgba(139,92,246,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                          }}
+                        >
+                          <div className={isCompleted ? 'text-gray-400' : 'text-white'}>
+                            {getMissionIcon(template.requirement_type)}
+                          </div>
+                        </div>
+
+                        {/* Title + reward */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm text-gray-900 leading-tight">{template.title}</h4>
+                        </div>
+
+                        {/* Reward badge */}
+                        <div className="flex-shrink-0">
+                          {hasReward ? (
+                            <button
+                              onClick={() => handleCollectReward(mission.id)}
+                              disabled={claimingMission === mission.id}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-white"
+                              style={{ background: 'linear-gradient(135deg, #10B981, #059669)', boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }}
+                            >
+                              <Gift className="w-3.5 h-3.5 inline mr-1" />
+                              Coletar
+                            </button>
+                          ) : (
+                            <span
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-white flex items-center gap-1"
+                              style={{
+                                background: isCompleted ? '#10B981' : gradient,
+                                boxShadow: `0 2px 6px ${isCompleted ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.2)'}`,
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {template.reward_value}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-xs text-gray-900 truncate">{template.title}</h4>
-                        {!isCompleted && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex-1 h-1 rounded-full bg-gray-100 overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${progressPercentage}%`, background: gradient }} />
-                            </div>
-                            <span className="text-[9px] text-gray-400 flex-shrink-0">
-                              {mission.progress_value}/{template.requirement_value}
-                            </span>
+                      {/* Progress */}
+                      {!isCompleted && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%`, background: gradient }} />
                           </div>
-                        )}
-                      </div>
-
-                      {/* Reward badge */}
-                      <div className="flex-shrink-0">
-                        {hasReward ? (
-                          <button
-                            onClick={() => handleCollectReward(mission.id)}
-                            disabled={claimingMission === mission.id}
-                            className="px-2 py-1 rounded-md text-[10px] font-bold text-white"
-                            style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
-                          >
-                            <Gift className="w-3 h-3 inline" />
-                          </button>
-                        ) : (
-                          <span
-                            className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white flex items-center gap-0.5"
-                            style={{ background: isCompleted ? '#10B981' : gradient }}
-                          >
-                            <Sparkles className="w-2.5 h-2.5" />
-                            {template.reward_value}
+                          <span className="text-[10px] font-medium text-gray-400 flex-shrink-0">
+                            {mission.progress_value}/{template.requirement_value}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 );
