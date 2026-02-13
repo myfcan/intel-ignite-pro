@@ -51,82 +51,78 @@ const TrailCard = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={!isLocked ? { y: -2, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } : undefined}
+      whileHover={!isLocked ? { y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' } : undefined}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
-      className={`group bg-white rounded-2xl border transition-all duration-300 ${
+      className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 ${
         isLocked ? 'cursor-not-allowed opacity-40 border-gray-100' : 'cursor-pointer border-gray-200 hover:border-gray-300'
       }`}
       style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}
     >
-      <div className="p-4 sm:p-5 flex items-center gap-4 sm:gap-5">
-        {/* Icon - larger rounded square */}
+      {/* Colored header area with icon (replaces image) */}
+      <div
+        className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
+        style={{
+          background: isLocked
+            ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
+            : `linear-gradient(135deg, ${theme.accent}DD, ${theme.accent})`,
+        }}
+      >
+        {/* Decorative circles */}
         <div
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+          className="absolute w-32 h-32 rounded-full opacity-20"
+          style={{ background: 'white', top: '-20px', right: '-20px' }}
+        />
+        <div
+          className="absolute w-20 h-20 rounded-full opacity-10"
+          style={{ background: 'white', bottom: '-10px', left: '10px' }}
+        />
+        {isLocked ? (
+          <Lock className="w-10 h-10 text-white/60" />
+        ) : (
+          <Icon className="w-12 h-12 sm:w-14 sm:h-14 text-white drop-shadow-lg" />
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-4 sm:p-5">
+        {/* Category badge */}
+        <span
+          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold mb-2"
           style={{
-            background: isLocked ? '#F3F4F6' : `linear-gradient(135deg, ${theme.accent}, ${theme.accent}CC)`,
-            boxShadow: isLocked ? 'none' : `0 6px 16px ${theme.accent}30`,
+            background: isLocked ? '#F3F4F6' : `${theme.accent}12`,
+            color: isLocked ? '#9CA3AF' : theme.accent,
           }}
         >
-          {isLocked ? (
-            <Lock className="w-6 h-6 text-gray-400" />
-          ) : (
-            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-          )}
-        </div>
+          {theme.label}
+        </span>
 
-        {/* Info - takes remaining space */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate uppercase tracking-wide">
-              {trail.title}
-            </h3>
-            <span
-              className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex-shrink-0"
-              style={{
-                background: isLocked ? '#F3F4F6' : `${theme.accent}12`,
-                color: isLocked ? '#9CA3AF' : theme.accent,
-              }}
-            >
-              {theme.label}
-            </span>
-          </div>
-          {/* Progress bar - full width */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 sm:h-2.5 rounded-full bg-gray-100 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: isLocked ? '#E5E7EB' : theme.accent }}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
-              />
-            </div>
-            <span className="text-xs sm:text-sm font-semibold text-gray-400 flex-shrink-0 min-w-[32px] text-right">
-              {completedLessons}/{totalLessons}
-            </span>
-          </div>
-        </div>
+        {/* Title */}
+        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 leading-tight line-clamp-2">
+          {trail.title}
+        </h3>
 
-        {/* CTA button - larger */}
-        <div className="flex-shrink-0">
-          {isLocked ? (
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-gray-100">
-              <Lock className="w-4 h-4 text-gray-300" />
-            </div>
-          ) : (
-            <div
-              className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all group-hover:scale-110"
-              style={{
-                background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent}DD)`,
-                boxShadow: `0 4px 12px ${theme.accent}35`,
-              }}
-            >
-              <ChevronRight className="w-5 h-5 text-white" />
-            </div>
-          )}
+        {/* Lesson count */}
+        <p className="text-xs sm:text-sm text-gray-400 mb-3">
+          {totalLessons} aulas
+        </p>
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: isLocked ? '#E5E7EB' : theme.accent }}
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+            />
+          </div>
+          <span className="text-[10px] sm:text-xs font-semibold text-gray-400">
+            {completedLessons}/{totalLessons}
+          </span>
         </div>
       </div>
     </motion.div>
