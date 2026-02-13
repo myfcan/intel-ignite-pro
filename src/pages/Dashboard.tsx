@@ -579,149 +579,189 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Feature Cards - NOVO DESIGN */}
+        {/* Feature Cards - MODERN DARK STYLE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-2 xs:px-0">
           {/* AI Playground */}
-          <div onClick={() => navigate('/ai-playground')}
-               className="cursor-pointer relative group overflow-hidden">
-            {/* Borda gradiente no hover */}
-            <div className="absolute -inset-0.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-40 transition duration-300 blur-sm"></div>
-            
-            {/* Card content */}
-            <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all overflow-hidden"
-                 style={{
-                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                   backgroundImage: `
-                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                   `,
-                   backgroundSize: 'cover, 16px 16px',
-                   backgroundPosition: 'center, 0 0',
-                   borderColor: 'rgba(99, 102, 241, 0.3)',
-                 }}>
-              <Bot className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 mb-3 sm:mb-4 flex-shrink-0" />
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 break-words">AI Playground</h3>
-              <p className="text-gray-600 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2">
-                Experimente modelos de IA em tempo real. Teste prompts e veja os resultados instantaneamente.
-              </p>
-              <button className="text-indigo-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all text-xs sm:text-sm md:text-base whitespace-nowrap">
-                Começar agora 
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Curso Renda Extra - DARK TECH DESIGN */}
           <div 
-            onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
-            className={`relative rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden shadow-xl transition-all ${
-              canAccessAdmin 
-                ? 'cursor-pointer hover:-translate-y-1' 
-                : 'cursor-not-allowed opacity-60'
-            }`}
+            onClick={() => navigate('/ai-playground')}
+            className="cursor-pointer group relative rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
             style={{
-              background: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              boxShadow: `
-                0 0 40px rgba(139, 92, 246, 0.15),
-                0 0 80px rgba(139, 92, 246, 0.08),
-                inset 0 0 60px rgba(139, 92, 246, 0.05)
-              `
+              background: 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 50%, #1E1B2E 100%)',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
             }}
           >
-            {/* Grid Pattern */}
-            <div 
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '20px 20px'
-              }}
-            />
-            
-            {/* Purple Gradient Overlay at Bottom */}
-            <div 
-              className="absolute inset-x-0 bottom-0 h-24 opacity-50 pointer-events-none"
-              style={{
-                background: 'linear-gradient(to top, rgba(139, 92, 246, 0.5) 0%, transparent 100%)'
-              }}
-            />
-            
-            {/* Badge Premium ou Admin */}
-            <div className="absolute top-4 right-4 z-10 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full flex items-center gap-2"
-                 style={{
-                   background: 'rgba(139, 92, 246, 0.2)',
-                   border: '1px solid rgba(139, 92, 246, 0.4)'
-                 }}>
-              <span className="text-xs sm:text-sm font-bold text-purple-300 whitespace-nowrap">
-                {canAccessAdmin ? '👑 Acesso Admin' : '🔒 Premium'}
-              </span>
+            {/* Decorative illustration area */}
+            <div className="relative h-36 sm:h-44 overflow-hidden flex items-center justify-center">
+              {/* Abstract chat UI mockup */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%)',
+              }} />
+              <div className="relative flex flex-col gap-2 w-3/4 max-w-[260px]">
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="self-start bg-indigo-500/20 border border-indigo-500/30 rounded-xl rounded-bl-sm px-3 py-2"
+                >
+                  <span className="text-[10px] sm:text-xs text-indigo-300">Crie um resumo do artigo...</span>
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="self-end bg-white/10 border border-white/10 rounded-xl rounded-br-sm px-3 py-2"
+                >
+                  <span className="text-[10px] sm:text-xs text-gray-400">Aqui está o resumo...</span>
+                </motion.div>
+              </div>
             </div>
             
-            <div className="relative z-10">
-              <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4 text-purple-400 flex-shrink-0" />
-              <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-100 break-words">Curso Renda Extra</h3>
-              <p className="text-gray-400 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2">
-                Aprenda estratégias comprovadas para gerar de R$ 10 mil a R$ 50 mil por mês usando Inteligência Artificial.
+            {/* Card info */}
+            <div className="p-4 sm:p-5 pt-2 sm:pt-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                  background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                }}>
+                  <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white">AI Playground</h3>
+              </div>
+              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                Experimente modelos de IA em tempo real com resultados instantâneos
               </p>
-              <button 
-                className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
-                  canAccessAdmin ? 'hover:bg-purple-500/30' : 'cursor-not-allowed'
-                }`}
-                style={{
-                  background: 'rgba(139, 92, 246, 0.2)',
-                  border: '1px solid rgba(139, 92, 246, 0.4)',
-                  color: '#A78BFA'
-                }}
-              >
-                {canAccessAdmin ? 'Ver curso →' : 'Em breve →'}
-              </button>
             </div>
+            
+            {/* Hover glow */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl sm:rounded-3xl" style={{
+              boxShadow: 'inset 0 0 30px rgba(99, 102, 241, 0.1), 0 8px 30px rgba(99, 102, 241, 0.15)',
+            }} />
+          </div>
+
+          {/* Curso Renda Extra */}
+          <div 
+            onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
+            className={`relative group rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 ${
+              canAccessAdmin ? 'cursor-pointer hover:-translate-y-1' : 'cursor-not-allowed opacity-60'
+            }`}
+            style={{
+              background: 'linear-gradient(145deg, #1E1B2E 0%, #2A1F3D 50%, #1E1B2E 100%)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            }}
+          >
+            {/* Decorative illustration area */}
+            <div className="relative h-36 sm:h-44 overflow-hidden flex items-center justify-center">
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'radial-gradient(circle at 70% 40%, rgba(139, 92, 246, 0.4) 0%, transparent 50%)',
+              }} />
+              {/* Abstract money/growth mockup */}
+              <div className="relative flex items-end gap-2 h-20">
+                {[40, 55, 45, 65, 80, 70, 90].map((h, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${h}%` }}
+                    transition={{ delay: 0.2 + i * 0.1, duration: 0.5, type: 'spring' }}
+                    className="w-4 sm:w-5 rounded-t-md"
+                    style={{
+                      background: `linear-gradient(to top, rgba(139, 92, 246, ${0.3 + i * 0.08}), rgba(139, 92, 246, ${0.6 + i * 0.05}))`,
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {/* Badge */}
+              <div className="absolute top-3 right-3 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                   style={{
+                     background: 'rgba(139, 92, 246, 0.15)',
+                     border: '1px solid rgba(139, 92, 246, 0.3)',
+                   }}>
+                <span className="text-[10px] sm:text-xs font-semibold text-purple-300">
+                  {canAccessAdmin ? '👑 Admin' : '🔒 Premium'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Card info */}
+            <div className="p-4 sm:p-5 pt-2 sm:pt-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                  background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                }}>
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white">Curso Renda Extra</h3>
+              </div>
+              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                Estratégias para gerar de R$ 10 mil a R$ 50 mil/mês com IA
+              </p>
+            </div>
+            
+            {/* Hover glow */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl sm:rounded-3xl" style={{
+              boxShadow: 'inset 0 0 30px rgba(139, 92, 246, 0.1), 0 8px 30px rgba(139, 92, 246, 0.15)',
+            }} />
           </div>
         </div>
 
-        {/* Quick Actions - NOVO DESIGN */}
+        {/* Quick Actions - MODERN STYLE */}
         <div className="mb-6 sm:mb-8 px-2 xs:px-0">
           <h2 className="text-lg xs:text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 px-2 xs:px-1 sm:px-0">Ações Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div onClick={() => navigate('/leaderboard')}
-                 className="rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border-l-4 border-pink-500 hover:shadow-lg hover:shadow-pink-500/30 transition-all cursor-pointer border overflow-hidden"
-                 style={{
-                   background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
-                   backgroundImage: `
-                     linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%),
-                     radial-gradient(circle, rgba(139, 92, 246, 0.08) 1px, transparent 1px)
-                   `,
-                   backgroundSize: 'cover, 16px 16px',
-                   backgroundPosition: 'center, 0 0',
-                   borderColor: 'rgba(236, 72, 153, 0.3)',
-                 }}>
-              <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500 flex-shrink-0" />
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base break-words">Ranking Global</h3>
+            {/* Ranking */}
+            <div 
+              onClick={() => navigate('/leaderboard')}
+              className="cursor-pointer group relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+              style={{
+                background: 'linear-gradient(145deg, #1E1B2E 0%, #2D2640 100%)',
+                border: '1px solid rgba(236, 72, 153, 0.15)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+              }}
+            >
+              <div className="p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                  background: 'linear-gradient(135deg, #EC4899, #F472B6)',
+                  boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+                }}>
+                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-white text-sm sm:text-base">Ranking Global</h3>
+                  <p className="text-gray-400 text-xs sm:text-sm truncate">Compare-se com outros aprendizes</p>
+                </div>
               </div>
-              <p className="text-gray-600 text-xs sm:text-sm line-clamp-1">
-                Compare-se com outros aprendizes
-              </p>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+                boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.08)',
+              }} />
             </div>
 
-            <div onClick={() => navigate('/achievements')}
-                 className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden"
-                 style={{
-                   background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)',
-                   boxShadow: '0 4px 20px rgba(236, 72, 153, 0.3)'
-                 }}>
-              <div className="relative z-10 flex items-center gap-3 mb-2">
-                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white flex-shrink-0" />
-                <h3 className="font-bold text-white text-sm sm:text-base break-words">Suas Conquistas</h3>
+            {/* Conquistas */}
+            <div 
+              onClick={() => navigate('/achievements')}
+              className="cursor-pointer group relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+              style={{
+                background: 'linear-gradient(135deg, #9333EA 0%, #EC4899 100%)',
+                boxShadow: '0 4px 20px rgba(147, 51, 234, 0.25)',
+              }}
+            >
+              <div className="p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(8px)',
+                }}>
+                  <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-white text-sm sm:text-base">Suas Conquistas</h3>
+                  <p className="text-white/80 text-xs sm:text-sm truncate">Desbloqueie badges e recompensas</p>
+                </div>
               </div>
-              <p className="relative z-10 text-white/90 text-xs sm:text-sm line-clamp-1">
-                Desbloqueie badges e recompensas
-              </p>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+                boxShadow: 'inset 0 0 20px rgba(255,255,255,0.1)',
+              }} />
             </div>
           </div>
         </div>
