@@ -4,6 +4,13 @@
  * Only active when ?debug=1 or in /admin/v7/play routes.
  */
 
+// ============= RUNTIME CONTRACT METADATA =============
+export const V7_RUNTIME_CONTRACT_VERSION = 'v7-runtime-c11-1.0';
+export const V7_RUNTIME_CONTRACTS = [
+  'C11_RUNTIME_ANCHOR_AUDIT',
+  'C11_RAF_ANCHOR_TIMING',
+] as const;
+
 export interface V7DebugLogEntry {
   t: number;
   tag: string;
