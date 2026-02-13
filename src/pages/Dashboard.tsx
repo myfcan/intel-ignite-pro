@@ -493,7 +493,7 @@ const Dashboard = () => {
             {/* ===== SUAS TRILHAS ===== */}
             <div className="mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Suas Trilhas</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
                   const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
@@ -623,8 +623,14 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* ===== MISSÕES DIÁRIAS (inside main content column) ===== */}
+          <div className="mb-6 sm:mb-8 lg:col-span-1">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Missões Diárias</h2>
+            <MissoesDiarias />
+          </div>
+
           {/* ===== SIDEBAR ===== */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block lg:row-span-full lg:col-start-2 lg:row-start-1">
             <DashboardSidebar
               streakDays={gamificationStats?.streakDays ?? 0}
               userName={user?.name?.split(' ')[0] || 'Aluno'}
@@ -640,12 +646,6 @@ const Dashboard = () => {
             userName={user?.name?.split(' ')[0] || 'Aluno'}
             isLoading={gamificationLoading}
           />
-        </div>
-
-        {/* Missões Diárias */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Missões Diárias</h2>
-          <MissoesDiarias />
         </div>
 
       </main>
