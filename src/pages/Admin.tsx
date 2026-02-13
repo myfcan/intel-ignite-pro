@@ -21,8 +21,9 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // JSON Modelo INPUT para Pipeline V7-vv (formato com scenes, não phases)
 import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
@@ -31,6 +32,20 @@ import V7Aula1InputModelo from '@/data/v7-aula1-input-modelo.json';
 export default function Admin() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [isAdminRole, setIsAdminRole] = useState(false);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id);
+      setIsAdminRole((roles || []).some(r => r.role === 'admin'));
+    };
+    checkRole();
+  }, []);
 
   const copyJsonToClipboard = async () => {
     try {
@@ -103,7 +118,8 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* ========== GESTÃO DE USUÁRIOS ========== */}
+        {/* ========== GESTÃO DE USUÁRIOS (somente admin) ========== */}
+        {isAdminRole && (
         <Card className="border-2 border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 shadow-lg shadow-blue-500/10">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -125,6 +141,7 @@ export default function Admin() {
             </Button>
           </CardContent>
         </Card>
+        )}
 
         {/* ========== CARDS DE NAVEGAÇÃO PRINCIPAIS ========== */}
         <div className="grid gap-6 md:grid-cols-3">
