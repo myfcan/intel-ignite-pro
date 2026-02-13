@@ -1,0 +1,94 @@
+name: V7 Runtime Contract Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/lessons/v7/**'
+      - 'src/components/lessons/v7/cinematic/**'
+      - 'tests/e2e/v7-runtime-contract.spec.ts'
+      - 'docs/contracts/C11_*'
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/lessons/v7/**'
+
+concurrency:
+  group: v7-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: "Unit: Validator + Crossing Detector"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run validator unit tests
+        run: bunx vitest run src/components/lessons/v7/cinematic/validators/ --reporter=verbose
+
+      - name: Run all unit tests
+        run: bunx vitest run --reporter=verbose
+
+  e2e-audit-replay:
+    name: "E2E: Audit Replay (C11)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: unit-tests
+
+    env:
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: |
+          bun run dev &
+          sleep 10
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:8080 > /dev/null && break
+            echo "Waiting for server... attempt $i"
+            sleep 2
+          done
+
+      - name: Run E2E Audit Replay
+        run: bunx playwright test tests/e2e/v7-runtime-contract.spec.ts --project=chromium --reporter=list
+
+      - name: Upload debug logs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v7-debug-logs
+          path: artifacts/
+          retention-days: 30
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
