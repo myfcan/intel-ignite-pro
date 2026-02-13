@@ -98,12 +98,15 @@ export const V7RewardsModal = ({
       const playSounds = async () => {
         // Som inicial
         if (isNewPatent) {
-          // Special fanfare for new patent
-          await playSound('dramatic-hit');
-          setTimeout(() => playSound('completion'), 300);
+          // 🏅 Epic level-up fanfare for new patent
+          await playSound('level-up');
         } else if (!isReview) {
-          // Sons de sucesso apenas para aulas novas
-          await playSound('success');
+          // 🔥 Streak-bonus for XP gains
+          if (xpDelta >= 50) {
+            await playSound('streak-bonus');
+          } else {
+            await playSound('success');
+          }
         } else {
           // Som suave para revisão
           await playSound('click-confirm');
@@ -163,7 +166,7 @@ export const V7RewardsModal = ({
         playSound('reveal');
       }, 500);
     }
-  }, [isNewPatent, isReview, playSound]);
+  }, [isNewPatent, isReview, playSound, xpDelta]);
 
   return (
     <>

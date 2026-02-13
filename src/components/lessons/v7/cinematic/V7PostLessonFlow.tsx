@@ -11,6 +11,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useV7SoundEffects } from './useV7SoundEffects';
 import { AnimatePresence } from 'framer-motion';
 import { V7LessonCompleteCard } from './phases/V7LessonCompleteCard';
 import { V7PerfeitoDragDrop } from './phases/V7PerfeitoDragDrop';
@@ -55,6 +56,7 @@ export const V7PostLessonFlow = ({
   const [stage, setStage] = useState<FlowStage>('lesson_complete');
   const [exerciseScore, setExerciseScore] = useState({ score: 0, total: 8 });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
   
   // ✅ Gamification state from database
   const [gamificationResult, setGamificationResult] = useState<GamificationResult | null>(null);
@@ -126,6 +128,14 @@ export const V7PostLessonFlow = ({
       if (result) {
         console.log('[V7PostLessonFlow] Gamification result:', result);
         setGamificationResult(result);
+        
+        // 🔊 Gamification sounds based on result
+        if (result.is_new_patent) {
+          playSound('level-up');
+        } else if (result.xp_delta >= 50) {
+          playSound('streak-bonus');
+        }
+        
         // Refresh stats to get updated totals
         await refreshStats();
       } else {
