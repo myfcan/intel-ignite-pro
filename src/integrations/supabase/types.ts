@@ -1141,6 +1141,7 @@ export type Database = {
           gamification_updated_at: string | null
           id: string
           interactions_used_today: number | null
+          is_active: boolean
           last_activity_date: string | null
           last_interaction_reset: string | null
           learning_goal:
@@ -1172,6 +1173,7 @@ export type Database = {
           gamification_updated_at?: string | null
           id: string
           interactions_used_today?: number | null
+          is_active?: boolean
           last_activity_date?: string | null
           last_interaction_reset?: string | null
           learning_goal?:
@@ -1203,6 +1205,7 @@ export type Database = {
           gamification_updated_at?: string | null
           id?: string
           interactions_used_today?: number | null
+          is_active?: boolean
           last_activity_date?: string | null
           last_interaction_reset?: string | null
           learning_goal?:
