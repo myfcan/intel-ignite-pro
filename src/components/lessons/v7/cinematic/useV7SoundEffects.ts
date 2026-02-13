@@ -1,5 +1,6 @@
-// useV7SoundEffects - Contextual sound effects for V7 cinematic experience
-// Provides: transition sounds, UI feedback, ambient, and dramatic effects
+// useV7SoundEffects - Game-style sound effects for V7 cinematic experience
+// Fun, juicy, Duolingo/Candy-Crush-inspired synthesized sounds
+// Uses Web Audio API with rich harmonics, arpeggios, and filter sweeps
 
 import { useCallback, useRef, useEffect } from "react";
 
@@ -19,75 +20,150 @@ type SoundType =
   | "progress-tick"
   | "completion"
   | "letter-reveal"
-  | "snap-success"    // Som de encaixe positivo (drag-drop correto)
-  | "snap-error";     // Som de encaixe negativo (drag-drop errado)
+  | "snap-success"
+  | "snap-error";
 
 interface SoundConfig {
   volume: number;
   pitch?: number;
 }
 
-// Web Audio API-based sound synthesis (no external files needed)
-const createOscillatorSound = (
+// ============================================================================
+// GAME-STYLE SOUND PRIMITIVES
+// ============================================================================
+
+/** Play a note with ADSR envelope for musical quality */
+const playNote = (
   ctx: AudioContext,
-  frequency: number,
+  freq: number,
   duration: number,
-  type: OscillatorType = "sine",
-  volume: number = 0.3
-): void => {
-  const oscillator = ctx.createOscillator();
-  const gainNode = ctx.createGain();
-
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
-  oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
-
-  gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-
-  oscillator.start(ctx.currentTime);
-  oscillator.stop(ctx.currentTime + duration);
+  type: OscillatorType,
+  vol: number,
+  delay: number = 0,
+  detune: number = 0
+) => {
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (detune) osc.detune.setValueAtTime(detune, t);
+  
+  // ADSR: quick attack, sustain, smooth release
+  const attack = Math.min(0.015, duration * 0.1);
+  const release = Math.min(0.08, duration * 0.4);
+  
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(vol, t + attack);
+  gain.gain.setValueAtTime(vol, t + duration - release);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + duration + 0.01);
 };
 
-const createNoiseSound = (
+/** Play a chord (multiple notes at once) */
+const playChord = (
+  ctx: AudioContext,
+  freqs: number[],
+  duration: number,
+  type: OscillatorType,
+  vol: number,
+  delay: number = 0
+) => {
+  const perNote = vol / Math.sqrt(freqs.length);
+  freqs.forEach(f => playNote(ctx, f, duration, type, perNote, delay));
+};
+
+/** Play an arpeggio (notes in sequence) */
+const playArpeggio = (
+  ctx: AudioContext,
+  freqs: number[],
+  noteLen: number,
+  gap: number,
+  type: OscillatorType,
+  vol: number,
+  startDelay: number = 0
+) => {
+  freqs.forEach((f, i) => {
+    playNote(ctx, f, noteLen, type, vol, startDelay + i * gap);
+  });
+};
+
+/** Filtered noise burst (whoosh, impact, etc) */
+const playNoise = (
   ctx: AudioContext,
   duration: number,
-  volume: number = 0.1
-): void => {
-  const bufferSize = ctx.sampleRate * duration;
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
+  vol: number,
+  filterFreqStart: number,
+  filterFreqEnd: number,
+  filterType: BiquadFilterType = "bandpass",
+  delay: number = 0
+) => {
+  const t = ctx.currentTime + delay;
+  const bufLen = Math.ceil(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
 
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * 0.5;
-  }
-
-  const source = ctx.createBufferSource();
-  const gainNode = ctx.createGain();
+  const src = ctx.createBufferSource();
+  const gain = ctx.createGain();
   const filter = ctx.createBiquadFilter();
-
-  filter.type = "lowpass";
-  filter.frequency.setValueAtTime(1000, ctx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + duration);
-
-  source.buffer = buffer;
-  source.connect(filter);
-  filter.connect(gainNode);
-  gainNode.connect(ctx.destination);
-
-  gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-
-  source.start();
-  source.stop(ctx.currentTime + duration);
+  
+  filter.type = filterType;
+  filter.Q.setValueAtTime(2, t);
+  filter.frequency.setValueAtTime(filterFreqStart, t);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(filterFreqEnd, 20), t + duration);
+  
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  
+  src.buffer = buf;
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start(t);
+  src.stop(t + duration + 0.01);
 };
+
+/** Pitch sweep (rising/falling tone) */
+const playSweep = (
+  ctx: AudioContext,
+  freqStart: number,
+  freqEnd: number,
+  duration: number,
+  type: OscillatorType,
+  vol: number,
+  delay: number = 0
+) => {
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, t);
+  osc.frequency.exponentialRampToValueAtTime(freqEnd, t + duration);
+  
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + duration + 0.01);
+};
+
+// ============================================================================
+// HOOK
+// ============================================================================
 
 export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean = true) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const isUnlockedRef = useRef(false);
 
-  // Initialize audio context
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -95,13 +171,11 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
     return audioContextRef.current;
   }, []);
 
-  // Unlock audio on user interaction
   const unlockAudio = useCallback(async () => {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") {
       try {
         await ctx.resume();
-        console.log('[useV7SoundEffects] ✅ AudioContext resumed');
       } catch (e) {
         console.warn('[useV7SoundEffects] Failed to resume AudioContext:', e);
       }
@@ -109,152 +183,183 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
     isUnlockedRef.current = true;
   }, [getAudioContext]);
 
-  // Play synthesized sounds - with auto-resume
   const playSound = useCallback(async (type: SoundType, config?: Partial<SoundConfig>) => {
     if (!enabled) return;
     
     const ctx = getAudioContext();
     
-    // ✅ Auto-resume if suspended (fixes sound not playing issue)
     if (ctx.state === "suspended") {
       try {
         await ctx.resume();
         isUnlockedRef.current = true;
-        console.log('[useV7SoundEffects] ✅ Auto-resumed AudioContext for sound:', type);
       } catch (e) {
-        console.warn('[useV7SoundEffects] ⚠️ Cannot resume AudioContext:', e);
         return;
       }
     }
 
-    const volume = (config?.volume ?? 1) * masterVolume;
+    const v = (config?.volume ?? 1) * masterVolume;
 
     switch (type) {
-      case "transition-whoosh":
-        // Sweeping whoosh sound
-        createNoiseSound(ctx, 0.4, volume * 0.3);
-        createOscillatorSound(ctx, 200, 0.3, "sine", volume * 0.2);
-        break;
-
-      case "transition-dramatic":
-        // Deep dramatic hit
-        createOscillatorSound(ctx, 80, 0.8, "sine", volume * 0.5);
-        createOscillatorSound(ctx, 160, 0.5, "triangle", volume * 0.3);
-        createNoiseSound(ctx, 0.3, volume * 0.2);
-        break;
-
+      // ────────────────────────────────────────────────────────
+      // UI FEEDBACK
+      // ────────────────────────────────────────────────────────
       case "click-soft":
-        createOscillatorSound(ctx, 800, 0.05, "sine", volume * 0.2);
+        // Soft pop — like tapping a bubble
+        playNote(ctx, 1400, 0.06, "sine", v * 0.25);
+        playNote(ctx, 2100, 0.04, "sine", v * 0.12, 0.01);
         break;
 
       case "click-confirm":
-        createOscillatorSound(ctx, 600, 0.08, "sine", volume * 0.3);
-        setTimeout(() => {
-          createOscillatorSound(ctx, 900, 0.08, "sine", volume * 0.3);
-        }, 50);
-        break;
-
-      case "success":
-        // Ascending tones
-        createOscillatorSound(ctx, 523, 0.15, "sine", volume * 0.3);
-        setTimeout(() => createOscillatorSound(ctx, 659, 0.15, "sine", volume * 0.3), 100);
-        setTimeout(() => createOscillatorSound(ctx, 784, 0.2, "sine", volume * 0.4), 200);
-        break;
-
-      case "error":
-        // Descending tones
-        createOscillatorSound(ctx, 400, 0.2, "sawtooth", volume * 0.2);
-        setTimeout(() => createOscillatorSound(ctx, 300, 0.3, "sawtooth", volume * 0.2), 150);
-        break;
-
-      case "reveal":
-        // Magic reveal sound
-        createOscillatorSound(ctx, 300, 0.5, "sine", volume * 0.2);
-        createOscillatorSound(ctx, 450, 0.4, "sine", volume * 0.15);
-        createOscillatorSound(ctx, 600, 0.3, "sine", volume * 0.1);
-        createNoiseSound(ctx, 0.2, volume * 0.1);
-        break;
-
-      case "count-up":
-        // Quick tick for counting
-        createOscillatorSound(ctx, 1200 + Math.random() * 200, 0.03, "sine", volume * 0.15);
-        break;
-
-      case "ambient-low":
-        // Low ambient hum
-        createOscillatorSound(ctx, 60, 2, "sine", volume * 0.05);
-        break;
-
-      case "dramatic-hit":
-        // Big dramatic impact
-        createOscillatorSound(ctx, 50, 1, "sine", volume * 0.6);
-        createOscillatorSound(ctx, 100, 0.8, "triangle", volume * 0.4);
-        createNoiseSound(ctx, 0.5, volume * 0.3);
-        break;
-
-      case "quiz-correct":
-        // Happy correct answer
-        createOscillatorSound(ctx, 523, 0.1, "sine", volume * 0.3);
-        setTimeout(() => createOscillatorSound(ctx, 659, 0.1, "sine", volume * 0.3), 80);
-        setTimeout(() => createOscillatorSound(ctx, 784, 0.15, "sine", volume * 0.4), 160);
-        setTimeout(() => createOscillatorSound(ctx, 1047, 0.2, "sine", volume * 0.5), 240);
-        break;
-
-      case "quiz-wrong":
-        // Wrong answer buzz
-        createOscillatorSound(ctx, 200, 0.3, "sawtooth", volume * 0.15);
-        createOscillatorSound(ctx, 150, 0.4, "sawtooth", volume * 0.1);
+        // Satisfying double-pop with rising pitch (Duolingo-style)
+        playNote(ctx, 880, 0.06, "sine", v * 0.3);
+        playNote(ctx, 1320, 0.08, "sine", v * 0.35, 0.06);
+        playNote(ctx, 1760, 0.04, "triangle", v * 0.15, 0.06);
         break;
 
       case "progress-tick":
-        createOscillatorSound(ctx, 1000, 0.02, "sine", volume * 0.1);
+        // Xylophone tick
+        playNote(ctx, 2400 + Math.random() * 400, 0.04, "sine", v * 0.15);
+        playNote(ctx, 4800 + Math.random() * 400, 0.03, "sine", v * 0.06, 0.01);
         break;
 
-      case "completion":
-        // Grand completion fanfare
-        createOscillatorSound(ctx, 523, 0.2, "sine", volume * 0.3);
-        setTimeout(() => {
-          createOscillatorSound(ctx, 659, 0.2, "sine", volume * 0.3);
-          createOscillatorSound(ctx, 784, 0.3, "sine", volume * 0.35);
-        }, 150);
-        setTimeout(() => {
-          createOscillatorSound(ctx, 1047, 0.4, "sine", volume * 0.4);
-          createNoiseSound(ctx, 0.2, volume * 0.1);
-        }, 300);
+      case "count-up":
+        // Coin-counter tick (game score style)
+        const tickFreq = 1800 + Math.random() * 600;
+        playNote(ctx, tickFreq, 0.03, "square", v * 0.08);
+        playNote(ctx, tickFreq * 2, 0.02, "sine", v * 0.06, 0.005);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // TRANSITIONS
+      // ────────────────────────────────────────────────────────
+      case "transition-whoosh":
+        // Sweeping whoosh with rising filter
+        playNoise(ctx, 0.35, v * 0.25, 400, 4000, "bandpass");
+        playSweep(ctx, 200, 800, 0.25, "sine", v * 0.1, 0.05);
+        break;
+
+      case "transition-dramatic":
+        // Cinematic boom + sub bass
+        playNote(ctx, 55, 1.0, "sine", v * 0.5);
+        playNote(ctx, 110, 0.6, "triangle", v * 0.3, 0.02);
+        playNoise(ctx, 0.4, v * 0.2, 200, 50, "lowpass");
+        // Shimmer on top
+        playNote(ctx, 880, 0.3, "sine", v * 0.08, 0.1);
+        playNote(ctx, 1320, 0.25, "sine", v * 0.05, 0.15);
+        break;
+
+      case "dramatic-hit":
+        // Impact + reverse reverb feel
+        playNote(ctx, 40, 0.8, "sine", v * 0.6);
+        playNote(ctx, 80, 0.6, "triangle", v * 0.35);
+        playNoise(ctx, 0.3, v * 0.3, 600, 60, "lowpass");
+        // Sparkle tail
+        playArpeggio(ctx, [1200, 1600, 2000], 0.08, 0.04, "sine", v * 0.1, 0.2);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // QUIZ & EXERCISES
+      // ────────────────────────────────────────────────────────
+      case "quiz-correct":
+        // 🎮 Game-style "CORRECT!" — bright major arpeggio + sparkle
+        // C5 → E5 → G5 → C6 fast arpeggio
+        playArpeggio(ctx, [523, 659, 784, 1047], 0.1, 0.07, "sine", v * 0.35);
+        // Harmonic shimmer
+        playNote(ctx, 1047, 0.2, "triangle", v * 0.15, 0.28);
+        playNote(ctx, 1568, 0.15, "sine", v * 0.1, 0.3);
+        // Tiny sparkle noise
+        playNoise(ctx, 0.15, v * 0.08, 3000, 6000, "highpass", 0.25);
+        break;
+
+      case "quiz-wrong":
+        // 🎮 Game-style "wrong" — short descending minor 2nd, not harsh
+        playNote(ctx, 370, 0.15, "triangle", v * 0.25);
+        playNote(ctx, 311, 0.2, "triangle", v * 0.2, 0.08);
+        // Subtle wobble
+        playSweep(ctx, 250, 180, 0.2, "sine", v * 0.08, 0.12);
+        break;
+
+      case "success":
+        // 🏆 Level-up style ascending chord burst
+        // Power chord: C → E → G (major triad, simultaneous)
+        playChord(ctx, [523, 659, 784], 0.2, "sine", v * 0.35);
+        // Then octave jump
+        playChord(ctx, [784, 1047, 1320], 0.25, "sine", v * 0.3, 0.15);
+        // Sparkle
+        playNoise(ctx, 0.15, v * 0.06, 4000, 8000, "highpass", 0.2);
+        break;
+
+      case "error":
+        // Gentle "nope" — two descending notes, not aggressive
+        playNote(ctx, 440, 0.12, "triangle", v * 0.2);
+        playNote(ctx, 349, 0.18, "triangle", v * 0.18, 0.1);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // REVEALS & SPECIAL MOMENTS
+      // ────────────────────────────────────────────────────────
+      case "reveal":
+        // ✨ Magic chest opening — rising shimmer + chord bloom
+        playSweep(ctx, 200, 1200, 0.4, "sine", v * 0.15);
+        playArpeggio(ctx, [440, 554, 659, 880], 0.12, 0.08, "sine", v * 0.2, 0.1);
+        playNoise(ctx, 0.3, v * 0.08, 2000, 6000, "highpass", 0.15);
+        // Final shimmer chord
+        playChord(ctx, [880, 1100, 1320], 0.3, "triangle", v * 0.15, 0.35);
         break;
 
       case "letter-reveal":
-        // Magical letter reveal - ascending sparkle
+        // 🔤 Typewriter + magic sparkle per letter
         const basePitch = config?.pitch ?? 1;
-        const letterFreq = 400 + (basePitch * 100); // Higher pitch for later letters
-        createOscillatorSound(ctx, letterFreq, 0.15, "sine", volume * 0.35);
-        createOscillatorSound(ctx, letterFreq * 1.5, 0.12, "triangle", volume * 0.2);
-        setTimeout(() => {
-          createOscillatorSound(ctx, letterFreq * 2, 0.1, "sine", volume * 0.15);
-        }, 50);
+        const lf = 600 + basePitch * 150;
+        playNote(ctx, lf, 0.08, "sine", v * 0.3);
+        playNote(ctx, lf * 1.5, 0.06, "triangle", v * 0.15, 0.02);
+        playNote(ctx, lf * 2.5, 0.04, "sine", v * 0.08, 0.04);
         break;
 
+      case "completion":
+        // 🎊 Grand fanfare — triumphant game completion
+        // Opening chord (C major)
+        playChord(ctx, [262, 330, 392], 0.25, "sine", v * 0.3);
+        // Rising to G major
+        playChord(ctx, [392, 494, 587], 0.25, "sine", v * 0.3, 0.2);
+        // Climax: C major octave up
+        playChord(ctx, [523, 659, 784, 1047], 0.4, "sine", v * 0.35, 0.4);
+        // Sparkle trail
+        playArpeggio(ctx, [1047, 1320, 1568, 2093], 0.08, 0.05, "triangle", v * 0.12, 0.6);
+        // Shimmering noise
+        playNoise(ctx, 0.4, v * 0.06, 3000, 8000, "highpass", 0.5);
+        // Sub bass for weight
+        playNote(ctx, 65, 0.8, "sine", v * 0.2, 0.4);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // DRAG & DROP
+      // ────────────────────────────────────────────────────────
       case "snap-success":
-        // 🎯 Som de encaixe satisfatório - "pop" + sparkle ascendente
-        // Pop inicial (impacto do encaixe)
-        createOscillatorSound(ctx, 300, 0.04, "sine", volume * 0.5);
-        createOscillatorSound(ctx, 600, 0.03, "sine", volume * 0.3);
-        // Sparkle ascendente (confirmação positiva)
-        setTimeout(() => createOscillatorSound(ctx, 800, 0.08, "sine", volume * 0.35), 30);
-        setTimeout(() => createOscillatorSound(ctx, 1000, 0.08, "sine", volume * 0.3), 60);
-        setTimeout(() => createOscillatorSound(ctx, 1200, 0.1, "sine", volume * 0.25), 90);
-        // Brilho final
-        setTimeout(() => createOscillatorSound(ctx, 1600, 0.15, "triangle", volume * 0.2), 120);
+        // 🧩 Satisfying snap-in — pop + ascending sparkle
+        // Impact pop
+        playNote(ctx, 400, 0.04, "sine", v * 0.4);
+        playNote(ctx, 800, 0.03, "sine", v * 0.2, 0.01);
+        // Ascending confirmation sparkle
+        playArpeggio(ctx, [880, 1100, 1320, 1760], 0.06, 0.03, "sine", v * 0.25, 0.03);
+        // Tiny celebration noise
+        playNoise(ctx, 0.1, v * 0.05, 4000, 8000, "highpass", 0.12);
         break;
 
       case "snap-error":
-        // ❌ Som de erro no encaixe - buzzer curto + descida
-        // Buzz inicial
-        createOscillatorSound(ctx, 180, 0.08, "sawtooth", volume * 0.25);
-        createOscillatorSound(ctx, 220, 0.08, "sawtooth", volume * 0.2);
-        // Descida (feedback negativo claro mas não agressivo)
-        setTimeout(() => createOscillatorSound(ctx, 150, 0.12, "square", volume * 0.15), 50);
-        setTimeout(() => createOscillatorSound(ctx, 100, 0.15, "sine", volume * 0.1), 100);
+        // 🧩 Soft reject — gentle "bump back" feel
+        playNote(ctx, 250, 0.08, "triangle", v * 0.2);
+        playNote(ctx, 200, 0.1, "triangle", v * 0.15, 0.04);
+        playNoise(ctx, 0.06, v * 0.08, 200, 100, "lowpass", 0.02);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // AMBIENT
+      // ────────────────────────────────────────────────────────
+      case "ambient-low":
+        // Warm pad — fifth interval for depth
+        playNote(ctx, 65, 2.5, "sine", v * 0.04);
+        playNote(ctx, 98, 2.0, "sine", v * 0.025, 0.3);
         break;
     }
   }, [enabled, masterVolume, getAudioContext]);
