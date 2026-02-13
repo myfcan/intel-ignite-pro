@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Zap, CheckCircle2, XCircle, Timer, Trophy } from 'lucide-react';
+import { Zap, CheckCircle2, XCircle, Timer, Trophy } from 'lucide-react';
 import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 import confetti from 'canvas-confetti';
 import { TimedQuizExerciseData } from '@/types/exerciseSchemas';
@@ -32,6 +32,8 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
   const { playSound, unlockAudio } = useV7SoundEffects(0.6, true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(0);
+  const resultsRef = useRef<Array<{ correct: boolean; bonus: number }>>([]);
+  const isCorrectRef = useRef<boolean | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
   const maxPossible = questions.length * (100 + timePerQuestion * bonusPerSecondLeft);
@@ -98,9 +100,10 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
       const correctOption = currentQuestion.options.find(o => o.isCorrect);
       setIsCorrect(false);
+      isCorrectRef.current = false;
       setSelectedOptionId(correctOption?.id ?? null);
       setShowExplanation(true);
-      setResults(prev => [...prev, { correct: false, bonus: 0 }]);
+      setResults(prev => { const next = [...prev, { correct: false, bonus: 0 }]; resultsRef.current = next; return next; });
 
       setTimeout(() => advanceQuestion(), 2500);
     }
@@ -117,6 +120,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
     const option = currentQuestion.options.find(o => o.id === optionId);
     const correct = option?.isCorrect ?? false;
     setIsCorrect(correct);
+    isCorrectRef.current = correct;
     setShowExplanation(true);
 
     const secondsLeft = Math.ceil(timeLeft);
@@ -125,7 +129,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
     setTotalPoints(prev => prev + points);
     if (bonus > 0) setTotalBonus(prev => prev + bonus);
-    setResults(prev => [...prev, { correct, bonus }]);
+    setResults(prev => { const next = [...prev, { correct, bonus }]; resultsRef.current = next; return next; });
 
     if (correct) {
       playSound('combo-hit');
@@ -145,13 +149,16 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedOptionId(null);
       setIsCorrect(null);
+      isCorrectRef.current = null;
       setShowExplanation(false);
       setTimerState('waiting');
       lastTickRef.current = 0;
     } else {
       setIsFinished(true);
-      const scorePercent = (totalPoints / maxPossible) * 100;
-      const correctCount = results.length > 0 ? results.filter(r => r.correct).length + (isCorrect ? 1 : 0) : (isCorrect ? 1 : 0);
+      // Use refs to avoid stale closure — these reflect the latest values
+      const latestResults = resultsRef.current;
+      const latestIsCorrect = isCorrectRef.current;
+      const correctCount = latestResults.filter(r => r.correct).length;
       const finalPercent = Math.min(100, Math.round((correctCount / questions.length) * 100));
 
       if (finalPercent >= 90) {
@@ -163,7 +170,7 @@ export function TimedQuizExercise({ title, instruction, data, onComplete }: Time
 
       setTimeout(() => onComplete(finalPercent), 2500);
     }
-  }, [currentQuestionIndex, questions.length, totalPoints, maxPossible, results, isCorrect, playSound, onComplete]);
+  }, [currentQuestionIndex, questions.length, playSound, onComplete]);
 
   const progressPercent = (timeLeft / effectiveTime) * 100;
 
