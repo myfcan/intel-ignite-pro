@@ -238,6 +238,35 @@ export interface FlipCardQuizExerciseData {
 }
 
 // ============================================================
+// TIMED-QUIZ EXERCISE
+// ============================================================
+export interface TimedQuizQuestion {
+  id: string;
+  question: string;
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }>;
+  explanation?: string;
+  timeOverride?: number;
+}
+
+export interface TimedQuizExerciseData {
+  timePerQuestion: number;
+  bonusPerSecondLeft: number;
+  timeoutPenalty: 'skip' | 'wrong';
+  visualTheme: 'cyber' | 'minimal';
+  questions: TimedQuizQuestion[];
+  feedback?: {
+    perfect: string;
+    good: string;
+    needsReview: string;
+    timeBonus: string;
+  };
+}
+
+// ============================================================
 // DISCRIMINATED UNION - GARANTIA DE TIPO CORRETO
 // ============================================================
 export type ExerciseConfigTyped = 
@@ -319,6 +348,15 @@ export type ExerciseConfigTyped =
       title: string;
       instruction: string;
       data: FlipCardQuizExerciseData;
+      passingScore?: number;
+      maxAttempts?: number;
+    }
+  | { 
+      id: string;
+      type: 'timed-quiz';
+      title: string;
+      instruction: string;
+      data: TimedQuizExerciseData;
       passingScore?: number;
       maxAttempts?: number;
     };

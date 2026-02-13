@@ -9,6 +9,7 @@ import { PlatformMatchExercise } from './PlatformMatchExercise';
 import { DataCollectionExercise } from './DataCollectionExercise';
 import { MultipleChoiceExercise } from '../lesson/MultipleChoiceExercise';
 import { FlipCardQuizExercise } from './FlipCardQuizExercise';
+import { TimedQuizExercise } from './TimedQuizExercise';
 import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -282,6 +283,16 @@ export function ExercisesSection({ exercises, onComplete, onScoreUpdate, onBack,
 
         {currentExercise.type === 'flipcard-quiz' && (
           <FlipCardQuizExercise
+            key={currentExerciseIndex}
+            title={currentExercise.title}
+            instruction={currentExercise.instruction}
+            data={currentExercise.data}
+            onComplete={handleExerciseComplete}
+          />
+        )}
+
+        {currentExercise.type === 'timed-quiz' && (
+          <TimedQuizExercise
             key={currentExerciseIndex}
             title={currentExercise.title}
             instruction={currentExercise.instruction}
