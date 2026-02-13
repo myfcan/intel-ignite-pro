@@ -22,9 +22,11 @@ type SoundType =
   | "letter-reveal"
   | "snap-success"
   | "snap-error"
-  | "streak-bonus"    // Streak milestone (3x, 5x, 10x...)
-  | "level-up"        // Rank/patent level up
-  | "combo-hit";      // Combo multiplier hit
+  | "streak-bonus"
+  | "level-up"
+  | "combo-hit"
+  | "timer-tick"
+  | "timer-buzzer";
 
 interface SoundConfig {
   volume: number;
@@ -405,6 +407,25 @@ export const useV7SoundEffects = (masterVolume: number = 0.5, enabled: boolean =
         playArpeggio(ctx, [800, 1000, 1400], 0.05, 0.03, "sine", v * 0.2, 0.04);
         // Tiny noise burst
         playNoise(ctx, 0.06, v * 0.1, 2000, 5000, "bandpass", 0.02);
+        break;
+
+      // ────────────────────────────────────────────────────────
+      // TIMED QUIZ
+      // ────────────────────────────────────────────────────────
+      case "timer-tick": {
+        // 🕐 Clock tick — pitch/volume controlled by config
+        const tickPitch = config?.pitch ?? 1;
+        const tickF = 1800 * tickPitch;
+        playNote(ctx, tickF, 0.035, "sine", v * 0.2);
+        playNote(ctx, tickF * 2, 0.025, "triangle", v * 0.08, 0.008);
+        break;
+      }
+
+      case "timer-buzzer":
+        // ⏰ Timeout buzzer — descending sawtooth sweep + noise burst
+        playSweep(ctx, 800, 200, 0.3, "sawtooth", v * 0.2);
+        playNote(ctx, 150, 0.25, "triangle", v * 0.15, 0.05);
+        playNoise(ctx, 0.2, v * 0.12, 400, 80, "lowpass", 0.05);
         break;
     }
   }, [enabled, masterVolume, getAudioContext]);
