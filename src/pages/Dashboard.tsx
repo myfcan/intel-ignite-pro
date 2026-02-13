@@ -282,15 +282,17 @@ const Dashboard = () => {
 
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 overflow-hidden">
         
-        {/* Admin Access Button */}
-        <div className="flex justify-end mb-4 relative z-50">
-          <button
-            onClick={() => navigate('/admin')}
-            className="text-sm text-slate-500 hover:text-slate-700 underline cursor-pointer relative z-50"
-          >
-            Acessar Painel Admin
-          </button>
-        </div>
+        {/* Admin Access Button - só visível para admin/supervisor */}
+        {canAccessAdmin && (
+          <div className="flex justify-end mb-4 relative z-50">
+            <button
+              onClick={() => navigate('/admin')}
+              className="text-sm text-slate-500 hover:text-slate-700 underline cursor-pointer relative z-50"
+            >
+              Acessar Painel Admin
+            </button>
+          </div>
+        )}
 
         {/* Hero Section - PALETA PRINCIPAL COM DEGRADÊ */}
         <motion.div 
@@ -613,9 +615,9 @@ const Dashboard = () => {
 
           {/* Curso Renda Extra - DARK TECH DESIGN */}
           <div 
-            onClick={isAdmin ? () => navigate('/curso-exclusivo') : undefined}
+            onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
             className={`relative rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden shadow-xl transition-all ${
-              isAdmin 
+              canAccessAdmin 
                 ? 'cursor-pointer hover:-translate-y-1' 
                 : 'cursor-not-allowed opacity-60'
             }`}
