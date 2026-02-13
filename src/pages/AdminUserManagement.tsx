@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Users, Shield, ShieldCheck, User, Loader2, Search, RefreshCw, Trash2, Ban, CheckCircle, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type AppRole = 'admin' | 'supervisor' | 'user';
 
@@ -37,8 +44,15 @@ interface UserWithRole {
   total_lessons_completed: number | null;
   power_score: number | null;
   coins: number | null;
+  is_active: boolean;
   role: AppRole;
 }
+
+type PendingAction =
+  | { type: 'role'; userId: string; newRole: AppRole }
+  | { type: 'suspend'; userId: string }
+  | { type: 'reactivate'; userId: string }
+  | { type: 'delete'; userId: string };
 
 const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: typeof Shield; description: string }> = {
   admin: {
@@ -67,31 +81,28 @@ export default function AdminUserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | AppRole>('all');
-  const [changingRole, setChangingRole] = useState<{ userId: string; newRole: AppRole } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch all users
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, name, email, plan, created_at, total_lessons_completed, power_score, coins')
+        .select('id, name, email, plan, created_at, total_lessons_completed, power_score, coins, is_active')
         .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
 
-      // Fetch all roles
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Map roles to users
       const roleMap = new Map<string, AppRole>();
       rolesData?.forEach((r) => {
-        // Priority: admin > supervisor > user
         const existing = roleMap.get(r.user_id);
         if (!existing || (r.role === 'admin') || (r.role === 'supervisor' && existing === 'user')) {
           roleMap.set(r.user_id, r.role as AppRole);
@@ -100,6 +111,7 @@ export default function AdminUserManagement() {
 
       const usersWithRoles: UserWithRole[] = (usersData || []).map((u) => ({
         ...u,
+        is_active: u.is_active ?? true,
         role: roleMap.get(u.id) || 'user',
       }));
 
@@ -116,43 +128,88 @@ export default function AdminUserManagement() {
     fetchUsers();
   }, []);
 
-  const handleRoleChange = async () => {
-    if (!changingRole) return;
+  const getUserName = (userId: string) => users.find((u) => u.id === userId)?.name || 'Usuário';
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
     setUpdating(true);
 
-    const { userId, newRole } = changingRole;
-
     try {
-      // Remove existing roles for this user
-      const { error: deleteError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+      if (pendingAction.type === 'role') {
+        const { userId, newRole } = pendingAction;
+        const { error: deleteError } = await supabase.from('user_roles').delete().eq('user_id', userId);
+        if (deleteError) throw deleteError;
 
-      if (deleteError) throw deleteError;
+        if (newRole !== 'user') {
+          const { error: insertError } = await supabase.from('user_roles').insert({ user_id: userId, role: newRole });
+          if (insertError) throw insertError;
+        }
 
-      // Insert new role (only if not 'user' - 'user' is the default when no role exists)
-      if (newRole !== 'user') {
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: newRole });
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+        toast.success(`${getUserName(userId)} agora é ${ROLE_CONFIG[newRole].label}`);
+      } else if (pendingAction.type === 'suspend') {
+        const { userId } = pendingAction;
+        const { error } = await supabase.from('users').update({ is_active: false }).eq('id', userId);
+        if (error) throw error;
 
-        if (insertError) throw insertError;
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: false } : u)));
+        toast.success(`${getUserName(userId)} foi suspenso`);
+      } else if (pendingAction.type === 'reactivate') {
+        const { userId } = pendingAction;
+        const { error } = await supabase.from('users').update({ is_active: true }).eq('id', userId);
+        if (error) throw error;
+
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: true } : u)));
+        toast.success(`${getUserName(userId)} foi reativado`);
+      } else if (pendingAction.type === 'delete') {
+        const { userId } = pendingAction;
+        await supabase.from('user_roles').delete().eq('user_id', userId);
+        await supabase.from('user_progress').delete().eq('user_id', userId);
+        await supabase.from('points_history').delete().eq('user_id', userId);
+        await supabase.from('user_achievements').delete().eq('user_id', userId);
+        await supabase.from('user_gamification_events').delete().eq('user_id', userId);
+        await supabase.from('user_streaks').delete().eq('user_id', userId);
+
+        const { error } = await supabase.from('users').delete().eq('id', userId);
+        if (error) throw error;
+
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        toast.success(`Usuário deletado permanentemente`);
       }
-
-      // Update local state
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-      );
-
-      const userName = users.find((u) => u.id === userId)?.name || 'Usuário';
-      toast.success(`${userName} agora é ${ROLE_CONFIG[newRole].label}`);
     } catch (err) {
-      console.error('[UserManagement] Role change error:', err);
-      toast.error('Erro ao alterar permissão');
+      console.error('[UserManagement] Action error:', err);
+      toast.error('Erro ao executar ação');
     } finally {
       setUpdating(false);
-      setChangingRole(null);
+      setPendingAction(null);
+    }
+  };
+
+  const getDialogContent = () => {
+    if (!pendingAction) return { title: '', description: '' };
+    const name = getUserName(pendingAction.userId);
+
+    switch (pendingAction.type) {
+      case 'role':
+        return {
+          title: 'Confirmar alteração de permissão',
+          description: `Deseja alterar o papel de "${name}" para ${ROLE_CONFIG[pendingAction.newRole].label}?\n${ROLE_CONFIG[pendingAction.newRole].description}`,
+        };
+      case 'suspend':
+        return {
+          title: '⚠️ Suspender usuário',
+          description: `"${name}" será suspenso e ficará inativo. Ele não conseguirá acessar a plataforma. Você pode reativá-lo depois.`,
+        };
+      case 'reactivate':
+        return {
+          title: 'Reativar usuário',
+          description: `"${name}" será reativado e poderá acessar a plataforma novamente.`,
+        };
+      case 'delete':
+        return {
+          title: '🚨 Deletar usuário PERMANENTEMENTE',
+          description: `ATENÇÃO: "${name}" será removido permanentemente do sistema, junto com todo o seu progresso, conquistas e dados. Esta ação NÃO pode ser desfeita.`,
+        };
     }
   };
 
@@ -161,15 +218,22 @@ export default function AdminUserManagement() {
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && u.is_active) ||
+      (statusFilter === 'suspended' && !u.is_active);
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const stats = {
     total: users.length,
     admins: users.filter((u) => u.role === 'admin').length,
     supervisors: users.filter((u) => u.role === 'supervisor').length,
-    users: users.filter((u) => u.role === 'user').length,
+    regular: users.filter((u) => u.role === 'user').length,
+    suspended: users.filter((u) => !u.is_active).length,
   };
+
+  const dialogContent = getDialogContent();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -185,12 +249,12 @@ export default function AdminUserManagement() {
             Gestão de Usuários
           </h1>
           <p className="text-muted-foreground">
-            Gerencie permissões e papéis de todos os usuários do sistema
+            Gerencie permissões, suspensões e remoções de usuários
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Card className="!bg-card">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold">{stats.total}</p>
@@ -211,8 +275,14 @@ export default function AdminUserManagement() {
           </Card>
           <Card className="!bg-card border-emerald-500/30">
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-400">{stats.users}</p>
+              <p className="text-2xl font-bold text-emerald-400">{stats.regular}</p>
               <p className="text-xs text-muted-foreground">Usuários</p>
+            </CardContent>
+          </Card>
+          <Card className="!bg-card border-orange-500/30">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-orange-400">{stats.suspended}</p>
+              <p className="text-xs text-muted-foreground">Suspensos</p>
             </CardContent>
           </Card>
         </div>
@@ -229,14 +299,24 @@ export default function AdminUserManagement() {
             />
           </div>
           <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as typeof roleFilter)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por role" />
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="all">Todos roles</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="supervisor">Supervisor</SelectItem>
               <SelectItem value="user">Usuário</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              <SelectItem value="active">Ativos</SelectItem>
+              <SelectItem value="suspended">Suspensos</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={fetchUsers} disabled={loading}>
@@ -257,12 +337,12 @@ export default function AdminUserManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Usuário</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Plano</TableHead>
                     <TableHead>XP / Coins</TableHead>
                     <TableHead>Aulas</TableHead>
-                    <TableHead>Cadastro</TableHead>
                     <TableHead>Permissão</TableHead>
-                    <TableHead className="text-right">Ação</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -277,12 +357,23 @@ export default function AdminUserManagement() {
                       const roleConfig = ROLE_CONFIG[user.role];
                       const RoleIcon = roleConfig.icon;
                       return (
-                        <TableRow key={user.id}>
+                        <TableRow key={user.id} className={!user.is_active ? 'opacity-50' : ''}>
                           <TableCell>
                             <div>
                               <p className="font-medium">{user.name}</p>
                               <p className="text-xs text-muted-foreground">{user.email}</p>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {user.is_active ? (
+                              <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs">
+                                Ativo
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
+                                Suspenso
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs capitalize">
@@ -295,11 +386,6 @@ export default function AdminUserManagement() {
                             </span>
                           </TableCell>
                           <TableCell>{user.total_lessons_completed || 0}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {user.created_at
-                              ? new Date(user.created_at).toLocaleDateString('pt-BR')
-                              : '—'}
-                          </TableCell>
                           <TableCell>
                             <Badge className={`${roleConfig.color} border text-xs`}>
                               <RoleIcon className="w-3 h-3 mr-1" />
@@ -307,33 +393,70 @@ export default function AdminUserManagement() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Select
-                              value={user.role}
-                              onValueChange={(newRole: string) =>
-                                setChangingRole({ userId: user.id, newRole: newRole as AppRole })
-                              }
-                            >
-                              <SelectTrigger className="w-[140px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">
-                                  <span className="flex items-center gap-1">
-                                    <Shield className="w-3 h-3" /> Admin
-                                  </span>
-                                </SelectItem>
-                                <SelectItem value="supervisor">
-                                  <span className="flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3" /> Supervisor
-                                  </span>
-                                </SelectItem>
-                                <SelectItem value="user">
-                                  <span className="flex items-center gap-1">
-                                    <User className="w-3 h-3" /> Usuário
-                                  </span>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center justify-end gap-2">
+                              <Select
+                                value={user.role}
+                                onValueChange={(newRole: string) =>
+                                  setPendingAction({ type: 'role', userId: user.id, newRole: newRole as AppRole })
+                                }
+                              >
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">
+                                    <span className="flex items-center gap-1">
+                                      <Shield className="w-3 h-3" /> Admin
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="supervisor">
+                                    <span className="flex items-center gap-1">
+                                      <ShieldCheck className="w-3 h-3" /> Supervisor
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="user">
+                                    <span className="flex items-center gap-1">
+                                      <User className="w-3 h-3" /> Usuário
+                                    </span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {user.is_active ? (
+                                    <DropdownMenuItem
+                                      onClick={() => setPendingAction({ type: 'suspend', userId: user.id })}
+                                      className="text-orange-400"
+                                    >
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      Suspender
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() => setPendingAction({ type: 'reactivate', userId: user.id })}
+                                      className="text-emerald-400"
+                                    >
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Reativar
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setPendingAction({ type: 'delete', userId: user.id })}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Deletar permanentemente
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -370,29 +493,33 @@ export default function AdminUserManagement() {
       </div>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!changingRole} onOpenChange={() => setChangingRole(null)}>
+      <AlertDialog open={!!pendingAction} onOpenChange={() => setPendingAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar alteração de permissão</AlertDialogTitle>
-            <AlertDialogDescription>
-              {changingRole && (
-                <>
-                  Deseja alterar o papel de{' '}
-                  <strong>{users.find((u) => u.id === changingRole.userId)?.name}</strong> para{' '}
-                  <strong>{ROLE_CONFIG[changingRole.newRole].label}</strong>?
-                  <br />
-                  <span className="text-xs mt-2 block">
-                    {ROLE_CONFIG[changingRole.newRole].description}
-                  </span>
-                </>
-              )}
+            <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line">
+              {dialogContent.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={updating}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRoleChange} disabled={updating}>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              disabled={updating}
+              className={
+                pendingAction?.type === 'delete'
+                  ? 'bg-destructive hover:bg-destructive/90'
+                  : pendingAction?.type === 'suspend'
+                  ? 'bg-orange-500 hover:bg-orange-600'
+                  : ''
+              }
+            >
               {updating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Confirmar
+              {pendingAction?.type === 'delete'
+                ? 'Deletar permanentemente'
+                : pendingAction?.type === 'suspend'
+                ? 'Suspender'
+                : 'Confirmar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
