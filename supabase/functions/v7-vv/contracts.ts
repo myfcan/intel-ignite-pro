@@ -1,7 +1,7 @@
 /**
  * V7-VV CONTRACT REGISTRY — Source of Truth
  * 
- * Contract Version: c10b-boundaryfix-execstate-1.0
+ * Contract Version: c10b-boundaryfix-execstate-c11-1.0
  * Pipeline Version: v7-vv-1.1.4+
  * 
  * This file is the CANONICAL registry for all pipeline contracts.
@@ -14,7 +14,7 @@
 // CONTRACT VERSION
 // ============================================================================
 
-export const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-1.0';
+export const CONTRACT_VERSION = 'c10b-boundaryfix-execstate-c11-1.0';
 
 // ============================================================================
 // CONTRACT STATUS TYPES
@@ -251,6 +251,42 @@ export const CONTRACT_REGISTRY: ContractEntry[] = [
       'pipeline_executions.error_message',
     ],
     introduced_in: 'v7-vv-1.1.3',
+  },
+  {
+    id: 'C11_RUNTIME_ANCHOR_AUDIT',
+    name: 'Runtime Anchor Audit Trail',
+    status: 'required',
+    description: 'Validates complete causal event chain for interactive phase pauses in the V7 player runtime.',
+    invariants: [
+      'PLAYGROUND_ENTRY → ANCHOR_PAUSE_EXECUTED → PLAYER_PAUSE_STATE_TRUE → SHOULD_PAUSE_TRANSITION → PLAYGROUND_PAUSED_AUDIO',
+      'All events have currentTime >= 0 (never -1)',
+      'Wallclock t is monotonically non-decreasing per phase',
+      '|ANCHOR_PAUSE_EXECUTED.currentTime - keywordTime| <= 0.15s',
+      'PLAYER_PAUSE_STATE_TRUE.t - ANCHOR_PAUSE_EXECUTED.t <= 200ms',
+      'SHOULD_PAUSE_TRANSITION.t - PLAYER_PAUSE_STATE_TRUE.t <= 200ms',
+    ],
+    error_code: 'C11_MISSING_EVENT|C11_INVALID_TIMESTAMP|C11_CAUSAL_ORDER_VIOLATED|C11_ANCHOR_PRECISION_EXCEEDED',
+    evidence_paths: [
+      'window.__v7debugLogs',
+    ],
+    introduced_in: 'v7-vv-1.1.4-c11',
+  },
+  {
+    id: 'C11_RAF_ANCHOR_TIMING',
+    name: 'RAF-based Anchor Crossing Detection',
+    status: 'required',
+    description: 'Mandates requestAnimationFrame polling for anchor crossing detection, replacing timeupdate (~250ms) with ~16ms precision.',
+    invariants: [
+      'Crossing detection uses RAF polling (not timeupdate event)',
+      'Crossing detected within 2 frames (<=32ms) of keywordTime',
+      'No audio bleed past anchor point',
+    ],
+    error_code: null,
+    evidence_paths: [
+      'useV7AudioManager.ts RAF loop',
+      'window.__v7debugLogs ANCHOR_PAUSE_EXECUTED timing',
+    ],
+    introduced_in: 'v7-vv-1.1.4-c11',
   },
 ];
 
