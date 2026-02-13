@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 
 // Suporta dois formatos: multi-option e simple-choice
 interface Scenario {
@@ -49,6 +50,7 @@ export function ScenarioSelectionExercise({
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
   
   if (scenarioList.length === 0) {
     return (
@@ -68,6 +70,12 @@ export function ScenarioSelectionExercise({
     setShowExplanation(true);
     setHasAnswered(true);
     const score = isCorrect ? 100 : 0;
+    
+    if (isCorrect) {
+      playSound('quiz-correct');
+    } else {
+      playSound('quiz-wrong');
+    }
     
     // Para simple-choice, completa imediatamente
     if (isSimpleChoice) {
@@ -96,6 +104,11 @@ export function ScenarioSelectionExercise({
                     setShowExplanation(true);
                     setHasAnswered(true);
                     const score = scenario.isCorrect ? 100 : 0;
+                    if (scenario.isCorrect) {
+                      playSound('quiz-correct');
+                    } else {
+                      playSound('quiz-wrong');
+                    }
                     setTimeout(() => onComplete(score), 2000);
                   }, 100);
                 }

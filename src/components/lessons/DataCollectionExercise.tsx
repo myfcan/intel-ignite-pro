@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
+import confetti from 'canvas-confetti';
 
 interface DataPoint {
   id: string;
@@ -36,6 +38,7 @@ export function DataCollectionExercise({
 }: DataCollectionExerciseProps) {
   const [selectedData, setSelectedData] = useState<Set<string>>(new Set());
   const [showFeedback, setShowFeedback] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Validação defensiva
   if (!scenario) {
@@ -55,8 +58,10 @@ export function DataCollectionExercise({
       const newSet = new Set(prev);
       if (newSet.has(dataId)) {
         newSet.delete(dataId);
+        playSound('click-soft');
       } else {
         newSet.add(dataId);
+        playSound('click-confirm');
       }
       return newSet;
     });
@@ -81,6 +86,15 @@ export function DataCollectionExercise({
     const score = isPerfect ? 100 : Math.round((correctSelected / maxScore) * 100);
     
     setShowFeedback(true);
+    
+    if (isPerfect) {
+      playSound('level-up');
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+    } else if (score >= 50) {
+      playSound('success');
+    } else {
+      playSound('error');
+    }
     
     // Chama onComplete IMEDIATAMENTE sem delay
     onComplete(score);

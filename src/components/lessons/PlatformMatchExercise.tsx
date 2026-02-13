@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
+import confetti from 'canvas-confetti';
 
 interface Scenario {
   id: string;
@@ -37,6 +39,7 @@ export function PlatformMatchExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Validação defensiva
   if (!scenarios || scenarios.length === 0) {
@@ -69,6 +72,12 @@ export function PlatformMatchExercise({
     setIsCorrect(correct);
     setShowFeedback(true);
 
+    if (correct) {
+      playSound('snap-success');
+    } else {
+      playSound('snap-error');
+    }
+
     // Salvar resposta
     setAnswers(prev => ({
       ...prev,
@@ -90,6 +99,12 @@ export function PlatformMatchExercise({
         ).length + (correct ? 1 : 0);
 
         const score = (correctCount / scenarios.length) * 100;
+        if (score === 100) {
+          playSound('level-up');
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+        } else if (score >= 50) {
+          playSound('completion');
+        }
         setTimeout(() => onComplete(score), 1000);
       }
     }, 1500);

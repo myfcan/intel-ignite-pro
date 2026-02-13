@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 
 interface DragDropLessonProps {
   content: {
@@ -31,6 +32,7 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
   const [items, setItems] = useState<string[]>([...content.items]);
   const [result, setResult] = useState<any>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -50,11 +52,17 @@ export const DragDropLesson = ({ content, onSubmit, submitting }: DragDropLesson
 
     setItems(newItems);
     setDraggedIndex(null);
+    playSound('snap-success');
   };
 
   const handleSubmit = async () => {
     const result = await onSubmit(items);
     setResult(result);
+    if (result?.passed) {
+      playSound('completion');
+    } else {
+      playSound('error');
+    }
   };
 
   const handleTryAgain = () => {

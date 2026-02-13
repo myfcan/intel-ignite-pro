@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { splitByPlaceholder, EXERCISE_PLACEHOLDER } from '@/lib/exerciseConstants';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 
 interface Sentence {
   id: string;
@@ -40,6 +41,7 @@ export function FillInBlanksExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Validação defensiva
   if (!sentences || sentences.length === 0) {
@@ -77,13 +79,17 @@ export function FillInBlanksExercise({
     // Confetti especial para pontuação perfeita
     if (isPerfect) {
       console.log('🏆 [PERFECT] Acertou tudo de primeira!');
-
+      playSound('level-up');
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#FFD700', '#FFA500', '#FF6347', '#FFFF00', '#FFD700']
       });
+    } else if (score >= 50) {
+      playSound('streak-bonus');
+    } else {
+      playSound('error');
     }
 
     // Chamar onComplete IMEDIATAMENTE
