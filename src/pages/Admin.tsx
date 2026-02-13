@@ -177,6 +177,36 @@ export default function Admin() {
             </CardContent>
           </Card>
 
+          {/* BIBLIOTECA DE EXERCÍCIOS */}
+          <Card className="border-2 border-violet-500/20 bg-violet-500/5 hover:border-violet-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/exercise-library')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-6 h-6 text-violet-500" />
+                Biblioteca de Exercícios
+              </CardTitle>
+              <CardDescription>
+                Catálogo completo dos 11 tipos de exercício V5/V7
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <p>📋 11 tipos catalogados</p>
+                <p>🎮 Demos interativas</p>
+                <p>🏷️ Status e versão de cada tipo</p>
+              </div>
+              <Button
+                className="w-full bg-violet-600 hover:bg-violet-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/admin/exercise-library');
+                }}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Ver Biblioteca
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* DEBUGS & DEMOS */}
           <Card className="border-2 border-orange-500/20 bg-orange-500/5 hover:border-orange-500/40 transition-colors cursor-pointer" onClick={() => navigate('/admin/debugs')}>
             <CardHeader>
