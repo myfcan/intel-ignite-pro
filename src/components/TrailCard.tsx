@@ -53,36 +53,55 @@ const TrailCard = ({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={!isLocked ? { y: -4, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' } : undefined}
+      whileHover={!isLocked ? { y: -6, scale: 1.02 } : undefined}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
-      className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-300 ${
-        isLocked ? 'cursor-not-allowed opacity-40 border-gray-100' : 'cursor-pointer border-gray-200 hover:border-gray-300'
+      className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+        isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
       }`}
-      style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}
+      style={{
+        boxShadow: isLocked
+          ? '0 1px 4px rgba(0,0,0,0.04)'
+          : '0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(0,0,0,0.06)',
+      }}
     >
-      {/* Colored header area with icon (replaces image) */}
+      {/* Colored header area */}
       <div
         className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
-            : `linear-gradient(135deg, ${theme.accent}DD, ${theme.accent})`,
+            : `linear-gradient(135deg, ${theme.accent}CC, ${theme.accent}, ${theme.accent}EE)`,
         }}
       >
-        {/* Decorative circles */}
+        {/* Decorative shapes */}
         <div
-          className="absolute w-32 h-32 rounded-full opacity-20"
-          style={{ background: 'white', top: '-20px', right: '-20px' }}
+          className="absolute w-40 h-40 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.12)', top: '-30px', right: '-30px' }}
         />
         <div
-          className="absolute w-20 h-20 rounded-full opacity-10"
-          style={{ background: 'white', bottom: '-10px', left: '10px' }}
+          className="absolute w-28 h-28 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '-10px' }}
+        />
+        <div
+          className="absolute w-16 h-16 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.06)', top: '20px', left: '30px' }}
         />
         {isLocked ? (
-          <Lock className="w-10 h-10 text-white/60" />
+          <Lock className="w-10 h-10 text-white/40" />
         ) : (
-          <Icon className="w-12 h-12 sm:w-14 sm:h-14 text-white drop-shadow-lg" />
+          <div className="relative">
+            <div
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.3)',
+              }}
+            >
+              <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
+            </div>
+          </div>
         )}
       </div>
 
@@ -90,9 +109,9 @@ const TrailCard = ({
       <div className="p-4 sm:p-5">
         {/* Category badge */}
         <span
-          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold mb-2"
+          className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold mb-2.5 tracking-wide uppercase"
           style={{
-            background: isLocked ? '#F3F4F6' : `${theme.accent}12`,
+            background: isLocked ? '#F3F4F6' : `${theme.accent}10`,
             color: isLocked ? '#9CA3AF' : theme.accent,
           }}
         >
@@ -100,27 +119,30 @@ const TrailCard = ({
         </span>
 
         {/* Title */}
-        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 leading-tight line-clamp-2">
+        <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1.5 leading-snug line-clamp-2">
           {trail.title}
         </h3>
 
         {/* Lesson count */}
-        <p className="text-xs sm:text-sm text-gray-400 mb-3">
+        <p className="text-xs text-gray-400 mb-3">
           {totalLessons} aulas
         </p>
 
         {/* Progress bar */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div className="flex items-center gap-2.5">
+          <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ background: isLocked ? '#E5E7EB' : theme.accent }}
+              style={{
+                background: isLocked ? '#E5E7EB' : `linear-gradient(90deg, ${theme.accent}, ${theme.accent}CC)`,
+                boxShadow: isLocked ? 'none' : `0 0 8px ${theme.accent}40`,
+              }}
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
             />
           </div>
-          <span className="text-[10px] sm:text-xs font-semibold text-gray-400">
+          <span className="text-[11px] font-bold text-gray-500">
             {completedLessons}/{totalLessons}
           </span>
         </div>
