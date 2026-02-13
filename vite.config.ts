@@ -51,6 +51,9 @@ export default defineConfig(({ mode }) => ({
       }
     })
   ].filter(Boolean),
+  optimizeDeps: {
+    include: ["react", "react-dom", "@tanstack/react-query"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
