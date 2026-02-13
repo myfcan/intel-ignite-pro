@@ -11,7 +11,7 @@ import { V7ExitConfirmModal } from './V7ExitConfirmModal';
 import { useV7AudioManager } from './useV7AudioManager';
 import { useV7SoundEffects } from './useV7SoundEffects';
 import { useAnchorText, convertPauseKeywordsToActions, AnchorAction, AnchorEvent } from './useAnchorText';
-import { pushV7DebugLog } from './v7DebugLogger';
+import { pushV7DebugLog, V7_RUNTIME_CONTRACT_VERSION, V7_RUNTIME_CONTRACTS } from './v7DebugLogger';
 import { V7SynchronizedCaptions } from '../V7SynchronizedCaptions';
 import { V7DebugPanel } from '../V7DebugPanel';
 import { V7DebugHUD } from './V7DebugHUD';
@@ -137,9 +137,17 @@ export const V7PhasePlayer = ({
   const [debugQuizEnabled, setDebugQuizEnabled] = useState(false);
   const [debugQuizReason, setDebugQuizReason] = useState('initial');
 
-  // ✅ DETERMINISTIC LOGS: Mount/unmount tracking
+  // ✅ DETERMINISTIC LOGS: Mount/unmount tracking + C11 SESSION_INIT
   useEffect(() => {
     console.log(`[PLAYER_MOUNT] V7PhasePlayer mounted - scriptId="${script?.id}" phasesCount=${script?.phases?.length}`);
+    pushV7DebugLog('SESSION_INIT', {
+      currentTime: 0,
+      contractVersion: V7_RUNTIME_CONTRACT_VERSION,
+      contracts: [...V7_RUNTIME_CONTRACTS],
+      scriptId: script?.id ?? null,
+      phasesCount: script?.phases?.length ?? 0,
+      hasAudio,
+    });
     return () => {
       console.log(`[PLAYER_UNMOUNT] V7PhasePlayer unmounted - scriptId="${script?.id}"`);
     };
