@@ -623,12 +623,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* ===== MISSÕES DIÁRIAS (inside main content column) ===== */}
-          <div className="mb-6 sm:mb-8 lg:col-span-1">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Missões Diárias</h2>
-            <MissoesDiarias />
-          </div>
-
           {/* ===== SIDEBAR ===== */}
           <div className="hidden lg:block lg:row-span-full lg:col-start-2 lg:row-start-1">
             <DashboardSidebar
