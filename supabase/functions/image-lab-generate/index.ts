@@ -30,9 +30,9 @@ Deno.serve(async (req) => {
   const openaiKey = Deno.env.get("OPENAI_API_KEY")!;
 
   try {
-    // Auth check
+    // === PARTE 1: Auth hardened via getClaims() ===
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ ok: false, error_code: "AUTH_MISSING", error_message: "No auth header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -42,17 +42,20 @@ Deno.serve(async (req) => {
     const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID", error_message: "Invalid auth" }), {
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ ok: false, error_code: "AUTH_INVALID", error_message: "Invalid JWT" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub;
 
-    // Role check
+    // Role check (defense-in-depth)
     const supabase = createClient(supabaseUrl, serviceKey);
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const userRoles = (roles || []).map((r: any) => r.role);
     if (!userRoles.includes("admin") && !userRoles.includes("supervisor")) {
       return new Response(JSON.stringify({ ok: false, error_code: "FORBIDDEN", error_message: "Admin/supervisor required" }), {
@@ -85,8 +88,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!["queued", "failed", "rejected"].includes(job.status)) {
-      return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${job.status}, expected queued/failed/rejected` }), {
+    if (!["queued", "failed", "rejected", "processing"].includes(job.status)) {
+      return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${job.status}, expected queued/failed/rejected/processing` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -203,7 +206,6 @@ Deno.serve(async (req) => {
       }
 
       const geminiData = await geminiResp.json();
-      // Extract base64 image from Gemini response
       const content = geminiData.choices?.[0]?.message?.content;
       let b64Data: string | null = null;
 
@@ -218,14 +220,12 @@ Deno.serve(async (req) => {
           b64Data = imgPart.data;
         }
       } else if (typeof content === "string") {
-        // Try to extract base64 from inline data URI
         const match = content.match(/data:image\/[^;]+;base64,([^\s"]+)/);
         if (match) b64Data = match[1];
       }
 
       if (!b64Data) throw new Error("No image data in Gemini response");
 
-      // Decode base64
       const binaryString = atob(b64Data);
       imageBytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
@@ -265,6 +265,8 @@ Deno.serve(async (req) => {
     }
 
     const latencyMs = Date.now() - startTime;
+    // === PARTE 4: bytes_out telemetry ===
+    const bytesOut = imageBytes.length;
 
     // Upload to storage
     const storagePath = `${job_id}/${attempt!.id}/0.png`;
@@ -277,31 +279,35 @@ Deno.serve(async (req) => {
 
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
-    // Get public URL
-    const { data: urlData } = supabase.storage.from("image-lab").getPublicUrl(storagePath);
-    const publicUrl = urlData.publicUrl;
+    // === PARTE 3: Generate signed URL instead of public URL ===
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("image-lab")
+      .createSignedUrl(storagePath, 3600);
+
+    const signedUrl = signedError ? null : signedData?.signedUrl;
 
     // Compute file hash
     const fileHash = await sha256(new TextDecoder().decode(imageBytes).substring(0, 1000) + imageBytes.length);
 
-    // Create asset
+    // Create asset (store storage_path for on-demand signed URL generation)
     const { data: asset } = await supabase.from("image_assets").insert({
       job_id,
       attempt_id: attempt!.id,
       status: "completed",
       variation_index: 0,
       storage_path: storagePath,
-      public_url: publicUrl,
+      public_url: signedUrl,
       width: sizeInfo.w,
       height: sizeInfo.h,
       sha256_bytes: fileHash,
       hash,
     }).select().single();
 
-    // Update attempt
+    // === PARTE 4: Update attempt with latency + bytes_out ===
     await supabase.from("image_attempts").update({
       status: "completed",
       latency_ms: latencyMs,
+      bytes_out: bytesOut,
       cost_estimate: actualProvider === "openai" ? 0.02 : 0.01,
     }).eq("id", attempt!.id);
 
@@ -328,17 +334,20 @@ Deno.serve(async (req) => {
       const supabase = createClient(supabaseUrl, serviceKey);
       const body = await req.clone().json().catch(() => ({}));
       if (body.job_id) {
+        const errorCode = "GENERATION_FAILED";
+        const errorMsg = error.message?.substring(0, 500);
+
         await supabase.from("image_jobs").update({
           status: "failed",
-          error_code: "GENERATION_FAILED",
-          error_message: error.message?.substring(0, 500),
+          error_code: errorCode,
+          error_message: errorMsg,
         }).eq("id", body.job_id);
 
-        // Update any processing attempts
+        // Update any processing attempts with error details
         await supabase.from("image_attempts").update({
           status: "failed",
-          error_code: "GENERATION_FAILED",
-          error_message: error.message?.substring(0, 500),
+          error_code: errorCode,
+          error_message: errorMsg,
         }).eq("job_id", body.job_id).eq("status", "processing");
       }
     } catch (_) { /* best effort */ }
