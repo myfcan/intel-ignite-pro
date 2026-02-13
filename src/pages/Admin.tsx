@@ -103,6 +103,29 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* ========== GESTÃO DE USUÁRIOS ========== */}
+        <Card className="border-2 border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 shadow-lg shadow-blue-500/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Box className="w-6 h-6 text-blue-500" />
+              Gestão de Usuários
+            </CardTitle>
+            <CardDescription>
+              Gerencie permissões: Admin, Supervisor ou Usuário comum
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate('/admin/users')}
+            >
+              <Box className="w-5 h-5 mr-2" />
+              Abrir Gestão de Usuários
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* ========== CARDS DE NAVEGAÇÃO PRINCIPAIS ========== */}
         <div className="grid gap-6 md:grid-cols-3">
           
