@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
+import confetti from 'canvas-confetti';
 
 interface Statement {
   id: string;
@@ -34,6 +36,7 @@ export function TrueFalseExercise({
   const [answers, setAnswers] = useState<Record<string, boolean | null>>({});
   const [revealedStatements, setRevealedStatements] = useState<Set<string>>(new Set());
   const [allRevealed, setAllRevealed] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Validação defensiva
   if (!statements || statements.length === 0) {
@@ -49,8 +52,18 @@ export function TrueFalseExercise({
   const handleAnswer = (statementId: string, answer: boolean) => {
     if (revealedStatements.has(statementId)) return;
 
+    const statement = statements.find(s => s.id === statementId);
+    const isAnswerCorrect = answer === statement?.correct;
+
     setAnswers({ ...answers, [statementId]: answer });
     setRevealedStatements(new Set(revealedStatements).add(statementId));
+
+    // Sound per answer
+    if (isAnswerCorrect) {
+      playSound('quiz-correct');
+    } else {
+      playSound('quiz-wrong');
+    }
 
     // Check if all answered
     if (revealedStatements.size + 1 === statements.length) {
@@ -58,9 +71,17 @@ export function TrueFalseExercise({
         setAllRevealed(true);
         const correctCount = statements.filter(
           s => answers[s.id] === s.correct || (revealedStatements.has(s.id) && answers[s.id] === s.correct)
-        ).length + (answers[statementId] === statements.find(s => s.id === statementId)?.correct ? 1 : 0);
+        ).length + (isAnswerCorrect ? 1 : 0);
         
         const score = Math.round((correctCount / statements.length) * 100);
+        
+        if (score === 100) {
+          playSound('level-up');
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+        } else if (score >= 50) {
+          playSound('streak-bonus');
+        }
+        
         setTimeout(() => onComplete(score), 3000);
       }, 500);
     }

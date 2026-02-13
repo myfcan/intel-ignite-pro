@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, XCircle, Info } from "lucide-react";
+import { useV7SoundEffects } from "@/components/lessons/v7/cinematic/useV7SoundEffects";
 
 interface MultipleChoiceExerciseProps {
   question: string;
@@ -24,6 +25,7 @@ export const MultipleChoiceExercise = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   const handleSubmit = () => {
     setIsSubmitted(true);
@@ -31,6 +33,7 @@ export const MultipleChoiceExercise = ({
     setIsCorrect(correct);
     
     if (correct) {
+      playSound('quiz-correct');
       // Espera mostrar o feedback, depois faz fade out
       setTimeout(() => {
         setIsFadingOut(true);
@@ -39,6 +42,8 @@ export const MultipleChoiceExercise = ({
           onComplete(true);
         }, 300);
       }, 1500);
+    } else {
+      playSound('quiz-wrong');
     }
   };
 

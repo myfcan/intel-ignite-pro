@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ExerciseErrorCard } from './ExerciseErrorCard';
 import { splitByPlaceholder, EXERCISE_PLACEHOLDER } from '@/lib/exerciseConstants';
+import { useV7SoundEffects } from './v7/cinematic/useV7SoundEffects';
 
 interface Sentence {
   id: string;
@@ -31,6 +32,7 @@ export function CompleteSentenceExercise({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<Record<string, boolean>>({});
+  const { playSound } = useV7SoundEffects(0.6, true);
 
   // Validação defensiva
   if (!sentences || sentences.length === 0) {
@@ -79,6 +81,13 @@ export function CompleteSentenceExercise({
     setSubmitted(true);
 
     const score = (correctCount / sentences.length) * 100;
+    if (score === 100) {
+      playSound('completion');
+    } else if (score >= 50) {
+      playSound('success');
+    } else {
+      playSound('error');
+    }
     setTimeout(() => onComplete(score), 2000);
   };
 
