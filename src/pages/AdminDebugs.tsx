@@ -9,7 +9,8 @@ import {
   MessageSquare,
   Play,
   FlaskConical,
-  Timer as TimerIcon
+  Timer as TimerIcon,
+  Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -198,6 +199,34 @@ export default function AdminDebugs() {
               >
                 <TimerIcon className="w-4 h-4 mr-2" />
                 Testar Quiz
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* FlipCard Quiz Demo */}
+        <Card className="border-2 border-purple-500/20 hover:border-purple-500/40 transition-colors">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-purple-500" />
+              FlipCard Quiz Demo
+              <span className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">NOVO</span>
+            </CardTitle>
+            <CardDescription>
+              Teste do exercício flipcard-quiz com 3 cards — flip 3D, score e confetti
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                <p>🃏 3 cards · flip 3D · score final</p>
+              </div>
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                onClick={() => navigate('/admin/debugs/flipcard-quiz')}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                Testar FlipCards
               </Button>
             </div>
           </CardContent>

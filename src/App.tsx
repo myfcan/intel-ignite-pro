@@ -78,6 +78,7 @@ const V7Documentation = lazy(() => import("./pages/V7Documentation"));
 const Admin3DDemos = lazy(() => import("./pages/Admin3DDemos"));
 const AdminDebugs = lazy(() => import("./pages/AdminDebugs"));
 const AdminTimedQuizDemo = lazy(() => import("./pages/AdminTimedQuizDemo"));
+const AdminFlipCardQuizDemo = lazy(() => import("./pages/AdminFlipCardQuizDemo"));
 const AdminModelos = lazy(() => import("./pages/AdminModelos"));
 const C10Report = lazy(() => import("./pages/admin/C10Report"));
 const AdminUserManagement = lazy(() => import("./pages/AdminUserManagement"));
@@ -207,6 +208,7 @@ const App = () => (
                 <Route path="/admin/3d-demos" element={<AdminRoute><Admin3DDemos /></AdminRoute>} />
                 <Route path="/admin/debugs" element={<AdminRoute><AdminDebugs /></AdminRoute>} />
                 <Route path="/admin/debugs/timed-quiz" element={<AdminRoute><AdminTimedQuizDemo /></AdminRoute>} />
+                <Route path="/admin/debugs/flipcard-quiz" element={<AdminRoute><AdminFlipCardQuizDemo /></AdminRoute>} />
                 <Route path="/admin/modelos" element={<AdminRoute><AdminModelos /></AdminRoute>} />
                 <Route path="/admin/c10-report" element={<AdminRoute><C10Report /></AdminRoute>} />
                 {/* NEW FEATURES ROUTES */}
