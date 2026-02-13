@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
@@ -14,6 +14,7 @@ import { useUserGamification } from "@/hooks/useUserGamification";
 import { AnimatedStatCard } from "@/components/gamification/AnimatedStatCard";
 import { CourseProgressCard } from "@/components/dashboard/CourseProgressCard";
 import { PointsCard } from "@/components/dashboard/PointsCard";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 interface User {
   id: string;
@@ -306,100 +307,177 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* ===== PURPLE CONTAINER - Hero Zone ===== */}
-        <div
-          className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 mb-6 sm:mb-8"
-          style={{
-            background: 'linear-gradient(135deg, #6C63FF 0%, #9333EA 100%)',
-            boxShadow: '0 20px 50px -12px rgba(108, 99, 255, 0.35)',
-          }}
-        >
-          {/* Top row: CourseProgress + Points */}
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 sm:gap-5 mb-4 sm:mb-5">
-            {activeTrail && activeTrailProgress ? (
-              <CourseProgressCard
-                trailName={activeTrail.title}
-                category={TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
-                progress={activeTrailProgress.progress}
-                completedLessons={activeTrailProgress.completedLessons}
-                totalLessons={activeTrailProgress.totalLessons}
-                onContinue={() => navigate(`/trail/${activeTrail.id}`)}
-              />
-            ) : (
-              <CourseProgressCard
-                trailName="Nenhuma trilha ativa"
-                category="Comece agora"
-                progress={0}
-                completedLessons={0}
-                totalLessons={0}
-                onContinue={() => {}}
-              />
-            )}
-
-            <PointsCard
-              powerScore={gamificationStats?.powerScore ?? 0}
-              patentName={gamificationStats?.patentName ?? 'Iniciante'}
-              isLoading={gamificationLoading || !gamificationStats}
-            />
-          </div>
-
-          {/* Bottom row: 2 Stat Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <AnimatedStatCard
-              value={gamificationStats?.streakDays ?? 0}
-              label="Dias de sequência"
-              icon={Flame}
-              gradientFrom="#EC4899"
-              gradientTo="#F472B6"
-              delay={0.2}
-              isLoading={gamificationLoading || !gamificationStats}
-              variant="colored"
-            />
-            <AnimatedStatCard
-              value={gamificationStats?.lessonsCompleted ?? 0}
-              label="Aulas completas"
-              icon={BookOpen}
-              gradientFrom="#10B981"
-              gradientTo="#0891B2"
-              delay={0.3}
-              isLoading={gamificationLoading || !gamificationStats}
-              variant="white"
-            />
-          </div>
-        </div>
-
-        {/* ===== SUAS TRILHAS - Horizontal white cards ===== */}
-        <div className="mb-6 sm:mb-8 px-2 xs:px-0">
-          <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-5">Suas Trilhas</h2>
+        {/* ===== 2-COLUMN LAYOUT: Main + Sidebar ===== */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           
-          <div className="flex flex-col gap-3">
-            {trails.map((trail, index) => {
-              const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
-              const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
-              const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
-              
-              const previousTrail = trails[index - 1];
-              const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
-              const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+          {/* ===== MAIN COLUMN ===== */}
+          <div>
+            {/* ===== PURPLE CONTAINER with floating icons ===== */}
+            <div
+              className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 mb-6 sm:mb-8 relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #6C63FF 0%, #7C3AED 50%, #9333EA 100%)',
+                boxShadow: '0 20px 50px -12px rgba(108, 99, 255, 0.35)',
+              }}
+            >
+              {/* Floating Icon Badges - ref 1 style */}
+              {[
+                { Icon: Code, bg: '#F97316', x: 'right-[12%]', y: 'top-[8%]', size: 'w-10 h-10 sm:w-12 sm:h-12', delay: 0 },
+                { Icon: Database, bg: '#0EA5E9', x: 'right-[5%]', y: 'top-[25%]', size: 'w-9 h-9 sm:w-10 sm:h-10', delay: 0.1 },
+                { Icon: PieChart, bg: '#8B5CF6', x: 'right-[18%]', y: 'top-[35%]', size: 'w-8 h-8 sm:w-9 sm:h-9', delay: 0.2 },
+                { Icon: Palette, bg: '#EC4899', x: 'right-[8%]', y: 'top-[55%]', size: 'w-10 h-10 sm:w-11 sm:h-11', delay: 0.3 },
+                { Icon: Layers, bg: '#10B981', x: 'right-[20%]', y: 'top-[70%]', size: 'w-8 h-8 sm:w-10 sm:h-10', delay: 0.15 },
+                { Icon: BarChart3, bg: '#6366F1', x: 'right-[3%]', y: 'top-[75%]', size: 'w-9 h-9', delay: 0.25 },
+              ].map(({ Icon: FloatIcon, bg, x, y, size, delay: d }, i) => (
+                <motion.div
+                  key={i}
+                  className={`absolute ${x} ${y} ${size} rounded-xl flex items-center justify-center shadow-lg hidden sm:flex`}
+                  style={{ background: bg }}
+                  initial={{ opacity: 0, scale: 0, rotate: -20 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.3 + d, type: 'spring', stiffness: 200 }}
+                >
+                  <FloatIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </motion.div>
+              ))}
 
-              return (
-                <TrailCard
-                  key={trail.id}
-                  trail={trail}
-                  Icon={Icon}
-                  progress={trailProgress?.progress || 0}
-                  completedLessons={trailProgress?.completedLessons || 0}
-                  totalLessons={trailProgress?.totalLessons || 0}
-                  status={trailProgress?.status || 'locked'}
-                  gradient={gradient}
-                  isNext={isNext}
+              {/* Hero text */}
+              <div className="relative z-10 mb-5 sm:mb-6">
+                <motion.h2
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1.5"
+                >
+                  Pronto para aprender?
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-purple-200 text-xs sm:text-sm max-w-md"
+                >
+                  Continue sua jornada. Você está a um passo dos seus objetivos.
+                </motion.p>
+                <div className="flex gap-3 mt-3">
+                  <button
+                    onClick={() => activeTrail && navigate(`/trail/${activeTrail.id}`)}
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-md hover:shadow-lg transition-all"
+                  >
+                    Continuar Última Aula
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-white/90 hover:text-white transition-all"
+                    style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+                  >
+                    Explorar Trilhas
+                  </button>
+                </div>
+              </div>
+
+              {/* Cards row: CourseProgress + Points */}
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 sm:gap-5 mb-4 sm:mb-5 relative z-10">
+                {activeTrail && activeTrailProgress ? (
+                  <CourseProgressCard
+                    trailName={activeTrail.title}
+                    category={TRAIL_CATEGORY_MAP[activeTrail.order_index] || 'Curso'}
+                    progress={activeTrailProgress.progress}
+                    completedLessons={activeTrailProgress.completedLessons}
+                    totalLessons={activeTrailProgress.totalLessons}
+                    onContinue={() => navigate(`/trail/${activeTrail.id}`)}
+                  />
+                ) : (
+                  <CourseProgressCard
+                    trailName="Nenhuma trilha ativa"
+                    category="Comece agora"
+                    progress={0}
+                    completedLessons={0}
+                    totalLessons={0}
+                    onContinue={() => {}}
+                  />
+                )}
+
+                <PointsCard
+                  powerScore={gamificationStats?.powerScore ?? 0}
+                  patentName={gamificationStats?.patentName ?? 'Iniciante'}
+                  isLoading={gamificationLoading || !gamificationStats}
                 />
-              );
-            })}
+              </div>
+
+              {/* Stat Cards row */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 relative z-10">
+                <AnimatedStatCard
+                  value={gamificationStats?.streakDays ?? 0}
+                  label="Dias de sequência"
+                  icon={Flame}
+                  gradientFrom="#EC4899"
+                  gradientTo="#F472B6"
+                  delay={0.2}
+                  isLoading={gamificationLoading || !gamificationStats}
+                  variant="colored"
+                />
+                <AnimatedStatCard
+                  value={gamificationStats?.lessonsCompleted ?? 0}
+                  label="Aulas completas"
+                  icon={BookOpen}
+                  gradientFrom="#10B981"
+                  gradientTo="#0891B2"
+                  delay={0.3}
+                  isLoading={gamificationLoading || !gamificationStats}
+                  variant="white"
+                />
+              </div>
+            </div>
+
+            {/* ===== SUAS TRILHAS ===== */}
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 md:mb-5">Suas Trilhas</h2>
+              
+              <div className="flex flex-col gap-3">
+                {trails.map((trail, index) => {
+                  const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
+                  const Icon = TRAIL_ICONS[trail.icon as keyof typeof TRAIL_ICONS] || GraduationCap;
+                  const gradient = TRAIL_GRADIENTS[trail.title] || 'from-blue-400 to-purple-500';
+                  
+                  const previousTrail = trails[index - 1];
+                  const previousProgress = trailsProgressWithStatus.find((tp) => tp.trailId === previousTrail?.id);
+                  const isNext = trailProgress?.status === 'locked' && previousProgress?.status === 'completed';
+
+                  return (
+                    <TrailCard
+                      key={trail.id}
+                      trail={trail}
+                      Icon={Icon}
+                      progress={trailProgress?.progress || 0}
+                      completedLessons={trailProgress?.completedLessons || 0}
+                      totalLessons={trailProgress?.totalLessons || 0}
+                      status={trailProgress?.status || 'locked'}
+                      gradient={gradient}
+                      isNext={isNext}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ===== SIDEBAR (desktop only, stacked on mobile) ===== */}
+          <div className="hidden lg:block">
+            <DashboardSidebar
+              streakDays={gamificationStats?.streakDays ?? 0}
+              userName={user?.name?.split(' ')[0] || 'Aluno'}
+              isLoading={gamificationLoading}
+            />
           </div>
         </div>
 
-        {/* Feature Cards - MODERN DARK STYLE */}
+        {/* Mobile sidebar content */}
+        <div className="lg:hidden mb-6">
+          <DashboardSidebar
+            streakDays={gamificationStats?.streakDays ?? 0}
+            userName={user?.name?.split(' ')[0] || 'Aluno'}
+            isLoading={gamificationLoading}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 px-2 xs:px-0">
           {/* AI Playground */}
           <div 
