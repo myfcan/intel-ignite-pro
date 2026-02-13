@@ -1,193 +1,164 @@
 
 
-# A1-v3 Patch Final — Codigo exato baseado no estado atual dos arquivos
+# Plan: Fix V7 E2E Contract to Single Source of Truth
 
-## Estado atual confirmado (leitura real)
+## Problem Summary
 
-- `useV7AudioManager.ts` linha 593: `getCurrentTime: () => mainAudioRef.current?.currentTime ?? -1` -- OK, existe.
-- `v7-phase-contracts.ts` linha 279: `getAudioCurrentTime?: () => number` -- OK, existe.
-- `V7PhasePlayer.tsx` linha 1631: `getAudioCurrentTime={() => audio.getCurrentTime()}` -- OK, existe.
-- `V7PhasePlayground.tsx` linha 44: `getAudioCurrentTime = () => -1` -- OK, existe.
+Four technical issues in the current E2E/CI setup:
 
-## 3 alteracoes necessarias (2 arquivos)
+1. **Inline validator drift** -- `tests/e2e/v7-runtime-contract.spec.ts` lines 199-346 contain a full reimplementation of `validateV7DebugLogs`, duplicating the official validator at `src/components/lessons/v7/cinematic/validators/validateV7DebugLogs.ts`.
+2. **Dangerous audio fallback** -- Lines 124-143 set `audio.currentTime = 115` directly, masking HUD/seek/RAF bugs.
+3. **Toolchain mismatch** -- Workflow uses `bun`/`bunx` but the project is an `npm`-based Vite project (no `bun.lockb` exists).
+4. **Auth fragility** -- Login via UI selectors in CI is flaky; no `storageState` support.
 
-### Alteracao 1: `V7PhasePlayer.tsx` linhas 1577-1585 — PLAYGROUND_ENTRY com getter + inPhase
+## Files to Modify
 
-Codigo ATUAL (linha 1581):
+| File | Action |
+|---|---|
+| `tests/e2e/v7-runtime-contract.spec.ts` | Rewrite: import official validator, remove inline copy, remove audio fallback, add storageState support |
+| `.github/workflows/v7-runtime-contract.yml` | Rewrite: replace bun with npm, use package.json scripts |
+| `package.json` | Add scripts: `test:unit`, `test:e2e:v7` |
+| `tests/e2e/fixtures/auth.ts` | Update: add storageState generation setup |
+
+No new files created. No new dependencies.
+
+## Technical Details
+
+### 1. E2E Spec -- Import Official Validator
+
+The official validator at `src/components/lessons/v7/cinematic/validators/validateV7DebugLogs.ts` imports only:
+
 ```typescript
-currentTime: audio.currentTime,
+import type { V7DebugLogEntry } from '../v7DebugLogger';
 ```
 
-Codigo NOVO (linhas 1577-1587):
+This is a **type-only** import. The `V7DebugLogEntry` interface has no runtime browser dependencies. The validator function itself uses zero browser APIs (`window`, `document`, `import.meta` are absent). Therefore Playwright (Node context) can import it directly.
+
+The spec will change from:
+
 ```typescript
-const _pgCurrentTime = audio.getCurrentTime();
-const _pgEntryPayload = {
-  phaseId: currentPhase.id,
-  startTime: currentPhase.startTime,
-  endTime: currentPhase.endTime,
-  currentTime: _pgCurrentTime,
-  inPhase: _pgCurrentTime >= (currentPhase.startTime ?? 0) &&
-           _pgCurrentTime <= (currentPhase.endTime ?? Infinity),
-  isPausedByAnchor,
-  c07AutoPaused,
-  shouldPauseAudio: Boolean(isPausedByAnchor || c07AutoPaused),
-};
+// BEFORE (line 176): calls local reimplementation
+const validationResult = runC11Validation(logs);
 ```
 
-Corrige objecao (A): `audio.currentTime` era React state (stale ~250ms). `audio.getCurrentTime()` le o ref instantaneo. `inPhase` prova que o audio esta dentro dos bounds da fase.
+To:
 
-### Alteracao 2: `V7PhasePlayer.tsx` apos linha 610 — novo useEffect edge-triggered
-
-Inserir APOS linha 610 (fim do bloco C07.2 legacy fallback):
 ```typescript
-// A1-v3: Edge-triggered log quando isPausedByAnchor transiciona false->true
-const prevPausedByAnchorRef = useRef<boolean>(false);
-useEffect(() => {
-  const prev = prevPausedByAnchorRef.current;
-  const next = Boolean(isPausedByAnchor);
-  if (!prev && next) {
-    pushV7DebugLog('PLAYER_PAUSE_STATE_TRUE', {
-      phaseId: currentPhase?.id ?? null,
-      isPausedByAnchor: true,
-      c07AutoPaused: Boolean(c07AutoPaused),
-      shouldPauseAudio: true,
-      currentTime: audio.getCurrentTime(),
-    });
-  }
-  prevPausedByAnchorRef.current = next;
-}, [isPausedByAnchor, c07AutoPaused, currentPhase?.id, audio]);
+// AFTER: imports the official validator
+import { validateV7DebugLogs } from '../../src/components/lessons/v7/cinematic/validators/validateV7DebugLogs';
+// ...
+const validationResult = validateV7DebugLogs(logs);
 ```
 
-Corrige objecao (B): preenche o buraco causal entre ANCHOR_PAUSE_EXECUTED e SHOULD_PAUSE_TRANSITION. Deps array inclui todos os valores lidos dentro do callback conforme exigido pelo CTO.
+Lines 199-346 (the entire inline `runC11Validation` function + types) will be deleted.
 
-### Alteracao 3: `V7PhasePlayground.tsx` — 3 sub-alteracoes
+Result: **1 contract, 1 source of truth.**
 
-**3a. Linha 62: `prevShouldPauseRef` inicializado com prop**
+### 2. Remove Dangerous Audio Fallback
 
-ATUAL:
+Current code (lines 124-143):
+
 ```typescript
-const prevShouldPauseRef = useRef<boolean | null>(null);
-```
-NOVO:
-```typescript
-const prevShouldPauseRef = useRef<boolean>(shouldPauseAudio);
-```
-
-Corrige objecao (D): `prev:null` nao aparece mais. O ref comeca com o valor real da prop no mount.
-
-**3b. Linhas 63-74: SHOULD_PAUSE_TRANSITION com `audioIsPlaying` + deps corretas**
-
-ATUAL:
-```typescript
-useEffect(() => {
-  const prev = prevShouldPauseRef.current;
-  if (prev !== shouldPauseAudio) {
-    console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
-    pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
-      prev,
-      current: shouldPauseAudio,
-      currentTime: getAudioCurrentTime(),
-    });
-    prevShouldPauseRef.current = shouldPauseAudio;
-  }
-}, [shouldPauseAudio]);
-```
-
-NOVO:
-```typescript
-useEffect(() => {
-  if (prevShouldPauseRef.current !== shouldPauseAudio) {
-    const prev = prevShouldPauseRef.current;
-    console.log(`[V7PhasePlayground] 🔄 shouldPauseAudio: ${prev} -> ${shouldPauseAudio}`);
-    pushV7DebugLog('SHOULD_PAUSE_TRANSITION', {
-      prev,
-      current: shouldPauseAudio,
-      currentTime: getAudioCurrentTime(),
-      audioIsPlaying: audioControlRef.current?.isPlaying ?? null,
-    });
-    prevShouldPauseRef.current = shouldPauseAudio;
-  }
-}, [shouldPauseAudio, getAudioCurrentTime]);
-```
-
-Adiciona `audioIsPlaying` para contexto e `getAudioCurrentTime` nos deps.
-
-**3c. Linhas 82-98: Pausa efetiva vs redundante (eventos separados)**
-
-ATUAL:
-```typescript
-const pauseAudio = async () => {
-  // Tentar pausar se ainda tocando
-  if (ctrl.isPlaying) {
-    if (ctrl.pauseWithFade) {
-      await ctrl.pauseWithFade(300);
-    } else {
-      ctrl.pause();
+if (!anchorFired) {
+  await page.evaluate(() => {
+    const audio = document.querySelector('audio');
+    if (audio) {
+      audio.currentTime = 115;
+      audio.play();
     }
-    setAudioPausedByPlayground(true);
-  }
-  // CRITICAL: Logar SEMPRE que shouldPauseAudio=true, mesmo que audio já esteja pausado pelo anchor
-  console.log('[V7PhasePlayground] 🔇 Audio pausado por anchor/fallback (shouldPauseAudio=true)');
-  pushV7DebugLog('PLAYGROUND_PAUSED_AUDIO', {
-    shouldPauseAudio: true,
-    audioWasPlaying: ctrl.isPlaying,
-    currentTime: getAudioCurrentTime(),
   });
-};
+  // ...
+}
 ```
 
-NOVO:
+This will be replaced with a **fail-fast** assertion:
+
 ```typescript
-const pauseAudio = async () => {
-  const wasPlaying = Boolean(ctrl.isPlaying);
-  if (wasPlaying) {
-    if (ctrl.pauseWithFade) {
-      await ctrl.pauseWithFade(300);
-    } else {
-      ctrl.pause();
-    }
-    setAudioPausedByPlayground(true);
-  }
-  console.log(
-    `[V7PhasePlayground] Audio ${wasPlaying ? 'PAUSED by playground' : 'already paused by anchor'}`
+if (!anchorFired) {
+  // Save diagnostic artifact before failing
+  const diagnosticLogs = await page.evaluate(() =>
+    JSON.stringify((window as any).__v7debugLogs ?? [], null, 2)
   );
-  pushV7DebugLog(
-    wasPlaying ? 'PLAYGROUND_PAUSED_AUDIO' : 'PLAYGROUND_AUDIO_ALREADY_PAUSED',
-    {
-      shouldPauseAudio: true,
-      audioWasPlaying: wasPlaying,
-      currentTime: getAudioCurrentTime(),
-    }
+  fs.writeFileSync(
+    path.join(ARTIFACTS_DIR, 'v7debuglogs-FAILED-no-anchor.json'),
+    diagnosticLogs
   );
-};
+  await page.screenshot({
+    path: path.join(ARTIFACTS_DIR, 'v7-FAILED-no-anchor.png')
+  });
+  throw new Error(
+    'ANCHOR_PAUSE_EXECUTED not detected after 4x Seek +30s. ' +
+    'HUD seek may be broken or crossing detection failed. ' +
+    'Check artifacts/v7debuglogs-FAILED-no-anchor.json'
+  );
+}
 ```
 
-Corrige objecao (C): captura `wasPlaying` ANTES da chamada `pause()`, e separa os eventos para distinguir pausa efetiva de redundante.
+### 3. Standardize Toolchain to npm
 
-## Resumo de impacto
+Current workflow uses `oven-sh/setup-bun` and `bunx`. The project has `package-lock.json` (npm), no `bun.lockb`.
 
-| Arquivo | Linhas | Mudanca | Risco |
-|---------|--------|---------|-------|
-| V7PhasePlayer.tsx | 1577-1585 | `getCurrentTime()` + `inPhase` | Zero (log only) |
-| V7PhasePlayer.tsx | apos 610 | Novo `PLAYER_PAUSE_STATE_TRUE` edge-triggered | Zero (novo useEffect readonly) |
-| V7PhasePlayground.tsx | 62 | `useRef<boolean>(shouldPauseAudio)` | Zero |
-| V7PhasePlayground.tsx | 63-74 | `audioIsPlaying` + deps | Zero |
-| V7PhasePlayground.tsx | 82-98 | PAUSED vs ALREADY_PAUSED | Zero (mesma logica, nomes distintos) |
+Changes in `.github/workflows/v7-runtime-contract.yml`:
 
-## Criterio de aceite A1-v3
+- Replace `oven-sh/setup-bun` with `actions/setup-node@v4` (Node 20)
+- Replace `bun install --frozen-lockfile` with `npm ci`
+- Replace `bunx vitest run` with `npm run test:unit`
+- Replace `bunx playwright test` with `npm run test:e2e:v7`
+- Replace `bun run dev` with `npm run dev`
 
-JSON exportado de `window.__v7debugLogs` deve conter:
+### 4. Authentication -- storageState with Fallback
 
-1. **PLAYGROUND_ENTRY**: `inPhase: true`, `currentTime <= endTime + 0.05`
-2. **ANCHOR_PAUSE_EXECUTED** e **PLAYER_PAUSE_STATE_TRUE**: ambos com `currentTime` ~118.41 (+-0.15s), delta wallclock `t` <= 200ms
-3. **SHOULD_PAUSE_TRANSITION**: `currentTime` ~118.41 (+-0.15s), `audioIsPlaying` presente
-4. **PLAYGROUND_PAUSED_AUDIO** ou **PLAYGROUND_AUDIO_ALREADY_PAUSED**: `currentTime` ~118.41 (+-0.15s)
+The spec will support two auth strategies:
 
-Condicoes globais: nenhum `currentTime = -1`, `t` monotonicamente crescente.
+1. **storageState** (preferred): If `playwright/.auth/admin.json` exists, use it via Playwright's `storageState` option. No login UI interaction needed.
+2. **Login UI** (CI fallback): If no storageState file, authenticate via `/auth` form using `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars, with stable selectors (`input[type="email"]`, `input[type="password"]`, `button[type="submit"]`).
 
-## Entregaveis pos-implementacao
+Local storageState generation command:
 
-1. JSON bruto exportado do `window.__v7debugLogs` (sem recorte)
-2. Screenshot do Debug HUD no momento do pause
-3. Commit com apenas V7PhasePlayer.tsx e V7PhasePlayground.tsx
+```bash
+# Generate auth state locally (one-time)
+ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=yourpass \
+  npx playwright test tests/e2e/fixtures/generate-auth.ts --project=chromium
+```
+
+A small setup script `tests/e2e/fixtures/generate-auth.ts` will be created to run the login flow once and save the state to `playwright/.auth/admin.json`.
+
+### 5. Package.json Scripts
+
+Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "test:unit": "vitest run --reporter=verbose",
+    "test:e2e:v7": "npx playwright test tests/e2e/v7-runtime-contract.spec.ts --project=chromium"
+  }
+}
+```
+
+### Acceptance Checklist
+
+After implementation, these conditions must hold:
+
+- [ ] `tests/e2e/v7-runtime-contract.spec.ts` contains zero validation logic -- it imports `validateV7DebugLogs` from the official path
+- [ ] No `audio.currentTime =` assignment exists in the spec
+- [ ] `.github/workflows/v7-runtime-contract.yml` contains zero references to `bun`, `bunx`, or `oven-sh`
+- [ ] `npm run test:unit` runs all Vitest tests
+- [ ] `npm run test:e2e:v7` runs the Playwright audit replay
+- [ ] E2E produces `artifacts/v7debuglogs.json` with `SESSION_INIT` as first event
+- [ ] `validateV7DebugLogs(logs).pass === true` is the single assertion gate
+- [ ] CI gate fails the PR if any step fails and uploads artifacts regardless
+
+### Local Execution
+
+```bash
+# Unit tests
+npm run test:unit
+
+# E2E (requires dev server running or uses webServer config)
+npm run test:e2e:v7
+
+# Generate auth state (one-time)
+ADMIN_EMAIL=x ADMIN_PASSWORD=y npx playwright test tests/e2e/fixtures/generate-auth.ts --project=chromium
+```
 
