@@ -308,7 +308,7 @@ const Dashboard = () => {
         )}
 
         {/* ===== 2-COLUMN LAYOUT: Main + Sidebar ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
           
           {/* ===== MAIN COLUMN ===== */}
           <div>
