@@ -1,6 +1,6 @@
 {
   "$schema": "V7-vv Pipeline Input Schema",
-  "$comment": "JSON INPUT C01-C10 compliant — Todas as correções aplicadas. Cada anchorText.pauseAt existe literalmente na narração da cena. Nenhuma heurística.",
+  "$comment": "JSON INPUT C01-C10 compliant — MicroVisuals canônicos (7 tipos). Cada anchorText.pauseAt existe literalmente na narração da cena e é a última palavra.",
   "$contractVersion": "c10b-boundaryfix-execstate-1.0",
   "$contracts": ["C01", "C02", "C04", "C05", "C06", "C08", "C10", "C10B", "BOUNDARY_FIX_GUARD", "EXEC_STATE_CANONICAL_JSON"],
   "title": "O Fim da Brincadeira com IA",
@@ -39,12 +39,12 @@
         },
         "microVisuals": [
           {
-            "id": "mv-multidao",
-            "type": "image-flash",
+            "id": "mv-brinquedo",
+            "type": "highlight",
             "anchorText": "brinquedo",
             "content": {
-              "description": "Multidão rindo em slow motion",
-              "animation": "fade"
+              "text": "como brinquedo",
+              "animation": "pulse"
             }
           }
         ]
@@ -73,21 +73,21 @@
         "microVisuals": [
           {
             "id": "mv-banana",
-            "type": "text-pop",
+            "type": "icon",
             "anchorText": "banana",
-            "content": {"text": "piada sobre banana", "emoji": "🍌"}
+            "content": {"icon": "banana", "emoji": "🍌"}
           },
           {
             "id": "mv-pirata",
-            "type": "text-pop",
+            "type": "icon",
             "anchorText": "pirata",
-            "content": {"text": "como pirata", "emoji": "🏴‍☠️"}
+            "content": {"icon": "pirate", "emoji": "🏴‍☠️"}
           },
           {
             "id": "mv-gato",
-            "type": "text-pop",
+            "type": "icon",
             "anchorText": "gato",
-            "content": {"text": "sobre meu gato", "emoji": "🐱"}
+            "content": {"icon": "cat", "emoji": "🐱"}
           }
         ]
       }
@@ -115,7 +115,7 @@
         "microVisuals": [
           {
             "id": "mv-dinheiro",
-            "type": "number-count",
+            "type": "number",
             "anchorText": "trinta mil",
             "content": {"from": 0, "to": 30000, "prefix": "R$ "}
           }
@@ -183,9 +183,9 @@
         "microVisuals": [
           {
             "id": "mv-honesto",
-            "type": "text-highlight",
+            "type": "highlight",
             "anchorText": "honesto",
-            "content": {"highlight": "SEJA HONESTO", "animation": "glow"}
+            "content": {"text": "SEJA HONESTO", "animation": "glow"}
           }
         ]
       }
@@ -287,21 +287,21 @@
         "microVisuals": [
           {
             "id": "mv-projetos",
-            "type": "card-reveal",
+            "type": "icon",
             "anchorText": "projetos",
-            "content": {"cardId": "card-projetos", "animation": "slide-up"}
+            "content": {"icon": "clipboard", "animation": "slide-up"}
           },
           {
             "id": "mv-renda",
-            "type": "card-reveal",
-            "anchorText": "renda extra",
-            "content": {"cardId": "card-renda", "animation": "slide-up"}
+            "type": "text",
+            "anchorText": "Renda extra",
+            "content": {"text": "RENDA EXTRA", "animation": "slide-up"}
           },
           {
             "id": "mv-dez-vezes",
-            "type": "card-reveal",
+            "type": "number",
             "anchorText": "dez vezes",
-            "content": {"cardId": "card-clareza", "animation": "slide-up"}
+            "content": {"value": "10x", "animation": "slide-up"}
           }
         ]
       },
