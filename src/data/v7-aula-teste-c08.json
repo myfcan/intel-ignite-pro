@@ -1,6 +1,6 @@
 {
   "$schema": "V7-vv Pipeline Input Schema",
-  "$comment": "Modelo demonstrativo C01-C10 compliant. Todos os anchorText.pauseAt existem literalmente na narração.",
+  "$comment": "Modelo demonstrativo C01-C10 compliant. MicroVisuals canônicos (7 tipos). Todos os anchorText.pauseAt existem literalmente na narração e são a última palavra.",
   "$contractVersion": "c10b-boundaryfix-execstate-1.0",
   "$contracts": ["C01", "C02", "C04", "C05", "C06", "C08", "C10", "C10B", "BOUNDARY_FIX_GUARD", "EXEC_STATE_CANONICAL_JSON"],
   "title": "Dominando Prompts com PERFEITO",
@@ -38,10 +38,10 @@
         "microVisuals": [
           {
             "id": "mv-genericas",
-            "type": "text-highlight",
+            "type": "highlight",
             "anchorText": "genéricas",
             "content": {
-              "highlight": "respostas genéricas",
+              "text": "respostas genéricas",
               "animation": "pulse"
             }
           }
@@ -52,7 +52,7 @@
       "id": "cena-2-comparacao",
       "title": "Comparação Lado a Lado",
       "type": "comparison",
-      "narration": "Enquanto um escreve 'me ajuda a escrever um email', o outro estrutura o pedido com contexto, objetivo e formato esperado.",
+      "narration": "Enquanto um escreve me ajuda a escrever um email, o outro estrutura o pedido com contexto, objetivo e formato esperado.",
       "visual": {
         "type": "split-screen",
         "content": {
@@ -75,7 +75,7 @@
         "microVisuals": [
           {
             "id": "mv-email",
-            "type": "text-pop",
+            "type": "text",
             "anchorText": "email",
             "content": {"text": "me ajuda a escrever um email", "emoji": "📧"}
           },
