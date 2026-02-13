@@ -99,8 +99,14 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
         const totalCorrect = correctCards.size + 1;
         const score = (totalCorrect / totalCards) * 100;
         if (score === 100) {
+          // Vitória perfeita
           playSound('level-up');
+          setTimeout(() => playSound('completion'), 200);
           setTimeout(() => confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } }), 300);
+        } else if (score >= 60) {
+          // Bom resultado
+          playSound('level-up');
+          setTimeout(() => confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } }), 300);
         } else {
           playSound('streak-bonus');
         }
@@ -121,7 +127,13 @@ export function FlipCardQuizExercise({ title, instruction, data, onComplete }: F
       if (newCompleted === totalCards) {
         const totalCorrect = correctCards.size;
         const score = (totalCorrect / totalCards) * 100;
-        playSound('streak-bonus');
+        if (score === 0) {
+          // Derrota total — som dramático
+          playSound('error');
+          setTimeout(() => playSound('timer-buzzer'), 300);
+        } else {
+          playSound('streak-bonus');
+        }
         setTimeout(() => onComplete(score), 2000);
       } else {
         setTimeout(() => {
