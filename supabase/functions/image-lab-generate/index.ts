@@ -88,8 +88,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!["queued", "failed", "rejected", "processing"].includes(job.status)) {
-      return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${job.status}, expected queued/failed/rejected/processing` }), {
+    // C12_CONCURRENCY_LOCK: If processing, reject with LOCKED
+    if (job.status === "processing") {
+      return new Response(JSON.stringify({ ok: false, error_code: "LOCKED", error_message: "Job is already being processed (concurrency lock)" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // C12_JOB_STATE_MACHINE: Only queued, failed, rejected can start generation
+    if (!["queued", "failed", "rejected"].includes(job.status)) {
+      return new Response(JSON.stringify({ ok: false, error_code: "INVALID_STATUS", error_message: `Job status is ${job.status}, expected queued/failed/rejected` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -363,13 +372,19 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error("[image-lab-generate] Error:", error);
 
-    // Try to update job/attempt status on error
+    // C12: Classify error and update job with normalized error_code
     try {
       const supabase = createClient(supabaseUrl, serviceKey);
       const body = await req.clone().json().catch(() => ({}));
       if (body.job_id) {
-        const errorCode = "GENERATION_FAILED";
-        const errorMsg = error.message?.substring(0, 500);
+        // C12 normalized error classification
+        const errorMsg = error.message?.substring(0, 500) || "Unknown error";
+        let errorCode = "GENERATION_FAILED";
+        if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("rate limit")) errorCode = "RATE_LIMIT";
+        else if (errorMsg.toLowerCase().includes("timeout") || errorMsg.includes("408")) errorCode = "TIMEOUT";
+        else if (errorMsg.toLowerCase().includes("content_policy") || errorMsg.toLowerCase().includes("safety")) errorCode = "CONTENT_POLICY";
+        else if (errorMsg.match(/5\d\d/)) errorCode = "PROVIDER_5XX";
+        else if (errorMsg.toLowerCase().includes("invalid") && errorMsg.toLowerCase().includes("prompt")) errorCode = "INVALID_PROMPT";
 
         await supabase.from("image_jobs").update({
           status: "failed",
