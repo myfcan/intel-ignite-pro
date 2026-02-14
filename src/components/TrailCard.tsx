@@ -24,7 +24,7 @@ const TRAIL_THEMES = [
   { accent: '#6366F1', label: 'Fundamentos' },
   { accent: '#8B5CF6', label: 'Dia a Dia' },
   { accent: '#7C3AED', label: 'Negócios' },
-  { accent: '#0EA5E9', label: 'Renda Extra' },
+  { accent: '#D4A017', label: 'Renda Extra', isGold: true },
   { accent: '#6366F1', label: 'Organização' },
 ];
 
@@ -43,6 +43,7 @@ const TrailCard = ({
   const isLocked = status === 'locked';
   const isCompleted = status === 'completed';
   const theme = TRAIL_THEMES[(trail.order_index - 1) % TRAIL_THEMES.length];
+  const isGold = !!(theme as any).isGold && !isLocked;
 
   const handleClick = () => {
     if (!isLocked) {
@@ -61,10 +62,19 @@ const TrailCard = ({
         isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
       }`}
       style={{
-        boxShadow: isLocked
-          ? '0 2px 8px rgba(0,0,0,0.03)'
-          : '0 8px 32px -4px rgba(0,0,0,0.1), 0 2px 8px -2px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(0,0,0,0.04)',
+        boxShadow: isGold
+          ? '0 0 0 2px #D4A017, 0 0 24px rgba(212, 160, 23, 0.25), 0 8px 32px -4px rgba(212, 160, 23, 0.2), 0 2px 8px -2px rgba(0,0,0,0.05)'
+          : isLocked
+            ? '0 2px 8px rgba(0,0,0,0.03)'
+            : '0 8px 32px -4px rgba(0,0,0,0.1), 0 2px 8px -2px rgba(0,0,0,0.05)',
+        border: isGold
+          ? '2px solid transparent'
+          : '1px solid rgba(0,0,0,0.04)',
+        backgroundImage: isGold
+          ? 'linear-gradient(white, white), linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)'
+          : undefined,
+        backgroundOrigin: isGold ? 'border-box' : undefined,
+        backgroundClip: isGold ? 'padding-box, border-box' : undefined,
       }}
     >
       {/* Colored header area */}
@@ -73,7 +83,9 @@ const TrailCard = ({
         style={{
           background: isLocked
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
-            : `linear-gradient(135deg, ${theme.accent}CC, ${theme.accent}, ${theme.accent}EE)`,
+            : isGold
+              ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B)'
+              : `linear-gradient(135deg, ${theme.accent}CC, ${theme.accent}, ${theme.accent}EE)`,
         }}
       >
         {/* Decorative shapes */}
