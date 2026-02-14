@@ -495,8 +495,39 @@ const Dashboard = () => {
             )}
 
             {/* ===== SUAS TRILHAS ===== */}
-            <div className="mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Suas Trilhas</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="mb-6 rounded-3xl p-5 sm:p-7 md:p-8"
+              style={{
+                background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 40%, #818CF8 100%)',
+                boxShadow: '0 16px 48px -12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+              }}
+            >
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-5 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Suas Trilhas</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-all"
+                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-all"
+                    style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}
+                  >
+                    ›
+                  </button>
+                  <span className="text-xs sm:text-sm text-white/80 font-medium cursor-pointer hover:text-white ml-1 transition-colors">
+                    Ver todas
+                  </span>
+                </div>
+              </div>
+
+              {/* Trail cards grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {trails.map((trail, index) => {
                   const trailProgress = trailsProgressWithStatus.find((tp) => tp.trailId === trail.id);
@@ -521,7 +552,7 @@ const Dashboard = () => {
                   );
                 })}
               </div>
-            </div>
+            </motion.div>
 
             {/* ===== FOR YOU - Feature Cards ===== */}
             <div className="mb-6">
