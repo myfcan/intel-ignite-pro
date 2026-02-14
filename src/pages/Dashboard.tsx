@@ -250,14 +250,14 @@ const Dashboard = () => {
   }
 
   const TRAIL_ICONS: Record<string, any> = {
-    '🎓': Brain,
+    '🎓': GraduationCap,
     '📱': Zap,
-    '💼': TrendingUp,
+    '💼': Target,
     '💰': Rocket,
     'Brain': Brain,
     'Zap': Zap,
     'Rocket': Rocket,
-    'Target': TrendingUp,
+    'Target': Target,
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
