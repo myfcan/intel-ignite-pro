@@ -9,34 +9,29 @@ export default function CursoExclusivo() {
   return (
     <div className="min-h-screen bg-[#FAFBFC]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Button
-              variant="ghost"
+      <header className="bg-white/70 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-4">
+            <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all shadow-sm hover:shadow-md"
             >
-              <ChevronLeft className="w-4 h-4" />
-              Voltar ao Dashboard
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg"
-                   style={{background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'}}>
-                <GraduationCap className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg">Curso Exclusivo</h1>
-                <p className="text-xs text-gray-600">Conteúdo Premium</p>
-              </div>
+              <ChevronLeft className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm text-gray-700">Voltar</span>
+            </button>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                Curso Exclusivo
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600">Conteúdo Premium</p>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Hero Section - Dark Tech */}
         <div className="mb-8">
           <div className="relative overflow-hidden rounded-3xl p-8 text-white shadow-2xl"

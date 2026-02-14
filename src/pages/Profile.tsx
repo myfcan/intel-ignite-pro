@@ -218,61 +218,78 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-white/70 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <header className="bg-white/70 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="text-sm font-semibold text-slate-700 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all shadow-sm hover:shadow-md"
             >
-              ← Voltar ao Dashboard
+              <User className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm sm:text-base text-gray-700">Voltar</span>
             </button>
           </div>
         </div>
       </header>
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Meu Perfil</h1>
-          <p className="text-muted-foreground">Gerencie suas informações e preferências</p>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Hero Banner */}
+        <div
+          className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-xl border mb-6 sm:mb-8"
+          style={{
+            background: 'linear-gradient(135deg, #6CB1FF 0%, #837BFF 100%)',
+            borderColor: 'rgba(255, 255, 255, 0.3)',
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none opacity-20"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+            }}
+          />
+          <div className="relative z-10 p-6 sm:p-8">
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white/30">
+                  <AvatarImage src={profile.avatar_url} />
+                  <AvatarFallback className="bg-white/20 text-white text-2xl font-bold">
+                    {profile.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <label 
+                  htmlFor="avatar-upload" 
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <Camera className="h-6 w-6 text-white" />
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">{profile.name}</h1>
+                <p className="text-white/80 text-sm sm:text-base">{profile.email}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Coluna Esquerda */}
           <div className="lg:col-span-2 space-y-6">
             {/* Informações Pessoais */}
-            <Card className="p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="relative group">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="bg-gradient-primary text-white text-2xl">
-                      {profile.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <label 
-                    htmlFor="avatar-upload" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  >
-                    <Camera className="h-6 w-6 text-white" />
-                  </label>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                    disabled={uploading}
-                  />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{profile.name}</h2>
-                  <p className="text-muted-foreground">{profile.email}</p>
-                </div>
-              </div>
-
-              <Separator className="my-6" />
+            <Card className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Informações Pessoais
+              </h3>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,17 +352,17 @@ export default function Profile() {
             </Card>
 
             {/* Preferências */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Bell className="h-5 w-5" />
+            <Card className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
                 Preferências
               </h3>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">Notificações</p>
-                    <p className="text-sm text-muted-foreground">Receber emails sobre novidades e conquistas</p>
+                    <p className="font-medium text-gray-900">Notificações</p>
+                    <p className="text-sm text-gray-500">Receber emails sobre novidades e conquistas</p>
                   </div>
                   <Switch
                     checked={profile.notifications_enabled}
@@ -356,9 +373,9 @@ export default function Profile() {
             </Card>
 
             {/* Segurança */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5" />
+            <Card className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
                 Segurança e Privacidade
               </h3>
               
@@ -389,51 +406,51 @@ export default function Profile() {
           {/* Coluna Direita */}
           <div className="space-y-6">
             {/* Estatísticas */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
+            <Card className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
                 Suas Estatísticas
               </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gradient-primary/10 rounded-lg">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Zap className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Power Score</span>
+                    <span className="font-medium text-gray-700">Power Score</span>
                   </div>
-                  <span className="text-lg font-bold">{stats?.powerScore || 0}</span>
+                  <span className="text-lg font-bold text-gray-900">{stats?.powerScore || 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gradient-primary/10 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Coins className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Créditos</span>
+                    <span className="font-medium text-gray-700">Créditos</span>
                   </div>
-                  <span className="text-lg font-bold">{stats?.coins || 0}</span>
+                  <span className="text-lg font-bold text-gray-900">{stats?.coins || 0}</span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gradient-primary/10 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Target className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Aulas Completas</span>
+                    <span className="font-medium text-gray-700">Aulas Completas</span>
                   </div>
-                  <span className="text-lg font-bold">{profile.total_lessons_completed}</span>
+                  <span className="text-lg font-bold text-gray-900">{profile.total_lessons_completed}</span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gradient-primary/10 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Sequência</span>
+                    <span className="font-medium text-gray-700">Sequência</span>
                   </div>
-                  <span className="text-lg font-bold">{profile.streak_days} dias</span>
+                  <span className="text-lg font-bold text-gray-900">{profile.streak_days} dias</span>
                 </div>
               </div>
             </Card>
 
             {/* Plano Atual */}
-            <Card className="p-6">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+            <Card className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
                 Plano Atual
               </h3>
               
@@ -441,7 +458,7 @@ export default function Profile() {
                 <Badge className="text-lg px-4 py-2 mb-4">
                   {planNames[profile.plan as keyof typeof planNames]}
                 </Badge>
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="text-sm text-gray-500 mb-6">
                   Você está no plano {planNames[profile.plan as keyof typeof planNames]}
                 </p>
                 <Button 
