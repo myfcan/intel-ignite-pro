@@ -61,9 +61,9 @@ const TrailCard = ({
       }`}
       style={{
         boxShadow: isLocked
-          ? '0 1px 4px rgba(0,0,0,0.04)'
-          : '0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-        border: '1px solid rgba(0,0,0,0.06)',
+          ? '0 2px 8px rgba(0,0,0,0.03)'
+          : '0 8px 32px -4px rgba(0,0,0,0.1), 0 2px 8px -2px rgba(0,0,0,0.05)',
+        border: '1px solid rgba(0,0,0,0.04)',
       }}
     >
       {/* Colored header area */}
