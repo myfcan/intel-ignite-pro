@@ -63,39 +63,44 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
         />
 
         <div className="p-5 pt-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(24 95% 53%), hsl(16 85% 55%))',
-                  boxShadow: '0 4px 12px hsl(24 95% 53% / 0.3)',
-                }}
-              >
-                <Flame className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'hsl(215 16% 47%)' }}>
-                  Sequência Ativa
-                </p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-bold leading-none" style={{ color: 'hsl(215 25% 9%)' }}>{streakDays}</span>
-                  <span className="text-xs font-medium" style={{ color: 'hsl(215 16% 47%)' }}>dias</span>
+        {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, hsl(24 95% 53%), hsl(16 85% 55%))',
+                    boxShadow: '0 4px 12px hsl(24 95% 53% / 0.3)',
+                  }}
+                >
+                  <Flame className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'hsl(215 16% 47%)' }}>
+                    Sequência Ativa
+                  </p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-bold leading-none" style={{ color: 'hsl(215 25% 9%)' }}>{streakDays}</span>
+                    <span className="text-xs font-medium" style={{ color: 'hsl(215 16% 47%)' }}>dias</span>
+                  </div>
                 </div>
               </div>
+              <div
+                className="px-2.5 py-1 rounded-lg text-[10px] font-bold"
+                style={{
+                  background: 'hsl(158 64% 52% / 0.1)',
+                  color: 'hsl(158 64% 42%)',
+                  border: '1px solid hsl(158 64% 52% / 0.15)',
+                }}
+              >
+                🔥 Ativo
+              </div>
             </div>
-            <div
-              className="px-2.5 py-1 rounded-lg text-[10px] font-bold"
-              style={{
-                background: 'hsl(158 64% 52% / 0.1)',
-                color: 'hsl(158 64% 42%)',
-                border: '1px solid hsl(158 64% 52% / 0.15)',
-              }}
-            >
-              🔥 Ativo
-            </div>
-          </div>
+
+          {/* Descrição do card */}
+          <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'hsl(215 16% 47%)' }}>
+            Manter uma sequência diária acelera seu aprendizado e desbloqueia recompensas exclusivas.
+          </p>
 
           {/* Progress toward goal */}
           <div className="mb-4">
@@ -127,8 +132,8 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
           {/* Motivational */}
           <p className="text-[12px] leading-relaxed mb-4" style={{ color: 'hsl(215 16% 47%)' }}>
             {streakDays > 0
-              ? `${userName}, sua consistência está acima de 92% dos usuários.`
-              : 'Complete uma aula hoje para iniciar sua sequência.'}
+              ? `${userName}, sua consistência está acima de 92% dos usuários. Continue assim!`
+              : 'Complete uma aula hoje para iniciar sua sequência e ganhar XP bônus.'}
           </p>
 
           {/* CTA */}
@@ -141,7 +146,7 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
             }}
           >
             <Zap className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1 text-left">Continuar Aprendendo</span>
+            <span className="flex-1 text-left">Continue sua Jornada</span>
             <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
           </button>
         </div>
