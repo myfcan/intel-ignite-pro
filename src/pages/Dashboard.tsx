@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target } from "lucide-react";
+import { Flame, Trophy, BookOpen, GraduationCap, Smartphone, Briefcase, DollarSign, Award, Bot, Calendar, Code, PieChart, BarChart3, Layers, Palette, Database, Brain, Zap, TrendingUp, Rocket, Target, Sparkles, Crown, Gem } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
 import TrailCard from "@/components/TrailCard";
 import { MissoesDiarias } from "@/components/gamification/MissoesDiarias";
@@ -603,40 +603,58 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
 
-                {/* Curso Renda Extra */}
+                {/* Curso Renda Extra - GOLD PREMIUM */}
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
                   onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
-                  className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
-                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-1.5' : 'cursor-not-allowed opacity-60'
+                  className={`group rounded-2xl overflow-hidden transition-all duration-300 ${
+                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-2' : 'cursor-not-allowed opacity-60'
                   }`}
                   style={{
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                    background: 'white',
+                    border: '2px solid transparent',
+                    backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)',
+                    backgroundOrigin: 'border-box',
+                    backgroundClip: 'padding-box, border-box',
+                    boxShadow: '0 0 24px rgba(212, 160, 23, 0.2), 0 8px 32px -4px rgba(212, 160, 23, 0.15), 0 2px 8px rgba(0,0,0,0.04)',
                   }}
                 >
                   <div
-                    className="h-36 sm:h-40 flex items-end justify-center pb-5"
-                    style={{ background: 'linear-gradient(160deg, #F5F0FF 0%, #EDE5FD 100%)' }}
+                    className="h-36 sm:h-40 flex items-end justify-center pb-5 relative overflow-hidden"
+                    style={{ background: 'linear-gradient(160deg, #FDF8E8 0%, #F5EDCF 50%, #EDE0A8 100%)' }}
                   >
-                    <div className="flex items-end gap-1.5 h-20">
+                    {/* Gold shimmer overlay */}
+                    <div
+                      className="absolute inset-0 opacity-30 pointer-events-none"
+                      style={{
+                        backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(212, 160, 23, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(245, 208, 96, 0.25) 0%, transparent 50%)',
+                      }}
+                    />
+                    <div className="flex items-end gap-1.5 h-20 relative z-10">
                       {[30, 45, 35, 55, 70, 60, 80].map((h, i) => (
                         <div
                           key={i}
                           className="w-4 sm:w-5 rounded-t-md"
                           style={{
                             height: `${h}%`,
-                            background: `rgba(139, 92, 246, ${0.3 + i * 0.09})`,
+                            background: `linear-gradient(180deg, rgba(245, 208, 96, ${0.6 + i * 0.05}), rgba(184, 134, 11, ${0.4 + i * 0.08}))`,
                           }}
                         />
                       ))}
                     </div>
                   </div>
                   <div className="p-5">
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: '#8B5CF60F', color: '#8B5CF6' }}>
-                      {canAccessAdmin ? 'PREMIUM' : 'BLOQUEADO'}
+                    <span
+                      className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide"
+                      style={{
+                        background: canAccessAdmin ? 'linear-gradient(135deg, #F5D060, #D4A017)' : '#E5E7EB',
+                        color: canAccessAdmin ? '#5C3D00' : '#9CA3AF',
+                        boxShadow: canAccessAdmin ? '0 2px 8px rgba(212, 160, 23, 0.2)' : 'none',
+                      }}
+                    >
+                      {canAccessAdmin ? '✦ PREMIUM' : 'BLOQUEADO'}
                     </span>
                     <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">Curso Renda Extra</h3>
                     <p className="text-gray-400 text-xs">R$ 10 mil a R$ 50 mil/mês com IA</p>
@@ -659,8 +677,8 @@ const Dashboard = () => {
                 }}
               >
                 <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #EC4899, #F472B6)', boxShadow: '0 4px 14px rgba(236, 72, 153, 0.25)' }}>
-                  <Trophy className="w-5 h-5 text-white" />
+                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.25)' }}>
+                  <Crown className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
@@ -680,7 +698,7 @@ const Dashboard = () => {
               >
                 <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
                      style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)' }}>
-                  <Award className="w-5 h-5 text-white" />
+                  <Gem className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
