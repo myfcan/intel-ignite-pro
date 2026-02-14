@@ -438,8 +438,8 @@ const Dashboard = () => {
                   <span className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
                 </div>
                 <div
-                  className="bg-white rounded-2xl p-4 sm:p-5 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-shadow"
-                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                  className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
+                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', minHeight: '120px' }}
                   onClick={() => navigate(`/trail/${activeTrail.id}`)}
                 >
                   {/* Colored icon area (acts as thumbnail) */}
