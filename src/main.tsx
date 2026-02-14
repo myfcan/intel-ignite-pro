@@ -15,12 +15,14 @@ const updateSW = registerSW({
     console.log('[PWA] App pronta para uso offline');
   },
   onRegisteredSW(swUrl, r) {
-    // Verifica atualizações a cada 1 hora
     if (r) {
+      // Verificação imediata ao registrar
+      r.update();
+      // Verifica atualizações a cada 60 segundos
       setInterval(() => {
         console.log('[PWA] Verificando atualizações...');
         r.update();
-      }, 60 * 60 * 1000);
+      }, 60 * 1000);
     }
   },
 });
