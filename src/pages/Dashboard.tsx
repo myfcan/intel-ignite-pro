@@ -266,7 +266,7 @@ const Dashboard = () => {
     'Domando as IAs nos Negócios': 'from-violet-500 to-violet-600',
     'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
     'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
-    'IA para Empresas de Serviços': 'from-blue-500 to-blue-600',
+    'IA para Profissionais': 'from-blue-500 to-blue-600',
   };
 
   // Find active trail for CourseProgressCard
@@ -283,7 +283,7 @@ const Dashboard = () => {
     2: 'Negócios',
     3: 'Copyright',
     4: 'Renda Extra',
-    5: 'Serviços',
+    5: 'Profissionais',
   };
 
   return (
