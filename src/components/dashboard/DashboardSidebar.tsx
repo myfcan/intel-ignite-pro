@@ -99,7 +99,7 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
 
           {/* Descrição do card */}
           <p className="text-[12px] leading-relaxed mb-3" style={{ color: 'hsl(215 16% 47%)' }}>
-            Manter uma sequência diária acelera seu aprendizado e desbloqueia recompensas exclusivas.
+            Manter uma sequência diária acelera seu aprendizado e desbloqueia recompensas.
           </p>
 
           {/* Progress toward goal */}
