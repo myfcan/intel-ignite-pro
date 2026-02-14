@@ -41,33 +41,31 @@ export default function PromptLibrary() {
   return (
     <div className="min-h-screen bg-[#FAFBFC] overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white/70 backdrop-blur-xl border-b border-gray-200 shadow-sm">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 md:py-8">
-          <div>
+      <header className="bg-white/70 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="group flex items-center gap-2 mb-3 sm:mb-4 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 
-                       bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100
-                       border border-gray-200 hover:border-gray-300
-                       rounded-xl transition-all duration-300 
-                       hover:shadow-md hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all shadow-sm hover:shadow-md"
             >
-              <ArrowLeft className="h-3 h-3 sm:h-4 sm:w-4 group-hover:text-gray-900 transition-colors flex-shrink-0" />
-              <span className="group-hover:text-gray-900 transition-colors">Painel</span>
+              <ArrowLeft className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm text-gray-700">Voltar</span>
             </button>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3 break-words">
-              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
-              <span>Super Prompts</span>
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-2">
-              Templates profissionais prontos para usar em qualquer IA
-            </p>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                Super Prompts
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Templates profissionais prontos para usar em qualquer IA
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 md:py-12 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 overflow-x-hidden">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           <div className="rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all border overflow-hidden"

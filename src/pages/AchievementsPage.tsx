@@ -189,25 +189,24 @@ export default function AchievementsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 animate-fade-in">
+    <div className="min-h-screen bg-[#FAFBFC]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={() => navigate('/dashboard')}
-              className="flex-shrink-0"
+              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all shadow-sm hover:shadow-md"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
+              <ChevronLeft className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm text-gray-700">Voltar</span>
+            </button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-pink-500" />
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 Suas Conquistas
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-xs sm:text-sm text-gray-600">
                 {unlockedCount} de {totalAchievements} conquistadas ({Math.round(completionPercentage)}%)
               </p>
             </div>
@@ -215,49 +214,57 @@ export default function AchievementsPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Stats Card */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        {/* Stats Cards - White style matching dashboard */}
         {stats && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <Card className="p-4 bg-gradient-to-br from-sky-500 to-blue-500 text-white border-0">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <Zap className="w-8 h-8" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background: 'linear-gradient(135deg, #6366F1, #818CF8)'}}>
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <p className="text-sm opacity-90">Power Score</p>
-                  <p className="text-3xl font-bold">{stats.powerScore}</p>
+                  <p className="text-xs text-gray-500">Power Score</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.powerScore}</p>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <Coins className="w-8 h-8" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background: 'linear-gradient(135deg, #F59E0B, #FBBF24)'}}>
+                  <Coins className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <p className="text-sm opacity-90">Créditos</p>
-                  <p className="text-3xl font-bold">{stats.coins}</p>
+                  <p className="text-xs text-gray-500">Créditos</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.coins}</p>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 text-white border-0">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <Award className="w-8 h-8" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)'}}>
+                  <Award className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <p className="text-sm opacity-90">Patente</p>
-                  <p className="text-base font-bold">{stats.patentName}</p>
+                  <p className="text-xs text-gray-500">Patente</p>
+                  <p className="text-sm font-bold text-gray-900">{stats.patentName}</p>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 text-white border-0">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <Trophy className="w-8 h-8" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background: 'linear-gradient(135deg, #10B981, #34D399)'}}>
+                  <Trophy className="w-5 h-5 text-white" />
+                </div>
                 <div>
-                  <p className="text-sm opacity-90">Aulas Completas</p>
-                  <p className="text-3xl font-bold">{lessonsCompleted}</p>
+                  <p className="text-xs text-gray-500">Aulas</p>
+                  <p className="text-xl font-bold text-gray-900">{lessonsCompleted}</p>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
         )}
 

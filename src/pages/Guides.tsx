@@ -43,37 +43,33 @@ export default function Guides() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAFBFC]">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
+      <header className="bg-white/70 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 bg-white rounded-xl border border-gray-200 hover:border-primary transition-all shadow-sm hover:shadow-md"
+            >
+              <ArrowLeft className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm text-gray-700">Voltar</span>
+            </button>
             <div>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="group flex items-center gap-2 mb-4 px-4 py-2 text-sm font-semibold text-slate-700 
-                         bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100
-                         border border-slate-200 hover:border-slate-300
-                         rounded-xl transition-all duration-300 
-                         hover:shadow-md hover:-translate-y-0.5"
-              >
-              <ArrowLeft className="h-4 w-4 group-hover:text-slate-900 transition-colors" />
-              <span className="group-hover:text-slate-900 transition-colors">Painel</span>
-              </button>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-primary" />
-              Guia de Bolso IA
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Domine as principais ferramentas de inteligência artificial em minutos
-            </p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                Guia de Bolso IA
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Domine as principais ferramentas de IA em minutos
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all">
