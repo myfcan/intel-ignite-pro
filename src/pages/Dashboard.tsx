@@ -377,6 +377,10 @@ const Dashboard = () => {
                     Continuar Última Aula
                   </button>
                   <button
+                    onClick={() => {
+                      const trailsSection = document.getElementById('suas-trilhas');
+                      trailsSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/90 hover:text-white transition-all"
                     style={{ background: 'rgba(255,255,255,0.12)' }}
                   >
@@ -435,7 +439,7 @@ const Dashboard = () => {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900">Continue Aprendendo</h2>
-                  <span className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
+                  <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todas</span>
                 </div>
                 <div
                   className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
@@ -496,6 +500,7 @@ const Dashboard = () => {
 
             {/* ===== SUAS TRILHAS ===== */}
             <motion.div
+              id="suas-trilhas"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
@@ -521,7 +526,7 @@ const Dashboard = () => {
                   >
                     ›
                   </button>
-                  <span className="text-xs sm:text-sm text-white/80 font-medium cursor-pointer hover:text-white ml-1 transition-colors">
+                  <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-white/80 font-medium cursor-pointer hover:text-white ml-1 transition-colors">
                     Ver todas
                   </span>
                 </div>
@@ -558,7 +563,7 @@ const Dashboard = () => {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">Para Você</h2>
-                <span className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
+                <span onClick={() => document.getElementById('suas-trilhas')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs sm:text-sm text-indigo-500 font-medium cursor-pointer hover:underline">Ver Todos</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* AI Playground */}

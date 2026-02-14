@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Flame, Clock, TrendingUp, ChevronRight, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { MissoesDiarias } from '@/components/gamification/MissoesDiarias';
@@ -44,6 +45,7 @@ const cardStyle = {
 };
 
 export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: DashboardSidebarProps) => {
+  const navigate = useNavigate();
   const streakPercentToGoal = Math.min((streakDays / 30) * 100, 100);
 
   return (
@@ -138,6 +140,10 @@ export const DashboardSidebar = ({ streakDays, userName, isLoading = false }: Da
 
           {/* CTA */}
           <button
+            onClick={() => {
+              const trailsSection = document.getElementById('suas-trilhas');
+              trailsSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="w-full py-3 px-4 rounded-xl text-[13px] font-bold flex items-center gap-2 transition-all duration-200 hover:shadow-md active:scale-[0.98]"
             style={{
               background: 'linear-gradient(135deg, hsl(239 84% 67%), hsl(258 90% 66%))',
