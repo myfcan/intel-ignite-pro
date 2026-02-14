@@ -250,21 +250,23 @@ const Dashboard = () => {
   }
 
   const TRAIL_ICONS: Record<string, any> = {
+    'Brain': Brain,
+    'Target': Target,
+    'Zap': Zap,
+    'Rocket': Rocket,
+    'TrendingUp': TrendingUp,
     '🎓': GraduationCap,
     '📱': Zap,
     '💼': Target,
     '💰': Rocket,
-    'Brain': Brain,
-    'Zap': Zap,
-    'Rocket': Rocket,
-    'Target': Target,
   };
 
   const TRAIL_GRADIENTS: { [key: string]: string } = {
-    'Fundamentos de IA': 'from-primary to-secondary',
-    'IA no Dia a Dia': 'from-primary to-secondary',
-    'IA nos Negócios': 'from-primary to-secondary',
-    'Renda Extra com IA': 'from-primary to-secondary',
+    'Fundamentos IA': 'from-indigo-500 to-indigo-600',
+    'Domando as IAs nos Negócios': 'from-violet-500 to-violet-600',
+    'Dominando Copyright Com IA': 'from-purple-500 to-purple-600',
+    'Renda Extra com IA': 'from-yellow-500 to-yellow-600',
+    'IA para Empresas de Serviços': 'from-blue-500 to-blue-600',
   };
 
   // Find active trail for CourseProgressCard
@@ -278,9 +280,10 @@ const Dashboard = () => {
 
   const TRAIL_CATEGORY_MAP: Record<number, string> = {
     1: 'Fundamentos',
-    2: 'Dia a Dia',
-    3: 'Negócios',
+    2: 'Negócios',
+    3: 'Copyright',
     4: 'Renda Extra',
+    5: 'Serviços',
   };
 
   return (
