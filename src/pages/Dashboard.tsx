@@ -284,7 +284,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC] relative">
+    <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #F0F1F5 0%, #E8E9EF 50%, #F0F1F5 100%)' }}>
       <DashboardHeader user={user!} />
       
       {/* Gamification Header */}
@@ -439,7 +439,7 @@ const Dashboard = () => {
                 </div>
                 <div
                   className="bg-white rounded-2xl p-5 sm:p-7 flex items-center gap-5 cursor-pointer hover:shadow-lg transition-shadow"
-                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', minHeight: '120px' }}
+                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)', minHeight: '120px' }}
                   onClick={() => navigate(`/trail/${activeTrail.id}`)}
                 >
                   {/* Colored icon area (acts as thumbnail) */}
@@ -564,8 +564,8 @@ const Dashboard = () => {
                 {/* AI Playground */}
                 <div
                   onClick={() => navigate('/ai-playground')}
-                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl"
+                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)' }}
                 >
                   <div
                     className="h-32 sm:h-36 flex items-center justify-center"
@@ -593,9 +593,9 @@ const Dashboard = () => {
                 <div
                   onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
                   className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
-                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg' : 'cursor-not-allowed opacity-60'
+                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-1.5 hover:shadow-2xl' : 'cursor-not-allowed opacity-60'
                   }`}
-                  style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                  style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)' }}
                 >
                   <div
                     className="h-32 sm:h-36 flex items-end justify-center pb-4"
@@ -629,8 +629,8 @@ const Dashboard = () => {
             <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 onClick={() => navigate('/leaderboard')}
-                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg transition-all hover:-translate-y-0.5"
-                style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-2xl transition-all hover:-translate-y-1"
+                style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)' }}
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                      style={{ background: 'linear-gradient(135deg, #EC4899, #F472B6)', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.25)' }}>
@@ -643,8 +643,8 @@ const Dashboard = () => {
               </div>
               <div
                 onClick={() => navigate('/achievements')}
-                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg transition-all hover:-translate-y-0.5"
-                style={{ border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+                className="cursor-pointer bg-white rounded-2xl p-4 flex items-center gap-3 hover:shadow-2xl transition-all hover:-translate-y-1"
+                style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.08), 0 2px 8px -2px rgba(0,0,0,0.04)' }}
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                      style={{ background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)' }}>
