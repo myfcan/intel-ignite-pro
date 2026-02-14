@@ -1,68 +1,119 @@
 
 
-# Dashboard Limpo: 1 Card por Trilha
-
-## Conceito
-
-Ao inves de mostrar todas as aulas no dashboard, cada trilha aparece como **um unico card**. Ao clicar, o usuario entra na pagina `TrailDetail` (que ja existe) onde ve os cards de aulas. Isso deixa o dashboard muito mais limpo e focado.
+# Nova Estrutura: Trilha -> Cursos/Jornadas -> Aulas
 
 ## O que muda
 
-### 1. Renomear as 5 trilhas no banco de dados
+Hoje a hierarquia e flat: **Trilha -> Aulas** (lessons.trail_id aponta direto para trails).
 
-| # | Nome Atual | Novo Nome |
+A nova hierarquia sera: **Trilha -> Cursos -> Aulas**.
+
+Exemplo concreto:
+```text
+Trilha: Renda Extra com IA
+  |
+  +-- Curso 1: Marketing Digital com IA
+  |     +-- Aula 1
+  |     +-- Aula 2
+  |     +-- Aula 3
+  |
+  +-- Curso 2: Criando Apps com IA
+  |     +-- Aula 1
+  |     +-- Aula 2
+  |
+  +-- Curso 3: Criando Negocios com IA
+        +-- Aula 1
+        +-- Aula 2
+```
+
+---
+
+## 1. Criar tabela `courses` no banco
+
+Nova tabela intermediaria:
+
+| Coluna | Tipo | Descricao |
 |---|---|---|
-| 1 | Fundamentos de IA | Fundamentos IA |
-| 2 | DOMINANDO AS IAs | Domando as IAs nos Negocios |
-| 3 | IA PARA SUA VIDA | Dominando Copyright Com IA |
-| 4 | APRENDIZADO ACELERADO | Renda Extra com IA |
-| 5 | ORGANIZACAO TOTAL | IA para Empresas de Servicos |
+| id | uuid (PK) | Identificador unico |
+| trail_id | uuid (FK -> trails) | A qual trilha pertence |
+| title | varchar | Nome do curso/jornada |
+| description | text | Subtitulo persuasivo |
+| icon | varchar | Icone Lucide |
+| order_index | integer | Ordem dentro da trilha |
+| is_active | boolean | Visibilidade |
+| created_at | timestamptz | Data de criacao |
 
-Execucao via migracao SQL (UPDATE nos titulos por order_index).
+RLS: leitura publica para cursos ativos, escrita apenas para admins.
 
-### 2. Layout da secao "Suas Trilhas" no Dashboard
+## 2. Adicionar `course_id` na tabela `lessons`
 
-O grid de TrailCards ja existe e ja funciona -- cada card ja navega para `/trail/:id`. O comportamento desejado **ja esta implementado**. O que muda:
+- Nova coluna `course_id` (uuid, nullable, FK -> courses)
+- A coluna `trail_id` existente sera mantida por compatibilidade (nao quebrar o pipeline)
+- Aulas que tiverem `course_id` preenchido pertencem a um curso; as demais continuam funcionando como hoje
 
-- **Desktop**: manter grid de 3 colunas (`lg:grid-cols-3`), com os 5 cards distribuidos (3 + 2)
-- **Mobile**: manter 1 coluna (como esta hoje)
-- Nao precisa de scroll horizontal/stories -- com apenas 5 cards compactos, a pagina nao fica poluida
+## 3. Migrar aulas existentes
 
-### 3. Atualizar cores e labels no TrailCard
+- Criar cursos iniciais para cada trilha (1 curso por trilha por enquanto, com as aulas ja existentes)
+- Atualizar `course_id` das aulas existentes para apontar ao curso correspondente
 
-Cada trilha tera uma cor distinta no `TRAIL_THEMES`:
+## 4. Nova pagina `TrailDetail` (refatorada)
 
-| Trilha | Cor | Label no badge |
-|---|---|---|
-| Fundamentos IA | Indigo (#6366F1) | FUNDAMENTOS |
-| Domando as IAs nos Negocios | Violeta (#8B5CF6) | NEGOCIOS |
-| Dominando Copyright Com IA | Roxo (#7C3AED) | COPYRIGHT |
-| Renda Extra com IA | Dourado (#D4A017) | RENDA EXTRA - estilo gold premium |
-| IA para Empresas de Servicos | Azul (#3B82F6) | SERVICOS |
+Hoje: `TrailDetail` lista aulas diretamente.
 
-### 4. Atualizar mapeamentos no Dashboard.tsx
+Depois: `TrailDetail` lista **cursos/jornadas** como cards (similar aos TrailCards). Cada card mostra:
+- Titulo do curso
+- Descricao
+- Numero de aulas
+- Progresso (aulas concluidas / total)
 
-- `TRAIL_ICONS`: mapear os icones corretos para cada trilha
-- `TRAIL_GRADIENTS`: ajustar para novos nomes
-- `TRAIL_CATEGORY_MAP`: refletir as 5 categorias
+Ao clicar em um curso, navega para uma nova pagina de detalhe do curso.
 
-### 5. Remover a secao "Continue Aprendendo" (opcional)
+## 5. Nova pagina `CourseDetail`
 
-Com apenas 5 cards de trilha, a secao "Continue Aprendendo" (linhas 437-499) se torna redundante -- o proprio card da trilha ativa ja mostra o progresso. Podemos manter ou remover conforme preferencia.
+Rota: `/course/:id`
+
+Mostra:
+- Header com titulo e progresso do curso
+- Lista de aulas (mesma UI que o TrailDetail atual)
+- Logica de desbloqueio sequencial (igual a de hoje)
+
+## 6. Atualizar Dashboard
+
+- O card de trilha no dashboard continua igual (1 card por trilha)
+- O progresso da trilha agora sera calculado a partir de todas as aulas de todos os cursos daquela trilha
+- A query de progresso no Dashboard precisa considerar a nova hierarquia
+
+## 7. Atualizar navegacao de "proxima aula"
+
+Em `Lesson.tsx`, ao completar uma aula, a logica de "proxima aula" precisa considerar:
+- Proxima aula dentro do mesmo curso
+- Se acabou o curso, voltar para a trilha (nao para o proximo curso automaticamente)
+
+---
 
 ## Detalhes tecnicos
 
+### Arquivos criados
+1. **Migracao SQL** -- criar tabela `courses`, adicionar `course_id` em `lessons`, criar cursos iniciais
+2. **`src/pages/CourseDetail.tsx`** -- nova pagina para listar aulas de um curso
+3. **`src/components/CourseCard.tsx`** -- card visual para curso/jornada (similar ao TrailCard mas mais compacto)
+
 ### Arquivos modificados
+1. **`src/pages/TrailDetail.tsx`** -- refatorar para listar cursos em vez de aulas
+2. **`src/pages/Dashboard.tsx`** -- ajustar calculo de progresso por trilha
+3. **`src/pages/Lesson.tsx`** -- ajustar navegacao "proxima aula"
+4. **`src/App.tsx`** -- adicionar rota `/course/:id`
 
-1. **Migracao SQL** -- renomear as 5 trilhas e atualizar icones
-2. **`src/components/TrailCard.tsx`** -- atualizar `TRAIL_THEMES` com 5 entradas, cores e labels corretos
-3. **`src/pages/Dashboard.tsx`** -- atualizar `TRAIL_ICONS`, `TRAIL_GRADIENTS`, `TRAIL_CATEGORY_MAP` para os novos nomes
+### Impacto no pipeline de criacao de aulas
+- O pipeline existente usa `trail_id` para associar aulas. Esse campo continua funcionando.
+- Futuramente, o pipeline pode receber `course_id` para associar aulas a cursos especificos.
+- Nenhuma mudanca obrigatoria no pipeline nesta fase.
 
-### Nenhuma pagina nova necessaria
-
-A pagina `TrailDetail.tsx` ja existe e funciona perfeitamente: mostra header da trilha, progresso, e lista de aulas com status (desbloqueada/bloqueada/completa). O clique no TrailCard ja navega para ela.
-
-### Nenhuma dependencia nova
-
-Usa React, framer-motion, lucide-react (ja instalados).
+### Sequencia de execucao
+1. Migracao SQL (tabela + dados iniciais)
+2. CourseCard component
+3. CourseDetail page + rota
+4. Refatorar TrailDetail
+5. Ajustar Dashboard (progresso)
+6. Ajustar Lesson (navegacao)
 
