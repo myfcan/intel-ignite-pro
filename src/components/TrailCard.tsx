@@ -58,7 +58,7 @@ const TrailCard = ({
       whileHover={!isLocked ? { y: -6, scale: 1.02 } : undefined}
       transition={{ duration: 0.3 }}
       onClick={handleClick}
-      className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+      className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
         isLocked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
       }`}
       style={{
@@ -66,18 +66,41 @@ const TrailCard = ({
           ? '0 0 0 2px #D4A017, 0 0 24px rgba(212, 160, 23, 0.25), 0 8px 32px -4px rgba(212, 160, 23, 0.2), 0 2px 8px -2px rgba(0,0,0,0.05)'
           : isLocked
             ? '0 2px 8px rgba(0,0,0,0.03)'
-            : '0 8px 32px -4px rgba(0,0,0,0.1), 0 2px 8px -2px rgba(0,0,0,0.05)',
-        border: isGold
-          ? '2px solid transparent'
-          : '1px solid rgba(0,0,0,0.04)',
-        backgroundImage: isGold
-          ? 'linear-gradient(white, white), linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)'
-          : undefined,
-        backgroundOrigin: isGold ? 'border-box' : undefined,
-        backgroundClip: isGold ? 'padding-box, border-box' : undefined,
+            : `0 8px 32px -4px rgba(16, 185, 129, 0.12), 0 4px 16px -2px rgba(6, 78, 59, 0.08), 0 0 0 1px rgba(16, 185, 129, 0.1)`,
       }}
     >
-      {/* Colored header area */}
+      {/* Aurora border glow effect */}
+      {!isLocked && (
+        <div
+          className="absolute inset-0 rounded-2xl z-0"
+          style={{
+            padding: '1.5px',
+            background: isGold
+              ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B, #D4A017, #F5D060)'
+              : 'linear-gradient(135deg, #10B981, #06B6D4, #8B5CF6, #10B981, #34D399)',
+            backgroundSize: '300% 300%',
+            animation: isGold ? undefined : 'aurora-shift 6s ease infinite',
+            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            maskComposite: 'exclude',
+            WebkitMaskComposite: 'xor',
+          }}
+        />
+      )}
+      {/* Inner card */}
+      <div className="relative z-10 bg-white rounded-2xl overflow-hidden">
+      {/* Aurora ambient glow on hover */}
+      {!isLocked && !isGold && (
+        <div
+          className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl z-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.12), rgba(139,92,246,0.1), rgba(52,211,153,0.15))',
+            backgroundSize: '300% 300%',
+            animation: 'aurora-shift 6s ease infinite',
+          }}
+        />
+      )}
+      {/* Colored header area with aurora gradient */}
       <div
         className="h-36 sm:h-40 flex items-center justify-center relative overflow-hidden"
         style={{
@@ -85,7 +108,9 @@ const TrailCard = ({
             ? 'linear-gradient(135deg, #E5E7EB, #D1D5DB)'
             : isGold
               ? 'linear-gradient(135deg, #F5D060, #D4A017, #B8860B)'
-              : `linear-gradient(135deg, ${theme.accent}CC, ${theme.accent}, ${theme.accent}EE)`,
+              : `linear-gradient(135deg, ${theme.accent}, #10B981, #06B6D4, ${theme.accent})`,
+          backgroundSize: isLocked || isGold ? '100% 100%' : '300% 300%',
+          animation: isLocked || isGold ? undefined : 'aurora-shift 8s ease infinite',
         }}
       >
         {/* Decorative shapes */}
@@ -166,6 +191,7 @@ const TrailCard = ({
             {completedLessons}/{totalLessons}
           </span>
         </div>
+      </div>
       </div>
     </motion.div>
   );
