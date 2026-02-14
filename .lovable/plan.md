@@ -1,119 +1,76 @@
 
 
-# Nova Estrutura: Trilha -> Cursos/Jornadas -> Aulas
+## Diagnóstico: Service Worker PWA Serve Código Antigo do Cache
 
-## O que muda
+### O Problema Real
 
-Hoje a hierarquia e flat: **Trilha -> Aulas** (lessons.trail_id aponta direto para trails).
+O Workbox (via `vite-plugin-pwa`) faz **precache** de todos os arquivos do build -- incluindo os chunks JS lazy-loaded como o Dashboard. Quando o site é publicado:
 
-A nova hierarquia sera: **Trilha -> Cursos -> Aulas**.
+1. O navegador carrega a pagina
+2. O Service Worker **antigo** (ainda controlando a pagina) serve os JS **do cache**
+3. O Dashboard renderiza com o **codigo do build anterior**
+4. Somente depois, o novo SW instala, ativa, e atualiza o cache
+5. O `onNeedRefresh` dispara e faz reload -- mas o usuario ja viu o design antigo
 
-Exemplo concreto:
-```text
-Trilha: Renda Extra com IA
-  |
-  +-- Curso 1: Marketing Digital com IA
-  |     +-- Aula 1
-  |     +-- Aula 2
-  |     +-- Aula 3
-  |
-  +-- Curso 2: Criando Apps com IA
-  |     +-- Aula 1
-  |     +-- Aula 2
-  |
-  +-- Curso 3: Criando Negocios com IA
-        +-- Aula 1
-        +-- Aula 2
+### Solucao
+
+Adicionar `navigateFallback` e configurar o Workbox para **nao fazer precache dos chunks JS**, usando `NetworkFirst` para assets dinamicos. Isso garante que o navegador sempre busque os JS mais recentes do servidor.
+
+### Mudancas Tecnicas
+
+**1. `vite.config.ts`** - Ajustar configuracao do Workbox:
+- Adicionar `globPatterns` restritivo para precache (apenas `index.html` e assets estaticos como fontes/imagens)
+- Adicionar `navigateFallback: '/index.html'` para SPA routing
+- Adicionar regra de `runtimeCaching` para arquivos `.js` e `.css` com estrategia `StaleWhileRevalidate` ou `NetworkFirst`
+- Isso faz com que os chunks JS do Dashboard sejam sempre buscados do servidor primeiro
+
+```
+workbox: {
+  skipWaiting: true,
+  clientsClaim: true,
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+  navigateFallback: '/index.html',
+  globPatterns: ['**/*.{html,ico,png,svg,woff,woff2}'],
+  runtimeCaching: [
+    {
+      urlPattern: /\.(?:js|css)$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'static-assets',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24,
+        },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'supabase-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 300,
+        },
+      },
+    },
+  ],
+},
 ```
 
----
+**2. `src/main.tsx`** - Melhorar o handler de update:
+- Adicionar verificacao de atualizacao imediata no `onRegisteredSW` (ao inves de esperar 1 hora)
+- Verificar atualizacoes a cada 60 segundos (em vez de 1 hora)
 
-## 1. Criar tabela `courses` no banco
+### Resultado Esperado
 
-Nova tabela intermediaria:
+Apos essa mudanca:
+- Arquivos JS/CSS serao sempre buscados do servidor primeiro (`NetworkFirst`)
+- Se o servidor estiver offline, o cache antigo serve como fallback
+- O precache fica restrito a `index.html` e assets estaticos (imagens, fontes)
+- O dashboard nunca mais mostra o design antigo apos um deploy
 
-| Coluna | Tipo | Descricao |
-|---|---|---|
-| id | uuid (PK) | Identificador unico |
-| trail_id | uuid (FK -> trails) | A qual trilha pertence |
-| title | varchar | Nome do curso/jornada |
-| description | text | Subtitulo persuasivo |
-| icon | varchar | Icone Lucide |
-| order_index | integer | Ordem dentro da trilha |
-| is_active | boolean | Visibilidade |
-| created_at | timestamptz | Data de criacao |
+### Risco
 
-RLS: leitura publica para cursos ativos, escrita apenas para admins.
-
-## 2. Adicionar `course_id` na tabela `lessons`
-
-- Nova coluna `course_id` (uuid, nullable, FK -> courses)
-- A coluna `trail_id` existente sera mantida por compatibilidade (nao quebrar o pipeline)
-- Aulas que tiverem `course_id` preenchido pertencem a um curso; as demais continuam funcionando como hoje
-
-## 3. Migrar aulas existentes
-
-- Criar cursos iniciais para cada trilha (1 curso por trilha por enquanto, com as aulas ja existentes)
-- Atualizar `course_id` das aulas existentes para apontar ao curso correspondente
-
-## 4. Nova pagina `TrailDetail` (refatorada)
-
-Hoje: `TrailDetail` lista aulas diretamente.
-
-Depois: `TrailDetail` lista **cursos/jornadas** como cards (similar aos TrailCards). Cada card mostra:
-- Titulo do curso
-- Descricao
-- Numero de aulas
-- Progresso (aulas concluidas / total)
-
-Ao clicar em um curso, navega para uma nova pagina de detalhe do curso.
-
-## 5. Nova pagina `CourseDetail`
-
-Rota: `/course/:id`
-
-Mostra:
-- Header com titulo e progresso do curso
-- Lista de aulas (mesma UI que o TrailDetail atual)
-- Logica de desbloqueio sequencial (igual a de hoje)
-
-## 6. Atualizar Dashboard
-
-- O card de trilha no dashboard continua igual (1 card por trilha)
-- O progresso da trilha agora sera calculado a partir de todas as aulas de todos os cursos daquela trilha
-- A query de progresso no Dashboard precisa considerar a nova hierarquia
-
-## 7. Atualizar navegacao de "proxima aula"
-
-Em `Lesson.tsx`, ao completar uma aula, a logica de "proxima aula" precisa considerar:
-- Proxima aula dentro do mesmo curso
-- Se acabou o curso, voltar para a trilha (nao para o proximo curso automaticamente)
-
----
-
-## Detalhes tecnicos
-
-### Arquivos criados
-1. **Migracao SQL** -- criar tabela `courses`, adicionar `course_id` em `lessons`, criar cursos iniciais
-2. **`src/pages/CourseDetail.tsx`** -- nova pagina para listar aulas de um curso
-3. **`src/components/CourseCard.tsx`** -- card visual para curso/jornada (similar ao TrailCard mas mais compacto)
-
-### Arquivos modificados
-1. **`src/pages/TrailDetail.tsx`** -- refatorar para listar cursos em vez de aulas
-2. **`src/pages/Dashboard.tsx`** -- ajustar calculo de progresso por trilha
-3. **`src/pages/Lesson.tsx`** -- ajustar navegacao "proxima aula"
-4. **`src/App.tsx`** -- adicionar rota `/course/:id`
-
-### Impacto no pipeline de criacao de aulas
-- O pipeline existente usa `trail_id` para associar aulas. Esse campo continua funcionando.
-- Futuramente, o pipeline pode receber `course_id` para associar aulas a cursos especificos.
-- Nenhuma mudanca obrigatoria no pipeline nesta fase.
-
-### Sequencia de execucao
-1. Migracao SQL (tabela + dados iniciais)
-2. CourseCard component
-3. CourseDetail page + rota
-4. Refatorar TrailDetail
-5. Ajustar Dashboard (progresso)
-6. Ajustar Lesson (navegacao)
+Nenhum impacto funcional. O app continua funcionando offline com os assets cacheados. A unica diferenca e que JS/CSS sao buscados via rede primeiro (com fallback para cache), em vez de cache primeiro.
 
