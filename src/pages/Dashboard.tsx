@@ -567,39 +567,34 @@ const Dashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.1 }}
                   onClick={() => navigate('/ai-playground')}
-                  className="cursor-pointer group bg-white rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
-                  style={{ border: '1px solid rgba(99,102,241,0.08)', boxShadow: '0 10px 40px -8px rgba(99,102,241,0.12), 0 4px 12px -4px rgba(0,0,0,0.05)' }}
+                  className="cursor-pointer group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                  }}
                 >
                   <div
-                    className="h-44 sm:h-48 flex items-center justify-center relative overflow-hidden"
-                    style={{ background: 'linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%)' }}
+                    className="h-36 sm:h-40 flex items-center justify-center"
+                    style={{ background: 'linear-gradient(160deg, #F0F0FF 0%, #E8E8FD 100%)' }}
                   >
-                    {/* Decorative orbs */}
-                    <div className="absolute w-32 h-32 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #818CF8, transparent)', top: '-20px', right: '-20px' }} />
-                    <div className="absolute w-24 h-24 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366F1, transparent)', bottom: '-10px', left: '20px' }} />
-                    
-                    <div className="flex flex-col gap-2.5 w-3/4 max-w-[240px] relative z-10">
-                      <motion.div 
-                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
-                        className="self-start rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm"
-                        style={{ background: 'rgba(99,102,241,0.15)', backdropFilter: 'blur(8px)' }}
+                    <div className="flex flex-col gap-2 w-3/4 max-w-[220px]">
+                      <div
+                        className="self-start rounded-xl rounded-bl-sm px-3.5 py-2"
+                        style={{ background: 'rgba(99,102,241,0.12)' }}
                       >
-                        <span className="text-xs font-medium text-indigo-700">Crie um resumo...</span>
-                      </motion.div>
-                      <motion.div 
-                        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
-                        className="self-end bg-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-md"
-                      >
-                        <span className="text-xs text-gray-600">Aqui está o resumo...</span>
-                      </motion.div>
+                        <span className="text-[11px] font-medium text-indigo-600">Crie um resumo...</span>
+                      </div>
+                      <div className="self-end bg-white rounded-xl rounded-br-sm px-3.5 py-2 shadow-sm">
+                        <span className="text-[11px] text-gray-500">Aqui está o resumo...</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-5 sm:p-6">
-                    <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold mb-2 tracking-wider" style={{ background: '#6366F112', color: '#6366F1', border: '1px solid #6366F120' }}>
+                  <div className="p-5">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: '#6366F10F', color: '#6366F1' }}>
                       IA
                     </span>
-                    <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-0.5">AI Playground</h3>
-                    <p className="text-gray-400 text-sm">Experimente IA em tempo real</p>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">AI Playground</h3>
+                    <p className="text-gray-400 text-xs">Experimente IA em tempo real</p>
                   </div>
                 </motion.div>
 
@@ -609,40 +604,37 @@ const Dashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
                   onClick={canAccessAdmin ? () => navigate('/curso-exclusivo') : undefined}
-                  className={`group bg-white rounded-3xl overflow-hidden transition-all duration-300 ${
-                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl' : 'cursor-not-allowed opacity-60'
+                  className={`group bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+                    canAccessAdmin ? 'cursor-pointer hover:-translate-y-1.5' : 'cursor-not-allowed opacity-60'
                   }`}
-                  style={{ border: '1px solid rgba(139,92,246,0.08)', boxShadow: '0 10px 40px -8px rgba(139,92,246,0.12), 0 4px 12px -4px rgba(0,0,0,0.05)' }}
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                  }}
                 >
                   <div
-                    className="h-44 sm:h-48 flex items-end justify-center pb-6 relative overflow-hidden"
-                    style={{ background: 'linear-gradient(145deg, #F5F3FF 0%, #EDE9FE 50%, #DDD6FE 100%)' }}
+                    className="h-36 sm:h-40 flex items-end justify-center pb-5"
+                    style={{ background: 'linear-gradient(160deg, #F5F0FF 0%, #EDE5FD 100%)' }}
                   >
-                    {/* Decorative orbs */}
-                    <div className="absolute w-36 h-36 rounded-full opacity-25" style={{ background: 'radial-gradient(circle, #A78BFA, transparent)', top: '-30px', left: '-20px' }} />
-                    
-                    <div className="flex items-end gap-2 h-24 relative z-10">
-                      {[28, 42, 32, 52, 68, 58, 82].map((h, i) => (
-                        <motion.div
+                    <div className="flex items-end gap-1.5 h-20">
+                      {[30, 45, 35, 55, 70, 60, 80].map((h, i) => (
+                        <div
                           key={i}
-                          className="w-5 sm:w-6 rounded-t-lg"
-                          initial={{ height: 0 }}
-                          animate={{ height: `${h}%` }}
-                          transition={{ duration: 0.6, delay: 0.3 + i * 0.08, ease: 'easeOut' }}
+                          className="w-4 sm:w-5 rounded-t-md"
                           style={{
-                            background: `linear-gradient(180deg, rgba(139,92,246,${0.4 + i * 0.08}), rgba(139,92,246,${0.2 + i * 0.06}))`,
-                            boxShadow: '0 -2px 8px rgba(139,92,246,0.15)',
+                            height: `${h}%`,
+                            background: `rgba(139, 92, 246, ${0.3 + i * 0.09})`,
                           }}
                         />
                       ))}
                     </div>
                   </div>
-                  <div className="p-5 sm:p-6">
-                    <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold mb-2 tracking-wider" style={{ background: '#8B5CF612', color: '#8B5CF6', border: '1px solid #8B5CF620' }}>
+                  <div className="p-5">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-2 tracking-wide" style={{ background: '#8B5CF60F', color: '#8B5CF6' }}>
                       {canAccessAdmin ? 'PREMIUM' : 'BLOQUEADO'}
                     </span>
-                    <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-0.5">Curso Renda Extra</h3>
-                    <p className="text-gray-400 text-sm">R$ 10 mil a R$ 50 mil/mês com IA</p>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-0.5">Curso Renda Extra</h3>
+                    <p className="text-gray-400 text-xs">R$ 10 mil a R$ 50 mil/mês com IA</p>
                   </div>
                 </motion.div>
               </div>
@@ -655,12 +647,15 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.25 }}
                 onClick={() => navigate('/leaderboard')}
-                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 hover:shadow-2xl transition-all hover:-translate-y-1.5 group"
-                style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 10px 40px -8px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04)' }}
+                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 transition-all hover:-translate-y-1 group"
+                style={{
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                }}
               >
-                <div className="w-13 h-13 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                     style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #EC4899, #F472B6)', boxShadow: '0 6px 20px rgba(236, 72, 153, 0.3)' }}>
-                  <Trophy className="w-6 h-6 text-white" />
+                <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
+                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #EC4899, #F472B6)', boxShadow: '0 4px 14px rgba(236, 72, 153, 0.25)' }}>
+                  <Trophy className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base">Ranking Global</h3>
@@ -672,12 +667,15 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.3 }}
                 onClick={() => navigate('/achievements')}
-                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 hover:shadow-2xl transition-all hover:-translate-y-1.5 group"
-                style={{ border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 10px 40px -8px rgba(0,0,0,0.08), 0 4px 12px -4px rgba(0,0,0,0.04)' }}
+                className="cursor-pointer bg-white rounded-2xl p-5 flex items-center gap-4 transition-all hover:-translate-y-1 group"
+                style={{
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  boxShadow: '0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+                }}
               >
                 <div className="rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                     style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 6px 20px rgba(139, 92, 246, 0.3)' }}>
-                  <Award className="w-6 h-6 text-white" />
+                     style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #8B5CF6, #A78BFA)', boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)' }}>
+                  <Award className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base">Suas Conquistas</h3>
