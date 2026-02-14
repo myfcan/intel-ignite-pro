@@ -31,6 +31,7 @@ interface Lesson {
   estimated_time: number;
   difficulty_level: string;
   trail_id?: string;
+  course_id?: string;
   order_index: number;
 }
 
@@ -163,14 +164,17 @@ const Lesson = () => {
   const handleContinueFromGamification = async () => {
     setShowResultCard(false);
     
-    // Buscar próxima aula da trilha
-    if (lesson?.trail_id) {
+    // Buscar próxima aula do curso (ou trilha como fallback)
+    const filterColumn = lesson?.course_id ? 'course_id' : 'trail_id';
+    const filterValue = lesson?.course_id || lesson?.trail_id;
+    
+    if (filterValue) {
       try {
         const { data: nextLesson, error } = await supabase
           .from('lessons')
           .select('id, order_index')
-          .eq('trail_id', lesson.trail_id)
-          .gt('order_index', lesson.order_index)
+          .eq(filterColumn, filterValue)
+          .gt('order_index', lesson!.order_index)
           .order('order_index', { ascending: true })
           .limit(1)
           .single();
@@ -184,13 +188,29 @@ const Lesson = () => {
       }
     }
     
-    // Se não houver próxima aula, vai para o dashboard
+    // Se acabou o curso, volta para a trilha
+    if (lesson?.course_id) {
+      try {
+        const { data: course } = await supabase
+          .from('courses')
+          .select('trail_id')
+          .eq('id', lesson.course_id)
+          .single();
+        if (course) {
+          navigate(`/trail/${course.trail_id}`);
+          return;
+        }
+      } catch {}
+    }
+    
     navigate('/dashboard');
   };
   
   const handleBackToTrail = () => {
     setShowResultCard(false);
-    if (lesson?.trail_id) {
+    if (lesson?.course_id) {
+      navigate(`/course/${lesson.course_id}`);
+    } else if (lesson?.trail_id) {
       navigate(`/trail/${lesson.trail_id}`);
     } else {
       navigate('/dashboard');

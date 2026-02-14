@@ -86,6 +86,47 @@ export type Database = {
           },
         ]
       }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          trail_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          trail_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          trail_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_trail_id_fkey"
+            columns: ["trail_id"]
+            isOneToOne: false
+            referencedRelation: "trails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_logs: {
         Row: {
           audio_time: number | null
@@ -472,6 +513,7 @@ export type Database = {
           audio_url: string | null
           audio_urls: string[] | null
           content: Json
+          course_id: string | null
           created_at: string | null
           description: string | null
           difficulty_level:
@@ -498,6 +540,7 @@ export type Database = {
           audio_url?: string | null
           audio_urls?: string[] | null
           content?: Json
+          course_id?: string | null
           created_at?: string | null
           description?: string | null
           difficulty_level?:
@@ -524,6 +567,7 @@ export type Database = {
           audio_url?: string | null
           audio_urls?: string[] | null
           content?: Json
+          course_id?: string | null
           created_at?: string | null
           description?: string | null
           difficulty_level?:
@@ -547,6 +591,13 @@ export type Database = {
           word_timestamps?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lessons_trail_id_fkey"
             columns: ["trail_id"]

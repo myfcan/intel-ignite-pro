@@ -21,7 +21,7 @@ export async function verificarAulaDesbloqueada(
     // Buscar dados da aula atual
     const { data: aulaAtual, error: aulaError } = await supabase
       .from('lessons')
-      .select('order_index, trail_id')
+      .select('order_index, trail_id, course_id')
       .eq('id', aulaId)
       .single();
 
@@ -34,11 +34,14 @@ export async function verificarAulaDesbloqueada(
       return { isLocked: false };
     }
 
-    // Buscar aula anterior
+    // Buscar aula anterior (dentro do mesmo curso se houver, senão da trilha)
+    const filterColumn = aulaAtual.course_id ? 'course_id' : 'trail_id';
+    const filterValue = aulaAtual.course_id || aulaAtual.trail_id;
+    
     const { data: aulaAnterior, error: anteriorError } = await supabase
       .from('lessons')
       .select('id, title')
-      .eq('trail_id', aulaAtual.trail_id)
+      .eq(filterColumn, filterValue)
       .eq('order_index', aulaAtual.order_index - 1)
       .single();
 
