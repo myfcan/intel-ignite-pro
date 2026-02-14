@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TrailDetail = lazy(() => import("./pages/TrailDetail"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
 const Lesson = lazy(() => import("./pages/Lesson"));
 const LessonInteractive = lazy(() => import("./pages/LessonInteractive"));
 const Achievements = lazy(() => import("./pages/Achievements"));
@@ -157,6 +158,11 @@ const App = () => (
                 <Route path="/trails/:id" element={
                   <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
                     <TrailDetail />
+                  </SuspenseWithFallback>
+                } />
+                <Route path="/course/:id" element={
+                  <SuspenseWithFallback fallback={<TrailDetailSkeleton />}>
+                    <CourseDetail />
                   </SuspenseWithFallback>
                 } />
                 <Route path="/lessons/:id" element={<Lesson />} />
